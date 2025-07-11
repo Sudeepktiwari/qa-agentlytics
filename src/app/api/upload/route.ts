@@ -6,6 +6,7 @@ import { chunkText } from "@/lib/chunkText";
 import { addChunks } from "@/lib/chroma";
 import OpenAI from "openai";
 import jwt from "jsonwebtoken";
+import type { IncomingMessage } from "http";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
 
@@ -38,7 +39,7 @@ export async function POST(req: NextRequest) {
   let fileInfo: File | null = null;
 
   await new Promise<void>((resolve, reject) => {
-    const nodeReq = (req as any).req;
+    const nodeReq = (req as unknown as { req: IncomingMessage }).req;
     form.parse(nodeReq, (err: Error | null, fields: Fields, files: Files) => {
       if (err) return reject(err);
       let file = files.file;
