@@ -8,6 +8,8 @@ import OpenAI from "openai";
 import jwt from "jsonwebtoken";
 import type { IncomingMessage } from "http";
 
+export const dynamic = "force-dynamic";
+
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
 
 export const config = {
