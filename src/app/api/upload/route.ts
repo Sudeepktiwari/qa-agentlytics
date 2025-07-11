@@ -19,6 +19,10 @@ export const config = {
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export async function POST(req: NextRequest) {
+  // Prevent Vercel or build tools from triggering this route without a real upload
+  if (req.method !== "POST") {
+    return NextResponse.json({ error: "Method Not Allowed" }, { status: 405 });
+  }
   // Extract adminId from JWT
   const token = req.cookies.get("auth_token")?.value;
   if (!token)
