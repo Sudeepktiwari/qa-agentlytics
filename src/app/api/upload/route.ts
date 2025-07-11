@@ -8,6 +8,10 @@ import OpenAI from "openai";
 import jwt from "jsonwebtoken";
 import type { IncomingMessage } from "http";
 
+if (process.env.VERCEL && process.env.NEXT_PHASE === "phase-production-build") {
+  throw new Error("Do not run /api/upload at build time");
+}
+
 export const dynamic = "force-dynamic";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
