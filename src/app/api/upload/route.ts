@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import formidable from "formidable";
+import formidable, { Fields, Files, File } from "formidable";
 import fs from "fs";
 import { extractText } from "@/lib/extractText";
 import { chunkText } from "@/lib/chunkText";
@@ -35,24 +35,29 @@ export async function POST(req: NextRequest) {
 
   const form = formidable({ multiples: false });
   const buffers: Buffer[] = [];
-  let fileInfo: any = null;
+  let fileInfo: File | null = null;
 
-  await new Promise((resolve, reject) => {
-    form.parse(req as any, (err, fields, files) => {
-      if (err) return reject(err);
-      const file = files.file;
-      if (!file) return reject("No file uploaded");
-      fileInfo = file;
-      const stream = fs.createReadStream(file.filepath);
-      stream.on("data", (chunk) => buffers.push(chunk));
-      stream.on("end", resolve);
-      stream.on("error", reject);
-    });
+  await new Promise<void>((resolve, reject) => {
+    form.parse(
+      req as unknown as NodeJS.ReadableStream,
+      (err: Error | null, fields: Fields, files: Files) => {
+        if (err) return reject(err);
+        const file = files.file as File;
+        if (!file) return reject("No file uploaded");
+        fileInfo = file;
+        const stream = fs.createReadStream(file.filepath);
+        stream.on("data", (chunk) => buffers.push(chunk));
+        stream.on("end", resolve);
+        stream.on("error", reject);
+      }
+    );
   });
 
-  const fileBuffer = Buffer.concat(buffers);
-  const mimetype = fileInfo.mimetype;
-  const filename = fileInfo.originalFilename;
+  const fileBuffer = Buffer.concat(
+    buffers.filter((b): b is Buffer => Buffer.isBuffer(b))
+  );
+  const mimetype = fileInfo?.mimetype;
+  const filename = fileInfo?.originalFilename;
   const text = await extractText(fileBuffer, mimetype);
   const chunks = chunkText(text);
 
@@ -61,7 +66,9 @@ export async function POST(req: NextRequest) {
     input: chunks,
     model: "text-embedding-3-small",
   });
-  const embeddings = embedResp.data.map((d: any) => d.embedding);
+  const embeddings = embedResp.data.map(
+    (d: { embedding: number[] }) => d.embedding
+  );
 
   // Store in ChromaDB
   const metadata = chunks.map((_, i) => ({ filename, adminId, chunkIndex: i }));
