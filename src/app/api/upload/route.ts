@@ -38,26 +38,29 @@ export async function POST(req: NextRequest) {
   let fileInfo: File | null = null;
 
   await new Promise<void>((resolve, reject) => {
-    form.parse(
-      req as unknown as NodeJS.ReadableStream,
-      (err: Error | null, fields: Fields, files: Files) => {
-        if (err) return reject(err);
-        const file = files.file as File;
-        if (!file) return reject("No file uploaded");
-        fileInfo = file;
-        const stream = fs.createReadStream(file.filepath);
-        stream.on("data", (chunk) => buffers.push(chunk));
-        stream.on("end", resolve);
-        stream.on("error", reject);
-      }
-    );
+    const nodeReq = (req as any).req;
+    form.parse(nodeReq, (err: Error | null, fields: Fields, files: Files) => {
+      if (err) return reject(err);
+      let file = files.file;
+      if (!file) return reject("No file uploaded");
+      // If multiple: false, file is File; if true, file is File[]
+      if (Array.isArray(file)) file = file[0];
+      // Type guard: ensure file is a File
+      if (!file || typeof file !== "object" || !("filepath" in file))
+        return reject("Invalid file");
+      fileInfo = file as File;
+      const stream = fs.createReadStream(file.filepath);
+      stream.on("data", (chunk) => buffers.push(chunk));
+      stream.on("end", resolve);
+      stream.on("error", reject);
+    });
   });
 
   const fileBuffer = Buffer.concat(
     buffers.filter((b): b is Buffer => Buffer.isBuffer(b))
   );
-  const mimetype = fileInfo?.mimetype;
-  const filename = fileInfo?.originalFilename;
+  const mimetype = fileInfo ? fileInfo.mimetype : undefined;
+  const filename = fileInfo ? fileInfo.originalFilename : undefined;
   const text = await extractText(fileBuffer, mimetype);
   const chunks = chunkText(text);
 
