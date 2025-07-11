@@ -47,8 +47,14 @@ export async function POST(req: NextRequest) {
       // If multiple: false, file is File; if true, file is File[]
       if (Array.isArray(file)) file = file[0];
       // Type guard: ensure file is a File
-      if (!file || typeof file !== "object" || !("filepath" in file))
+      if (
+        !file ||
+        typeof file !== "object" ||
+        Array.isArray(file) ||
+        !("filepath" in file)
+      ) {
         return reject("Invalid file");
+      }
       fileInfo = file as File;
       const stream = fs.createReadStream(file.filepath);
       stream.on("data", (chunk) => buffers.push(chunk));
