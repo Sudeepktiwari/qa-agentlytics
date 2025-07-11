@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { getUsersCollection } from "@/lib/mongo";
-import { ObjectId } from "mongodb";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
 
@@ -80,7 +79,7 @@ export async function GET(req: NextRequest) {
       email: payload.email,
       adminId: payload.adminId,
     });
-  } catch (e) {
+  } catch {
     return NextResponse.json({ error: "Invalid token" }, { status: 401 });
   }
 }
@@ -100,7 +99,7 @@ export async function PUT(req: NextRequest) {
       email: payload.email,
       adminId: payload.adminId,
     });
-  } catch (e) {
+  } catch {
     return NextResponse.json({ error: "Invalid token" }, { status: 401 });
   }
 }
