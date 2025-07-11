@@ -11,7 +11,7 @@ export async function getCollection() {
   let collection;
   try {
     collection = await client.getCollection({ name: COLLECTION_NAME });
-  } catch (e) {
+  } catch {
     collection = await client.createCollection({ name: COLLECTION_NAME });
   }
   return collection;
@@ -46,7 +46,7 @@ export async function querySimilarChunks(
   });
   // Filter by adminId if provided
   let docs = results.documents[0];
-  const metas: (Record<string, any> | null)[] = results.metadatas[0];
+  const metas: (Record<string, unknown> | null)[] = results.metadatas[0];
   if (adminId) {
     const filtered = metas
       .map((meta, i) => ({ meta, doc: docs[i] }))
