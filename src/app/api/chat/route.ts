@@ -105,7 +105,9 @@ export async function POST(req: NextRequest) {
                 input: chunks,
                 model: "text-embedding-3-small",
               });
-              const embeddings = embedResp.data.map((d: any) => d.embedding);
+              const embeddings = embedResp.data.map(
+                (d: { embedding: number[] }) => d.embedding
+              );
               const metadata = chunks.map((_, i) => ({
                 filename: pageUrl,
                 adminId,
@@ -215,10 +217,6 @@ export async function POST(req: NextRequest) {
   ];
   const isGreeting =
     question && greetings.some((g) => question.toLowerCase().includes(g));
-
-  // Fallback sales pitch if no context
-  const fallbackPitch =
-    "Hello! I'm your dedicated sales assistant. To provide the best information about our company, products, and pricing, please upload your company documents or add your website sitemap in the admin panel. I'm here to help you grow your business!";
 
   // If no context, refer to sales team and ask for contact
   if (!context.trim() && !pageContext.trim()) {
