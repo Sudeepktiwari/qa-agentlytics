@@ -35,7 +35,13 @@ const AdminPanel: React.FC = () => {
   const [sitemapLoading, setSitemapLoading] = useState(false);
 
   // Sitemaps management state
-  const [sitemaps, setSitemaps] = useState<any[]>([]);
+  interface SitemapMeta {
+    sitemapUrl: string;
+    count: number;
+    firstCrawled: string;
+    urls: string[];
+  }
+  const [sitemaps, setSitemaps] = useState<SitemapMeta[]>([]);
   const [sitemapsLoading, setSitemapsLoading] = useState(false);
   const [sitemapsError, setSitemapsError] = useState("");
   const [sitemapsPage, setSitemapsPage] = useState(1);
@@ -108,7 +114,7 @@ const AdminPanel: React.FC = () => {
       const res = await fetch("/api/admin-docs?admin=1");
       const data = await res.json();
       setDocs(data.documents || []);
-    } catch (e) {
+    } catch {
       setError("Failed to fetch documents");
     } finally {
       setLoading(false);
@@ -131,7 +137,7 @@ const AdminPanel: React.FC = () => {
         }
       );
       fetchDocs();
-    } catch (e) {
+    } catch {
       setError("Failed to delete document");
       setLoading(false);
     }
