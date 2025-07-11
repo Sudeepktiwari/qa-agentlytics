@@ -42,32 +42,43 @@ export async function POST(req: NextRequest) {
     const nodeReq = (req as unknown as { req: IncomingMessage }).req;
     form.parse(nodeReq, (err: Error | null, fields: Fields, files: Files) => {
       if (err) return reject(err);
-      let file = files.file;
+      let file = files.file as unknown;
       if (!file) return reject("No file uploaded");
       // If multiple: false, file is File; if true, file is File[]
       if (Array.isArray(file)) file = file[0];
-      // Type guard: ensure file is a File
       if (
         !file ||
         typeof file !== "object" ||
         Array.isArray(file) ||
-        !("filepath" in file)
+        typeof (file as File).filepath !== "string"
       ) {
         return reject("Invalid file");
       }
       fileInfo = file as File;
-      const stream = fs.createReadStream(file.filepath);
-      stream.on("data", (chunk) => buffers.push(chunk));
+      const stream = fs.createReadStream(fileInfo.filepath);
+      stream.on("data", (chunk) => {
+        if (Buffer.isBuffer(chunk)) buffers.push(chunk);
+      });
       stream.on("end", resolve);
       stream.on("error", reject);
     });
   });
 
+  if (!fileInfo) {
+    return NextResponse.json(
+      { error: "File info missing after upload" },
+      { status: 400 }
+    );
+  }
+
   const fileBuffer = Buffer.concat(
     buffers.filter((b): b is Buffer => Buffer.isBuffer(b))
   );
-  const mimetype = fileInfo ? fileInfo.mimetype : undefined;
-  const filename = fileInfo ? fileInfo.originalFilename : undefined;
+  const mimetype = (fileInfo as File).mimetype || "";
+  const filename = (fileInfo as File).originalFilename || "";
+  if (!filename) {
+    return NextResponse.json({ error: "Filename missing" }, { status: 400 });
+  }
   const text = await extractText(fileBuffer, mimetype);
   const chunks = chunkText(text);
 
