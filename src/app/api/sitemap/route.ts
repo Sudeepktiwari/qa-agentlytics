@@ -41,13 +41,11 @@ export async function POST(req: NextRequest) {
   if (!token)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   let adminId = "";
-  let email = "";
   try {
     const payload = jwt.verify(token, JWT_SECRET) as {
       email: string;
       adminId: string;
     };
-    email = payload.email;
     adminId = payload.adminId;
   } catch {
     return NextResponse.json({ error: "Invalid token" }, { status: 401 });
@@ -213,7 +211,6 @@ export async function GET(req: NextRequest) {
       email: string;
       adminId: string;
     };
-    email = payload.email;
     adminId = payload.adminId;
   } catch {
     return NextResponse.json({ error: "Invalid token" }, { status: 401 });
@@ -265,13 +262,11 @@ export async function DELETE(req: NextRequest) {
   if (!token)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   let adminId = "";
-  let email = "";
   try {
     const payload = jwt.verify(token, JWT_SECRET) as {
       email: string;
       adminId: string;
     };
-    email = payload.email;
     adminId = payload.adminId;
   } catch {
     return NextResponse.json({ error: "Invalid token" }, { status: 401 });
