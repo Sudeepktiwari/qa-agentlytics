@@ -9,19 +9,31 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@chroma-core/default-embed": "^0.1.8",
+    "bcrypt": "^6.0.0",
+    "cheerio": "^1.1.0",
+    "chromadb": "^3.0.6",
+    "jsonwebtoken": "^9.0.2",
+    "mongodb": "^6.17.0",
+    "next": "15.3.5",
+    "node-fetch": "^3.3.2",
+    "openai": "^5.8.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "next": "15.3.5"
+    "react-markdown": "^10.1.0"
   },
   "devDependencies": {
-    "typescript": "^5",
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "@types/bcrypt": "^5.0.2",
+    "@types/cheerio": "^0.22.35",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@tailwindcss/postcss": "^4",
-    "tailwindcss": "^4",
     "eslint": "^9",
     "eslint-config-next": "15.3.5",
-    "@eslint/eslintrc": "^3"
+    "tailwindcss": "^4",
+    "typescript": "^5"
   }
 }
