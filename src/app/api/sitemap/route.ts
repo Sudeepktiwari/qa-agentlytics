@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
   let urls: string[] = [];
   try {
     urls = await parseSitemap(sitemapUrl);
-  } catch (e) {
+  } catch {
     return NextResponse.json(
       { error: "Failed to parse sitemap" },
       { status: 400 }
@@ -117,7 +117,6 @@ export async function POST(req: NextRequest) {
       results.push({ url, text });
       await pages.insertOne({
         adminId,
-        email,
         url,
         text,
         filename: url,
@@ -135,7 +134,9 @@ export async function POST(req: NextRequest) {
           input: chunks,
           model: "text-embedding-3-small",
         });
-        const embeddings = embedResp.data.map((d: any) => d.embedding);
+        const embeddings = embedResp.data.map(
+          (d: { embedding: number[] }) => d.embedding
+        );
         const metadata = chunks.map((_, i) => ({
           filename: url,
           adminId,
@@ -207,7 +208,6 @@ export async function GET(req: NextRequest) {
   if (!token)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   let adminId = "";
-  let email = "";
   try {
     const payload = jwt.verify(token, JWT_SECRET) as {
       email: string;
