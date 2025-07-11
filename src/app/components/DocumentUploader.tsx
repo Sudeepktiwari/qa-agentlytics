@@ -59,7 +59,7 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
         };
         xhr.send(formData);
       });
-    } catch (err) {
+    } catch {
       setStatus("Error uploading file");
     } finally {
       setLoading(false);

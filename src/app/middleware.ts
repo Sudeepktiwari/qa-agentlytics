@@ -38,7 +38,7 @@ export function middleware(req: NextRequest) {
     }
     try {
       jwt.verify(token, JWT_SECRET);
-    } catch (e) {
+    } catch {
       return NextResponse.json(
         { error: "Unauthorized: Invalid token" },
         { status: 401 }

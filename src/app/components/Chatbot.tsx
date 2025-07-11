@@ -94,7 +94,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
         clearTimeout(followupTimer.current);
       }
     };
-  }, [pageUrl, adminId]);
+  }, [pageUrl, adminId, getEffectivePageUrl]);
 
   // Watch for user response or followup trigger
   useEffect(() => {
@@ -164,7 +164,15 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
         clearTimeout(followupTimer.current);
       }
     };
-  }, [messages, followupSent, adminId, pageUrl]);
+  }, [
+    messages,
+    followupSent,
+    adminId,
+    pageUrl,
+    followupCount,
+    getEffectivePageUrl,
+    getPreviousQuestions,
+  ]);
 
   const sendMessage = async () => {
     if (!input.trim()) return;
@@ -193,7 +201,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
       // Clear follow-up timer on user message
       if (followupTimer.current) clearTimeout(followupTimer.current);
       setFollowupSent(false);
-    } catch (err) {
+    } catch {
       setMessages((msgs) => [
         ...msgs,
         { role: "assistant", content: "Error: Could not get answer." },

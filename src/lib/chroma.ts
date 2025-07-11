@@ -46,10 +46,10 @@ export async function querySimilarChunks(
   });
   // Filter by adminId if provided
   let docs = results.documents[0];
-  let metas = results.metadatas[0];
+  const metas: (Record<string, any> | null)[] = results.metadatas[0];
   if (adminId) {
     const filtered = metas
-      .map((meta: any, i: number) => ({ meta, doc: docs[i] }))
+      .map((meta, i) => ({ meta, doc: docs[i] }))
       .filter((item) => item.meta && item.meta.adminId === adminId);
     docs = filtered.map((item) => item.doc).slice(0, topK);
   } else {
@@ -62,8 +62,8 @@ export async function listDocuments() {
   const collection = await getCollection();
   const all = await collection.get();
   const docMap: Record<string, number> = {};
-  all.metadatas.forEach((meta: any) => {
-    if (meta && meta.filename) {
+  all.metadatas.forEach((meta) => {
+    if (meta && typeof meta.filename === "string") {
       docMap[meta.filename] = (docMap[meta.filename] || 0) + 1;
     }
   });
@@ -77,7 +77,7 @@ export async function deleteDocument(filename: string, adminId?: string) {
   const collection = await getCollection();
   const all = await collection.get();
   const idsToDelete = all.metadatas
-    .map((meta: any, i: number) =>
+    .map((meta, i) =>
       meta &&
       meta.filename === filename &&
       (!adminId || meta.adminId === adminId)
@@ -97,7 +97,7 @@ export async function deleteChunksByFilename(
   const collection = await getCollection();
   const all = await collection.get();
   const idsToDelete = all.metadatas
-    .map((meta: any, i: number) =>
+    .map((meta, i) =>
       meta &&
       meta.filename === filename &&
       (!adminId || meta.adminId === adminId)
@@ -114,7 +114,7 @@ export async function deleteChunksByUrl(url: string, adminId?: string) {
   const collection = await getCollection();
   const all = await collection.get();
   const idsToDelete = all.metadatas
-    .map((meta: any, i: number) =>
+    .map((meta, i) =>
       meta && meta.url === url && (!adminId || meta.adminId === adminId)
         ? all.ids[i]
         : null
@@ -134,8 +134,11 @@ export async function getChunksByPageUrl(adminId: string, pageUrl: string) {
     pageUrl.endsWith("/") ? pageUrl.slice(0, -1) : pageUrl + "/",
   ];
   const chunks = all.metadatas
-    .map((meta: any, i: number) =>
-      meta && meta.adminId === adminId && urlVariants.includes(meta.filename)
+    .map((meta, i) =>
+      meta &&
+      meta.adminId === adminId &&
+      typeof meta.filename === "string" &&
+      urlVariants.includes(meta.filename as string)
         ? all.documents[i]
         : null
     )
@@ -143,8 +146,11 @@ export async function getChunksByPageUrl(adminId: string, pageUrl: string) {
   // If nothing found, try matching on meta.url as well
   if (chunks.length === 0) {
     return all.metadatas
-      .map((meta: any, i: number) =>
-        meta && meta.adminId === adminId && urlVariants.includes(meta.url)
+      .map((meta, i) =>
+        meta &&
+        meta.adminId === adminId &&
+        typeof meta.url === "string" &&
+        urlVariants.includes(meta.url as string)
           ? all.documents[i]
           : null
       )
