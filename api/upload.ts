@@ -1,14 +1,4 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import formidable, { Fields, Files, File } from "formidable";
-import fs from "fs";
-import { extractText } from "../src/lib/extractText";
-import { chunkText } from "../src/lib/chunkText";
-import { addChunks } from "../src/lib/chroma";
-import OpenAI from "openai";
-import jwt from "jsonwebtoken";
-
-const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export const config = {
   api: {
@@ -21,6 +11,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.status(405).json({ error: "Method Not Allowed" });
     return;
   }
+
+  // Dynamic imports for large dependencies
+  const formidable = (await import("formidable")).default;
+  const fs = await import("fs");
+  const { extractText } = await import("../src/lib/extractText");
+  const { chunkText } = await import("../src/lib/chunkText");
+  const { addChunks } = await import("../src/lib/chroma");
+  const OpenAI = (await import("openai")).default;
+  const jwt = (await import("jsonwebtoken")).default;
+
+  const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
   // Extract adminId from JWT
   const token =
@@ -47,25 +49,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const form = formidable({ multiples: false });
   const buffers: Buffer[] = [];
-  let fileInfo: File | null = null;
+  let fileInfo: any = null;
 
   await new Promise<void>((resolve, reject) => {
-    form.parse(req, (err: Error | null, fields: Fields, files: Files) => {
+    form.parse(req, (err: Error | null, fields: any, files: any) => {
       if (err) return reject(err);
-      let file = files.file as unknown;
+      let file = files.file as any;
       if (!file) return reject("No file uploaded");
       if (Array.isArray(file)) file = file[0];
       if (
         !file ||
         typeof file !== "object" ||
         Array.isArray(file) ||
-        typeof (file as File).filepath !== "string"
+        typeof file.filepath !== "string"
       ) {
         return reject("Invalid file");
       }
-      fileInfo = file as File;
-      const stream = fs.createReadStream(fileInfo.filepath);
-      stream.on("data", (chunk) => {
+      fileInfo = file;
+      const stream = fs.createReadStream(file.filepath);
+      stream.on("data", (chunk: any) => {
         if (Buffer.isBuffer(chunk)) buffers.push(chunk);
       });
       stream.on("end", resolve);
@@ -81,8 +83,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const fileBuffer = Buffer.concat(
     buffers.filter((b): b is Buffer => Buffer.isBuffer(b))
   );
-  const mimetype = (fileInfo as File).mimetype || "";
-  const filename = (fileInfo as File).originalFilename || "";
+  const mimetype = (fileInfo as any).mimetype || "";
+  const filename = (fileInfo as any).originalFilename || "";
   if (!filename) {
     res.status(400).json({ error: "Filename missing" });
     return;
