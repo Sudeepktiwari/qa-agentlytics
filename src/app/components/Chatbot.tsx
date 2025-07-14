@@ -35,22 +35,24 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
   const followupTimer = useRef<NodeJS.Timeout | null>(null);
   const [followupSent, setFollowupSent] = useState(false);
   const [followupCount, setFollowupCount] = useState(0);
+  const isTestEnv = process.env.NEXT_PUBLIC_ENV === "test";
+  const [selectedLink, setSelectedLink] = useState<string | null>(null);
+  const [proactiveTriggered, setProactiveTriggered] = useState(false);
 
-  function getEffectivePageUrl() {
-    return pageUrl || getPageUrl();
-  }
-
-  // Helper to get all previous assistant messages (bot questions)
-  function getPreviousQuestions() {
-    return messages
-      .filter((msg) => msg.role === "assistant")
-      .map((msg) => msg.content);
-  }
+  // Remove getEffectivePageUrl and getPreviousQuestions from component scope
 
   useEffect(() => {
-    // Fetch chat history on mount
+    if (isTestEnv) {
+      // In test, only run after a link is selected
+      if (!proactiveTriggered || !selectedLink) return;
+    } else {
+      // In prod, only run on mount (or when pageUrl/adminId changes)
+      if (proactiveTriggered || selectedLink) return;
+    }
+    // Fetch chat history on mount or after link selection
     const sessionId = getSessionId();
-    const effectivePageUrl = getEffectivePageUrl();
+    const effectivePageUrl =
+      isTestEnv && selectedLink ? selectedLink : pageUrl || getPageUrl();
     fetch(
       `/api/chat?sessionId=${sessionId}&pageUrl=${encodeURIComponent(
         effectivePageUrl
@@ -59,7 +61,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
       .then((res) => res.json())
       .then((data) => {
         if (data.history) setMessages(data.history);
-        // Always trigger proactive bot message and follow-up timer on mount
+        // Always trigger proactive bot message and follow-up timer on mount or after link selection
         fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -94,19 +96,19 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
         clearTimeout(followupTimer.current);
       }
     };
-  }, [pageUrl, adminId, getEffectivePageUrl]);
+  }, [pageUrl, adminId, isTestEnv, proactiveTriggered, selectedLink]);
 
-  // Watch for user response or followup trigger
   useEffect(() => {
-    // Only run if there is at least one message
     if (messages.length === 0) return;
-    // Find the last message
     const lastMsg = messages[messages.length - 1];
+    const effectivePageUrl = pageUrl || getPageUrl();
+    const previousQuestions = messages
+      .filter((msg) => msg.role === "assistant")
+      .map((msg) => msg.content);
     // If last message is from bot, start inactivity timer
     if (lastMsg.role === "assistant") {
       if (followupTimer.current) clearTimeout(followupTimer.current);
       setFollowupSent(false);
-      // Only set timer if followupCount < 3
       if (followupCount < 3) {
         console.log(
           "[Chatbot] Setting inactivity follow-up timer for 10 seconds after bot message"
@@ -119,7 +121,6 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
         }, 10000);
       }
     } else if (lastMsg.role === "user") {
-      // If user replied, clear timer and reset followupCount
       if (followupTimer.current) {
         console.log(
           "[Chatbot] User responded, clearing inactivity follow-up timer"
@@ -134,8 +135,6 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
     if (followupSent && lastMsg.role === "assistant" && followupCount < 3) {
       console.log("[Chatbot] Sending follow-up request to backend");
       const sessionId = getSessionId();
-      const effectivePageUrl = getEffectivePageUrl();
-      const previousQuestions = getPreviousQuestions();
       fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -164,15 +163,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
         clearTimeout(followupTimer.current);
       }
     };
-  }, [
-    messages,
-    followupSent,
-    adminId,
-    pageUrl,
-    followupCount,
-    getEffectivePageUrl,
-    getPreviousQuestions,
-  ]);
+  }, [messages, followupSent, adminId, pageUrl, followupCount]);
 
   const sendMessage = async () => {
     if (!input.trim()) return;
@@ -182,7 +173,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
     setLoading(true);
     try {
       const sessionId = getSessionId();
-      const effectivePageUrl = getEffectivePageUrl();
+      const effectivePageUrl = pageUrl || getPageUrl();
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -213,6 +204,12 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && !loading) sendMessage();
+  };
+
+  // Handler to be called when a link is selected from the dropdown in admin test env
+  const handleLinkSelect = (link: string) => {
+    setSelectedLink(link);
+    setProactiveTriggered(true);
   };
 
   return (
