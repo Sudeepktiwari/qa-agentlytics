@@ -1,9 +1,8 @@
-import { CloudClient } from "chromadb";
+import { ChromaClient } from "chromadb";
 
-const client = new CloudClient({
-  apiKey: process.env.CHROMA_API_KEY!,
-  tenant: process.env.CHROMA_TENANT!,
-  database: process.env.CHROMA_DB!,
+// For ChromaDB v2.x, set CHROMA_URL to your ChromaDB server URL (e.g., http://localhost:8000 or your remote endpoint)
+const client = new ChromaClient({
+  path: process.env.CHROMA_URL || "http://localhost:8000",
 });
 const COLLECTION_NAME = "documents";
 
