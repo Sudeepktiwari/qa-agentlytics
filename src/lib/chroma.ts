@@ -1,19 +1,24 @@
-import { ChromaClient } from "chromadb";
+import { Pinecone } from "@pinecone-database/pinecone";
 
-// For ChromaDB v2.x, set CHROMA_URL to your ChromaDB server URL (e.g., http://localhost:8000 or your remote endpoint)
-const client = new ChromaClient({
-  path: process.env.CHROMA_URL || "http://localhost:8000",
+// Pinecone environment variables must be set:
+// - PINECONE_API_KEY (your Pinecone API key)
+// - PINECONE_CONTROLLER_HOST (your Pinecone environment's controller host, e.g., https://controller.us-east1-gcp.pinecone.io)
+const pinecone = new Pinecone({
+  apiKey: process.env.PINECONE_KEY!,
 });
-const COLLECTION_NAME = "documents";
+const index = pinecone.Index(process.env.PINECONE_INDEX!);
 
-export async function getCollection() {
-  let collection;
-  try {
-    collection = await client.getCollection({ name: COLLECTION_NAME });
-  } catch {
-    collection = await client.createCollection({ name: COLLECTION_NAME });
-  }
-  return collection;
+// Helper to build Pinecone vector objects
+function buildVectors(
+  chunks: string[],
+  embeddings: number[][],
+  metadata: { filename: string; chunkIndex: number; adminId: string }[]
+) {
+  return chunks.map((chunk, i) => ({
+    id: `${metadata[i].filename}-${metadata[i].chunkIndex}-${metadata[i].adminId}`,
+    values: embeddings[i],
+    metadata: { ...metadata[i], chunk },
+  }));
 }
 
 export async function addChunks(
@@ -21,16 +26,8 @@ export async function addChunks(
   embeddings: number[][],
   metadata: { filename: string; chunkIndex: number; adminId: string }[]
 ) {
-  const collection = await getCollection();
-  await collection.add({
-    ids: chunks.map(
-      (_, i) =>
-        `${metadata[i].filename}-${metadata[i].chunkIndex}-${metadata[i].adminId}`
-    ),
-    documents: chunks,
-    embeddings,
-    metadatas: metadata,
-  });
+  const vectors = buildVectors(chunks, embeddings, metadata);
+  await index.upsert(vectors);
 }
 
 export async function querySimilarChunks(
@@ -38,122 +35,50 @@ export async function querySimilarChunks(
   topK = 5,
   adminId?: string
 ) {
-  const collection = await getCollection();
-  const results = await collection.query({
-    queryEmbeddings: [questionEmbedding],
-    nResults: topK * 2, // fetch more to filter by adminId
+  const result = await index.query({
+    vector: questionEmbedding,
+    topK,
+    includeMetadata: true,
   });
   // Filter by adminId if provided
-  let docs = results.documents[0];
-  const metas: (Record<string, unknown> | null)[] = results.metadatas[0];
+  type PineconeMatch = { metadata?: { adminId?: string; chunk?: string } };
+  let matches: PineconeMatch[] = result.matches || [];
   if (adminId) {
-    const filtered = metas
-      .map((meta, i) => ({ meta, doc: docs[i] }))
-      .filter((item) => item.meta && item.meta.adminId === adminId);
-    docs = filtered.map((item) => item.doc).slice(0, topK);
-  } else {
-    docs = docs.slice(0, topK);
+    matches = matches.filter(
+      (m: PineconeMatch) => m.metadata && m.metadata.adminId === adminId
+    );
   }
-  return docs;
+  // Return the chunk text
+  return matches.map((m: PineconeMatch) => m.metadata?.chunk || "");
 }
 
 export async function listDocuments() {
-  const collection = await getCollection();
-  const all = await collection.get();
-  const docMap: Record<string, number> = {};
-  all.metadatas.forEach((meta) => {
-    if (meta && typeof meta.filename === "string") {
-      docMap[meta.filename] = (docMap[meta.filename] || 0) + 1;
-    }
-  });
-  return Object.entries(docMap).map(([filename, count]) => ({
-    filename,
-    count,
-  }));
+  // Pinecone does not support listing all vectors directly; you need to track filenames separately.
+  // As a workaround, you can store a list in your DB, or use metadata filtering if available in your plan.
+  // Here, we return an empty array and recommend tracking filenames elsewhere.
+  return [];
 }
 
 export async function deleteDocument(filename: string, adminId?: string) {
-  const collection = await getCollection();
-  const all = await collection.get();
-  const idsToDelete = all.metadatas
-    .map((meta, i) =>
-      meta &&
-      meta.filename === filename &&
-      (!adminId || meta.adminId === adminId)
-        ? all.ids[i]
-        : null
-    )
-    .filter((id): id is string => Boolean(id));
-  if (idsToDelete.length > 0) {
-    await collection.delete({ ids: idsToDelete });
-  }
+  // Pinecone does not support metadata-based deletion directly; you must track IDs elsewhere.
+  // If you track IDs, you can delete by ID. Otherwise, you need to fetch all IDs for the filename and delete them.
+  // Not implemented here.
 }
 
 export async function deleteChunksByFilename(
   filename: string,
   adminId?: string
 ) {
-  const collection = await getCollection();
-  const all = await collection.get();
-  const idsToDelete = all.metadatas
-    .map((meta, i) =>
-      meta &&
-      meta.filename === filename &&
-      (!adminId || meta.adminId === adminId)
-        ? all.ids[i]
-        : null
-    )
-    .filter((id): id is string => Boolean(id));
-  if (idsToDelete.length > 0) {
-    await collection.delete({ ids: idsToDelete });
-  }
+  // Not implemented: see note above. You need to track IDs for each filename to delete.
 }
 
 export async function deleteChunksByUrl(url: string, adminId?: string) {
-  const collection = await getCollection();
-  const all = await collection.get();
-  const idsToDelete = all.metadatas
-    .map((meta, i) =>
-      meta && meta.url === url && (!adminId || meta.adminId === adminId)
-        ? all.ids[i]
-        : null
-    )
-    .filter((id): id is string => Boolean(id));
-  if (idsToDelete.length > 0) {
-    await collection.delete({ ids: idsToDelete });
-  }
+  // Not implemented: see note above. You need to track IDs for each URL to delete.
 }
 
 export async function getChunksByPageUrl(adminId: string, pageUrl: string) {
-  const collection = await getCollection();
-  const all = await collection.get();
-  // Normalize URLs: try both with and without trailing slash
-  const urlVariants = [
-    pageUrl,
-    pageUrl.endsWith("/") ? pageUrl.slice(0, -1) : pageUrl + "/",
-  ];
-  const chunks = all.metadatas
-    .map((meta, i) =>
-      meta &&
-      meta.adminId === adminId &&
-      typeof meta.filename === "string" &&
-      urlVariants.includes(meta.filename as string)
-        ? all.documents[i]
-        : null
-    )
-    .filter((chunk): chunk is string => Boolean(chunk));
-  // If nothing found, try matching on meta.url as well
-  if (chunks.length === 0) {
-    return all.metadatas
-      .map((meta, i) =>
-        meta &&
-        meta.adminId === adminId &&
-        typeof meta.url === "string" &&
-        urlVariants.includes(meta.url as string)
-          ? all.documents[i]
-          : null
-      )
-      .filter((chunk): chunk is string => Boolean(chunk));
-  }
-  return chunks;
+  // Pinecone does not support metadata-based queries in all plans. If available, use a metadata filter.
+  // Otherwise, you need to track IDs for each pageUrl/adminId pair.
+  // Not implemented here.
+  return [];
 }

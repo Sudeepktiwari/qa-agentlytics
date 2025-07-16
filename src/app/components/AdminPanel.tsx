@@ -173,9 +173,11 @@ const AdminPanel: React.FC = () => {
         setSitemapUrl(sitemapUrl); // Prefill the input with the just-crawled URL
       } else {
         setSitemapStatus(data.error || "Failed to crawl sitemap");
+        console.error("Sitemap crawl error:", data.error || data);
       }
-    } catch {
+    } catch (err) {
       setSitemapStatus("Failed to crawl sitemap");
+      console.error("Sitemap crawl exception:", err);
     } finally {
       setSitemapLoading(false);
     }
@@ -358,7 +360,33 @@ const AdminPanel: React.FC = () => {
           </button>
         </form>
         {sitemapStatus && (
-          <div style={{ marginTop: 8, whiteSpace: "pre-line" }}>
+          <div
+            style={{
+              marginTop: 8,
+              whiteSpace: "pre-line",
+              color:
+                sitemapStatus.toLowerCase().includes("fail") ||
+                sitemapStatus.toLowerCase().includes("error")
+                  ? "#b00020"
+                  : undefined,
+              background:
+                sitemapStatus.toLowerCase().includes("fail") ||
+                sitemapStatus.toLowerCase().includes("error")
+                  ? "#ffeaea"
+                  : undefined,
+              border:
+                sitemapStatus.toLowerCase().includes("fail") ||
+                sitemapStatus.toLowerCase().includes("error")
+                  ? "1px solid #b00020"
+                  : undefined,
+              padding:
+                sitemapStatus.toLowerCase().includes("fail") ||
+                sitemapStatus.toLowerCase().includes("error")
+                  ? "8px 12px"
+                  : undefined,
+              borderRadius: 4,
+            }}
+          >
             {sitemapStatus}
           </div>
         )}

@@ -112,6 +112,7 @@ export async function POST(req: NextRequest) {
   for (const url of uncrawledUrls) {
     try {
       const text = await extractTextFromUrl(url);
+      console.log(`[Crawl] Extracted text for ${url}:`, text.slice(0, 100));
       results.push({ url, text });
       await pages.insertOne({
         adminId,
@@ -125,8 +126,9 @@ export async function POST(req: NextRequest) {
         { adminId, url },
         { $set: { crawled: true, crawledAt: new Date() } }
       );
-      // Chunk and embed for ChromaDB
+      // Chunk and embed for Pinecone
       const chunks = chunkText(text);
+      console.log(`[Crawl] Chunks for ${url}:`, chunks.length);
       if (chunks.length > 0) {
         const embedResp = await openai.embeddings.create({
           input: chunks,
@@ -141,11 +143,16 @@ export async function POST(req: NextRequest) {
           url,
           chunkIndex: i,
         }));
+        console.log(
+          `[Crawl] Upserting to Pinecone:`,
+          embeddings.length,
+          metadata.length
+        );
         await addChunks(chunks, embeddings, metadata);
         totalChunks += chunks.length;
       }
-    } catch {
-      // Skip failed pages
+    } catch (err) {
+      console.error(`[Crawl] Failed for ${url}:`, err);
     }
   }
 
