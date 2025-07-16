@@ -6,7 +6,9 @@ import { Pinecone } from "@pinecone-database/pinecone";
 const pinecone = new Pinecone({
   apiKey: process.env.PINECONE_KEY!,
 });
-const index = pinecone.Index(process.env.PINECONE_INDEX!);
+const index = pinecone.index(process.env.PINECONE_INDEX!);
+
+console.log("[DEBUG] PINECONE_INDEX:", process.env.PINECONE_INDEX);
 
 // Helper to build Pinecone vector objects
 function buildVectors(
@@ -27,7 +29,12 @@ export async function addChunks(
   metadata: { filename: string; chunkIndex: number; adminId: string }[]
 ) {
   const vectors = buildVectors(chunks, embeddings, metadata);
-  await index.upsert(vectors);
+  console.log(
+    "[Crawl] Upserting vector IDs:",
+    vectors.map((v) => v.id)
+  );
+  const upsertResponse = await index.upsert(vectors);
+  console.log("[Crawl] Pinecone upsert response:", upsertResponse);
 }
 
 export async function querySimilarChunks(
