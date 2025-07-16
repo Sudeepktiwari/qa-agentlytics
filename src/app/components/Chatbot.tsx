@@ -313,7 +313,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
                   </div>
                 )}
                 {/* Render email prompt/input if present */}
-                {msg.emailPrompt && (
+                {msg.emailPrompt && msg.emailPrompt.trim() !== "" && (
                   <div style={{ marginTop: 8 }}>
                     <div>{msg.emailPrompt}</div>
                     <form

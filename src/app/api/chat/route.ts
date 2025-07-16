@@ -475,11 +475,29 @@ ${previousQnA}
       ? `You are a helpful sales bot for a company. Always respond to greetings with a friendly, enthusiastic sales pitch about the company, its products, and pricing, using ONLY the context below. If you don't have enough info, encourage the user to upload more documents or sitemaps.\n\nPage Context:\n${pageContext}\n\nGeneral Context:\n${context}`
       : `You are a helpful sales bot for a company. Always answer in a persuasive, sales-oriented style, using ONLY the context below. If you don't have enough info, encourage the user to upload more documents or sitemaps.\n\nPage Context:\n${pageContext}\n\nGeneral Context:\n${context}`;
   } else if (isButtonAction) {
-    // If user clicked a context-aware button, ask for email related to that action and page
-    systemPrompt = `You are a helpful sales assistant for Appointy. The user has not provided an email yet.\n\nYou will receive page and general context, the user's selected action, and the previous conversation. Always generate your response in the following JSON format:\n\n{\n  "mainText": "<A friendly, direct request for the user's email, referencing the user's selected action ('${lastButtonLabel}') and the page context. Explain why you need their email to proceed with their request. Do NOT ask another qualifying question. Do NOT include any buttons.>",\n  "buttons": [],\n  "emailPrompt": "Please enter your email so I can send you the exact steps, demo, or connect you to support for this page!"\n}\n\nContext:\nPage Context:\n${pageContext}\n\nGeneral Context:\n${context}\n\nUser Selected Action: ${lastButtonLabel}\n\nPrevious Conversation:\n${previousQuestions.join(
-      " | "
-    )}\n\n- Only use the above JSON format.\n- Do not answer in any other way.\n- Your mainText must be a friendly, direct request for the user's email, referencing the user's selected action and the page context. Do NOT ask another qualifying question or repeat previous questions. Do NOT include any buttons.`;
-    userPrompt = `Please ask the user for their email in a friendly, direct way, referencing their selected action ('${lastButtonLabel}') and the page context. Explain why you need their email to proceed with their request. Do NOT ask another qualifying question. Do NOT include any buttons. Only output the JSON format as instructed.`;
+    // If user clicked a context-aware button, only prompt for email the first time after a button click
+    // Check if the last assistant message was already an email prompt
+    const lastAssistantMsg = await chats.findOne(
+      {
+        sessionId,
+        role: "assistant",
+        "content.emailPrompt": { $exists: true, $ne: "" },
+      },
+      { sort: { createdAt: -1 } }
+    );
+    if (lastAssistantMsg) {
+      // Already prompted for email, don't prompt again
+      systemPrompt = `You are a helpful sales assistant for Appointy. The user has not provided an email yet.\n\nYou will receive page and general context, the user's selected action, and the previous conversation. Always generate your response in the following JSON format:\n\n{\n  "mainText": "<Acknowledge the user's action and provide relevant info, but do not prompt for email again.>",\n  "buttons": [],\n  "emailPrompt": ""\n}\n\nContext:\nPage Context:\n${pageContext}\n\nGeneral Context:\n${context}\n\nUser Selected Action: ${lastButtonLabel}\n\nPrevious Conversation:\n${previousQuestions.join(
+        " | "
+      )}\n\n- Only use the above JSON format.\n- Do not answer in any other way.\n- Do not prompt for email again. Do NOT include any buttons.`;
+      userPrompt = `Acknowledge the user's action and provide relevant info, but do not prompt for email again. Only output the JSON format as instructed.`;
+    } else {
+      // First time after button click, prompt for email
+      systemPrompt = `You are a helpful sales assistant for Appointy. The user has not provided an email yet.\n\nYou will receive page and general context, the user's selected action, and the previous conversation. Always generate your response in the following JSON format:\n\n{\n  "mainText": "<A friendly, direct request for the user's email, referencing the user's selected action ('${lastButtonLabel}') and the page context. Explain why you need their email to proceed with their request. Do NOT ask another qualifying question. Do NOT include any buttons.>",\n  "buttons": [],\n  "emailPrompt": "Please enter your email so I can send you the exact steps, demo, or connect you to support for this page!"\n}\n\nContext:\nPage Context:\n${pageContext}\n\nGeneral Context:\n${context}\n\nUser Selected Action: ${lastButtonLabel}\n\nPrevious Conversation:\n${previousQuestions.join(
+        " | "
+      )}\n\n- Only use the above JSON format.\n- Do not answer in any other way.\n- Your mainText must be a friendly, direct request for the user's email, referencing the user's selected action and the page context. Do NOT ask another qualifying question or repeat previous questions. Do NOT include any buttons.`;
+      userPrompt = `Please ask the user for their email in a friendly, direct way, referencing their selected action ('${lastButtonLabel}') and the page context. Explain why you need their email to proceed with their request. Do NOT ask another qualifying question. Do NOT include any buttons. Only output the JSON format as instructed.`;
+    }
   } else {
     systemPrompt = `\nYou are a helpful sales assistant for Appointy. The user has not provided an email yet.\n\nYou will receive page and general context. Always generate your response in the following JSON format:\n\n{\n  "mainText": "<A dynamic, page-aware summary or answer, using the context below.>",\n  "buttons": ["Send Setup Guide", "Share My Website Type", "Talk to Support"],\n  "emailPrompt": "Still here? I can send exact steps based on your platform. Want me to email it to you?"\n}\n\nContext:\nPage Context:\n${pageContext}\n\nGeneral Context:\n${context}\n\n- Only use the above JSON format.\n- Do not answer in any other way.\n- Always include actionable buttons and an email prompt until the user provides their email.`;
   }
