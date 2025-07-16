@@ -21,6 +21,15 @@ function getPageUrl() {
 interface Message {
   role: "user" | "assistant";
   content: string;
+  buttons?: string[];
+  emailPrompt?: string;
+}
+
+// Type for backend bot response
+interface BotResponse {
+  mainText: string;
+  buttons?: string[];
+  emailPrompt?: string;
 }
 
 interface ChatbotProps {
@@ -63,7 +72,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
       .then((data) => {
         if (data.history) {
           setMessages(
-            data.history.map((msg: any) => {
+            data.history.map((msg: Message) => {
               if (msg.role === "assistant") {
                 try {
                   const parsed =
@@ -202,7 +211,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
   }, [messages, followupSent, adminId, pageUrl, followupCount]);
 
   // Helper: Parse backend response (now JSON with mainText, buttons, emailPrompt)
-  function parseBotResponse(data: any): {
+  function parseBotResponse(data: BotResponse | string): {
     mainText: string;
     buttons: string[];
     emailPrompt: string;
@@ -269,25 +278,6 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
     if (e.key === "Enter" && !loading) sendMessage(input);
   };
 
-  // Helper: Parse bot message for actionable buttons
-  function parseActions(message: string) {
-    return message
-      .split("\n")
-      .filter((line) => line.trim().startsWith("🔘"))
-      .map((line) => line.replace("🔘", "").trim());
-  }
-
-  // Helper: Check if message contains email input marker
-  function hasEmailInput(message: string) {
-    return message.includes("📩 Email Input Field");
-  }
-
-  // Handler to be called when a link is selected from the dropdown in admin test env
-  const handleLinkSelect = (link: string) => {
-    setSelectedLink(link);
-    setProactiveTriggered(true);
-  };
-
   return (
     <div style={{ border: "1px solid #ccc", padding: 16, borderRadius: 8 }}>
       <h3>Chatbot</h3>
@@ -305,27 +295,26 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
               <>
                 <ReactMarkdown>{msg.content}</ReactMarkdown>
                 {/* Render actionable buttons if present */}
-                {Array.isArray((msg as any).buttons) &&
-                  (msg as any).buttons.length > 0 && (
-                    <div style={{ marginTop: 8 }}>
-                      {(msg as any).buttons.map((action: string) => (
-                        <button
-                          key={action}
-                          onClick={() => {
-                            setInput("");
-                            sendMessage(action);
-                          }}
-                          style={{ margin: "4px", padding: "6px 12px" }}
-                        >
-                          {action}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                {/* Render email prompt/input if present */}
-                {(msg as any).emailPrompt && (
+                {Array.isArray(msg.buttons) && msg.buttons.length > 0 && (
                   <div style={{ marginTop: 8 }}>
-                    <div>{(msg as any).emailPrompt}</div>
+                    {msg.buttons.map((action: string) => (
+                      <button
+                        key={action}
+                        onClick={() => {
+                          setInput("");
+                          sendMessage(action);
+                        }}
+                        style={{ margin: "4px", padding: "6px 12px" }}
+                      >
+                        {action}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {/* Render email prompt/input if present */}
+                {msg.emailPrompt && (
+                  <div style={{ marginTop: 8 }}>
+                    <div>{msg.emailPrompt}</div>
                     <form
                       onSubmit={(e) => {
                         e.preventDefault();
