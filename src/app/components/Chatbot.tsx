@@ -227,6 +227,26 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
     };
   }
 
+  // Add a simple nudge tracking function
+  async function trackNudge(label: string, context?: any) {
+    // Log to the console
+    console.log(`[Nudge Track] Button clicked: ${label}`, context);
+    // Send to backend analytics endpoint
+    try {
+      await fetch("/api/track-nudge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          label,
+          context,
+          timestamp: new Date().toISOString(),
+        }),
+      });
+    } catch (err) {
+      // Ignore analytics errors
+    }
+  }
+
   const sendMessage = async (userInput: string) => {
     if (!userInput.trim()) return;
     const userMsg: Message = { role: "user", content: userInput };
@@ -294,7 +314,24 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
             <b>{msg.role === "user" ? "You" : "Bot"}:</b>{" "}
             {msg.role === "assistant" ? (
               <>
-                <ReactMarkdown>{msg.content}</ReactMarkdown>
+                {/* Highlight nudges that start with '💡 Assistant Tip:' */}
+                {typeof msg.content === "string" &&
+                msg.content.trim().startsWith("💡 Assistant Tip:") ? (
+                  <div
+                    style={{
+                      background: "#f0f8ff",
+                      borderLeft: "4px solid #0070f3",
+                      padding: "8px 12px",
+                      borderRadius: 4,
+                      marginBottom: 4,
+                      fontWeight: 500,
+                    }}
+                  >
+                    <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  </div>
+                ) : (
+                  <ReactMarkdown>{msg.content}</ReactMarkdown>
+                )}
                 {/* Render actionable buttons if present */}
                 {Array.isArray(msg.buttons) && msg.buttons.length > 0 && (
                   <div style={{ marginTop: 8 }}>
@@ -302,6 +339,11 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
                       <button
                         key={action}
                         onClick={() => {
+                          trackNudge(action, {
+                            pageUrl,
+                            adminId,
+                            message: msg,
+                          });
                           setInput("");
                           sendMessage(action);
                         }}

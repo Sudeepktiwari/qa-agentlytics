@@ -48,6 +48,50 @@ type ChatMessage = {
 
 type MainTextLike = string | { mainText: string };
 
+// Add a simple intent detection function
+function detectIntent({
+  question,
+  pageUrl,
+}: {
+  question?: string;
+  pageUrl?: string;
+}): string {
+  const lowerQ = (question || "").toLowerCase();
+  const lowerUrl = (pageUrl || "").toLowerCase();
+  if (
+    lowerQ.includes("couple") ||
+    lowerQ.includes("romance") ||
+    lowerUrl.includes("couple")
+  ) {
+    return "couple massage";
+  }
+  if (
+    lowerQ.includes("pricing") ||
+    lowerQ.includes("price") ||
+    lowerUrl.includes("pricing")
+  ) {
+    return "pricing";
+  }
+  if (
+    lowerQ.includes("demo") ||
+    lowerQ.includes("feature demo") ||
+    lowerUrl.includes("demo")
+  ) {
+    return "feature demo";
+  }
+  if (
+    lowerQ.includes("discovery call") ||
+    lowerUrl.includes("discovery-call")
+  ) {
+    return "discovery call";
+  }
+  if (lowerQ.includes("quote") || lowerUrl.includes("quote")) {
+    return "quote";
+  }
+  // Add more as needed
+  return "general";
+}
+
 export async function POST(req: NextRequest) {
   const body = await req.json();
   const {
@@ -245,20 +289,22 @@ export async function POST(req: NextRequest) {
           .filter((msg) => (msg as unknown as ChatMessage).role === "assistant")
           .map((msg) => (msg as unknown as ChatMessage).content);
         const lastFewQuestions = prevQuestions.slice(-3);
+        // Detect intent from last user message or pageUrl
+        const detectedIntent = detectIntent({ question, pageUrl });
         // Use followupCount from request body to determine follow-up stage
         const followupCount =
           typeof body.followupCount === "number" ? body.followupCount : 0;
         let followupSystemPrompt = "";
         let followupUserPrompt = "";
         if (followupCount === 0) {
-          // First follow-up: creative, page-contextual question with context-aware buttons
+          // First follow-up: context-aware, visually tagged nudge with buttons
           followupSystemPrompt = `
 You are a helpful sales assistant for Appointy. The user has not provided an email yet.
 
-You will receive page and general context, and the previous conversation. Always generate your response in the following JSON format:
+You will receive page and general context, the detected intent, and the previous conversation. Always generate your response in the following JSON format:
 {
-  "mainText": "<A single, creative, engaging, and highly specific follow-up question for the user, based on the page context below. Reference details from the page context if possible. Do NOT ask a generic or repetitive question. Do NOT repeat or rephrase any of the last few questions. Do NOT include a summary or multiple questions.>",
-  "buttons": ["<2-4 actionable, context-aware options for the user to choose from, based on the follow-up question and page context. Make them relevant to the user's needs or the page content. Do not use generic options.>"],
+  "mainText": "<💡 Assistant Tip: A single, creative, engaging, and highly specific nudge for the user, based on the page context, detected intent, and their last action. Reference details from the page context, detected intent, or last action if possible. Do NOT ask a generic or repetitive question. Do NOT repeat or rephrase any of the last few questions. Do NOT include a summary or multiple questions. Vary the nudge text for each follow-up.>",
+  "buttons": ["<2-4 actionable, context-aware options for the user to choose from, based on the nudge, detected intent, and page context. Make them relevant to the user's needs or the page content. Do not use generic options.>"],
   "emailPrompt": ""
 }
 Context:
@@ -266,28 +312,58 @@ Page Context:
 ${pageChunks.slice(0, 3).join("\n---\n")}
 General Context:
 ${pageChunks.join(" ")}
+Detected Intent:
+${detectedIntent}
 Previous Conversation:
 ${previousQnA}
 - Only use the above JSON format.
 - Do not answer in any other way.
-- Your mainText must be a single, creative, engaging, and highly specific follow-up question that references the page context if possible. Do NOT repeat or rephrase any of these previous questions: ${lastFewQuestions
+- Your mainText must be a single, creative, engaging, and highly specific nudge that references the page context, detected intent, or last action if possible. Do NOT repeat or rephrase any of these previous questions: ${lastFewQuestions
             .map((q) => `"${getText(q)}"`)
             .join(", ")}. Do NOT include a summary or multiple questions.
-- For the 'buttons' array, generate 2-4 actionable, context-aware options for the user to choose from, based on the follow-up question and page context. Make them relevant to the user's needs or the page content. Do not use generic options.
+- For the 'buttons' array, generate 2-4 actionable, context-aware options for the user to choose from, based on the nudge, detected intent, and page context. Make them relevant to the user's needs or the page content. Do not use generic options.
+- Prefix the nudge with '💡 Assistant Tip:'.
+- Vary the nudge text for each follow-up.
 `;
-          followupUserPrompt = `Ask only one, creative, engaging, and highly specific follow-up question to further engage the user. Use the page context below to make your question relevant and interesting. Do NOT ask a generic or repetitive question. Do NOT repeat or rephrase any of these previous questions: ${lastFewQuestions
+          followupUserPrompt = `Ask only one, creative, engaging, and highly specific nudge to further engage the user. Use the page context, detected intent, and last action below to make your nudge relevant and interesting. Do NOT ask a generic or repetitive question. Do NOT repeat or rephrase any of these previous questions: ${lastFewQuestions
             .map((q) => `"${getText(q)}"`)
             .join(
               ", "
-            )}. Do NOT include a summary or multiple questions. For the 'buttons' array, generate 2-4 actionable, context-aware options for the user to choose from, based on the follow-up question and page context. Make them relevant to the user's needs or the page content. Do not use generic options. Only output the JSON format as instructed.`;
+            )}. Do NOT include a summary or multiple questions. For the 'buttons' array, generate 2-4 actionable, context-aware options for the user to choose from, based on the nudge, detected intent, and page context. Make them relevant to the user's needs or the page content. Do not use generic options. Prefix the nudge with '💡 Assistant Tip:'. Vary the nudge text for each follow-up. Only output the JSON format as instructed.`;
         } else if (followupCount === 1) {
-          // Second follow-up: ask for email, explain why it's needed for a page-relevant action
+          // Second follow-up: micro-conversion nudge (smaller ask)
           followupSystemPrompt = `
 You are a helpful sales assistant for Appointy. The user has not provided an email yet.
 
-You will receive page and general context, and the previous conversation. Always generate your response in the following JSON format:
+You will receive page and general context, the detected intent, and the previous conversation. Always generate your response in the following JSON format:
 {
-  "mainText": "<A friendly, direct request for the user's email, explaining why you need it to send them personalized setup instructions, a demo, or other page-relevant action. Reference the page context if possible. Do NOT ask another qualifying question.>",
+  "mainText": "<💡 Assistant Tip: A micro-conversion nudge—a small, low-friction ask (e.g., 'Want to save this setup guide to your email?' or 'Should I show how others customize their services?'), based on the user's last action, detected intent, page context, or detected intent. Do NOT ask for a discovery call or email directly. Vary the nudge text for each follow-up.>",
+  "buttons": ["<2-4 actionable, context-aware options for the user to choose from, based on the nudge, detected intent, and page context. Make them relevant to the user's needs or the page content. Do not use generic options.>"],
+  "emailPrompt": ""
+}
+Context:
+Page Context:
+${pageChunks.slice(0, 3).join("\n---\n")}
+General Context:
+${pageChunks.join(" ")}
+Detected Intent:
+${detectedIntent}
+Previous Conversation:
+${previousQnA}
+- Only use the above JSON format.
+- Do not answer in any other way.
+- Your mainText must be a micro-conversion nudge, referencing the user's last action, detected intent, page context, or detected intent. Do NOT ask for a discovery call or email directly. Vary the nudge text for each follow-up.
+- Prefix the nudge with '💡 Assistant Tip:'.
+`;
+          followupUserPrompt = `Ask a micro-conversion nudge—a small, low-friction ask (e.g., 'Want to save this setup guide to your email?' or 'Should I show how others customize their services?'), based on the user's last action, detected intent, page context, or detected intent. Do NOT ask for a discovery call or email directly. Vary the nudge text for each follow-up. Prefix the nudge with '💡 Assistant Tip:'. Only output the JSON format as instructed.`;
+        } else if (followupCount === 2) {
+          // Third follow-up: ask for email, explain why it's needed for a page-relevant action
+          followupSystemPrompt = `
+You are a helpful sales assistant for Appointy. The user has not provided an email yet.
+
+You will receive page and general context, the detected intent, and the previous conversation. Always generate your response in the following JSON format:
+{
+  "mainText": "<💡 Assistant Tip: A friendly, direct request for the user's email, explaining why you need it to send them personalized setup instructions, a demo, or other page-relevant action. Reference the page context or detected intent if possible. Do NOT ask another qualifying question.>",
   "buttons": [],
   "emailPrompt": "Please enter your email so I can send you the exact steps, demo, or connect you to support for this page!"
 }
@@ -296,38 +372,43 @@ Page Context:
 ${pageChunks.slice(0, 3).join("\n---\n")}
 General Context:
 ${pageChunks.join(" ")}
+Detected Intent:
+${detectedIntent}
 Previous Conversation:
 ${previousQnA}
 - Only use the above JSON format.
 - Do not answer in any other way.
-- Your mainText must be a friendly, direct request for the user's email, referencing the page context if possible. Do NOT ask another qualifying question or repeat previous questions.
+- Your mainText must be a friendly, direct request for the user's email, referencing the page context or detected intent if possible. Do NOT ask another qualifying question or repeat previous questions.
+- Prefix the nudge with '💡 Assistant Tip:'.
 `;
-          followupUserPrompt = `Ask the user for their email in a friendly, direct way, explaining why you need it to send them setup instructions, a demo, or connect them to support for this page. Reference the page context if possible. Do NOT ask another qualifying question. Only output the JSON format as instructed.`;
-        } else if (followupCount === 2) {
-          // Third follow-up: offer to connect to support (yes/no buttons), referencing the page and chat context
+          followupUserPrompt = `Ask the user for their email in a friendly, direct way, explaining why you need it to send them setup instructions, a demo, or connect them to support for this page. Reference the page context or detected intent if possible. Do NOT ask another qualifying question. Prefix the nudge with '💡 Assistant Tip:'. Only output the JSON format as instructed.`;
+        } else if (followupCount === 3) {
+          // Final nudge for abandoners: offer to email a summary
           followupSystemPrompt = `
-You are a helpful sales assistant for Appointy. The user has not provided an email yet.
+You are a helpful sales assistant for Appointy. The user has not provided an email yet and has not responded to several nudges.
 
-You will receive page and general context, and the previous conversation. Always generate your response in the following JSON format:
+You will receive page and general context, the detected intent, and the previous conversation. Always generate your response in the following JSON format:
 {
-  "mainText": "<Offer to connect the user to support for this page, referencing the page and chat context. Ask if they would like to be connected to a support specialist.>",
-  "buttons": ["Yes, connect me to support", "No, thanks"],
-  "emailPrompt": "If you'd like more help, I can connect you to a support specialist or send you more info by email."
+  "mainText": "<💡 Assistant Tip: Looks like you stepped away. I’ve saved all your options—want a summary emailed to you? Summarize the user's last few actions or options in a friendly way.>",
+  "buttons": ["Yes, email me a summary", "No, thanks"],
+  "emailPrompt": "If you'd like a summary or more help, I can email it to you."
 }
 Context:
 Page Context:
 ${pageChunks.slice(0, 3).join("\n---\n")}
 General Context:
 ${pageChunks.join(" ")}
+Detected Intent:
+${detectedIntent}
 Previous Conversation:
 ${previousQnA}
 - Only use the above JSON format.
 - Do not answer in any other way.
-- Your mainText must offer to connect the user to support, referencing the page and chat context. Only output the JSON format as instructed.
+- Your mainText must summarize the user's last few actions or options and offer to email a summary. Prefix the nudge with '💡 Assistant Tip:'.
 `;
-          followupUserPrompt = `Offer to connect the user to support for this page, referencing the page and chat context. Ask if they would like to be connected to a support specialist. Only output the JSON format as instructed.`;
+          followupUserPrompt = `Offer to email the user a summary of their options, summarizing their last few actions or options in a friendly way. Prefix the nudge with '💡 Assistant Tip:'. Only output the JSON format as instructed.`;
         } else {
-          // No more follow-ups after 3
+          // No more follow-ups after 4
           return NextResponse.json({});
         }
         // Helper to check if a question is too similar to previous ones
