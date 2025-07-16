@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@chroma-core/default-embed": "^0.1.8",
     "bcrypt": "^6.0.0",
     "cheerio": "^1.1.0",
     "chromadb": "^3.0.6",
