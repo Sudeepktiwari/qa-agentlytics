@@ -1,4 +1,5 @@
 import { Pinecone } from "@pinecone-database/pinecone";
+import { getDb } from "./mongo";
 
 // Pinecone environment variables must be set:
 // - PINECONE_API_KEY (your Pinecone API key)
@@ -35,6 +36,19 @@ export async function addChunks(
   );
   const upsertResponse = await index.upsert(vectors);
   console.log("[Crawl] Pinecone upsert response:", upsertResponse);
+  // Track in MongoDB
+  const db = await getDb();
+  const pineconeVectors = db.collection("pinecone_vectors");
+  const docs = vectors.map((v, i) => ({
+    vectorId: v.id,
+    filename: metadata[i].filename,
+    adminId: metadata[i].adminId,
+    chunkIndex: metadata[i].chunkIndex,
+    createdAt: new Date(),
+  }));
+  if (docs.length > 0) {
+    await pineconeVectors.insertMany(docs);
+  }
 }
 
 export async function querySimilarChunks(
@@ -59,17 +73,33 @@ export async function querySimilarChunks(
   return matches.map((m: PineconeMatch) => m.metadata?.chunk || "");
 }
 
-export async function listDocuments() {
-  // Pinecone does not support listing all vectors directly; you need to track filenames separately.
-  // As a workaround, you can store a list in your DB, or use metadata filtering if available in your plan.
-  // Here, we return an empty array and recommend tracking filenames elsewhere.
-  return [];
+export async function listDocuments(adminId?: string) {
+  const db = await getDb();
+  const pineconeVectors = db.collection("pinecone_vectors");
+  const match = adminId ? { adminId } : {};
+  const docs = await pineconeVectors
+    .aggregate([
+      { $match: match },
+      { $group: { _id: "$filename", count: { $sum: 1 } } },
+      { $sort: { _id: 1 } },
+    ])
+    .toArray();
+  return docs.map((d) => ({ filename: d._id, count: d.count }));
 }
 
 export async function deleteDocument(filename: string, adminId?: string) {
-  // Pinecone does not support metadata-based deletion directly; you must track IDs elsewhere.
-  // If you track IDs, you can delete by ID. Otherwise, you need to fetch all IDs for the filename and delete them.
-  // Not implemented here.
+  const db = await getDb();
+  const pineconeVectors = db.collection("pinecone_vectors");
+  const match = adminId ? { filename, adminId } : { filename };
+  const ids = await pineconeVectors
+    .find(match)
+    .project({ vectorId: 1, _id: 0 })
+    .toArray();
+  const vectorIds = ids.map((d: any) => d.vectorId);
+  if (vectorIds.length > 0) {
+    await index.deleteMany(vectorIds);
+  }
+  await pineconeVectors.deleteMany(match);
 }
 
 export async function deleteChunksByFilename(
@@ -84,8 +114,21 @@ export async function deleteChunksByUrl(url: string, adminId?: string) {
 }
 
 export async function getChunksByPageUrl(adminId: string, pageUrl: string) {
-  // Pinecone does not support metadata-based queries in all plans. If available, use a metadata filter.
-  // Otherwise, you need to track IDs for each pageUrl/adminId pair.
-  // Not implemented here.
-  return [];
+  const db = await getDb();
+  const pineconeVectors = db.collection("pinecone_vectors");
+  // Find all vector IDs for this adminId and pageUrl (filename)
+  const ids = await pineconeVectors
+    .find({ adminId, filename: pageUrl })
+    .project({ vectorId: 1, _id: 0 })
+    .toArray();
+  const vectorIds = ids.map((d: any) => d.vectorId);
+  console.log("[DEBUG] Vector IDs to fetch:", vectorIds);
+  if (vectorIds.length === 0) return [];
+  // Query Pinecone for these vectors
+  const result = await index.fetch(vectorIds);
+  console.log("[DEBUG] Pinecone fetch result:", result);
+  // Return the chunk text from metadata (use result.records)
+  return Object.values(result.records || {}).map(
+    (v: any) => v.metadata?.chunk || ""
+  );
 }

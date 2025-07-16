@@ -111,9 +111,27 @@ const AdminPanel: React.FC = () => {
     setLoading(true);
     setError("");
     try {
+      // Try to fetch uploaded documents first
       const res = await fetch("/api/admin-docs?admin=1");
       const data = await res.json();
-      setDocs(data.documents || []);
+      if (data.documents && data.documents.length > 0) {
+        setDocs(data.documents || []);
+      } else {
+        // If no uploaded documents, fetch crawled pages as fallback
+        const sitemapRes = await fetch("/api/sitemap?page=1&pageSize=100");
+        const sitemapData = await sitemapRes.json();
+        if (sitemapData.sitemaps && sitemapData.sitemaps.length > 0) {
+          // Map crawled sitemaps to DocMeta format
+          setDocs(
+            sitemapData.sitemaps.map((s: any) => ({
+              filename: s.sitemapUrl,
+              count: s.count,
+            }))
+          );
+        } else {
+          setDocs([]);
+        }
+      }
     } catch {
       setError("Failed to fetch documents");
     } finally {
@@ -134,6 +152,8 @@ const AdminPanel: React.FC = () => {
         `/api/admin-docs?admin=1&filename=${encodeURIComponent(filename)}`,
         {
           method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ filename }),
         }
       );
       fetchDocs();
@@ -548,7 +568,9 @@ const AdminPanel: React.FC = () => {
             </button>
           </li>
         ))}
-        {docs.length === 0 && !loading && <li>No documents uploaded.</li>}
+        {docs.length === 0 && !loading && (
+          <li>No documents uploaded or crawled.</li>
+        )}
       </ul>
     </div>
   );
