@@ -62,7 +62,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
     // Fetch chat history on mount or after link selection
     const sessionId = getSessionId();
     const effectivePageUrl = isTestEnv /* && selectedLink */
-      ? /* selectedLink */ undefined
+      ? /* selectedLink */ "/"
       : pageUrl || getPageUrl();
     fetch(
       `/api/chat?sessionId=${sessionId}&pageUrl=${encodeURIComponent(
