@@ -45,8 +45,8 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
   const [followupSent, setFollowupSent] = useState(false);
   const [followupCount, setFollowupCount] = useState(0);
   const isTestEnv = process.env.NEXT_PUBLIC_ENV === "test";
-  const [selectedLink, setSelectedLink] = useState<string | null>(null);
-  const [proactiveTriggered, setProactiveTriggered] = useState(false);
+  // const [selectedLink, setSelectedLink] = useState<string | null>(null);
+  // const [proactiveTriggered, setProactiveTriggered] = useState(false);
   const [emailInputValue, setEmailInputValue] = useState("");
 
   // Remove getEffectivePageUrl and getPreviousQuestions from component scope
@@ -54,15 +54,16 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
   useEffect(() => {
     if (isTestEnv) {
       // In test, only run after a link is selected
-      if (!proactiveTriggered || !selectedLink) return;
+      // if (!proactiveTriggered || !selectedLink) return;
     } else {
       // In prod, only run on mount (or when pageUrl/adminId changes)
-      if (proactiveTriggered || selectedLink) return;
+      // if (proactiveTriggered || selectedLink) return;
     }
     // Fetch chat history on mount or after link selection
     const sessionId = getSessionId();
-    const effectivePageUrl =
-      isTestEnv && selectedLink ? selectedLink : pageUrl || getPageUrl();
+    const effectivePageUrl = isTestEnv /* && selectedLink */
+      ? /* selectedLink */ undefined
+      : pageUrl || getPageUrl();
     fetch(
       `/api/chat?sessionId=${sessionId}&pageUrl=${encodeURIComponent(
         effectivePageUrl
@@ -128,7 +129,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
         clearTimeout(followupTimer.current);
       }
     };
-  }, [pageUrl, adminId, isTestEnv, proactiveTriggered, selectedLink]);
+  }, [pageUrl, adminId, isTestEnv /*, proactiveTriggered, selectedLink */]);
 
   useEffect(() => {
     if (messages.length === 0) return;
