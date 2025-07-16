@@ -72,6 +72,10 @@ export async function POST(req: NextRequest) {
   // If email detected, update all previous messages in this session
   if (detectedEmail) {
     await chats.updateMany({ sessionId }, { $set: { email: detectedEmail } });
+    // Log for verification
+    console.log(
+      `[LeadGen] Stored email for session ${sessionId}: ${detectedEmail}`
+    );
   }
 
   // Get adminId if available (from request or previous chat with admin, or null for public)
@@ -210,8 +214,7 @@ export async function POST(req: NextRequest) {
         const proactiveMsg = `Welcome! You're viewing: ${pageUrl}\n\n${pageSummary}`;
         return NextResponse.json({ answer: proactiveMsg });
       } else if (followup) {
-        // For follow-up, only use previous chat messages to reduce token usage
-        // Get previous chat messages for this session
+        // For follow-up, use the same JSON-output system prompt as main chat
         const previousChats = await chats
           .find({ sessionId })
           .sort({ createdAt: 1 })
@@ -226,18 +229,134 @@ export async function POST(req: NextRequest) {
         const prevQuestions = previousChats
           .filter((msg: any) => msg.role === "assistant")
           .map((msg: any) => msg.content);
-        const followupPrompt = `Here is the previous conversation:\n${previousQnA}\n\nBased on this, ask a new, relevant follow-up question to further engage the user. Do not repeat any of these previous questions: ${prevQuestions.join(
-          " | "
-        )}`;
-        const followupResp = await openai.chat.completions.create({
-          model: "gpt-4o-mini",
-          messages: [
-            { role: "system", content: "You are a helpful sales assistant." },
-            { role: "user", content: followupPrompt },
-          ],
-        });
-        const followupMsg = followupResp.choices[0].message.content || "";
-        return NextResponse.json({ answer: followupMsg });
+        const lastFewQuestions = prevQuestions.slice(-3);
+        // Use followupCount from request body to determine follow-up stage
+        const followupCount =
+          typeof body.followupCount === "number" ? body.followupCount : 0;
+        let followupSystemPrompt = "";
+        let followupUserPrompt = "";
+        if (followupCount === 0) {
+          // First follow-up: creative, page-contextual question with context-aware buttons
+          followupSystemPrompt = `
+You are a helpful sales assistant for Appointy. The user has not provided an email yet.
+
+You will receive page and general context, and the previous conversation. Always generate your response in the following JSON format:
+{
+  "mainText": "<A single, creative, engaging, and highly specific follow-up question for the user, based on the page context below. Reference details from the page context if possible. Do NOT ask a generic or repetitive question. Do NOT repeat or rephrase any of the last few questions. Do NOT include a summary or multiple questions.>",
+  "buttons": ["<2-4 actionable, context-aware options for the user to choose from, based on the follow-up question and page context. Make them relevant to the user's needs or the page content. Do not use generic options.>"],
+  "emailPrompt": ""
+}
+Context:
+Page Context:
+${pageChunks.slice(0, 3).join("\n---\n")}
+General Context:
+${pageChunks.join(" ")}
+Previous Conversation:
+${previousQnA}
+- Only use the above JSON format.
+- Do not answer in any other way.
+- Your mainText must be a single, creative, engaging, and highly specific follow-up question that references the page context if possible. Do NOT repeat or rephrase any of these previous questions: ${lastFewQuestions
+            .map((q) => `"${getText(q)}"`)
+            .join(", ")}. Do NOT include a summary or multiple questions.
+- For the 'buttons' array, generate 2-4 actionable, context-aware options for the user to choose from, based on the follow-up question and page context. Make them relevant to the user's needs or the page content. Do not use generic options.
+`;
+          followupUserPrompt = `Ask only one, creative, engaging, and highly specific follow-up question to further engage the user. Use the page context below to make your question relevant and interesting. Do NOT ask a generic or repetitive question. Do NOT repeat or rephrase any of these previous questions: ${lastFewQuestions
+            .map((q) => `"${getText(q)}"`)
+            .join(
+              ", "
+            )}. Do NOT include a summary or multiple questions. For the 'buttons' array, generate 2-4 actionable, context-aware options for the user to choose from, based on the follow-up question and page context. Make them relevant to the user's needs or the page content. Do not use generic options. Only output the JSON format as instructed.`;
+        } else if (followupCount === 1) {
+          // Second follow-up: ask for email, explain why it's needed for a page-relevant action
+          followupSystemPrompt = `
+You are a helpful sales assistant for Appointy. The user has not provided an email yet.
+
+You will receive page and general context, and the previous conversation. Always generate your response in the following JSON format:
+{
+  "mainText": "<A friendly, direct request for the user's email, explaining why you need it to send them personalized setup instructions, a demo, or other page-relevant action. Reference the page context if possible. Do NOT ask another qualifying question.>",
+  "buttons": [],
+  "emailPrompt": "Please enter your email so I can send you the exact steps, demo, or connect you to support for this page!"
+}
+Context:
+Page Context:
+${pageChunks.slice(0, 3).join("\n---\n")}
+General Context:
+${pageChunks.join(" ")}
+Previous Conversation:
+${previousQnA}
+- Only use the above JSON format.
+- Do not answer in any other way.
+- Your mainText must be a friendly, direct request for the user's email, referencing the page context if possible. Do NOT ask another qualifying question or repeat previous questions.
+`;
+          followupUserPrompt = `Ask the user for their email in a friendly, direct way, explaining why you need it to send them setup instructions, a demo, or connect them to support for this page. Reference the page context if possible. Do NOT ask another qualifying question. Only output the JSON format as instructed.`;
+        } else if (followupCount === 2) {
+          // Third follow-up: offer to connect to support (yes/no buttons), referencing the page and chat context
+          followupSystemPrompt = `
+You are a helpful sales assistant for Appointy. The user has not provided an email yet.
+
+You will receive page and general context, and the previous conversation. Always generate your response in the following JSON format:
+{
+  "mainText": "<Offer to connect the user to support for this page, referencing the page and chat context. Ask if they would like to be connected to a support specialist.>",
+  "buttons": ["Yes, connect me to support", "No, thanks"],
+  "emailPrompt": "If you'd like more help, I can connect you to a support specialist or send you more info by email."
+}
+Context:
+Page Context:
+${pageChunks.slice(0, 3).join("\n---\n")}
+General Context:
+${pageChunks.join(" ")}
+Previous Conversation:
+${previousQnA}
+- Only use the above JSON format.
+- Do not answer in any other way.
+- Your mainText must offer to connect the user to support, referencing the page and chat context. Only output the JSON format as instructed.
+`;
+          followupUserPrompt = `Offer to connect the user to support for this page, referencing the page and chat context. Ask if they would like to be connected to a support specialist. Only output the JSON format as instructed.`;
+        } else {
+          // No more follow-ups after 3
+          return NextResponse.json({});
+        }
+        // Helper to check if a question is too similar to previous ones
+        function getText(val: any): string {
+          if (typeof val === "string") return val;
+          if (val && typeof val === "object" && "mainText" in val)
+            return val.mainText || "";
+          return "";
+        }
+        function isTooSimilar(newQ: any, prevQs: any[]): boolean {
+          const newText = getText(newQ);
+          if (!newText) return true;
+          const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+          return prevQs.some((q: any) => {
+            const prevText = getText(q);
+            return (
+              norm(newText).includes(norm(prevText)) ||
+              norm(prevText).includes(norm(newText))
+            );
+          });
+        }
+        let followupMsg = "";
+        let parsed = null;
+        for (let attempt = 0; attempt < 2; attempt++) {
+          const followupResp = await openai.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages: [
+              { role: "system", content: followupSystemPrompt },
+              { role: "user", content: followupUserPrompt },
+            ],
+          });
+          followupMsg = followupResp.choices[0].message.content || "";
+          try {
+            parsed = JSON.parse(followupMsg || "");
+          } catch (e) {
+            parsed = { mainText: followupMsg, buttons: [], emailPrompt: "" };
+          }
+          if (!isTooSimilar(parsed.mainText, lastFewQuestions)) break;
+        }
+        // If still too similar, skip sending a new follow-up
+        if (isTooSimilar(parsed.mainText, lastFewQuestions)) {
+          return NextResponse.json({});
+        }
+        return NextResponse.json(parsed);
       }
     }
     // Fallback if no context
@@ -289,6 +408,39 @@ export async function POST(req: NextRequest) {
   const isGreeting =
     question && greetings.some((g) => question.toLowerCase().includes(g));
 
+  // Detect if user is identified (has provided email)
+  let userEmail: string | null = null;
+  const lastEmailMsg = await chats.findOne(
+    { sessionId, email: { $exists: true } },
+    { sort: { createdAt: -1 } }
+  );
+  if (lastEmailMsg && lastEmailMsg.email) userEmail = lastEmailMsg.email;
+
+  // Detect if the user message matches any previous assistant message's buttons
+  let isButtonAction = false;
+  let lastButtonLabel = "";
+  if (question) {
+    // Find the last assistant message with buttons
+    const lastAssistantWithButtons = await chats.findOne(
+      {
+        sessionId,
+        role: "assistant",
+        "content.buttons.0": { $exists: true },
+      },
+      { sort: { createdAt: -1 } }
+    );
+    if (
+      lastAssistantWithButtons &&
+      lastAssistantWithButtons.content &&
+      Array.isArray(lastAssistantWithButtons.content.buttons)
+    ) {
+      isButtonAction = lastAssistantWithButtons.content.buttons.some(
+        (b: string) => b.toLowerCase() === question.trim().toLowerCase()
+      );
+      if (isButtonAction) lastButtonLabel = question.trim();
+    }
+  }
+
   // If no context, refer to sales team and ask for contact
   if (!context.trim() && !pageContext.trim()) {
     return NextResponse.json({
@@ -298,9 +450,21 @@ export async function POST(req: NextRequest) {
   }
 
   // Chat completion with sales-pitch system prompt
-  const systemPrompt = isGreeting
-    ? `You are a helpful sales bot for a company. Always respond to greetings with a friendly, enthusiastic sales pitch about the company, its products, and pricing, using ONLY the context below. If you don't have enough info, encourage the user to upload more documents or sitemaps.\n\nPage Context:\n${pageContext}\n\nGeneral Context:\n${context}`
-    : `You are a helpful sales bot for a company. Always answer in a persuasive, sales-oriented style, using ONLY the context below. If you don't have enough info, encourage the user to upload more documents or sitemaps.\n\nPage Context:\n${pageContext}\n\nGeneral Context:\n${context}`;
+  let systemPrompt = "";
+  let userPrompt = question;
+  if (userEmail) {
+    systemPrompt = isGreeting
+      ? `You are a helpful sales bot for a company. Always respond to greetings with a friendly, enthusiastic sales pitch about the company, its products, and pricing, using ONLY the context below. If you don't have enough info, encourage the user to upload more documents or sitemaps.\n\nPage Context:\n${pageContext}\n\nGeneral Context:\n${context}`
+      : `You are a helpful sales bot for a company. Always answer in a persuasive, sales-oriented style, using ONLY the context below. If you don't have enough info, encourage the user to upload more documents or sitemaps.\n\nPage Context:\n${pageContext}\n\nGeneral Context:\n${context}`;
+  } else if (isButtonAction) {
+    // If user clicked a context-aware button, ask for email related to that action and page
+    systemPrompt = `You are a helpful sales assistant for Appointy. The user has not provided an email yet.\n\nYou will receive page and general context, the user's selected action, and the previous conversation. Always generate your response in the following JSON format:\n\n{\n  "mainText": "<A friendly, direct request for the user's email, referencing the user's selected action ('${lastButtonLabel}') and the page context. Explain why you need their email to proceed with their request. Do NOT ask another qualifying question. Do NOT include any buttons.>",\n  "buttons": [],\n  "emailPrompt": "Please enter your email so I can send you the exact steps, demo, or connect you to support for this page!"\n}\n\nContext:\nPage Context:\n${pageContext}\n\nGeneral Context:\n${context}\n\nUser Selected Action: ${lastButtonLabel}\n\nPrevious Conversation:\n${previousQuestions.join(
+      " | "
+    )}\n\n- Only use the above JSON format.\n- Do not answer in any other way.\n- Your mainText must be a friendly, direct request for the user's email, referencing the user's selected action and the page context. Do NOT ask another qualifying question or repeat previous questions. Do NOT include any buttons.`;
+    userPrompt = `Please ask the user for their email in a friendly, direct way, referencing their selected action ('${lastButtonLabel}') and the page context. Explain why you need their email to proceed with their request. Do NOT ask another qualifying question. Do NOT include any buttons. Only output the JSON format as instructed.`;
+  } else {
+    systemPrompt = `\nYou are a helpful sales assistant for Appointy. The user has not provided an email yet.\n\nYou will receive page and general context. Always generate your response in the following JSON format:\n\n{\n  "mainText": "<A dynamic, page-aware summary or answer, using the context below.>",\n  "buttons": ["Send Setup Guide", "Share My Website Type", "Talk to Support"],\n  "emailPrompt": "Still here? I can send exact steps based on your platform. Want me to email it to you?"\n}\n\nContext:\nPage Context:\n${pageContext}\n\nGeneral Context:\n${context}\n\n- Only use the above JSON format.\n- Do not answer in any other way.\n- Always include actionable buttons and an email prompt until the user provides their email.`;
+  }
 
   const chatResp = await openai.chat.completions.create({
     model: "gpt-4o-mini",
@@ -311,11 +475,20 @@ export async function POST(req: NextRequest) {
       },
       {
         role: "user",
-        content: question,
+        content: userPrompt,
       },
     ],
   });
   const answer = chatResp.choices[0].message.content;
+
+  // Try to parse the answer as JSON
+  let parsed = null;
+  try {
+    parsed = JSON.parse(answer || "");
+  } catch (e) {
+    // fallback: treat as plain text
+    parsed = { mainText: answer, buttons: [], emailPrompt: "" };
+  }
 
   // Save user and assistant message, including email if detected or already present
   let emailToStore = detectedEmail;
@@ -344,7 +517,7 @@ export async function POST(req: NextRequest) {
     },
   ]);
 
-  return NextResponse.json({ answer });
+  return NextResponse.json(parsed);
 }
 
 export async function GET(req: NextRequest) {

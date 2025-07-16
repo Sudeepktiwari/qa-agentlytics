@@ -23,14 +23,14 @@ export async function POST(req: NextRequest) {
     const userDoc = { email, password: hashed };
     const result = await users.insertOne(userDoc);
     const adminId = result.insertedId.toString();
-    const token = jwt.sign({ email, adminId }, JWT_SECRET, { expiresIn: "7d" });
+    const token = jwt.sign({ email, adminId }, JWT_SECRET, { expiresIn: "1d" });
     await users.updateOne({ _id: result.insertedId }, { $set: { token } });
     const res = NextResponse.json({ token, adminId });
     res.cookies.set("auth_token", token, {
       httpOnly: true,
       path: "/",
       sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7,
+      maxAge: 60 * 60 * 24, // 1 day
     });
     return res;
   } else if (action === "login") {
@@ -49,14 +49,14 @@ export async function POST(req: NextRequest) {
       );
     }
     const adminId = user._id.toString();
-    const token = jwt.sign({ email, adminId }, JWT_SECRET, { expiresIn: "7d" });
+    const token = jwt.sign({ email, adminId }, JWT_SECRET, { expiresIn: "1d" });
     await users.updateOne({ email }, { $set: { token } });
     const res = NextResponse.json({ token, adminId });
     res.cookies.set("auth_token", token, {
       httpOnly: true,
       path: "/",
       sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7,
+      maxAge: 60 * 60 * 24, // 1 day
     });
     return res;
   } else {

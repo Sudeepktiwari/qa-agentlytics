@@ -38,6 +38,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
   const isTestEnv = process.env.NEXT_PUBLIC_ENV === "test";
   const [selectedLink, setSelectedLink] = useState<string | null>(null);
   const [proactiveTriggered, setProactiveTriggered] = useState(false);
+  const [emailInputValue, setEmailInputValue] = useState("");
 
   // Remove getEffectivePageUrl and getPreviousQuestions from component scope
 
@@ -60,7 +61,29 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
     )
       .then((res) => res.json())
       .then((data) => {
-        if (data.history) setMessages(data.history);
+        if (data.history) {
+          setMessages(
+            data.history.map((msg: any) => {
+              if (msg.role === "assistant") {
+                try {
+                  const parsed =
+                    typeof msg.content === "string"
+                      ? JSON.parse(msg.content)
+                      : msg.content;
+                  return {
+                    ...msg,
+                    content: parsed.mainText || "",
+                    buttons: parsed.buttons || [],
+                    emailPrompt: parsed.emailPrompt || "",
+                  };
+                } catch {
+                  return msg;
+                }
+              }
+              return msg;
+            })
+          );
+        }
         // Always trigger proactive bot message and follow-up timer on mount or after link selection
         fetch("/api/chat", {
           method: "POST",
@@ -114,10 +137,17 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
           "[Chatbot] Setting inactivity follow-up timer for 10 seconds after bot message"
         );
         followupTimer.current = setTimeout(() => {
-          console.log(
-            "[Chatbot] Inactivity timer triggered, setting followupSent to true"
-          );
-          setFollowupSent(true);
+          if (followupCount < 2) {
+            // Only trigger if less than 2, so the next will be the 3rd
+            console.log(
+              "[Chatbot] Inactivity timer triggered, setting followupSent to true"
+            );
+            setFollowupSent(true);
+          } else {
+            // After 3 followups, do not trigger again
+            if (followupTimer.current) clearTimeout(followupTimer.current);
+            setFollowupSent(false);
+          }
         }, 10000);
       }
     } else if (lastMsg.role === "user") {
@@ -148,11 +178,17 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
       })
         .then((res) => res.json())
         .then((data) => {
-          if (data.answer)
-            setMessages((msgs) => [
-              ...msgs,
-              { role: "assistant", content: data.answer },
-            ]);
+          // Use parseBotResponse for follow-up responses
+          const parsed = parseBotResponse(data);
+          setMessages((msgs) => [
+            ...msgs,
+            {
+              role: "assistant",
+              content: parsed.mainText,
+              buttons: parsed.buttons,
+              emailPrompt: parsed.emailPrompt,
+            },
+          ]);
           setFollowupCount((c) => c + 1);
         });
     }
@@ -165,9 +201,25 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
     };
   }, [messages, followupSent, adminId, pageUrl, followupCount]);
 
-  const sendMessage = async () => {
-    if (!input.trim()) return;
-    const userMsg: Message = { role: "user", content: input };
+  // Helper: Parse backend response (now JSON with mainText, buttons, emailPrompt)
+  function parseBotResponse(data: any): {
+    mainText: string;
+    buttons: string[];
+    emailPrompt: string;
+  } {
+    if (!data) return { mainText: "", buttons: [], emailPrompt: "" };
+    if (typeof data === "string")
+      return { mainText: data, buttons: [], emailPrompt: "" };
+    return {
+      mainText: data.mainText || "",
+      buttons: Array.isArray(data.buttons) ? data.buttons : [],
+      emailPrompt: data.emailPrompt || "",
+    };
+  }
+
+  const sendMessage = async (userInput: string) => {
+    if (!userInput.trim()) return;
+    const userMsg: Message = { role: "user", content: userInput };
     setMessages((msgs) => [...msgs, userMsg]);
     setInput("");
     setLoading(true);
@@ -185,9 +237,15 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
         }),
       });
       const data = await res.json();
+      const parsed = parseBotResponse(data);
       setMessages((msgs) => [
         ...msgs,
-        { role: "assistant", content: data.answer || "Error: No answer" },
+        {
+          role: "assistant",
+          content: parsed.mainText,
+          buttons: parsed.buttons,
+          emailPrompt: parsed.emailPrompt,
+        },
       ]);
       // Clear follow-up timer on user message
       if (followupTimer.current) clearTimeout(followupTimer.current);
@@ -195,7 +253,12 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
     } catch {
       setMessages((msgs) => [
         ...msgs,
-        { role: "assistant", content: "Error: Could not get answer." },
+        {
+          role: "assistant",
+          content: "Error: Could not get answer.",
+          buttons: [],
+          emailPrompt: "",
+        },
       ]);
     } finally {
       setLoading(false);
@@ -203,8 +266,21 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && !loading) sendMessage();
+    if (e.key === "Enter" && !loading) sendMessage(input);
   };
+
+  // Helper: Parse bot message for actionable buttons
+  function parseActions(message: string) {
+    return message
+      .split("\n")
+      .filter((line) => line.trim().startsWith("🔘"))
+      .map((line) => line.replace("🔘", "").trim());
+  }
+
+  // Helper: Check if message contains email input marker
+  function hasEmailInput(message: string) {
+    return message.includes("📩 Email Input Field");
+  }
 
   // Handler to be called when a link is selected from the dropdown in admin test env
   const handleLinkSelect = (link: string) => {
@@ -226,7 +302,53 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
           >
             <b>{msg.role === "user" ? "You" : "Bot"}:</b>{" "}
             {msg.role === "assistant" ? (
-              <ReactMarkdown>{msg.content}</ReactMarkdown>
+              <>
+                <ReactMarkdown>{msg.content}</ReactMarkdown>
+                {/* Render actionable buttons if present */}
+                {Array.isArray((msg as any).buttons) &&
+                  (msg as any).buttons.length > 0 && (
+                    <div style={{ marginTop: 8 }}>
+                      {(msg as any).buttons.map((action: string) => (
+                        <button
+                          key={action}
+                          onClick={() => {
+                            setInput("");
+                            sendMessage(action);
+                          }}
+                          style={{ margin: "4px", padding: "6px 12px" }}
+                        >
+                          {action}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                {/* Render email prompt/input if present */}
+                {(msg as any).emailPrompt && (
+                  <div style={{ marginTop: 8 }}>
+                    <div>{(msg as any).emailPrompt}</div>
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        if (emailInputValue.trim()) {
+                          sendMessage(emailInputValue.trim());
+                          setEmailInputValue("");
+                        }
+                      }}
+                      style={{ marginTop: 8 }}
+                    >
+                      <input
+                        type="email"
+                        value={emailInputValue}
+                        onChange={(e) => setEmailInputValue(e.target.value)}
+                        placeholder="Enter your email"
+                        required
+                        style={{ marginRight: 8 }}
+                      />
+                      <button type="submit">Send My Setup Instructions</button>
+                    </form>
+                  </div>
+                )}
+              </>
             ) : (
               msg.content
             )}
@@ -243,7 +365,10 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
         style={{ width: "80%", marginRight: 8 }}
         disabled={loading}
       />
-      <button onClick={sendMessage} disabled={loading || !input.trim()}>
+      <button
+        onClick={() => sendMessage(input)}
+        disabled={loading || !input.trim()}
+      >
         Send
       </button>
     </div>
