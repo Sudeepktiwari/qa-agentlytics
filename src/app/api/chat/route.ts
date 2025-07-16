@@ -18,7 +18,7 @@ function countTokens(text: string) {
 // Helper to split text into ~n-token chunks
 async function splitTextIntoTokenChunks(text: string, chunkSize: number) {
   const words = text.split(" ");
-  let chunks = [];
+  const chunks = [];
   let currentChunk = [];
   let currentTokenCount = 0;
   for (const word of words) {
@@ -36,6 +36,17 @@ async function splitTextIntoTokenChunks(text: string, chunkSize: number) {
   }
   return chunks;
 }
+
+// Types for chat messages and mainText-like objects
+type ChatMessage = {
+  role: "user" | "assistant";
+  content:
+    | string
+    | { mainText: string; buttons?: string[]; emailPrompt?: string };
+  [key: string]: any;
+};
+
+type MainTextLike = string | { mainText: string };
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
@@ -220,15 +231,19 @@ export async function POST(req: NextRequest) {
           .sort({ createdAt: 1 })
           .toArray();
         const previousQnA = previousChats
-          .filter((msg: any) => msg.role === "assistant" || msg.role === "user")
-          .map(
-            (msg: any) =>
-              `${msg.role === "user" ? "User" : "Bot"}: ${msg.content}`
+          .filter(
+            (msg) =>
+              (msg as unknown as ChatMessage).role === "assistant" ||
+              (msg as unknown as ChatMessage).role === "user"
           )
+          .map((msg) => {
+            const m = msg as unknown as ChatMessage;
+            return `${m.role === "user" ? "User" : "Bot"}: ${m.content}`;
+          })
           .join("\n");
         const prevQuestions = previousChats
-          .filter((msg: any) => msg.role === "assistant")
-          .map((msg: any) => msg.content);
+          .filter((msg) => (msg as unknown as ChatMessage).role === "assistant")
+          .map((msg) => (msg as unknown as ChatMessage).content);
         const lastFewQuestions = prevQuestions.slice(-3);
         // Use followupCount from request body to determine follow-up stage
         const followupCount =
@@ -316,17 +331,20 @@ ${previousQnA}
           return NextResponse.json({});
         }
         // Helper to check if a question is too similar to previous ones
-        function getText(val: any): string {
+        function getText(val: MainTextLike): string {
           if (typeof val === "string") return val;
           if (val && typeof val === "object" && "mainText" in val)
             return val.mainText || "";
           return "";
         }
-        function isTooSimilar(newQ: any, prevQs: any[]): boolean {
+        function isTooSimilar(
+          newQ: MainTextLike,
+          prevQs: MainTextLike[]
+        ): boolean {
           const newText = getText(newQ);
           if (!newText) return true;
           const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
-          return prevQs.some((q: any) => {
+          return prevQs.some((q: MainTextLike) => {
             const prevText = getText(q);
             return (
               norm(newText).includes(norm(prevText)) ||
@@ -347,7 +365,7 @@ ${previousQnA}
           followupMsg = followupResp.choices[0].message.content || "";
           try {
             parsed = JSON.parse(followupMsg || "");
-          } catch (e) {
+          } catch {
             parsed = { mainText: followupMsg, buttons: [], emailPrompt: "" };
           }
           if (!isTooSimilar(parsed.mainText, lastFewQuestions)) break;
@@ -485,7 +503,7 @@ ${previousQnA}
   let parsed = null;
   try {
     parsed = JSON.parse(answer || "");
-  } catch (e) {
+  } catch {
     // fallback: treat as plain text
     parsed = { mainText: answer, buttons: [], emailPrompt: "" };
   }
