@@ -43,7 +43,7 @@ type ChatMessage = {
   content:
     | string
     | { mainText: string; buttons?: string[]; emailPrompt?: string };
-  [key: string]: any;
+  [key: string]: unknown;
 };
 
 type MainTextLike = string | { mainText: string };
