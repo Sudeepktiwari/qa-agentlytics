@@ -228,7 +228,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
   }
 
   // Add a simple nudge tracking function
-  async function trackNudge(label: string, context?: any) {
+  async function trackNudge(label: string, context?: unknown) {
     // Log to the console
     console.log(`[Nudge Track] Button clicked: ${label}`, context);
     // Send to backend analytics endpoint
@@ -242,7 +242,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
           timestamp: new Date().toISOString(),
         }),
       });
-    } catch (err) {
+    } catch {
       // Ignore analytics errors
     }
   }
