@@ -123,10 +123,12 @@ const AdminPanel: React.FC = () => {
         if (sitemapData.sitemaps && sitemapData.sitemaps.length > 0) {
           // Map crawled sitemaps to DocMeta format
           setDocs(
-            sitemapData.sitemaps.map((s: any) => ({
-              filename: s.sitemapUrl,
-              count: s.count,
-            }))
+            sitemapData.sitemaps.map(
+              (s: { sitemapUrl: string; count: number }) => ({
+                filename: s.sitemapUrl,
+                count: s.count,
+              })
+            )
           );
         } else {
           setDocs([]);
