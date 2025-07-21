@@ -183,6 +183,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
           pageUrl: effectivePageUrl,
           followup: true,
           previousQuestions,
+          followupCount, // <-- added so backend knows which follow-up to send
           ...(adminId ? { adminId } : {}),
         }),
       })
