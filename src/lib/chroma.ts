@@ -95,7 +95,7 @@ export async function deleteDocument(filename: string, adminId?: string) {
     .find(match)
     .project({ vectorId: 1, _id: 0 })
     .toArray();
-  const vectorIds = ids.map((d: any) => d.vectorId);
+  const vectorIds = ids.map((d) => (d as { vectorId: string }).vectorId);
   if (vectorIds.length > 0) {
     await index.deleteMany(vectorIds);
   }
@@ -103,13 +103,13 @@ export async function deleteDocument(filename: string, adminId?: string) {
 }
 
 export async function deleteChunksByFilename(
-  filename: string,
-  adminId?: string
+  _filename: string,
+  _adminId?: string
 ) {
   // Not implemented: see note above. You need to track IDs for each filename to delete.
 }
 
-export async function deleteChunksByUrl(url: string, adminId?: string) {
+export async function deleteChunksByUrl(_url: string, _adminId?: string) {
   // Not implemented: see note above. You need to track IDs for each URL to delete.
 }
 
@@ -121,7 +121,7 @@ export async function getChunksByPageUrl(adminId: string, pageUrl: string) {
     .find({ adminId, filename: pageUrl })
     .project({ vectorId: 1, _id: 0 })
     .toArray();
-  const vectorIds = ids.map((d: any) => d.vectorId);
+  const vectorIds = ids.map((d) => (d as { vectorId: string }).vectorId);
   console.log("[DEBUG] Vector IDs to fetch:", vectorIds);
   if (vectorIds.length === 0) return [];
   // Query Pinecone for these vectors
@@ -129,6 +129,6 @@ export async function getChunksByPageUrl(adminId: string, pageUrl: string) {
   console.log("[DEBUG] Pinecone fetch result:", result);
   // Return the chunk text from metadata (use result.records)
   return Object.values(result.records || {}).map(
-    (v: any) => v.metadata?.chunk || ""
+    (v: { metadata?: { chunk?: string } }) => v.metadata?.chunk || ""
   );
 }
