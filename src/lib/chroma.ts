@@ -60,15 +60,12 @@ export async function querySimilarChunks(
     vector: questionEmbedding,
     topK,
     includeMetadata: true,
+    filter: adminId ? { adminId } : undefined, // restrict search to current admin
   });
   // Filter by adminId if provided
   type PineconeMatch = { metadata?: { adminId?: string; chunk?: string } };
   let matches: PineconeMatch[] = result.matches || [];
-  if (adminId) {
-    matches = matches.filter(
-      (m: PineconeMatch) => m.metadata && m.metadata.adminId === adminId
-    );
-  }
+  // No need to filter by adminId here, as Pinecone already does it
   // Return the chunk text
   return matches.map((m: PineconeMatch) => m.metadata?.chunk || "");
 }

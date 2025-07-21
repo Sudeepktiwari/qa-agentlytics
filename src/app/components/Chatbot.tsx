@@ -48,6 +48,8 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
   // const [selectedLink, setSelectedLink] = useState<string | null>(null);
   // const [proactiveTriggered, setProactiveTriggered] = useState(false);
   const [emailInputValue, setEmailInputValue] = useState("");
+  // Add state for selected radio button
+  const [selectedRadio, setSelectedRadio] = useState<number | null>(null);
 
   // Remove getEffectivePageUrl and getPreviousQuestions from component scope
 
@@ -331,10 +333,12 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
                 {/* Render actionable buttons if present */}
                 {Array.isArray(msg.buttons) && msg.buttons.length > 0 && (
                   <div style={{ marginTop: 8 }}>
-                    {msg.buttons.map((action: string) => (
-                      <button
-                        key={action}
-                        onClick={() => {
+                    {/* Radio button group for actions */}
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        if (selectedRadio !== null) {
+                          const action = (msg.buttons ?? [])[selectedRadio];
                           trackNudge(action, {
                             pageUrl,
                             adminId,
@@ -342,12 +346,48 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
                           });
                           setInput("");
                           sendMessage(action);
-                        }}
-                        style={{ margin: "4px", padding: "6px 12px" }}
-                      >
-                        {action}
-                      </button>
-                    ))}
+                          setSelectedRadio(null);
+                        }
+                      }}
+                    >
+                      {msg.buttons.map((action: string, idx: number) => (
+                        <div
+                          key={action}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            marginBottom: 4,
+                            cursor: "pointer",
+                          }}
+                        >
+                          <input
+                            type="radio"
+                            id={`action-${i}-${idx}`}
+                            name={`actions-${i}`}
+                            value={idx}
+                            checked={selectedRadio === idx}
+                            onChange={() => {
+                              setSelectedRadio(idx);
+                              trackNudge(action, {
+                                pageUrl,
+                                adminId,
+                                message: msg,
+                              });
+                              setInput("");
+                              sendMessage(action);
+                              setSelectedRadio(null);
+                            }}
+                            style={{ marginRight: 8, cursor: "pointer" }}
+                          />
+                          <label
+                            htmlFor={`action-${i}-${idx}`}
+                            style={{ cursor: "pointer" }}
+                          >
+                            {action}
+                          </label>
+                        </div>
+                      ))}
+                    </form>
                   </div>
                 )}
                 {/* Render email prompt/input if present */}
