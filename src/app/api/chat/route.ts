@@ -331,7 +331,7 @@ ${previousQnA}
               ", "
             )}. Do NOT include a summary or multiple questions. For the 'buttons' array, generate 2-4 actionable, context-aware options for the user to choose from, based on the nudge, detected intent, and page context. Make them relevant to the user's needs or the page content. Do not use generic options. Prefix the nudge with '💡 Assistant Tip:'. Vary the nudge text for each follow-up. Only output the JSON format as instructed.`;
         } else if (followupCount === 1) {
-          // Second follow-up: micro-conversion nudge (smaller ask)
+          // Second follow-up: micro-conversion nudge
           followupSystemPrompt = `
 You are a helpful sales assistant for Appointy. The user has not provided an email yet.
 

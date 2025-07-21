@@ -147,17 +147,12 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
           "[Chatbot] Setting inactivity follow-up timer for 10 seconds after bot message"
         );
         followupTimer.current = setTimeout(() => {
-          if (followupCount < 2) {
-            // Only trigger if less than 2, so the next will be the 3rd
-            console.log(
-              "[Chatbot] Inactivity timer triggered, setting followupSent to true"
-            );
-            setFollowupSent(true);
-          } else {
-            // After 3 followups, do not trigger again
-            if (followupTimer.current) clearTimeout(followupTimer.current);
-            setFollowupSent(false);
-          }
+          // The check `if (followupCount < 3)` above is sufficient.
+          // This internal check was preventing the 3rd followup.
+          console.log(
+            "[Chatbot] Inactivity timer triggered, setting followupSent to true"
+          );
+          setFollowupSent(true);
         }, 10000);
       }
     } else if (lastMsg.role === "user") {
