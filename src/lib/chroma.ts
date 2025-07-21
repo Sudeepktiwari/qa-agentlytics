@@ -106,10 +106,14 @@ export async function deleteChunksByFilename(
   _filename: string,
   _adminId?: string
 ) {
+  void _filename;
+  void _adminId;
   // Not implemented: see note above. You need to track IDs for each filename to delete.
 }
 
 export async function deleteChunksByUrl(_url: string, _adminId?: string) {
+  void _url;
+  void _adminId;
   // Not implemented: see note above. You need to track IDs for each URL to delete.
 }
 
