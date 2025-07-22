@@ -10,10 +10,17 @@ import {
   deleteChunksByUrl,
 } from "@/lib/chroma";
 import OpenAI from "openai";
+import { Pinecone } from "@pinecone-database/pinecone";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
 const MAX_PAGES = 20;
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+// Initialize Pinecone
+const pinecone = new Pinecone({
+  apiKey: process.env.PINECONE_KEY!,
+});
+const index = pinecone.index(process.env.PINECONE_INDEX!);
 
 async function parseSitemap(sitemapUrl: string): Promise<string[]> {
   const res = await fetch(sitemapUrl);
@@ -28,21 +35,50 @@ async function parseSitemap(sitemapUrl: string): Promise<string[]> {
 }
 
 async function extractTextFromUrl(url: string): Promise<string> {
-  const res = await fetch(url);
+  const res = await fetch(url, { follow: 20 }); // Follow up to 20 HTTP redirects
   if (!res.ok) throw new Error(`Failed to fetch page: ${url}`);
   const html = await res.text();
   const $ = cheerio.load(html);
+
+  // Check for HTML meta redirects
+  const metaRefresh = $('meta[http-equiv="refresh"]').attr("content");
+  if (metaRefresh) {
+    const match = metaRefresh.match(/url=(.+)$/i);
+    if (match) {
+      const redirectUrl = match[1].trim();
+      console.log(
+        `[Crawl] Following meta redirect from ${url} to ${redirectUrl}`
+      );
+      // Recursively fetch the redirect URL (with a simple depth limit)
+      if (redirectUrl.startsWith("http")) {
+        return extractTextFromUrl(redirectUrl);
+      }
+    }
+  }
+
   $("script, style, noscript").remove();
-  return $("body").text().replace(/\s+/g, " ").trim();
+  const text = $("body").text().replace(/\s+/g, " ").trim();
+
+  // If the text is too short (likely a redirect page), log it
+  if (text.length < 100) {
+    console.log(
+      `[Crawl] Warning: Very short content for ${url} (${
+        text.length
+      } chars): ${text.substring(0, 100)}`
+    );
+  }
+
+  return text;
 }
 
 export async function POST(req: NextRequest) {
   const token = req.cookies.get("auth_token")?.value;
   if (!token)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   let adminId = "";
   try {
-    const payload = jwt.verify(token, JWT_SECRET) as {
+    const payload = jwt.verify(token!, JWT_SECRET) as {
       email: string;
       adminId: string;
     };
@@ -102,17 +138,88 @@ export async function POST(req: NextRequest) {
     .toArray();
   const crawledUrls = new Set(crawledDocs.map((doc) => doc.url));
 
+  // Also check for pages that were marked as crawled but have no chunks in Pinecone
+  // This can happen if they were redirect pages or had errors during processing
+  const pineconeVectors = db.collection("pinecone_vectors");
+  const problematicUrls: string[] = [];
+
+  console.log(
+    `[Crawl] Checking ${crawledDocs.length} crawled URLs for missing vectors`
+  );
+  for (const doc of crawledDocs) {
+    // Check if vectors exist in Pinecone by trying to fetch them
+    const vectorIds = await pineconeVectors
+      .find({ adminId, filename: doc.url })
+      .project({ vectorId: 1, _id: 0 })
+      .toArray();
+
+    if (vectorIds.length === 0) {
+      console.log(`[Crawl] URL ${doc.url} has no MongoDB vector records`);
+      problematicUrls.push(doc.url);
+    } else {
+      // Check if the vectors actually exist in Pinecone
+      try {
+        const vectorIdList = vectorIds.map((v: any) => v.vectorId);
+        const result = await index.fetch(vectorIdList);
+        const foundVectors = Object.keys(result.records || {}).length;
+        console.log(
+          `[Crawl] URL ${doc.url} has ${vectorIds.length} MongoDB records, ${foundVectors} Pinecone vectors`
+        );
+
+        if (foundVectors === 0) {
+          console.log(
+            `[Crawl] URL ${doc.url} has MongoDB records but no Pinecone vectors - will re-crawl`
+          );
+          problematicUrls.push(doc.url);
+        }
+      } catch (pineconeError) {
+        console.log(
+          `[Crawl] Error checking Pinecone for ${doc.url}:`,
+          pineconeError
+        );
+        problematicUrls.push(doc.url);
+      }
+    }
+
+    if (problematicUrls.includes(doc.url)) {
+      // Reset the crawled status so it can be re-crawled
+      await sitemapUrls.updateOne(
+        { adminId, url: doc.url },
+        {
+          $unset: { crawled: 1, crawledAt: 1 },
+          $set: { recrawlReason: "no_pinecone_vectors", recrawlAt: new Date() },
+        }
+      );
+    }
+  }
+
+  // Recalculate crawled URLs after reset
+  const updatedCrawledDocs = await sitemapUrls
+    .find({ adminId, sitemapUrl, crawled: true })
+    .toArray();
+  const updatedCrawledUrls = new Set(updatedCrawledDocs.map((doc) => doc.url));
+
   // Select the next batch of uncrawled URLs (up to MAX_PAGES)
   const uncrawledUrls = urls
-    .filter((url) => !crawledUrls.has(url))
+    .filter((url) => !updatedCrawledUrls.has(url))
     .slice(0, MAX_PAGES);
+
+  console.log(
+    `[Crawl] Found ${problematicUrls.length} problematic URLs to re-crawl`
+  );
+  console.log(`[Crawl] Will crawl ${uncrawledUrls.length} URLs in this batch`);
 
   const results: { url: string; text: string }[] = [];
   let totalChunks = 0;
   for (const url of uncrawledUrls) {
     try {
+      console.log(`[Crawl] Starting to crawl: ${url}`);
       const text = await extractTextFromUrl(url);
-      console.log(`[Crawl] Extracted text for ${url}:`, text.slice(0, 100));
+      console.log(
+        `[Crawl] Extracted text for ${url}: ${
+          text.length
+        } chars, first 100: ${text.slice(0, 100)}`
+      );
       results.push({ url, text });
       await pages.insertOne({
         adminId,
@@ -150,9 +257,26 @@ export async function POST(req: NextRequest) {
         );
         await addChunks(chunks, embeddings, metadata);
         totalChunks += chunks.length;
+        console.log(
+          `[Crawl] Successfully processed ${url}: ${chunks.length} chunks`
+        );
+      } else {
+        console.log(
+          `[Crawl] No chunks created for ${url} - content may be too short or empty`
+        );
       }
     } catch (err) {
       console.error(`[Crawl] Failed for ${url}:`, err);
+      // Mark as failed in sitemap_urls (but don't set crawled to true)
+      await sitemapUrls.updateOne(
+        { adminId, url },
+        {
+          $set: {
+            failedAt: new Date(),
+            error: err instanceof Error ? err.message : String(err),
+          },
+        }
+      );
     }
   }
 
@@ -160,9 +284,10 @@ export async function POST(req: NextRequest) {
     crawled: results.length,
     totalChunks,
     pages: results.map((r) => r.url),
-    batchDone: uncrawledUrls.length,
-    batchRemaining: urls.length - crawledUrls.size - uncrawledUrls.length,
-    totalRemaining: urls.length - crawledUrls.size - uncrawledUrls.length,
+    batchDone: results.length, // Number of pages successfully crawled in this batch
+    batchRemaining: urls.length - updatedCrawledUrls.size - results.length, // Total remaining pages
+    totalRemaining: urls.length - updatedCrawledUrls.size - results.length,
+    recrawledPages: problematicUrls.length, // Show how many pages were reset for re-crawling
   });
 }
 

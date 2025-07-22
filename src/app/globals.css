@@ -24,3 +24,23 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Enhanced blockquote styling for chatbot messages */
+blockquote {
+  border-left: 4px solid #0070f3;
+  background: #f8fafc;
+  padding: 12px 16px;
+  margin: 12px 0;
+  border-radius: 6px;
+  font-style: italic;
+  color: #374151;
+}
+
+/* Dark mode blockquote styling */
+@media (prefers-color-scheme: dark) {
+  blockquote {
+    background: #1f2937;
+    color: #d1d5db;
+    border-left-color: #60a5fa;
+  }
+}

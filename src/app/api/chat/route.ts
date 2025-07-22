@@ -245,7 +245,7 @@ export async function POST(req: NextRequest) {
               messages: [
                 {
                   role: "system",
-                  content: `You are a proactive assistant for Appointy. Your goal is to help users plan or organize their next steps. Open with a friendly, proactive greeting, reference the user's likely intent, and ask a question that encourages them to share their plans or needs.`,
+                  content: `You are a proactive assistant for Appointy. Your goal is to help users plan or organize their next steps. Create engaging, emoji-enhanced messages with proper formatting. Use emojis strategically and break content into digestible sections with proper spacing.`,
                 },
                 { role: "user", content: chunk },
               ],
@@ -258,13 +258,32 @@ export async function POST(req: NextRequest) {
           );
         }
         const detectedIntent = detectIntent({ pageUrl });
-        const summaryPrompt = `The user is viewing: ${pageUrl}. Their likely intent is: ${detectedIntent}.\n\nSummarize the following page content for a sales prospect in 2-3 sentences, focusing on planning or organizing. Then, as a proactive assistant, open with a friendly greeting, reference their intent, and ask a relevant, engaging question that encourages them to share their plans or needs or what they're hoping to accomplish.\n\nContent:\n${summaryContext}`;
+        const summaryPrompt = `The user is viewing: ${pageUrl}. Their likely intent is: ${detectedIntent}.
+
+Create a proactive greeting message following this exact format and style:
+
+👋 Hello there! Looks like you're exploring Appointy's [specific feature/solution] — designed to simplify how you [specific benefit based on detected intent].
+
+With features like [list 2-3 key features], Appointy helps you focus on [main outcome] — without the admin burden.
+
+> I'd love to learn more about what you're planning!
+What type of [relevant context] are you organizing, or what challenges are you hoping to solve with [relevant area]?
+
+Requirements:
+- Start with 👋 Hello there!
+- Use em dashes (—) for better flow
+- Include specific Appointy features relevant to the page content
+- Use a quote block (>) for the transition
+- End with an open-ended question about their needs
+- Keep it conversational and engaging
+
+Content to reference:\n${summaryContext}`;
         const summaryResp = await openai.chat.completions.create({
           model: "gpt-4o-mini",
           messages: [
             {
               role: "system",
-              content: `You are a proactive assistant for Appointy. Your goal is to help users plan or organize their next steps. Open with a friendly, proactive greeting, reference the user's likely intent, and ask a question that encourages them to share their plans or needs.`,
+              content: `You are a proactive assistant for Appointy. Create engaging, professional messages with emojis and proper formatting. Follow the exact format provided in the user prompt. Focus on being warm, informative, and encouraging engagement.`,
             },
             { role: "user", content: summaryPrompt },
           ],
@@ -461,7 +480,12 @@ ${previousQnA}
     }
     // Fallback if no context
     if (proactive) {
-      const proactiveMsg = `Welcome! You're viewing: ${pageUrl}\n\n${pageSummary}`;
+      const proactiveMsg = `👋 Hello there! Looks like you're exploring Appointy's scheduling and appointment management platform — designed to simplify how you manage bookings, clients, and business operations.
+
+With features like automated scheduling, client management, payment processing, and calendar integrations, Appointy helps you focus on growing your business — without the admin burden.
+
+> I'd love to learn more about what you're planning!
+What type of business are you looking to streamline, or what scheduling challenges are you hoping to solve?`;
       return NextResponse.json({ answer: proactiveMsg });
     } else if (followup) {
       return NextResponse.json({
