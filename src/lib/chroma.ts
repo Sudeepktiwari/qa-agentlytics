@@ -64,7 +64,7 @@ export async function querySimilarChunks(
   });
   // Filter by adminId if provided
   type PineconeMatch = { metadata?: { adminId?: string; chunk?: string } };
-  let matches: PineconeMatch[] = result.matches || [];
+  const matches: PineconeMatch[] = result.matches || [];
   // No need to filter by adminId here, as Pinecone already does it
   // Return the chunk text
   return matches.map((m: PineconeMatch) => m.metadata?.chunk || "");

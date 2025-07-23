@@ -298,18 +298,35 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
   };
 
   return (
-    <div style={{ border: "1px solid #ccc", padding: 16, borderRadius: 8 }}>
-      <h3>Chatbot</h3>
-      <div style={{ minHeight: 120, marginBottom: 12 }}>
+    <div
+      style={{
+        border: "1px solid #ccc",
+        padding: 16,
+        borderRadius: 8,
+        backgroundColor: "#ffffff",
+        color: "#000000",
+      }}
+    >
+      <h3 style={{ color: "#000000" }}>Chatbot</h3>
+      <div
+        style={{
+          minHeight: 120,
+          marginBottom: 12,
+          backgroundColor: "#ffffff",
+          color: "#000000",
+        }}
+      >
         {messages.map((msg, i) => (
           <div
             key={i}
             style={{
               margin: "8px 0",
-              color: msg.role === "user" ? "#333" : "#0070f3",
+              color: msg.role === "user" ? "#000000" : "#000000",
             }}
           >
-            <b>{msg.role === "user" ? "You" : "Bot"}:</b>{" "}
+            <b style={{ color: "#000000" }}>
+              {msg.role === "user" ? "You" : "Bot"}:
+            </b>{" "}
             {msg.role === "assistant" ? (
               <>
                 {/* Highlight nudges that start with '💡 Assistant Tip:' */}
@@ -323,12 +340,15 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
                       borderRadius: 4,
                       marginBottom: 4,
                       fontWeight: 500,
+                      color: "#000000",
                     }}
                   >
                     <ReactMarkdown>{msg.content}</ReactMarkdown>
                   </div>
                 ) : (
-                  <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  <div style={{ color: "#000000" }}>
+                    <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  </div>
                 )}
                 {/* Render actionable buttons if present */}
                 {Array.isArray(msg.buttons) && msg.buttons.length > 0 && (
@@ -381,7 +401,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
                           />
                           <label
                             htmlFor={`action-${i}-${idx}`}
-                            style={{ cursor: "pointer" }}
+                            style={{ cursor: "pointer", color: "#000000" }}
                           >
                             {action}
                           </label>
@@ -392,7 +412,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
                 )}
                 {/* Render email prompt/input if present */}
                 {msg.emailPrompt && msg.emailPrompt.trim() !== "" && (
-                  <div style={{ marginTop: 8 }}>
+                  <div style={{ marginTop: 8, color: "#000000" }}>
                     <div>{msg.emailPrompt}</div>
                     <form
                       onSubmit={(e) => {
@@ -410,19 +430,36 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
                         onChange={(e) => setEmailInputValue(e.target.value)}
                         placeholder="Enter your email"
                         required
-                        style={{ marginRight: 8 }}
+                        style={{
+                          marginRight: 8,
+                          backgroundColor: "#ffffff",
+                          color: "#000000",
+                          border: "1px solid #ccc",
+                        }}
                       />
-                      <button type="submit">Send My Setup Instructions</button>
+                      <button
+                        type="submit"
+                        style={{
+                          backgroundColor: "#0070f3",
+                          color: "#ffffff",
+                          border: "none",
+                          padding: "8px 16px",
+                          borderRadius: "4px",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Send My Setup Instructions
+                      </button>
                     </form>
                   </div>
                 )}
               </>
             ) : (
-              msg.content
+              <span style={{ color: "#000000" }}>{msg.content}</span>
             )}
           </div>
         ))}
-        {loading && <div>Bot is typing...</div>}
+        {loading && <div style={{ color: "#000000" }}>Bot is typing...</div>}
       </div>
       <input
         type="text"
@@ -430,12 +467,28 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder="Ask a question about your documents..."
-        style={{ width: "80%", marginRight: 8 }}
+        style={{
+          width: "80%",
+          marginRight: 8,
+          backgroundColor: "#ffffff",
+          color: "#000000",
+          border: "1px solid #ccc",
+          padding: "8px",
+        }}
         disabled={loading}
       />
       <button
         onClick={() => sendMessage(input)}
         disabled={loading || !input.trim()}
+        style={{
+          backgroundColor: "#0070f3",
+          color: "#ffffff",
+          border: "none",
+          padding: "8px 16px",
+          borderRadius: "4px",
+          cursor: loading || !input.trim() ? "not-allowed" : "pointer",
+          opacity: loading || !input.trim() ? 0.6 : 1,
+        }}
       >
         Send
       </button>

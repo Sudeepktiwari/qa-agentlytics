@@ -34,7 +34,16 @@ async function parseSitemap(sitemapUrl: string): Promise<string[]> {
   return urls;
 }
 
-async function extractTextFromUrl(url: string): Promise<string> {
+async function extractTextFromUrl(
+  url: string,
+  depth: number = 0
+): Promise<string> {
+  // Prevent infinite redirect loops
+  if (depth > 5) {
+    console.log(`[Crawl] Max redirect depth reached for ${url}`);
+    throw new Error(`Too many redirects for ${url}`);
+  }
+
   const res = await fetch(url, { follow: 20 }); // Follow up to 20 HTTP redirects
   if (!res.ok) throw new Error(`Failed to fetch page: ${url}`);
   const html = await res.text();
@@ -45,13 +54,31 @@ async function extractTextFromUrl(url: string): Promise<string> {
   if (metaRefresh) {
     const match = metaRefresh.match(/url=(.+)$/i);
     if (match) {
-      const redirectUrl = match[1].trim();
+      let redirectUrl = match[1].trim();
       console.log(
         `[Crawl] Following meta redirect from ${url} to ${redirectUrl}`
       );
+
+      // Handle relative URLs by converting to absolute
+      if (!redirectUrl.startsWith("http")) {
+        try {
+          const baseUrl = new URL(url);
+          redirectUrl = new URL(redirectUrl, baseUrl.origin).href;
+          console.log(
+            `[Crawl] Converted relative URL to absolute: ${redirectUrl}`
+          );
+        } catch (urlError) {
+          console.log(
+            `[Crawl] Failed to convert relative URL: ${redirectUrl}`,
+            urlError
+          );
+          // If URL conversion fails, proceed with original content
+        }
+      }
+
       // Recursively fetch the redirect URL (with a simple depth limit)
       if (redirectUrl.startsWith("http")) {
-        return extractTextFromUrl(redirectUrl);
+        return extractTextFromUrl(redirectUrl, depth + 1);
       }
     }
   }
@@ -136,7 +163,6 @@ export async function POST(req: NextRequest) {
   const crawledDocs = await sitemapUrls
     .find({ adminId, sitemapUrl, crawled: true })
     .toArray();
-  const crawledUrls = new Set(crawledDocs.map((doc) => doc.url));
 
   // Also check for pages that were marked as crawled but have no chunks in Pinecone
   // This can happen if they were redirect pages or had errors during processing
@@ -159,7 +185,7 @@ export async function POST(req: NextRequest) {
     } else {
       // Check if the vectors actually exist in Pinecone
       try {
-        const vectorIdList = vectorIds.map((v: any) => v.vectorId);
+        const vectorIdList = vectorIds.map((v) => (v as { vectorId: string }).vectorId);
         const result = await index.fetch(vectorIdList);
         const foundVectors = Object.keys(result.records || {}).length;
         console.log(

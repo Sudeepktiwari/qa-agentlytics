@@ -289,7 +289,18 @@ const AdminPanel: React.FC = () => {
     }
   }, [auth]);
 
-  if (authLoading) return <div>Checking authentication...</div>;
+  if (authLoading)
+    return (
+      <div
+        style={{
+          backgroundColor: "#ffffff",
+          color: "#000000",
+          padding: "20px",
+        }}
+      >
+        Checking authentication...
+      </div>
+    );
   if (!auth) {
     return (
       <div
@@ -298,9 +309,11 @@ const AdminPanel: React.FC = () => {
           padding: 20,
           borderRadius: 10,
           marginBottom: 32,
+          backgroundColor: "#ffffff",
+          color: "#000000",
         }}
       >
-        <h2>Admin Login / Register</h2>
+        <h2 style={{ color: "#000000" }}>Admin Login / Register</h2>
         <form onSubmit={handleAuth} style={{ marginBottom: 16 }}>
           <input
             type="email"
@@ -308,7 +321,13 @@ const AdminPanel: React.FC = () => {
             value={form.email}
             onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
             required
-            style={{ marginRight: 8 }}
+            style={{
+              marginRight: 8,
+              backgroundColor: "#ffffff",
+              color: "#000000",
+              border: "1px solid #ccc",
+              padding: "8px",
+            }}
           />
           <input
             type="password"
@@ -318,12 +337,24 @@ const AdminPanel: React.FC = () => {
               setForm((f) => ({ ...f, password: e.target.value }))
             }
             required
-            style={{ marginRight: 8 }}
+            style={{
+              marginRight: 8,
+              backgroundColor: "#ffffff",
+              color: "#000000",
+              border: "1px solid #ccc",
+              padding: "8px",
+            }}
           />
           <select
             value={form.action}
             onChange={(e) => setForm((f) => ({ ...f, action: e.target.value }))}
-            style={{ marginRight: 8 }}
+            style={{
+              marginRight: 8,
+              backgroundColor: "#ffffff",
+              color: "#000000",
+              border: "1px solid #ccc",
+              padding: "8px",
+            }}
           >
             <option value="login">Login</option>
             <option value="register">Register</option>

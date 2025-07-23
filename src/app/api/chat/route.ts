@@ -10,6 +10,71 @@ import { addChunks } from "@/lib/chroma";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+// Helper to extract text from URL with redirect handling (same as sitemap route)
+async function extractTextFromUrl(
+  url: string,
+  depth: number = 0
+): Promise<string> {
+  // Prevent infinite redirect loops
+  if (depth > 5) {
+    console.log(`[OnDemandCrawl] Max redirect depth reached for ${url}`);
+    throw new Error(`Too many redirects for ${url}`);
+  }
+
+  const res = await fetch(url, { follow: 20 }); // Follow up to 20 HTTP redirects
+  if (!res.ok) throw new Error(`Failed to fetch page: ${url}`);
+  const html = await res.text();
+  const $ = cheerio.load(html);
+
+  // Check for HTML meta redirects
+  const metaRefresh = $('meta[http-equiv="refresh"]').attr("content");
+  if (metaRefresh) {
+    const match = metaRefresh.match(/url=(.+)$/i);
+    if (match) {
+      let redirectUrl = match[1].trim();
+      console.log(
+        `[OnDemandCrawl] Following meta redirect from ${url} to ${redirectUrl}`
+      );
+
+      // Handle relative URLs by converting to absolute
+      if (!redirectUrl.startsWith("http")) {
+        try {
+          const baseUrl = new URL(url);
+          redirectUrl = new URL(redirectUrl, baseUrl.origin).href;
+          console.log(
+            `[OnDemandCrawl] Converted relative URL to absolute: ${redirectUrl}`
+          );
+        } catch (urlError) {
+          console.log(
+            `[OnDemandCrawl] Failed to convert relative URL: ${redirectUrl}`,
+            urlError
+          );
+          // If URL conversion fails, proceed with original content
+        }
+      }
+
+      // Recursively fetch the redirect URL (with a simple depth limit)
+      if (redirectUrl.startsWith("http")) {
+        return extractTextFromUrl(redirectUrl, depth + 1);
+      }
+    }
+  }
+
+  $("script, style, noscript").remove();
+  const text = $("body").text().replace(/\s+/g, " ").trim();
+
+  // If the text is too short (likely a redirect page), log it
+  if (text.length < 100) {
+    console.log(
+      `[OnDemandCrawl] Warning: Very short content for ${url} (${
+        text.length
+      } chars): ${text.substring(0, 100)}`
+    );
+  }
+
+  return text;
+}
+
 // Helper to count tokens using a simple estimation (4 chars per token)
 function countTokens(text: string) {
   return Math.ceil(text.length / 4);
@@ -101,7 +166,6 @@ export async function POST(req: NextRequest) {
     proactive,
     adminId: adminIdFromBody,
     followup,
-    previousQuestions = [],
   } = body;
   if ((!question && !proactive && !followup) || !sessionId)
     return NextResponse.json(
@@ -163,48 +227,57 @@ export async function POST(req: NextRequest) {
         sitemapEntry
       );
       if (sitemapEntry && !sitemapEntry.crawled) {
-        // Crawl the page on demand
+        // Crawl the page on demand with redirect handling
         try {
-          const res = await fetch(pageUrl);
-          if (res.ok) {
-            const html = await res.text();
-            const $ = cheerio.load(html);
-            $("script, style, noscript").remove();
-            const text = $("body").text().replace(/\s+/g, " ").trim();
-            // Store in crawled_pages
-            await db.collection("crawled_pages").insertOne({
+          console.log(`[OnDemandCrawl] Starting to crawl: ${pageUrl}`);
+          const text = await extractTextFromUrl(pageUrl);
+          console.log(
+            `[OnDemandCrawl] Extracted text for ${pageUrl}: ${
+              text.length
+            } chars, first 100: ${text.slice(0, 100)}`
+          );
+
+          // Store in crawled_pages
+          await db.collection("crawled_pages").insertOne({
+            adminId,
+            url: pageUrl,
+            text,
+            filename: pageUrl,
+            createdAt: new Date(),
+          });
+          // Mark as crawled in sitemap_urls
+          await sitemapUrls.updateOne(
+            { adminId, url: pageUrl },
+            { $set: { crawled: true, crawledAt: new Date() } }
+          );
+          // Chunk and embed for ChromaDB
+          const chunks = chunkText(text);
+          if (chunks.length > 0) {
+            const embedResp = await openai.embeddings.create({
+              input: chunks,
+              model: "text-embedding-3-small",
+            });
+            const embeddings = embedResp.data.map(
+              (d: { embedding: number[] }) => d.embedding
+            );
+            const metadata = chunks.map((_, i) => ({
+              filename: pageUrl,
               adminId,
               url: pageUrl,
-              text,
-              filename: pageUrl,
-              createdAt: new Date(),
-            });
-            // Mark as crawled in sitemap_urls
-            await sitemapUrls.updateOne(
-              { adminId, url: pageUrl },
-              { $set: { crawled: true, crawledAt: new Date() } }
+              chunkIndex: i,
+            }));
+            await addChunks(chunks, embeddings, metadata);
+            pageChunks = chunks;
+            console.log(
+              `[OnDemandCrawl] Successfully processed ${pageUrl}: ${chunks.length} chunks`
             );
-            // Chunk and embed for ChromaDB
-            const chunks = chunkText(text);
-            if (chunks.length > 0) {
-              const embedResp = await openai.embeddings.create({
-                input: chunks,
-                model: "text-embedding-3-small",
-              });
-              const embeddings = embedResp.data.map(
-                (d: { embedding: number[] }) => d.embedding
-              );
-              const metadata = chunks.map((_, i) => ({
-                filename: pageUrl,
-                adminId,
-                url: pageUrl,
-                chunkIndex: i,
-              }));
-              await addChunks(chunks, embeddings, metadata);
-              pageChunks = chunks;
-            }
+          } else {
+            console.log(
+              `[OnDemandCrawl] No chunks created for ${pageUrl} - content may be too short or empty`
+            );
           }
-        } catch {
+        } catch (err) {
+          console.error(`[OnDemandCrawl] Failed for ${pageUrl}:`, err);
           // If crawl fails, fallback to no info
         }
       } else if (sitemapEntry && sitemapEntry.crawled) {
@@ -541,8 +614,8 @@ What type of business are you looking to streamline, or what scheduling challeng
   if (lastEmailMsg && lastEmailMsg.email) userEmail = lastEmailMsg.email;
 
   // Detect if the user message matches any previous assistant message's buttons
-  let isButtonAction = false;
-  let lastButtonLabel = "";
+  // (currently unused but kept for future functionality)
+  // let isButtonAction = false;
   if (question) {
     // Find the last assistant message with buttons
     const lastAssistantWithButtons = await chats.findOne(
@@ -558,10 +631,9 @@ What type of business are you looking to streamline, or what scheduling challeng
       lastAssistantWithButtons.content &&
       Array.isArray(lastAssistantWithButtons.content.buttons)
     ) {
-      isButtonAction = lastAssistantWithButtons.content.buttons.some(
-        (b: string) => b.toLowerCase() === question.trim().toLowerCase()
-      );
-      if (isButtonAction) lastButtonLabel = question.trim();
+      // isButtonAction = lastAssistantWithButtons.content.buttons.some(
+      //   (b: string) => b.toLowerCase() === question.trim().toLowerCase()
+      // );
     }
   }
 
@@ -575,7 +647,7 @@ What type of business are you looking to streamline, or what scheduling challeng
 
   // Chat completion with sales-pitch system prompt
   let systemPrompt = "";
-  let userPrompt = question;
+  const userPrompt = question;
   if (userEmail) {
     systemPrompt = isGreeting
       ? `You are a helpful sales bot for a company. Always respond to greetings with a friendly, enthusiastic sales pitch about the company, its products, and pricing, using ONLY the context below. If you don't have enough info, encourage the user to upload more documents or sitemaps.\n\nPage Context:\n${pageContext}\n\nGeneral Context:\n${context}\n\nIf you think a tip would be helpful for the user, you may include it anywhere in your response, starting with '💡 Assistant Tip:'. Only include a tip if it is genuinely useful or relevant to the user's context or question. Otherwise, respond normally.`
