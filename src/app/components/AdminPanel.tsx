@@ -459,7 +459,7 @@ const AdminPanel: React.FC = () => {
           )}
       </div>
       {/* Sitemap Management Section */}
-      <div
+      {/* <div
         style={{
           border: "1px solid #ccc",
           padding: 16,
@@ -533,9 +533,9 @@ const AdminPanel: React.FC = () => {
               </ul>
             )}
           </div>
-        ))}
-        {/* Pagination Controls */}
-        {sitemapsTotal > SITEMAPS_PAGE_SIZE && (
+        ))} */}
+      {/* Pagination Controls */}
+      {/* {sitemapsTotal > SITEMAPS_PAGE_SIZE && (
           <div style={{ marginTop: 8 }}>
             <button
               onClick={() => fetchSitemaps(sitemapsPage - 1)}
@@ -561,7 +561,7 @@ const AdminPanel: React.FC = () => {
             </button>
           </div>
         )}
-      </div>
+      </div> */}
       {/* Admin-only: Sitemap URL dropdown for testing */}
       {auth && sitemapUrls.length > 0 && (
         <div style={{ marginBottom: 16 }}>
@@ -585,7 +585,7 @@ const AdminPanel: React.FC = () => {
       )}
       <Chatbot pageUrl={selectedPageUrl || undefined} adminId={auth.adminId} />
       <DocumentUploader onUploadDone={handleUploadDone} />
-      <h4>Uploaded Documents</h4>
+      {/* <h4>Uploaded Documents</h4>
       {loading && <div>Loading...</div>}
       {error && <div style={{ color: "red" }}>{error}</div>}
       <ul>
@@ -604,7 +604,7 @@ const AdminPanel: React.FC = () => {
         {docs.length === 0 && !loading && (
           <li>No documents uploaded or crawled.</li>
         )}
-      </ul>
+      </ul> */}
     </div>
   );
 };
