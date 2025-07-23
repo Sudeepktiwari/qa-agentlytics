@@ -66,35 +66,128 @@ The chatbot widget will:
 
 ### Step 5: Customization Options
 
-#### 🎨 **Visual Customization**
+#### 🎨 **Basic Customization**
 
-The widget comes with default styling, but you can customize it by adding CSS:
-
-```css
-/* Customize the toggle button */
-#appointy-chatbot-toggle {
-  background: your-brand-color !important;
-  width: 70px !important;
-  height: 70px !important;
-}
-
-/* Customize the widget */
-#appointy-chatbot-widget {
-  width: 400px !important;
-  height: 600px !important;
-}
-```
-
-#### ⚙️ **Advanced Configuration**
-
-You can modify the widget behavior by updating the script parameters:
+The widget supports extensive customization through data attributes:
 
 ```html
 <script
   src="YOUR_CHATBOT_DOMAIN/api/widget"
   data-api-key="YOUR_API_KEY"
+  data-theme="blue"
+  data-size="medium"
+  data-position="bottom-right"
+  data-chat-title="Chat with us"
+  data-button-text="💬"
+></script>
+```
+
+#### 🎯 **Available Themes**
+
+Choose from pre-built themes:
+
+```html
+<!-- Blue Theme (Default) -->
+data-theme="blue"
+
+<!-- Green Theme -->
+data-theme="green"
+
+<!-- Purple Theme -->
+data-theme="purple"
+
+<!-- Orange Theme -->
+data-theme="orange"
+
+<!-- Dark Theme -->
+data-theme="dark"
+
+<!-- Custom Brand Colors -->
+data-theme="custom" data-brand-color="#ff6b35"
+```
+
+#### 📏 **Widget Sizes**
+
+```html
+<!-- Small: 300x400px -->
+data-size="small"
+
+<!-- Medium: 350x500px (Default) -->
+data-size="medium"
+
+<!-- Large: 400x600px -->
+data-size="large"
+```
+
+#### 📍 **Widget Position**
+
+```html
+<!-- Bottom Right (Default) -->
+data-position="bottom-right"
+
+<!-- Bottom Left -->
+data-position="bottom-left"
+
+<!-- Top Right -->
+data-position="top-right"
+
+<!-- Top Left -->
+data-position="top-left"
+```
+
+#### ✏️ **Text Customization**
+
+```html
+<!-- Custom chat title -->
+data-chat-title="Need Help?"
+
+<!-- Custom button icon/text -->
+data-button-text="🚀" data-button-text="Help"
+
+<!-- Custom welcome message -->
+data-welcome-message="Hi! How can we help you today?"
+```
+
+#### 🎨 **Advanced CSS Customization**
+
+For even more control, add custom CSS:
+
+```css
+/* Customize the toggle button */
+#appointy-chatbot-toggle {
+  background: linear-gradient(45deg, #ff6b35, #f7931e) !important;
+  width: 70px !important;
+  height: 70px !important;
+  font-size: 28px !important;
+}
+
+/* Customize the widget container */
+#appointy-chatbot-widget {
+  width: 400px !important;
+  height: 600px !important;
+  border-radius: 20px !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Customize the header */
+#appointy-chatbot-widget .header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+}
+```
+
+#### 🔧 **Complete Customization Example**
+
+```html
+<script
+  src="YOUR_CHATBOT_DOMAIN/api/widget"
+  data-api-key="YOUR_API_KEY"
+  data-theme="custom"
+  data-brand-color="#ff6b35"
+  data-size="large"
   data-position="bottom-left"
-  data-theme="dark"
+  data-chat-title="🚀 Support Chat"
+  data-button-text="Help"
+  data-welcome-message="Welcome! How can our team assist you today?"
 ></script>
 ```
 
@@ -159,7 +252,9 @@ For technical support or questions:
 
 ### Example Implementation
 
-Here's a complete example of how to add the chatbot to your website:
+Here are examples of how to add the chatbot with different customizations:
+
+#### 🔵 **Basic Implementation**
 
 ```html
 <!DOCTYPE html>
@@ -172,13 +267,76 @@ Here's a complete example of how to add the chatbot to your website:
     <h1>Welcome to our website</h1>
     <p>Your content here...</p>
 
-    <!-- Chatbot Widget Script -->
+    <!-- Basic Chatbot Widget -->
     <script
       src="https://your-chatbot-domain.com/api/widget"
       data-api-key="ak_your_api_key_here"
     ></script>
   </body>
 </html>
+```
+
+#### 🎨 **Fully Customized Implementation**
+
+```html
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Your Website</title>
+    <style>
+      /* Optional: Additional custom styling */
+      #appointy-chatbot-toggle {
+        background: linear-gradient(45deg, #667eea, #764ba2) !important;
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3) !important;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Your website content -->
+    <h1>Welcome to our website</h1>
+    <p>Your content here...</p>
+
+    <!-- Customized Chatbot Widget -->
+    <script
+      src="https://your-chatbot-domain.com/api/widget"
+      data-api-key="ak_your_api_key_here"
+      data-theme="purple"
+      data-size="large"
+      data-position="bottom-left"
+      data-chat-title="🚀 Get Help"
+      data-button-text="Support"
+      data-welcome-message="Hi there! Our team is here to help you."
+    ></script>
+  </body>
+</html>
+```
+
+#### 🏢 **E-commerce Example**
+
+```html
+<script
+  src="https://your-chatbot-domain.com/api/widget"
+  data-api-key="ak_your_api_key_here"
+  data-theme="green"
+  data-size="medium"
+  data-chat-title="🛍️ Shop Assistant"
+  data-button-text="🛒"
+  data-welcome-message="Looking for something? Let me help you find it!"
+></script>
+```
+
+#### 🏥 **Healthcare Example**
+
+```html
+<script
+  src="https://your-chatbot-domain.com/api/widget"
+  data-api-key="ak_your_api_key_here"
+  data-theme="blue"
+  data-size="large"
+  data-chat-title="🏥 Patient Support"
+  data-button-text="💊"
+  data-welcome-message="How can we assist with your healthcare needs today?"
+></script>
 ```
 
 The widget will automatically:

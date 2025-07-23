@@ -1190,6 +1190,242 @@ const AdminPanel: React.FC = () => {
             </div>
           </div>
 
+          {/* Widget Customization Options */}
+          {apiKey && (
+            <div
+              style={{
+                background: "rgba(255, 255, 255, 0.95)",
+                backdropFilter: "blur(10px)",
+                borderRadius: "20px",
+                padding: "24px",
+                boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
+                border: "1px solid rgba(255, 255, 255, 0.2)",
+                marginBottom: "24px",
+              }}
+            >
+              <h3
+                style={{
+                  margin: "0 0 16px 0",
+                  fontSize: "20px",
+                  fontWeight: "700",
+                  color: "#2d3748",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                🎨 Widget Customization
+              </h3>
+              <p
+                style={{
+                  color: "#718096",
+                  fontSize: "14px",
+                  marginBottom: "20px",
+                }}
+              >
+                Customize the appearance and behavior of your widget
+              </p>
+
+              {/* Theme Options */}
+              <div style={{ marginBottom: "20px" }}>
+                <h4
+                  style={{
+                    margin: "0 0 12px 0",
+                    fontSize: "16px",
+                    fontWeight: "600",
+                    color: "#2d3748",
+                  }}
+                >
+                  🎯 Themes
+                </h4>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(3, 1fr)",
+                    gap: "12px",
+                  }}
+                >
+                  {[
+                    { name: "blue", color: "#0070f3", label: "Blue" },
+                    { name: "green", color: "#10b981", label: "Green" },
+                    { name: "purple", color: "#8b5cf6", label: "Purple" },
+                    { name: "orange", color: "#f59e0b", label: "Orange" },
+                    { name: "dark", color: "#1f2937", label: "Dark" },
+                    { name: "custom", color: "#ff6b35", label: "Custom" },
+                  ].map((theme) => (
+                    <div
+                      key={theme.name}
+                      style={{
+                        padding: "12px",
+                        background: "rgba(255, 255, 255, 0.8)",
+                        borderRadius: "8px",
+                        border: "1px solid rgba(255, 255, 255, 0.4)",
+                        textAlign: "center",
+                        fontSize: "12px",
+                        color: "#4a5568",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: "24px",
+                          height: "24px",
+                          background: theme.color,
+                          borderRadius: "50%",
+                          margin: "0 auto 8px",
+                        }}
+                      ></div>
+                      data-theme="{theme.name}"
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Size Options */}
+              <div style={{ marginBottom: "20px" }}>
+                <h4
+                  style={{
+                    margin: "0 0 12px 0",
+                    fontSize: "16px",
+                    fontWeight: "600",
+                    color: "#2d3748",
+                  }}
+                >
+                  📏 Sizes
+                </h4>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(3, 1fr)",
+                    gap: "12px",
+                  }}
+                >
+                  {[
+                    { name: "small", size: "300×400", label: "Small" },
+                    { name: "medium", size: "350×500", label: "Medium" },
+                    { name: "large", size: "400×600", label: "Large" },
+                  ].map((size) => (
+                    <div
+                      key={size.name}
+                      style={{
+                        padding: "12px",
+                        background: "rgba(255, 255, 255, 0.8)",
+                        borderRadius: "8px",
+                        border: "1px solid rgba(255, 255, 255, 0.4)",
+                        textAlign: "center",
+                        fontSize: "12px",
+                        color: "#4a5568",
+                      }}
+                    >
+                      <div style={{ fontWeight: "600", marginBottom: "4px" }}>
+                        {size.label}
+                      </div>
+                      <div style={{ fontSize: "10px", color: "#718096" }}>
+                        {size.size}px
+                      </div>
+                      <div style={{ fontSize: "11px", marginTop: "4px" }}>
+                        data-size="{size.name}"
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Position Options */}
+              <div style={{ marginBottom: "20px" }}>
+                <h4
+                  style={{
+                    margin: "0 0 12px 0",
+                    fontSize: "16px",
+                    fontWeight: "600",
+                    color: "#2d3748",
+                  }}
+                >
+                  📍 Positions
+                </h4>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(2, 1fr)",
+                    gap: "12px",
+                  }}
+                >
+                  {[
+                    { name: "bottom-right", label: "Bottom Right" },
+                    { name: "bottom-left", label: "Bottom Left" },
+                    { name: "top-right", label: "Top Right" },
+                    { name: "top-left", label: "Top Left" },
+                  ].map((position) => (
+                    <div
+                      key={position.name}
+                      style={{
+                        padding: "12px",
+                        background: "rgba(255, 255, 255, 0.8)",
+                        borderRadius: "8px",
+                        border: "1px solid rgba(255, 255, 255, 0.4)",
+                        textAlign: "center",
+                        fontSize: "12px",
+                        color: "#4a5568",
+                      }}
+                    >
+                      <div style={{ fontWeight: "600", marginBottom: "4px" }}>
+                        {position.label}
+                      </div>
+                      <div style={{ fontSize: "11px", marginTop: "4px" }}>
+                        data-position="{position.name}"
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Custom Example */}
+              <div
+                style={{
+                  background: "linear-gradient(135deg, #f7fafc, #edf2f7)",
+                  borderRadius: "12px",
+                  padding: "16px",
+                  border: "1px solid #e2e8f0",
+                }}
+              >
+                <h4
+                  style={{
+                    margin: "0 0 12px 0",
+                    fontSize: "14px",
+                    fontWeight: "600",
+                    color: "#2d3748",
+                  }}
+                >
+                  🚀 Example with Customization:
+                </h4>
+                <textarea
+                  readOnly
+                  value={`<script 
+  src="${window.location.origin}/api/widget" 
+  data-api-key="${apiKey}"
+  data-theme="purple"
+  data-size="large"
+  data-position="bottom-left"
+  data-chat-title="🚀 Get Help"
+  data-button-text="Support"
+></script>`}
+                  style={{
+                    width: "100%",
+                    height: "120px",
+                    fontFamily: "monospace",
+                    fontSize: "12px",
+                    padding: "12px",
+                    border: "1px solid #cbd5e0",
+                    borderRadius: "6px",
+                    backgroundColor: "#f7fafc",
+                    resize: "none",
+                    color: "#2d3748",
+                    boxSizing: "border-box",
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
           {/* How it works */}
           <div
             style={{

@@ -23,19 +23,67 @@ export async function GET(req: NextRequest) {
   const API_KEY = '${apiKey}';
   const ADMIN_ID = '${auth.adminId}';
   
+  // Get script element and read customization data attributes
+  const scriptElement = document.currentScript || document.querySelector('script[data-api-key="${apiKey}"]');
+  const config = {
+    position: scriptElement?.getAttribute('data-position') || 'bottom-right',
+    theme: scriptElement?.getAttribute('data-theme') || 'blue',
+    size: scriptElement?.getAttribute('data-size') || 'medium',
+    buttonText: scriptElement?.getAttribute('data-button-text') || '💬',
+    welcomeMessage: scriptElement?.getAttribute('data-welcome-message') || '',
+    brandColor: scriptElement?.getAttribute('data-brand-color') || '',
+    textColor: scriptElement?.getAttribute('data-text-color') || '',
+    chatTitle: scriptElement?.getAttribute('data-chat-title') || 'Chat with us'
+  };
+  
+  // Theme configurations
+  const themes = {
+    blue: { primary: '#0070f3', secondary: '#f0f8ff' },
+    green: { primary: '#10b981', secondary: '#f0fdf4' },
+    purple: { primary: '#8b5cf6', secondary: '#faf5ff' },
+    orange: { primary: '#f59e0b', secondary: '#fffbeb' },
+    dark: { primary: '#1f2937', secondary: '#f9fafb' },
+    custom: { primary: config.brandColor || '#0070f3', secondary: '#f0f8ff' }
+  };
+  
+  // Size configurations
+  const sizes = {
+    small: { width: '300px', height: '400px', buttonSize: '50px' },
+    medium: { width: '350px', height: '500px', buttonSize: '60px' },
+    large: { width: '400px', height: '600px', buttonSize: '70px' }
+  };
+  
+  // Position configurations
+  const positions = {
+    'bottom-right': { bottom: '20px', right: '20px' },
+    'bottom-left': { bottom: '20px', left: '20px' },
+    'top-right': { top: '20px', right: '20px' },
+    'top-left': { top: '20px', left: '20px' }
+  };
+  
+  const currentTheme = themes[config.theme] || themes.blue;
+  const currentSize = sizes[config.size] || sizes.medium;
+  const currentPosition = positions[config.position] || positions['bottom-right'];
+  
   // Create widget container
   const widgetContainer = document.createElement('div');
   widgetContainer.id = 'appointy-chatbot-widget';
+  
+  // Apply position styles
+  let positionStyles = '';
+  Object.keys(currentPosition).forEach(key => {
+    positionStyles += \`\${key}: \${currentPosition[key]}; \`;
+  });
+  
   widgetContainer.style.cssText = \`
     position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 350px;
-    height: 500px;
-    border: 1px solid #ccc;
+    \${positionStyles}
+    width: \${currentSize.width};
+    height: \${currentSize.height};
+    border: 1px solid #e5e7eb;
     border-radius: 12px;
     background: white;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
     z-index: 10000;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     display: none;
@@ -45,22 +93,24 @@ export async function GET(req: NextRequest) {
   // Create toggle button
   const toggleButton = document.createElement('button');
   toggleButton.id = 'appointy-chatbot-toggle';
-  toggleButton.innerHTML = '💬';
+  toggleButton.innerHTML = config.buttonText;
   toggleButton.style.cssText = \`
     position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 60px;
-    height: 60px;
+    \${positionStyles}
+    width: \${currentSize.buttonSize};
+    height: \${currentSize.buttonSize};
     border: none;
     border-radius: 50%;
-    background: #0070f3;
+    background: \${currentTheme.primary};
     color: white;
-    font-size: 24px;
+    font-size: \${parseInt(currentSize.buttonSize) * 0.4}px;
     cursor: pointer;
     z-index: 10001;
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   \`;
   
   toggleButton.addEventListener('mouseenter', () => {
@@ -91,24 +141,24 @@ export async function GET(req: NextRequest) {
   function createWidgetHTML() {
     return \`
       <div style="display: flex; flex-direction: column; height: 100%; background: white; border-radius: 12px; overflow: hidden;">
-        <div style="background: #0070f3; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center;">
-          <h3 style="margin: 0; font-size: 16px;">Chat with us</h3>
-          <button id="appointy-close-btn" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer;">×</button>
+        <div style="background: \${currentTheme.primary}; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center;">
+          <h3 style="margin: 0; font-size: 16px; font-weight: 600;">\${config.chatTitle}</h3>
+          <button id="appointy-close-btn" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer; padding: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">×</button>
         </div>
-        <div id="appointy-messages" style="flex: 1; padding: 15px; overflow-y: auto; max-height: 350px;">
+        <div id="appointy-messages" style="flex: 1; padding: 15px; overflow-y: auto; max-height: calc(100% - 140px); background: \${currentTheme.secondary};">
           <div style="color: #666; font-size: 14px;">Loading...</div>
         </div>
-        <div style="padding: 15px; border-top: 1px solid #eee;">
+        <div style="padding: 15px; border-top: 1px solid #e5e7eb; background: white;">
           <div style="display: flex; gap: 8px;">
             <input 
               id="appointy-input" 
               type="text" 
               placeholder="Type your message..." 
-              style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px; outline: none;"
+              style="flex: 1; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; outline: none; font-size: 14px;"
             />
             <button 
               id="appointy-send-btn" 
-              style="background: #0070f3; color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer;"
+              style="background: \${currentTheme.primary}; color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500;"
             >
               Send
             </button>
