@@ -7,6 +7,7 @@ import fetch from "node-fetch";
 import * as cheerio from "cheerio";
 import { chunkText } from "@/lib/chunkText";
 import { addChunks } from "@/lib/chroma";
+import { verifyApiKey } from "@/lib/auth";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -167,6 +168,7 @@ export async function POST(req: NextRequest) {
     adminId: adminIdFromBody,
     followup,
   } = body;
+
   if ((!question && !proactive && !followup) || !sessionId)
     return NextResponse.json(
       {
@@ -175,6 +177,16 @@ export async function POST(req: NextRequest) {
       },
       { status: 400 }
     );
+
+  // Check for API key authentication (for external widget usage)
+  const apiKey = req.headers.get("x-api-key");
+  let apiAuth = null;
+  if (apiKey) {
+    apiAuth = await verifyApiKey(apiKey);
+    if (!apiAuth) {
+      return NextResponse.json({ error: "Invalid API key" }, { status: 401 });
+    }
+  }
 
   // Email detection regex
   const emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -197,10 +209,13 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Get adminId if available (from request or previous chat with admin, or null for public)
+  // Get adminId if available (from request, API key auth, or previous chat with admin, or null for public)
   let adminId: string | null = null;
   if (adminIdFromBody) {
     adminId = adminIdFromBody;
+  } else if (apiAuth) {
+    // Use adminId from API key authentication
+    adminId = apiAuth.adminId;
   } else {
     const lastMsg = await chats.findOne({
       sessionId,

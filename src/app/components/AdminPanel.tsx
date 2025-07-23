@@ -1,18 +1,10 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import DocumentUploader from "./DocumentUploader";
 import Chatbot from "./Chatbot";
 
-interface DocMeta {
-  filename: string;
-  count: number;
-}
-
 const AdminPanel: React.FC = () => {
-  const [docs, setDocs] = useState<DocMeta[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const [auth, setAuth] = useState<null | { email: string; adminId?: string }>(
     null
   );
@@ -27,33 +19,39 @@ const AdminPanel: React.FC = () => {
   // Sitemap crawling state
   const [sitemapUrl, setSitemapUrl] = useState("");
   const [sitemapStatus, setSitemapStatus] = useState<string | null>(null);
-  const [sitemapResult, setSitemapResult] = useState<{
-    crawled: number;
-    totalChunks: number;
-    pages: string[];
-  } | null>(null);
   const [sitemapLoading, setSitemapLoading] = useState(false);
 
-  // Sitemaps management state
-  interface SitemapMeta {
-    sitemapUrl: string;
-    count: number;
-    firstCrawled: string;
-    urls: string[];
-  }
-  const [sitemaps, setSitemaps] = useState<SitemapMeta[]>([]);
-  const [sitemapsLoading, setSitemapsLoading] = useState(false);
-  const [sitemapsError, setSitemapsError] = useState("");
-  const [sitemapsPage, setSitemapsPage] = useState(1);
-  const [sitemapsTotal, setSitemapsTotal] = useState(0);
-  const [expandedSitemap, setExpandedSitemap] = useState<string | null>(null);
-  const SITEMAPS_PAGE_SIZE = 5;
+  // Page URL dropdown state  
+  const [sitemapUrls, setSitemapUrls] = useState<{ url: string; crawled: boolean }[]>([]);
+  const [selectedPageUrl, setSelectedPageUrl] = useState("");
 
-  // Admin-only: sitemap URL dropdown for testing
-  const [sitemapUrls, setSitemapUrls] = useState<
-    { url: string; crawled?: boolean }[]
-  >([]);
-  const [selectedPageUrl, setSelectedPageUrl] = useState<string>("");
+  // API Key management state
+  const [apiKey, setApiKey] = useState<string>("");
+  const [apiKeyLoading, setApiKeyLoading] = useState(false);
+  const [apiKeyError, setApiKeyError] = useState("");
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [apiKeyCreated, setApiKeyCreated] = useState<string>("");
+
+  // Leads management state
+  interface Lead {
+    email: string;
+    firstSeen: string;
+    lastSeen: string;
+    messageCount: number;
+    sessionId: string;
+    latestContent: string | { mainText: string };
+    latestRole: string;
+  }
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [leadsLoading, setLeadsLoading] = useState(false);
+  const [leadsError, setLeadsError] = useState("");
+  const [leadsPage, setLeadsPage] = useState(1);
+  const [leadsTotal, setLeadsTotal] = useState(0);
+  const [leadsTotalPages, setLeadsTotalPages] = useState(0);
+  const [leadsSearch, setLeadsSearch] = useState("");
+  const [leadsSortBy, setLeadsSortBy] = useState("lastSeen");
+  const [leadsSortOrder, setLeadsSortOrder] = useState("desc");
+  const LEADS_PAGE_SIZE = 10;
 
   // Check authentication on mount
   useEffect(() => {
@@ -65,11 +63,9 @@ const AdminPanel: React.FC = () => {
         if (res.ok) {
           const data = await res.json();
           setAuth({ email: data.email, adminId: data.adminId });
-        } else {
-          setAuth(null);
         }
       } catch {
-        setAuth(null);
+        // Not authenticated
       } finally {
         setAuthLoading(false);
       }
@@ -106,75 +102,10 @@ const AdminPanel: React.FC = () => {
     }
   };
 
-  // Fetch docs only if authenticated
-  const fetchDocs = async () => {
-    setLoading(true);
-    setError("");
-    try {
-      // Try to fetch uploaded documents first
-      const res = await fetch("/api/admin-docs?admin=1");
-      const data = await res.json();
-      if (data.documents && data.documents.length > 0) {
-        setDocs(data.documents || []);
-      } else {
-        // If no uploaded documents, fetch crawled pages as fallback
-        const sitemapRes = await fetch("/api/sitemap?page=1&pageSize=100");
-        const sitemapData = await sitemapRes.json();
-        if (sitemapData.sitemaps && sitemapData.sitemaps.length > 0) {
-          // Map crawled sitemaps to DocMeta format
-          setDocs(
-            sitemapData.sitemaps.map(
-              (s: { sitemapUrl: string; count: number }) => ({
-                filename: s.sitemapUrl,
-                count: s.count,
-              })
-            )
-          );
-        } else {
-          setDocs([]);
-        }
-      }
-    } catch {
-      setError("Failed to fetch documents");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (auth) fetchDocs();
-  }, [auth]);
-
-  const handleDelete = async (filename: string) => {
-    if (!window.confirm(`Delete ${filename}?`)) return;
-    setLoading(true);
-    setError("");
-    try {
-      await fetch(
-        `/api/admin-docs?admin=1&filename=${encodeURIComponent(filename)}`,
-        {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ filename }),
-        }
-      );
-      fetchDocs();
-    } catch {
-      setError("Failed to delete document");
-      setLoading(false);
-    }
-  };
-
-  // Refresh doc list after upload
-  const handleUploadDone = () => {
-    fetchDocs();
-  };
-
   // Sitemap submission handler
   const handleSitemapSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSitemapStatus(null);
-    setSitemapResult(null);
     setSitemapLoading(true);
     try {
       const res = await fetch("/api/sitemap", {
@@ -184,18 +115,9 @@ const AdminPanel: React.FC = () => {
       });
       const data = await res.json();
       if (res.ok) {
-        setSitemapResult(data);
-        setSitemapStatus(
-          `Crawled ${data.crawled} pages, ${data.totalChunks} chunks.\n` +
-            (typeof data.batchDone === "number" &&
-            typeof data.totalRemaining === "number"
-              ? `Batch: ${data.batchDone} crawled, ${data.totalRemaining} remaining.`
-              : "")
-        );
-        setSitemapUrl(sitemapUrl); // Prefill the input with the just-crawled URL
+        setSitemapStatus(`Success: Crawled ${data.crawled} pages, ${data.totalChunks} total chunks`);
       } else {
-        setSitemapStatus(data.error || "Failed to crawl sitemap");
-        console.error("Sitemap crawl error:", data.error || data);
+        setSitemapStatus(`Error: ${data.error}`);
       }
     } catch (err) {
       setSitemapStatus("Failed to crawl sitemap");
@@ -205,70 +127,109 @@ const AdminPanel: React.FC = () => {
     }
   };
 
-  const fetchSitemaps = async (page = 1) => {
-    setSitemapsLoading(true);
-    setSitemapsError("");
-    try {
-      const res = await fetch(
-        `/api/sitemap?page=${page}&pageSize=${SITEMAPS_PAGE_SIZE}`
-      );
-      const data = await res.json();
-      if (res.ok) {
-        setSitemaps(data.sitemaps);
-        setSitemapsTotal(data.total);
-        setSitemapsPage(data.page);
-      } else {
-        setSitemapsError(data.error || "Failed to fetch sitemaps");
-      }
-    } catch {
-      setSitemapsError("Failed to fetch sitemaps");
-    } finally {
-      setSitemapsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (auth) fetchSitemaps();
-  }, [auth]);
-
-  const handleDeleteSitemap = async (sitemapUrl: string) => {
-    if (!window.confirm(`Delete all pages for sitemap?\n${sitemapUrl}`)) return;
-    setSitemapsLoading(true);
-    try {
-      const res = await fetch("/api/sitemap", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sitemapUrl }),
-      });
-      await res.json();
-      fetchSitemaps(sitemapsPage);
-    } catch {
-      setSitemapsError("Failed to delete sitemap");
-      setSitemapsLoading(false);
-    }
-  };
-
-  const handleDeletePage = async (url: string) => {
-    if (!window.confirm(`Delete crawled page?\n${url}`)) return;
-    setSitemapsLoading(true);
-    try {
-      const res = await fetch("/api/sitemap", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
-      });
-      await res.json();
-      fetchSitemaps(sitemapsPage);
-    } catch {
-      setSitemapsError("Failed to delete page");
-      setSitemapsLoading(false);
-    }
-  };
-
   // Logout handler
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
     setAuth(null);
+  };
+
+  // API Key management functions
+  const fetchApiKey = async () => {
+    try {
+      const res = await fetch("/api/auth/api-key");
+      const data = await res.json();
+      if (res.ok) {
+        setApiKey(data.apiKey || "");
+        setApiKeyCreated(data.apiKeyCreated || "");
+      }
+    } catch (error) {
+      console.error("Failed to fetch API key:", error);
+    }
+  };
+
+  const generateApiKey = async () => {
+    setApiKeyLoading(true);
+    setApiKeyError("");
+    try {
+      const res = await fetch("/api/auth/api-key", { method: "POST" });
+      const data = await res.json();
+      if (res.ok) {
+        setApiKey(data.apiKey);
+        setApiKeyCreated(new Date().toISOString());
+        setShowApiKey(true);
+      } else {
+        setApiKeyError(data.error || "Failed to generate API key");
+      }
+    } catch {
+      setApiKeyError("Failed to generate API key");
+    } finally {
+      setApiKeyLoading(false);
+    }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    alert("Copied to clipboard!");
+  };
+
+  // Leads management functions
+  const fetchLeads = useCallback(async (page = 1, search = leadsSearch) => {
+    setLeadsLoading(true);
+    setLeadsError("");
+    try {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        pageSize: LEADS_PAGE_SIZE.toString(),
+        sortBy: leadsSortBy,
+        sortOrder: leadsSortOrder,
+        ...(search && { search })
+      });
+      
+      const res = await fetch(`/api/leads?${params}`);
+      const data = await res.json();
+      
+      if (res.ok) {
+        setLeads(data.leads || []);
+        setLeadsPage(data.page || 1);
+        setLeadsTotal(data.total || 0);
+        setLeadsTotalPages(data.totalPages || 0);
+      } else {
+        setLeadsError(data.error || "Failed to fetch leads");
+      }
+    } catch (error) {
+      setLeadsError("Failed to fetch leads");
+      console.error("Error fetching leads:", error);
+    } finally {
+      setLeadsLoading(false);
+    }
+  }, [leadsSearch, leadsSortBy, leadsSortOrder, LEADS_PAGE_SIZE]);
+
+  const deleteLead = async (email: string) => {
+    if (!window.confirm(`Delete all conversation data for ${email}?`)) return;
+    
+    try {
+      const res = await fetch("/api/leads", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email })
+      });
+      
+      if (res.ok) {
+        fetchLeads(leadsPage); // Refresh current page
+      } else {
+        const data = await res.json();
+        setLeadsError(data.error || "Failed to delete lead");
+      }
+    } catch (error) {
+      setLeadsError("Failed to delete lead");
+      console.error("Error deleting lead:", error);
+    }
+  };
+
+  const handleLeadsSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    setLeadsPage(1);
+    fetchLeads(1, leadsSearch);
   };
 
   useEffect(() => {
@@ -277,17 +238,21 @@ const AdminPanel: React.FC = () => {
       fetch("/api/sitemap?settings=1")
         .then((res) => res.json())
         .then((data) => {
-          if (data.settings && data.settings.lastSitemapUrl) {
-            setSitemapUrl(data.settings.lastSitemapUrl);
-          }
+          if (data.lastSitemapUrl) setSitemapUrl(data.lastSitemapUrl);
         });
       fetch("/api/sitemap?urls=1")
         .then((res) => res.json())
         .then((data) => {
           if (data.urls) setSitemapUrls(data.urls);
         });
+
+      // Fetch current API key
+      fetchApiKey();
+      
+      // Fetch leads
+      fetchLeads();
     }
-  }, [auth]);
+  }, [auth, fetchLeads]);
 
   if (authLoading)
     return (
@@ -314,60 +279,70 @@ const AdminPanel: React.FC = () => {
         }}
       >
         <h2 style={{ color: "#000000" }}>Admin Login / Register</h2>
+        {authError && (
+          <div style={{ color: "red", marginBottom: 16 }}>{authError}</div>
+        )}
         <form onSubmit={handleAuth} style={{ marginBottom: 16 }}>
-          <input
-            type="email"
-            placeholder="Email"
-            value={form.email}
-            onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-            required
-            style={{
-              marginRight: 8,
-              backgroundColor: "#ffffff",
-              color: "#000000",
-              border: "1px solid #ccc",
-              padding: "8px",
-            }}
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={form.password}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, password: e.target.value }))
-            }
-            required
-            style={{
-              marginRight: 8,
-              backgroundColor: "#ffffff",
-              color: "#000000",
-              border: "1px solid #ccc",
-              padding: "8px",
-            }}
-          />
-          <select
-            value={form.action}
-            onChange={(e) => setForm((f) => ({ ...f, action: e.target.value }))}
-            style={{
-              marginRight: 8,
-              backgroundColor: "#ffffff",
-              color: "#000000",
-              border: "1px solid #ccc",
-              padding: "8px",
-            }}
-          >
-            <option value="login">Login</option>
-            <option value="register">Register</option>
-          </select>
+          <div style={{ marginBottom: 8 }}>
+            <label htmlFor="email">Email:</label>
+            <input
+              type="email"
+              id="email"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              required
+              style={{
+                marginLeft: 8,
+                padding: 4,
+                color: "#000000",
+                backgroundColor: "#ffffff",
+              }}
+            />
+          </div>
+          <div style={{ marginBottom: 8 }}>
+            <label htmlFor="password">Password:</label>
+            <input
+              type="password"
+              id="password"
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+              required
+              style={{
+                marginLeft: 8,
+                padding: 4,
+                color: "#000000",
+                backgroundColor: "#ffffff",
+              }}
+            />
+          </div>
+          <div style={{ marginBottom: 8 }}>
+            <label>
+              <input
+                type="radio"
+                value="login"
+                checked={form.action === "login"}
+                onChange={(e) => setForm({ ...form, action: e.target.value })}
+              />
+              Login
+            </label>
+            <label style={{ marginLeft: 16 }}>
+              <input
+                type="radio"
+                value="register"
+                checked={form.action === "register"}
+                onChange={(e) => setForm({ ...form, action: e.target.value })}
+              />
+              Register
+            </label>
+          </div>
           <button type="submit" disabled={authLoading}>
             {authLoading
-              ? "Please wait..."
+              ? "Processing..."
               : form.action === "login"
               ? "Login"
               : "Register"}
           </button>
         </form>
-        {authError && <div style={{ color: "red" }}>{authError}</div>}
       </div>
     );
   }
@@ -388,6 +363,7 @@ const AdminPanel: React.FC = () => {
           Logout
         </button>
       </div>
+      
       {/* Sitemap Submission Section */}
       <div
         style={{
@@ -420,46 +396,179 @@ const AdminPanel: React.FC = () => {
               color:
                 sitemapStatus.toLowerCase().includes("fail") ||
                 sitemapStatus.toLowerCase().includes("error")
-                  ? "#b00020"
-                  : undefined,
-              background:
-                sitemapStatus.toLowerCase().includes("fail") ||
-                sitemapStatus.toLowerCase().includes("error")
-                  ? "#ffeaea"
-                  : undefined,
-              border:
-                sitemapStatus.toLowerCase().includes("fail") ||
-                sitemapStatus.toLowerCase().includes("error")
-                  ? "1px solid #b00020"
-                  : undefined,
-              padding:
-                sitemapStatus.toLowerCase().includes("fail") ||
-                sitemapStatus.toLowerCase().includes("error")
-                  ? "8px 12px"
-                  : undefined,
-              borderRadius: 4,
+                  ? "red"
+                  : "green",
             }}
           >
             {sitemapStatus}
           </div>
         )}
-        {sitemapResult &&
-          sitemapResult.pages &&
-          sitemapResult.pages.length > 0 && (
-            <div style={{ marginTop: 8 }}>
-              <b>Crawled URLs:</b>
-              <ul style={{ maxHeight: 120, overflowY: "auto", fontSize: 13 }}>
-                {sitemapResult.pages.map((url) => (
-                  <li key={url} style={{ wordBreak: "break-all" }}>
-                    {url}
-                  </li>
-                ))}
-              </ul>
+      </div>
+
+      {/* API Key Management Section */}
+      <div
+        style={{
+          border: "1px solid #ccc",
+          padding: 16,
+          borderRadius: 8,
+          marginBottom: 24,
+          backgroundColor: "#f9f9f9",
+        }}
+      >
+        <h3>Website Integration</h3>
+        <p style={{ color: "#666", fontSize: 14, marginBottom: 16 }}>
+          Use these credentials to embed the chatbot on your website.
+        </p>
+
+        <div style={{ marginBottom: 16 }}>
+          <h4>API Key</h4>
+          {apiKey ? (
+            <div>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  marginBottom: 8,
+                }}
+              >
+                <input
+                  type={showApiKey ? "text" : "password"}
+                  value={apiKey}
+                  readOnly
+                  style={{
+                    fontFamily: "monospace",
+                    fontSize: 13,
+                    padding: 8,
+                    border: "1px solid #ddd",
+                    borderRadius: 4,
+                    width: 400,
+                    backgroundColor: "#f5f5f5",
+                  }}
+                />
+                <button onClick={() => setShowApiKey(!showApiKey)}>
+                  {showApiKey ? "Hide" : "Show"}
+                </button>
+                <button onClick={() => copyToClipboard(apiKey)}>Copy</button>
+              </div>
+              {apiKeyCreated && (
+                <div style={{ fontSize: 12, color: "#666" }}>
+                  Created: {new Date(apiKeyCreated).toLocaleString()}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div>
+              <p style={{ color: "#666", fontSize: 14 }}>
+                No API key generated yet.
+              </p>
             </div>
           )}
+
+          <button
+            onClick={generateApiKey}
+            disabled={apiKeyLoading}
+            style={{
+              marginTop: 8,
+              backgroundColor: apiKey ? "#dc3545" : "#28a745",
+              color: "white",
+              border: "none",
+              padding: "8px 16px",
+              borderRadius: 4,
+              cursor: "pointer",
+            }}
+          >
+            {apiKeyLoading
+              ? "Generating..."
+              : apiKey
+              ? "Regenerate API Key"
+              : "Generate API Key"}
+          </button>
+
+          {apiKeyError && (
+            <div style={{ color: "red", fontSize: 14, marginTop: 8 }}>
+              {apiKeyError}
+            </div>
+          )}
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <h4>Widget Script</h4>
+          <p style={{ color: "#666", fontSize: 14, marginBottom: 8 }}>
+            Add this script tag to your website to embed the chatbot:
+          </p>
+          {apiKey ? (
+            <div>
+              <textarea
+                readOnly
+                value={`<script src="${window.location.origin}/api/widget" data-api-key="${apiKey}"></script>`}
+                style={{
+                  width: "100%",
+                  height: 60,
+                  fontFamily: "monospace",
+                  fontSize: 13,
+                  padding: 8,
+                  border: "1px solid #ddd",
+                  borderRadius: 4,
+                  backgroundColor: "#f5f5f5",
+                  resize: "none",
+                }}
+              />
+              <button
+                onClick={() =>
+                  copyToClipboard(
+                    `<script src="${window.location.origin}/api/widget" data-api-key="${apiKey}"></script>`
+                  )
+                }
+                style={{ marginTop: 8 }}
+              >
+                Copy Script
+              </button>
+            </div>
+          ) : (
+            <div style={{ color: "#666", fontSize: 14 }}>
+              Generate an API key first to get the widget script.
+            </div>
+          )}
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <h4>How it works</h4>
+          <ul style={{ color: "#666", fontSize: 14, paddingLeft: 20 }}>
+            <li>
+              The widget automatically detects which page the user is viewing
+            </li>
+            <li>
+              It provides contextual responses based on your crawled sitemap
+              data
+            </li>
+            <li>All conversations are linked to your admin account</li>
+            <li>Users can provide their email for lead generation</li>
+            <li>
+              The widget includes automatic followup messages after 30 seconds
+              of inactivity
+            </li>
+          </ul>
+        </div>
+
+        <div
+          style={{
+            backgroundColor: "#fff3cd",
+            border: "1px solid #ffeaa7",
+            padding: 12,
+            borderRadius: 4,
+          }}
+        >
+          <strong>⚠️ Security Note:</strong>
+          <p style={{ margin: 0, fontSize: 14, color: "#856404" }}>
+            Keep your API key secure and never expose it in client-side code.
+            The widget script handles authentication automatically.
+          </p>
+        </div>
       </div>
-      {/* Sitemap Management Section */}
-      {/* <div
+      
+      {/* Leads Management Section */}
+      <div
         style={{
           border: "1px solid #ccc",
           padding: 16,
@@ -467,101 +576,290 @@ const AdminPanel: React.FC = () => {
           marginBottom: 24,
         }}
       >
-        <h3>Crawled Sitemaps</h3>
-        {sitemapsLoading && <div>Loading...</div>}
-        {sitemapsError && <div style={{ color: "red" }}>{sitemapsError}</div>}
-        {sitemaps.length === 0 && !sitemapsLoading && (
-          <div>No sitemaps crawled yet.</div>
-        )}
-        {sitemaps.map((s) => (
-          <div
-            key={s.sitemapUrl}
-            style={{
-              marginBottom: 12,
-              border: "1px solid #eee",
-              borderRadius: 6,
-              padding: 8,
+        <h3>Lead Management</h3>
+        
+        {/* Search and Controls */}
+        <div style={{ marginBottom: 16, display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+          <form onSubmit={handleLeadsSearch} style={{ display: "flex", gap: 8 }}>
+            <input
+              type="text"
+              placeholder="Search by email or message..."
+              value={leadsSearch}
+              onChange={(e) => setLeadsSearch(e.target.value)}
+              style={{
+                padding: 8,
+                border: "1px solid #ddd",
+                borderRadius: 4,
+                width: 250
+              }}
+            />
+            <button type="submit" style={{ padding: "8px 16px" }}>
+              Search
+            </button>
+          </form>
+          
+          <select
+            value={leadsSortBy}
+            onChange={(e) => {
+              setLeadsSortBy(e.target.value);
+              fetchLeads(1, leadsSearch);
             }}
+            style={{ padding: 8, border: "1px solid #ddd", borderRadius: 4 }}
           >
-            <div style={{ display: "flex", alignItems: "center" }}>
-              <span style={{ fontWeight: 500, flex: 1 }}>{s.sitemapUrl}</span>
-              <span style={{ fontSize: 12, color: "#666", marginLeft: 8 }}>
-                {s.count} pages, crawled{" "}
-                {new Date(s.firstCrawled).toLocaleString()}
-              </span>
-              <button
-                style={{ marginLeft: 12 }}
-                onClick={() =>
-                  setExpandedSitemap(
-                    expandedSitemap === s.sitemapUrl ? null : s.sitemapUrl
-                  )
-                }
-              >
-                {expandedSitemap === s.sitemapUrl ? "Hide" : "Show"} Pages
-              </button>
-              <button
-                style={{ marginLeft: 8, color: "red" }}
-                onClick={() => handleDeleteSitemap(s.sitemapUrl)}
-              >
-                Delete Sitemap
-              </button>
-            </div>
-            {expandedSitemap === s.sitemapUrl && (
-              <ul
-                style={{
-                  marginTop: 8,
-                  marginBottom: 0,
-                  fontSize: 13,
-                  maxHeight: 120,
-                  overflowY: "auto",
-                }}
-              >
-                {s.urls.map((url: string) => (
-                  <li
-                    key={url}
-                    style={{ wordBreak: "break-all", marginBottom: 4 }}
-                  >
-                    {url}
-                    <button
-                      style={{ marginLeft: 8, color: "red" }}
-                      onClick={() => handleDeletePage(url)}
-                    >
-                      Delete
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
+            <option value="lastSeen">Sort by Last Seen</option>
+            <option value="firstSeen">Sort by First Seen</option>
+            <option value="email">Sort by Email</option>
+            <option value="messageCount">Sort by Message Count</option>
+          </select>
+          
+          <select
+            value={leadsSortOrder}
+            onChange={(e) => {
+              setLeadsSortOrder(e.target.value);
+              fetchLeads(1, leadsSearch);
+            }}
+            style={{ padding: 8, border: "1px solid #ddd", borderRadius: 4 }}
+          >
+            <option value="desc">Descending</option>
+            <option value="asc">Ascending</option>
+          </select>
+          
+          <button
+            onClick={() => fetchLeads(leadsPage, leadsSearch)}
+            disabled={leadsLoading}
+            style={{ padding: "8px 16px" }}
+          >
+            {leadsLoading ? "Loading..." : "Refresh"}
+          </button>
+        </div>
+
+        {/* Stats */}
+        <div style={{ marginBottom: 16, padding: 12, backgroundColor: "#f8f9fa", borderRadius: 4 }}>
+          <strong>Total Leads: {leadsTotal}</strong>
+          {leadsTotal > 0 && (
+            <span style={{ marginLeft: 16, color: "#666" }}>
+              Showing {((leadsPage - 1) * LEADS_PAGE_SIZE) + 1} - {Math.min(leadsPage * LEADS_PAGE_SIZE, leadsTotal)} of {leadsTotal}
+            </span>
+          )}
+        </div>
+
+        {/* Error Display */}
+        {leadsError && (
+          <div style={{ color: "red", marginBottom: 16, padding: 8, backgroundColor: "#ffeaea", borderRadius: 4 }}>
+            {leadsError}
           </div>
-        ))} */}
-      {/* Pagination Controls */}
-      {/* {sitemapsTotal > SITEMAPS_PAGE_SIZE && (
-          <div style={{ marginTop: 8 }}>
+        )}
+
+        {/* Leads Table */}
+        {leadsLoading ? (
+          <div style={{ textAlign: "center", padding: 20 }}>Loading leads...</div>
+        ) : leads.length === 0 ? (
+          <div style={{ textAlign: "center", padding: 20, color: "#666" }}>
+            No leads found. Start promoting your chatbot to collect leads!
+          </div>
+        ) : (
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+              <thead>
+                <tr style={{ backgroundColor: "#f8f9fa" }}>
+                  <th style={{ padding: 12, textAlign: "left", borderBottom: "2px solid #dee2e6" }}>Email</th>
+                  <th style={{ padding: 12, textAlign: "left", borderBottom: "2px solid #dee2e6" }}>First Contact</th>
+                  <th style={{ padding: 12, textAlign: "left", borderBottom: "2px solid #dee2e6" }}>Last Activity</th>
+                  <th style={{ padding: 12, textAlign: "center", borderBottom: "2px solid #dee2e6" }}>Messages</th>
+                  <th style={{ padding: 12, textAlign: "left", borderBottom: "2px solid #dee2e6" }}>Latest Message</th>
+                  <th style={{ padding: 12, textAlign: "center", borderBottom: "2px solid #dee2e6" }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {leads.map((lead, index) => (
+                  <tr key={lead.email} style={{ backgroundColor: index % 2 === 0 ? "#fff" : "#f8f9fa" }}>
+                    <td style={{ padding: 12, borderBottom: "1px solid #dee2e6" }}>
+                      <strong>{lead.email}</strong>
+                    </td>
+                    <td style={{ padding: 12, borderBottom: "1px solid #dee2e6", color: "#666" }}>
+                      {new Date(lead.firstSeen).toLocaleString()}
+                    </td>
+                    <td style={{ padding: 12, borderBottom: "1px solid #dee2e6", color: "#666" }}>
+                      {new Date(lead.lastSeen).toLocaleString()}
+                    </td>
+                    <td style={{ padding: 12, borderBottom: "1px solid #dee2e6", textAlign: "center" }}>
+                      <span style={{ 
+                        backgroundColor: "#0070f3", 
+                        color: "white", 
+                        padding: "2px 8px", 
+                        borderRadius: 12, 
+                        fontSize: 12 
+                      }}>
+                        {lead.messageCount}
+                      </span>
+                    </td>
+                    <td style={{ padding: 12, borderBottom: "1px solid #dee2e6", maxWidth: 200 }}>
+                      <div style={{ 
+                        overflow: "hidden", 
+                        textOverflow: "ellipsis", 
+                        whiteSpace: "nowrap",
+                        color: lead.latestRole === "user" ? "#333" : "#666"
+                      }}>
+                        <span style={{ fontSize: 12, fontWeight: "bold" }}>
+                          {lead.latestRole === "user" ? "👤" : "🤖"}
+                        </span>
+                        {" "}
+                        {typeof lead.latestContent === "string" 
+                          ? lead.latestContent 
+                          : (lead.latestContent && typeof lead.latestContent === "object" && "mainText" in lead.latestContent)
+                            ? lead.latestContent.mainText 
+                            : "No content"
+                        }
+                      </div>
+                    </td>
+                    <td style={{ padding: 12, borderBottom: "1px solid #dee2e6", textAlign: "center" }}>
+                      <button
+                        onClick={() => copyToClipboard(lead.email)}
+                        style={{
+                          backgroundColor: "#28a745",
+                          color: "white",
+                          border: "none",
+                          padding: "4px 8px",
+                          borderRadius: 4,
+                          fontSize: 12,
+                          marginRight: 4,
+                          cursor: "pointer"
+                        }}
+                        title="Copy email"
+                      >
+                        Copy
+                      </button>
+                      <button
+                        onClick={() => deleteLead(lead.email)}
+                        style={{
+                          backgroundColor: "#dc3545",
+                          color: "white",
+                          border: "none",
+                          padding: "4px 8px",
+                          borderRadius: 4,
+                          fontSize: 12,
+                          cursor: "pointer"
+                        }}
+                        title="Delete lead"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Pagination */}
+        {leadsTotalPages > 1 && (
+          <div style={{ marginTop: 16, display: "flex", justifyContent: "center", alignItems: "center", gap: 8 }}>
             <button
-              onClick={() => fetchSitemaps(sitemapsPage - 1)}
-              disabled={sitemapsPage === 1 || sitemapsLoading}
-              style={{ marginRight: 8 }}
+              onClick={() => {
+                setLeadsPage(1);
+                fetchLeads(1, leadsSearch);
+              }}
+              disabled={leadsPage === 1}
+              style={{ padding: "8px 12px" }}
+            >
+              First
+            </button>
+            <button
+              onClick={() => {
+                const newPage = leadsPage - 1;
+                setLeadsPage(newPage);
+                fetchLeads(newPage, leadsSearch);
+              }}
+              disabled={leadsPage === 1}
+              style={{ padding: "8px 12px" }}
             >
               Previous
             </button>
-            <span style={{ fontSize: 13 }}>
-              Page {sitemapsPage} of{" "}
-              {Math.ceil(sitemapsTotal / SITEMAPS_PAGE_SIZE)}
+            <span style={{ padding: "8px 12px", backgroundColor: "#f8f9fa", borderRadius: 4 }}>
+              Page {leadsPage} of {leadsTotalPages}
             </span>
             <button
-              onClick={() => fetchSitemaps(sitemapsPage + 1)}
-              disabled={
-                sitemapsPage ===
-                  Math.ceil(sitemapsTotal / SITEMAPS_PAGE_SIZE) ||
-                sitemapsLoading
-              }
-              style={{ marginLeft: 8 }}
+              onClick={() => {
+                const newPage = leadsPage + 1;
+                setLeadsPage(newPage);
+                fetchLeads(newPage, leadsSearch);
+              }}
+              disabled={leadsPage === leadsTotalPages}
+              style={{ padding: "8px 12px" }}
             >
               Next
             </button>
+            <button
+              onClick={() => {
+                setLeadsPage(leadsTotalPages);
+                fetchLeads(leadsTotalPages, leadsSearch);
+              }}
+              disabled={leadsPage === leadsTotalPages}
+              style={{ padding: "8px 12px" }}
+            >
+              Last
+            </button>
           </div>
         )}
-      </div> */}
+
+        {/* Export Options */}
+        {leads.length > 0 && (
+          <div style={{ marginTop: 16, padding: 12, backgroundColor: "#f8f9fa", borderRadius: 4 }}>
+            <h4 style={{ margin: "0 0 8px 0" }}>Export Options</h4>
+            <button
+              onClick={() => {
+                const csvContent = [
+                  ["Email", "First Contact", "Last Activity", "Message Count", "Latest Message"].join(","),
+                  ...leads.map(lead => [
+                    `"${lead.email}"`,
+                    `"${new Date(lead.firstSeen).toLocaleString()}"`,
+                    `"${new Date(lead.lastSeen).toLocaleString()}"`,
+                    lead.messageCount,
+                    `"${(typeof lead.latestContent === "string" ? lead.latestContent : (lead.latestContent && typeof lead.latestContent === "object" && "mainText" in lead.latestContent) ? lead.latestContent.mainText : "").replace(/"/g, '""')}"`
+                  ].join(","))
+                ].join("\n");
+                
+                const blob = new Blob([csvContent], { type: "text/csv" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `leads-${new Date().toISOString().split('T')[0]}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+              style={{
+                backgroundColor: "#17a2b8",
+                color: "white",
+                border: "none",
+                padding: "8px 16px",
+                borderRadius: 4,
+                cursor: "pointer",
+                marginRight: 8
+              }}
+            >
+              Export as CSV
+            </button>
+            <button
+              onClick={() => {
+                const emailList = leads.map(lead => lead.email).join(", ");
+                copyToClipboard(emailList);
+              }}
+              style={{
+                backgroundColor: "#6f42c1",
+                color: "white",
+                border: "none",
+                padding: "8px 16px",
+                borderRadius: 4,
+                cursor: "pointer"
+              }}
+            >
+              Copy All Emails
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* Admin-only: Sitemap URL dropdown for testing */}
       {auth && sitemapUrls.length > 0 && (
         <div style={{ marginBottom: 16 }}>
@@ -583,28 +881,8 @@ const AdminPanel: React.FC = () => {
           </select>
         </div>
       )}
-      <Chatbot pageUrl={selectedPageUrl || undefined} adminId={auth.adminId} />
-      <DocumentUploader onUploadDone={handleUploadDone} />
-      {/* <h4>Uploaded Documents</h4>
-      {loading && <div>Loading...</div>}
-      {error && <div style={{ color: "red" }}>{error}</div>}
-      <ul>
-        {docs.map((doc) => (
-          <li key={doc.filename} style={{ marginBottom: 8 }}>
-            <b>{doc.filename}</b> ({doc.count} chunks)
-            <button
-              style={{ marginLeft: 12, color: "red" }}
-              onClick={() => handleDelete(doc.filename)}
-              disabled={loading}
-            >
-              Delete
-            </button>
-          </li>
-        ))}
-        {docs.length === 0 && !loading && (
-          <li>No documents uploaded or crawled.</li>
-        )}
-      </ul> */}
+      <Chatbot pageUrl={selectedPageUrl || undefined} adminId={auth?.adminId} />
+      <DocumentUploader onUploadDone={() => {}} />
     </div>
   );
 };
