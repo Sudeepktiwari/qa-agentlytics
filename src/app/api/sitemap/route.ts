@@ -185,7 +185,9 @@ export async function POST(req: NextRequest) {
     } else {
       // Check if the vectors actually exist in Pinecone
       try {
-        const vectorIdList = vectorIds.map((v) => (v as { vectorId: string }).vectorId);
+        const vectorIdList = vectorIds.map(
+          (v) => (v as { vectorId: string }).vectorId
+        );
         const result = await index.fetch(vectorIdList);
         const foundVectors = Object.keys(result.records || {}).length;
         console.log(
