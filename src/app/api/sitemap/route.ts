@@ -34,6 +34,99 @@ async function parseSitemap(sitemapUrl: string): Promise<string[]> {
   return urls;
 }
 
+async function extractLinksFromPage(pageUrl: string): Promise<string[]> {
+  const res = await fetch(pageUrl);
+  if (!res.ok) throw new Error(`Failed to fetch page: ${pageUrl}`);
+  const html = await res.text();
+  const $ = cheerio.load(html);
+
+  const links = new Set<string>();
+
+  // Add the original page itself
+  links.add(pageUrl);
+
+  // Extract all links from the page
+  $("a[href]").each((_, element) => {
+    const href = $(element).attr("href");
+    if (href) {
+      try {
+        // Convert relative URLs to absolute
+        const absoluteUrl = new URL(href, pageUrl).href;
+
+        // Only include HTTP/HTTPS URLs from the same domain
+        const pageUrlObj = new URL(pageUrl);
+        const linkUrlObj = new URL(absoluteUrl);
+
+        if (
+          linkUrlObj.protocol.startsWith("http") &&
+          linkUrlObj.hostname === pageUrlObj.hostname
+        ) {
+          // Remove fragments and common file extensions we can't crawl
+          const cleanUrl = absoluteUrl.split("#")[0];
+          const extension = cleanUrl.split(".").pop()?.toLowerCase();
+          const skipExtensions = [
+            "pdf",
+            "doc",
+            "docx",
+            "xls",
+            "xlsx",
+            "ppt",
+            "pptx",
+            "zip",
+            "rar",
+            "exe",
+            "dmg",
+            "jpg",
+            "jpeg",
+            "png",
+            "gif",
+            "svg",
+            "mp4",
+            "mp3",
+            "avi",
+            "mov",
+          ];
+
+          if (!extension || !skipExtensions.includes(extension)) {
+            links.add(cleanUrl);
+          }
+        }
+      } catch {
+        // Skip invalid URLs
+        console.log(`[LinkExtract] Skipping invalid URL: ${href}`);
+      }
+    }
+  });
+
+  return Array.from(links);
+}
+
+async function discoverUrls(
+  inputUrl: string
+): Promise<{ urls: string[]; type: "sitemap" | "webpage" }> {
+  // First, try to parse as sitemap
+  try {
+    const urls = await parseSitemap(inputUrl);
+    if (urls.length > 0) {
+      console.log(`[Discovery] Found ${urls.length} URLs in sitemap`);
+      return { urls, type: "sitemap" };
+    }
+  } catch (error) {
+    console.log(`[Discovery] Not a valid sitemap, trying as webpage: ${error}`);
+  }
+
+  // If sitemap parsing fails, extract links from the page
+  try {
+    const urls = await extractLinksFromPage(inputUrl);
+    console.log(
+      `[Discovery] Found ${urls.length} URLs by crawling webpage links`
+    );
+    return { urls, type: "webpage" };
+  } catch (error) {
+    throw new Error(`Failed to discover URLs from ${inputUrl}: ${error}`);
+  }
+}
+
 async function extractTextFromUrl(
   url: string,
   depth: number = 0
@@ -116,14 +209,19 @@ export async function POST(req: NextRequest) {
 
   const { sitemapUrl } = await req.json();
   if (!sitemapUrl)
-    return NextResponse.json({ error: "Missing sitemapUrl" }, { status: 400 });
+    return NextResponse.json({ error: "Missing URL" }, { status: 400 });
 
   let urls: string[] = [];
+  let discoveryType: "sitemap" | "webpage" = "sitemap";
   try {
-    urls = await parseSitemap(sitemapUrl);
-  } catch {
+    const result = await discoverUrls(sitemapUrl);
+    urls = result.urls;
+    discoveryType = result.type;
+    console.log(`[Crawl] Discovered ${urls.length} URLs via ${discoveryType}`);
+  } catch (error) {
+    console.error(`[Crawl] Discovery failed:`, error);
     return NextResponse.json(
-      { error: "Failed to parse sitemap" },
+      { error: `Failed to discover URLs from the provided link: ${error}` },
       { status: 400 }
     );
   }
