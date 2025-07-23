@@ -385,6 +385,53 @@ Content to reference:\n${summaryContext}`;
           .filter((msg) => (msg as unknown as ChatMessage).role === "assistant")
           .map((msg) => (msg as unknown as ChatMessage).content);
         const lastFewQuestions = prevQuestions.slice(-3);
+
+        // Helper functions needed for followup processing
+        function getText(val: MainTextLike): string {
+          if (typeof val === "string") return val;
+          if (val && typeof val === "object" && "mainText" in val)
+            return val.mainText || "";
+          return "";
+        }
+
+        function isTooSimilar(
+          newQ: MainTextLike,
+          prevQs: MainTextLike[]
+        ): boolean {
+          const newText = getText(newQ);
+          if (!newText || newText.length < 10) return true; // Skip very short responses
+          const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+          const normalizedNew = norm(newText);
+
+          return prevQs.some((q: MainTextLike) => {
+            const prevText = getText(q);
+            if (!prevText) return false;
+            const normalizedPrev = norm(prevText);
+
+            // Only consider it similar if there's significant overlap (>70% of the shorter text)
+            const overlapThreshold = 0.7;
+            const minLength = Math.min(
+              normalizedNew.length,
+              normalizedPrev.length
+            );
+
+            if (
+              normalizedNew.includes(normalizedPrev) &&
+              normalizedPrev.length > minLength * overlapThreshold
+            ) {
+              return true;
+            }
+            if (
+              normalizedPrev.includes(normalizedNew) &&
+              normalizedNew.length > minLength * overlapThreshold
+            ) {
+              return true;
+            }
+
+            return false;
+          });
+        }
+
         // Detect intent from last user message or pageUrl
         const detectedIntent = detectIntent({ question, pageUrl });
         // Use followupCount from request body to determine follow-up stage
@@ -502,53 +549,58 @@ ${previousQnA}
           followupUserPrompt = `Offer to email the user a summary of their options, summarizing their last few actions or options in a friendly way. Prefix the nudge with '💡 Assistant Tip:'. Only output the JSON format as instructed.`;
         } else {
           // No more follow-ups after 4
+          console.log(
+            `[Followup] No more followups after count 4 for session ${sessionId}`
+          );
           return NextResponse.json({});
         }
-        // Helper to check if a question is too similar to previous ones
-        function getText(val: MainTextLike): string {
-          if (typeof val === "string") return val;
-          if (val && typeof val === "object" && "mainText" in val)
-            return val.mainText || "";
-          return "";
-        }
-        function isTooSimilar(
-          newQ: MainTextLike,
-          prevQs: MainTextLike[]
-        ): boolean {
-          const newText = getText(newQ);
-          if (!newText) return true;
-          const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
-          return prevQs.some((q: MainTextLike) => {
-            const prevText = getText(q);
-            return (
-              norm(newText).includes(norm(prevText)) ||
-              norm(prevText).includes(norm(newText))
-            );
-          });
-        }
+
+        // Start followup generation with error handling
+        console.log(
+          `[Followup] Starting followup generation for session ${sessionId}, count: ${followupCount}`
+        );
         let followupMsg = "";
         let parsed = null;
-        for (let attempt = 0; attempt < 2; attempt++) {
-          const followupResp = await openai.chat.completions.create({
-            model: "gpt-4o-mini",
-            messages: [
-              { role: "system", content: followupSystemPrompt },
-              { role: "user", content: followupUserPrompt },
-            ],
-          });
-          followupMsg = followupResp.choices[0].message.content || "";
-          try {
-            parsed = JSON.parse(followupMsg || "");
-          } catch {
-            parsed = { mainText: followupMsg, buttons: [], emailPrompt: "" };
+
+        try {
+          for (let attempt = 0; attempt < 2; attempt++) {
+            console.log(
+              `[Followup] Attempt ${attempt + 1}/2 for session ${sessionId}`
+            );
+            const followupResp = await openai.chat.completions.create({
+              model: "gpt-4o-mini",
+              messages: [
+                { role: "system", content: followupSystemPrompt },
+                { role: "user", content: followupUserPrompt },
+              ],
+            });
+            followupMsg = followupResp.choices[0].message.content || "";
+            try {
+              parsed = JSON.parse(followupMsg || "");
+            } catch {
+              parsed = { mainText: followupMsg, buttons: [], emailPrompt: "" };
+            }
+            if (!isTooSimilar(parsed.mainText, lastFewQuestions)) break;
           }
-          if (!isTooSimilar(parsed.mainText, lastFewQuestions)) break;
-        }
-        // If still too similar, skip sending a new follow-up
-        if (isTooSimilar(parsed.mainText, lastFewQuestions)) {
+          // If still too similar, skip sending a new follow-up
+          if (isTooSimilar(parsed.mainText, lastFewQuestions)) {
+            console.log(
+              `[Followup] Skipping followup - too similar to previous questions for session ${sessionId}`
+            );
+            return NextResponse.json({});
+          }
+
+          console.log(
+            `[Followup] Successfully generated followup for session ${sessionId}`
+          );
+          return NextResponse.json(parsed);
+        } catch (error) {
+          console.error(
+            `[Followup] Error generating followup for session ${sessionId}:`,
+            error
+          );
           return NextResponse.json({});
         }
-        return NextResponse.json(parsed);
       }
     }
     // Fallback if no context
@@ -561,10 +613,58 @@ With features like automated scheduling, client management, payment processing, 
 What type of business are you looking to streamline, or what scheduling challenges are you hoping to solve?`;
       return NextResponse.json({ answer: proactiveMsg });
     } else if (followup) {
+      console.log(
+        `[Followup] Simple fallback followup for session ${sessionId}`
+      );
       return NextResponse.json({
-        answer:
-          "Is there anything specific you'd like to know about our offerings?",
+        mainText:
+          "Is there anything else you'd like to know about Appointy's features?",
+        buttons: ["Learn More Features", "Get Demo", "Contact Support"],
+        emailPrompt: "Want me to send you more details? Share your email!",
       });
+    }
+  }
+
+  // Handle followup without pageUrl (generic followup logic)
+  if (followup && !pageUrl) {
+    console.log(
+      `[Followup] Processing followup without pageUrl for session ${sessionId}`
+    );
+
+    try {
+      const followupCount =
+        typeof body.followupCount === "number" ? body.followupCount : 0;
+
+      if (followupCount < 3) {
+        const genericFollowups = [
+          "Is there anything else you'd like to know about Appointy's features?",
+          "Would you like to explore how Appointy could help with your specific needs?",
+          "Ready to see how Appointy can streamline your business? Let me know what interests you most!",
+        ];
+
+        const message = genericFollowups[followupCount] || genericFollowups[0];
+        console.log(
+          `[Followup] Sending generic followup ${followupCount} for session ${sessionId}`
+        );
+
+        return NextResponse.json({
+          mainText: message,
+          buttons: ["Learn More Features", "Get Demo", "Contact Support"],
+          emailPrompt:
+            "Want me to send you more details about Appointy? Share your email!",
+        });
+      } else {
+        console.log(
+          `[Followup] No more generic followups for session ${sessionId}`
+        );
+        return NextResponse.json({});
+      }
+    } catch (error) {
+      console.error(
+        `[Followup] Error in generic followup for session ${sessionId}:`,
+        error
+      );
+      return NextResponse.json({});
     }
   }
 

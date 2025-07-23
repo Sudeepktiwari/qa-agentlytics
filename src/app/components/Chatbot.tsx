@@ -66,6 +66,9 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
     const effectivePageUrl = isTestEnv /* && selectedLink */
       ? /* selectedLink */ "/"
       : pageUrl || getPageUrl();
+    console.log(
+      `[Chatbot] URL changed to: ${effectivePageUrl}, resetting followup state`
+    );
     fetch(
       `/api/chat?sessionId=${sessionId}&pageUrl=${encodeURIComponent(
         effectivePageUrl
@@ -114,6 +117,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
             // Start follow-up timer
             if (followupTimer.current) clearTimeout(followupTimer.current);
             setFollowupSent(false);
+            setFollowupCount(0); // Reset followup count for new URL
             console.log("[Chatbot] Setting follow-up timer for 10 seconds");
             followupTimer.current = setTimeout(() => {
               // Only send follow-up if user hasn't responded
