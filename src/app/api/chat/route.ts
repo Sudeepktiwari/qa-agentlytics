@@ -555,6 +555,27 @@ ${previousQnA}
           return NextResponse.json({});
         }
 
+        // Check if user has been recently active based on recent message timestamps
+        const recentMessages = await chats
+          .find({ sessionId })
+          .sort({ createdAt: -1 })
+          .limit(5)
+          .toArray();
+
+        const now = new Date();
+        const recentUserActivity = recentMessages.some((msg) => {
+          const msgTime = new Date(msg.createdAt);
+          const timeDiff = now.getTime() - msgTime.getTime();
+          return msg.role === "user" && timeDiff < 25000; // 25 seconds
+        });
+
+        if (recentUserActivity) {
+          console.log(
+            `[Followup] Skipping followup - user was active within last 25 seconds for session ${sessionId}`
+          );
+          return NextResponse.json({});
+        }
+
         // Start followup generation with error handling
         console.log(
           `[Followup] Starting followup generation for session ${sessionId}, count: ${followupCount}`
@@ -745,6 +766,15 @@ What type of business are you looking to streamline, or what scheduling challeng
     });
   }
 
+  // Detect specific user intents for special handling
+  const lowerQuestion = (question || "").toLowerCase();
+  const isTalkToSupport =
+    lowerQuestion.includes("talk to support") ||
+    lowerQuestion.includes("contact support");
+  const isEmailRequest =
+    lowerQuestion.includes("email") &&
+    (lowerQuestion.includes("send") || lowerQuestion.includes("share"));
+
   // Chat completion with sales-pitch system prompt
   let systemPrompt = "";
   const userPrompt = question;
@@ -753,7 +783,44 @@ What type of business are you looking to streamline, or what scheduling challeng
       ? `You are a helpful sales bot for a company. Always respond to greetings with a friendly, enthusiastic sales pitch about the company, its products, and pricing, using ONLY the context below. If you don't have enough info, encourage the user to upload more documents or sitemaps.\n\nPage Context:\n${pageContext}\n\nGeneral Context:\n${context}\n\nIf you think a tip would be helpful for the user, you may include it anywhere in your response, starting with '💡 Assistant Tip:'. Only include a tip if it is genuinely useful or relevant to the user's context or question. Otherwise, respond normally.`
       : `You are a helpful sales bot for a company. Always answer in a persuasive, sales-oriented style, using ONLY the context below. If you don't have enough info, encourage the user to upload more documents or sitemaps.\n\nPage Context:\n${pageContext}\n\nGeneral Context:\n${context}\n\nIf you think a tip would be helpful for the user, you may include it anywhere in your response, starting with '💡 Assistant Tip:'. Only include a tip if it is genuinely useful or relevant to the user's context or question. Otherwise, respond normally.`;
   } else {
-    systemPrompt = `You are a helpful sales assistant for Appointy. The user has not provided an email yet.\n\nYou will receive page and general context. If you think a tip would be helpful for the user, you may include it anywhere in your response, starting with '💡 Assistant Tip:'. Only include a tip if it is genuinely useful or relevant to the user's context or question. Otherwise, respond normally. Always generate your response in the following JSON format:\n\n{\n  "mainText": "<A dynamic, page-aware summary or answer, using the context below.>",\n  "buttons": ["Send Setup Guide", "Share My Website Type", "Talk to Support"],\n  "emailPrompt": "Still here? I can send exact steps based on your platform. Want me to email it to you?"\n}\n\nContext:\nPage Context:\n${pageContext}\n\nGeneral Context:\n${context}`;
+    // Special handling for different types of requests
+    if (isTalkToSupport) {
+      systemPrompt = `You are a helpful support assistant for Appointy. The user wants to talk to support. Provide a helpful, specific support response based on the context and their needs. Always generate your response in the following JSON format:
+
+{
+  "mainText": "<A helpful, specific support response that addresses their likely needs based on the context. Be warm and professional. Provide specific next steps or information about how to get help.>",
+  "buttons": ["<Generate 2-3 relevant support-related actions like 'Schedule Support Call', 'Check Help Center', 'Report Technical Issue', etc. Make them specific to their context.>"],
+  "emailPrompt": ""
+}
+
+Context:
+Page Context:
+${pageContext}
+
+General Context:
+${context}
+
+IMPORTANT: Focus on being helpful and supportive. Don't ask for email unless it's specifically needed for support. Generate contextual support-related buttons.`;
+    } else if (isEmailRequest) {
+      systemPrompt = `You are a helpful sales assistant for Appointy. The user is asking about email or wanting something sent to their email. Always generate your response in the following JSON format:
+
+{
+  "mainText": "<Acknowledge their email request and explain what you can send them. Be specific about what information or resources you'll provide.>",
+  "buttons": [],
+  "emailPrompt": "Please enter your email address and I'll send you the information right away!"
+}
+
+Context:
+Page Context:
+${pageContext}
+
+General Context:
+${context}
+
+IMPORTANT: Don't provide other action buttons when user is requesting email. Focus on the email collection.`;
+    } else {
+      systemPrompt = `You are a helpful sales assistant for Appointy. The user has not provided an email yet.\n\nYou will receive page and general context. If you think a tip would be helpful for the user, you may include it anywhere in your response, starting with '💡 Assistant Tip:'. Only include a tip if it is genuinely useful or relevant to the user's context or question. Otherwise, respond normally. Always generate your response in the following JSON format:\n\n{\n  "mainText": "<A dynamic, page-aware summary or answer, using the context below.>",\n  "buttons": ["<Generate 2-4 contextually relevant action buttons based on the user's question and the content you provided. These should be specific to their query and help them take the next logical step. For example, if they ask about hosting, buttons could be 'Learn About Security', 'Compare Plans', 'Contact Hosting Team'. Make buttons actionable and relevant to the specific topic discussed.>"],\n  "emailPrompt": "<Create a contextual email prompt that relates to the specific topic discussed, offering to send more detailed information about that topic specifically.>"\n}\n\nContext:\nPage Context:\n${pageContext}\n\nGeneral Context:\n${context}\n\nIMPORTANT: Generate buttons and email prompt that are directly related to the user's specific question and your answer. Do not use generic buttons. Make them actionable and relevant to the conversation topic.`;
+    }
   }
 
   const chatResp = await openai.chat.completions.create({

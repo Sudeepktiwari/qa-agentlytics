@@ -50,6 +50,9 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
   const [emailInputValue, setEmailInputValue] = useState("");
   // Add state for selected radio button
   const [selectedRadio, setSelectedRadio] = useState<number | null>(null);
+  // Track user activity to prevent unnecessary followups
+  const [userIsActive, setUserIsActive] = useState(false);
+  const [lastUserAction, setLastUserAction] = useState<number>(Date.now());
 
   // Remove getEffectivePageUrl and getPreviousQuestions from component scope
 
@@ -118,14 +121,16 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
             if (followupTimer.current) clearTimeout(followupTimer.current);
             setFollowupSent(false);
             setFollowupCount(0); // Reset followup count for new URL
-            console.log("[Chatbot] Setting follow-up timer for 10 seconds");
+            setUserIsActive(false); // Reset user activity
+            setLastUserAction(Date.now());
+            console.log("[Chatbot] Setting follow-up timer for 30 seconds");
             followupTimer.current = setTimeout(() => {
               // Only send follow-up if user hasn't responded
               console.log(
                 "[Chatbot] Follow-up timer triggered, setting followupSent to true"
               );
               setFollowupSent(true);
-            }, 10000); // 10 seconds
+            }, 30000); // 30 seconds
           });
       });
     // Cleanup timer on unmount
@@ -148,18 +153,26 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
     if (lastMsg.role === "assistant") {
       if (followupTimer.current) clearTimeout(followupTimer.current);
       setFollowupSent(false);
+      setUserIsActive(false); // Reset user activity state
       if (followupCount < 3) {
         console.log(
-          "[Chatbot] Setting inactivity follow-up timer for 10 seconds after bot message"
+          "[Chatbot] Setting inactivity follow-up timer for 30 seconds after bot message"
         );
         followupTimer.current = setTimeout(() => {
-          // The check `if (followupCount < 3)` above is sufficient.
-          // This internal check was preventing the 3rd followup.
-          console.log(
-            "[Chatbot] Inactivity timer triggered, setting followupSent to true"
-          );
-          setFollowupSent(true);
-        }, 10000);
+          // Only send followup if user is not currently active and hasn't interacted recently
+          const timeSinceLastAction = Date.now() - lastUserAction;
+          if (!userIsActive && timeSinceLastAction >= 25000) {
+            // 25 seconds buffer
+            console.log(
+              "[Chatbot] Inactivity timer triggered, setting followupSent to true"
+            );
+            setFollowupSent(true);
+          } else {
+            console.log(
+              "[Chatbot] Skipping followup - user was active recently or currently typing"
+            );
+          }
+        }, 30000); // 30 seconds
       }
     } else if (lastMsg.role === "user") {
       if (followupTimer.current) {
@@ -171,9 +184,19 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
       }
       setFollowupSent(false);
       setFollowupCount(0);
+      setUserIsActive(false); // Reset after user sends message
+      setLastUserAction(Date.now());
     }
     // Send follow-up if triggered and last message is from bot, and limit to 3
     if (followupSent && lastMsg.role === "assistant" && followupCount < 3) {
+      // Additional check: don't send if user has been active recently
+      const timeSinceLastAction = Date.now() - lastUserAction;
+      if (userIsActive || timeSinceLastAction < 25000) {
+        console.log("[Chatbot] Skipping followup - user was active recently");
+        setFollowupSent(false);
+        return;
+      }
+
       console.log("[Chatbot] Sending follow-up request to backend");
       const sessionId = getSessionId();
       fetch("/api/chat", {
@@ -211,7 +234,15 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
         clearTimeout(followupTimer.current);
       }
     };
-  }, [messages, followupSent, adminId, pageUrl, followupCount]);
+  }, [
+    messages,
+    followupSent,
+    adminId,
+    pageUrl,
+    followupCount,
+    userIsActive,
+    lastUserAction,
+  ]);
 
   // Helper: Parse backend response (now JSON with mainText, buttons, emailPrompt)
   function parseBotResponse(data: BotResponse | string): {
@@ -251,6 +282,17 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
 
   const sendMessage = async (userInput: string) => {
     if (!userInput.trim()) return;
+
+    // Clear followup timer and reset activity state when user sends message
+    if (followupTimer.current) {
+      console.log("[Chatbot] User sending message, clearing followup timer");
+      clearTimeout(followupTimer.current);
+      followupTimer.current = null;
+    }
+    setFollowupSent(false);
+    setUserIsActive(false);
+    setLastUserAction(Date.now());
+
     const userMsg: Message = { role: "user", content: userInput };
     setMessages((msgs) => [...msgs, userMsg]);
     setInput("");
@@ -299,6 +341,39 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && !loading) sendMessage(input);
+  };
+
+  // Handle input changes to detect when user is typing
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInput(e.target.value);
+
+    // Mark user as active when they start typing
+    if (e.target.value.length > 0 && !userIsActive) {
+      console.log("[Chatbot] User started typing, marking as active");
+      setUserIsActive(true);
+      setLastUserAction(Date.now());
+
+      // Reset followup timer when user starts typing
+      if (followupTimer.current) {
+        console.log("[Chatbot] User typing, resetting followup timer");
+        clearTimeout(followupTimer.current);
+        setFollowupSent(false);
+
+        // Start a new timer if there's a bot message to follow up on
+        const lastMsg = messages[messages.length - 1];
+        if (lastMsg && lastMsg.role === "assistant" && followupCount < 3) {
+          followupTimer.current = setTimeout(() => {
+            const timeSinceLastAction = Date.now() - lastUserAction;
+            if (!userIsActive && timeSinceLastAction >= 25000) {
+              setFollowupSent(true);
+            }
+          }, 30000);
+        }
+      }
+    } else if (e.target.value.length === 0 && userIsActive) {
+      // User cleared the input, mark as less active but don't reset timer
+      setUserIsActive(false);
+    }
   };
 
   return (
@@ -354,67 +429,64 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
                     <ReactMarkdown>{msg.content}</ReactMarkdown>
                   </div>
                 )}
-                {/* Render actionable buttons if present */}
-                {Array.isArray(msg.buttons) && msg.buttons.length > 0 && (
-                  <div style={{ marginTop: 8 }}>
-                    {/* Radio button group for actions */}
-                    <form
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        if (selectedRadio !== null) {
-                          const action = (msg.buttons ?? [])[selectedRadio];
-                          trackNudge(action, {
-                            pageUrl,
-                            adminId,
-                            message: msg,
-                          });
-                          setInput("");
-                          sendMessage(action);
-                          setSelectedRadio(null);
-                        }
-                      }}
-                    >
-                      {msg.buttons.map((action: string, idx: number) => (
-                        <div
-                          key={action}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            marginBottom: 4,
-                            cursor: "pointer",
-                          }}
-                        >
-                          <input
-                            type="radio"
-                            id={`action-${i}-${idx}`}
-                            name={`actions-${i}`}
-                            value={idx}
-                            checked={selectedRadio === idx}
-                            onChange={() => {
-                              setSelectedRadio(idx);
-                              trackNudge(action, {
-                                pageUrl,
-                                adminId,
-                                message: msg,
-                              });
-                              setInput("");
-                              sendMessage(action);
-                              setSelectedRadio(null);
+                {/* Render action buttons if present and no email prompt */}
+                {msg.buttons &&
+                  msg.buttons.length > 0 &&
+                  (!msg.emailPrompt || msg.emailPrompt.trim() === "") && (
+                    <div style={{ marginTop: 8 }}>
+                      <form>
+                        {msg.buttons.map((action, idx) => (
+                          <div
+                            key={idx}
+                            style={{
+                              marginBottom: 4,
+                              display: "flex",
+                              alignItems: "center",
                             }}
-                            style={{ marginRight: 8, cursor: "pointer" }}
-                          />
-                          <label
-                            htmlFor={`action-${i}-${idx}`}
-                            style={{ cursor: "pointer", color: "#000000" }}
                           >
-                            {action}
-                          </label>
-                        </div>
-                      ))}
-                    </form>
-                  </div>
-                )}
-                {/* Render email prompt/input if present */}
+                            <input
+                              type="radio"
+                              id={`action-${i}-${idx}`}
+                              name={`actions-${i}`}
+                              value={idx}
+                              checked={selectedRadio === idx}
+                              onChange={() => {
+                                console.log(
+                                  "[Chatbot] Button clicked, resetting followup timer"
+                                );
+                                setSelectedRadio(idx);
+                                // Reset followup timer when button is clicked
+                                if (followupTimer.current) {
+                                  clearTimeout(followupTimer.current);
+                                  followupTimer.current = null;
+                                }
+                                setFollowupSent(false);
+                                setUserIsActive(false);
+                                setLastUserAction(Date.now());
+
+                                trackNudge(action, {
+                                  pageUrl,
+                                  adminId,
+                                  message: msg,
+                                });
+                                setInput("");
+                                sendMessage(action);
+                                setSelectedRadio(null);
+                              }}
+                              style={{ marginRight: 8, cursor: "pointer" }}
+                            />
+                            <label
+                              htmlFor={`action-${i}-${idx}`}
+                              style={{ cursor: "pointer", color: "#000000" }}
+                            >
+                              {action}
+                            </label>
+                          </div>
+                        ))}
+                      </form>
+                    </div>
+                  )}
+                {/* Render email prompt/input if present (prioritize email over buttons) */}
                 {msg.emailPrompt && msg.emailPrompt.trim() !== "" && (
                   <div style={{ marginTop: 8, color: "#000000" }}>
                     <div>{msg.emailPrompt}</div>
@@ -422,6 +494,18 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
                       onSubmit={(e) => {
                         e.preventDefault();
                         if (emailInputValue.trim()) {
+                          console.log(
+                            "[Chatbot] Email submitted, resetting followup timer"
+                          );
+                          // Reset followup timer when email is submitted
+                          if (followupTimer.current) {
+                            clearTimeout(followupTimer.current);
+                            followupTimer.current = null;
+                          }
+                          setFollowupSent(false);
+                          setUserIsActive(false);
+                          setLastUserAction(Date.now());
+
                           sendMessage(emailInputValue.trim());
                           setEmailInputValue("");
                         }
@@ -431,7 +515,14 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
                       <input
                         type="email"
                         value={emailInputValue}
-                        onChange={(e) => setEmailInputValue(e.target.value)}
+                        onChange={(e) => {
+                          setEmailInputValue(e.target.value);
+                          // Mark user as active when typing email
+                          if (e.target.value.length > 0 && !userIsActive) {
+                            setUserIsActive(true);
+                            setLastUserAction(Date.now());
+                          }
+                        }}
                         placeholder="Enter your email"
                         required
                         style={{
@@ -452,7 +543,13 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
                           cursor: "pointer",
                         }}
                       >
-                        Send My Setup Instructions
+                        {msg.emailPrompt.toLowerCase().includes("support")
+                          ? "Contact Support"
+                          : msg.emailPrompt.toLowerCase().includes("setup")
+                          ? "Send Setup Guide"
+                          : msg.emailPrompt.toLowerCase().includes("demo")
+                          ? "Get Demo"
+                          : "Submit"}
                       </button>
                     </form>
                   </div>
@@ -468,7 +565,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
       <input
         type="text"
         value={input}
-        onChange={(e) => setInput(e.target.value)}
+        onChange={handleInputChange}
         onKeyDown={handleKeyDown}
         placeholder="Ask a question about your documents..."
         style={{
