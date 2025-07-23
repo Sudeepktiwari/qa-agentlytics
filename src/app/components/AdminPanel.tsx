@@ -182,9 +182,16 @@ const AdminPanel: React.FC = () => {
     }
   };
 
+  // Helper function to get origin safely
+  const getOrigin = () =>
+    typeof window !== "undefined" ? window.location.origin : "YOUR_DOMAIN";
+
   // Generate widget script with current configuration
   const generateWidgetScript = () => {
-    let script = `<script src="${window.location.origin}/api/widget" data-api-key="${apiKey}"`;
+    if (!apiKey) return "";
+
+    const origin = getOrigin();
+    let script = `<script src="${origin}/api/widget" data-api-key="${apiKey}"`;
 
     if (widgetConfig.theme !== "blue") {
       script += ` data-theme="${widgetConfig.theme}"`;
@@ -1174,7 +1181,7 @@ const AdminPanel: React.FC = () => {
                 <div>
                   <textarea
                     readOnly
-                    value={`<script src="${window.location.origin}/api/widget" data-api-key="${apiKey}"></script>`}
+                    value={`<script src="${getOrigin()}/api/widget" data-api-key="${apiKey}"></script>`}
                     style={{
                       width: "100%",
                       height: "80px",
@@ -1192,7 +1199,7 @@ const AdminPanel: React.FC = () => {
                   <button
                     onClick={() =>
                       copyToClipboard(
-                        `<script src="${window.location.origin}/api/widget" data-api-key="${apiKey}"></script>`
+                        `<script src="${getOrigin()}/api/widget" data-api-key="${apiKey}"></script>`
                       )
                     }
                     style={{
@@ -1689,14 +1696,14 @@ const AdminPanel: React.FC = () => {
                       • Position: {widgetConfig.position}
                     </div>
                     <div style={{ fontSize: "11px", color: "#6366f1" }}>
-                      • Title: "{widgetConfig.chatTitle}"
+                      • Title: &quot;{widgetConfig.chatTitle}&quot;
                     </div>
                     <div style={{ fontSize: "11px", color: "#6366f1" }}>
-                      • Button: "{widgetConfig.buttonText}"
+                      • Button: &quot;{widgetConfig.buttonText}&quot;
                     </div>
                     {widgetConfig.welcomeMessage && (
                       <div style={{ fontSize: "11px", color: "#6366f1" }}>
-                        • Welcome: "{widgetConfig.welcomeMessage}"
+                        • Welcome: &quot;{widgetConfig.welcomeMessage}&quot;
                       </div>
                     )}
                   </div>
