@@ -55,6 +55,17 @@ const AdminPanel: React.FC = () => {
   const [leadsSortOrder, setLeadsSortOrder] = useState("desc");
   const LEADS_PAGE_SIZE = 10;
 
+  // Widget configuration state
+  const [widgetConfig, setWidgetConfig] = useState({
+    theme: "blue",
+    size: "medium",
+    position: "bottom-right",
+    chatTitle: "Chat with us",
+    buttonText: "💬",
+    welcomeMessage: "",
+    customColor: "#0070f3",
+  });
+
   // Check authentication on mount
   useEffect(() => {
     const checkAuth = async () => {
@@ -169,6 +180,36 @@ const AdminPanel: React.FC = () => {
     } finally {
       setApiKeyLoading(false);
     }
+  };
+
+  // Generate widget script with current configuration
+  const generateWidgetScript = () => {
+    let script = `<script src="${window.location.origin}/api/widget" data-api-key="${apiKey}"`;
+
+    if (widgetConfig.theme !== "blue") {
+      script += ` data-theme="${widgetConfig.theme}"`;
+    }
+    if (widgetConfig.size !== "medium") {
+      script += ` data-size="${widgetConfig.size}"`;
+    }
+    if (widgetConfig.position !== "bottom-right") {
+      script += ` data-position="${widgetConfig.position}"`;
+    }
+    if (widgetConfig.chatTitle !== "Chat with us") {
+      script += ` data-chat-title="${widgetConfig.chatTitle}"`;
+    }
+    if (widgetConfig.buttonText !== "💬") {
+      script += ` data-button-text="${widgetConfig.buttonText}"`;
+    }
+    if (widgetConfig.welcomeMessage) {
+      script += ` data-welcome-message="${widgetConfig.welcomeMessage}"`;
+    }
+    if (widgetConfig.theme === "custom") {
+      script += ` data-brand-color="${widgetConfig.customColor}"`;
+    }
+
+    script += `></script>`;
+    return script;
   };
 
   const copyToClipboard = (text: string) => {
@@ -1190,7 +1231,7 @@ const AdminPanel: React.FC = () => {
             </div>
           </div>
 
-          {/* Widget Customization Options */}
+          {/* Interactive Widget Configurator */}
           {apiKey && (
             <div
               style={{
@@ -1214,214 +1255,452 @@ const AdminPanel: React.FC = () => {
                   gap: "8px",
                 }}
               >
-                🎨 Widget Customization
+                🎨 Widget Configurator
               </h3>
               <p
                 style={{
                   color: "#718096",
                   fontSize: "14px",
-                  marginBottom: "20px",
+                  marginBottom: "24px",
                 }}
               >
-                Customize the appearance and behavior of your widget
+                Customize your widget appearance and get the script
+                automatically updated
               </p>
 
-              {/* Theme Options */}
-              <div style={{ marginBottom: "20px" }}>
-                <h4
-                  style={{
-                    margin: "0 0 12px 0",
-                    fontSize: "16px",
-                    fontWeight: "600",
-                    color: "#2d3748",
-                  }}
-                >
-                  🎯 Themes
-                </h4>
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(3, 1fr)",
-                    gap: "12px",
-                  }}
-                >
-                  {[
-                    { name: "blue", color: "#0070f3", label: "Blue" },
-                    { name: "green", color: "#10b981", label: "Green" },
-                    { name: "purple", color: "#8b5cf6", label: "Purple" },
-                    { name: "orange", color: "#f59e0b", label: "Orange" },
-                    { name: "dark", color: "#1f2937", label: "Dark" },
-                    { name: "custom", color: "#ff6b35", label: "Custom" },
-                  ].map((theme) => (
-                    <div
-                      key={theme.name}
-                      style={{
-                        padding: "12px",
-                        background: "rgba(255, 255, 255, 0.8)",
-                        borderRadius: "8px",
-                        border: "1px solid rgba(255, 255, 255, 0.4)",
-                        textAlign: "center",
-                        fontSize: "12px",
-                        color: "#4a5568",
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: "24px",
-                          height: "24px",
-                          background: theme.color,
-                          borderRadius: "50%",
-                          margin: "0 auto 8px",
-                        }}
-                      ></div>
-                      data-theme="{theme.name}"
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Size Options */}
-              <div style={{ marginBottom: "20px" }}>
-                <h4
-                  style={{
-                    margin: "0 0 12px 0",
-                    fontSize: "16px",
-                    fontWeight: "600",
-                    color: "#2d3748",
-                  }}
-                >
-                  📏 Sizes
-                </h4>
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(3, 1fr)",
-                    gap: "12px",
-                  }}
-                >
-                  {[
-                    { name: "small", size: "300×400", label: "Small" },
-                    { name: "medium", size: "350×500", label: "Medium" },
-                    { name: "large", size: "400×600", label: "Large" },
-                  ].map((size) => (
-                    <div
-                      key={size.name}
-                      style={{
-                        padding: "12px",
-                        background: "rgba(255, 255, 255, 0.8)",
-                        borderRadius: "8px",
-                        border: "1px solid rgba(255, 255, 255, 0.4)",
-                        textAlign: "center",
-                        fontSize: "12px",
-                        color: "#4a5568",
-                      }}
-                    >
-                      <div style={{ fontWeight: "600", marginBottom: "4px" }}>
-                        {size.label}
-                      </div>
-                      <div style={{ fontSize: "10px", color: "#718096" }}>
-                        {size.size}px
-                      </div>
-                      <div style={{ fontSize: "11px", marginTop: "4px" }}>
-                        data-size="{size.name}"
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Position Options */}
-              <div style={{ marginBottom: "20px" }}>
-                <h4
-                  style={{
-                    margin: "0 0 12px 0",
-                    fontSize: "16px",
-                    fontWeight: "600",
-                    color: "#2d3748",
-                  }}
-                >
-                  📍 Positions
-                </h4>
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(2, 1fr)",
-                    gap: "12px",
-                  }}
-                >
-                  {[
-                    { name: "bottom-right", label: "Bottom Right" },
-                    { name: "bottom-left", label: "Bottom Left" },
-                    { name: "top-right", label: "Top Right" },
-                    { name: "top-left", label: "Top Left" },
-                  ].map((position) => (
-                    <div
-                      key={position.name}
-                      style={{
-                        padding: "12px",
-                        background: "rgba(255, 255, 255, 0.8)",
-                        borderRadius: "8px",
-                        border: "1px solid rgba(255, 255, 255, 0.4)",
-                        textAlign: "center",
-                        fontSize: "12px",
-                        color: "#4a5568",
-                      }}
-                    >
-                      <div style={{ fontWeight: "600", marginBottom: "4px" }}>
-                        {position.label}
-                      </div>
-                      <div style={{ fontSize: "11px", marginTop: "4px" }}>
-                        data-position="{position.name}"
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Custom Example */}
               <div
                 style={{
-                  background: "linear-gradient(135deg, #f7fafc, #edf2f7)",
-                  borderRadius: "12px",
-                  padding: "16px",
-                  border: "1px solid #e2e8f0",
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "24px",
                 }}
               >
-                <h4
-                  style={{
-                    margin: "0 0 12px 0",
-                    fontSize: "14px",
-                    fontWeight: "600",
-                    color: "#2d3748",
-                  }}
-                >
-                  🚀 Example with Customization:
-                </h4>
-                <textarea
-                  readOnly
-                  value={`<script 
-  src="${window.location.origin}/api/widget" 
-  data-api-key="${apiKey}"
-  data-theme="purple"
-  data-size="large"
-  data-position="bottom-left"
-  data-chat-title="🚀 Get Help"
-  data-button-text="Support"
-></script>`}
-                  style={{
-                    width: "100%",
-                    height: "120px",
-                    fontFamily: "monospace",
-                    fontSize: "12px",
-                    padding: "12px",
-                    border: "1px solid #cbd5e0",
-                    borderRadius: "6px",
-                    backgroundColor: "#f7fafc",
-                    resize: "none",
-                    color: "#2d3748",
-                    boxSizing: "border-box",
-                  }}
-                />
+                {/* Configuration Options */}
+                <div>
+                  {/* Theme Selection */}
+                  <div style={{ marginBottom: "20px" }}>
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: "8px",
+                        fontSize: "14px",
+                        fontWeight: "600",
+                        color: "#2d3748",
+                      }}
+                    >
+                      🎯 Theme
+                    </label>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(3, 1fr)",
+                        gap: "8px",
+                      }}
+                    >
+                      {[
+                        { name: "blue", color: "#0070f3", label: "Blue" },
+                        { name: "green", color: "#10b981", label: "Green" },
+                        { name: "purple", color: "#8b5cf6", label: "Purple" },
+                        { name: "orange", color: "#f59e0b", label: "Orange" },
+                        { name: "dark", color: "#1f2937", label: "Dark" },
+                        { name: "custom", color: "#ff6b35", label: "Custom" },
+                      ].map((theme) => (
+                        <button
+                          key={theme.name}
+                          onClick={() =>
+                            setWidgetConfig({
+                              ...widgetConfig,
+                              theme: theme.name,
+                            })
+                          }
+                          style={{
+                            padding: "8px",
+                            background:
+                              widgetConfig.theme === theme.name
+                                ? "linear-gradient(135deg, #667eea, #764ba2)"
+                                : "rgba(255, 255, 255, 0.8)",
+                            border:
+                              widgetConfig.theme === theme.name
+                                ? "2px solid #667eea"
+                                : "1px solid rgba(255, 255, 255, 0.4)",
+                            borderRadius: "8px",
+                            cursor: "pointer",
+                            fontSize: "11px",
+                            color:
+                              widgetConfig.theme === theme.name
+                                ? "white"
+                                : "#4a5568",
+                            fontWeight:
+                              widgetConfig.theme === theme.name
+                                ? "600"
+                                : "normal",
+                            transition: "all 0.2s ease",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            gap: "4px",
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: "16px",
+                              height: "16px",
+                              background: theme.color,
+                              borderRadius: "50%",
+                            }}
+                          ></div>
+                          {theme.label}
+                        </button>
+                      ))}
+                    </div>
+                    {widgetConfig.theme === "custom" && (
+                      <div style={{ marginTop: "8px" }}>
+                        <input
+                          type="color"
+                          value={widgetConfig.customColor}
+                          onChange={(e) =>
+                            setWidgetConfig({
+                              ...widgetConfig,
+                              customColor: e.target.value,
+                            })
+                          }
+                          style={{
+                            width: "100%",
+                            height: "40px",
+                            border: "1px solid #d1d5db",
+                            borderRadius: "6px",
+                            cursor: "pointer",
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Size Selection */}
+                  <div style={{ marginBottom: "20px" }}>
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: "8px",
+                        fontSize: "14px",
+                        fontWeight: "600",
+                        color: "#2d3748",
+                      }}
+                    >
+                      📏 Size
+                    </label>
+                    <div style={{ display: "flex", gap: "8px" }}>
+                      {[
+                        { name: "small", label: "Small", size: "300×400" },
+                        { name: "medium", label: "Medium", size: "350×500" },
+                        { name: "large", label: "Large", size: "400×600" },
+                      ].map((size) => (
+                        <button
+                          key={size.name}
+                          onClick={() =>
+                            setWidgetConfig({
+                              ...widgetConfig,
+                              size: size.name,
+                            })
+                          }
+                          style={{
+                            flex: 1,
+                            padding: "12px",
+                            background:
+                              widgetConfig.size === size.name
+                                ? "linear-gradient(135deg, #667eea, #764ba2)"
+                                : "rgba(255, 255, 255, 0.8)",
+                            border:
+                              widgetConfig.size === size.name
+                                ? "2px solid #667eea"
+                                : "1px solid rgba(255, 255, 255, 0.4)",
+                            borderRadius: "8px",
+                            cursor: "pointer",
+                            fontSize: "12px",
+                            color:
+                              widgetConfig.size === size.name
+                                ? "white"
+                                : "#4a5568",
+                            fontWeight:
+                              widgetConfig.size === size.name
+                                ? "600"
+                                : "normal",
+                            transition: "all 0.2s ease",
+                            textAlign: "center",
+                          }}
+                        >
+                          <div style={{ fontWeight: "600" }}>{size.label}</div>
+                          <div style={{ fontSize: "10px", marginTop: "2px" }}>
+                            {size.size}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Position Selection */}
+                  <div style={{ marginBottom: "20px" }}>
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: "8px",
+                        fontSize: "14px",
+                        fontWeight: "600",
+                        color: "#2d3748",
+                      }}
+                    >
+                      📍 Position
+                    </label>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: "8px",
+                      }}
+                    >
+                      {[
+                        { name: "bottom-right", label: "Bottom Right" },
+                        { name: "bottom-left", label: "Bottom Left" },
+                        { name: "top-right", label: "Top Right" },
+                        { name: "top-left", label: "Top Left" },
+                      ].map((position) => (
+                        <button
+                          key={position.name}
+                          onClick={() =>
+                            setWidgetConfig({
+                              ...widgetConfig,
+                              position: position.name,
+                            })
+                          }
+                          style={{
+                            padding: "10px",
+                            background:
+                              widgetConfig.position === position.name
+                                ? "linear-gradient(135deg, #667eea, #764ba2)"
+                                : "rgba(255, 255, 255, 0.8)",
+                            border:
+                              widgetConfig.position === position.name
+                                ? "2px solid #667eea"
+                                : "1px solid rgba(255, 255, 255, 0.4)",
+                            borderRadius: "8px",
+                            cursor: "pointer",
+                            fontSize: "12px",
+                            color:
+                              widgetConfig.position === position.name
+                                ? "white"
+                                : "#4a5568",
+                            fontWeight:
+                              widgetConfig.position === position.name
+                                ? "600"
+                                : "normal",
+                            transition: "all 0.2s ease",
+                          }}
+                        >
+                          {position.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Text Customization */}
+                  <div style={{ marginBottom: "20px" }}>
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: "8px",
+                        fontSize: "14px",
+                        fontWeight: "600",
+                        color: "#2d3748",
+                      }}
+                    >
+                      💬 Chat Title
+                    </label>
+                    <input
+                      type="text"
+                      value={widgetConfig.chatTitle}
+                      onChange={(e) =>
+                        setWidgetConfig({
+                          ...widgetConfig,
+                          chatTitle: e.target.value,
+                        })
+                      }
+                      placeholder="Chat with us"
+                      style={{
+                        width: "100%",
+                        padding: "10px",
+                        border: "1px solid #d1d5db",
+                        borderRadius: "6px",
+                        fontSize: "14px",
+                        boxSizing: "border-box",
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ marginBottom: "20px" }}>
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: "8px",
+                        fontSize: "14px",
+                        fontWeight: "600",
+                        color: "#2d3748",
+                      }}
+                    >
+                      🔘 Button Text
+                    </label>
+                    <input
+                      type="text"
+                      value={widgetConfig.buttonText}
+                      onChange={(e) =>
+                        setWidgetConfig({
+                          ...widgetConfig,
+                          buttonText: e.target.value,
+                        })
+                      }
+                      placeholder="💬"
+                      style={{
+                        width: "100%",
+                        padding: "10px",
+                        border: "1px solid #d1d5db",
+                        borderRadius: "6px",
+                        fontSize: "14px",
+                        boxSizing: "border-box",
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: "8px",
+                        fontSize: "14px",
+                        fontWeight: "600",
+                        color: "#2d3748",
+                      }}
+                    >
+                      � Welcome Message (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={widgetConfig.welcomeMessage}
+                      onChange={(e) =>
+                        setWidgetConfig({
+                          ...widgetConfig,
+                          welcomeMessage: e.target.value,
+                        })
+                      }
+                      placeholder="Hi! How can we help you today?"
+                      style={{
+                        width: "100%",
+                        padding: "10px",
+                        border: "1px solid #d1d5db",
+                        borderRadius: "6px",
+                        fontSize: "14px",
+                        boxSizing: "border-box",
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Generated Script */}
+                <div>
+                  <label
+                    style={{
+                      display: "block",
+                      marginBottom: "8px",
+                      fontSize: "14px",
+                      fontWeight: "600",
+                      color: "#2d3748",
+                    }}
+                  >
+                    🚀 Your Customized Script
+                  </label>
+                  <textarea
+                    readOnly
+                    value={generateWidgetScript()}
+                    style={{
+                      width: "100%",
+                      height: "200px",
+                      fontFamily: "monospace",
+                      fontSize: "12px",
+                      padding: "12px",
+                      border: "1px solid #d1d5db",
+                      borderRadius: "8px",
+                      backgroundColor: "#f7fafc",
+                      resize: "none",
+                      color: "#2d3748",
+                      boxSizing: "border-box",
+                      marginBottom: "12px",
+                    }}
+                  />
+                  <button
+                    onClick={() => copyToClipboard(generateWidgetScript())}
+                    style={{
+                      width: "100%",
+                      padding: "12px 20px",
+                      background:
+                        "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "12px",
+                      fontSize: "14px",
+                      fontWeight: "600",
+                      cursor: "pointer",
+                      transition: "all 0.2s ease",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "8px",
+                    }}
+                  >
+                    📋 Copy Customized Script
+                  </button>
+
+                  {/* Preview Info */}
+                  <div
+                    style={{
+                      marginTop: "16px",
+                      padding: "12px",
+                      background: "linear-gradient(135deg, #eef2ff, #e0e7ff)",
+                      borderRadius: "8px",
+                      border: "1px solid #c7d2fe",
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: "12px",
+                        color: "#4338ca",
+                        fontWeight: "600",
+                        marginBottom: "4px",
+                      }}
+                    >
+                      ✨ Live Preview:
+                    </div>
+                    <div style={{ fontSize: "11px", color: "#6366f1" }}>
+                      • Theme: {widgetConfig.theme}{" "}
+                      {widgetConfig.theme === "custom" &&
+                        `(${widgetConfig.customColor})`}
+                    </div>
+                    <div style={{ fontSize: "11px", color: "#6366f1" }}>
+                      • Size: {widgetConfig.size}
+                    </div>
+                    <div style={{ fontSize: "11px", color: "#6366f1" }}>
+                      • Position: {widgetConfig.position}
+                    </div>
+                    <div style={{ fontSize: "11px", color: "#6366f1" }}>
+                      • Title: "{widgetConfig.chatTitle}"
+                    </div>
+                    <div style={{ fontSize: "11px", color: "#6366f1" }}>
+                      • Button: "{widgetConfig.buttonText}"
+                    </div>
+                    {widgetConfig.welcomeMessage && (
+                      <div style={{ fontSize: "11px", color: "#6366f1" }}>
+                        • Welcome: "{widgetConfig.welcomeMessage}"
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           )}
