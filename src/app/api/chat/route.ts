@@ -904,3 +904,39 @@ export async function GET(req: NextRequest) {
     .toArray();
   return NextResponse.json({ history: history.reverse() });
 }
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const { sessionId, clearHistory } = await req.json();
+
+    if (!sessionId) {
+      return NextResponse.json({ error: "Missing sessionId" }, { status: 400 });
+    }
+
+    if (clearHistory) {
+      const db = await getDb();
+      const chats = db.collection("chats");
+
+      // Delete all chat history for this session
+      const result = await chats.deleteMany({ sessionId });
+
+      console.log(
+        `[Chat] Cleared ${result.deletedCount} messages for session ${sessionId}`
+      );
+
+      return NextResponse.json({
+        success: true,
+        deletedCount: result.deletedCount,
+        message: "Chat history cleared successfully",
+      });
+    }
+
+    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+  } catch (error) {
+    console.error("[Chat] Error clearing chat history:", error);
+    return NextResponse.json(
+      { error: "Failed to clear chat history" },
+      { status: 500 }
+    );
+  }
+}

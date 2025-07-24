@@ -102,6 +102,68 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
             })
           );
         }
+
+        // Check if we should clear history before showing proactive message (after reset)
+        const clearHistoryFirst =
+          localStorage.getItem("clearHistoryBeforeProactive") === "true";
+        if (clearHistoryFirst) {
+          localStorage.removeItem("clearHistoryBeforeProactive");
+          console.log(
+            "[Chatbot] Clearing chat history before showing proactive message"
+          );
+
+          // Clear chat history from backend first
+          fetch("/api/chat", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              sessionId,
+              clearHistory: true,
+            }),
+          })
+            .then(() => {
+              console.log(
+                "[Chatbot] Chat history cleared, now showing proactive message"
+              );
+              // Now show the proactive message with clean history
+              return fetch("/api/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  sessionId,
+                  pageUrl: effectivePageUrl,
+                  proactive: true,
+                  ...(adminId ? { adminId } : {}),
+                }),
+              });
+            })
+            .then((res) => res.json())
+            .then((data) => {
+              if (data.answer)
+                setMessages([{ role: "assistant", content: data.answer }]);
+              // Start follow-up timer
+              if (followupTimer.current) clearTimeout(followupTimer.current);
+              setFollowupSent(false);
+              setFollowupCount(0);
+              setUserIsActive(false);
+              setLastUserAction(Date.now());
+              console.log("[Chatbot] Setting follow-up timer for 30 seconds");
+              followupTimer.current = setTimeout(() => {
+                console.log(
+                  "[Chatbot] Follow-up timer triggered, setting followupSent to true"
+                );
+                setFollowupSent(true);
+              }, 30000);
+            })
+            .catch((error) => {
+              console.error(
+                "[Chatbot] Error clearing history or showing proactive message:",
+                error
+              );
+            });
+          return;
+        }
+
         // Always trigger proactive bot message and follow-up timer on mount or after link selection
         fetch("/api/chat", {
           method: "POST",
@@ -382,6 +444,9 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
     localStorage.removeItem("chatHistory");
     localStorage.removeItem("userActivity");
     localStorage.removeItem("lastUserAction");
+
+    // Set a flag to clear history before showing proactive message
+    localStorage.setItem("clearHistoryBeforeProactive", "true");
 
     // Reset component state
     setMessages([]);
