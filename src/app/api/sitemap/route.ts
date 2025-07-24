@@ -218,10 +218,11 @@ async function extractLinksUsingBrowser(pageUrl: string): Promise<string[]> {
       `[JSCrawl] Final counts after infinite scroll: ${finalCounts.totalLinks} total links, ${finalCounts.blogLinks} blog links`
     );
 
-    // Extract all links from the rendered page
+    // Extract all links from the rendered page with enhanced deduplication
     const links = await page.evaluate((currentUrl) => {
       const linkElements = document.querySelectorAll("a[href]");
       const foundLinks = new Set<string>();
+      const processedHrefs = new Set<string>(); // Track processed hrefs to avoid duplicates
 
       console.log(
         `[JSCrawl-Browser] Found ${linkElements.length} link elements on page`
@@ -232,7 +233,10 @@ async function extractLinksUsingBrowser(pageUrl: string): Promise<string[]> {
 
       linkElements.forEach((element, index) => {
         const href = element.getAttribute("href");
-        if (href) {
+        if (href && !processedHrefs.has(href)) {
+          // Skip if we've already processed this href
+          processedHrefs.add(href);
+
           try {
             // Convert relative URLs to absolute
             const absoluteUrl = new URL(href, currentUrl).href;
@@ -301,27 +305,28 @@ async function extractLinksUsingBrowser(pageUrl: string): Promise<string[]> {
               if (
                 !hasSkipExtension &&
                 !hasSkipPattern &&
-                cleanUrl !== currentUrl
+                cleanUrl !== currentUrl &&
+                !foundLinks.has(cleanUrl) // Additional check to prevent duplicates
               ) {
                 foundLinks.add(cleanUrl);
 
-                // Log blog-related links as we find them
+                // Log blog-related links as we find them (but only first few to avoid spam)
                 if (
-                  cleanUrl.includes("/blog") ||
-                  cleanUrl.includes("/post") ||
-                  cleanUrl.includes("/article")
+                  (cleanUrl.includes("/blog") ||
+                    cleanUrl.includes("/post") ||
+                    cleanUrl.includes("/article")) &&
+                  index < 20 // Only log first 20 blog links to avoid spam
                 ) {
-                  console.log(
-                    `[JSCrawl-Browser] Found blog link ${
-                      index + 1
-                    }: ${cleanUrl}`
-                  );
+                  console.log(`[JSCrawl-Browser] Found blog link: ${cleanUrl}`);
                 }
               }
             }
           } catch {
             // Skip invalid URLs
-            console.log("[JSCrawl-Browser] Skipping invalid URL:", href);
+            if (index < 10) {
+              // Only log first 10 invalid URLs to avoid spam
+              console.log("[JSCrawl-Browser] Skipping invalid URL:", href);
+            }
           }
         }
       });
@@ -335,7 +340,7 @@ async function extractLinksUsingBrowser(pageUrl: string): Promise<string[]> {
       );
 
       console.log(
-        `[JSCrawl-Browser] Total links extracted: ${allLinks.length}`
+        `[JSCrawl-Browser] Total unique links extracted: ${allLinks.length}`
       );
       console.log(`[JSCrawl-Browser] Blog-related links: ${blogLinks.length}`);
 
@@ -594,7 +599,16 @@ async function discoverUrls(
             `[Discovery] JS Article URLs (${jsArticleUrls.length}):`,
             jsArticleUrls
           );
-          return { urls: jsUrls, type: "javascript" };
+
+          // Ensure no duplicates in the final result
+          const uniqueJsUrls = Array.from(new Set(jsUrls));
+          console.log(
+            `[Discovery] Final unique URLs: ${uniqueJsUrls.length} (removed ${
+              jsUrls.length - uniqueJsUrls.length
+            } duplicates)`
+          );
+
+          return { urls: uniqueJsUrls, type: "javascript" };
         }
       } catch (jsError) {
         console.log(
@@ -605,7 +619,18 @@ async function discoverUrls(
     }
 
     console.log(`[Discovery] All discovered URLs:`, urls);
-    return { urls, type: "webpage" };
+
+    // Ensure no duplicates in regular webpage results either
+    const uniqueUrls = Array.from(new Set(urls));
+    if (uniqueUrls.length !== urls.length) {
+      console.log(
+        `[Discovery] Removed ${
+          urls.length - uniqueUrls.length
+        } duplicate URLs from webpage results`
+      );
+    }
+
+    return { urls: uniqueUrls, type: "webpage" };
   } catch (error) {
     console.log(`[Discovery] Error during webpage link extraction:`, error);
     throw new Error(`Failed to discover URLs from ${inputUrl}: ${error}`);
@@ -833,7 +858,18 @@ export async function POST(req: NextRequest) {
 
   // Store all sitemap URLs for this admin with the specific sitemapUrl context
   const now = new Date();
-  const sitemapUrlDocs = urls.map((url) => ({
+
+  // Ensure no duplicate URLs before creating docs
+  const uniqueUrls = Array.from(new Set(urls));
+  if (uniqueUrls.length !== urls.length) {
+    console.log(
+      `[Crawl] Removed ${
+        urls.length - uniqueUrls.length
+      } duplicate URLs before storage`
+    );
+  }
+
+  const sitemapUrlDocs = uniqueUrls.map((url) => ({
     adminId,
     url,
     sitemapUrl, // This ensures each sitemap submission is tracked separately

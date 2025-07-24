@@ -86,11 +86,13 @@ const TestingSection: React.FC<TestingSectionProps> = ({
           }}
         >
           <option value="">(Select a page URL to test)</option>
-          {sitemapUrls.map((u) => (
-            <option key={u.url} value={u.url}>
-              {u.url} {u.crawled ? "✅ (crawled)" : "⏳ (not crawled)"}
-            </option>
-          ))}
+          {Array.from(new Map(sitemapUrls.map((u) => [u.url, u])).values()).map(
+            (u, index) => (
+              <option key={`${u.url}-${index}`} value={u.url}>
+                {u.url} {u.crawled ? "✅ (crawled)" : "⏳ (not crawled)"}
+              </option>
+            )
+          )}
         </select>
       </div>
     </div>
