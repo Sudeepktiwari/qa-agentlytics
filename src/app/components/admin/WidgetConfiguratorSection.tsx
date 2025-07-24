@@ -29,6 +29,22 @@ const WidgetConfiguratorSection: React.FC<WidgetConfiguratorSectionProps> = ({
   const getOrigin = () =>
     typeof window !== "undefined" ? window.location.origin : "YOUR_DOMAIN";
 
+  // Get current theme color
+  const getCurrentThemeColor = () => {
+    switch (widgetConfig.theme) {
+      case "blue":
+        return "#3b82f6";
+      case "green":
+        return "#10b981";
+      case "purple":
+        return "#8b5cf6";
+      case "custom":
+        return widgetConfig.customColor;
+      default:
+        return "#3b82f6";
+    }
+  };
+
   // Generate widget script with current configuration
   const generateWidgetScript = () => {
     const configParams = [];
@@ -102,11 +118,11 @@ const WidgetConfiguratorSection: React.FC<WidgetConfiguratorSectionProps> = ({
       >
         {/* Configuration Options */}
         <div>
-          <div style={{ marginBottom: "20px" }}>
+          <div style={{ marginBottom: "24px" }}>
             <label
               style={{
                 display: "block",
-                marginBottom: "8px",
+                marginBottom: "12px",
                 fontSize: "14px",
                 fontWeight: "600",
                 color: "#2d3748",
@@ -114,36 +130,103 @@ const WidgetConfiguratorSection: React.FC<WidgetConfiguratorSectionProps> = ({
             >
               🎨 Theme
             </label>
-            <select
-              value={widgetConfig.theme}
-              onChange={(e) =>
-                onWidgetConfigChange({
-                  ...widgetConfig,
-                  theme: e.target.value,
-                })
-              }
+            <div
               style={{
-                width: "100%",
-                padding: "10px",
-                border: "1px solid #d1d5db",
-                borderRadius: "6px",
-                fontSize: "14px",
-                boxSizing: "border-box",
+                display: "grid",
+                gridTemplateColumns: "repeat(2, 1fr)",
+                gap: "8px",
               }}
             >
-              <option value="blue">Blue</option>
-              <option value="green">Green</option>
-              <option value="purple">Purple</option>
-              <option value="custom">Custom Color</option>
-            </select>
+              {[
+                { value: "blue", label: "Blue", color: "#3b82f6" },
+                { value: "green", label: "Green", color: "#10b981" },
+                { value: "purple", label: "Purple", color: "#8b5cf6" },
+                {
+                  value: "custom",
+                  label: "Custom",
+                  color: widgetConfig.customColor,
+                },
+              ].map((theme) => (
+                <button
+                  key={theme.value}
+                  onClick={() =>
+                    onWidgetConfigChange({
+                      ...widgetConfig,
+                      theme: theme.value,
+                    })
+                  }
+                  style={{
+                    padding: "12px 16px",
+                    border:
+                      widgetConfig.theme === theme.value
+                        ? `2px solid ${theme.color}`
+                        : "2px solid #e2e8f0",
+                    borderRadius: "8px",
+                    background:
+                      widgetConfig.theme === theme.value
+                        ? `linear-gradient(135deg, ${theme.color}20, ${theme.color}10)`
+                        : "linear-gradient(135deg, #ffffff, #f8fafc)",
+                    color:
+                      widgetConfig.theme === theme.value
+                        ? theme.color
+                        : "#4a5568",
+                    cursor: "pointer",
+                    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                    fontWeight: "600",
+                    fontSize: "14px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    boxShadow:
+                      widgetConfig.theme === theme.value
+                        ? `0 4px 12px ${theme.color}25, inset 0 1px 0 rgba(255,255,255,0.1)`
+                        : "0 2px 4px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.1)",
+                    transform:
+                      widgetConfig.theme === theme.value
+                        ? "translateY(-1px)"
+                        : "translateY(0)",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (widgetConfig.theme !== theme.value) {
+                      const target = e.target as HTMLButtonElement;
+                      target.style.borderColor = `${theme.color}80`;
+                      target.style.background = `linear-gradient(135deg, ${theme.color}15, ${theme.color}08)`;
+                      target.style.boxShadow = `0 4px 8px ${theme.color}20, inset 0 1px 0 rgba(255,255,255,0.1)`;
+                      target.style.transform = "translateY(-1px)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (widgetConfig.theme !== theme.value) {
+                      const target = e.target as HTMLButtonElement;
+                      target.style.borderColor = "#e2e8f0";
+                      target.style.background =
+                        "linear-gradient(135deg, #ffffff, #f8fafc)";
+                      target.style.boxShadow =
+                        "0 2px 4px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.1)";
+                      target.style.transform = "translateY(0)";
+                    }
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "12px",
+                      height: "12px",
+                      borderRadius: "50%",
+                      background: theme.color,
+                    }}
+                  />
+                  {theme.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {widgetConfig.theme === "custom" && (
-            <div style={{ marginBottom: "20px" }}>
+            <div style={{ marginBottom: "24px" }}>
               <label
                 style={{
                   display: "block",
-                  marginBottom: "8px",
+                  marginBottom: "12px",
                   fontSize: "14px",
                   fontWeight: "600",
                   color: "#2d3748",
@@ -151,32 +234,58 @@ const WidgetConfiguratorSection: React.FC<WidgetConfiguratorSectionProps> = ({
               >
                 🌈 Custom Color
               </label>
-              <input
-                type="color"
-                value={widgetConfig.customColor}
-                onChange={(e) =>
-                  onWidgetConfigChange({
-                    ...widgetConfig,
-                    customColor: e.target.value,
-                  })
-                }
-                style={{
-                  width: "100%",
-                  padding: "8px",
-                  border: "1px solid #d1d5db",
-                  borderRadius: "6px",
-                  height: "40px",
-                  boxSizing: "border-box",
-                }}
-              />
+              <div
+                style={{ display: "flex", gap: "12px", alignItems: "center" }}
+              >
+                <input
+                  type="color"
+                  value={widgetConfig.customColor}
+                  onChange={(e) =>
+                    onWidgetConfigChange({
+                      ...widgetConfig,
+                      customColor: e.target.value,
+                    })
+                  }
+                  style={{
+                    width: "50px",
+                    height: "50px",
+                    padding: "0",
+                    border: "2px solid #e2e8f0",
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                  }}
+                />
+                <input
+                  type="text"
+                  value={widgetConfig.customColor}
+                  onChange={(e) =>
+                    onWidgetConfigChange({
+                      ...widgetConfig,
+                      customColor: e.target.value,
+                    })
+                  }
+                  style={{
+                    flex: 1,
+                    padding: "12px 16px",
+                    border: "2px solid #e2e8f0",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    fontFamily: "monospace",
+                    color: "#2d3748",
+                    background: "white",
+                    outline: "none",
+                  }}
+                  placeholder="#0070f3"
+                />
+              </div>
             </div>
           )}
 
-          <div style={{ marginBottom: "20px" }}>
+          <div style={{ marginBottom: "24px" }}>
             <label
               style={{
                 display: "block",
-                marginBottom: "8px",
+                marginBottom: "12px",
                 fontSize: "14px",
                 fontWeight: "600",
                 color: "#2d3748",
@@ -184,34 +293,93 @@ const WidgetConfiguratorSection: React.FC<WidgetConfiguratorSectionProps> = ({
             >
               📏 Size
             </label>
-            <select
-              value={widgetConfig.size}
-              onChange={(e) =>
-                onWidgetConfigChange({
-                  ...widgetConfig,
-                  size: e.target.value,
-                })
-              }
+            <div
               style={{
-                width: "100%",
-                padding: "10px",
-                border: "1px solid #d1d5db",
-                borderRadius: "6px",
-                fontSize: "14px",
-                boxSizing: "border-box",
+                display: "grid",
+                gridTemplateColumns: "repeat(3, 1fr)",
+                gap: "8px",
               }}
             >
-              <option value="small">Small</option>
-              <option value="medium">Medium</option>
-              <option value="large">Large</option>
-            </select>
+              {[
+                { value: "small", label: "Small", icon: "📱" },
+                { value: "medium", label: "Medium", icon: "💻" },
+                { value: "large", label: "Large", icon: "🖥️" },
+              ].map((size) => {
+                const themeColor = getCurrentThemeColor();
+                return (
+                  <button
+                    key={size.value}
+                    onClick={() =>
+                      onWidgetConfigChange({
+                        ...widgetConfig,
+                        size: size.value,
+                      })
+                    }
+                    style={{
+                      padding: "16px 12px",
+                      border:
+                        widgetConfig.size === size.value
+                          ? `2px solid ${themeColor}`
+                          : "2px solid #e2e8f0",
+                      borderRadius: "8px",
+                      background:
+                        widgetConfig.size === size.value
+                          ? `linear-gradient(135deg, ${themeColor}20, ${themeColor}20, ${themeColor}10)`
+                          : "linear-gradient(135deg, #ffffff, #f8fafc)",
+                      color:
+                        widgetConfig.size === size.value
+                          ? themeColor
+                          : "#4a5568",
+                      cursor: "pointer",
+                      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                      fontWeight: "600",
+                      fontSize: "14px",
+                      textAlign: "center",
+                      boxShadow:
+                        widgetConfig.size === size.value
+                          ? `0 4px 12px ${themeColor}25, inset 0 1px 0 rgba(255,255,255,0.1)`
+                          : "0 2px 4px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.1)",
+                      transform:
+                        widgetConfig.size === size.value
+                          ? "translateY(-1px)"
+                          : "translateY(0)",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (widgetConfig.size !== size.value) {
+                        const target = e.target as HTMLButtonElement;
+                        target.style.borderColor = `${themeColor}80`;
+                        target.style.background = `linear-gradient(135deg, ${themeColor}15, ${themeColor}15, ${themeColor}08)`;
+                        target.style.boxShadow = `0 4px 8px ${themeColor}20, inset 0 1px 0 rgba(255,255,255,0.1)`;
+                        target.style.transform = "translateY(-1px)";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (widgetConfig.size !== size.value) {
+                        const target = e.target as HTMLButtonElement;
+                        target.style.borderColor = "#e2e8f0";
+                        target.style.background =
+                          "linear-gradient(135deg, #ffffff, #f8fafc)";
+                        target.style.boxShadow =
+                          "0 2px 4px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.1)";
+                        target.style.transform = "translateY(0)";
+                      }
+                    }}
+                  >
+                    <div style={{ fontSize: "20px", marginBottom: "4px" }}>
+                      {size.icon}
+                    </div>
+                    {size.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-          <div style={{ marginBottom: "20px" }}>
+          <div style={{ marginBottom: "24px" }}>
             <label
               style={{
                 display: "block",
-                marginBottom: "8px",
+                marginBottom: "12px",
                 fontSize: "14px",
                 fontWeight: "600",
                 color: "#2d3748",
@@ -219,28 +387,87 @@ const WidgetConfiguratorSection: React.FC<WidgetConfiguratorSectionProps> = ({
             >
               📍 Position
             </label>
-            <select
-              value={widgetConfig.position}
-              onChange={(e) =>
-                onWidgetConfigChange({
-                  ...widgetConfig,
-                  position: e.target.value,
-                })
-              }
+            <div
               style={{
-                width: "100%",
-                padding: "10px",
-                border: "1px solid #d1d5db",
-                borderRadius: "6px",
-                fontSize: "14px",
-                boxSizing: "border-box",
+                display: "grid",
+                gridTemplateColumns: "repeat(2, 1fr)",
+                gap: "8px",
               }}
             >
-              <option value="bottom-right">Bottom Right</option>
-              <option value="bottom-left">Bottom Left</option>
-              <option value="top-right">Top Right</option>
-              <option value="top-left">Top Left</option>
-            </select>
+              {[
+                { value: "bottom-right", label: "Bottom Right", icon: "↘️" },
+                { value: "bottom-left", label: "Bottom Left", icon: "↙️" },
+                { value: "top-right", label: "Top Right", icon: "↗️" },
+                { value: "top-left", label: "Top Left", icon: "↖️" },
+              ].map((position) => {
+                const themeColor = getCurrentThemeColor();
+                return (
+                  <button
+                    key={position.value}
+                    onClick={() =>
+                      onWidgetConfigChange({
+                        ...widgetConfig,
+                        position: position.value,
+                      })
+                    }
+                    style={{
+                      padding: "12px 16px",
+                      border:
+                        widgetConfig.position === position.value
+                          ? `2px solid ${themeColor}`
+                          : "2px solid #e2e8f0",
+                      borderRadius: "8px",
+                      background:
+                        widgetConfig.position === position.value
+                          ? `linear-gradient(135deg, ${themeColor}20, ${themeColor}20, ${themeColor}10)`
+                          : "linear-gradient(135deg, #ffffff, #f8fafc)",
+                      color:
+                        widgetConfig.position === position.value
+                          ? themeColor
+                          : "#4a5568",
+                      cursor: "pointer",
+                      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                      fontWeight: "600",
+                      fontSize: "14px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      boxShadow:
+                        widgetConfig.position === position.value
+                          ? `0 4px 12px ${themeColor}25, inset 0 1px 0 rgba(255,255,255,0.1)`
+                          : "0 2px 4px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.1)",
+                      transform:
+                        widgetConfig.position === position.value
+                          ? "translateY(-1px)"
+                          : "translateY(0)",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (widgetConfig.position !== position.value) {
+                        const target = e.target as HTMLButtonElement;
+                        target.style.borderColor = `${themeColor}80`;
+                        target.style.background = `linear-gradient(135deg, ${themeColor}15, ${themeColor}15, ${themeColor}08)`;
+                        target.style.boxShadow = `0 4px 8px ${themeColor}20, inset 0 1px 0 rgba(255,255,255,0.1)`;
+                        target.style.transform = "translateY(-1px)";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (widgetConfig.position !== position.value) {
+                        const target = e.target as HTMLButtonElement;
+                        target.style.borderColor = "#e2e8f0";
+                        target.style.background =
+                          "linear-gradient(135deg, #ffffff, #f8fafc)";
+                        target.style.boxShadow =
+                          "0 2px 4px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.1)";
+                        target.style.transform = "translateY(0)";
+                      }
+                    }}
+                  >
+                    <span style={{ fontSize: "16px" }}>{position.icon}</span>
+                    {position.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <div style={{ marginBottom: "20px" }}>
