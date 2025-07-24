@@ -949,6 +949,30 @@ async function extractTextFromUrl(
     throw new Error(`Too many redirects for ${url}`);
   }
 
+  // Check if this is a slide page - force JavaScript rendering
+  if (url.includes("/slide")) {
+    console.log(
+      `[Crawl] Detected slide page, forcing JavaScript extraction: ${url}`
+    );
+    try {
+      const jsText = await extractTextUsingBrowser(url);
+      console.log(
+        `[Crawl] JavaScript extraction for slide page returned ${jsText.length} chars`
+      );
+      if (jsText.length > 100) {
+        return jsText;
+      }
+      console.log(
+        `[Crawl] JavaScript extraction returned minimal content, trying regular extraction as fallback`
+      );
+    } catch (jsError) {
+      console.log(
+        `[Crawl] JavaScript extraction failed for slide page, trying regular extraction:`,
+        jsError
+      );
+    }
+  }
+
   // Try regular extraction first
   try {
     const res = await fetch(url, { follow: 20 }); // Follow up to 20 HTTP redirects
@@ -993,6 +1017,8 @@ async function extractTextFromUrl(
     $("script, style, noscript").remove();
     const text = $("body").text().replace(/\s+/g, " ").trim();
 
+    console.log(`[Crawl] Regular extraction for ${url}: ${text.length} chars`);
+
     // If the text is too short and this looks like a dynamic content page, try JavaScript extraction
     const contentPatterns = [
       /\/blog\//i,
@@ -1012,9 +1038,13 @@ async function extractTextFromUrl(
 
     const isContentPage = contentPatterns.some((pattern) => pattern.test(url));
 
-    if (text.length < 200 && isContentPage) {
+    // For slide pages, be more aggressive about using JavaScript rendering
+    const isSlidePageWithMinimalContent =
+      url.includes("/slide") && text.length < 500;
+
+    if ((text.length < 200 && isContentPage) || isSlidePageWithMinimalContent) {
       console.log(
-        `[Crawl] Content seems minimal (${text.length} chars), trying JavaScript extraction...`
+        `[Crawl] Content seems minimal (${text.length} chars) or slide page with little content, trying JavaScript extraction...`
       );
       try {
         const jsText = await extractTextUsingBrowser(url);
@@ -1090,8 +1120,25 @@ async function extractTextUsingBrowser(url: string): Promise<string> {
       timeout: 30000,
     });
 
-    // Wait for dynamic content
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+    // Wait for dynamic content - longer wait for slides
+    const waitTime = url.includes("/slide") ? 5000 : 3000;
+    console.log(
+      `[JSExtract] Waiting ${waitTime}ms for dynamic content to load...`
+    );
+    await new Promise((resolve) => setTimeout(resolve, waitTime));
+
+    // For slide pages, try scrolling to load more content
+    if (url.includes("/slide")) {
+      console.log(
+        `[JSExtract] Slide page detected, attempting scroll to load content...`
+      );
+      await page.evaluate(() => {
+        window.scrollTo(0, document.body.scrollHeight);
+        // Try to trigger any lazy loading
+        window.dispatchEvent(new Event("scroll"));
+      });
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+    }
 
     // Extract text content from the rendered page
     const text = await page.evaluate(() => {
@@ -1099,11 +1146,34 @@ async function extractTextUsingBrowser(url: string): Promise<string> {
       const scripts = document.querySelectorAll("script, style, noscript");
       scripts.forEach((el) => el.remove());
 
-      // Get the main content text
+      // For slide pages, try to get content from common slide containers
+      const slideSelectors = [
+        ".slide-content",
+        ".presentation-content",
+        ".slide-container",
+        '[class*="slide"]',
+        ".content",
+        "main",
+        "article",
+      ];
+
+      let slideText = "";
+      for (const selector of slideSelectors) {
+        const elements = document.querySelectorAll(selector);
+        elements.forEach((el) => {
+          const elementText = el.textContent || "";
+          if (elementText.length > slideText.length) {
+            slideText = elementText;
+          }
+        });
+      }
+
+      // Get the main content text (fallback to body if slide-specific content not found)
       const bodyText = document.body?.innerText || "";
+      const finalText = slideText.length > 100 ? slideText : bodyText;
 
       // Clean up whitespace
-      return bodyText.replace(/\s+/g, " ").trim();
+      return finalText.replace(/\s+/g, " ").trim();
     });
 
     console.log(
@@ -1291,6 +1361,12 @@ export async function POST(req: NextRequest) {
           text.length
         } chars, first 100: ${text.slice(0, 100)}`
       );
+
+      // Debug: Log if text is too short
+      if (text.length < 50) {
+        console.log(`[Crawl] WARNING: Very short content for ${url}:`, text);
+      }
+
       results.push({ url, text });
       await pages.insertOne({
         adminId,
@@ -1305,35 +1381,57 @@ export async function POST(req: NextRequest) {
         { $set: { crawled: true, crawledAt: new Date() } }
       );
       // Chunk and embed for Pinecone
-      const chunks = chunkText(text);
+      let chunks = chunkText(text);
       console.log(`[Crawl] Chunks for ${url}:`, chunks.length);
+
+      // Debug: If no chunks created, log why and try to create a minimal chunk
+      if (chunks.length === 0) {
+        console.log(
+          `[Crawl] DEBUG: No chunks created for ${url}. Text length: ${text.length}. Sample text:`,
+          text.slice(0, 200)
+        );
+
+        // If we have some text but no chunks, create a minimal chunk
+        if (text.length > 10) {
+          console.log(`[Crawl] Creating minimal chunk for short content...`);
+          chunks = [text.trim()];
+        }
+      }
+
       if (chunks.length > 0) {
-        const embedResp = await openai.embeddings.create({
-          input: chunks,
-          model: "text-embedding-3-small",
-        });
-        const embeddings = embedResp.data.map(
-          (d: { embedding: number[] }) => d.embedding
-        );
-        const metadata = chunks.map((_, i) => ({
-          filename: url,
-          adminId,
-          url,
-          chunkIndex: i,
-        }));
         console.log(
-          `[Crawl] Upserting to Pinecone:`,
-          embeddings.length,
-          metadata.length
+          `[Crawl] Creating embeddings for ${chunks.length} chunks...`
         );
-        await addChunks(chunks, embeddings, metadata);
-        totalChunks += chunks.length;
-        console.log(
-          `[Crawl] Successfully processed ${url}: ${chunks.length} chunks`
-        );
+        try {
+          const embedResp = await openai.embeddings.create({
+            input: chunks,
+            model: "text-embedding-3-small",
+          });
+          const embeddings = embedResp.data.map(
+            (d: { embedding: number[] }) => d.embedding
+          );
+          const metadata = chunks.map((_, i) => ({
+            filename: url,
+            adminId,
+            url,
+            chunkIndex: i,
+          }));
+          console.log(
+            `[Crawl] Upserting to Pinecone:`,
+            embeddings.length,
+            metadata.length
+          );
+          await addChunks(chunks, embeddings, metadata);
+          totalChunks += chunks.length;
+          console.log(
+            `[Crawl] Successfully processed ${url}: ${chunks.length} chunks`
+          );
+        } catch (embeddingError) {
+          console.error(`[Crawl] Embedding error for ${url}:`, embeddingError);
+        }
       } else {
         console.log(
-          `[Crawl] No chunks created for ${url} - content may be too short or empty`
+          `[Crawl] No chunks created for ${url} - content may be too short or empty. Text length: ${text.length}`
         );
       }
     } catch (err) {

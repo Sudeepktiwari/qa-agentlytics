@@ -376,6 +376,34 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
     }
   };
 
+  const resetUser = () => {
+    // Clear all chatbot-related localStorage items
+    localStorage.removeItem("chatSessionId");
+    localStorage.removeItem("chatHistory");
+    localStorage.removeItem("userActivity");
+    localStorage.removeItem("lastUserAction");
+
+    // Reset component state
+    setMessages([]);
+    setInput("");
+    setEmailInputValue("");
+    setFollowupSent(false);
+    setFollowupCount(0);
+    setUserIsActive(false);
+    setLastUserAction(Date.now());
+
+    // Clear any existing timer
+    if (followupTimer.current) {
+      clearTimeout(followupTimer.current);
+      followupTimer.current = null;
+    }
+
+    // Force re-initialization by triggering a new session
+    setTimeout(() => {
+      window.location.reload();
+    }, 100);
+  };
+
   return (
     <div
       style={{
@@ -569,7 +597,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
         onKeyDown={handleKeyDown}
         placeholder="Ask a question about your documents..."
         style={{
-          width: "80%",
+          width: "65%",
           marginRight: 8,
           backgroundColor: "#ffffff",
           color: "#000000",
@@ -589,9 +617,25 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
           borderRadius: "4px",
           cursor: loading || !input.trim() ? "not-allowed" : "pointer",
           opacity: loading || !input.trim() ? 0.6 : 1,
+          marginRight: "8px",
         }}
       >
         Send
+      </button>
+      <button
+        onClick={resetUser}
+        style={{
+          backgroundColor: "#dc3545",
+          color: "#ffffff",
+          border: "none",
+          padding: "8px 12px",
+          borderRadius: "4px",
+          cursor: "pointer",
+          fontSize: "12px",
+        }}
+        title="Reset user session and start as a new user"
+      >
+        🔄 Reset User
       </button>
     </div>
   );
