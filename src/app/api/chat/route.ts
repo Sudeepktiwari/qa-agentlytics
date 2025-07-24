@@ -333,7 +333,7 @@ export async function POST(req: NextRequest) {
               messages: [
                 {
                   role: "system",
-                  content: `You are a proactive assistant for Appointy. Your goal is to help users plan or organize their next steps. Create engaging, emoji-enhanced messages with proper formatting. Use emojis strategically and break content into digestible sections with proper spacing.`,
+                  content: `You are a proactive assistant. Your goal is to help users plan or organize their next steps. Create engaging, emoji-enhanced messages with proper formatting. Use emojis strategically and break content into digestible sections with proper spacing.`,
                 },
                 { role: "user", content: chunk },
               ],
@@ -350,9 +350,9 @@ export async function POST(req: NextRequest) {
 
 Create a proactive greeting message following this exact format and style:
 
-👋 Hello there! Looks like you're exploring Appointy's [specific feature/solution] — designed to simplify how you [specific benefit based on detected intent].
+👋 Hello there! Looks like you're exploring [specific feature/solution] — designed to simplify how you [specific benefit based on detected intent].
 
-With features like [list 2-3 key features], Appointy helps you focus on [main outcome] — without the admin burden.
+With features like [list 2-3 key features], this helps you focus on [main outcome] — without the admin burden.
 
 > I'd love to learn more about what you're planning!
 What type of [relevant context] are you organizing, or what challenges are you hoping to solve with [relevant area]?
@@ -360,7 +360,7 @@ What type of [relevant context] are you organizing, or what challenges are you h
 Requirements:
 - Start with 👋 Hello there!
 - Use em dashes (—) for better flow
-- Include specific Appointy features relevant to the page content
+- Include specific relevant features from the page content
 - Use a quote block (>) for the transition
 - End with an open-ended question about their needs
 - Keep it conversational and engaging
@@ -371,7 +371,7 @@ Content to reference:\n${summaryContext}`;
           messages: [
             {
               role: "system",
-              content: `You are a proactive assistant for Appointy. Create engaging, professional messages with emojis and proper formatting. Follow the exact format provided in the user prompt. Focus on being warm, informative, and encouraging engagement.`,
+              content: `You are a proactive assistant. Create engaging, professional messages with emojis and proper formatting. Follow the exact format provided in the user prompt. Focus on being warm, informative, and encouraging engagement.`,
             },
             { role: "user", content: summaryPrompt },
           ],
@@ -457,7 +457,7 @@ Content to reference:\n${summaryContext}`;
         if (followupCount === 0) {
           // First follow-up: context-aware nudge with buttons, tip is optional
           followupSystemPrompt = `
-You are a helpful sales assistant for Appointy. The user has not provided an email yet.
+You are a helpful sales assistant. The user has not provided an email yet.
 
 You will receive page and general context, the detected intent, and the previous conversation. If you think a tip would be helpful for the user, you may include it anywhere in your response, starting with '💡 Assistant Tip:'. Only include a tip if it is genuinely useful or relevant to the user's context or question. Otherwise, respond normally. Always generate your response in the following JSON format:
 {
@@ -490,7 +490,7 @@ ${previousQnA}
         } else if (followupCount === 1) {
           // Second follow-up: micro-conversion nudge, tip is optional
           followupSystemPrompt = `
-You are a helpful sales assistant for Appointy. The user has not provided an email yet.
+You are a helpful sales assistant. The user has not provided an email yet.
 
 You will receive page and general context, the detected intent, and the previous conversation. If you think a tip would be helpful for the user, you may include it anywhere in your response, starting with '💡 Assistant Tip:'. Only include a tip if it is genuinely useful or relevant to the user's context or question. Otherwise, respond normally. Always generate your response in the following JSON format:
 {
@@ -515,7 +515,7 @@ ${previousQnA}
         } else if (followupCount === 2) {
           // Third follow-up: ask for email, tip is optional
           followupSystemPrompt = `
-You are a helpful sales assistant for Appointy. The user has not provided an email yet.
+You are a helpful sales assistant. The user has not provided an email yet.
 
 You will receive page and general context, the detected intent, and the previous conversation. If you think a tip would be helpful for the user, you may include it anywhere in your response, starting with '💡 Assistant Tip:'. Only include a tip if it is genuinely useful or relevant to the user's context or question. Otherwise, respond normally. Always generate your response in the following JSON format:
 {
@@ -540,7 +540,7 @@ ${previousQnA}
         } else if (followupCount === 3) {
           // Final nudge for abandoners: offer to email a summary, tip is optional
           followupSystemPrompt = `
-You are a helpful sales assistant for Appointy. The user has not provided an email yet and has not responded to several nudges.
+You are a helpful sales assistant. The user has not provided an email yet and has not responded to several nudges.
 
 You will receive page and general context, the detected intent, and the previous conversation. If you think a tip would be helpful for the user, you may include it anywhere in your response, starting with '💡 Assistant Tip:'. Only include a tip if it is genuinely useful or relevant to the user's context or question. Otherwise, respond normally. Always generate your response in the following JSON format:
 {
@@ -641,12 +641,12 @@ ${previousQnA}
     }
     // Fallback if no context
     if (proactive) {
-      const proactiveMsg = `👋 Hello there! Looks like you're exploring Appointy's scheduling and appointment management platform — designed to simplify how you manage bookings, clients, and business operations.
+      const proactiveMsg = `👋 Hello there! I'm here to help you learn more about the products and services available.
 
-With features like automated scheduling, client management, payment processing, and calendar integrations, Appointy helps you focus on growing your business — without the admin burden.
+I can help answer questions, provide information, and guide you through available options based on your specific needs.
 
-> I'd love to learn more about what you're planning!
-What type of business are you looking to streamline, or what scheduling challenges are you hoping to solve?`;
+> What would you like to know more about?
+Feel free to ask me anything or let me know what you're looking to accomplish!`;
       return NextResponse.json({ answer: proactiveMsg });
     } else if (followup) {
       console.log(
@@ -654,7 +654,7 @@ What type of business are you looking to streamline, or what scheduling challeng
       );
       return NextResponse.json({
         mainText:
-          "Is there anything else you'd like to know about Appointy's features?",
+          "Is there anything else you'd like to know about the available features?",
         buttons: ["Learn More Features", "Get Demo", "Contact Support"],
         emailPrompt: "Want me to send you more details? Share your email!",
       });
@@ -673,9 +673,9 @@ What type of business are you looking to streamline, or what scheduling challeng
 
       if (followupCount < 3) {
         const genericFollowups = [
-          "Is there anything else you'd like to know about Appointy's features?",
-          "Would you like to explore how Appointy could help with your specific needs?",
-          "Ready to see how Appointy can streamline your business? Let me know what interests you most!",
+          "Is there anything else you'd like to know about the available features?",
+          "Would you like to explore how this could help with your specific needs?",
+          "Ready to see how this can streamline your business? Let me know what interests you most!",
         ];
 
         const message = genericFollowups[followupCount] || genericFollowups[0];
@@ -686,8 +686,7 @@ What type of business are you looking to streamline, or what scheduling challeng
         return NextResponse.json({
           mainText: message,
           buttons: ["Learn More Features", "Get Demo", "Contact Support"],
-          emailPrompt:
-            "Want me to send you more details about Appointy? Share your email!",
+          emailPrompt: "Want me to send you more details? Share your email!",
         });
       } else {
         console.log(
@@ -800,7 +799,7 @@ What type of business are you looking to streamline, or what scheduling challeng
   } else {
     // Special handling for different types of requests
     if (isTalkToSupport) {
-      systemPrompt = `You are a helpful support assistant for Appointy. The user wants to talk to support. Provide a helpful, specific support response based on the context and their needs. Always generate your response in the following JSON format:
+      systemPrompt = `You are a helpful support assistant. The user wants to talk to support. Provide a helpful, specific support response based on the context and their needs. Always generate your response in the following JSON format:
 
 {
   "mainText": "<A helpful, specific support response that addresses their likely needs based on the context. Be warm and professional. Provide specific next steps or information about how to get help.>",
@@ -817,7 +816,7 @@ ${context}
 
 IMPORTANT: Focus on being helpful and supportive. Don't ask for email unless it's specifically needed for support. Generate contextual support-related buttons.`;
     } else if (isEmailRequest) {
-      systemPrompt = `You are a helpful sales assistant for Appointy. The user is asking about email or wanting something sent to their email. Always generate your response in the following JSON format:
+      systemPrompt = `You are a helpful sales assistant. The user is asking about email or wanting something sent to their email. Always generate your response in the following JSON format:
 
 {
   "mainText": "<Acknowledge their email request and explain what you can send them. Be specific about what information or resources you'll provide.>",
@@ -834,7 +833,7 @@ ${context}
 
 IMPORTANT: Don't provide other action buttons when user is requesting email. Focus on the email collection.`;
     } else {
-      systemPrompt = `You are a helpful sales assistant for Appointy. The user has not provided an email yet.\n\nYou will receive page and general context. If you think a tip would be helpful for the user, you may include it anywhere in your response, starting with '💡 Assistant Tip:'. Only include a tip if it is genuinely useful or relevant to the user's context or question. Otherwise, respond normally. Always generate your response in the following JSON format:\n\n{\n  "mainText": "<A dynamic, page-aware summary or answer, using the context below.>",\n  "buttons": ["<Generate 2-4 contextually relevant action buttons based on the user's question and the content you provided. These should be specific to their query and help them take the next logical step. For example, if they ask about hosting, buttons could be 'Learn About Security', 'Compare Plans', 'Contact Hosting Team'. Make buttons actionable and relevant to the specific topic discussed.>"],\n  "emailPrompt": "<Create a contextual email prompt that relates to the specific topic discussed, offering to send more detailed information about that topic specifically.>"\n}\n\nContext:\nPage Context:\n${pageContext}\n\nGeneral Context:\n${context}\n\nIMPORTANT: Generate buttons and email prompt that are directly related to the user's specific question and your answer. Do not use generic buttons. Make them actionable and relevant to the conversation topic.`;
+      systemPrompt = `You are a helpful sales assistant. The user has not provided an email yet.\n\nYou will receive page and general context. If you think a tip would be helpful for the user, you may include it anywhere in your response, starting with '💡 Assistant Tip:'. Only include a tip if it is genuinely useful or relevant to the user's context or question. Otherwise, respond normally. Always generate your response in the following JSON format:\n\n{\n  "mainText": "<A dynamic, page-aware summary or answer, using the context below.>",\n  "buttons": ["<Generate 2-4 contextually relevant action buttons based on the user's question and the content you provided. These should be specific to their query and help them take the next logical step. For example, if they ask about hosting, buttons could be 'Learn About Security', 'Compare Plans', 'Contact Hosting Team'. Make buttons actionable and relevant to the specific topic discussed.>"],\n  "emailPrompt": "<Create a contextual email prompt that relates to the specific topic discussed, offering to send more detailed information about that topic specifically.>"\n}\n\nContext:\nPage Context:\n${pageContext}\n\nGeneral Context:\n${context}\n\nIMPORTANT: Generate buttons and email prompt that are directly related to the user's specific question and your answer. Do not use generic buttons. Make them actionable and relevant to the conversation topic.`;
     }
   }
 
