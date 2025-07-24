@@ -70,11 +70,153 @@ async function extractLinksUsingBrowser(pageUrl: string): Promise<string[]> {
 
     // Wait a bit more for any dynamic content to load
     console.log(`[JSCrawl] Waiting for dynamic content to load...`);
-    await new Promise((resolve) => setTimeout(resolve, 5000)); // Increased wait time
+    await new Promise((resolve) => setTimeout(resolve, 3000)); // Initial wait
 
     // Check if page has loaded properly
     const pageTitle = await page.title();
     console.log(`[JSCrawl] Page loaded with title: ${pageTitle}`);
+
+    // Handle infinite scrolling by scrolling down multiple times
+    console.log(`[JSCrawl] Handling infinite scrolling...`);
+    let previousLinkCount = 0;
+    let scrollAttempts = 0;
+    const maxScrollAttempts = 15; // Increased attempts for more thorough scrolling
+
+    while (scrollAttempts < maxScrollAttempts) {
+      // Get current link count and blog-specific count
+      const { currentLinkCount, currentBlogCount } = await page.evaluate(() => {
+        const allLinks = document.querySelectorAll("a[href]").length;
+        const blogLinks = Array.from(
+          document.querySelectorAll("a[href]")
+        ).filter((el) => {
+          const href = el.getAttribute("href");
+          return (
+            href &&
+            (href.includes("/blog") ||
+              href.includes("/post") ||
+              href.includes("/article"))
+          );
+        }).length;
+        return {
+          currentLinkCount: allLinks,
+          currentBlogCount: blogLinks,
+        };
+      });
+
+      console.log(
+        `[JSCrawl] Scroll attempt ${
+          scrollAttempts + 1
+        }: Found ${currentLinkCount} total links, ${currentBlogCount} blog links`
+      );
+
+      // If no new links were loaded after scrolling, try a few more times
+      if (scrollAttempts > 2 && currentLinkCount === previousLinkCount) {
+        console.log(
+          `[JSCrawl] No new content loaded, trying 2 more attempts...`
+        );
+        // Try scrolling more aggressively
+        await page.evaluate(() => {
+          window.scrollTo(0, document.body.scrollHeight + 1000);
+        });
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+
+        const { finalLinkCount } = await page.evaluate(() => {
+          return {
+            finalLinkCount: document.querySelectorAll("a[href]").length,
+          };
+        });
+
+        if (finalLinkCount === currentLinkCount) {
+          console.log(
+            `[JSCrawl] Still no new content, stopping infinite scroll`
+          );
+          break;
+        }
+      }
+
+      previousLinkCount = currentLinkCount;
+
+      // Scroll to bottom of page with multiple strategies
+      await page.evaluate(() => {
+        // Strategy 1: Scroll to bottom
+        window.scrollTo(0, document.body.scrollHeight);
+
+        // Strategy 2: Also try scrolling the document element
+        if (
+          document.documentElement.scrollHeight > document.body.scrollHeight
+        ) {
+          window.scrollTo(0, document.documentElement.scrollHeight);
+        }
+
+        // Strategy 3: Smooth scroll to trigger lazy loading
+        window.scrollTo({
+          top: document.body.scrollHeight,
+          behavior: "smooth",
+        });
+
+        // Strategy 4: Trigger scroll events that might activate infinite scroll
+        window.dispatchEvent(new Event("scroll"));
+        document.dispatchEvent(new Event("scroll"));
+      });
+
+      // Wait for new content to load with progressive waiting
+      console.log(`[JSCrawl] Waiting for new content after scroll...`);
+      await new Promise((resolve) => setTimeout(resolve, 2000)); // Initial wait
+
+      // Check if there are loading indicators and wait longer if needed
+      const hasLoadingIndicators = await page.evaluate(() => {
+        const loadingSelectors = [
+          '[class*="loading"]',
+          '[class*="spinner"]',
+          '[class*="loader"]',
+          ".loading",
+          ".spinner",
+          ".loader",
+        ];
+
+        return loadingSelectors.some((selector) => {
+          const elements = document.querySelectorAll(selector);
+          return Array.from(elements).some((el) => {
+            const htmlEl = el as HTMLElement;
+            return htmlEl.offsetHeight > 0 && htmlEl.offsetWidth > 0; // Element is visible
+          });
+        });
+      });
+
+      if (hasLoadingIndicators) {
+        console.log(`[JSCrawl] Loading indicators detected, waiting longer...`);
+        await new Promise((resolve) => setTimeout(resolve, 4000));
+      } else {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+
+      scrollAttempts++;
+    }
+
+    console.log(
+      `[JSCrawl] Finished scrolling after ${scrollAttempts} attempts`
+    );
+
+    // Get final counts after all scrolling
+    const finalCounts = await page.evaluate(() => {
+      const allLinks = document.querySelectorAll("a[href]").length;
+      const blogLinks = Array.from(document.querySelectorAll("a[href]")).filter(
+        (el) => {
+          const href = el.getAttribute("href");
+          return (
+            href &&
+            (href.includes("/blog") ||
+              href.includes("/post") ||
+              href.includes("/article"))
+          );
+        }
+      ).length;
+      return { totalLinks: allLinks, blogLinks };
+    });
+
+    console.log(
+      `[JSCrawl] Final counts after infinite scroll: ${finalCounts.totalLinks} total links, ${finalCounts.blogLinks} blog links`
+    );
 
     // Extract all links from the rendered page
     const links = await page.evaluate((currentUrl) => {
