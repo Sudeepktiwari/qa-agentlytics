@@ -83,30 +83,48 @@ async function extractLinksUsingBrowser(pageUrl: string): Promise<string[]> {
     const maxScrollAttempts = 15; // Increased attempts for more thorough scrolling
 
     while (scrollAttempts < maxScrollAttempts) {
-      // Get current link count and blog-specific count
-      const { currentLinkCount, currentBlogCount } = await page.evaluate(() => {
-        const allLinks = document.querySelectorAll("a[href]").length;
-        const blogLinks = Array.from(
-          document.querySelectorAll("a[href]")
-        ).filter((el) => {
-          const href = el.getAttribute("href");
-          return (
-            href &&
-            (href.includes("/blog") ||
-              href.includes("/post") ||
-              href.includes("/article"))
-          );
-        }).length;
-        return {
-          currentLinkCount: allLinks,
-          currentBlogCount: blogLinks,
-        };
-      });
+      // Get current link count and content-specific count
+      const { currentLinkCount, currentContentCount } = await page.evaluate(
+        () => {
+          const allLinks = document.querySelectorAll("a[href]").length;
+
+          // Intelligent content detection in browser
+          const contentPatterns = [
+            /\/blog\//i,
+            /\/post\//i,
+            /\/article\//i,
+            /\/slide\//i,
+            /\/news\//i,
+            /\/help\//i,
+            /\/guide\//i,
+            /\/tutorial\//i,
+            /\/docs?\//i,
+            /\/support\//i,
+            /\/resource\//i,
+            /\/case-stud/i,
+            /\/faq\//i,
+          ];
+
+          const contentLinks = Array.from(
+            document.querySelectorAll("a[href]")
+          ).filter((el) => {
+            const href = el.getAttribute("href");
+            return (
+              href && contentPatterns.some((pattern) => pattern.test(href))
+            );
+          }).length;
+
+          return {
+            currentLinkCount: allLinks,
+            currentContentCount: contentLinks,
+          };
+        }
+      );
 
       console.log(
         `[JSCrawl] Scroll attempt ${
           scrollAttempts + 1
-        }: Found ${currentLinkCount} total links, ${currentBlogCount} blog links`
+        }: Found ${currentLinkCount} total links, ${currentContentCount} content links`
       );
 
       // If no new links were loaded after scrolling, try a few more times
@@ -200,22 +218,36 @@ async function extractLinksUsingBrowser(pageUrl: string): Promise<string[]> {
     // Get final counts after all scrolling
     const finalCounts = await page.evaluate(() => {
       const allLinks = document.querySelectorAll("a[href]").length;
-      const blogLinks = Array.from(document.querySelectorAll("a[href]")).filter(
-        (el) => {
-          const href = el.getAttribute("href");
-          return (
-            href &&
-            (href.includes("/blog") ||
-              href.includes("/post") ||
-              href.includes("/article"))
-          );
-        }
-      ).length;
-      return { totalLinks: allLinks, blogLinks };
+
+      // Use the same intelligent content detection
+      const contentPatterns = [
+        /\/blog\//i,
+        /\/post\//i,
+        /\/article\//i,
+        /\/slide\//i,
+        /\/news\//i,
+        /\/help\//i,
+        /\/guide\//i,
+        /\/tutorial\//i,
+        /\/docs?\//i,
+        /\/support\//i,
+        /\/resource\//i,
+        /\/case-stud/i,
+        /\/faq\//i,
+      ];
+
+      const contentLinks = Array.from(
+        document.querySelectorAll("a[href]")
+      ).filter((el) => {
+        const href = el.getAttribute("href");
+        return href && contentPatterns.some((pattern) => pattern.test(href));
+      }).length;
+
+      return { totalLinks: allLinks, contentLinks };
     });
 
     console.log(
-      `[JSCrawl] Final counts after infinite scroll: ${finalCounts.totalLinks} total links, ${finalCounts.blogLinks} blog links`
+      `[JSCrawl] Final counts after infinite scroll: ${finalCounts.totalLinks} total links, ${finalCounts.contentLinks} content links`
     );
 
     // Extract all links from the rendered page with enhanced deduplication
@@ -310,14 +342,58 @@ async function extractLinksUsingBrowser(pageUrl: string): Promise<string[]> {
               ) {
                 foundLinks.add(cleanUrl);
 
-                // Log blog-related links as we find them (but only first few to avoid spam)
-                if (
-                  (cleanUrl.includes("/blog") ||
-                    cleanUrl.includes("/post") ||
-                    cleanUrl.includes("/article")) &&
-                  index < 20 // Only log first 20 blog links to avoid spam
-                ) {
-                  console.log(`[JSCrawl-Browser] Found blog link: ${cleanUrl}`);
+                // Log content-related links as we find them (but only first few to avoid spam)
+                const contentPatterns = [
+                  /\/blog\//i,
+                  /\/post\//i,
+                  /\/article\//i,
+                  /\/slide\//i,
+                  /\/news\//i,
+                  /\/help\//i,
+                  /\/guide\//i,
+                  /\/tutorial\//i,
+                  /\/docs?\//i,
+                  /\/support\//i,
+                  /\/resource\//i,
+                  /\/case-stud/i,
+                  /\/faq\//i,
+                ];
+
+                const matchedPattern = contentPatterns.find((pattern) =>
+                  pattern.test(cleanUrl)
+                );
+                if (matchedPattern && index < 20) {
+                  // Only log first 20 content links to avoid spam
+                  const linkType = cleanUrl.includes("/slide")
+                    ? "slide"
+                    : cleanUrl.includes("/blog")
+                    ? "blog"
+                    : cleanUrl.includes("/post")
+                    ? "post"
+                    : cleanUrl.includes("/article")
+                    ? "article"
+                    : cleanUrl.includes("/help")
+                    ? "help"
+                    : cleanUrl.includes("/guide")
+                    ? "guide"
+                    : cleanUrl.includes("/news")
+                    ? "news"
+                    : cleanUrl.includes("/tutorial")
+                    ? "tutorial"
+                    : cleanUrl.includes("/docs")
+                    ? "docs"
+                    : cleanUrl.includes("/support")
+                    ? "support"
+                    : cleanUrl.includes("/resource")
+                    ? "resource"
+                    : cleanUrl.includes("/case-stud")
+                    ? "case-study"
+                    : cleanUrl.includes("/faq")
+                    ? "faq"
+                    : "content";
+                  console.log(
+                    `[JSCrawl-Browser] Found ${linkType} link: ${cleanUrl}`
+                  );
                 }
               }
             }
@@ -332,17 +408,47 @@ async function extractLinksUsingBrowser(pageUrl: string): Promise<string[]> {
       });
 
       const allLinks = Array.from(foundLinks);
-      const blogLinks = allLinks.filter(
-        (url) =>
-          url.includes("/blog") ||
-          url.includes("/post") ||
-          url.includes("/article")
+
+      // Use intelligent content detection for final summary
+      const contentPatterns = [
+        { pattern: /\/blog\//i, name: "blog" },
+        { pattern: /\/post\//i, name: "post" },
+        { pattern: /\/article\//i, name: "article" },
+        { pattern: /\/slide\//i, name: "slide" },
+        { pattern: /\/news\//i, name: "news" },
+        { pattern: /\/help\//i, name: "help" },
+        { pattern: /\/guide\//i, name: "guide" },
+        { pattern: /\/tutorial\//i, name: "tutorial" },
+        { pattern: /\/docs?\//i, name: "docs" },
+        { pattern: /\/support\//i, name: "support" },
+        { pattern: /\/resource\//i, name: "resource" },
+        { pattern: /\/case-stud/i, name: "case-study" },
+        { pattern: /\/faq\//i, name: "faq" },
+      ];
+
+      const contentLinks = allLinks.filter((url) =>
+        contentPatterns.some((cp) => cp.pattern.test(url))
       );
 
       console.log(
         `[JSCrawl-Browser] Total unique links extracted: ${allLinks.length}`
       );
-      console.log(`[JSCrawl-Browser] Blog-related links: ${blogLinks.length}`);
+      console.log(
+        `[JSCrawl-Browser] Content-related links: ${contentLinks.length}`
+      );
+
+      // Break down by content type
+      const contentBreakdown: Record<string, number> = {};
+      contentPatterns.forEach(({ pattern, name }) => {
+        const count = allLinks.filter((url) => pattern.test(url)).length;
+        if (count > 0) {
+          contentBreakdown[name] = count;
+        }
+      });
+
+      if (Object.keys(contentBreakdown).length > 0) {
+        console.log(`[JSCrawl-Browser] Content breakdown:`, contentBreakdown);
+      }
 
       return allLinks;
     }, pageUrl);
@@ -351,17 +457,15 @@ async function extractLinksUsingBrowser(pageUrl: string): Promise<string[]> {
       `[JSCrawl] Found ${links.length} links with JavaScript rendering`
     );
 
-    // Log blog-related URLs specifically
-    const blogUrls = links.filter(
-      (url) =>
-        url.includes("/blog") ||
-        url.includes("/post") ||
-        url.includes("/article")
-    );
-    console.log(
-      `[JSCrawl] Blog-related URLs found: ${blogUrls.length}`,
-      blogUrls
-    );
+    // Use intelligent content analysis for final summary
+    const finalAnalysis = analyzeUrlPatterns(links, pageUrl);
+    console.log(`[JSCrawl] Final content analysis:`, {
+      totalContentUrls: finalAnalysis.contentUrls.length,
+      patterns: finalAnalysis.detectedPatterns
+        .map((p) => `${p.name}: ${p.count}`)
+        .join(", "),
+      contentScore: finalAnalysis.totalContentScore.toFixed(1),
+    });
 
     return links;
   } catch (error) {
@@ -483,21 +587,238 @@ async function extractLinksFromPage(pageUrl: string): Promise<string[]> {
     }
   });
 
-  // Also look for common blog/article patterns in URLs
-  const blogPatterns = ["/blog/", "/post/", "/article/", "/news/"];
+  // Use intelligent content pattern detection
+  const contentPatterns = [
+    "/blog/",
+    "/post/",
+    "/article/",
+    "/slide/",
+    "/news/",
+    "/help/",
+    "/guide/",
+    "/tutorial/",
+    "/docs/",
+    "/support/",
+    "/resource/",
+    "/case-stud",
+    "/faq/",
+  ];
   const pageLinks = Array.from(links);
 
   console.log(
     `[LinkExtract] Total links found on ${pageUrl}: ${pageLinks.length}`
   );
-  console.log(
-    `[LinkExtract] Blog-like URLs found:`,
-    pageLinks.filter((url) =>
-      blogPatterns.some((pattern) => url.includes(pattern))
-    )
-  );
+
+  const intelligentAnalysis = analyzeUrlPatterns(pageLinks, pageUrl);
+  console.log(`[LinkExtract] Intelligent content analysis:`, {
+    contentUrls: intelligentAnalysis.contentUrls.length,
+    patterns: intelligentAnalysis.detectedPatterns
+      .map((p) => `${p.name}: ${p.count}`)
+      .join(", "),
+  });
 
   return pageLinks;
+}
+
+// Intelligent URL pattern analysis
+function analyzeUrlPatterns(urls: string[], inputUrl: string) {
+  // Common content patterns to look for (dynamically extensible)
+  const knownContentPatterns = [
+    { pattern: /\/blog\//i, name: "blog", weight: 1.0 },
+    { pattern: /\/post\//i, name: "post", weight: 1.0 },
+    { pattern: /\/article\//i, name: "article", weight: 1.0 },
+    { pattern: /\/slide\//i, name: "slide", weight: 1.0 },
+    { pattern: /\/news\//i, name: "news", weight: 0.9 },
+    { pattern: /\/help\//i, name: "help", weight: 0.8 },
+    { pattern: /\/guide\//i, name: "guide", weight: 0.8 },
+    { pattern: /\/tutorial\//i, name: "tutorial", weight: 0.8 },
+    { pattern: /\/docs\//i, name: "docs", weight: 0.7 },
+    { pattern: /\/support\//i, name: "support", weight: 0.7 },
+    { pattern: /\/faq\//i, name: "faq", weight: 0.6 },
+    { pattern: /\/case-stud/i, name: "case-study", weight: 0.8 },
+    { pattern: /\/resource\//i, name: "resource", weight: 0.7 },
+  ];
+
+  const detectedPatterns: Array<{
+    name: string;
+    count: number;
+    weight: number;
+    urls: string[];
+  }> = [];
+  const contentUrls: string[] = [];
+  const patternMap = new Map<string, string[]>();
+
+  // Analyze each URL against known patterns
+  urls.forEach((url) => {
+    knownContentPatterns.forEach(({ pattern, name, weight }) => {
+      if (pattern.test(url)) {
+        if (!patternMap.has(name)) {
+          patternMap.set(name, []);
+        }
+        patternMap.get(name)!.push(url);
+        if (!contentUrls.includes(url)) {
+          contentUrls.push(url);
+        }
+      }
+    });
+  });
+
+  // Build detected patterns summary
+  patternMap.forEach((urls, name) => {
+    const patternInfo = knownContentPatterns.find((p) => p.name === name);
+    if (patternInfo) {
+      detectedPatterns.push({
+        name,
+        count: urls.length,
+        weight: patternInfo.weight,
+        urls: urls.slice(0, 5), // Sample URLs
+      });
+    }
+  });
+
+  // Sort by relevance (count * weight)
+  detectedPatterns.sort((a, b) => b.count * b.weight - a.count * a.weight);
+
+  // Detect URL path depth patterns (for dynamic content detection)
+  const pathAnalysis = analyzePathDepth(urls, inputUrl);
+
+  return {
+    contentUrls,
+    detectedPatterns,
+    pathAnalysis,
+    totalContentScore: detectedPatterns.reduce(
+      (sum, p) => sum + p.count * p.weight,
+      0
+    ),
+  };
+}
+
+function analyzePathDepth(urls: string[], inputUrl: string) {
+  try {
+    const inputPath = new URL(inputUrl).pathname;
+    const inputDepth = inputPath
+      .split("/")
+      .filter((segment) => segment.length > 0).length;
+
+    const pathDepths = urls.map((url) => {
+      try {
+        const path = new URL(url).pathname;
+        return path.split("/").filter((segment) => segment.length > 0).length;
+      } catch {
+        return 0;
+      }
+    });
+
+    const avgDepth =
+      pathDepths.reduce((sum, depth) => sum + depth, 0) / pathDepths.length;
+    const maxDepth = Math.max(...pathDepths);
+    const minDepth = Math.min(...pathDepths.filter((d) => d > 0));
+
+    return {
+      inputDepth,
+      avgDepth,
+      maxDepth,
+      minDepth,
+      hasDeepPaths: maxDepth > inputDepth + 1, // URLs go deeper than the listing page
+      depthVariation: maxDepth - minDepth,
+    };
+  } catch {
+    return {
+      inputDepth: 0,
+      avgDepth: 0,
+      maxDepth: 0,
+      minDepth: 0,
+      hasDeepPaths: false,
+      depthVariation: 0,
+    };
+  }
+}
+
+function detectDynamicContentPage(
+  inputUrl: string,
+  urlAnalysis: any,
+  totalUrls: number
+) {
+  const hasMinimalLinks = totalUrls <= 10;
+  const hasMinimalContent = urlAnalysis.contentUrls.length <= 3;
+  const hasZeroContent = urlAnalysis.contentUrls.length === 0;
+
+  // Check if URL looks like a listing page (plural form or common listing patterns)
+  const listingPatterns = [
+    /\/blogs?\/?$/i,
+    /\/posts?\/?$/i,
+    /\/articles?\/?$/i,
+    /\/slides?\/?$/i,
+    /\/news\/?$/i,
+    /\/help\/?$/i,
+    /\/guides?\/?$/i,
+    /\/tutorials?\/?$/i,
+    /\/docs?\/?$/i,
+    /\/support\/?$/i,
+    /\/resources?\/?$/i,
+    /\/case-studies?\/?$/i,
+    /\/faqs?\/?$/i,
+  ];
+
+  const isListingPage = listingPatterns.some((pattern) =>
+    pattern.test(inputUrl)
+  );
+
+  // Check if URL contains any content-related keywords
+  const hasContentKeywords =
+    urlAnalysis.detectedPatterns.length > 0 ||
+    /\/(blog|post|article|slide|news|help|guide|tutorial|doc|support|resource|case-stud|faq)/i.test(
+      inputUrl
+    );
+
+  // Determine if this looks like a dynamic content page
+  const shouldUseJavaScript =
+    // Case 1: It's clearly a listing page
+    isListingPage ||
+    // Case 2: Has content keywords but found very few/no content URLs (likely dynamic)
+    (hasContentKeywords && (hasMinimalContent || hasZeroContent)) ||
+    // Case 3: Very few total links found (might be dynamic loading)
+    (hasContentKeywords && hasMinimalLinks) ||
+    // Case 4: URL suggests content but we found no deeper paths (might load dynamically)
+    (hasContentKeywords && !urlAnalysis.pathAnalysis.hasDeepPaths);
+
+  return {
+    shouldUseJavaScript,
+    reasons: {
+      isListingPage,
+      hasContentKeywords,
+      hasMinimalLinks,
+      hasMinimalContent,
+      hasZeroContent,
+      lacksDeepPaths:
+        hasContentKeywords && !urlAnalysis.pathAnalysis.hasDeepPaths,
+    },
+    confidence: calculateConfidence(
+      isListingPage,
+      hasContentKeywords,
+      hasMinimalContent,
+      hasZeroContent,
+      hasMinimalLinks
+    ),
+  };
+}
+
+function calculateConfidence(
+  isListingPage: boolean,
+  hasContentKeywords: boolean,
+  hasMinimalContent: boolean,
+  hasZeroContent: boolean,
+  hasMinimalLinks: boolean
+): number {
+  let confidence = 0;
+
+  if (isListingPage) confidence += 0.4; // Strong indicator
+  if (hasContentKeywords) confidence += 0.2;
+  if (hasZeroContent && hasContentKeywords) confidence += 0.3; // Very likely dynamic
+  if (hasMinimalContent && hasContentKeywords) confidence += 0.2;
+  if (hasMinimalLinks && hasContentKeywords) confidence += 0.1;
+
+  return Math.min(confidence, 1.0); // Cap at 1.0
 }
 
 async function discoverUrls(
@@ -524,63 +845,50 @@ async function discoverUrls(
       `[Discovery] Found ${urls.length} URLs by crawling webpage links`
     );
 
-    // Show breakdown by URL patterns
-    const blogUrls = urls.filter((url) => url.includes("/blog"));
-    const postUrls = urls.filter((url) => url.includes("/post"));
-    const articleUrls = urls.filter((url) => url.includes("/article"));
+    // Intelligent content detection - analyze URL patterns dynamically
+    const urlAnalysis = analyzeUrlPatterns(urls, inputUrl);
 
-    console.log(`[Discovery] Blog URLs (${blogUrls.length}):`, blogUrls);
-    console.log(`[Discovery] Post URLs (${postUrls.length}):`, postUrls);
+    console.log(`[Discovery] URL Analysis:`, urlAnalysis);
     console.log(
-      `[Discovery] Article URLs (${articleUrls.length}):`,
-      articleUrls
+      `[Discovery] Potential content URLs found: ${urlAnalysis.contentUrls.length}`
+    );
+    console.log(
+      `[Discovery] Content patterns detected:`,
+      urlAnalysis.detectedPatterns
     );
 
-    // Check if we found meaningful content or if we should try JavaScript rendering
-    const contentUrls = blogUrls.length + postUrls.length + articleUrls.length;
     const totalUrls = urls.length;
+    const contentUrls = urlAnalysis.contentUrls.length;
 
-    // If the page seems to be a blog/content page but we found very few content URLs,
-    // or if the page content seems minimal, try JavaScript rendering
-    const isLikelyContentPage =
-      inputUrl.includes("/blog") ||
-      inputUrl.includes("/post") ||
-      inputUrl.includes("/article");
-    const hasMinimalContent = totalUrls <= 10; // Very few links found
-    const hasMinimalBlogContent = contentUrls <= 3; // Very few blog/post/article URLs found
+    // Intelligent detection: check if this looks like a dynamic content page
+    const isDynamicContentPage = detectDynamicContentPage(
+      inputUrl,
+      urlAnalysis,
+      totalUrls
+    );
 
-    // Enhanced logic: trigger JS rendering if it's a likely content page AND either:
-    // 1. We found very few total links, OR
-    // 2. We found very few blog-specific content URLs (even if total links is high)
-    // 3. OR it's specifically a "/blogs" page (common pattern for blog listing pages)
-    const isBlogListingPage =
-      inputUrl.includes("/blogs") && !inputUrl.includes("/blogs/");
+    console.log(
+      `[Discovery] Dynamic content page detection:`,
+      isDynamicContentPage
+    );
 
-    if (
-      isLikelyContentPage &&
-      (hasMinimalContent ||
-        hasMinimalBlogContent ||
-        contentUrls === 0 ||
-        isBlogListingPage)
-    ) {
+    if (isDynamicContentPage.shouldUseJavaScript) {
       console.log(
-        `[Discovery] Detected potential JavaScript-rendered content page. ` +
-          `Total URLs: ${totalUrls}, Content URLs: ${contentUrls}, Is blog listing: ${isBlogListingPage}. Trying JS crawling...`
+        `[Discovery] Detected dynamic content page (confidence: ${isDynamicContentPage.confidence.toFixed(
+          2
+        )}). ` +
+          `Reasons: ${Object.entries(isDynamicContentPage.reasons)
+            .filter(([_, value]) => value)
+            .map(([key, _]) => key)
+            .join(", ")}. Trying JS crawling...`
       );
 
       try {
         const jsUrls = await extractLinksUsingBrowser(inputUrl);
-        const jsBlogUrls = jsUrls.filter((url: string) =>
-          url.includes("/blog")
-        );
-        const jsPostUrls = jsUrls.filter((url: string) =>
-          url.includes("/post")
-        );
-        const jsArticleUrls = jsUrls.filter((url: string) =>
-          url.includes("/article")
-        );
-        const jsContentUrls =
-          jsBlogUrls.length + jsPostUrls.length + jsArticleUrls.length;
+        const jsUrlAnalysis = analyzeUrlPatterns(jsUrls, inputUrl);
+        const jsContentUrls = jsUrlAnalysis.contentUrls.length;
+
+        console.log(`[Discovery] JS Analysis:`, jsUrlAnalysis);
 
         // If JavaScript rendering found more content URLs, use those results
         if (jsUrls.length > totalUrls || jsContentUrls > contentUrls) {
@@ -588,16 +896,10 @@ async function discoverUrls(
             `[Discovery] JavaScript rendering found more content! Using JS results.`
           );
           console.log(
-            `[Discovery] JS Blog URLs (${jsBlogUrls.length}):`,
-            jsBlogUrls
-          );
-          console.log(
-            `[Discovery] JS Post URLs (${jsPostUrls.length}):`,
-            jsPostUrls
-          );
-          console.log(
-            `[Discovery] JS Article URLs (${jsArticleUrls.length}):`,
-            jsArticleUrls
+            `[Discovery] Content patterns found:`,
+            jsUrlAnalysis.detectedPatterns
+              .map((p) => `${p.name}: ${p.count}`)
+              .join(", ")
           );
 
           // Ensure no duplicates in the final result
@@ -691,13 +993,26 @@ async function extractTextFromUrl(
     $("script, style, noscript").remove();
     const text = $("body").text().replace(/\s+/g, " ").trim();
 
-    // If the text is too short and this looks like a dynamic page, try JavaScript extraction
-    if (
-      text.length < 200 &&
-      (url.includes("/blog") ||
-        url.includes("/post") ||
-        url.includes("/article"))
-    ) {
+    // If the text is too short and this looks like a dynamic content page, try JavaScript extraction
+    const contentPatterns = [
+      /\/blog\//i,
+      /\/post\//i,
+      /\/article\//i,
+      /\/slide\//i,
+      /\/news\//i,
+      /\/help\//i,
+      /\/guide\//i,
+      /\/tutorial\//i,
+      /\/docs?\//i,
+      /\/support\//i,
+      /\/resource\//i,
+      /\/case-stud/i,
+      /\/faq\//i,
+    ];
+
+    const isContentPage = contentPatterns.some((pattern) => pattern.test(url));
+
+    if (text.length < 200 && isContentPage) {
       console.log(
         `[Crawl] Content seems minimal (${text.length} chars), trying JavaScript extraction...`
       );
