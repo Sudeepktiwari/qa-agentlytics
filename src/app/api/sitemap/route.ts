@@ -69,17 +69,26 @@ async function extractLinksUsingBrowser(pageUrl: string): Promise<string[]> {
     });
 
     // Wait a bit more for any dynamic content to load
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+    console.log(`[JSCrawl] Waiting for dynamic content to load...`);
+    await new Promise((resolve) => setTimeout(resolve, 5000)); // Increased wait time
+
+    // Check if page has loaded properly
+    const pageTitle = await page.title();
+    console.log(`[JSCrawl] Page loaded with title: ${pageTitle}`);
 
     // Extract all links from the rendered page
     const links = await page.evaluate((currentUrl) => {
       const linkElements = document.querySelectorAll("a[href]");
       const foundLinks = new Set<string>();
 
+      console.log(
+        `[JSCrawl-Browser] Found ${linkElements.length} link elements on page`
+      );
+
       // Add the current page
       foundLinks.add(currentUrl);
 
-      linkElements.forEach((element) => {
+      linkElements.forEach((element, index) => {
         const href = element.getAttribute("href");
         if (href) {
           try {
@@ -136,7 +145,7 @@ async function extractLinksUsingBrowser(pageUrl: string): Promise<string[]> {
                 "/wp-admin/",
                 "/admin/",
                 "/login",
-                "/register",
+                "/register/",
                 "/contact",
                 "/privacy",
                 "/terms",
@@ -153,16 +162,42 @@ async function extractLinksUsingBrowser(pageUrl: string): Promise<string[]> {
                 cleanUrl !== currentUrl
               ) {
                 foundLinks.add(cleanUrl);
+
+                // Log blog-related links as we find them
+                if (
+                  cleanUrl.includes("/blog") ||
+                  cleanUrl.includes("/post") ||
+                  cleanUrl.includes("/article")
+                ) {
+                  console.log(
+                    `[JSCrawl-Browser] Found blog link ${
+                      index + 1
+                    }: ${cleanUrl}`
+                  );
+                }
               }
             }
           } catch {
             // Skip invalid URLs
-            console.log("Skipping invalid URL:", href);
+            console.log("[JSCrawl-Browser] Skipping invalid URL:", href);
           }
         }
       });
 
-      return Array.from(foundLinks);
+      const allLinks = Array.from(foundLinks);
+      const blogLinks = allLinks.filter(
+        (url) =>
+          url.includes("/blog") ||
+          url.includes("/post") ||
+          url.includes("/article")
+      );
+
+      console.log(
+        `[JSCrawl-Browser] Total links extracted: ${allLinks.length}`
+      );
+      console.log(`[JSCrawl-Browser] Blog-related links: ${blogLinks.length}`);
+
+      return allLinks;
     }, pageUrl);
 
     console.log(
@@ -365,10 +400,25 @@ async function discoverUrls(
       inputUrl.includes("/post") ||
       inputUrl.includes("/article");
     const hasMinimalContent = totalUrls <= 10; // Very few links found
+    const hasMinimalBlogContent = contentUrls <= 3; // Very few blog/post/article URLs found
 
-    if (isLikelyContentPage && (hasMinimalContent || contentUrls === 0)) {
+    // Enhanced logic: trigger JS rendering if it's a likely content page AND either:
+    // 1. We found very few total links, OR
+    // 2. We found very few blog-specific content URLs (even if total links is high)
+    // 3. OR it's specifically a "/blogs" page (common pattern for blog listing pages)
+    const isBlogListingPage =
+      inputUrl.includes("/blogs") && !inputUrl.includes("/blogs/");
+
+    if (
+      isLikelyContentPage &&
+      (hasMinimalContent ||
+        hasMinimalBlogContent ||
+        contentUrls === 0 ||
+        isBlogListingPage)
+    ) {
       console.log(
-        `[Discovery] Detected potential JavaScript-rendered content page. Trying JS crawling...`
+        `[Discovery] Detected potential JavaScript-rendered content page. ` +
+          `Total URLs: ${totalUrls}, Content URLs: ${contentUrls}, Is blog listing: ${isBlogListingPage}. Trying JS crawling...`
       );
 
       try {
