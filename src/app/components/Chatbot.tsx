@@ -501,27 +501,9 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
             </b>{" "}
             {msg.role === "assistant" ? (
               <>
-                {/* Highlight nudges that start with '💡 Assistant Tip:' */}
-                {typeof msg.content === "string" &&
-                msg.content.trim().startsWith("💡 Assistant Tip:") ? (
-                  <div
-                    style={{
-                      background: "#f0f8ff",
-                      borderLeft: "4px solid #0070f3",
-                      padding: "8px 12px",
-                      borderRadius: 4,
-                      marginBottom: 4,
-                      fontWeight: 500,
-                      color: "#000000",
-                    }}
-                  >
-                    <ReactMarkdown>{msg.content}</ReactMarkdown>
-                  </div>
-                ) : (
-                  <div style={{ color: "#000000" }}>
-                    <ReactMarkdown>{msg.content}</ReactMarkdown>
-                  </div>
-                )}
+                <div style={{ color: "#000000" }}>
+                  <ReactMarkdown>{msg.content}</ReactMarkdown>
+                </div>
                 {/* Render action buttons if present and no email prompt */}
                 {msg.buttons &&
                   msg.buttons.length > 0 &&
