@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -26,7 +27,19 @@ export default function RootLayout({
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        suppressHydrationWarning={true}
       >
+        <Script
+          src="http://localhost:3001/api/widget"
+          data-api-key="ak_e8a971aee600130a0dcc93ca0fbb8831e366c4566f6b80426991b4ed6c8f9848"
+          data-theme="green"
+          data-size="large"
+          data-position="bottom-right"
+          data-voice-enabled="true"
+          data-voice-gender="female"
+          data-auto-open-proactive="true"
+          strategy="afterInteractive"
+        />
         {children}
       </body>
     </html>

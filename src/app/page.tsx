@@ -1,5 +1,4 @@
 "use client";
-import Chatbot from "./components/Chatbot";
 
 export default function HomePage() {
   return (
@@ -21,9 +20,12 @@ export default function HomePage() {
           color: "#000000",
         }}
       >
-        Document Chatbot
+        Welcome to Our Website
       </h1>
-      <Chatbot />
+      <div style={{ textAlign: "center", color: "#666" }}>
+        <p>This is a sample page with our chatbot widget.</p>
+        <p>Look for the chat bubble in the bottom-right corner!</p>
+      </div>
     </main>
   );
 }

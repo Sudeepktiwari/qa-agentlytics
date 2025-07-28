@@ -84,6 +84,9 @@ const AdminPanel: React.FC = () => {
     buttonText: "💬",
     welcomeMessage: "",
     customColor: "#0070f3",
+    voiceEnabled: true,
+    voiceGender: "female",
+    autoOpenProactive: true,
   });
 
   // Check authentication on mount

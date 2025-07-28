@@ -10,6 +10,9 @@ interface WidgetConfig {
   buttonText: string;
   welcomeMessage: string;
   customColor: string;
+  voiceEnabled: boolean;
+  voiceGender: string;
+  autoOpenProactive: boolean;
 }
 
 interface WidgetConfiguratorSectionProps {
@@ -64,6 +67,13 @@ const WidgetConfiguratorSection: React.FC<WidgetConfiguratorSectionProps> = ({
       );
     if (widgetConfig.customColor !== "#0070f3")
       configParams.push(`data-custom-color="${widgetConfig.customColor}"`);
+
+    // Voice settings - always include these
+    configParams.push(`data-voice-enabled="${widgetConfig.voiceEnabled}"`);
+    configParams.push(`data-voice-gender="${widgetConfig.voiceGender}"`);
+    configParams.push(
+      `data-auto-open-proactive="${widgetConfig.autoOpenProactive}"`
+    );
 
     const allParams = [`data-api-key="${apiKey}"`, ...configParams].join(" ");
     return `<script src="${getOrigin()}/api/widget" ${allParams}></script>`;
@@ -567,6 +577,184 @@ const WidgetConfiguratorSection: React.FC<WidgetConfiguratorSectionProps> = ({
                 boxSizing: "border-box",
               }}
             />
+          </div>
+
+          {/* Voice Settings Section */}
+          <div
+            style={{
+              marginTop: "24px",
+              paddingTop: "20px",
+              borderTop: "1px solid #e2e8f0",
+            }}
+          >
+            <h3
+              style={{
+                fontSize: "16px",
+                fontWeight: "600",
+                color: "#2d3748",
+                marginBottom: "16px",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+              }}
+            >
+              🎤 Voice Settings
+            </h3>
+
+            {/* Enable Voice */}
+            <div style={{ marginBottom: "16px" }}>
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  fontSize: "14px",
+                  fontWeight: "500",
+                  color: "#2d3748",
+                  cursor: "pointer",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={widgetConfig.voiceEnabled}
+                  onChange={(e) =>
+                    onWidgetConfigChange({
+                      ...widgetConfig,
+                      voiceEnabled: e.target.checked,
+                    })
+                  }
+                  style={{
+                    width: "16px",
+                    height: "16px",
+                    accentColor: getCurrentThemeColor(),
+                  }}
+                />
+                Enable Voice Functionality
+              </label>
+              <p
+                style={{
+                  fontSize: "12px",
+                  color: "#6b7280",
+                  marginLeft: "24px",
+                  marginTop: "4px",
+                }}
+              >
+                Allow text-to-speech for bot messages
+              </p>
+            </div>
+
+            {/* Voice Gender */}
+            <div style={{ marginBottom: "16px" }}>
+              <label
+                style={{
+                  display: "block",
+                  marginBottom: "8px",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  color: "#2d3748",
+                }}
+              >
+                🎭 Voice Gender
+              </label>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(2, 1fr)",
+                  gap: "8px",
+                }}
+              >
+                {[
+                  { value: "female", label: "Female", icon: "👩" },
+                  { value: "male", label: "Male", icon: "👨" },
+                ].map((voice) => {
+                  const themeColor = getCurrentThemeColor();
+                  return (
+                    <button
+                      key={voice.value}
+                      onClick={() =>
+                        onWidgetConfigChange({
+                          ...widgetConfig,
+                          voiceGender: voice.value,
+                        })
+                      }
+                      style={{
+                        padding: "12px 16px",
+                        border:
+                          widgetConfig.voiceGender === voice.value
+                            ? `2px solid ${themeColor}`
+                            : "2px solid #e2e8f0",
+                        borderRadius: "8px",
+                        background:
+                          widgetConfig.voiceGender === voice.value
+                            ? `linear-gradient(135deg, ${themeColor}20, ${themeColor}10)`
+                            : "linear-gradient(135deg, #ffffff, #f8fafc)",
+                        color:
+                          widgetConfig.voiceGender === voice.value
+                            ? themeColor
+                            : "#4a5568",
+                        cursor: "pointer",
+                        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                        fontWeight: "600",
+                        fontSize: "14px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "8px",
+                        boxShadow:
+                          widgetConfig.voiceGender === voice.value
+                            ? `0 4px 12px ${themeColor}25, inset 0 1px 0 rgba(255,255,255,0.1)`
+                            : "0 2px 4px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.1)",
+                      }}
+                    >
+                      <span>{voice.icon}</span>
+                      {voice.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Auto Open Proactive */}
+            <div style={{ marginBottom: "16px" }}>
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  fontSize: "14px",
+                  fontWeight: "500",
+                  color: "#2d3748",
+                  cursor: "pointer",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={widgetConfig.autoOpenProactive}
+                  onChange={(e) =>
+                    onWidgetConfigChange({
+                      ...widgetConfig,
+                      autoOpenProactive: e.target.checked,
+                    })
+                  }
+                  style={{
+                    width: "16px",
+                    height: "16px",
+                    accentColor: getCurrentThemeColor(),
+                  }}
+                />
+                Auto-open for Proactive Messages
+              </label>
+              <p
+                style={{
+                  fontSize: "12px",
+                  color: "#6b7280",
+                  marginLeft: "24px",
+                  marginTop: "4px",
+                }}
+              >
+                Automatically open chat when sending proactive messages
+              </p>
+            </div>
           </div>
         </div>
 

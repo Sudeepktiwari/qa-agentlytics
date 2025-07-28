@@ -15,7 +15,9 @@ import DocumentManagementSection from "./admin/DocumentManagementSection";
 
 const AdminPanel: React.FC = () => {
   // Authentication state
-  const [auth, setAuth] = useState<null | { email: string; adminId?: string }>(null);
+  const [auth, setAuth] = useState<null | { email: string; adminId?: string }>(
+    null
+  );
   const [authError, setAuthError] = useState("");
   const [authLoading, setAuthLoading] = useState(true);
   const [form, setForm] = useState({
@@ -30,7 +32,9 @@ const AdminPanel: React.FC = () => {
   const [sitemapLoading, setSitemapLoading] = useState(false);
 
   // Page URL dropdown state
-  const [sitemapUrls, setSitemapUrls] = useState<{ url: string; crawled: boolean }[]>([]);
+  const [sitemapUrls, setSitemapUrls] = useState<
+    { url: string; crawled: boolean }[]
+  >([]);
   const [selectedPageUrl, setSelectedPageUrl] = useState("");
 
   // API Key management state
@@ -80,6 +84,9 @@ const AdminPanel: React.FC = () => {
     buttonText: "💬",
     welcomeMessage: "",
     customColor: "#0070f3",
+    voiceEnabled: true,
+    voiceGender: "female",
+    autoOpenProactive: true,
   });
 
   // Check authentication on mount
@@ -261,7 +268,11 @@ const AdminPanel: React.FC = () => {
   };
 
   const deleteDocumentFile = async (filename: string) => {
-    if (!window.confirm(`Delete document "${filename}"? This will remove all its chunks from the knowledge base.`)) {
+    if (
+      !window.confirm(
+        `Delete document "${filename}"? This will remove all its chunks from the knowledge base.`
+      )
+    ) {
       return;
     }
 
@@ -491,7 +502,9 @@ const AdminPanel: React.FC = () => {
             documentsLoading={documentsLoading}
             documentsError={documentsError}
             documentsExpanded={documentsExpanded}
-            onToggleDocumentsExpanded={() => setDocumentsExpanded(!documentsExpanded)}
+            onToggleDocumentsExpanded={() =>
+              setDocumentsExpanded(!documentsExpanded)
+            }
             onRefreshDocuments={fetchDocuments}
             onDeleteDocument={deleteDocumentFile}
           />
