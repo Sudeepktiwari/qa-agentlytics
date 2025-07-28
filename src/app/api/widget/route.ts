@@ -314,10 +314,12 @@ export async function GET(request: Request) {
     // Auto-open chat if configured and currently closed
     if (config.autoOpenProactive && !isOpen) {
       toggleWidget();
-    }
-    
-    // Re-render messages if chat is open
-    if (isOpen) {
+      // Small delay to ensure widget is opened before rendering
+      setTimeout(() => {
+        renderMessages();
+      }, 100);
+    } else if (isOpen) {
+      // Re-render messages if chat is already open
       renderMessages();
     }
     
@@ -334,7 +336,7 @@ export async function GET(request: Request) {
       console.log('Proactive message voice disabled - waiting for user interaction');
     }
     
-    // Update bubble if chat is closed
+    // Update bubble if chat is closed (shouldn't happen with auto-open, but just in case)
     if (!isOpen) {
       updateBubble();
     }
@@ -738,9 +740,8 @@ export async function GET(request: Request) {
     });
     
     if (data.answer) {
-      const welcomeMessage = { role: 'assistant', content: data.answer };
-      messages.push(welcomeMessage);
-      renderMessages();
+      // Use sendProactiveMessage to handle auto-opening and voice
+      sendProactiveMessage(data.answer);
       startFollowupTimer();
     }
   }
