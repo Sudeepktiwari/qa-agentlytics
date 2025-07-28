@@ -321,14 +321,6 @@ export async function GET() {
     }
   }
   
-  // Example proactive message (you can call this from admin or based on user behavior)
-  setTimeout(() => {
-    const message = config.voiceEnabled ? 
-      "Hi there! 👋 I'm here to help you. Feel free to ask me anything! (Click anywhere to enable voice)" : 
-      "Hi there! 👋 I'm here to help you. Feel free to ask me anything!";
-    sendProactiveMessage(message);
-  }, 3000); // Send after 3 seconds for demo
-  
   // Update bubble to show notification when there are unread messages
   function updateBubble() {
     const unreadCount = messages.filter(msg => msg.role === 'assistant').length;
