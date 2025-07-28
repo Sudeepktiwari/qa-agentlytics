@@ -11,6 +11,22 @@ import { verifyApiKey } from "@/lib/auth";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+// CORS headers for cross-origin requests
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, x-api-key",
+  "Access-Control-Max-Age": "86400",
+};
+
+// Handle preflight requests
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: corsHeaders,
+  });
+}
+
 // Helper to extract text from URL with redirect handling (same as sitemap route)
 async function extractTextFromUrl(
   url: string,
@@ -175,7 +191,7 @@ export async function POST(req: NextRequest) {
         error:
           "No question, proactive, or followup flag, or no sessionId provided",
       },
-      { status: 400 }
+      { status: 400, headers: corsHeaders }
     );
 
   // Check for API key authentication (for external widget usage)
@@ -184,7 +200,10 @@ export async function POST(req: NextRequest) {
   if (apiKey) {
     apiAuth = await verifyApiKey(apiKey);
     if (!apiAuth) {
-      return NextResponse.json({ error: "Invalid API key" }, { status: 401 });
+      return NextResponse.json(
+        { error: "Invalid API key" },
+        { status: 401, headers: corsHeaders }
+      );
     }
   }
 
@@ -378,7 +397,10 @@ Content to reference:\n${summaryContext}`;
         });
         pageSummary = summaryResp.choices[0].message.content || "";
         const proactiveMsg = pageSummary;
-        return NextResponse.json({ answer: proactiveMsg });
+        return NextResponse.json(
+          { answer: proactiveMsg },
+          { headers: corsHeaders }
+        );
       } else if (followup) {
         // For follow-up, use the same JSON-output system prompt as main chat
         const previousChats = await chats
@@ -563,7 +585,7 @@ ${previousQnA}
           console.log(
             `[Followup] No more followups after count 4 for session ${sessionId}`
           );
-          return NextResponse.json({});
+          return NextResponse.json({}, { headers: corsHeaders });
         }
 
         // Check if user has been recently active based on recent message timestamps
@@ -584,7 +606,7 @@ ${previousQnA}
           console.log(
             `[Followup] Skipping followup - user was active within last 25 seconds for session ${sessionId}`
           );
-          return NextResponse.json({});
+          return NextResponse.json({}, { headers: corsHeaders });
         }
 
         // Start followup generation with error handling
@@ -619,19 +641,19 @@ ${previousQnA}
             console.log(
               `[Followup] Skipping followup - too similar to previous questions for session ${sessionId}`
             );
-            return NextResponse.json({});
+            return NextResponse.json({}, { headers: corsHeaders });
           }
 
           console.log(
             `[Followup] Successfully generated followup for session ${sessionId}`
           );
-          return NextResponse.json(parsed);
+          return NextResponse.json(parsed, { headers: corsHeaders });
         } catch (error) {
           console.error(
             `[Followup] Error generating followup for session ${sessionId}:`,
             error
           );
-          return NextResponse.json({});
+          return NextResponse.json({}, { headers: corsHeaders });
         }
       }
     }
@@ -643,7 +665,10 @@ I can help answer questions, provide information, and guide you through availabl
 
 > What would you like to know more about?
 Feel free to ask me anything or let me know what you're looking to accomplish!`;
-      return NextResponse.json({ answer: proactiveMsg });
+      return NextResponse.json(
+        { answer: proactiveMsg },
+        { headers: corsHeaders }
+      );
     } else if (followup) {
       console.log(
         `[Followup] Simple fallback followup for session ${sessionId}`
@@ -688,7 +713,7 @@ Feel free to ask me anything or let me know what you're looking to accomplish!`;
         console.log(
           `[Followup] No more generic followups for session ${sessionId}`
         );
-        return NextResponse.json({});
+        return NextResponse.json({}, { headers: corsHeaders });
       }
     } catch (error) {
       console.error(
@@ -884,12 +909,13 @@ IMPORTANT: Don't provide other action buttons when user is requesting email. Foc
     },
   ]);
 
-  return NextResponse.json(parsed);
+  return NextResponse.json(parsed, { headers: corsHeaders });
 }
 
 export async function GET(req: NextRequest) {
   const sessionId = req.nextUrl.searchParams.get("sessionId");
-  if (!sessionId) return NextResponse.json({ history: [] });
+  if (!sessionId)
+    return NextResponse.json({ history: [] }, { headers: corsHeaders });
   const db = await getDb();
   const chats = db.collection("chats");
   const history = await chats
@@ -897,7 +923,10 @@ export async function GET(req: NextRequest) {
     .sort({ createdAt: -1 })
     .limit(20)
     .toArray();
-  return NextResponse.json({ history: history.reverse() });
+  return NextResponse.json(
+    { history: history.reverse() },
+    { headers: corsHeaders }
+  );
 }
 
 export async function DELETE(req: NextRequest) {
@@ -905,7 +934,10 @@ export async function DELETE(req: NextRequest) {
     const { sessionId, clearHistory } = await req.json();
 
     if (!sessionId) {
-      return NextResponse.json({ error: "Missing sessionId" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Missing sessionId" },
+        { status: 400, headers: corsHeaders }
+      );
     }
 
     if (clearHistory) {
@@ -919,19 +951,25 @@ export async function DELETE(req: NextRequest) {
         `[Chat] Cleared ${result.deletedCount} messages for session ${sessionId}`
       );
 
-      return NextResponse.json({
-        success: true,
-        deletedCount: result.deletedCount,
-        message: "Chat history cleared successfully",
-      });
+      return NextResponse.json(
+        {
+          success: true,
+          deletedCount: result.deletedCount,
+          message: "Chat history cleared successfully",
+        },
+        { headers: corsHeaders }
+      );
     }
 
-    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Invalid request" },
+      { status: 400, headers: corsHeaders }
+    );
   } catch (error) {
     console.error("[Chat] Error clearing chat history:", error);
     return NextResponse.json(
       { error: "Failed to clear chat history" },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }
