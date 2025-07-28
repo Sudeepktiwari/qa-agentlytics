@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Universal Widget Test</title>
+  </head>
+  <body>
+    <h1>🌐 Universal Chatbot Widget Test</h1>
+    <p>This page demonstrates that your chatbot widget works on any website!</p>
+
+    <div
+      style="
+        margin: 20px 0;
+        padding: 20px;
+        background: #f0f8ff;
+        border-radius: 8px;
+      "
+    >
+      <h3>Test Instructions:</h3>
+      <ol>
+        <li>✅ Check if widget appears in bottom-right corner</li>
+        <li>✅ Click to open chat</li>
+        <li>✅ Test voice settings (gear icon)</li>
+        <li>✅ Send a message</li>
+        <li>✅ Test proactive messages in console:</li>
+      </ol>
+      <pre
+        style="
+          background: #333;
+          color: #fff;
+          padding: 10px;
+          border-radius: 4px;
+          margin: 10px 0;
+        "
+      >
+window.appointyChatbot.sendProactiveMessage('Hello from external website! 🎉');
+        </pre
+      >
+    </div>
+
+    <!-- Your universal widget script -->
+    <script
+      src="https://sample-chatbot-nine.vercel.app/api/widget"
+      data-api-key="ak_b17dd57a2e0d78b5d3f1155e94167da890dda703409fe1e36e647c2e6cc8d345"
+      data-theme="green"
+      data-size="large"
+      data-voice-enabled="true"
+      data-voice-gender="female"
+      data-auto-open-proactive="true"
+    ></script>
+
+    <script>
+      // Test script to verify widget functionality
+      setTimeout(() => {
+        console.log("🎯 Testing widget on external website...");
+
+        if (window.appointyChatbot) {
+          console.log("✅ Widget loaded successfully!");
+          console.log("🔧 Available API:", Object.keys(window.appointyChatbot));
+
+          // Send test proactive message after 5 seconds
+          setTimeout(() => {
+            console.log("📢 Sending test proactive message...");
+            window.appointyChatbot.sendProactiveMessage(
+              "🌟 Success! This chatbot widget works on ANY website! Try asking me a question."
+            );
+          }, 5000);
+        } else {
+          console.error("❌ Widget failed to load");
+        }
+      }, 2000);
+    </script>
+  </body>
+</html>

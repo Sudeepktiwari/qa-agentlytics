@@ -1,14 +1,13 @@
-export async function GET() {
-  // For the widget script, we'll handle API key in the client-side JavaScript
-  // since data attributes are only available on the client side
+export async function GET(request: Request) {
+  // Get the current request URL to determine the base URL dynamically
+  const url = new URL(request.url);
+  const baseUrl = `${url.protocol}//${url.host}`;
 
   // Generate the embeddable widget JavaScript
   const widgetScript = `
 (function() {
-  // Chatbot Widget Implementation
-  const CHATBOT_API_BASE = '${
-    process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
-  }';
+  // Chatbot Widget Implementation - dynamically use the same domain as the widget
+  const CHATBOT_API_BASE = '${baseUrl}';
   
   // Get script element and read data attributes (this is the correct way)
   const scriptElement = document.currentScript || document.querySelector('script[src*="/api/widget"]');
