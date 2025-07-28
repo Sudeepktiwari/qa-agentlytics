@@ -587,22 +587,6 @@ async function extractLinksFromPage(pageUrl: string): Promise<string[]> {
     }
   });
 
-  // Use intelligent content pattern detection
-  const contentPatterns = [
-    "/blog/",
-    "/post/",
-    "/article/",
-    "/slide/",
-    "/news/",
-    "/help/",
-    "/guide/",
-    "/tutorial/",
-    "/docs/",
-    "/support/",
-    "/resource/",
-    "/case-stud",
-    "/faq/",
-  ];
   const pageLinks = Array.from(links);
 
   console.log(
@@ -650,7 +634,7 @@ function analyzeUrlPatterns(urls: string[], inputUrl: string) {
 
   // Analyze each URL against known patterns
   urls.forEach((url) => {
-    knownContentPatterns.forEach(({ pattern, name, weight }) => {
+    knownContentPatterns.forEach(({ pattern, name }) => {
       if (pattern.test(url)) {
         if (!patternMap.has(name)) {
           patternMap.set(name, []);
@@ -734,9 +718,22 @@ function analyzePathDepth(urls: string[], inputUrl: string) {
   }
 }
 
+interface UrlAnalysis {
+  contentUrls: string[];
+  detectedPatterns: Array<{
+    name: string;
+    count: number;
+    weight: number;
+    urls: string[];
+  }>;
+  pathAnalysis: {
+    hasDeepPaths: boolean;
+  };
+}
+
 function detectDynamicContentPage(
   inputUrl: string,
-  urlAnalysis: any,
+  urlAnalysis: UrlAnalysis,
   totalUrls: number
 ) {
   const hasMinimalLinks = totalUrls <= 10;
@@ -878,8 +875,8 @@ async function discoverUrls(
           2
         )}). ` +
           `Reasons: ${Object.entries(isDynamicContentPage.reasons)
-            .filter(([_, value]) => value)
-            .map(([key, _]) => key)
+            .filter(([, value]) => value)
+            .map(([key]) => key)
             .join(", ")}. Trying JS crawling...`
       );
 
@@ -1410,7 +1407,7 @@ export async function POST(req: NextRequest) {
           const embeddings = embedResp.data.map(
             (d: { embedding: number[] }) => d.embedding
           );
-          const metadata = chunks.map((_, i) => ({
+          const metadata = chunks.map((chunk, i) => ({
             filename: url,
             adminId,
             url,
