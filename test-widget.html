@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Widget Test</title>
+  </head>
+  <body>
+    <h1>Test Page for Chatbot Widget</h1>
+    <p>This is a test page to verify the chatbot widget is working.</p>
+
+    <!-- Replace localhost:3000 with your actual domain -->
+    <script
+      src="http://localhost:3000/api/widget"
+      data-api-key="ak_e8a971aee600130a0dcc93ca0fbb8831e366c4566f6b80426991b4ed6c8f9848"
+      data-theme="blue"
+      data-chat-title="Test Chat"
+      data-welcome-message="Hello! This is a test message."
+      data-voice-enabled="true"
+      data-voice-gender="female"
+      data-auto-open-proactive="true"
+    ></script>
+
+    <script>
+      // Debug script to check if widget loaded
+      setTimeout(() => {
+        console.log("Checking widget status...");
+        console.log("appointyChatbot available:", !!window.appointyChatbot);
+
+        if (window.appointyChatbot) {
+          console.log(
+            "Widget API methods:",
+            Object.keys(window.appointyChatbot)
+          );
+
+          // Test proactive message after 5 seconds
+          setTimeout(() => {
+            console.log("Sending test proactive message...");
+            window.appointyChatbot.sendProactiveMessage(
+              "This is a test proactive message! 🎉"
+            );
+          }, 5000);
+        } else {
+          console.error("Widget failed to load!");
+        }
+      }, 2000);
+    </script>
+  </body>
+</html>

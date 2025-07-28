@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Direct Script Test</title>
+  </head>
+  <body>
+    <h1>Direct Script Tag Test</h1>
+    <p>Testing the direct script tag approach you wanted:</p>
+
+    <!-- Your exact script tag -->
+    <script
+      src="https://sample-chatbot-nine.vercel.app/api/widget"
+      data-api-key="ak_b17dd57a2e0d78b5d3f1155e94167da890dda703409fe1e36e647c2e6cc8d345"
+      data-voice-enabled="true"
+      data-voice-gender="female"
+      data-auto-open-proactive="true"
+    ></script>
+
+    <script>
+      // Debug script to check if widget loaded
+      setTimeout(() => {
+        console.log("Checking widget status...");
+        console.log("appointyChatbot available:", !!window.appointyChatbot);
+
+        if (window.appointyChatbot) {
+          console.log(
+            "✅ Widget API methods:",
+            Object.keys(window.appointyChatbot)
+          );
+          console.log("✅ Direct script tag approach works!");
+
+          // Test proactive message after 3 seconds
+          setTimeout(() => {
+            console.log("🎉 Sending test proactive message...");
+            window.appointyChatbot.sendProactiveMessage(
+              "Hello! This widget was loaded using the direct script tag approach! 🚀"
+            );
+          }, 3000);
+        } else {
+          console.error("❌ Widget failed to load with direct script approach");
+        }
+      }, 2000);
+    </script>
+  </body>
+</html>

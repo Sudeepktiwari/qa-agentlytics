@@ -12,21 +12,36 @@ export async function GET() {
   
   // Get script element and read data attributes (this is the correct way)
   const scriptElement = document.currentScript || document.querySelector('script[src*="/api/widget"]');
-  const API_KEY = scriptElement?.getAttribute('data-api-key') || 'ak_e8a971aee600130a0dcc93ca0fbb8831e366c4566f6b80426991b4ed6c8f9848';
+  
+  // Helper function to get attribute with fallback
+  const getAttr = (name, defaultValue) => {
+    const value = scriptElement?.getAttribute(name);
+    return value !== null && value !== undefined ? value : defaultValue;
+  };
+  
+  // Helper function for boolean attributes
+  const getBoolAttr = (name, defaultValue) => {
+    const value = scriptElement?.getAttribute(name);
+    if (value === null || value === undefined) return defaultValue;
+    return value !== 'false' && value !== '0';
+  };
+  
+  // API Key - always has a default fallback
+  const API_KEY = getAttr('data-api-key', 'ak_e8a971aee600130a0dcc93ca0fbb8831e366c4566f6b80426991b4ed6c8f9848');
   const ADMIN_ID = 'default';
   
-  // Read customization data attributes from the same script element
-  // Configuration
+  // Configuration with comprehensive defaults
   const config = {
-    theme: scriptElement?.getAttribute('data-theme') || 'blue',
-    size: scriptElement?.getAttribute('data-size') || 'medium',
-    position: scriptElement?.getAttribute('data-position') || 'bottom-right',
-    chatTitle: scriptElement?.getAttribute('data-title') || 'Chat with us',
-    welcomeMessage: scriptElement?.getAttribute('data-welcome') || 'Hello! How can I help you today?',
-    buttonText: scriptElement?.getAttribute('data-button-text') || '💬',
-    autoOpenProactive: scriptElement?.getAttribute('data-auto-open-proactive') !== 'false', // defaults to true
-    voiceEnabled: scriptElement?.getAttribute('data-voice-enabled') !== 'false', // defaults to true
-    voiceGender: scriptElement?.getAttribute('data-voice-gender') || 'female' // 'male' or 'female'
+    theme: getAttr('data-theme', 'blue'),
+    size: getAttr('data-size', 'medium'),
+    position: getAttr('data-position', 'bottom-right'),
+    chatTitle: getAttr('data-chat-title', 'Chat with us'),
+    welcomeMessage: getAttr('data-welcome-message', 'Hello! How can I help you today?'),
+    buttonText: getAttr('data-button-text', '💬'),
+    customColor: getAttr('data-custom-color', '#0070f3'),
+    autoOpenProactive: getBoolAttr('data-auto-open-proactive', true),
+    voiceEnabled: getBoolAttr('data-voice-enabled', true),
+    voiceGender: getAttr('data-voice-gender', 'female') // 'male' or 'female'
   };
   
   // Theme configurations
@@ -36,8 +51,11 @@ export async function GET() {
     purple: { primary: '#8b5cf6', secondary: '#faf5ff' },
     orange: { primary: '#f59e0b', secondary: '#fffbeb' },
     dark: { primary: '#1f2937', secondary: '#f9fafb' },
-    custom: { primary: '#0070f3', secondary: '#f0f8ff' }
+    custom: { primary: config.customColor, secondary: '#f0f8ff' }
   };
+  
+  // Get theme colors with fallback
+  const currentTheme = themes[config.theme] || themes.blue;
   
   // Size configurations
   const sizes = {
@@ -45,6 +63,9 @@ export async function GET() {
     medium: { width: '350px', height: '500px', buttonSize: '60px' },
     large: { width: '400px', height: '600px', buttonSize: '70px' }
   };
+  
+  // Get size config with fallback
+  const currentSize = sizes[config.size] || sizes.medium;
   
   // Position configurations
   const positions = {
@@ -54,8 +75,7 @@ export async function GET() {
     'top-left': { top: '20px', left: '20px' }
   };
   
-  const currentTheme = themes[config.theme] || themes.blue;
-  const currentSize = sizes[config.size] || sizes.medium;
+  // Get position config with fallback
   const currentPosition = positions[config.position] || positions['bottom-right'];
   
   // Create main widget container (column layout)

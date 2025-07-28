@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chatbot Widget - All Configuration Options</title>
+  </head>
+  <body>
+    <h1>Chatbot Widget Configuration Examples</h1>
+
+    <h2>✅ Minimal Setup (All attributes optional)</h2>
+    <p>
+      This will work with just the script src - all other attributes are
+      optional:
+    </p>
+    <pre><code>&lt;script src="http://localhost:3001/api/widget"&gt;&lt;/script&gt;</code></pre>
+
+    <h2>🎨 Full Configuration Options</h2>
+    <p>
+      Here are all available customization options with their default values:
+    </p>
+
+    <h3>📝 Basic Configuration</h3>
+    <ul>
+      <li>
+        <strong>data-api-key</strong>: API key for authentication <br /><em
+          >Default: Built-in fallback key</em
+        >
+      </li>
+      <li>
+        <strong>data-theme</strong>: Color theme <br /><em
+          >Options: blue, green, purple, orange, dark, custom</em
+        >
+        <br /><em>Default: "blue"</em>
+      </li>
+      <li>
+        <strong>data-size</strong>: Widget size <br /><em
+          >Options: small, medium, large</em
+        >
+        <br /><em>Default: "medium"</em>
+      </li>
+      <li>
+        <strong>data-position</strong>: Widget position <br /><em
+          >Options: bottom-right, bottom-left, top-right, top-left</em
+        >
+        <br /><em>Default: "bottom-right"</em>
+      </li>
+    </ul>
+
+    <h3>💬 Chat Customization</h3>
+    <ul>
+      <li>
+        <strong>data-chat-title</strong>: Title shown in chat header <br /><em
+          >Default: "Chat with us"</em
+        >
+      </li>
+      <li>
+        <strong>data-welcome-message</strong>: Initial welcome message <br /><em
+          >Default: "Hello! How can I help you today?"</em
+        >
+      </li>
+      <li>
+        <strong>data-button-text</strong>: Text/emoji on the chat button
+        <br /><em>Default: "💬"</em>
+      </li>
+      <li>
+        <strong>data-custom-color</strong>: Custom hex color (when
+        theme="custom") <br /><em>Default: "#0070f3"</em>
+      </li>
+    </ul>
+
+    <h3>🎤 Voice Settings</h3>
+    <ul>
+      <li>
+        <strong>data-voice-enabled</strong>: Enable text-to-speech <br /><em
+          >Options: true, false</em
+        >
+        <br /><em>Default: true</em>
+      </li>
+      <li>
+        <strong>data-voice-gender</strong>: Voice gender <br /><em
+          >Options: female, male</em
+        >
+        <br /><em>Default: "female"</em>
+      </li>
+      <li>
+        <strong>data-auto-open-proactive</strong>: Auto-open chat for proactive
+        messages <br /><em>Options: true, false</em> <br /><em
+          >Default: true</em
+        >
+      </li>
+    </ul>
+
+    <h2>🚀 Example Usage</h2>
+
+    <h3>Example 1: Minimal (uses all defaults)</h3>
+    <pre><code>&lt;script src="http://localhost:3001/api/widget"&gt;&lt;/script&gt;</code></pre>
+
+    <h3>Example 2: Basic customization</h3>
+    <pre><code>&lt;script 
+    src="http://localhost:3001/api/widget"
+    data-theme="green"
+    data-size="large"
+    data-chat-title="Help & Support"&gt;
+&lt;/script&gt;</code></pre>
+
+    <h3>Example 3: Full customization</h3>
+    <pre><code>&lt;script 
+    src="http://localhost:3001/api/widget"
+    data-api-key="your-api-key-here"
+    data-theme="custom"
+    data-custom-color="#ff6b6b"
+    data-size="large"
+    data-position="bottom-left"
+    data-chat-title="Customer Support"
+    data-welcome-message="Hi! Need help? I'm here to assist you!"
+    data-button-text="🆘"
+    data-voice-enabled="true"
+    data-voice-gender="male"
+    data-auto-open-proactive="false"&gt;
+&lt;/script&gt;</code></pre>
+
+    <h3>Example 4: Voice disabled</h3>
+    <pre><code>&lt;script 
+    src="http://localhost:3001/api/widget"
+    data-theme="dark"
+    data-voice-enabled="false"&gt;
+&lt;/script&gt;</code></pre>
+
+    <h2>🎯 Testing Proactive Messages</h2>
+    <p>
+      Once the widget loads, you can test proactive messages in the browser
+      console:
+    </p>
+    <pre><code>// Send a proactive message
+window.appointyChatbot.sendProactiveMessage('Hello! This is a test message!');
+
+// Check if chat is open
+console.log('Chat open:', window.appointyChatbot.isOpen());
+
+// Open/close chat programmatically
+window.appointyChatbot.openChat();
+window.appointyChatbot.closeChat();</code></pre>
+
+    <!-- Actual widget with minimal setup to demonstrate defaults -->
+    <script
+      src="http://localhost:3001/api/widget"
+      data-theme="green"
+      data-size="large"
+    ></script>
+
+    <script>
+      // Test the widget API after it loads
+      setTimeout(() => {
+        if (window.appointyChatbot) {
+          console.log("✅ Widget loaded successfully!");
+          console.log(
+            "Available API methods:",
+            Object.keys(window.appointyChatbot)
+          );
+
+          // Test proactive message after 5 seconds
+          setTimeout(() => {
+            console.log("🎉 Sending test proactive message...");
+            window.appointyChatbot.sendProactiveMessage(
+              "Welcome! This chatbot was loaded with minimal configuration - most attributes were optional and used defaults. Only theme and size were customized!"
+            );
+          }, 5000);
+        } else {
+          console.error("❌ Widget failed to load");
+        }
+      }, 2000);
+    </script>
+  </body>
+</html>
