@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test - Enhanced Detection Default</title>
+  </head>
+  <body>
+    <h1>Enhanced Detection Default Test</h1>
+
+    <div>
+      <h2>Test 1: No data-enhanced-detection attribute</h2>
+      <p>
+        This widget should have enhanced detection enabled by default (no
+        attribute specified):
+      </p>
+      <div id="widget1-status">Loading...</div>
+    </div>
+
+    <div>
+      <h2>Test 2: Explicitly disabled</h2>
+      <p>This widget has enhanced detection explicitly disabled:</p>
+      <div id="widget2-status">Loading...</div>
+    </div>
+
+    <div>
+      <h2>Navigation Test</h2>
+      <button onclick="navigateTo('/about')">Go to About</button>
+      <button onclick="navigateTo('/services')">Go to Services</button>
+      <button onclick="navigateTo('/')">Go to Home</button>
+      <p>Current page: <span id="current-page"></span></p>
+    </div>
+
+    <!-- Widget 1: No enhanced detection attribute (should default to true) -->
+    <script
+      src="http://localhost:3001/api/widget"
+      data-server="http://localhost:3001"
+      data-auto-open-proactive="true"
+      data-theme="blue"
+      data-position="bottom-right"
+    ></script>
+
+    <script>
+      function navigateTo(path) {
+        history.pushState({}, "", path);
+        document.getElementById("current-page").textContent = path;
+        console.log("Navigated to:", path);
+      }
+
+      // Initialize
+      document.addEventListener("DOMContentLoaded", function () {
+        document.getElementById("current-page").textContent =
+          window.location.pathname;
+        console.log("=== Enhanced Detection Default Test ===");
+        console.log("Testing that enhanced detection is enabled by default");
+
+        // Check after a delay to let widget initialize
+        setTimeout(() => {
+          if (window.appointyChatbot) {
+            const config = window.appointyChatbot.getConfig();
+            console.log("Widget 1 config:", config);
+
+            const isEnhanced = config.enhancedDetection;
+            document.getElementById("widget1-status").innerHTML = isEnhanced
+              ? '<span style="color: green;">✅ Enhanced detection enabled by default</span>'
+              : '<span style="color: red;">❌ Enhanced detection not enabled</span>';
+
+            console.log("Enhanced detection enabled:", isEnhanced);
+          } else {
+            document.getElementById("widget1-status").innerHTML =
+              '<span style="color: red;">❌ Widget API not available</span>';
+          }
+        }, 2000);
+      });
+    </script>
+  </body>
+</html>

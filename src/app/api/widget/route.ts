@@ -40,7 +40,8 @@ export async function GET(request: Request) {
     customColor: getAttr('data-custom-color', '#0070f3'),
     autoOpenProactive: getBoolAttr('data-auto-open-proactive', true),
     voiceEnabled: getBoolAttr('data-voice-enabled', true),
-    voiceGender: getAttr('data-voice-gender', 'female') // 'male' or 'female'
+    voiceGender: getAttr('data-voice-gender', 'female'), // 'male' or 'female'
+    enhancedDetection: getBoolAttr('data-enhanced-detection', true) // Enable enhanced page detection by default
   };
   
   // Theme configurations
@@ -353,10 +354,8 @@ export async function GET(request: Request) {
       currentPageUrl = newUrl;
       isPageContextLoaded = false;
       
-      // Clear existing context and reload for new page
-      if (isOpen) {
-        loadPageContext();
-      }
+      // Always reload context for new page to ensure proper detection
+      loadPageContext();
       
       return true;
     }
@@ -379,8 +378,8 @@ export async function GET(request: Request) {
       });
       
       if (data.answer) {
-        // If chat is open, show the new context message
-        if (isOpen) {
+        // Send proactive message if auto-open is enabled
+        if (config.autoOpenProactive) {
           sendProactiveMessage(data.answer);
         }
         isPageContextLoaded = true;
@@ -807,17 +806,24 @@ export async function GET(request: Request) {
   async function initializeChat() {
     console.log('[ChatWidget] Initializing chat for page:', currentPageUrl);
     
-    // Simple proactive message initialization
-    const data = await sendApiRequest('chat', {
-      sessionId,
-      pageUrl: currentPageUrl,
-      proactive: true,
-      adminId: 'default'
-    });
+    // Wait for page context to be properly loaded first
+    if (!isPageContextLoaded) {
+      await loadPageContext();
+    }
     
-    if (data.answer) {
-      sendProactiveMessage(data.answer);
-      isPageContextLoaded = true;
+    // If page context loading didn't provide a proactive message, send default
+    if (messages.length === 0) {
+      console.log('[ChatWidget] No page-specific context found, using default message');
+      const data = await sendApiRequest('chat', {
+        sessionId,
+        pageUrl: currentPageUrl,
+        proactive: true,
+        adminId: 'default'
+      });
+      
+      if (data.answer) {
+        sendProactiveMessage(data.answer);
+      }
     }
     
     console.log('[ChatWidget] Chat initialized successfully');
@@ -996,9 +1002,13 @@ export async function GET(request: Request) {
       initializeVoices();
     }
     
-    // Start page monitoring after a short delay to ensure everything is ready
+    // Start page monitoring and load initial context (if enhanced detection is enabled)
     setTimeout(() => {
-      startPageMonitoring();
+      if (config.enhancedDetection) {
+        startPageMonitoring();
+        // Load initial page context
+        loadPageContext();
+      }
     }, 1000);
     
     console.log('[ChatWidget] Widget initialized successfully');    // Add cleanup function for page monitoring
@@ -1053,6 +1063,17 @@ export async function GET(request: Request) {
       },
       setAutoOpen: (autoOpen) => {
         config.autoOpenProactive = !!autoOpen;
+      },
+      setEnhancedDetection: (enabled) => {
+        config.enhancedDetection = !!enabled;
+        if (enabled && !pageChangeCheckInterval) {
+          // Start monitoring if it wasn't running
+          startPageMonitoring();
+          loadPageContext();
+        } else if (!enabled && pageChangeCheckInterval) {
+          // Stop monitoring if it was running
+          cleanupPageMonitoring();
+        }
       },
       speakText: (text) => {
         if (config.voiceEnabled && text) {

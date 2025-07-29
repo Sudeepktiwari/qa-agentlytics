@@ -30,7 +30,7 @@ export default function RootLayout({
         suppressHydrationWarning={true}
       >
         <Script
-          src="https://sample-chatbot-nine.vercel.app/api/widget"
+          src="http://localhost:3000/api/widget"
           data-api-key="ak_b17dd57a2e0d78b5d3f1155e94167da890dda703409fe1e36e647c2e6cc8d345"
           data-theme="green"
           data-size="large"

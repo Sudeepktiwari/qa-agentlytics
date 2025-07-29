@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test Page - Enhanced Detection Fixed</title>
+  </head>
+  <body>
+    <h1>Enhanced Widget Test - Fixed Version</h1>
+
+    <div>
+      <h2>Test Navigation:</h2>
+      <button onclick="navigateTo('/services')">Services Page</button>
+      <button onclick="navigateTo('/about')">About Page</button>
+      <button onclick="navigateTo('/pricing')">Pricing Page</button>
+      <button onclick="navigateTo('/')">Home Page</button>
+    </div>
+
+    <div>
+      <h3>Current Page: <span id="current-page"></span></h3>
+      <p>
+        Watch the console for debug messages about page detection and context
+        loading.
+      </p>
+      <p>
+        The widget should now provide page-specific proactive messages instead
+        of generic ones.
+      </p>
+    </div>
+
+    <!-- Load the fixed widget -->
+    <script
+      src="http://localhost:3002/api/widget"
+      data-server="http://localhost:3002"
+      data-auto-open-proactive="true"
+      data-enhanced-detection="true"
+      data-theme="default"
+      data-position="bottom-right"
+    ></script>
+
+    <script>
+      function navigateTo(path) {
+        history.pushState({}, "", path);
+        document.getElementById("current-page").textContent = path;
+        console.log("Navigated to:", path);
+      }
+
+      // Initialize
+      document.addEventListener("DOMContentLoaded", function () {
+        document.getElementById("current-page").textContent =
+          window.location.pathname;
+        console.log("=== Enhanced Widget Test Started ===");
+        console.log("Initial page:", window.location.pathname);
+      });
+    </script>
+  </body>
+</html>
