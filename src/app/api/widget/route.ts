@@ -49,38 +49,16 @@ export async function GET(request: Request) {
   
   // Validate API Key is provided - STRICTLY REQUIRED
   if (!API_KEY || API_KEY.trim() === '') {
-    const errorMessage = 'Widget ERROR: API key is required. Please add data-api-key attribute to the script tag.';
-    console.error('[Widget]', errorMessage);
-    // Return error script with static messages to avoid syntax issues
-    const errorScript = [
-      '(function() {',
-      '  console.error("[Widget] API key is required. Please add data-api-key attribute to the script tag.");',
-      '  console.error("Widget will not initialize without a valid API key.");',
-      '  throw new Error("API key required");',
-      '})();'
-    ].join('\n');
-    return new NextResponse(errorScript, {
-      status: 400,
-      headers: { 'Content-Type': 'application/javascript', ...corsHeaders }
-    });
+    console.error('[Widget] API key is required. Please add data-api-key attribute to the script tag.');
+    console.error('Widget will not initialize without a valid API key.');
+    throw new Error('API key required');
   }
   
   // Validate API Key format (should start with 'ak_' and be 67 characters total)
   if (!API_KEY.startsWith('ak_') || API_KEY.length !== 67) {
-    const errorMessage = 'Widget ERROR: Invalid API key format. API key should start with ak_ and be 67 characters long.';
-    console.error('[Widget]', errorMessage);
-    // Return error script with static messages to avoid syntax issues
-    const errorScript = [
-      '(function() {',
-      '  console.error("[Widget] Invalid API key format. API key should start with ak_ and be 67 characters long.");',
-      '  console.error("Widget will not initialize with invalid API key format.");',
-      '  throw new Error("Invalid API key format");',
-      '})();'
-    ].join('\n');
-    return new NextResponse(errorScript, {
-      status: 400,
-      headers: { 'Content-Type': 'application/javascript', ...corsHeaders }
-    });
+    console.error('[Widget] Invalid API key format. API key should start with ak_ and be 67 characters long.');
+    console.error('Widget will not initialize with invalid API key format.');
+    throw new Error('Invalid API key format');
   }
   
   // Configuration with comprehensive defaults
