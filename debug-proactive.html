@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Debug Proactive Messaging - Advancelytics</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        line-height: 1.6;
+      }
+      .debug-panel {
+        background: #f4f4f4;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+      }
+      .test-buttons {
+        margin: 10px 0;
+      }
+      .test-buttons button {
+        margin: 5px;
+        padding: 10px 15px;
+        background: #007cba;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .log-output {
+        background: #000;
+        color: #00ff00;
+        padding: 15px;
+        border-radius: 4px;
+        height: 200px;
+        overflow-y: auto;
+        font-family: monospace;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Debug Proactive Messaging - Advancelytics</h1>
+
+    <div class="debug-panel">
+      <h3>Debug Information:</h3>
+      <p><strong>Current URL:</strong> <span id="currentUrl"></span></p>
+      <p>
+        <strong>API Key:</strong>
+        ak_b17dd57a2e0d78b5d3f1155e94167da890dda703409fe1e36e647c2e6cc8d345
+      </p>
+      <p>
+        <strong>Widget Config:</strong> voice-enabled=true,
+        auto-open-proactive=true
+      </p>
+
+      <div class="test-buttons">
+        <button
+          onclick="simulatePageChange('https://www.advancelytics.com/features')"
+        >
+          Test Features Page
+        </button>
+        <button
+          onclick="simulatePageChange('https://www.advancelytics.com/how-it-works')"
+        >
+          Test How It Works
+        </button>
+        <button
+          onclick="simulatePageChange('https://www.advancelytics.com/solutions')"
+        >
+          Test Solutions
+        </button>
+        <button onclick="simulatePageChange('https://www.advancelytics.com/')">
+          Test Homepage
+        </button>
+        <button onclick="testProactiveAPI()">Direct API Test</button>
+        <button onclick="clearLogs()">Clear Logs</button>
+      </div>
+
+      <h4>Console Logs:</h4>
+      <div id="logOutput" class="log-output"></div>
+    </div>
+
+    <div style="padding: 20px; background: #e8f4f8; border-radius: 8px">
+      <h2>About Advancelytics Features</h2>
+      <p>
+        Explore our comprehensive analytics platform designed to transform how
+        you understand and utilize your data. Our advanced features include:
+      </p>
+      <ul>
+        <li>
+          <strong>Real-time Analytics:</strong> Get instant insights from your
+          data streams
+        </li>
+        <li>
+          <strong>Predictive Modeling:</strong> Forecast trends and anticipate
+          market changes
+        </li>
+        <li>
+          <strong>Custom Dashboards:</strong> Create personalized views for
+          different stakeholders
+        </li>
+        <li>
+          <strong>Data Integration:</strong> Connect multiple data sources
+          seamlessly
+        </li>
+        <li>
+          <strong>Advanced Visualization:</strong> Present complex data in
+          understandable formats
+        </li>
+      </ul>
+      <p>
+        Whether you're looking to optimize operations, understand customer
+        behavior, or drive strategic decisions, our platform provides the tools
+        you need.
+      </p>
+    </div>
+
+    <script>
+      // Update current URL display
+      document.getElementById("currentUrl").textContent = window.location.href;
+
+      // Capture console logs
+      const originalConsoleLog = console.log;
+      const originalConsoleError = console.error;
+      const logOutput = document.getElementById("logOutput");
+
+      function addLog(message, type = "log") {
+        const timestamp = new Date().toLocaleTimeString();
+        const logElement = document.createElement("div");
+        logElement.innerHTML = `[${timestamp}] ${type.toUpperCase()}: ${message}`;
+        if (type === "error") logElement.style.color = "#ff6666";
+        logOutput.appendChild(logElement);
+        logOutput.scrollTop = logOutput.scrollHeight;
+      }
+
+      console.log = function (...args) {
+        addLog(args.join(" "));
+        originalConsoleLog.apply(console, args);
+      };
+
+      console.error = function (...args) {
+        addLog(args.join(" "), "error");
+        originalConsoleError.apply(console, args);
+      };
+
+      function simulatePageChange(newUrl) {
+        addLog(`Simulating page change to: ${newUrl}`);
+        // Update the URL without actually navigating
+        window.history.pushState({}, "", newUrl);
+        document.getElementById("currentUrl").textContent = newUrl;
+
+        // Trigger the widget's page change detection
+        if (window.dispatchEvent) {
+          window.dispatchEvent(new Event("popstate"));
+        }
+      }
+
+      async function testProactiveAPI() {
+        const apiUrl = "https://sample-chatbot-nine.vercel.app/api/chat";
+        const testData = {
+          sessionId: "debug-session-" + Date.now(),
+          pageUrl: window.location.href,
+          proactive: true,
+          adminId: "default",
+        };
+
+        addLog(`Testing proactive API with: ${JSON.stringify(testData)}`);
+
+        try {
+          const response = await fetch(apiUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-api-key":
+                "ak_b17dd57a2e0d78b5d3f1155e94167da890dda703409fe1e36e647c2e6cc8d345",
+            },
+            body: JSON.stringify(testData),
+          });
+
+          const result = await response.json();
+          addLog(`API Response: ${JSON.stringify(result, null, 2)}`);
+
+          if (result.answer) {
+            addLog(`Proactive message received: ${result.answer}`);
+          } else {
+            addLog("No proactive message in response", "error");
+          }
+        } catch (error) {
+          addLog(`API Error: ${error.message}`, "error");
+        }
+      }
+
+      function clearLogs() {
+        logOutput.innerHTML = "";
+      }
+
+      // Log initial load
+      addLog("Debug page loaded successfully");
+      addLog(`Current page URL: ${window.location.href}`);
+    </script>
+
+    <!-- Your chatbot widget -->
+    <script
+      src="https://sample-chatbot-nine.vercel.app/api/widget"
+      data-api-key="ak_b17dd57a2e0d78b5d3f1155e94167da890dda703409fe1e36e647c2e6cc8d345"
+      data-voice-enabled="true"
+      data-voice-gender="female"
+      data-auto-open-proactive="true"
+    ></script>
+  </body>
+</html>

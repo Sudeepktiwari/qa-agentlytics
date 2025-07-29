@@ -140,38 +140,59 @@ function detectIntent({
 }): string {
   const lowerQ = (question || "").toLowerCase();
   const lowerUrl = (pageUrl || "").toLowerCase();
+
+  // Analytics and technology services intents
   if (
-    lowerQ.includes("couple") ||
-    lowerQ.includes("romance") ||
-    lowerUrl.includes("couple")
+    lowerQ.includes("features") ||
+    lowerQ.includes("feature") ||
+    lowerUrl.includes("features")
   ) {
-    return "couple massage";
+    return "exploring features";
+  }
+  if (
+    lowerQ.includes("how") ||
+    lowerQ.includes("works") ||
+    lowerUrl.includes("how-it-works")
+  ) {
+    return "understanding how it works";
+  }
+  if (
+    lowerQ.includes("solutions") ||
+    lowerQ.includes("solution") ||
+    lowerUrl.includes("solutions")
+  ) {
+    return "exploring solutions";
   }
   if (
     lowerQ.includes("pricing") ||
     lowerQ.includes("price") ||
     lowerUrl.includes("pricing")
   ) {
-    return "pricing";
+    return "pricing information";
   }
   if (
     lowerQ.includes("demo") ||
-    lowerQ.includes("feature demo") ||
+    lowerQ.includes("demonstration") ||
     lowerUrl.includes("demo")
   ) {
-    return "feature demo";
+    return "requesting a demo";
   }
   if (
-    lowerQ.includes("discovery call") ||
-    lowerUrl.includes("discovery-call")
+    lowerQ.includes("analytics") ||
+    lowerQ.includes("data") ||
+    lowerUrl.includes("analytics")
   ) {
-    return "discovery call";
+    return "data analytics solutions";
   }
-  if (lowerQ.includes("quote") || lowerUrl.includes("quote")) {
-    return "quote";
+  if (
+    lowerQ.includes("contact") ||
+    lowerQ.includes("get started") ||
+    lowerUrl.includes("contact")
+  ) {
+    return "getting started";
   }
-  // Add more as needed
-  return "general";
+  // Add more as needed for your specific business
+  return "exploring services";
 }
 
 export async function POST(req: NextRequest) {
@@ -247,8 +268,15 @@ export async function POST(req: NextRequest) {
 
   // Proactive page-aware message
   if ((proactive || followup) && pageUrl) {
+    console.log(
+      `[DEBUG] Proactive request - pageUrl: ${pageUrl}, adminId: ${adminId}, proactive: ${proactive}, followup: ${followup}`
+    );
+
     let pageChunks: string[] = [];
     if (adminId) {
+      console.log(
+        `[DEBUG] AdminId found: ${adminId}, checking sitemap for pageUrl: ${pageUrl}`
+      );
       // Check if pageUrl is in sitemap_urls and if it's crawled
       const sitemapUrls = db.collection("sitemap_urls");
       const sitemapEntry = await sitemapUrls.findOne({ adminId, url: pageUrl });
