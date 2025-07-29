@@ -840,30 +840,129 @@ export async function GET(request: Request) {
           const buttonsDiv = document.createElement('div');
           buttonsDiv.style.cssText = 'margin-top: 8px;';
           
-          msg.buttons.forEach((buttonText) => {
+          msg.buttons.forEach((buttonText, index) => {
             const button = document.createElement('button');
-            button.textContent = buttonText;
-            button.style.cssText = \`
-              background: \${currentTheme.primary};
-              color: white;
-              border: none;
-              padding: 8px 12px;
-              margin: 4px 4px 4px 0;
-              border-radius: 12px;
-              cursor: pointer;
-              font-size: 13px;
-              transition: background-color 0.2s;
+            
+            // Add arrow icon to make it more enticing
+            const icon = document.createElement('span');
+            icon.textContent = '→';
+            icon.style.cssText = \`
+              margin-left: 8px;
+              transition: transform 0.3s ease;
+              display: inline-block;
             \`;
+            
+            const textSpan = document.createElement('span');
+            textSpan.textContent = buttonText;
+            
+            button.appendChild(textSpan);
+            button.appendChild(icon);
+            
+            button.style.cssText = \`
+              background: linear-gradient(135deg, \${currentTheme.primary} 0%, \${currentTheme.primary}dd 100%);
+              color: white;
+              border: 2px solid \${currentTheme.primary}22;
+              padding: 10px 16px;
+              margin: 6px 6px 6px 0;
+              border-radius: 20px;
+              cursor: pointer;
+              font-size: 14px;
+              font-weight: 500;
+              transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+              box-shadow: 0 2px 8px \${currentTheme.primary}33, 0 1px 3px rgba(0,0,0,0.1);
+              position: relative;
+              overflow: hidden;
+              display: inline-flex;
+              align-items: center;
+              justify-content: center;
+              min-height: 40px;
+              text-align: center;
+              user-select: none;
+              transform: translateY(0);
+              opacity: 0;
+              animation: buttonFadeIn 0.5s ease forwards;
+              animation-delay: \${index * 0.1}s;
+            \`;
+            
+            // Add CSS keyframes for the fade-in animation
+            if (!document.getElementById('appointy-button-styles')) {
+              const style = document.createElement('style');
+              style.id = 'appointy-button-styles';
+              style.textContent = \`
+                @keyframes buttonFadeIn {
+                  from {
+                    opacity: 0;
+                    transform: translateY(10px) scale(0.9);
+                  }
+                  to {
+                    opacity: 1;
+                    transform: translateY(0) scale(1);
+                  }
+                }
+                @keyframes buttonPulse {
+                  0%, 100% { transform: scale(1); }
+                  50% { transform: scale(1.05); }
+                }
+              \`;
+              document.head.appendChild(style);
+            }
+            
+            // Add a subtle shine effect
+            const shine = document.createElement('div');
+            shine.style.cssText = \`
+              position: absolute;
+              top: 0;
+              left: -100%;
+              width: 100%;
+              height: 100%;
+              background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+              transition: left 0.5s;
+              pointer-events: none;
+            \`;
+            button.appendChild(shine);
+            
             button.addEventListener('mouseenter', () => {
-              button.style.opacity = '0.9';
+              button.style.transform = 'translateY(-2px) scale(1.02)';
+              button.style.boxShadow = \`0 6px 20px \${currentTheme.primary}44, 0 3px 6px rgba(0,0,0,0.15)\`;
+              button.style.background = \`linear-gradient(135deg, \${currentTheme.primary} 0%, \${currentTheme.primary}ee 100%)\`;
+              icon.style.transform = 'translateX(4px)';
+              shine.style.left = '100%';
             });
+            
             button.addEventListener('mouseleave', () => {
-              button.style.opacity = '1';
+              button.style.transform = 'translateY(0) scale(1)';
+              button.style.boxShadow = \`0 2px 8px \${currentTheme.primary}33, 0 1px 3px rgba(0,0,0,0.1)\`;
+              button.style.background = \`linear-gradient(135deg, \${currentTheme.primary} 0%, \${currentTheme.primary}dd 100%)\`;
+              icon.style.transform = 'translateX(0)';
+              shine.style.left = '-100%';
+            });
+            
+            button.addEventListener('mousedown', () => {
+              button.style.transform = 'translateY(1px) scale(0.98)';
+              button.style.boxShadow = \`0 1px 4px \${currentTheme.primary}44, 0 1px 2px rgba(0,0,0,0.1)\`;
+            });
+            
+            button.addEventListener('mouseup', () => {
+              button.style.transform = 'translateY(-2px) scale(1.02)';
+              button.style.boxShadow = \`0 6px 20px \${currentTheme.primary}44, 0 3px 6px rgba(0,0,0,0.15)\`;
             });
             button.addEventListener('click', () => {
               resetUserActivity();
               sendMessage(buttonText);
             });
+            
+            // Add subtle pulse animation to draw attention after appearing
+            setTimeout(() => {
+              if (button.parentNode) { // Only if button still exists
+                button.style.animation = 'buttonPulse 2s ease-in-out 3'; // Pulse 3 times
+                setTimeout(() => {
+                  if (button.parentNode) {
+                    button.style.animation = 'none';
+                  }
+                }, 6000); // Remove pulse after 6 seconds
+              }
+            }, (index * 100) + 1000); // Start pulse 1 second after fade-in animation
+            
             buttonsDiv.appendChild(button);
           });
           
