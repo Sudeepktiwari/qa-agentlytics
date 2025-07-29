@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Requirements Detection Test</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        margin: 0;
+        padding: 20px;
+        background: #f5f7fa;
+      }
+      .demo-section {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+      }
+      h1,
+      h2 {
+        color: #333;
+      }
+      .highlight {
+        background: #e3f2fd;
+        padding: 15px;
+        border-radius: 8px;
+        border-left: 4px solid #2196f3;
+        margin: 10px 0;
+      }
+      .success {
+        background: #e8f5e8;
+        border-left-color: #4caf50;
+      }
+      .new-feature {
+        background: #fff3e0;
+        border-left-color: #ff9800;
+      }
+      .code {
+        background: #f5f5f5;
+        padding: 10px;
+        border-radius: 4px;
+        font-family: monospace;
+        font-size: 14px;
+      }
+      .conversation-example {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 10px 0;
+        border: 1px solid #dee2e6;
+      }
+      .user-msg {
+        color: #007bff;
+        font-weight: 600;
+      }
+      .bot-msg {
+        color: #6c757d;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🎯 AI-Powered Customer Requirements Detection</h1>
+
+    <div class="demo-section">
+      <h2>🚀 New Feature Enhancement!</h2>
+      <div class="highlight new-feature">
+        <strong>✨ What's New:</strong> The chatbot now automatically extracts
+        and stores customer requirements using AI analysis!
+      </div>
+
+      <div class="highlight success">
+        <strong>🎯 How It Works:</strong>
+        <ul>
+          <li>
+            <strong>Conversation Analysis:</strong> When an email is detected,
+            AI analyzes the entire conversation
+          </li>
+          <li>
+            <strong>Smart Extraction:</strong> Identifies specific business
+            needs, use cases, budget constraints, timelines, etc.
+          </li>
+          <li>
+            <strong>Structured Storage:</strong> Requirements are saved with the
+            lead data in 2-3 concise bullet points
+          </li>
+          <li>
+            <strong>Admin Visibility:</strong> Requirements appear in a new "🎯
+            Requirements" column in Lead Management
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="demo-section">
+      <h2>💡 Example Scenarios:</h2>
+
+      <div class="conversation-example">
+        <strong>Scenario 1: E-commerce Integration</strong><br />
+        <span class="user-msg">Customer:</span> "Hi, I need a chatbot for my
+        online store to handle customer support and recommend products"<br />
+        <span class="bot-msg">Bot:</span> "I'd be happy to help! What's your
+        email so I can send you some examples?"<br />
+        <span class="user-msg">Customer:</span> "store@example.com. I have about
+        1000 visitors daily and need it integrated with Shopify"<br />
+        <br />
+        <strong>Extracted Requirements:</strong>
+        <div class="code">
+          • E-commerce chatbot for customer support and product recommendations
+          • Shopify integration required • Handles ~1000 daily visitors
+        </div>
+      </div>
+
+      <div class="conversation-example">
+        <strong>Scenario 2: Lead Generation</strong><br />
+        <span class="user-msg">Customer:</span> "We're a B2B company looking to
+        qualify leads before they talk to sales"<br />
+        <span class="bot-msg">Bot:</span> "That sounds perfect for our lead
+        qualification features. What's your email?"<br />
+        <span class="user-msg">Customer:</span> "sales@company.com. We need
+        something that can ask budget questions and schedule meetings"<br />
+        <br />
+        <strong>Extracted Requirements:</strong>
+        <div class="code">
+          • B2B lead qualification system • Budget inquiry and meeting
+          scheduling functionality • Pre-sales lead filtering requirements
+        </div>
+      </div>
+    </div>
+
+    <div class="demo-section">
+      <h2>🔧 Technical Implementation:</h2>
+
+      <div class="highlight">
+        <strong>🤖 AI Analysis Process:</strong>
+        <ul>
+          <li>
+            <strong>Trigger:</strong> Runs when email is detected in
+            conversation
+          </li>
+          <li>
+            <strong>Context:</strong> Analyzes full conversation history +
+            current message
+          </li>
+          <li>
+            <strong>Model:</strong> Uses GPT-4o-mini for cost-effective analysis
+          </li>
+          <li>
+            <strong>Focus:</strong> Extracts business requirements, technical
+            needs, constraints
+          </li>
+          <li>
+            <strong>Output:</strong> 2-3 concise, actionable bullet points
+          </li>
+        </ul>
+      </div>
+
+      <div class="code">
+        // AI Prompt Template: "Analyze this customer conversation and extract
+        their key requirements, needs, or interests in 2-3 bullet points. Be
+        specific and business-focused." // Database Schema: { sessionId:
+        "sess_abc123", email: "customer@example.com", requirements: "•
+        E-commerce integration\n• 24/7 support automation\n• Multi-language
+        support", adminId: "admin_xyz", // ... other fields }
+      </div>
+    </div>
+
+    <div class="demo-section">
+      <h2>📊 Admin Interface Enhancement:</h2>
+      <div class="highlight">
+        <strong>🎯 New "Requirements" Column:</strong>
+        <ul>
+          <li>
+            <strong>Visual Design:</strong> Highlighted with green background
+            and target emoji
+          </li>
+          <li>
+            <strong>Smart Display:</strong> Shows extracted requirements or "No
+            specific requirements detected"
+          </li>
+          <li>
+            <strong>Actionable Data:</strong> Sales teams can immediately
+            understand customer needs
+          </li>
+          <li>
+            <strong>Better Qualification:</strong> Helps prioritize leads based
+            on specific requirements
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="demo-section">
+      <h2>🧪 Test the Feature:</h2>
+      <p><strong>Instructions:</strong></p>
+      <ol>
+        <li>Open the chat widget below</li>
+        <li>
+          Have a conversation about your business needs (be specific about
+          requirements)
+        </li>
+        <li>Provide your email when prompted</li>
+        <li>Go to Admin Panel → Lead Management</li>
+        <li>
+          Look for the new "🎯 Requirements" column with AI-extracted needs!
+        </li>
+      </ol>
+
+      <div class="highlight">
+        <strong>💡 Test Conversation Ideas:</strong>
+        <ul>
+          <li>
+            "I need a chatbot for my restaurant to take orders and handle
+            reservations"
+          </li>
+          <li>
+            "Looking for customer support automation for our SaaS product with
+            50+ users"
+          </li>
+          <li>
+            "Want to qualify leads and schedule demos for our B2B software"
+          </li>
+          <li>
+            "Need multilingual support for our international e-commerce store"
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Test Chatbot Widget -->
+    <script
+      src="http://localhost:3001/api/widget"
+      data-api-key="ak_1d96074cc78dbd634ccac7d29f6de02fafa23a4c4f1b840684696cf62a706f91"
+      data-position="bottom-right"
+      data-button-text="💬 Test AI Requirements"
+      data-primary-color="#2563eb"
+      data-greeting="Hello! I'm testing the new **AI requirements detection** feature. Tell me about your business needs and provide your email to see how the system automatically extracts your requirements!"
+      data-voice-enabled="true"
+      data-voice-gender="female"
+      data-proactive-message="I see you're testing the AI requirements detection! 🎯 Feel free to share your specific business needs - the more detailed you are, the better the AI can extract your requirements when you provide your email."
+      data-proactive-delay="10000"
+    ></script>
+
+    <div style="margin-top: 100px">
+      <h3>Expected Workflow:</h3>
+      <p>
+        1. <strong>Customer shares needs</strong> → "I need chatbot for
+        e-commerce with inventory integration"
+      </p>
+      <p>2. <strong>Email provided</strong> → "customer@store.com"</p>
+      <p>
+        3. <strong>AI analysis runs</strong> → Extracts: "E-commerce chatbot,
+        inventory integration, customer support"
+      </p>
+      <p>
+        4. <strong>Data saved</strong> → Email + Requirements stored in database
+      </p>
+      <p>
+        5. <strong>Admin visibility</strong> → New "🎯 Requirements" column
+        shows extracted needs
+      </p>
+      <p>
+        6. <strong>Better lead qualification</strong> → Sales team knows exactly
+        what customer needs
+      </p>
+    </div>
+  </body>
+</html>

@@ -267,12 +267,73 @@ export async function POST(req: NextRequest) {
 
   // If email detected, update all previous messages in this session with email and adminId
   if (detectedEmail) {
-    const updateData: { email: string; adminId?: string } = {
+    const updateData: {
+      email: string;
+      adminId?: string;
+      requirements?: string;
+    } = {
       email: detectedEmail,
     };
     if (adminId) {
       updateData.adminId = adminId;
     }
+
+    // Extract customer requirements using AI
+    try {
+      const conversationHistory = await chats
+        .find({ sessionId })
+        .sort({ createdAt: 1 })
+        .toArray();
+
+      const conversation = conversationHistory
+        .map(
+          (msg) =>
+            `${msg.role === "user" ? "Customer" : "Assistant"}: ${msg.content}`
+        )
+        .join("\n");
+
+      if (conversation.length > 50) {
+        // Only analyze if there's meaningful conversation
+        const requirementsPrompt = `Analyze this customer conversation and extract their key requirements, needs, or interests in 2-3 bullet points. Be specific and business-focused. If no clear requirements are mentioned, respond with "General inquiry".
+
+Conversation:
+${conversation}
+
+Customer: ${question}
+
+Extract key requirements (2-3 bullet points max, be concise):`;
+
+        const requirementsResp = await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          max_tokens: 150,
+          temperature: 0.3,
+          messages: [
+            {
+              role: "system",
+              content:
+                "You are an expert at analyzing customer conversations to extract business requirements. Focus on specific needs, use cases, budget constraints, timeline requirements, technical specifications, or business goals. Be concise and actionable.",
+            },
+            { role: "user", content: requirementsPrompt },
+          ],
+        });
+
+        const extractedRequirements =
+          requirementsResp.choices[0].message.content?.trim();
+        if (
+          extractedRequirements &&
+          extractedRequirements !== "General inquiry"
+        ) {
+          updateData.requirements = extractedRequirements;
+          console.log(
+            `[LeadGen] Extracted requirements for ${detectedEmail}: ${extractedRequirements}`
+          );
+        }
+      }
+    } catch (error) {
+      console.error("[LeadGen] Error extracting requirements:", error);
+      // Continue without requirements if AI analysis fails
+    }
+
     await chats.updateMany({ sessionId }, { $set: updateData });
     // Log for verification
     console.log(
@@ -1002,16 +1063,30 @@ IMPORTANT: Don't provide other action buttons when user is requesting email. Foc
     parsed = { mainText: answer, buttons: [], emailPrompt: "" };
   }
 
-  // Save user and assistant message, including email if detected or already present
+  // Save user and assistant message, including email and requirements if detected or already present
   let emailToStore = detectedEmail;
+  let requirementsToStore = null;
   if (!emailToStore) {
     // Check if session already has an email
     const lastMsg = await chats.findOne({
       sessionId,
       email: { $exists: true },
     });
-    if (lastMsg && lastMsg.email) emailToStore = lastMsg.email;
+    if (lastMsg && lastMsg.email) {
+      emailToStore = lastMsg.email;
+      requirementsToStore = lastMsg.requirements || null;
+    }
+  } else {
+    // If we just detected an email, check if we also extracted requirements
+    const updatedMsg = await chats.findOne({
+      sessionId,
+      requirements: { $exists: true },
+    });
+    if (updatedMsg && updatedMsg.requirements) {
+      requirementsToStore = updatedMsg.requirements;
+    }
   }
+
   await chats.insertMany([
     {
       sessionId,
@@ -1019,6 +1094,7 @@ IMPORTANT: Don't provide other action buttons when user is requesting email. Foc
       content: question,
       createdAt: now,
       ...(emailToStore ? { email: emailToStore } : {}),
+      ...(requirementsToStore ? { requirements: requirementsToStore } : {}),
       ...(adminId ? { adminId } : {}),
     },
     {
@@ -1027,6 +1103,7 @@ IMPORTANT: Don't provide other action buttons when user is requesting email. Foc
       content: answer,
       createdAt: new Date(now.getTime() + 1),
       ...(emailToStore ? { email: emailToStore } : {}),
+      ...(requirementsToStore ? { requirements: requirementsToStore } : {}),
       ...(adminId ? { adminId } : {}),
     },
   ]);

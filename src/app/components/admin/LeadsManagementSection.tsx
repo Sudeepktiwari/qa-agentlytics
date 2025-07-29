@@ -8,6 +8,7 @@ interface Lead {
   lastSeen: string;
   messageCount: number;
   sessionId: string;
+  requirements?: string;
   latestContent: string | { mainText: string };
   latestRole: string;
 }
@@ -356,6 +357,17 @@ const LeadsManagementSection: React.FC<LeadsManagementSectionProps> = ({
                   <th
                     style={{
                       padding: "16px 20px",
+                      textAlign: "left",
+                      borderBottom: "2px solid #e2e8f0",
+                      color: "#4a5568",
+                      fontWeight: "600",
+                    }}
+                  >
+                    🎯 Requirements
+                  </th>
+                  <th
+                    style={{
+                      padding: "16px 20px",
                       textAlign: "center",
                       borderBottom: "2px solid #e2e8f0",
                       color: "#4a5568",
@@ -483,6 +495,50 @@ const LeadsManagementSection: React.FC<LeadsManagementSectionProps> = ({
                             "mainText" in lead.latestContent
                           ? lead.latestContent.mainText
                           : "No content"}
+                      </div>
+                    </td>
+                    <td
+                      style={{
+                        padding: "16px 20px",
+                        borderBottom: "1px solid #e2e8f0",
+                        maxWidth: "250px",
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontSize: "13px",
+                          color: lead.requirements ? "#4a5568" : "#a0aec0",
+                          lineHeight: "1.4",
+                        }}
+                      >
+                        {lead.requirements ? (
+                          <div
+                            style={{
+                              background:
+                                "linear-gradient(135deg, #e6fffa, #f0fff4)",
+                              padding: "8px 12px",
+                              borderRadius: "8px",
+                              border: "1px solid #b2f5ea",
+                            }}
+                          >
+                            <span
+                              style={{ fontSize: "12px", marginRight: "6px" }}
+                            >
+                              🎯
+                            </span>
+                            {lead.requirements}
+                          </div>
+                        ) : (
+                          <div
+                            style={{
+                              fontStyle: "italic",
+                              color: "#a0aec0",
+                              fontSize: "12px",
+                            }}
+                          >
+                            No specific requirements detected
+                          </div>
+                        )}
                       </div>
                     </td>
                     <td

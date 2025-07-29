@@ -90,6 +90,7 @@ export async function GET(req: NextRequest) {
           lastSeen: { $max: "$createdAt" },
           messageCount: { $sum: 1 },
           sessionId: { $last: "$sessionId" },
+          requirements: { $last: "$requirements" },
         },
       },
       {
@@ -99,6 +100,7 @@ export async function GET(req: NextRequest) {
           lastSeen: 1,
           messageCount: 1,
           sessionId: 1,
+          requirements: 1,
           latestContent: "$latestMessage.content",
           latestRole: "$latestMessage.role",
         },
