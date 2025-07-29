@@ -49,11 +49,11 @@ export async function GET(request: Request) {
   
   // Validate API Key is provided - STRICTLY REQUIRED
   if (!API_KEY || API_KEY.trim() === '') {
-    const errorMessage = '[Widget] ERROR: API key is required. Please add data-api-key="your-api-key" attribute to the script tag.';
-    console.error(errorMessage);
+    const errorMessage = 'Widget ERROR: API key is required. Please add data-api-key attribute to the script tag.';
+    console.error('[Widget]', errorMessage);
     // Return error script that displays the error in console
     return new NextResponse(`;
-  console.error("${errorMessage}");
+  console.error("[Widget] ${errorMessage}");
   console.error("Widget will not initialize without a valid API key.");
   throw new Error("${errorMessage}");
   `, {
@@ -64,10 +64,10 @@ export async function GET(request: Request) {
   
   // Validate API Key format (should start with 'ak_' and be 67 characters total)
   if (!API_KEY.startsWith('ak_') || API_KEY.length !== 67) {
-    const errorMessage = '[Widget] ERROR: Invalid API key format. API key should start with "ak_" and be 67 characters long.';
-    console.error(errorMessage);
+    const errorMessage = 'Widget ERROR: Invalid API key format. API key should start with ak_ and be 67 characters long.';
+    console.error('[Widget]', errorMessage);
     return new NextResponse(`;
-  console.error("${errorMessage}");
+  console.error("[Widget] ${errorMessage}");
   console.error("Provided API key: ${API_KEY}");
   console.error("Widget will not initialize with invalid API key format.");
   throw new Error("${errorMessage}");
