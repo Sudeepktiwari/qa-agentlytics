@@ -9,7 +9,7 @@ export const corsHeaders = {
 };
 
 // Helper function to create CORS-enabled responses
-export function corsResponse(data: any, init?: ResponseInit) {
+export function corsResponse(data: unknown, init?: ResponseInit) {
   return new Response(JSON.stringify(data), {
     ...init,
     headers: {
@@ -22,7 +22,7 @@ export function corsResponse(data: any, init?: ResponseInit) {
 
 // Helper function for Next.js responses with CORS
 export function corsNextResponse(
-  data: any,
+  data: unknown,
   init?: Parameters<typeof Response.json>[1]
 ) {
   return Response.json(data, {
