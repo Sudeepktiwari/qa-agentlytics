@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Widget Test - Basic Load</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        line-height: 1.6;
+      }
+      .status {
+        padding: 15px;
+        border-radius: 8px;
+        margin: 20px 0;
+      }
+      .success {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
+      .warning {
+        background: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeaa7;
+      }
+      .error {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+      }
+      button {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        margin: 5px;
+      }
+      button:hover {
+        background: #0056b3;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🔧 Widget Basic Load Test</h1>
+
+    <div id="status" class="status warning">
+      <strong>Status:</strong> Loading widget...
+    </div>
+
+    <p><strong>Instructions:</strong></p>
+    <ol>
+      <li>Check if the chat widget appears in the bottom-right corner</li>
+      <li>Look for any JavaScript errors in the browser console (F12)</li>
+      <li>Click the chat button to test if it opens</li>
+      <li>Check if proactive messages appear when opening chat</li>
+    </ol>
+
+    <button onclick="checkWidget()">🔍 Check Widget Status</button>
+    <button onclick="testChat()">💬 Test Chat</button>
+    <button onclick="showConsole()">📋 Show Console Commands</button>
+
+    <div
+      id="console-commands"
+      style="
+        display: none;
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+        margin: 10px 0;
+      "
+    >
+      <h4>Console Commands to Test:</h4>
+      <code>
+        window.appointyChatbot<br />
+        window.appointyChatbot.isOpen()<br />
+        window.appointyChatbot.getCurrentPageUrl()<br />
+        window.appointyChatbot.openChat()<br />
+      </code>
+    </div>
+
+    <!-- Basic Widget Script -->
+    <script
+      src="https://sample-chatbot-nine.vercel.app/api/widget"
+      data-api-key="ak_b17dd57a2e0d78b5d3f1155e94167da890dda703409fe1e36e647c2e6cc8d345"
+      data-theme="green"
+      data-size="large"
+      data-voice-enabled="true"
+      data-voice-gender="female"
+      data-auto-open-proactive="true"
+    ></script>
+
+    <script>
+      // Check widget status after loading
+      setTimeout(checkWidget, 3000);
+
+      function checkWidget() {
+        const statusDiv = document.getElementById("status");
+
+        if (window.appointyChatbot) {
+          statusDiv.className = "status success";
+          statusDiv.innerHTML =
+            "<strong>✅ Success:</strong> Widget loaded successfully!";
+          console.log("✅ Widget loaded:", window.appointyChatbot);
+        } else {
+          statusDiv.className = "status error";
+          statusDiv.innerHTML =
+            "<strong>❌ Error:</strong> Widget failed to load. Check browser console for errors.";
+          console.error("❌ Widget not found on window object");
+        }
+      }
+
+      function testChat() {
+        if (window.appointyChatbot) {
+          if (window.appointyChatbot.isOpen()) {
+            window.appointyChatbot.closeChat();
+            alert("Chat closed");
+          } else {
+            window.appointyChatbot.openChat();
+            alert("Chat opened");
+          }
+        } else {
+          alert("Widget not loaded yet");
+        }
+      }
+
+      function showConsole() {
+        const consoleDiv = document.getElementById("console-commands");
+        consoleDiv.style.display =
+          consoleDiv.style.display === "none" ? "block" : "none";
+      }
+
+      // Auto-check every 5 seconds
+      setInterval(checkWidget, 5000);
+    </script>
+  </body>
+</html>

@@ -172,76 +172,7 @@ export async function GET(request: Request) {
   let pageChangeCheckInterval = null;
 
   // Messages array
-  let messages = [];
-  
-  // Enhanced page detection and monitoring
-  function detectPageChange() {
-    const newUrl = window.location.href;
-    if (newUrl !== currentPageUrl) {
-      console.log('[ChatWidget] Page changed from', currentPageUrl, 'to', newUrl);
-      currentPageUrl = newUrl;
-      isPageContextLoaded = false;
-      
-      // Clear existing context and reload for new page
-      if (isOpen) {
-        loadPageContext();
-      }
-      
-      return true;
-    }
-    return false;
-  }
-  
-  // Load page-specific context
-  async function loadPageContext() {
-    if (isPageContextLoaded) return;
-    
-    try {
-      console.log('[ChatWidget] Loading context for page:', currentPageUrl);
-      
-      // Get page-specific proactive message
-      const data = await sendApiRequest('chat', {
-        sessionId,
-        pageUrl: currentPageUrl,
-        proactive: true,
-        adminId: 'default'
-      });
-      
-      if (data.answer) {
-        // If chat is open, show the new context message
-        if (isOpen) {
-          sendProactiveMessage(data.answer);
-        }
-        isPageContextLoaded = true;
-        console.log('[ChatWidget] Page context loaded successfully');
-      }
-    } catch (error) {
-      console.error('[ChatWidget] Failed to load page context:', error);
-    }
-  }
-  
-  // Start monitoring page changes
-  function startPageMonitoring() {
-    // Check for page changes every 1 second
-    pageChangeCheckInterval = setInterval(detectPageChange, 1000);
-    
-    // Also listen for navigation events
-    window.addEventListener('popstate', detectPageChange);
-    
-    // Modern browsers - detect pushState/replaceState
-    const originalPushState = history.pushState;
-    const originalReplaceState = history.replaceState;
-    
-    history.pushState = function() {
-      originalPushState.apply(history, arguments);
-      setTimeout(detectPageChange, 100);
-    };
-    
-    history.replaceState = function() {
-      originalReplaceState.apply(history, arguments);
-      setTimeout(detectPageChange, 100);
-    };
-  }  // Text-to-Speech functionality with user interaction handling
+  let messages = [];  // Text-to-Speech functionality with user interaction handling
   let speechAllowed = false;
   let speechInitialized = false;
   
@@ -412,6 +343,75 @@ export async function GET(request: Request) {
     if (!isOpen) {
       updateBubble();
     }
+  }
+  
+  // Enhanced page detection and monitoring
+  function detectPageChange() {
+    const newUrl = window.location.href;
+    if (newUrl !== currentPageUrl) {
+      console.log('[ChatWidget] Page changed from', currentPageUrl, 'to', newUrl);
+      currentPageUrl = newUrl;
+      isPageContextLoaded = false;
+      
+      // Clear existing context and reload for new page
+      if (isOpen) {
+        loadPageContext();
+      }
+      
+      return true;
+    }
+    return false;
+  }
+  
+  // Load page-specific context
+  async function loadPageContext() {
+    if (isPageContextLoaded) return;
+    
+    try {
+      console.log('[ChatWidget] Loading context for page:', currentPageUrl);
+      
+      // Get page-specific proactive message
+      const data = await sendApiRequest('chat', {
+        sessionId,
+        pageUrl: currentPageUrl,
+        proactive: true,
+        adminId: 'default'
+      });
+      
+      if (data.answer) {
+        // If chat is open, show the new context message
+        if (isOpen) {
+          sendProactiveMessage(data.answer);
+        }
+        isPageContextLoaded = true;
+        console.log('[ChatWidget] Page context loaded successfully');
+      }
+    } catch (error) {
+      console.error('[ChatWidget] Failed to load page context:', error);
+    }
+  }
+  
+  // Start monitoring page changes
+  function startPageMonitoring() {
+    // Check for page changes every 1 second
+    pageChangeCheckInterval = setInterval(detectPageChange, 1000);
+    
+    // Also listen for navigation events
+    window.addEventListener('popstate', detectPageChange);
+    
+    // Modern browsers - detect pushState/replaceState
+    const originalPushState = history.pushState;
+    const originalReplaceState = history.replaceState;
+    
+    history.pushState = function() {
+      originalPushState.apply(history, arguments);
+      setTimeout(detectPageChange, 100);
+    };
+    
+    history.replaceState = function() {
+      originalReplaceState.apply(history, arguments);
+      setTimeout(detectPageChange, 100);
+    };
   }
   
   // Update bubble to show notification when there are unread messages
@@ -804,17 +804,23 @@ export async function GET(request: Request) {
   }
   
   // Initialize proactive message
-  // Initialize chat with enhanced page detection
   async function initializeChat() {
     console.log('[ChatWidget] Initializing chat for page:', currentPageUrl);
     
-    // Load page context first
-    await loadPageContext();
+    // Simple proactive message initialization
+    const data = await sendApiRequest('chat', {
+      sessionId,
+      pageUrl: currentPageUrl,
+      proactive: true,
+      adminId: 'default'
+    });
     
-    // Start monitoring for page changes
-    startPageMonitoring();
+    if (data.answer) {
+      sendProactiveMessage(data.answer);
+      isPageContextLoaded = true;
+    }
     
-    console.log('[ChatWidget] Chat initialized with automatic page detection');
+    console.log('[ChatWidget] Chat initialized successfully');
   }
   
   // Toggle widget
@@ -827,14 +833,6 @@ export async function GET(request: Request) {
     toggleButton.style.animation = 'none'; // Remove pulse animation
     
     if (isOpen) {
-      // Check if page has changed since last time
-      detectPageChange();
-      
-      // Load page context if not loaded or if page changed
-      if (!isPageContextLoaded) {
-        loadPageContext();
-      }
-      
       // If no messages exist, initialize chat
       if (messages.length === 0) {
         initializeChat();
@@ -998,12 +996,12 @@ export async function GET(request: Request) {
       initializeVoices();
     }
     
-    // Start page monitoring immediately
-    startPageMonitoring();
+    // Start page monitoring after a short delay to ensure everything is ready
+    setTimeout(() => {
+      startPageMonitoring();
+    }, 1000);
     
-        console.log('[ChatWidget] Widget initialized with automatic page detection');
-    
-    // Add cleanup function for page monitoring
+    console.log('[ChatWidget] Widget initialized successfully');    // Add cleanup function for page monitoring
     window.addEventListener('beforeunload', cleanupPageMonitoring);
   }
   
