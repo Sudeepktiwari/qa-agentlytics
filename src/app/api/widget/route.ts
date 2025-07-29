@@ -303,7 +303,12 @@ export async function GET(request: Request) {
   
   // Send proactive message with voice and auto-opening
   function sendProactiveMessage(text) {
-    if (!text) return;
+    if (!text) {
+      console.log('[ChatWidget] No proactive message text provided');
+      return;
+    }
+    
+    console.log('[ChatWidget] Sending proactive message:', text.substring(0, 100) + '...');
     
     const proactiveMessage = {
       role: 'assistant',
@@ -314,21 +319,27 @@ export async function GET(request: Request) {
     };
     
     messages.push(proactiveMessage);
+    console.log('[ChatWidget] Proactive message added to messages array. Total messages:', messages.length);
     
     // Auto-open chat if configured and currently closed
     if (config.autoOpenProactive && !isOpen) {
+      console.log('[ChatWidget] Auto-opening chat widget for proactive message');
       toggleWidget();
       // Small delay to ensure widget is opened before rendering
       setTimeout(() => {
         renderMessages();
       }, 100);
     } else if (isOpen) {
+      console.log('[ChatWidget] Chat already open, rendering proactive message');
       // Re-render messages if chat is already open
       renderMessages();
+    } else {
+      console.log('[ChatWidget] Auto-open disabled, not opening chat for proactive message');
     }
     
     // Only speak if user has already interacted with the page
     if (config.voiceEnabled && speechAllowed) {
+      console.log('[ChatWidget] Speaking proactive message (user interaction detected)');
       // Initialize voices first, then speak
       initializeVoices().then(() => {
         // Small delay to ensure chat is open and visible
@@ -342,6 +353,7 @@ export async function GET(request: Request) {
     
     // Update bubble if chat is closed (shouldn't happen with auto-open, but just in case)
     if (!isOpen) {
+      console.log('[ChatWidget] Updating bubble for closed chat');
       updateBubble();
     }
   }
@@ -364,7 +376,10 @@ export async function GET(request: Request) {
   
   // Load page-specific context
   async function loadPageContext() {
-    if (isPageContextLoaded) return;
+    if (isPageContextLoaded) {
+      console.log('[ChatWidget] Page context already loaded, skipping');
+      return;
+    }
     
     try {
       console.log('[ChatWidget] Loading context for page:', currentPageUrl);
@@ -377,13 +392,22 @@ export async function GET(request: Request) {
         adminId: 'default'
       });
       
+      console.log('[ChatWidget] API response for proactive request:', data);
+      
       if (data.answer) {
+        console.log('[ChatWidget] Received proactive message from API:', data.answer.substring(0, 100) + '...');
         // Send proactive message if auto-open is enabled
         if (config.autoOpenProactive) {
+          console.log('[ChatWidget] Auto-open enabled, sending proactive message');
           sendProactiveMessage(data.answer);
+        } else {
+          console.log('[ChatWidget] Auto-open disabled, not sending proactive message');
         }
         isPageContextLoaded = true;
         console.log('[ChatWidget] Page context loaded successfully');
+      } else {
+        console.log('[ChatWidget] No proactive message received from API');
+        console.log('[ChatWidget] Full API response:', data);
       }
     } catch (error) {
       console.error('[ChatWidget] Failed to load page context:', error);
