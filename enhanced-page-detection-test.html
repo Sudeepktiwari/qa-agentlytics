@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Enhanced Page Detection Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 20px;
+        line-height: 1.6;
+      }
+      .test-section {
+        margin: 30px 0;
+        padding: 25px;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      }
+      .feature-highlight {
+        background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+        border: 2px solid #60a5fa;
+        color: #1e40af;
+      }
+      button {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        cursor: pointer;
+        margin: 8px 4px;
+        font-weight: 600;
+        transition: all 0.2s;
+      }
+      button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+      }
+      .success {
+        background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+        color: #065f46;
+        border: 2px solid #10b981;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 10px 0;
+      }
+      .info {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        color: #92400e;
+        border: 2px solid #f59e0b;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 10px 0;
+      }
+      .code {
+        background: #1f2937;
+        color: #f9fafb;
+        padding: 15px;
+        border-radius: 8px;
+        font-family: "Courier New", monospace;
+        margin: 10px 0;
+        overflow-x: auto;
+      }
+      h1 {
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-size: 2.5rem;
+        text-align: center;
+        margin-bottom: 30px;
+      }
+      h2 {
+        color: #1e40af;
+        border-bottom: 2px solid #e2e8f0;
+        padding-bottom: 10px;
+      }
+      .current-url {
+        font-weight: bold;
+        color: #059669;
+        word-break: break-all;
+      }
+      .page-nav {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin: 20px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🎯 Enhanced Chatbot Page Detection Test</h1>
+
+    <div class="test-section feature-highlight">
+      <h2>✨ What's New in Enhanced Page Detection</h2>
+      <p>
+        <strong
+          >Your chatbot widget now works exactly like the live chat
+          preview!</strong
+        >
+      </p>
+      <ul>
+        <li>
+          🔍 <strong>Automatic Page Detection</strong>: Instantly detects when
+          users navigate to different pages
+        </li>
+        <li>
+          🎯 <strong>Contextual Responses</strong>: Provides page-specific
+          answers based on your sitemap content
+        </li>
+        <li>
+          ⚡ <strong>Real-time Updates</strong>: Updates context without
+          requiring chat restart
+        </li>
+        <li>
+          🔄 <strong>Smart Monitoring</strong>: Detects both standard navigation
+          and SPA route changes
+        </li>
+        <li>
+          💡 <strong>On-demand Crawling</strong>: Automatically crawls new pages
+          when first visited
+        </li>
+      </ul>
+    </div>
+
+    <div class="test-section">
+      <h2>📍 Current Page Status</h2>
+      <p>
+        <strong>Current URL:</strong>
+        <span id="current-url" class="current-url">Loading...</span>
+      </p>
+      <p>
+        <strong>Widget Status:</strong>
+        <span id="widget-status">Loading...</span>
+      </p>
+      <p>
+        <strong>Page Context:</strong>
+        <span id="context-status">Loading...</span>
+      </p>
+
+      <button onclick="refreshStatus()">🔄 Refresh Status</button>
+      <button onclick="forcePageDetection()">🎯 Force Page Detection</button>
+      <button onclick="refreshPageContext()">📄 Refresh Page Context</button>
+    </div>
+
+    <div class="test-section">
+      <h2>🧪 Page Navigation Test</h2>
+      <p>
+        Test the enhanced page detection by simulating navigation to different
+        pages:
+      </p>
+
+      <div class="page-nav">
+        <button onclick="simulateNavigation('/pricing')">
+          💰 Pricing Page
+        </button>
+        <button onclick="simulateNavigation('/features')">
+          ⚡ Features Page
+        </button>
+        <button onclick="simulateNavigation('/about')">ℹ️ About Page</button>
+        <button onclick="simulateNavigation('/contact')">
+          📞 Contact Page
+        </button>
+        <button onclick="simulateNavigation('/demo')">🎮 Demo Page</button>
+      </div>
+
+      <div class="info">
+        <strong>💡 Pro Tip:</strong> After navigating to a different "page",
+        open the chat and see how it provides contextual responses based on the
+        URL!
+      </div>
+    </div>
+
+    <div class="test-section">
+      <h2>🔧 Developer Testing Tools</h2>
+      <p>Use these tools to test the enhanced functionality:</p>
+
+      <button onclick="testChatOpenClose()">💬 Test Chat Open/Close</button>
+      <button onclick="testProactiveMessage()">
+        📢 Test Proactive Message
+      </button>
+      <button onclick="showWidgetAPI()">🔌 Show Widget API</button>
+      <button onclick="testPageChangeDetection()">
+        🔍 Test Page Change Detection
+      </button>
+
+      <div id="api-output" class="code" style="display: none"></div>
+    </div>
+
+    <div class="test-section">
+      <h2>📊 Real-time Monitoring</h2>
+      <p>
+        Watch the console output to see how the widget detects page changes:
+      </p>
+
+      <div class="code">
+        <div>// Open browser console (F12) to see detailed logs like:</div>
+        <div style="color: #10b981">
+          [ChatWidget] Page changed from /old-page to /new-page
+        </div>
+        <div style="color: #3b82f6">
+          [ChatWidget] Loading context for page: /new-page
+        </div>
+        <div style="color: #8b5cf6">
+          [ChatWidget] Page context loaded successfully
+        </div>
+      </div>
+
+      <button onclick="toggleConsoleHelp()">📋 Show Console Commands</button>
+      <div id="console-help" style="display: none" class="code">
+        <div>// Test page detection in console:</div>
+        <div style="color: #fbbf24">
+          window.appointyChatbot.getCurrentPageUrl()
+        </div>
+        <div style="color: #fbbf24">
+          window.appointyChatbot.refreshPageContext()
+        </div>
+        <div style="color: #fbbf24">
+          window.appointyChatbot.forcePageDetection()
+        </div>
+        <div style="color: #fbbf24">
+          window.appointyChatbot.isPageContextLoaded()
+        </div>
+      </div>
+    </div>
+
+    <div class="test-section">
+      <h2>🎯 How It Works</h2>
+      <div class="success">
+        <h3>🔄 Automatic Detection Process:</h3>
+        <ol>
+          <li>
+            <strong>Page Monitoring</strong>: Widget monitors URL changes every
+            second
+          </li>
+          <li>
+            <strong>Context Loading</strong>: When page changes, loads relevant
+            content from your sitemap
+          </li>
+          <li>
+            <strong>Smart Responses</strong>: Provides contextual answers based
+            on page content
+          </li>
+          <li>
+            <strong>On-demand Crawling</strong>: Crawls new pages automatically
+            when needed
+          </li>
+          <li>
+            <strong>Real-time Updates</strong>: Updates chat context without
+            page reload
+          </li>
+        </ol>
+      </div>
+    </div>
+
+    <!-- Enhanced Chatbot Widget -->
+    <script
+      src="https://sample-chatbot-nine.vercel.app/api/widget"
+      data-api-key="ak_b17dd57a2e0d78b5d3f1155e94167da890dda703409fe1e36e647c2e6cc8d345"
+      data-theme="green"
+      data-size="large"
+      data-voice-enabled="true"
+      data-voice-gender="female"
+      data-auto-open-proactive="true"
+    ></script>
+
+    <script>
+      // Wait for widget to load
+      setTimeout(() => {
+        refreshStatus();
+      }, 2000);
+
+      function refreshStatus() {
+        const currentUrlElement = document.getElementById("current-url");
+        const widgetStatusElement = document.getElementById("widget-status");
+        const contextStatusElement = document.getElementById("context-status");
+
+        if (window.appointyChatbot) {
+          currentUrlElement.textContent =
+            window.appointyChatbot.getCurrentPageUrl();
+          widgetStatusElement.textContent = "✅ Widget Loaded";
+          widgetStatusElement.style.color = "#059669";
+
+          const isContextLoaded = window.appointyChatbot.isPageContextLoaded();
+          contextStatusElement.textContent = isContextLoaded
+            ? "✅ Context Loaded"
+            : "⏳ Loading Context...";
+          contextStatusElement.style.color = isContextLoaded
+            ? "#059669"
+            : "#f59e0b";
+        } else {
+          widgetStatusElement.textContent = "⏳ Loading Widget...";
+          widgetStatusElement.style.color = "#f59e0b";
+          contextStatusElement.textContent = "⏳ Waiting for Widget...";
+          contextStatusElement.style.color = "#6b7280";
+        }
+      }
+
+      function forcePageDetection() {
+        if (window.appointyChatbot) {
+          const changed = window.appointyChatbot.forcePageDetection();
+          alert(
+            changed ? "✅ Page change detected!" : "ℹ️ No page change detected"
+          );
+          refreshStatus();
+        } else {
+          alert("❌ Widget not loaded yet");
+        }
+      }
+
+      function refreshPageContext() {
+        if (window.appointyChatbot) {
+          window.appointyChatbot.refreshPageContext().then(() => {
+            alert("✅ Page context refreshed!");
+            refreshStatus();
+          });
+        } else {
+          alert("❌ Widget not loaded yet");
+        }
+      }
+
+      function simulateNavigation(path) {
+        // Simulate navigation using pushState
+        const newUrl = window.location.origin + path;
+        history.pushState({}, "", newUrl);
+
+        // The widget should automatically detect this change
+        setTimeout(() => {
+          refreshStatus();
+          alert(
+            `🎯 Simulated navigation to: ${path}\n\n💡 Check the chat for contextual responses!`
+          );
+        }, 1000);
+      }
+
+      function testChatOpenClose() {
+        if (window.appointyChatbot) {
+          if (window.appointyChatbot.isOpen()) {
+            window.appointyChatbot.closeChat();
+            setTimeout(() => {
+              window.appointyChatbot.openChat();
+            }, 1000);
+          } else {
+            window.appointyChatbot.openChat();
+          }
+        } else {
+          alert("❌ Widget not loaded yet");
+        }
+      }
+
+      function testProactiveMessage() {
+        if (window.appointyChatbot) {
+          const messages = [
+            `🎯 This is a contextual message for ${window.location.pathname}!`,
+            `👋 Hello! I see you're on the ${
+              window.location.pathname.replace("/", "") || "home"
+            } page. How can I help?`,
+            `⚡ Enhanced page detection is working! Current page: ${window.location.href}`,
+          ];
+
+          const randomMessage =
+            messages[Math.floor(Math.random() * messages.length)];
+          window.appointyChatbot.sendProactiveMessage(randomMessage);
+        } else {
+          alert("❌ Widget not loaded yet");
+        }
+      }
+
+      function showWidgetAPI() {
+        const output = document.getElementById("api-output");
+        if (window.appointyChatbot) {
+          const api = {
+            "getCurrentPageUrl()": window.appointyChatbot.getCurrentPageUrl(),
+            "isOpen()": window.appointyChatbot.isOpen(),
+            "isPageContextLoaded()":
+              window.appointyChatbot.isPageContextLoaded(),
+            "getConfig()": window.appointyChatbot.getConfig(),
+          };
+
+          output.textContent = JSON.stringify(api, null, 2);
+          output.style.display = "block";
+        } else {
+          output.textContent = "Widget not loaded yet";
+          output.style.display = "block";
+        }
+      }
+
+      function testPageChangeDetection() {
+        if (window.appointyChatbot) {
+          console.log("🧪 Testing page change detection...");
+          console.log(
+            "Current URL:",
+            window.appointyChatbot.getCurrentPageUrl()
+          );
+
+          // Change URL and test detection
+          const testPath = "/test-" + Date.now();
+          history.pushState({}, "", testPath);
+
+          setTimeout(() => {
+            const newUrl = window.appointyChatbot.getCurrentPageUrl();
+            console.log("New URL after change:", newUrl);
+            console.log(
+              "Page context loaded:",
+              window.appointyChatbot.isPageContextLoaded()
+            );
+
+            alert(
+              `✅ Test completed! Check console for details.\n\nNew URL: ${newUrl}`
+            );
+          }, 1000);
+        } else {
+          alert("❌ Widget not loaded yet");
+        }
+      }
+
+      function toggleConsoleHelp() {
+        const helpDiv = document.getElementById("console-help");
+        helpDiv.style.display =
+          helpDiv.style.display === "none" ? "block" : "none";
+      }
+
+      // Auto-refresh status every 3 seconds
+      setInterval(refreshStatus, 3000);
+    </script>
+  </body>
+</html>

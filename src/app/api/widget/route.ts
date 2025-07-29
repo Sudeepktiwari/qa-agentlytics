@@ -159,17 +159,89 @@ export async function GET(request: Request) {
     sessionId = 'sess_' + Math.random().toString(36).substr(2, 9);
     localStorage.setItem('appointy_session_id', sessionId);
   }
-  
+
   let followupTimer = null;
   let followupCount = 0;
   let followupSent = false;
   let lastUserAction = Date.now();
   let userIsActive = false;
   
+  // Enhanced page detection variables
+  let currentPageUrl = window.location.href;
+  let isPageContextLoaded = false;
+  let pageChangeCheckInterval = null;
+
   // Messages array
   let messages = [];
   
-  // Text-to-Speech functionality with user interaction handling
+  // Enhanced page detection and monitoring
+  function detectPageChange() {
+    const newUrl = window.location.href;
+    if (newUrl !== currentPageUrl) {
+      console.log('[ChatWidget] Page changed from', currentPageUrl, 'to', newUrl);
+      currentPageUrl = newUrl;
+      isPageContextLoaded = false;
+      
+      // Clear existing context and reload for new page
+      if (isOpen) {
+        loadPageContext();
+      }
+      
+      return true;
+    }
+    return false;
+  }
+  
+  // Load page-specific context
+  async function loadPageContext() {
+    if (isPageContextLoaded) return;
+    
+    try {
+      console.log('[ChatWidget] Loading context for page:', currentPageUrl);
+      
+      // Get page-specific proactive message
+      const data = await sendApiRequest('chat', {
+        sessionId,
+        pageUrl: currentPageUrl,
+        proactive: true,
+        adminId: 'default'
+      });
+      
+      if (data.answer) {
+        // If chat is open, show the new context message
+        if (isOpen) {
+          sendProactiveMessage(data.answer);
+        }
+        isPageContextLoaded = true;
+        console.log('[ChatWidget] Page context loaded successfully');
+      }
+    } catch (error) {
+      console.error('[ChatWidget] Failed to load page context:', error);
+    }
+  }
+  
+  // Start monitoring page changes
+  function startPageMonitoring() {
+    // Check for page changes every 1 second
+    pageChangeCheckInterval = setInterval(detectPageChange, 1000);
+    
+    // Also listen for navigation events
+    window.addEventListener('popstate', detectPageChange);
+    
+    // Modern browsers - detect pushState/replaceState
+    const originalPushState = history.pushState;
+    const originalReplaceState = history.replaceState;
+    
+    history.pushState = function() {
+      originalPushState.apply(history, arguments);
+      setTimeout(detectPageChange, 100);
+    };
+    
+    history.replaceState = function() {
+      originalReplaceState.apply(history, arguments);
+      setTimeout(detectPageChange, 100);
+    };
+  }  // Text-to-Speech functionality with user interaction handling
   let speechAllowed = false;
   let speechInitialized = false;
   
@@ -492,6 +564,9 @@ export async function GET(request: Request) {
     
     resetUserActivity();
     
+    // Ensure we have the latest page URL
+    detectPageChange();
+    
     // Add user message
     const userMessage = { role: 'user', content: text };
     messages.push(userMessage);
@@ -504,12 +579,11 @@ export async function GET(request: Request) {
     // Show typing indicator
     showTypingIndicator();
     
-    // Send to API
-    const currentUrl = window.location.href;
+    // Send to API with current page context
     const data = await sendApiRequest('chat', {
       question: text,
       sessionId,
-      pageUrl: currentUrl,
+      pageUrl: currentPageUrl,
       adminId: ADMIN_ID
     });
     
@@ -730,20 +804,17 @@ export async function GET(request: Request) {
   }
   
   // Initialize proactive message
+  // Initialize chat with enhanced page detection
   async function initializeChat() {
-    const currentUrl = window.location.href;
-    const data = await sendApiRequest('chat', {
-      sessionId,
-      pageUrl: currentUrl,
-      proactive: true,
-      adminId: ADMIN_ID
-    });
+    console.log('[ChatWidget] Initializing chat for page:', currentPageUrl);
     
-    if (data.answer) {
-      // Use sendProactiveMessage to handle auto-opening and voice
-      sendProactiveMessage(data.answer);
-      startFollowupTimer();
-    }
+    // Load page context first
+    await loadPageContext();
+    
+    // Start monitoring for page changes
+    startPageMonitoring();
+    
+    console.log('[ChatWidget] Chat initialized with automatic page detection');
   }
   
   // Toggle widget
@@ -755,11 +826,20 @@ export async function GET(request: Request) {
     toggleButton.innerHTML = isOpen ? '×' : config.buttonText;
     toggleButton.style.animation = 'none'; // Remove pulse animation
     
-    if (isOpen && messages.length === 0) {
-      initializeChat();
-    }
-    
     if (isOpen) {
+      // Check if page has changed since last time
+      detectPageChange();
+      
+      // Load page context if not loaded or if page changed
+      if (!isPageContextLoaded) {
+        loadPageContext();
+      }
+      
+      // If no messages exist, initialize chat
+      if (messages.length === 0) {
+        initializeChat();
+      }
+      
       resetUserActivity();
     } else {
       clearFollowupTimer();
@@ -918,6 +998,26 @@ export async function GET(request: Request) {
       initializeVoices();
     }
     
+    // Start page monitoring immediately
+    startPageMonitoring();
+    
+        console.log('[ChatWidget] Widget initialized with automatic page detection');
+    
+    // Add cleanup function for page monitoring
+    window.addEventListener('beforeunload', cleanupPageMonitoring);
+  }
+  
+  // Cleanup page monitoring
+  function cleanupPageMonitoring() {
+    if (pageChangeCheckInterval) {
+      clearInterval(pageChangeCheckInterval);
+      pageChangeCheckInterval = null;
+    }
+    
+    window.removeEventListener('popstate', detectPageChange);
+    console.log('[ChatWidget] Page monitoring cleaned up');
+  }
+    
     // Expose global API for admin control
     window.appointyChatbot = {
       sendProactiveMessage: (text) => {
@@ -973,7 +1073,16 @@ export async function GET(request: Request) {
       },
       isSpeechAllowed: () => speechAllowed,
       getConfig: () => ({ ...config }),
-      getVoices: () => speechSynthesis.getVoices()
+      getVoices: () => speechSynthesis.getVoices(),
+      
+      // Enhanced page detection APIs
+      getCurrentPageUrl: () => currentPageUrl,
+      refreshPageContext: () => {
+        isPageContextLoaded = false;
+        return loadPageContext();
+      },
+      forcePageDetection: () => detectPageChange(),
+      isPageContextLoaded: () => isPageContextLoaded
     };
     
     console.log('Appointy Chatbot Widget loaded successfully');
