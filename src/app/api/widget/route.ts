@@ -1084,7 +1084,6 @@ export async function GET(request: Request) {
     };
     
     console.log('Appointy Chatbot Widget loaded successfully');
-  }
   
   // Wait for DOM to be ready
   if (document.readyState === 'loading') {

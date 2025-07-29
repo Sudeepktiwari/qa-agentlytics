@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Widget Test - Debug</title>
+  </head>
+  <body>
+    <h1>Widget Debug Test</h1>
+    <p>Open the browser console to see debug messages.</p>
+    <p>The widget should appear in the bottom-right corner.</p>
+
+    <div id="debug-info">
+      <h3>Debug Information:</h3>
+      <p>Page loaded at: <span id="load-time"></span></p>
+      <p>Current URL: <span id="current-url"></span></p>
+    </div>
+
+    <!-- Widget with minimal configuration -->
+    <script
+      src="http://localhost:3001/api/widget"
+      data-server="http://localhost:3001"
+      data-enhanced-detection="true"
+    ></script>
+
+    <script>
+      document.getElementById("load-time").textContent =
+        new Date().toLocaleString();
+      document.getElementById("current-url").textContent = window.location.href;
+
+      // Log to console for debugging
+      console.log("=== Widget Debug Test ===");
+      console.log("Page loaded:", new Date().toLocaleString());
+      console.log("URL:", window.location.href);
+
+      // Check if widget loads
+      setTimeout(() => {
+        if (window.appointyChatbot) {
+          console.log(
+            "✅ Widget API available:",
+            Object.keys(window.appointyChatbot)
+          );
+        } else {
+          console.log("❌ Widget API not available");
+        }
+      }, 2000);
+    </script>
+  </body>
+</html>
