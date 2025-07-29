@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb, getAdminSettingsCollection } from "@/lib/mongo";
+import { verifyApiKey } from "@/lib/auth";
 import jwt from "jsonwebtoken";
 import fetch from "node-fetch";
 import * as cheerio from "cheerio";
@@ -1458,6 +1459,49 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
+  // If ?debug=1 with API key, return sitemap debug info
+  if (req.nextUrl.searchParams.get("debug") === "1") {
+    const apiKey = req.headers.get("x-api-key");
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: "API key required for debug" },
+        { status: 401 }
+      );
+    }
+
+    const apiAuth = await verifyApiKey(apiKey);
+    if (!apiAuth) {
+      return NextResponse.json({ error: "Invalid API key" }, { status: 401 });
+    }
+
+    const adminId = apiAuth.adminId;
+    const db = await getDb();
+    const sitemapUrls = db.collection("sitemap_urls");
+
+    // Get all sitemap entries for this admin
+    const entries = await sitemapUrls.find({ adminId }).toArray();
+
+    // Get specific page check if provided
+    const checkUrl = req.nextUrl.searchParams.get("url");
+    let specificEntry = null;
+    if (checkUrl) {
+      specificEntry = await sitemapUrls.findOne({ adminId, url: checkUrl });
+    }
+
+    return NextResponse.json({
+      adminId,
+      totalEntries: entries.length,
+      entries: entries.map((e) => ({
+        url: e.url,
+        crawled: e.crawled,
+        crawledAt: e.crawledAt,
+      })),
+      specificUrlCheck: checkUrl
+        ? { url: checkUrl, found: !!specificEntry, entry: specificEntry }
+        : null,
+    });
+  }
+
   // If ?settings=1, return admin settings (last submitted sitemapUrl)
   if (req.nextUrl.searchParams.get("settings") === "1") {
     const token = req.cookies.get("auth_token")?.value;
