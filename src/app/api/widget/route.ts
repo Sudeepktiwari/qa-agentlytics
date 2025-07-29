@@ -44,8 +44,14 @@ export async function GET(request: Request) {
     return value !== 'false' && value !== '0';
   };
   
-  // API Key - always has a default fallback
-  const API_KEY = getAttr('data-api-key', 'ak_e8a971aee600130a0dcc93ca0fbb8831e366c4566f6b80426991b4ed6c8f9848');
+  // API Key - REQUIRED, no fallback
+  const API_KEY = getAttr('data-api-key', null);
+  
+  // Validate API Key is provided
+  if (!API_KEY) {
+    console.error('[Widget] No API key provided. Please add data-api-key attribute to the script tag.');
+    return;
+  }
   
   // Configuration with comprehensive defaults
   const config = {
