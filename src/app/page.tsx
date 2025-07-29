@@ -86,7 +86,7 @@ export default function HomePage() {
                 Transform Your Customer Experience
               </h2>
               <p className="text-gray-600 mb-6">
-                Whether you're a small startup or a large enterprise, our
+                Whether you&apos;re a small startup or a large enterprise, our
                 chatbot solutions can be customized to meet your specific needs
                 and integrate seamlessly with your existing systems.
               </p>

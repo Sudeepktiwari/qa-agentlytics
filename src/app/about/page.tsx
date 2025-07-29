@@ -118,8 +118,8 @@ export default function AboutPage() {
                 Innovation
               </h3>
               <p className="text-gray-600 text-sm mb-4">
-                We continuously push the boundaries of what's possible with AI,
-                developing cutting-edge solutions that solve real-world
+                We continuously push the boundaries of what&apos;s possible with
+                AI, developing cutting-edge solutions that solve real-world
                 problems.
               </p>
             </div>
