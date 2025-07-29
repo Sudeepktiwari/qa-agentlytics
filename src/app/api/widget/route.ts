@@ -46,7 +46,6 @@ export async function GET(request: Request) {
   
   // API Key - always has a default fallback
   const API_KEY = getAttr('data-api-key', 'ak_e8a971aee600130a0dcc93ca0fbb8831e366c4566f6b80426991b4ed6c8f9848');
-  const ADMIN_ID = 'default';
   
   // Configuration with comprehensive defaults
   const config = {
@@ -581,8 +580,8 @@ export async function GET(request: Request) {
       sessionId,
       pageUrl: currentUrl,
       followup: true,
-      followupCount,
-      adminId: ADMIN_ID
+      followupCount
+      // Don't specify adminId - let the API extract it from the API key
     });
     
     if (data.mainText || data.answer) {
@@ -625,8 +624,8 @@ export async function GET(request: Request) {
     const data = await sendApiRequest('chat', {
       question: text,
       sessionId,
-      pageUrl: currentPageUrl,
-      adminId: ADMIN_ID
+      pageUrl: currentPageUrl
+      // Don't specify adminId - let the API extract it from the API key
     });
     
     // Hide typing indicator
