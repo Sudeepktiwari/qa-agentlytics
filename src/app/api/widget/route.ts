@@ -1015,9 +1015,9 @@ export async function GET(request: Request) {
     window.removeEventListener('popstate', detectPageChange);
     console.log('[ChatWidget] Page monitoring cleaned up');
   }
-    
-    // Expose global API for admin control
-    window.appointyChatbot = {
+  
+  // Expose global API for admin control
+  window.appointyChatbot = {
       sendProactiveMessage: (text) => {
         // For programmatic calls, try to enable speech first
         if (config.voiceEnabled && !speechAllowed) {

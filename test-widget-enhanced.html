@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test Widget - Enhanced Page Detection</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 40px;
+        line-height: 1.6;
+      }
+      .page-content {
+        max-width: 800px;
+        margin: 0 auto;
+      }
+      .navigation {
+        background: #f4f4f4;
+        padding: 20px;
+        margin-bottom: 30px;
+        border-radius: 8px;
+      }
+      .navigation button {
+        margin: 5px;
+        padding: 10px 15px;
+        background: #007cba;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .navigation button:hover {
+        background: #005a8a;
+      }
+      .section {
+        margin: 30px 0;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page-content">
+      <h1>Test Page - Enhanced Widget Detection</h1>
+
+      <div class="navigation">
+        <h3>Test Navigation (simulates page changes):</h3>
+        <button onclick="simulatePageChange('/services')">
+          Go to Services
+        </button>
+        <button onclick="simulatePageChange('/about')">Go to About</button>
+        <button onclick="simulatePageChange('/contact')">Go to Contact</button>
+        <button onclick="simulatePageChange('/pricing')">Go to Pricing</button>
+        <button onclick="simulatePageChange('/')">Go to Home</button>
+      </div>
+
+      <div class="section">
+        <h2>Current Page Info</h2>
+        <p><strong>URL:</strong> <span id="current-url"></span></p>
+        <p><strong>Page Title:</strong> <span id="current-title"></span></p>
+        <p><strong>Timestamp:</strong> <span id="timestamp"></span></p>
+      </div>
+
+      <div class="section">
+        <h2>Widget Test Instructions</h2>
+        <ol>
+          <li>The chatbot widget should appear automatically</li>
+          <li>
+            Click on the navigation buttons above to simulate page changes
+          </li>
+          <li>The widget should detect these changes and update its context</li>
+          <li>
+            Open the chatbot and ask questions - it should be aware of the
+            current "page"
+          </li>
+          <li>
+            Check the browser console for debug messages about page detection
+          </li>
+        </ol>
+      </div>
+
+      <div class="section">
+        <h2>Expected Behavior</h2>
+        <ul>
+          <li>Widget loads without JavaScript errors</li>
+          <li>Page changes are detected automatically (check console)</li>
+          <li>Widget context updates based on current URL</li>
+          <li>No need to select pages from dropdown - it's automatic now</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Load the enhanced widget -->
+    <script
+      src="http://localhost:3001/api/widget"
+      data-server="http://localhost:3001"
+      data-auto-open-proactive="true"
+      data-proactive-message="Hi! I can help you with information about this page. What would you like to know?"
+      data-theme="default"
+      data-position="bottom-right"
+      data-button-text="💬"
+      data-chat-title="AI Assistant"
+      data-placeholder="Ask me anything about this page..."
+      data-voice-enabled="true"
+      data-enhanced-detection="true"
+    ></script>
+
+    <script>
+      // Simulate page changes for testing
+      function simulatePageChange(newPath) {
+        // Update URL without page reload
+        history.pushState({}, "", newPath);
+
+        // Update page info display
+        updatePageInfo();
+
+        // Log for debugging
+        console.log("Simulated navigation to:", newPath);
+      }
+
+      function updatePageInfo() {
+        document.getElementById("current-url").textContent =
+          window.location.pathname;
+        document.getElementById("current-title").textContent = document.title;
+        document.getElementById("timestamp").textContent =
+          new Date().toLocaleTimeString();
+      }
+
+      // Initialize page info
+      document.addEventListener("DOMContentLoaded", function () {
+        updatePageInfo();
+
+        // Log widget loading
+        console.log(
+          "Test page loaded, widget should initialize with enhanced detection"
+        );
+      });
+
+      // Listen for page changes (this would happen in a real SPA)
+      window.addEventListener("popstate", function () {
+        updatePageInfo();
+        console.log("Browser navigation detected");
+      });
+    </script>
+  </body>
+</html>
