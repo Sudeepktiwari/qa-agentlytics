@@ -289,6 +289,21 @@ export async function POST(req: NextRequest) {
         "sitemapEntry:",
         sitemapEntry
       );
+
+      if (!sitemapEntry) {
+        console.log(
+          `[DEBUG] No sitemap entry found for pageUrl: ${pageUrl} with adminId: ${adminId}`
+        );
+        console.log(
+          `[DEBUG] This means the page is not in your sitemap. Add it via admin panel.`
+        );
+      } else if (!sitemapEntry.crawled) {
+        console.log(
+          `[DEBUG] Sitemap entry found but page not crawled yet. Will crawl now.`
+        );
+      } else {
+        console.log(`[DEBUG] Page found and crawled. Getting chunks...`);
+      }
       if (sitemapEntry && !sitemapEntry.crawled) {
         // Crawl the page on demand with redirect handling
         try {
@@ -351,6 +366,12 @@ export async function POST(req: NextRequest) {
     } else {
       // LOG: No adminId found for session
       console.log("[Proactive] No adminId found for sessionId:", sessionId);
+      console.log(
+        "[DEBUG] This means your API key is not properly mapped to an adminId"
+      );
+      console.log(
+        "[DEBUG] Check that your API key exists in the users collection"
+      );
     }
     let pageSummary = "(No specific information found for this page.)";
     if (pageChunks.length > 0) {
@@ -394,6 +415,9 @@ export async function POST(req: NextRequest) {
           );
         }
         const detectedIntent = detectIntent({ pageUrl });
+        console.log(
+          `[DEBUG] Detected intent for pageUrl "${pageUrl}": "${detectedIntent}"`
+        );
         const summaryPrompt = `The user is viewing: ${pageUrl}. Their likely intent is: ${detectedIntent}.
 
 Create a proactive greeting message following this exact format and style:
@@ -687,7 +711,13 @@ ${previousQnA}
       }
     }
     // Fallback if no context
+    console.log(
+      `[DEBUG] Falling back to generic message. pageSummary: "${pageSummary}", pageChunks.length: ${pageChunks.length}`
+    );
     if (proactive) {
+      console.log(
+        `[DEBUG] Returning generic proactive message - no page context found`
+      );
       const proactiveMsg = `👋 Hello there! I'm here to help you learn more about the products and services available.
 
 I can help answer questions, provide information, and guide you through available options based on your specific needs.

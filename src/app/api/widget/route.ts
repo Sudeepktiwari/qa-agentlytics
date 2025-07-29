@@ -1128,7 +1128,7 @@ export async function GET(request: Request) {
       isPageContextLoaded: () => isPageContextLoaded
     };
     
-    console.log('Appointy Chatbot Widget loaded successfully');
+    console.log('AI Chatbot Widget loaded successfully');
   
   // Wait for DOM to be ready
   if (document.readyState === 'loading') {
