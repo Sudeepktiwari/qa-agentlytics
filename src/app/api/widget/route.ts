@@ -47,10 +47,34 @@ export async function GET(request: Request) {
   // API Key - REQUIRED, no fallback
   const API_KEY = getAttr('data-api-key', null);
   
-  // Validate API Key is provided
-  if (!API_KEY) {
-    console.error('[Widget] No API key provided. Please add data-api-key attribute to the script tag.');
-    return;
+  // Validate API Key is provided - STRICTLY REQUIRED
+  if (!API_KEY || API_KEY.trim() === '') {
+    const errorMessage = '[Widget] ERROR: API key is required. Please add data-api-key="your-api-key" attribute to the script tag.';
+    console.error(errorMessage);
+    // Return error script that displays the error in console
+    return new NextResponse(`;
+  console.error("${errorMessage}");
+  console.error("Widget will not initialize without a valid API key.");
+  throw new Error("${errorMessage}");
+  `, {
+      status: 400,
+      headers: { 'Content-Type': 'application/javascript', ...corsHeaders }
+    });
+  }
+  
+  // Validate API Key format (should start with 'ak_' and be 67 characters total)
+  if (!API_KEY.startsWith('ak_') || API_KEY.length !== 67) {
+    const errorMessage = '[Widget] ERROR: Invalid API key format. API key should start with "ak_" and be 67 characters long.';
+    console.error(errorMessage);
+    return new NextResponse(`;
+  console.error("${errorMessage}");
+  console.error("Provided API key: ${API_KEY}");
+  console.error("Widget will not initialize with invalid API key format.");
+  throw new Error("${errorMessage}");
+  `, {
+      status: 400,
+      headers: { 'Content-Type': 'application/javascript', ...corsHeaders }
+    });
   }
   
   // Configuration with comprehensive defaults
@@ -197,7 +221,26 @@ export async function GET(request: Request) {
   let pageChangeCheckInterval = null;
 
   // Messages array
-  let messages = [];  // Text-to-Speech functionality with user interaction handling
+  let messages = [];
+  
+  // Format text with markdown-like styling
+  function formatMessageText(text) {
+    if (!text) return '';
+    
+    // Convert **text** to <strong>text</strong>
+    let formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    
+    // Convert *text* to <em>text</em>
+    formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    
+    // Convert line breaks
+    formatted = formatted.replace(/\n/g, '<br>');
+    
+    // Convert > blockquotes to styled divs
+    formatted = formatted.replace(/^>\s*(.+)$/gm, '<div style="border-left: 3px solid #e5e7eb; padding-left: 12px; margin: 8px 0; font-style: italic; color: #6b7280;">$1</div>');
+    
+    return formatted;
+  }  // Text-to-Speech functionality with user interaction handling
   let speechAllowed = false;
   let speechInitialized = false;
   
@@ -530,6 +573,7 @@ export async function GET(request: Request) {
   // Clear followup timer
   function clearFollowupTimer() {
     if (followupTimer) {
+      console.log('[Widget] Clearing followup timer');
       clearTimeout(followupTimer);
       followupTimer = null;
     }
@@ -538,6 +582,7 @@ export async function GET(request: Request) {
   
   // Reset user activity
   function resetUserActivity() {
+    console.log('[Widget] Resetting user activity - clearing followup timer');
     clearFollowupTimer();
     userIsActive = false;
     lastUserAction = Date.now();
@@ -546,19 +591,36 @@ export async function GET(request: Request) {
   
   // Set user as active
   function setUserActive() {
+    console.log('[Widget] User is now active');
     userIsActive = true;
     lastUserAction = Date.now();
   }
   
   // Start followup timer
   function startFollowupTimer() {
+    console.log('[Widget] Starting followup timer - count:', followupCount, 'userIsActive:', userIsActive);
     clearFollowupTimer();
     followupTimer = setTimeout(() => {
       const timeSinceLastAction = Date.now() - lastUserAction;
+      console.log('[Widget] Followup timer triggered:', {
+        userIsActive,
+        timeSinceLastAction,
+        followupCount,
+        timeSinceLastActionSeconds: Math.round(timeSinceLastAction / 1000)
+      });
+      
       if (!userIsActive && timeSinceLastAction >= 25000 && followupCount < 3) {
+        console.log('[Widget] Conditions met for followup message - sending now');
         sendFollowupMessage();
+      } else {
+        console.log('[Widget] Followup conditions not met:', {
+          userNotActive: !userIsActive,
+          enoughTimePassed: timeSinceLastAction >= 25000,
+          underLimit: followupCount < 3
+        });
       }
     }, 30000); // 30 seconds
+    console.log('[Widget] Followup timer set for 30 seconds');
   }
   
   // Send API request
@@ -581,27 +643,47 @@ export async function GET(request: Request) {
   
   // Send followup message
   async function sendFollowupMessage() {
+    console.log('[Widget] Sending followup message', { followupCount, sessionId });
     const currentUrl = window.location.href;
-    const data = await sendApiRequest('chat', {
-      sessionId,
-      pageUrl: currentUrl,
-      followup: true,
-      followupCount
-      // Don't specify adminId - let the API extract it from the API key
-    });
     
-    if (data.mainText || data.answer) {
-      const botMessage = {
-        role: 'assistant',
-        content: data.mainText || data.answer,
-        buttons: data.buttons || [],
-        emailPrompt: data.emailPrompt || ''
-      };
-      messages.push(botMessage);
-      renderMessages();
-      followupCount++;
-      startFollowupTimer();
+    try {
+      const data = await sendApiRequest('chat', {
+        sessionId,
+        pageUrl: currentUrl,
+        followup: true,
+        followupCount
+        // Don't specify adminId - let the API extract it from the API key
+      });
+      
+      console.log('[Widget] Followup API response:', data);
+      
+      if (data.mainText || data.answer) {
+        const botMessage = {
+          role: 'assistant',
+          content: data.mainText || data.answer,
+          buttons: data.buttons || [],
+          emailPrompt: data.emailPrompt || ''
+        };
+        messages.push(botMessage);
+        renderMessages();
+        followupCount++;
+        console.log('[Widget] Followup message added, new count:', followupCount);
+        
+        // Auto-open chat if it's closed and user hasn't opened it yet
+        if (!isOpen && config.autoOpenProactive) {
+          console.log('[Widget] Auto-opening chat for followup message');
+          toggleWidget();
+        }
+        
+        // Continue followup chain
+        startFollowupTimer();
+      } else {
+        console.log('[Widget] No followup message content received from API');
+      }
+    } catch (error) {
+      console.error('[Widget] Error sending followup message:', error);
     }
+    
     followupSent = false;
   }
   
@@ -651,6 +733,7 @@ export async function GET(request: Request) {
       };
       messages.push(botMessage);
       botResponse = botMessage.content;
+      console.log('[Widget] Bot response received, starting followup timer');
       startFollowupTimer();
     }
     
@@ -714,7 +797,7 @@ export async function GET(request: Request) {
           line-height: 1.4;
           display: inline-block;
         \`;
-        bubbleDiv.textContent = msg.content;
+        bubbleDiv.innerHTML = formatMessageText(msg.content);
         messageDiv.appendChild(bubbleDiv);
         
       } else {
@@ -741,7 +824,7 @@ export async function GET(request: Request) {
         
         // Bot message with potential buttons and email prompt
         const contentDiv = document.createElement('div');
-        contentDiv.textContent = msg.content;
+        contentDiv.innerHTML = formatMessageText(msg.content);
         bubbleDiv.appendChild(contentDiv);
         
         // Add buttons if present and no email prompt
@@ -880,6 +963,7 @@ export async function GET(request: Request) {
   // Toggle widget
   function toggleWidget() {
     isOpen = !isOpen;
+    console.log('[Widget] Toggling widget, now open:', isOpen);
     widgetContainer.style.display = isOpen ? 'flex' : 'none';
     
     // Update button appearance
@@ -887,13 +971,16 @@ export async function GET(request: Request) {
     toggleButton.style.animation = 'none'; // Remove pulse animation
     
     if (isOpen) {
+      console.log('[Widget] Widget opened');
       // If no messages exist, initialize chat
       if (messages.length === 0) {
+        console.log('[Widget] No messages, initializing chat');
         initializeChat();
       }
       
       resetUserActivity();
     } else {
+      console.log('[Widget] Widget closed, clearing followup timer');
       clearFollowupTimer();
       // Hide settings when closing chat
       const settingsPanel = document.getElementById('appointy-settings');
@@ -998,20 +1085,18 @@ export async function GET(request: Request) {
     document.addEventListener('input', (e) => {
       if (e.target.id === 'appointy-input') {
         if (e.target.value.length > 0 && !userIsActive) {
+          console.log('[Widget] User started typing, setting active');
           setUserActive();
           clearFollowupTimer();
           
           // Restart timer with user activity consideration
           const lastMessage = messages[messages.length - 1];
           if (lastMessage && lastMessage.role === 'assistant' && followupCount < 3) {
-            followupTimer = setTimeout(() => {
-              const timeSinceLastAction = Date.now() - lastUserAction;
-              if (!userIsActive && timeSinceLastAction >= 25000) {
-                sendFollowupMessage();
-              }
-            }, 30000);
+            console.log('[Widget] Restarting followup timer after user typing');
+            startFollowupTimer();
           }
         } else if (e.target.value.length === 0 && userIsActive) {
+          console.log('[Widget] User cleared input, setting inactive');
           userIsActive = false;
         }
       }
@@ -1020,10 +1105,13 @@ export async function GET(request: Request) {
     // Page visibility change
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
+        console.log('[Widget] Page hidden, clearing followup timer');
         clearFollowupTimer();
       } else if (isOpen && messages.length > 0) {
+        console.log('[Widget] Page visible again, checking if should restart followup timer');
         const lastMessage = messages[messages.length - 1];
         if (lastMessage && lastMessage.role === 'assistant' && followupCount < 3) {
+          console.log('[Widget] Restarting followup timer after page became visible');
           startFollowupTimer();
         }
       }
