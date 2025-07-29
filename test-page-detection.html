@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Widget Test - Page Detection Demo</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 40px;
+        line-height: 1.6;
+      }
+      .page-content {
+        max-width: 800px;
+        margin: 0 auto;
+      }
+      .navigation {
+        background: #f4f4f4;
+        padding: 20px;
+        margin-bottom: 30px;
+        border-radius: 8px;
+      }
+      .navigation button {
+        margin: 5px;
+        padding: 10px 15px;
+        background: #007cba;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .navigation button:hover {
+        background: #005a8a;
+      }
+      .section {
+        margin: 30px 0;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+      }
+      .status {
+        padding: 10px;
+        margin: 10px 0;
+        border-radius: 4px;
+        font-weight: bold;
+      }
+      .success {
+        background-color: #d4edda;
+        color: #155724;
+      }
+      .info {
+        background-color: #d1ecf1;
+        color: #0c5460;
+      }
+      .warning {
+        background-color: #fff3cd;
+        color: #856404;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page-content">
+      <h1>🧪 Enhanced Widget Detection Test</h1>
+
+      <div class="section">
+        <h2>Test Instructions</h2>
+        <ol>
+          <li>
+            <strong>Wait for widget to load</strong> - Check that the chat
+            bubble appears
+          </li>
+          <li>
+            <strong>Navigate between pages</strong> - Use the buttons below to
+            simulate page changes
+          </li>
+          <li>
+            <strong>Watch for contextual messages</strong> - The widget should
+            automatically detect page changes and provide relevant proactive
+            messages
+          </li>
+          <li>
+            <strong>Check console logs</strong> - Open browser console to see
+            debug information
+          </li>
+        </ol>
+      </div>
+
+      <div class="navigation">
+        <h3>🚀 Test Navigation (simulates page changes):</h3>
+        <button onclick="navigateTo('http://localhost:3000/')">
+          🏠 Home Page
+        </button>
+        <button onclick="navigateTo('http://localhost:3000/services')">
+          🛠️ Services
+        </button>
+        <button onclick="navigateTo('http://localhost:3000/pricing')">
+          💰 Pricing
+        </button>
+        <button onclick="navigateTo('http://localhost:3000/about')">
+          ℹ️ About Us
+        </button>
+        <button onclick="navigateTo('http://localhost:3000/contact')">
+          📞 Contact
+        </button>
+      </div>
+
+      <div class="section">
+        <h2>📊 Current Page Status</h2>
+        <p><strong>Current URL:</strong> <span id="current-url"></span></p>
+        <p><strong>Page Title:</strong> <span id="current-title"></span></p>
+        <p><strong>Last Updated:</strong> <span id="timestamp"></span></p>
+        <div id="detection-status" class="status info">
+          🔄 Waiting for page detection...
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>✅ Expected Results</h2>
+        <ul>
+          <li>
+            <strong>Home Page:</strong> General welcome message about AI chatbot
+            platform
+          </li>
+          <li>
+            <strong>Services:</strong> Information about custom chatbot
+            development and AI integration
+          </li>
+          <li>
+            <strong>Pricing:</strong> Details about pricing plans and features
+          </li>
+          <li><strong>About:</strong> Company information and team details</li>
+          <li>
+            <strong>Contact:</strong> Contact information and support options
+          </li>
+        </ul>
+        <p>
+          <strong>🎯 Goal:</strong> Each page should trigger a unique,
+          contextual proactive message instead of the generic fallback message.
+        </p>
+      </div>
+
+      <div class="section">
+        <h2>🔍 Debug Information</h2>
+        <div id="debug-log"></div>
+      </div>
+    </div>
+
+    <!-- Load the enhanced widget -->
+    <script
+      src="http://localhost:3000/api/widget"
+      data-api-key="ak_b17dd57a2e0d78b5d3f1155e94167da890dda703409fe1e36e647c2e6cc8d345"
+      data-auto-open-proactive="true"
+      data-theme="default"
+      data-position="bottom-right"
+      data-button-text="💬"
+      data-chat-title="AI Assistant"
+      data-placeholder="Ask me about this page..."
+    ></script>
+
+    <script>
+      let debugLog = [];
+
+      // Enhanced logging function
+      function addDebugLog(message, type = "info") {
+        const timestamp = new Date().toLocaleTimeString();
+        debugLog.push(`[${timestamp}] ${message}`);
+
+        const debugElement = document.getElementById("debug-log");
+        debugElement.innerHTML = debugLog
+          .slice(-10)
+          .map(
+            (log) =>
+              `<div style="font-family: monospace; font-size: 12px; margin: 2px 0; color: #666;">${log}</div>`
+          )
+          .join("");
+
+        console.log(`[WidgetTest] ${message}`);
+      }
+
+      // Simulate page changes for testing
+      function navigateTo(newUrl) {
+        // Extract just the path for display
+        const urlPath = newUrl.replace("http://localhost:3000", "") || "/";
+
+        // Update URL without page reload
+        history.pushState({}, "", urlPath);
+
+        // Update page info display
+        updatePageInfo();
+
+        // Update detection status
+        document.getElementById("detection-status").innerHTML =
+          "🔄 Page changed - waiting for widget detection...";
+        document.getElementById("detection-status").className = "status info";
+
+        addDebugLog(`Navigated to: ${urlPath}`);
+
+        // Check if widget detected the change after a delay
+        setTimeout(() => {
+          if (window.appointyChatbot) {
+            const config = window.appointyChatbot.getConfig();
+            addDebugLog(
+              `Widget config - enhanced detection: ${config.enhancedDetection}`
+            );
+          }
+        }, 2000);
+      }
+
+      function updatePageInfo() {
+        document.getElementById("current-url").textContent =
+          window.location.pathname;
+        document.getElementById("current-title").textContent = document.title;
+        document.getElementById("timestamp").textContent =
+          new Date().toLocaleTimeString();
+      }
+
+      // Initialize page info
+      document.addEventListener("DOMContentLoaded", function () {
+        updatePageInfo();
+        addDebugLog("Test page loaded");
+        addDebugLog(
+          "Enhanced widget should initialize with automatic page detection"
+        );
+
+        // Check widget initialization after a delay
+        setTimeout(() => {
+          if (window.appointyChatbot) {
+            document.getElementById("detection-status").innerHTML =
+              "✅ Widget loaded and enhanced detection enabled";
+            document.getElementById("detection-status").className =
+              "status success";
+            addDebugLog("Widget API available - enhanced detection enabled");
+          } else {
+            document.getElementById("detection-status").innerHTML =
+              "❌ Widget failed to load";
+            document.getElementById("detection-status").className =
+              "status warning";
+            addDebugLog("Widget API not available");
+          }
+        }, 3000);
+      });
+
+      // Listen for browser navigation events
+      window.addEventListener("popstate", function () {
+        updatePageInfo();
+        addDebugLog("Browser navigation detected (popstate)");
+      });
+
+      // Override console.log to capture widget debug messages
+      const originalLog = console.log;
+      console.log = function (...args) {
+        if (
+          args[0] &&
+          args[0].includes &&
+          (args[0].includes("[ChatWidget]") ||
+            args[0].includes("[Proactive]") ||
+            args[0].includes("Appointy Chatbot"))
+        ) {
+          addDebugLog(`Widget: ${args.join(" ")}`);
+        }
+        originalLog.apply(console, args);
+      };
+    </script>
+  </body>
+</html>

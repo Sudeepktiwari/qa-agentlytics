@@ -199,6 +199,7 @@ export async function POST(req: NextRequest) {
   let apiAuth = null;
   if (apiKey) {
     apiAuth = await verifyApiKey(apiKey);
+    console.log("[DEBUG] apiAuth result:", apiAuth);
     if (!apiAuth) {
       return NextResponse.json(
         { error: "Invalid API key" },
