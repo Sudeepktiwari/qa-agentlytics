@@ -1490,6 +1490,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       adminId,
+      email: apiAuth.email,
       totalEntries: entries.length,
       entries: entries.map((e) => ({
         url: e.url,
