@@ -245,15 +245,6 @@ export async function POST(req: NextRequest) {
   const chats = db.collection("chats");
   const now = new Date();
 
-  // If email detected, update all previous messages in this session
-  if (detectedEmail) {
-    await chats.updateMany({ sessionId }, { $set: { email: detectedEmail } });
-    // Log for verification
-    console.log(
-      `[LeadGen] Stored email for session ${sessionId}: ${detectedEmail}`
-    );
-  }
-
   // Get adminId if available (prioritize API key auth, then request body, then previous chat)
   let adminId: string | null = null;
   if (apiAuth) {
@@ -272,6 +263,21 @@ export async function POST(req: NextRequest) {
       adminId = lastMsg.adminId;
       console.log(`[DEBUG] Using adminId from previous chat: ${adminId}`);
     }
+  }
+
+  // If email detected, update all previous messages in this session with email and adminId
+  if (detectedEmail) {
+    const updateData: { email: string; adminId?: string } = {
+      email: detectedEmail,
+    };
+    if (adminId) {
+      updateData.adminId = adminId;
+    }
+    await chats.updateMany({ sessionId }, { $set: updateData });
+    // Log for verification
+    console.log(
+      `[LeadGen] Stored email for session ${sessionId}: ${detectedEmail} with adminId: ${adminId}`
+    );
   }
   // Optionally, you could extract adminId from a cookie/JWT if you want admin-specific context
 
@@ -1013,6 +1019,7 @@ IMPORTANT: Don't provide other action buttons when user is requesting email. Foc
       content: question,
       createdAt: now,
       ...(emailToStore ? { email: emailToStore } : {}),
+      ...(adminId ? { adminId } : {}),
     },
     {
       sessionId,
@@ -1020,6 +1027,7 @@ IMPORTANT: Don't provide other action buttons when user is requesting email. Foc
       content: answer,
       createdAt: new Date(now.getTime() + 1),
       ...(emailToStore ? { email: emailToStore } : {}),
+      ...(adminId ? { adminId } : {}),
     },
   ]);
 

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Email Lead Collection Test</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        margin: 0;
+        padding: 20px;
+        background: #f5f7fa;
+      }
+      .demo-section {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+      }
+      h1,
+      h2 {
+        color: #333;
+      }
+      .highlight {
+        background: #e3f2fd;
+        padding: 15px;
+        border-radius: 8px;
+        border-left: 4px solid #2196f3;
+        margin: 10px 0;
+      }
+      .success {
+        background: #e8f5e8;
+        border-left-color: #4caf50;
+      }
+      .code {
+        background: #f5f5f5;
+        padding: 10px;
+        border-radius: 4px;
+        font-family: monospace;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>📧 Email Lead Collection - FIXED!</h1>
+
+    <div class="demo-section">
+      <h2>🔧 Problem Fixed:</h2>
+      <div class="highlight success">
+        <strong>✅ Issue Resolved:</strong> Emails are now properly saved as
+        leads with the correct adminId association!
+      </div>
+
+      <p>
+        <strong>The Problem:</strong> When users provided their email in the
+        chat, it wasn't appearing in the admin interface's Lead Management
+        section.
+      </p>
+
+      <p>
+        <strong>Root Cause:</strong> Chat messages were being saved without the
+        <code>adminId</code> field, so the leads API couldn't find them when
+        filtering by adminId.
+      </p>
+
+      <div class="highlight">
+        <strong>🛠️ What Was Fixed:</strong>
+        <ul>
+          <li>
+            <strong>Added adminId to all chat records</strong> - Both user and
+            assistant messages now include the adminId
+          </li>
+          <li>
+            <strong>Updated email detection logic</strong> - When an email is
+            detected, all previous messages in the session are updated with both
+            email and adminId
+          </li>
+          <li>
+            <strong>Proper order of operations</strong> - AdminId is now
+            determined before email processing
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="demo-section">
+      <h2>🧪 Test Email Lead Collection:</h2>
+      <p><strong>Instructions:</strong></p>
+      <ol>
+        <li>Open the chat widget below</li>
+        <li>Have a conversation with the chatbot</li>
+        <li>
+          When asked for your email or during the conversation, provide a test
+          email like: <code>test@example.com</code>
+        </li>
+        <li>Go to the admin interface → Lead Management</li>
+        <li>You should now see the email listed as a lead!</li>
+      </ol>
+
+      <div class="highlight">
+        <strong>💡 How it works:</strong>
+        <ul>
+          <li>
+            Email detection regex: <code>/^[^@\s]+@[^@\s]+\.[^@\s]+$/</code>
+          </li>
+          <li>
+            When detected, all session messages get updated with:
+            <code>{ email: "user@example.com", adminId: "admin123" }</code>
+          </li>
+          <li>
+            Leads API filters by:
+            <code
+              >{ adminId, email: { $exists: true, $ne: null, $not: { $eq: "" } }
+              }</code
+            >
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="demo-section">
+      <h2>🎯 Technical Details:</h2>
+      <div class="code">
+        // Before (BROKEN): await chats.insertMany([ { sessionId, role: "user",
+        content: question, email: emailToStore // ❌ Missing adminId } ]); //
+        After (FIXED): await chats.insertMany([ { sessionId, role: "user",
+        content: question, email: emailToStore, adminId // ✅ Now includes
+        adminId } ]);
+      </div>
+    </div>
+
+    <!-- Test Chatbot Widget -->
+    <script
+      src="http://localhost:3001/api/widget"
+      data-api-key="ak_1d96074cc78dbd634ccac7d29f6de02fafa23a4c4f1b840684696cf62a706f91"
+      data-position="bottom-right"
+      data-button-text="💬 Test Lead Collection"
+      data-primary-color="#2563eb"
+      data-greeting="Hello! I'm testing the **email lead collection fix**. Try asking me questions and then provide your email - it should now show up in the admin leads section!"
+      data-voice-enabled="true"
+      data-voice-gender="female"
+      data-proactive-message="I see you're testing email lead collection! 📧 Feel free to provide a test email during our conversation to verify it gets properly saved as a lead."
+      data-proactive-delay="8000"
+    ></script>
+
+    <div style="margin-top: 100px">
+      <h3>Expected Behavior:</h3>
+      <p>1. <strong>User provides email</strong> (e.g., "test@example.com")</p>
+      <p>
+        2. <strong>Email is detected</strong> and logged: "Stored email for
+        session xyz: test@example.com with adminId: admin123"
+      </p>
+      <p>
+        3. <strong>All session messages</strong> are updated with email +
+        adminId
+      </p>
+      <p>
+        4. <strong>Admin interface</strong> can now find and display the lead
+      </p>
+      <p>
+        5. <strong>Lead appears</strong> in the Lead Management section with
+        proper filtering
+      </p>
+    </div>
+  </body>
+</html>
