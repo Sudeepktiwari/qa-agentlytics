@@ -884,6 +884,14 @@ export async function GET(request: Request) {
               animation-delay: \${index * 0.1}s;
             \`;
             
+            // Fallback to ensure button becomes visible even if animation fails
+            setTimeout(() => {
+              if (button.style.opacity === '0') {
+                button.style.opacity = '1';
+                button.style.transform = 'translateY(0) scale(1)';
+              }
+            }, (index * 100) + 600); // Slightly after animation should complete
+            
             // Add CSS keyframes for the fade-in animation
             if (!document.getElementById('appointy-button-styles')) {
               const style = document.createElement('style');
@@ -954,10 +962,17 @@ export async function GET(request: Request) {
             // Add subtle pulse animation to draw attention after appearing
             setTimeout(() => {
               if (button.parentNode) { // Only if button still exists
-                button.style.animation = 'buttonPulse 2s ease-in-out 3'; // Pulse 3 times
+                // Ensure button is fully visible first
+                button.style.opacity = '1';
+                button.style.transform = 'translateY(0) scale(1)';
+                // Apply pulse animation without overriding other properties
+                button.style.animation = 'buttonPulse 2s ease-in-out 3';
                 setTimeout(() => {
                   if (button.parentNode) {
+                    // Reset to default state instead of removing animation completely
                     button.style.animation = 'none';
+                    button.style.opacity = '1';
+                    button.style.transform = 'translateY(0) scale(1)';
                   }
                 }, 6000); // Remove pulse after 6 seconds
               }

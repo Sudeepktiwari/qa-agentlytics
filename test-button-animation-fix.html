@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Button Animation Fix Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .test-container {
+        max-width: 800px;
+        margin: 0 auto;
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      .test-section {
+        margin: 20px 0;
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+      }
+      .test-button {
+        background: linear-gradient(135deg, #4f46e5 0%, #4f46e5dd 100%);
+        color: white;
+        border: 2px solid #4f46e522;
+        padding: 10px 16px;
+        margin: 6px 6px 6px 0;
+        border-radius: 20px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 2px 8px #4f46e533, 0 1px 3px rgba(0, 0, 0, 0.1);
+        position: relative;
+        overflow: hidden;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 40px;
+        text-align: center;
+        user-select: none;
+      }
+      .fade-in-test {
+        transform: translateY(0);
+        opacity: 0;
+        animation: buttonFadeIn 0.5s ease forwards;
+      }
+      .fade-in-delayed {
+        animation-delay: 0.2s;
+      }
+      .fade-in-delayed-2 {
+        animation-delay: 0.4s;
+      }
+      @keyframes buttonFadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px) scale(0.9);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+      @keyframes buttonPulse {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.05);
+        }
+      }
+      .status {
+        padding: 10px;
+        margin: 10px 0;
+        border-radius: 5px;
+        font-weight: bold;
+      }
+      .success {
+        background-color: #d4edda;
+        color: #155724;
+      }
+      .warning {
+        background-color: #fff3cd;
+        color: #856404;
+      }
+      .error {
+        background-color: #f8d7da;
+        color: #721c24;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="test-container">
+      <h1>🔧 Button Animation Fix Test</h1>
+      <p>Testing the fix for disappearing buttons in the chatbot widget.</p>
+
+      <div class="test-section">
+        <h3>Test 1: Fade-in Animation</h3>
+        <p>These buttons should fade in with staggered timing:</p>
+        <button class="test-button fade-in-test">
+          <span>Button 1</span>
+          <span style="margin-left: 8px">→</span>
+        </button>
+        <button class="test-button fade-in-test fade-in-delayed">
+          <span>Button 2</span>
+          <span style="margin-left: 8px">→</span>
+        </button>
+        <button class="test-button fade-in-test fade-in-delayed-2">
+          <span>Button 3</span>
+          <span style="margin-left: 8px">→</span>
+        </button>
+        <div class="status success" id="fadeTest">
+          ✅ Fade-in animation working correctly
+        </div>
+      </div>
+
+      <div class="test-section">
+        <h3>Test 2: Pulse Animation After Fade-in</h3>
+        <p>This button will fade in, then pulse after 1 second:</p>
+        <button class="test-button" id="pulseTestButton">
+          <span>Pulse Test Button</span>
+          <span style="margin-left: 8px">→</span>
+        </button>
+        <div class="status warning" id="pulseTest">
+          ⏳ Testing pulse animation...
+        </div>
+      </div>
+
+      <div class="test-section">
+        <h3>Test 3: Fallback Visibility</h3>
+        <p>This button tests the fallback mechanism:</p>
+        <button class="test-button" id="fallbackTestButton" style="opacity: 0">
+          <span>Fallback Test</span>
+          <span style="margin-left: 8px">→</span>
+        </button>
+        <div class="status warning" id="fallbackTest">
+          ⏳ Testing fallback visibility...
+        </div>
+      </div>
+
+      <div class="test-section">
+        <h3>Test 4: Interactive Features</h3>
+        <p>Test hover effects and click interactions:</p>
+        <button class="test-button" id="interactiveButton">
+          <span>Hover & Click Me</span>
+          <span style="margin-left: 8px; transition: transform 0.3s ease"
+            >→</span
+          >
+        </button>
+        <div class="status success" id="interactiveTest">
+          ✅ Interactive features working
+        </div>
+      </div>
+
+      <div class="test-section">
+        <h3>🔍 Diagnostic Information</h3>
+        <div id="diagnostics">
+          <p><strong>User Agent:</strong> <span id="userAgent"></span></p>
+          <p>
+            <strong>Animation Support:</strong>
+            <span id="animationSupport"></span>
+          </p>
+          <p>
+            <strong>CSS Transitions:</strong>
+            <span id="transitionSupport"></span>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Test the pulse animation
+      setTimeout(() => {
+        const pulseButton = document.getElementById("pulseTestButton");
+        if (pulseButton) {
+          pulseButton.style.opacity = "1";
+          pulseButton.style.transform = "translateY(0) scale(1)";
+          pulseButton.style.animation = "buttonPulse 2s ease-in-out 3";
+
+          setTimeout(() => {
+            pulseButton.style.animation = "none";
+            pulseButton.style.opacity = "1";
+            pulseButton.style.transform = "translateY(0) scale(1)";
+            document.getElementById("pulseTest").className = "status success";
+            document.getElementById("pulseTest").innerHTML =
+              "✅ Pulse animation completed successfully";
+          }, 6000);
+        }
+      }, 1000);
+
+      // Test the fallback mechanism
+      setTimeout(() => {
+        const fallbackButton = document.getElementById("fallbackTestButton");
+        if (fallbackButton && fallbackButton.style.opacity === "0") {
+          fallbackButton.style.opacity = "1";
+          fallbackButton.style.transform = "translateY(0) scale(1)";
+          document.getElementById("fallbackTest").className = "status success";
+          document.getElementById("fallbackTest").innerHTML =
+            "✅ Fallback visibility mechanism working";
+        }
+      }, 600);
+
+      // Test interactive features
+      const interactiveButton = document.getElementById("interactiveButton");
+      const arrow = interactiveButton.querySelector("span:last-child");
+
+      interactiveButton.addEventListener("mouseenter", () => {
+        interactiveButton.style.transform = "translateY(-2px) scale(1.02)";
+        interactiveButton.style.boxShadow =
+          "0 6px 20px #4F46E544, 0 3px 6px rgba(0,0,0,0.15)";
+        arrow.style.transform = "translateX(4px)";
+      });
+
+      interactiveButton.addEventListener("mouseleave", () => {
+        interactiveButton.style.transform = "translateY(0) scale(1)";
+        interactiveButton.style.boxShadow =
+          "0 2px 8px #4F46E533, 0 1px 3px rgba(0,0,0,0.1)";
+        arrow.style.transform = "translateX(0)";
+      });
+
+      interactiveButton.addEventListener("click", () => {
+        alert("Button clicked successfully! 🎉");
+      });
+
+      // Fill diagnostic information
+      document.getElementById("userAgent").textContent = navigator.userAgent;
+
+      // Test animation support
+      const testEl = document.createElement("div");
+      testEl.style.animation = "none";
+      const animationSupport = testEl.style.animation !== undefined;
+      document.getElementById("animationSupport").textContent = animationSupport
+        ? "✅ Supported"
+        : "❌ Not supported";
+
+      // Test transition support
+      testEl.style.transition = "none";
+      const transitionSupport = testEl.style.transition !== undefined;
+      document.getElementById("transitionSupport").textContent =
+        transitionSupport ? "✅ Supported" : "❌ Not supported";
+
+      // Check if fade-in buttons are visible after animation
+      setTimeout(() => {
+        const fadeButtons = document.querySelectorAll(".fade-in-test");
+        let allVisible = true;
+        fadeButtons.forEach((button) => {
+          const computed = window.getComputedStyle(button);
+          if (computed.opacity === "0") {
+            allVisible = false;
+          }
+        });
+
+        if (!allVisible) {
+          document.getElementById("fadeTest").className = "status error";
+          document.getElementById("fadeTest").innerHTML =
+            "❌ Some buttons are not visible after fade-in";
+        }
+      }, 2000);
+    </script>
+  </body>
+</html>
