@@ -251,19 +251,24 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Get adminId if available (from request, API key auth, or previous chat with admin, or null for public)
+  // Get adminId if available (prioritize API key auth, then request body, then previous chat)
   let adminId: string | null = null;
-  if (adminIdFromBody) {
-    adminId = adminIdFromBody;
-  } else if (apiAuth) {
-    // Use adminId from API key authentication
+  if (apiAuth) {
+    // Use adminId from API key authentication (highest priority)
     adminId = apiAuth.adminId;
+    console.log(`[DEBUG] Using adminId from API key: ${adminId}`);
+  } else if (adminIdFromBody) {
+    adminId = adminIdFromBody;
+    console.log(`[DEBUG] Using adminId from request body: ${adminId}`);
   } else {
     const lastMsg = await chats.findOne({
       sessionId,
       adminId: { $exists: true },
     });
-    if (lastMsg && lastMsg.adminId) adminId = lastMsg.adminId;
+    if (lastMsg && lastMsg.adminId) {
+      adminId = lastMsg.adminId;
+      console.log(`[DEBUG] Using adminId from previous chat: ${adminId}`);
+    }
   }
   // Optionally, you could extract adminId from a cookie/JWT if you want admin-specific context
 

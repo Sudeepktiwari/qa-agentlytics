@@ -407,8 +407,8 @@ export async function GET(request: Request) {
       const data = await sendApiRequest('chat', {
         sessionId,
         pageUrl: currentPageUrl,
-        proactive: true,
-        adminId: 'default'
+        proactive: true
+        // Don't specify adminId - let the API extract it from the API key
       });
       
       console.log('[ChatWidget] API response for proactive request:', data);
@@ -860,8 +860,8 @@ export async function GET(request: Request) {
       const data = await sendApiRequest('chat', {
         sessionId,
         pageUrl: currentPageUrl,
-        proactive: true,
-        adminId: 'default'
+        proactive: true
+        // Don't specify adminId - let the API extract it from the API key
       });
       
       if (data.answer) {
