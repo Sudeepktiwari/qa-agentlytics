@@ -193,6 +193,11 @@ export async function GET(request: Request) {
     localStorage.setItem('appointy_session_id', sessionId);
   }
 
+  // Conversation state tracking
+  let hasBeenGreeted = localStorage.getItem('appointy_has_been_greeted') === 'true';
+  let proactiveMessageCount = parseInt(localStorage.getItem('appointy_proactive_count') || '0');
+  let visitedPages = JSON.parse(localStorage.getItem('appointy_visited_pages') || '[]');
+
   let followupTimer = null;
   let followupCount = 0;
   let followupSent = false;
@@ -361,6 +366,22 @@ export async function GET(request: Request) {
     
     console.log('[ChatWidget] Sending proactive message:', text.substring(0, 100) + '...');
     
+    // Update conversation state tracking
+    if (!hasBeenGreeted) {
+      hasBeenGreeted = true;
+      localStorage.setItem('appointy_has_been_greeted', 'true');
+    }
+    
+    proactiveMessageCount++;
+    localStorage.setItem('appointy_proactive_count', proactiveMessageCount.toString());
+    
+    // Track visited pages
+    const currentPage = window.location.pathname;
+    if (!visitedPages.includes(currentPage)) {
+      visitedPages.push(currentPage);
+      localStorage.setItem('appointy_visited_pages', JSON.stringify(visitedPages));
+    }
+    
     const proactiveMessage = {
       role: 'assistant',
       content: text,
@@ -439,7 +460,10 @@ export async function GET(request: Request) {
       const data = await sendApiRequest('chat', {
         sessionId,
         pageUrl: currentPageUrl,
-        proactive: true
+        proactive: true,
+        hasBeenGreeted: hasBeenGreeted,
+        proactiveMessageCount: proactiveMessageCount,
+        visitedPages: visitedPages
         // Don't specify adminId - let the API extract it from the API key
       });
       

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Conversation State Test - Non-Repetitive Proactive Messages</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        line-height: 1.6;
+      }
+      .test-section {
+        background: #f5f5f5;
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 8px;
+      }
+      .test-button {
+        background: #2563eb;
+        color: white;
+        padding: 10px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        margin: 5px;
+      }
+      .test-button:hover {
+        background: #1d4ed8;
+      }
+      .status {
+        background: #e5e7eb;
+        padding: 10px;
+        border-radius: 5px;
+        font-family: monospace;
+        margin: 10px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🔧 Conversation State Test - Non-Repetitive Proactive Messages</h1>
+
+    <div class="test-section">
+      <h3>Test Scenario</h3>
+      <p>
+        This test demonstrates the new conversation state tracking that prevents
+        repetitive "Hello there!" greetings when users navigate between pages.
+      </p>
+      <p><strong>Expected Behavior:</strong></p>
+      <ul>
+        <li>
+          <strong>First visit:</strong> Standard greeting with "👋 Hello there!"
+        </li>
+        <li>
+          <strong>Page navigation:</strong> Contextual messages like "I see
+          you're checking out..." or "Looks like you've moved to..."
+        </li>
+        <li>
+          <strong>No more repetitive greetings</strong> after the initial one
+        </li>
+      </ul>
+    </div>
+
+    <div class="test-section">
+      <h3>Current Conversation State</h3>
+      <div class="status" id="conversationState">Loading...</div>
+
+      <button class="test-button" onclick="clearConversationState()">
+        🔄 Reset Conversation State
+      </button>
+      <button class="test-button" onclick="checkConversationState()">
+        📊 Check Current State
+      </button>
+    </div>
+
+    <div class="test-section">
+      <h3>Test Instructions</h3>
+      <ol>
+        <li>
+          <strong>First Time:</strong> If this is your first visit, you should
+          see a "👋 Hello there!" greeting
+        </li>
+        <li>
+          <strong>Navigate Away:</strong> Go to
+          <a href="/about" target="_blank">About Page</a> or
+          <a href="/contact" target="_blank">Contact Page</a>
+        </li>
+        <li>
+          <strong>Come Back:</strong> Return to this page and observe the
+          different message style
+        </li>
+        <li>
+          <strong>Multiple Pages:</strong> Try visiting different pages to see
+          varied contextual messages
+        </li>
+      </ol>
+    </div>
+
+    <div class="test-section">
+      <h3>Quick Page Navigation Links</h3>
+      <a href="/" class="test-button">🏠 Home</a>
+      <a href="/about" class="test-button">ℹ️ About</a>
+      <a href="/contact" class="test-button">📞 Contact</a>
+      <a href="/services" class="test-button">🔧 Services</a>
+      <a href="/pricing" class="test-button">💰 Pricing</a>
+    </div>
+
+    <!-- Chatbot Widget -->
+    <script
+      src="http://localhost:3001/api/widget"
+      data-api-key="ak_1d96074cc78dbd634ccac7d29f6de02fafa23a4c4f1b840684696cf62a706f91"
+      data-position="bottom-right"
+      data-button-text="💬 Chat"
+      data-primary-color="#2563eb"
+      data-greeting="Welcome! This is a test of our improved conversation state tracking."
+      data-voice-enabled="false"
+      data-proactive-message="auto-generated"
+      data-proactive-delay="3000"
+      data-auto-open-proactive="true"
+    ></script>
+
+    <script>
+      function checkConversationState() {
+        const hasBeenGreeted = localStorage.getItem(
+          "appointy_has_been_greeted"
+        );
+        const proactiveCount =
+          localStorage.getItem("appointy_proactive_count") || "0";
+        const visitedPages =
+          localStorage.getItem("appointy_visited_pages") || "[]";
+        const sessionId = localStorage.getItem("appointy_session_id");
+
+        const state = {
+          hasBeenGreeted: hasBeenGreeted === "true",
+          proactiveMessageCount: parseInt(proactiveCount),
+          visitedPages: JSON.parse(visitedPages),
+          sessionId: sessionId,
+        };
+
+        document.getElementById("conversationState").innerHTML =
+          "Has Been Greeted: " +
+          state.hasBeenGreeted +
+          "<br>" +
+          "Proactive Message Count: " +
+          state.proactiveMessageCount +
+          "<br>" +
+          "Visited Pages: " +
+          state.visitedPages.length +
+          " pages<br>" +
+          "Pages: " +
+          JSON.stringify(state.visitedPages) +
+          "<br>" +
+          "Session ID: " +
+          (state.sessionId || "Not set");
+      }
+
+      function clearConversationState() {
+        localStorage.removeItem("appointy_has_been_greeted");
+        localStorage.removeItem("appointy_proactive_count");
+        localStorage.removeItem("appointy_visited_pages");
+        localStorage.removeItem("appointy_session_id");
+
+        document.getElementById("conversationState").innerHTML =
+          "Conversation state cleared! Refresh page to see first-time greeting.";
+
+        alert(
+          "Conversation state cleared! Refresh the page to test the first-time greeting behavior."
+        );
+      }
+
+      // Auto-check state on page load
+      checkConversationState();
+
+      // Update state display every 2 seconds to catch changes
+      setInterval(checkConversationState, 2000);
+    </script>
+  </body>
+</html>

@@ -205,6 +205,9 @@ export async function POST(req: NextRequest) {
     proactive,
     adminId: adminIdFromBody,
     followup,
+    hasBeenGreeted = false,
+    proactiveMessageCount = 0,
+    visitedPages = [],
   } = body;
 
   if ((!question && !proactive && !followup) || !sessionId)
@@ -424,7 +427,15 @@ export async function POST(req: NextRequest) {
         console.log(
           `[DEBUG] Detected intent for pageUrl "${pageUrl}": "${detectedIntent}"`
         );
-        const summaryPrompt = `The user is viewing: ${pageUrl}. Their likely intent is: ${detectedIntent}.
+        console.log(
+          `[DEBUG] Conversation state: hasBeenGreeted=${hasBeenGreeted}, proactiveCount=${proactiveMessageCount}, visitedPages=${visitedPages.length}`
+        );
+
+        let summaryPrompt;
+
+        if (!hasBeenGreeted) {
+          // First time greeting - use the original format
+          summaryPrompt = `The user is viewing: ${pageUrl}. Their likely intent is: ${detectedIntent}.
 
 Create a proactive greeting message following this exact format and style:
 
@@ -444,6 +455,44 @@ Requirements:
 - Keep it conversational and engaging
 
 Content to reference:\n${summaryContext}`;
+        } else {
+          // Follow-up proactive message - more contextual and varied
+          const isRevisit = visitedPages.some((page: string) =>
+            pageUrl.includes(page)
+          );
+
+          summaryPrompt = `The user has already been greeted and is now viewing: ${pageUrl}. 
+This is proactive message #${proactiveMessageCount + 1}. They have visited ${
+            visitedPages.length
+          } pages before.
+Their likely intent is: ${detectedIntent}.
+${
+  isRevisit
+    ? "They have visited a similar page before."
+    : "This appears to be a new page for them."
+}
+
+Create a contextual follow-up message that feels natural and helpful. AVOID repetitive greetings.
+
+Use one of these opening patterns (pick the most natural one):
+- "I see you're checking out [specific feature/solution]..."
+- "Looks like you've moved to [page/section]..."  
+- "I noticed you're exploring [relevant area]..."
+- "You seem interested in [specific topic]..."
+
+Continue with helpful information about this page and end with a relevant question.
+
+Requirements:
+- NO generic greetings like "Hello there!" since they've been greeted
+- Be contextual to what they're currently viewing
+- Reference relevant features from the page content  
+- Sound conversational, not robotic
+- Use emojis sparingly and naturally
+- End with a specific question about their current interest
+- Keep it concise but informative
+
+Content to reference:\n${summaryContext}`;
+        }
         const summaryResp = await openai.chat.completions.create({
           model: "gpt-4o-mini",
           messages: [
