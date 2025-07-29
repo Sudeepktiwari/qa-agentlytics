@@ -212,16 +212,16 @@ export async function GET(request: Request) {
     if (!text) return '';
     
     // Convert **text** to <strong>text</strong>
-    let formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    let formatted = text.replace(/\\*\\*(.*?)\\*\\*/g, '<strong>$1</strong>');
     
     // Convert *text* to <em>text</em>
-    formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    formatted = formatted.replace(/\\*(.*?)\\*/g, '<em>$1</em>');
     
     // Convert line breaks
-    formatted = formatted.replace(/\n/g, '<br>');
+    formatted = formatted.replace(/\\n/g, '<br>');
     
     // Convert > blockquotes to styled divs
-    formatted = formatted.replace(/^>\s*(.+)$/gm, '<div style="border-left: 3px solid #e5e7eb; padding-left: 12px; margin: 8px 0; font-style: italic; color: #6b7280;">$1</div>');
+    formatted = formatted.replace(/^>\\s*(.+)$/gm, '<div style="border-left: 3px solid #e5e7eb; padding-left: 12px; margin: 8px 0; font-style: italic; color: #6b7280;">$1</div>');
     
     return formatted;
   }  // Text-to-Speech functionality with user interaction handling
