@@ -15,8 +15,9 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, x-api-key",
+  "Access-Control-Allow-Headers": "Content-Type, x-api-key, Authorization",
   "Access-Control-Max-Age": "86400",
+  "Access-Control-Allow-Credentials": "true",
 };
 
 // Handle preflight requests

@@ -1,3 +1,22 @@
+import { NextResponse } from "next/server";
+
+// CORS headers for cross-origin requests
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, x-api-key, Authorization",
+  "Access-Control-Max-Age": "86400",
+  "Access-Control-Allow-Credentials": "true",
+};
+
+// Handle preflight requests
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: corsHeaders,
+  });
+}
+
 export async function GET(request: Request) {
   // Get the current request URL to determine the base URL dynamically
   const url = new URL(request.url);
@@ -1143,6 +1162,7 @@ export async function GET(request: Request) {
     headers: {
       "Content-Type": "application/javascript",
       "Cache-Control": "public, max-age=3600", // Cache for 1 hour
+      ...corsHeaders, // Add CORS headers
     },
   });
 }
