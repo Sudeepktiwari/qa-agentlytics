@@ -1,19 +1,25 @@
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <title>Widget Error Test</title>
-</head>
-<body>
+  </head>
+  <body>
     <h1>Testing Widget Error Handling</h1>
     <p>Open browser console to see error messages</p>
-    
+
     <h2>Test 1: No API Key (Should show error)</h2>
     <script src="http://localhost:3000/api/widget"></script>
-    
+
     <h2>Test 2: Invalid API Key Format (Should show error)</h2>
-    <script src="http://localhost:3000/api/widget" data-api-key="invalid-key"></script>
-    
+    <script
+      src="http://localhost:3000/api/widget"
+      data-api-key="invalid-key"
+    ></script>
+
     <h2>Test 3: Valid API Key Format (Should work)</h2>
-    <script src="http://localhost:3000/api/widget" data-api-key="ak_1d96074cc78dbd634ccac7d29f6de02fafa23a4c4f1b840684696cf62a706f91"></script>
-</body>
+    <script
+      src="http://localhost:3000/api/widget"
+      data-api-key="ak_1d96074cc78dbd634ccac7d29f6de02fafa23a4c4f1b840684696cf62a706f91"
+    ></script>
+  </body>
 </html>
