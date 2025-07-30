@@ -17,7 +17,7 @@ export async function getMongoClient() {
 export async function getDb() {
   if (!db) {
     const client = await getMongoClient();
-    db = client.db();
+    db = client.db("chatbot_db"); // Explicitly specify the database name
   }
   return db;
 }

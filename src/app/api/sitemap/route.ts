@@ -999,8 +999,52 @@ async function extractTextFromUrl(
 
   // Try regular extraction first
   try {
-    const res = await fetch(url, { follow: 20 }); // Follow up to 20 HTTP redirects
-    if (!res.ok) throw new Error(`Failed to fetch page: ${url}`);
+    console.log(`[ExtractText] Starting fetch for: ${url}`);
+
+    // Create an AbortController for timeout
+    const controller = new AbortController();
+    const timeout = setTimeout(() => {
+      controller.abort();
+      console.log(`[ExtractText] TIMEOUT - Aborting request for: ${url}`);
+    }, 30000); // 30 second timeout
+
+    const fetchStart = Date.now();
+    const res = await fetch(url, {
+      follow: 20, // Follow up to 20 HTTP redirects
+      signal: controller.signal,
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        Accept:
+          "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.5",
+        "Accept-Encoding": "gzip, deflate",
+        Connection: "keep-alive",
+      },
+    });
+    const fetchEnd = Date.now();
+
+    clearTimeout(timeout);
+    console.log(
+      `[ExtractText] Fetch completed in ${fetchEnd - fetchStart}ms for: ${url}`
+    );
+    console.log(
+      `[ExtractText] Response status: ${res.status} ${res.statusText}`
+    );
+    console.log(
+      `[ExtractText] Response headers: ${JSON.stringify(
+        Object.fromEntries(res.headers.entries())
+      )}`
+    );
+
+    clearTimeout(timeout);
+
+    if (!res.ok) {
+      throw new Error(
+        `Failed to fetch page: ${url} (Status: ${res.status} ${res.statusText})`
+      );
+    }
+
     const html = await res.text();
     const $ = cheerio.load(html);
 
@@ -1033,15 +1077,20 @@ async function extractTextFromUrl(
 
         // Recursively fetch the redirect URL (with a simple depth limit)
         if (redirectUrl.startsWith("http")) {
+          console.log(`[ExtractText] Following redirect to: ${redirectUrl}`);
           return extractTextFromUrl(redirectUrl, depth + 1);
         }
       }
     }
 
+    console.log(`[ExtractText] Parsing HTML content...`);
     $("script, style, noscript").remove();
     const text = $("body").text().replace(/\s+/g, " ").trim();
 
-    console.log(`[Crawl] Regular extraction for ${url}: ${text.length} chars`);
+    console.log(
+      `[ExtractText] SUCCESS - Extracted ${text.length} chars from ${url}`
+    );
+    console.log(`[ExtractText] Text preview: ${text.slice(0, 200)}...`);
 
     // If the text is too short and this looks like a dynamic content page, try JavaScript extraction
     const contentPatterns = [
@@ -1219,10 +1268,19 @@ async function extractTextUsingBrowser(url: string): Promise<string> {
 }
 
 export async function POST(req: NextRequest) {
-  const token = req.cookies.get("auth_token")?.value;
-  if (!token)
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  console.log(`[Sitemap] POST request received at ${new Date().toISOString()}`);
+  console.log(
+    `[Sitemap] Request headers:`,
+    Object.fromEntries(req.headers.entries())
+  );
 
+  const token = req.cookies.get("auth_token")?.value;
+  if (!token) {
+    console.log(`[Sitemap] No auth token provided`);
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  console.log(`[Sitemap] Auth token found, verifying...`);
   let adminId = "";
   try {
     const payload = jwt.verify(token!, JWT_SECRET) as {
@@ -1230,277 +1288,366 @@ export async function POST(req: NextRequest) {
       adminId: string;
     };
     adminId = payload.adminId;
-  } catch {
+    console.log(`[Sitemap] Auth successful for adminId: ${adminId}`);
+  } catch (authError) {
+    console.log(`[Sitemap] Auth failed:`, authError);
     return NextResponse.json({ error: "Invalid token" }, { status: 401 });
   }
 
-  const { sitemapUrl } = await req.json();
-  if (!sitemapUrl)
+  console.log(`[Sitemap] Parsing request body...`);
+  const body = await req.json();
+  console.log(`[Sitemap] Request body:`, JSON.stringify(body, null, 2));
+
+  const { sitemapUrl } = body;
+  if (!sitemapUrl) {
+    console.log(`[Sitemap] No sitemapUrl provided in request body`);
     return NextResponse.json({ error: "Missing URL" }, { status: 400 });
-
-  // Normalize URL to ensure HTTPS and proper format
-  let normalizedUrl = sitemapUrl.trim();
-
-  // Add protocol if missing
-  if (
-    !normalizedUrl.startsWith("http://") &&
-    !normalizedUrl.startsWith("https://")
-  ) {
-    normalizedUrl = "https://" + normalizedUrl;
   }
 
-  // Convert HTTP to HTTPS for better compatibility
-  if (normalizedUrl.startsWith("http://")) {
-    normalizedUrl = normalizedUrl.replace("http://", "https://");
-  }
-
-  console.log(`[Crawl] Original URL: ${sitemapUrl}`);
-  console.log(`[Crawl] Normalized URL: ${normalizedUrl}`);
-
-  let urls: string[] = [];
-  let discoveryType: "sitemap" | "webpage" | "javascript" = "sitemap";
+  console.log(`[Sitemap] Starting sitemap processing for URL: ${sitemapUrl}`);
   try {
-    const result = await discoverUrls(normalizedUrl);
-    urls = result.urls;
-    discoveryType = result.type;
-    console.log(`[Crawl] Discovered ${urls.length} URLs via ${discoveryType}`);
-  } catch (error) {
-    console.error(`[Crawl] Discovery failed:`, error);
-    return NextResponse.json(
-      { error: `Failed to discover URLs from the provided link: ${error}` },
-      { status: 400 }
-    );
-  }
+    // Normalize URL to ensure HTTPS and proper format
+    let normalizedUrl = sitemapUrl.trim();
 
-  const db = await getDb();
-  const pages = db.collection("crawled_pages");
-  const sitemapUrls = db.collection("sitemap_urls");
-  const adminSettings = await getAdminSettingsCollection();
+    // Add protocol if missing
+    if (
+      !normalizedUrl.startsWith("http://") &&
+      !normalizedUrl.startsWith("https://")
+    ) {
+      normalizedUrl = "https://" + normalizedUrl;
+    }
 
-  // Store the last submitted sitemapUrl for this admin
-  await adminSettings.updateOne(
-    { adminId },
-    { $set: { lastSitemapUrl: sitemapUrl } },
-    { upsert: true }
-  );
+    // Convert HTTP to HTTPS for better compatibility
+    if (normalizedUrl.startsWith("http://")) {
+      normalizedUrl = normalizedUrl.replace("http://", "https://");
+    }
 
-  // Store all sitemap URLs for this admin with the specific sitemapUrl context
-  const now = new Date();
+    console.log(`[Crawl] Original URL: ${sitemapUrl}`);
+    console.log(`[Crawl] Normalized URL: ${normalizedUrl}`);
 
-  // Ensure no duplicate URLs before creating docs
-  const uniqueUrls = Array.from(new Set(urls));
-  if (uniqueUrls.length !== urls.length) {
-    console.log(
-      `[Crawl] Removed ${
-        urls.length - uniqueUrls.length
-      } duplicate URLs before storage`
-    );
-  }
-
-  const sitemapUrlDocs = uniqueUrls.map((url) => ({
-    adminId,
-    url,
-    sitemapUrl, // This ensures each sitemap submission is tracked separately
-    addedAt: now,
-    crawled: false,
-    discoveryType, // Track how this URL was discovered
-  }));
-  if (sitemapUrlDocs.length > 0) {
-    for (const doc of sitemapUrlDocs) {
-      await sitemapUrls.updateOne(
-        { adminId: doc.adminId, url: doc.url, sitemapUrl: doc.sitemapUrl }, // Include sitemapUrl in the query
-        { $setOnInsert: doc },
-        { upsert: true }
+    let urls: string[] = [];
+    let discoveryType: "sitemap" | "webpage" | "javascript" = "sitemap";
+    try {
+      console.log(`[Crawl] Starting URL discovery for: ${normalizedUrl}`);
+      const result = await discoverUrls(normalizedUrl);
+      urls = result.urls;
+      discoveryType = result.type;
+      console.log(
+        `[Crawl] Discovery SUCCESS - Found ${urls.length} URLs via ${discoveryType}`
+      );
+      console.log(`[Crawl] First 5 URLs: ${urls.slice(0, 5).join(", ")}`);
+    } catch (error) {
+      console.error(`[Crawl] Discovery FAILED for ${normalizedUrl}:`, error);
+      return NextResponse.json(
+        { error: `Failed to discover URLs from the provided link: ${error}` },
+        { status: 400 }
       );
     }
-  }
 
-  // Find already crawled URLs for this specific admin/sitemapUrl combination
-  const crawledDocs = await sitemapUrls
-    .find({ adminId, sitemapUrl, crawled: true }) // This now only looks at URLs from this specific sitemap submission
-    .toArray();
+    console.log(`[Crawl] Connecting to database...`);
+    const db = await getDb();
+    const pages = db.collection("crawled_pages");
+    const sitemapUrls = db.collection("sitemap_urls");
+    const adminSettings = await getAdminSettingsCollection();
 
-  // Also check for pages that were marked as crawled but have no chunks in Pinecone
-  // This can happen if they were redirect pages or had errors during processing
-  const pineconeVectors = db.collection("pinecone_vectors");
-  const problematicUrls: string[] = [];
+    // Store the last submitted sitemapUrl for this admin
+    await adminSettings.updateOne(
+      { adminId },
+      { $set: { lastSitemapUrl: sitemapUrl } },
+      { upsert: true }
+    );
 
-  console.log(
-    `[Crawl] Checking ${crawledDocs.length} crawled URLs for missing vectors`
-  );
-  for (const doc of crawledDocs) {
-    // Check if vectors exist in Pinecone by trying to fetch them
-    const vectorIds = await pineconeVectors
-      .find({ adminId, filename: doc.url })
-      .project({ vectorId: 1, _id: 0 })
+    // Store all sitemap URLs for this admin with the specific sitemapUrl context
+    const now = new Date();
+
+    // Ensure no duplicate URLs before creating docs
+    const uniqueUrls = Array.from(new Set(urls));
+    if (uniqueUrls.length !== urls.length) {
+      console.log(
+        `[Crawl] Removed ${
+          urls.length - uniqueUrls.length
+        } duplicate URLs before storage`
+      );
+    }
+
+    const sitemapUrlDocs = uniqueUrls.map((url) => ({
+      adminId,
+      url,
+      sitemapUrl, // This ensures each sitemap submission is tracked separately
+      addedAt: now,
+      crawled: false,
+      discoveryType, // Track how this URL was discovered
+    }));
+    if (sitemapUrlDocs.length > 0) {
+      for (const doc of sitemapUrlDocs) {
+        await sitemapUrls.updateOne(
+          { adminId: doc.adminId, url: doc.url, sitemapUrl: doc.sitemapUrl }, // Include sitemapUrl in the query
+          { $setOnInsert: doc },
+          { upsert: true }
+        );
+      }
+    }
+
+    // Find already crawled URLs for this specific admin/sitemapUrl combination
+    const crawledDocs = await sitemapUrls
+      .find({ adminId, sitemapUrl, crawled: true }) // This now only looks at URLs from this specific sitemap submission
       .toArray();
 
-    if (vectorIds.length === 0) {
-      console.log(`[Crawl] URL ${doc.url} has no MongoDB vector records`);
-      problematicUrls.push(doc.url);
-    } else {
-      // Check if the vectors actually exist in Pinecone
-      try {
-        const vectorIdList = vectorIds.map(
-          (v) => (v as { vectorId: string }).vectorId
-        );
-        const result = await index.fetch(vectorIdList);
-        const foundVectors = Object.keys(result.records || {}).length;
-        console.log(
-          `[Crawl] URL ${doc.url} has ${vectorIds.length} MongoDB records, ${foundVectors} Pinecone vectors`
-        );
+    // Also check for pages that were marked as crawled but have no chunks in Pinecone
+    // This can happen if they were redirect pages or had errors during processing
+    const pineconeVectors = db.collection("pinecone_vectors");
+    const problematicUrls: string[] = [];
 
-        if (foundVectors === 0) {
+    console.log(
+      `[Crawl] Checking ${crawledDocs.length} crawled URLs for missing vectors`
+    );
+    for (const doc of crawledDocs) {
+      // Check if vectors exist in Pinecone by trying to fetch them
+      const vectorIds = await pineconeVectors
+        .find({ adminId, filename: doc.url })
+        .project({ vectorId: 1, _id: 0 })
+        .toArray();
+
+      if (vectorIds.length === 0) {
+        console.log(`[Crawl] URL ${doc.url} has no MongoDB vector records`);
+        problematicUrls.push(doc.url);
+      } else {
+        // Check if the vectors actually exist in Pinecone
+        try {
+          const vectorIdList = vectorIds.map(
+            (v) => (v as { vectorId: string }).vectorId
+          );
+          const result = await index.fetch(vectorIdList);
+          const foundVectors = Object.keys(result.records || {}).length;
           console.log(
-            `[Crawl] URL ${doc.url} has MongoDB records but no Pinecone vectors - will re-crawl`
+            `[Crawl] URL ${doc.url} has ${vectorIds.length} MongoDB records, ${foundVectors} Pinecone vectors`
+          );
+
+          if (foundVectors === 0) {
+            console.log(
+              `[Crawl] URL ${doc.url} has MongoDB records but no Pinecone vectors - will re-crawl`
+            );
+            problematicUrls.push(doc.url);
+          }
+        } catch (pineconeError) {
+          console.log(
+            `[Crawl] Error checking Pinecone for ${doc.url}:`,
+            pineconeError
           );
           problematicUrls.push(doc.url);
         }
-      } catch (pineconeError) {
-        console.log(
-          `[Crawl] Error checking Pinecone for ${doc.url}:`,
-          pineconeError
+      }
+
+      if (problematicUrls.includes(doc.url)) {
+        // Reset the crawled status so it can be re-crawled
+        await sitemapUrls.updateOne(
+          { adminId, url: doc.url, sitemapUrl }, // Include sitemapUrl in the query
+          {
+            $unset: { crawled: 1, crawledAt: 1 },
+            $set: {
+              recrawlReason: "no_pinecone_vectors",
+              recrawlAt: new Date(),
+            },
+          }
         );
-        problematicUrls.push(doc.url);
       }
     }
 
-    if (problematicUrls.includes(doc.url)) {
-      // Reset the crawled status so it can be re-crawled
-      await sitemapUrls.updateOne(
-        { adminId, url: doc.url, sitemapUrl }, // Include sitemapUrl in the query
-        {
-          $unset: { crawled: 1, crawledAt: 1 },
-          $set: { recrawlReason: "no_pinecone_vectors", recrawlAt: new Date() },
-        }
-      );
-    }
-  }
+    // Recalculate crawled URLs after reset
+    const updatedCrawledDocs = await sitemapUrls
+      .find({ adminId, sitemapUrl, crawled: true })
+      .toArray();
+    const updatedCrawledUrls = new Set(
+      updatedCrawledDocs.map((doc) => doc.url)
+    );
 
-  // Recalculate crawled URLs after reset
-  const updatedCrawledDocs = await sitemapUrls
-    .find({ adminId, sitemapUrl, crawled: true })
-    .toArray();
-  const updatedCrawledUrls = new Set(updatedCrawledDocs.map((doc) => doc.url));
+    // Select the next batch of uncrawled URLs (up to MAX_PAGES)
+    const uncrawledUrls = urls
+      .filter((url) => !updatedCrawledUrls.has(url))
+      .slice(0, MAX_PAGES);
 
-  // Select the next batch of uncrawled URLs (up to MAX_PAGES)
-  const uncrawledUrls = urls
-    .filter((url) => !updatedCrawledUrls.has(url))
-    .slice(0, MAX_PAGES);
+    console.log(
+      `[Crawl] Found ${problematicUrls.length} problematic URLs to re-crawl`
+    );
+    console.log(
+      `[Crawl] Will crawl ${uncrawledUrls.length} URLs in this batch`
+    );
+    console.log(
+      `[Crawl] URLs to crawl: ${uncrawledUrls.slice(0, 3).join(", ")}${
+        uncrawledUrls.length > 3 ? "..." : ""
+      }`
+    );
 
-  console.log(
-    `[Crawl] Found ${problematicUrls.length} problematic URLs to re-crawl`
-  );
-  console.log(`[Crawl] Will crawl ${uncrawledUrls.length} URLs in this batch`);
+    const results: { url: string; text: string }[] = [];
+    let totalChunks = 0;
+    let crawlCount = 0;
 
-  const results: { url: string; text: string }[] = [];
-  let totalChunks = 0;
-  for (const url of uncrawledUrls) {
-    try {
-      console.log(`[Crawl] Starting to crawl: ${url}`);
-      const text = await extractTextFromUrl(url);
-      console.log(
-        `[Crawl] Extracted text for ${url}: ${
-          text.length
-        } chars, first 100: ${text.slice(0, 100)}`
-      );
-
-      // Debug: Log if text is too short
-      if (text.length < 50) {
-        console.log(`[Crawl] WARNING: Very short content for ${url}:`, text);
-      }
-
-      results.push({ url, text });
-      await pages.insertOne({
-        adminId,
-        url,
-        text,
-        filename: url,
-        createdAt: new Date(),
-      });
-      // Mark as crawled in sitemap_urls with specific sitemapUrl context
-      await sitemapUrls.updateOne(
-        { adminId, url, sitemapUrl }, // Include sitemapUrl to ensure proper tracking
-        { $set: { crawled: true, crawledAt: new Date() } }
-      );
-      // Chunk and embed for Pinecone
-      let chunks = chunkText(text);
-      console.log(`[Crawl] Chunks for ${url}:`, chunks.length);
-
-      // Debug: If no chunks created, log why and try to create a minimal chunk
-      if (chunks.length === 0) {
+    for (const url of uncrawledUrls) {
+      crawlCount++;
+      try {
         console.log(
-          `[Crawl] DEBUG: No chunks created for ${url}. Text length: ${text.length}. Sample text:`,
-          text.slice(0, 200)
+          `[Crawl] [${crawlCount}/${uncrawledUrls.length}] Starting to crawl: ${url}`
         );
+        const startTime = Date.now();
 
-        // If we have some text but no chunks, create a minimal chunk
-        if (text.length > 10) {
-          console.log(`[Crawl] Creating minimal chunk for short content...`);
-          chunks = [text.trim()];
-        }
-      }
+        const text = await extractTextFromUrl(url);
+        const endTime = Date.now();
 
-      if (chunks.length > 0) {
         console.log(
-          `[Crawl] Creating embeddings for ${chunks.length} chunks...`
+          `[Crawl] [${crawlCount}/${
+            uncrawledUrls.length
+          }] SUCCESS - Extracted ${text.length} chars in ${
+            endTime - startTime
+          }ms from ${url}`
         );
-        try {
-          const embedResp = await openai.embeddings.create({
-            input: chunks,
-            model: "text-embedding-3-small",
-          });
-          const embeddings = embedResp.data.map(
-            (d: { embedding: number[] }) => d.embedding
-          );
-          const metadata = chunks.map((chunk, i) => ({
-            filename: url,
-            adminId,
-            url,
-            chunkIndex: i,
-          }));
+        console.log(`[Crawl] First 100 chars: ${text.slice(0, 100)}`);
+
+        // Debug: Log if text is too short
+        if (text.length < 50) {
+          console.log(`[Crawl] WARNING: Very short content for ${url}:`, text);
+        }
+
+        console.log(`[Crawl] Storing page data in MongoDB...`);
+        results.push({ url, text });
+        await pages.insertOne({
+          adminId,
+          url,
+          text,
+          filename: url,
+          createdAt: new Date(),
+        });
+        console.log(`[Crawl] Page data stored successfully`);
+
+        // Mark as crawled in sitemap_urls with specific sitemapUrl context
+        console.log(`[Crawl] Marking URL as crawled in sitemap_urls...`);
+        await sitemapUrls.updateOne(
+          { adminId, url, sitemapUrl }, // Include sitemapUrl to ensure proper tracking
+          { $set: { crawled: true, crawledAt: new Date() } }
+        );
+        // Chunk and embed for Pinecone
+        let chunks = chunkText(text);
+        console.log(`[Crawl] Chunks for ${url}:`, chunks.length);
+
+        // Debug: If no chunks created, log why and try to create a minimal chunk
+        if (chunks.length === 0) {
           console.log(
-            `[Crawl] Upserting to Pinecone:`,
-            embeddings.length,
-            metadata.length
+            `[Crawl] DEBUG: No chunks created for ${url}. Text length: ${text.length}. Sample text:`,
+            text.slice(0, 200)
           );
-          await addChunks(chunks, embeddings, metadata);
-          totalChunks += chunks.length;
-          console.log(
-            `[Crawl] Successfully processed ${url}: ${chunks.length} chunks`
-          );
-        } catch (embeddingError) {
-          console.error(`[Crawl] Embedding error for ${url}:`, embeddingError);
+
+          // If we have some text but no chunks, create a minimal chunk
+          if (text.length > 10) {
+            console.log(`[Crawl] Creating minimal chunk for short content...`);
+            chunks = [text.trim()];
+          }
         }
-      } else {
-        console.log(
-          `[Crawl] No chunks created for ${url} - content may be too short or empty. Text length: ${text.length}`
+
+        if (chunks.length > 0) {
+          console.log(
+            `[Crawl] Creating embeddings for ${chunks.length} chunks...`
+          );
+          try {
+            const embedResp = await openai.embeddings.create({
+              input: chunks,
+              model: "text-embedding-3-small",
+            });
+            const embeddings = embedResp.data.map(
+              (d: { embedding: number[] }) => d.embedding
+            );
+            const metadata = chunks.map((chunk, i) => ({
+              filename: url,
+              adminId,
+              url,
+              chunkIndex: i,
+            }));
+            console.log(
+              `[Crawl] Upserting ${embeddings.length} embeddings to Pinecone...`
+            );
+            await addChunks(chunks, embeddings, metadata);
+            totalChunks += chunks.length;
+            console.log(
+              `[Crawl] SUCCESS - Processed ${url}: ${chunks.length} chunks, ${totalChunks} total chunks so far`
+            );
+          } catch (embeddingError) {
+            console.error(
+              `[Crawl] EMBEDDING ERROR for ${url}:`,
+              embeddingError
+            );
+            if (embeddingError instanceof Error) {
+              console.error(`[Crawl] Stack trace:`, embeddingError.stack);
+            }
+          }
+        } else {
+          console.log(
+            `[Crawl] WARNING - No chunks created for ${url}. Text length: ${
+              text.length
+            }, Content: ${text.slice(0, 200)}`
+          );
+        }
+      } catch (err) {
+        console.error(`[Crawl] CRITICAL ERROR for URL ${url}:`, err);
+        if (err instanceof Error) {
+          console.error(`[Crawl] Error type: ${err.constructor.name}`);
+          console.error(`[Crawl] Error message: ${err.message}`);
+          console.error(`[Crawl] Stack trace:`, err.stack);
+        }
+
+        // Mark as failed in sitemap_urls (but don't set crawled to true)
+        await sitemapUrls.updateOne(
+          { adminId, url, sitemapUrl }, // Include sitemapUrl for proper tracking
+          {
+            $set: {
+              failedAt: new Date(),
+              error: err instanceof Error ? err.message : String(err),
+            },
+          }
         );
       }
-    } catch (err) {
-      console.error(`[Crawl] Failed for ${url}:`, err);
-      // Mark as failed in sitemap_urls (but don't set crawled to true)
-      await sitemapUrls.updateOne(
-        { adminId, url, sitemapUrl }, // Include sitemapUrl for proper tracking
-        {
-          $set: {
-            failedAt: new Date(),
-            error: err instanceof Error ? err.message : String(err),
-          },
-        }
-      );
     }
-  }
 
-  return NextResponse.json({
-    crawled: results.length,
-    totalChunks,
-    pages: results.map((r) => r.url),
-    batchDone: results.length, // Number of pages successfully crawled in this batch
-    batchRemaining: urls.length - updatedCrawledUrls.size - results.length, // Total remaining pages
-    totalRemaining: urls.length - updatedCrawledUrls.size - results.length,
-    recrawledPages: problematicUrls.length, // Show how many pages were reset for re-crawling
-  });
+    console.log(
+      `[Crawl] BATCH COMPLETE - Successfully crawled ${results.length} pages`
+    );
+    console.log(`[Crawl] Total chunks created: ${totalChunks}`);
+    console.log(
+      `[Crawl] Remaining pages in sitemap: ${
+        urls.length - updatedCrawledUrls.size - results.length
+      }`
+    );
+
+    const response = {
+      crawled: results.length,
+      totalChunks,
+      pages: results.map((r) => r.url),
+      batchDone: results.length, // Number of pages successfully crawled in this batch
+      batchRemaining: urls.length - updatedCrawledUrls.size - results.length, // Total remaining pages
+      totalRemaining: urls.length - updatedCrawledUrls.size - results.length,
+      recrawledPages: problematicUrls.length, // Show how many pages were reset for re-crawling
+    };
+
+    console.log(`[Crawl] Sending response:`, JSON.stringify(response, null, 2));
+    return NextResponse.json(response);
+  } catch (error) {
+    console.error("[Sitemap] CRITICAL ERROR during sitemap processing:", error);
+    if (error instanceof Error) {
+      console.error("[Sitemap] Error name:", error.name);
+      console.error("[Sitemap] Error message:", error.message);
+      console.error("[Sitemap] Error stack:", error.stack);
+    }
+
+    const errorResponse = {
+      error:
+        "An error occurred while processing the sitemap. Please try again.",
+      details: error instanceof Error ? error.message : String(error),
+      timestamp: new Date().toISOString(),
+    };
+
+    console.log(
+      "[Sitemap] Sending error response:",
+      JSON.stringify(errorResponse, null, 2)
+    );
+    return NextResponse.json(errorResponse, { status: 500 });
+  }
 }
 
 export async function GET(req: NextRequest) {
