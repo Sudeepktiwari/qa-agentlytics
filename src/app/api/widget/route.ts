@@ -417,6 +417,7 @@ export async function GET(request: Request) {
         // Small delay to ensure chat is open and visible
         setTimeout(() => {
           speakText(text, true);
+          console.log('[ChatWidget] Speech initiated for proactive message - timer continues independently');
         }, 500);
       });
     } else if (config.voiceEnabled) {
@@ -428,6 +429,10 @@ export async function GET(request: Request) {
       console.log('[ChatWidget] Updating bubble for closed chat');
       updateBubble();
     }
+    
+    // Start follow-up timer after proactive message (independent of speech)
+    console.log('[ChatWidget] Starting follow-up timer after proactive message - runs independently of speech');
+    startFollowupTimer();
   }
   
   // Enhanced page detection and monitoring
@@ -606,7 +611,8 @@ export async function GET(request: Request) {
   
   // Start followup timer
   function startFollowupTimer() {
-    console.log('[Widget] Starting followup timer - count:', followupCount, 'userIsActive:', userIsActive);
+    console.log('[Widget] Starting followup timer - count:', followupCount, 'userIsActive:', userIsActive, 'speechSynthesis.speaking:', speechSynthesis.speaking);
+    console.log('[Widget] Timer starts independently of speech playback status');
     clearFollowupTimer();
     followupTimer = setTimeout(() => {
       const timeSinceLastAction = Date.now() - lastUserAction;
