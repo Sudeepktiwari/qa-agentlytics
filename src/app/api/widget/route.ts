@@ -1042,7 +1042,7 @@ export async function GET(request: Request) {
           
           const emailInput = document.createElement('input');
           emailInput.type = 'email';
-          emailInput.placeholder = 'Enter your email';
+          emailInput.placeholder = 'Type in your email';
           emailInput.required = true;
           emailInput.style.cssText = \`
             flex: 1;
@@ -1052,6 +1052,7 @@ export async function GET(request: Request) {
             font-size: 13px;
             outline: none;
             background: white;
+            color: black;
           \`;
           
           emailInput.addEventListener('input', () => {
