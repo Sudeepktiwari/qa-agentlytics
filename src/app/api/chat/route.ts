@@ -971,19 +971,6 @@ Feel free to ask me anything or let me know what you're looking to accomplish!`;
     }
   }
 
-  // Detect greetings
-  const greetings = [
-    "hi",
-    "hello",
-    "hey",
-    "how are you",
-    "good morning",
-    "good afternoon",
-    "good evening",
-  ];
-  const isGreeting =
-    question && greetings.some((g) => question.toLowerCase().includes(g));
-
   // Detect if user is identified (has provided email)
   let userEmail: string | null = null;
   const lastEmailMsg = await chats.findOne(
