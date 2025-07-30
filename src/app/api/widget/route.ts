@@ -907,7 +907,7 @@ export async function GET(request: Request) {
           color: #333;
           padding: 12px 16px;
           border-radius: 18px;
-          max-width: 100%;
+          max-width: calc(100% - 40px);
           min-width: fit-content;
           word-wrap: break-word;
           font-size: \${currentSize.fontSize};
@@ -946,7 +946,7 @@ export async function GET(request: Request) {
           color: white;
           padding: 12px 16px;
           border-radius: 18px;
-          max-width: 100%;
+          max-width: calc(100% - 40px);
           min-width: fit-content;
           word-wrap: break-word;
           font-size: \${currentSize.fontSize};
