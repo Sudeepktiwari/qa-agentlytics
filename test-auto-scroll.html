@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Auto-Scroll Test - Chatbot Widget</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        color: white;
+      }
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+      }
+      .content {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 30px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+        backdrop-filter: blur(10px);
+      }
+      h1 {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+      .test-section {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+      }
+      button {
+        background: #4caf50;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        margin: 5px;
+        font-size: 14px;
+      }
+      button:hover {
+        background: #45a049;
+      }
+      .instructions {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 15px;
+        border-radius: 8px;
+        margin-top: 20px;
+      }
+      .feature {
+        margin: 10px 0;
+        padding: 10px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🤖 Auto-Scroll Test Page</h1>
+
+      <div class="content">
+        <div class="test-section">
+          <h2>Widget Auto-Scroll Testing</h2>
+          <p>
+            This page tests the auto-scrolling functionality of the chatbot
+            widget. The widget should automatically scroll to the bottom when:
+          </p>
+
+          <div class="feature">✅ New messages are received from the bot</div>
+          <div class="feature">✅ User sends a message</div>
+          <div class="feature">✅ Proactive messages appear</div>
+          <div class="feature">✅ Buttons with animations are displayed</div>
+          <div class="feature">✅ Widget is opened with existing messages</div>
+          <div class="feature">✅ Typing indicator appears</div>
+        </div>
+
+        <div class="test-section">
+          <h3>Widget Controls</h3>
+          <button onclick="window.appointyChatbot?.openChat()">
+            📖 Open Chat
+          </button>
+          <button onclick="window.appointyChatbot?.closeChat()">
+            ❌ Close Chat
+          </button>
+          <button onclick="testProactiveMessage()">
+            💬 Send Proactive Message
+          </button>
+          <button onclick="testLongMessage()">📝 Send Long Message</button>
+        </div>
+
+        <div class="instructions">
+          <h3>📋 How to Test Auto-Scroll:</h3>
+          <ol>
+            <li>
+              <strong>Wait for proactive message:</strong> A message should
+              appear automatically and the chat should scroll to show it
+            </li>
+            <li>
+              <strong>Send multiple messages:</strong> Type several messages and
+              verify the chat scrolls to show each new response
+            </li>
+            <li>
+              <strong>Test buttons:</strong> Click follow-up buttons and verify
+              scrolling works with animated content
+            </li>
+            <li>
+              <strong>Close and reopen:</strong> Close the chat, then reopen it
+              - it should scroll to the latest message
+            </li>
+            <li>
+              <strong>Test long messages:</strong> Use the "Send Long Message"
+              button to test scrolling with lengthy content
+            </li>
+          </ol>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function testProactiveMessage() {
+        if (
+          window.appointyChatbot &&
+          window.appointyChatbot.sendProactiveMessage
+        ) {
+          const messages = [
+            "🎉 This is a test proactive message to check auto-scrolling! The chat should automatically scroll to show this message at the bottom.",
+            "📊 Here's another test message with some buttons. Try clicking them to see if scrolling works with interactive content.",
+            "🚀 Testing auto-scroll with a longer message that contains multiple lines and should trigger the enhanced scrolling functionality. This message is intentionally long to test how the widget handles content that might overflow the visible area.",
+          ];
+          const randomMessage =
+            messages[Math.floor(Math.random() * messages.length)];
+          window.appointyChatbot.sendProactiveMessage(randomMessage);
+        } else {
+          alert("Widget not loaded yet. Please wait a moment and try again.");
+        }
+      }
+
+      function testLongMessage() {
+        if (
+          window.appointyChatbot &&
+          window.appointyChatbot.sendProactiveMessage
+        ) {
+          const longMessage = `🔬 **Comprehensive Auto-Scroll Test Message**
+
+This is an extensive test message designed to validate the auto-scrolling functionality of the chatbot widget. 
+
+**Key Features Being Tested:**
+• Multiple paragraph content rendering
+• **Bold text** and *italic formatting*
+• Line breaks and spacing
+• Content that exceeds the visible chat area
+
+> This is a blockquote to test special formatting
+> and how it affects the scrolling behavior
+
+The auto-scroll feature should:
+1. Immediately scroll to show this content
+2. Handle the animation timing properly  
+3. Account for any delayed rendering
+4. Work with formatted text elements
+
+**Expected Behavior:** The chat should smoothly scroll to the bottom to show this entire message, even with all the formatting and length. Multiple scroll attempts should ensure it reaches the very bottom.
+
+*End of test message - if you can see this, auto-scroll is working! 🎯*`;
+
+          window.appointyChatbot.sendProactiveMessage(longMessage);
+        } else {
+          alert("Widget not loaded yet. Please wait a moment and try again.");
+        }
+      }
+
+      // Log widget status
+      window.addEventListener("load", () => {
+        setTimeout(() => {
+          console.log("🔍 Checking widget status...");
+          console.log("Widget API available:", !!window.appointyChatbot);
+          if (window.appointyChatbot) {
+            console.log("Widget is open:", window.appointyChatbot.isOpen());
+            console.log(
+              "Available methods:",
+              Object.keys(window.appointyChatbot)
+            );
+          }
+        }, 2000);
+      });
+    </script>
+
+    <!-- Chatbot Widget Script -->
+    <script
+      src="http://localhost:3002/api/widget"
+      data-api-key="ak_test_1234567890123456789012345678901234567890123456789012345678901234567"
+      data-theme="blue"
+      data-position="bottom-right"
+      data-auto-open-proactive="true"
+      data-voice-enabled="true"
+      data-enhanced-detection="true"
+    ></script>
+  </body>
+</html>

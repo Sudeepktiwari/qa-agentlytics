@@ -761,6 +761,43 @@ export async function GET(request: Request) {
     }
   }
   
+  // Smooth scroll to bottom function with enhanced reliability
+  function scrollToBottom() {
+    const messagesContainer = document.getElementById('appointy-messages');
+    if (!messagesContainer) return;
+    
+    // Check if container is visible and has height
+    const containerRect = messagesContainer.getBoundingClientRect();
+    if (containerRect.height === 0) {
+      // Container not ready, try again after a short delay
+      setTimeout(() => scrollToBottom(), 50);
+      return;
+    }
+    
+    const targetScrollTop = messagesContainer.scrollHeight - messagesContainer.clientHeight;
+    
+    // Immediate scroll
+    messagesContainer.scrollTop = targetScrollTop;
+    
+    // Additional scroll to handle any pending renders
+    requestAnimationFrame(() => {
+      if (messagesContainer) {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight - messagesContainer.clientHeight;
+      }
+    });
+  }
+  
+  // Enhanced scroll that accounts for content changes
+  function scrollToBottomEnhanced() {
+    scrollToBottom();
+    
+    // Multiple fallback scrolls to handle various timing issues
+    const scrollAttempts = [100, 200, 400, 600];
+    scrollAttempts.forEach(delay => {
+      setTimeout(() => scrollToBottom(), delay);
+    });
+  }
+
   // Show typing indicator
   function showTypingIndicator() {
     const messagesContainer = document.getElementById('appointy-messages');
@@ -771,7 +808,7 @@ export async function GET(request: Request) {
     typingDiv.style.cssText = 'color: #666; font-style: italic; margin: 8px 0;';
     typingDiv.textContent = 'Typing...';
     messagesContainer.appendChild(typingDiv);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    scrollToBottom();
   }
   
   // Hide typing indicator
@@ -1058,7 +1095,8 @@ export async function GET(request: Request) {
       messagesContainer.appendChild(messageDiv);
     });
     
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    // Enhanced scroll to bottom that handles animated content
+    scrollToBottomEnhanced();
   }
   
   // Initialize proactive message
@@ -1104,6 +1142,11 @@ export async function GET(request: Request) {
       if (messages.length === 0) {
         console.log('[Widget] No messages, initializing chat');
         initializeChat();
+      } else {
+        // Scroll to bottom when opening widget with existing messages
+        setTimeout(() => {
+          scrollToBottom();
+        }, 100);
       }
       
       resetUserActivity();
