@@ -8,6 +8,7 @@ import * as cheerio from "cheerio";
 import { chunkText } from "@/lib/chunkText";
 import { addChunks } from "@/lib/chroma";
 import { verifyApiKey } from "@/lib/auth";
+import { createOrUpdateLead } from "@/lib/leads";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -279,11 +280,24 @@ export async function POST(req: NextRequest) {
     }
 
     // Extract customer requirements using AI
+    let extractedRequirements: string | null = null;
+    let conversationHistory: {
+      role: string;
+      content: string;
+      createdAt: Date;
+    }[] = [];
+
     try {
-      const conversationHistory = await chats
+      const historyDocs = await chats
         .find({ sessionId })
         .sort({ createdAt: 1 })
         .toArray();
+
+      conversationHistory = historyDocs.map((doc) => ({
+        role: doc.role as string,
+        content: doc.content as string,
+        createdAt: doc.createdAt as Date,
+      }));
 
       const conversation = conversationHistory
         .map(
@@ -317,8 +331,8 @@ Extract key requirements (2-3 bullet points max, be concise):`;
           ],
         });
 
-        const extractedRequirements =
-          requirementsResp.choices[0].message.content?.trim();
+        extractedRequirements =
+          requirementsResp.choices[0].message.content?.trim() || null;
         if (
           extractedRequirements &&
           extractedRequirements !== "General inquiry"
@@ -334,7 +348,35 @@ Extract key requirements (2-3 bullet points max, be concise):`;
       // Continue without requirements if AI analysis fails
     }
 
+    // Update chat messages with email and adminId
     await chats.updateMany({ sessionId }, { $set: updateData });
+
+    // Create or update lead in separate collection
+    if (adminId) {
+      try {
+        const firstMessage =
+          conversationHistory.length > 0
+            ? conversationHistory[0].content
+            : question || "";
+
+        await createOrUpdateLead(
+          adminId,
+          detectedEmail,
+          sessionId,
+          extractedRequirements,
+          pageUrl || undefined,
+          firstMessage
+        );
+
+        console.log(
+          `[LeadGen] Created/updated lead record for ${detectedEmail} with adminId: ${adminId}`
+        );
+      } catch (error) {
+        console.error("[LeadGen] Error creating lead record:", error);
+        // Continue even if lead creation fails
+      }
+    }
+
     // Log for verification
     console.log(
       `[LeadGen] Stored email for session ${sessionId}: ${detectedEmail} with adminId: ${adminId}`
