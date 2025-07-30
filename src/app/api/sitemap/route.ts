@@ -15,7 +15,7 @@ import { Pinecone } from "@pinecone-database/pinecone";
 import puppeteer from "puppeteer";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
-const MAX_PAGES = 20;
+const MAX_PAGES = 10; // Reduced for timeout protection
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // Initialize Pinecone
@@ -25,15 +25,49 @@ const pinecone = new Pinecone({
 const index = pinecone.index(process.env.PINECONE_INDEX!);
 
 async function parseSitemap(sitemapUrl: string): Promise<string[]> {
-  const res = await fetch(sitemapUrl);
-  if (!res.ok) throw new Error("Failed to fetch sitemap");
-  const xml = await res.text();
-  const urls: string[] = [];
-  const matches = xml.matchAll(/<loc>(.*?)<\/loc>/g);
-  for (const match of matches) {
-    urls.push(match[1]);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout for sitemap fetch
+
+  try {
+    const res = await fetch(sitemapUrl, { signal: controller.signal });
+    clearTimeout(timeoutId);
+
+    if (!res.ok) throw new Error("Failed to fetch sitemap");
+    const xml = await res.text();
+
+    console.log(`[Sitemap] XML size: ${xml.length} characters`);
+
+    const urls: string[] = [];
+    const matches = xml.matchAll(/<loc>(.*?)<\/loc>/g);
+
+    let matchCount = 0;
+    for (const match of matches) {
+      urls.push(match[1]);
+      matchCount++;
+
+      // Add protection against extremely large sitemaps
+      if (matchCount % 1000 === 0) {
+        console.log(`[Sitemap] Processed ${matchCount} URLs from sitemap...`);
+      }
+
+      // Limit sitemap size to prevent memory issues
+      if (matchCount > 5000) {
+        console.log(
+          `[Sitemap] Limiting sitemap to first 5000 URLs to prevent timeout`
+        );
+        break;
+      }
+    }
+
+    console.log(`[Sitemap] Total URLs extracted: ${urls.length}`);
+    return urls;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error("Sitemap fetch timed out after 30 seconds");
+    }
+    throw error;
   }
-  return urls;
 }
 
 async function extractLinksUsingBrowser(pageUrl: string): Promise<string[]> {
@@ -1268,6 +1302,9 @@ async function extractTextUsingBrowser(url: string): Promise<string> {
 }
 
 export async function POST(req: NextRequest) {
+  const startTime = Date.now();
+  const MAX_EXECUTION_TIME = 270000; // 270 seconds (30 seconds buffer before Vercel timeout)
+
   console.log(`[Sitemap] POST request received at ${new Date().toISOString()}`);
   console.log(
     `[Sitemap] Request headers:`,
@@ -1481,14 +1518,42 @@ export async function POST(req: NextRequest) {
     const results: { url: string; text: string }[] = [];
     let totalChunks = 0;
     let crawlCount = 0;
+    let timeoutReached = false;
 
     for (const url of uncrawledUrls) {
+      // Check if we're approaching the timeout limit
+      const currentTime = Date.now();
+      const elapsedTime = currentTime - startTime;
+
+      if (elapsedTime > MAX_EXECUTION_TIME) {
+        console.log(
+          `[Timeout] Execution time limit reached (${elapsedTime}ms > ${MAX_EXECUTION_TIME}ms)`
+        );
+        console.log(
+          `[Timeout] Processed ${crawlCount}/${uncrawledUrls.length} URLs before timeout`
+        );
+        timeoutReached = true;
+        break;
+      }
+
+      // Also check if we're close to timeout and have processed some URLs
+      if (elapsedTime > MAX_EXECUTION_TIME - 30000 && crawlCount > 0) {
+        console.log(
+          `[Timeout] Approaching timeout limit with 30s buffer (${elapsedTime}ms)`
+        );
+        console.log(
+          `[Timeout] Stopping early after ${crawlCount}/${uncrawledUrls.length} URLs`
+        );
+        timeoutReached = true;
+        break;
+      }
+
       crawlCount++;
       try {
         console.log(
-          `[Crawl] [${crawlCount}/${uncrawledUrls.length}] Starting to crawl: ${url}`
+          `[Crawl] [${crawlCount}/${uncrawledUrls.length}] Starting to crawl: ${url} (elapsed: ${elapsedTime}ms)`
         );
-        const startTime = Date.now();
+        const crawlStartTime = Date.now();
 
         const text = await extractTextFromUrl(url);
         const endTime = Date.now();
@@ -1497,7 +1562,7 @@ export async function POST(req: NextRequest) {
           `[Crawl] [${crawlCount}/${
             uncrawledUrls.length
           }] SUCCESS - Extracted ${text.length} chars in ${
-            endTime - startTime
+            endTime - crawlStartTime
           }ms from ${url}`
         );
         console.log(`[Crawl] First 100 chars: ${text.slice(0, 100)}`);
@@ -1605,24 +1670,39 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    const totalElapsedTime = Date.now() - startTime;
+    const totalRemaining =
+      urls.length - updatedCrawledUrls.size - results.length;
+    const hasMorePages = totalRemaining > 0;
+
     console.log(
-      `[Crawl] BATCH COMPLETE - Successfully crawled ${results.length} pages`
+      `[Crawl] BATCH COMPLETE - Successfully crawled ${results.length} pages in ${totalElapsedTime}ms`
     );
     console.log(`[Crawl] Total chunks created: ${totalChunks}`);
-    console.log(
-      `[Crawl] Remaining pages in sitemap: ${
-        urls.length - updatedCrawledUrls.size - results.length
-      }`
-    );
+    console.log(`[Crawl] Remaining pages in sitemap: ${totalRemaining}`);
+
+    if (timeoutReached) {
+      console.log(`[Timeout] Batch stopped due to timeout protection`);
+    }
 
     const response = {
       crawled: results.length,
       totalChunks,
       pages: results.map((r) => r.url),
       batchDone: results.length, // Number of pages successfully crawled in this batch
-      batchRemaining: urls.length - updatedCrawledUrls.size - results.length, // Total remaining pages
-      totalRemaining: urls.length - updatedCrawledUrls.size - results.length,
+      batchRemaining: totalRemaining, // Total remaining pages
+      totalRemaining: totalRemaining,
       recrawledPages: problematicUrls.length, // Show how many pages were reset for re-crawling
+      timeoutReached, // Indicate if processing stopped due to timeout
+      executionTime: totalElapsedTime,
+      totalDiscovered: urls.length,
+      hasMorePages, // Indicates if there are more pages to crawl
+      sitemapUrl, // Include the sitemap URL for auto-continue
+      message: timeoutReached
+        ? `Processed ${results.length} pages before timeout. ${totalRemaining} pages remaining.`
+        : hasMorePages
+        ? `Successfully processed ${results.length} pages. ${totalRemaining} pages remaining - auto-continue available.`
+        : `All ${urls.length} pages have been successfully processed!`,
     };
 
     console.log(`[Crawl] Sending response:`, JSON.stringify(response, null, 2));

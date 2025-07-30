@@ -6,16 +6,30 @@ interface ContentCrawlingSectionProps {
   sitemapUrl: string;
   sitemapStatus: string | null;
   sitemapLoading: boolean;
+  autoContinue: boolean;
+  continueCrawling: boolean;
+  totalProcessed: number;
+  totalRemaining: number;
   onSitemapUrlChange: (url: string) => void;
   onSitemapSubmit: (e: React.FormEvent) => void;
+  onAutoContinueChange: (enabled: boolean) => void;
+  onContinueCrawling: () => void;
+  onStopCrawling: () => void;
 }
 
 const ContentCrawlingSection: React.FC<ContentCrawlingSectionProps> = ({
   sitemapUrl,
   sitemapStatus,
   sitemapLoading,
+  autoContinue,
+  continueCrawling,
+  totalProcessed,
+  totalRemaining,
   onSitemapUrlChange,
   onSitemapSubmit,
+  onAutoContinueChange,
+  onContinueCrawling,
+  onStopCrawling,
 }) => {
   return (
     <div
@@ -159,6 +173,140 @@ const ContentCrawlingSection: React.FC<ContentCrawlingSectionProps> = ({
           </button>
         </div>
       </form>
+
+      {/* Auto-continue controls */}
+      <div
+        style={{
+          marginBottom: "16px",
+          padding: "16px",
+          background: "linear-gradient(135deg, #f7fafc, #edf2f7)",
+          borderRadius: "12px",
+          border: "1px solid #e2e8f0",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: "12px",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <label
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                fontSize: "14px",
+                fontWeight: "600",
+                color: "#2d3748",
+                cursor: "pointer",
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={autoContinue}
+                onChange={(e) => onAutoContinueChange(e.target.checked)}
+                disabled={sitemapLoading}
+                style={{
+                  width: "16px",
+                  height: "16px",
+                  accentColor: "#48bb78",
+                }}
+              />
+              🔄 Auto-continue crawling
+            </label>
+
+            {(totalProcessed > 0 || totalRemaining > 0) && (
+              <div
+                style={{
+                  fontSize: "12px",
+                  color: "#718096",
+                  background: "white",
+                  padding: "4px 8px",
+                  borderRadius: "6px",
+                  border: "1px solid #e2e8f0",
+                }}
+              >
+                📊 {totalProcessed} processed, {totalRemaining} remaining
+              </div>
+            )}
+          </div>
+
+          <div style={{ display: "flex", gap: "8px" }}>
+            {totalRemaining > 0 && !sitemapLoading && (
+              <button
+                onClick={onContinueCrawling}
+                style={{
+                  padding: "8px 16px",
+                  background:
+                    "linear-gradient(135deg, #4299e1 0%, #3182ce 100%)",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "8px",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                }}
+                onMouseEnter={(e) => {
+                  const target = e.target as HTMLButtonElement;
+                  target.style.transform = "translateY(-1px)";
+                }}
+                onMouseLeave={(e) => {
+                  const target = e.target as HTMLButtonElement;
+                  target.style.transform = "translateY(0)";
+                }}
+              >
+                ▶️ Continue Crawling
+              </button>
+            )}
+
+            {sitemapLoading && (autoContinue || continueCrawling) && (
+              <button
+                onClick={onStopCrawling}
+                style={{
+                  padding: "8px 16px",
+                  background:
+                    "linear-gradient(135deg, #f56565 0%, #e53e3e 100%)",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "8px",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                }}
+                onMouseEnter={(e) => {
+                  const target = e.target as HTMLButtonElement;
+                  target.style.transform = "translateY(-1px)";
+                }}
+                onMouseLeave={(e) => {
+                  const target = e.target as HTMLButtonElement;
+                  target.style.transform = "translateY(0)";
+                }}
+              >
+                ⏹️ Stop Crawling
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div
+          style={{
+            fontSize: "12px",
+            color: "#718096",
+            marginTop: "8px",
+            lineHeight: "1.4",
+          }}
+        >
+          💡 <strong>Auto-continue:</strong> Automatically processes all pages
+          in batches without manual intervention. Large sitemaps will be
+          processed incrementally to avoid timeouts.
+        </div>
+      </div>
 
       {sitemapStatus && (
         <div
