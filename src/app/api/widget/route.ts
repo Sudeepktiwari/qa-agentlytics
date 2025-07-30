@@ -1051,6 +1051,7 @@ export async function GET(request: Request) {
             border-radius: 8px;
             font-size: 13px;
             outline: none;
+            background: white;
           \`;
           
           emailInput.addEventListener('input', () => {
