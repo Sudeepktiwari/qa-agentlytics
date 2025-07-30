@@ -91,9 +91,9 @@ export async function GET(request: Request) {
   
   // Size configurations
   const sizes = {
-    small: { width: '300px', height: '400px', buttonSize: '50px' },
-    medium: { width: '350px', height: '500px', buttonSize: '60px' },
-    large: { width: '400px', height: '600px', buttonSize: '70px' }
+    small: { width: '300px', height: '400px', buttonSize: '50px', fontSize: '13px' },
+    medium: { width: '350px', height: '600px', buttonSize: '60px', fontSize: '14px' },
+    large: { width: '400px', height: '700px', buttonSize: '70px', fontSize: '15px' }
   };
   
   // Get size config with fallback
@@ -560,8 +560,8 @@ export async function GET(request: Request) {
             </label>
           </div>
         </div>
-        <div id="appointy-messages" style="flex: 1; padding: 15px; overflow-y: auto; max-height: calc(100% - 140px); background: white;">
-          <div style="color: #666; font-size: 14px;">Loading...</div>
+        <div id="appointy-messages" style="flex: 1; padding: 15px; overflow-y: auto; max-height: calc(100% - 140px); background: white; font-size: \${currentSize.fontSize};">
+          <div style="color: #666; font-size: \${currentSize.fontSize};">Loading...</div>
         </div>
         <div style="padding: 15px; border-top: 1px solid #e5e7eb; background: white;">
           <div style="display: flex; gap: 8px;">
@@ -569,11 +569,11 @@ export async function GET(request: Request) {
               id="appointy-input" 
               type="text" 
               placeholder="Type your message..." 
-              style="flex: 1; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; outline: none; font-size: 14px;"
+              style="flex: 1; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; outline: none; font-size: \${currentSize.fontSize};"
             />
             <button 
               id="appointy-send-btn" 
-              style="background: \${currentTheme.primary}; color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500;"
+              style="background: \${currentTheme.primary}; color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-size: \${currentSize.fontSize}; font-weight: 500;"
             >
               Send
             </button>
@@ -844,7 +844,7 @@ export async function GET(request: Request) {
           max-width: 100%;
           min-width: fit-content;
           word-wrap: break-word;
-          font-size: 14px;
+          font-size: \${currentSize.fontSize};
           line-height: 1.4;
           display: inline-block;
         \`;
@@ -868,7 +868,7 @@ export async function GET(request: Request) {
           max-width: 100%;
           min-width: fit-content;
           word-wrap: break-word;
-          font-size: 14px;
+          font-size: \${currentSize.fontSize};
           line-height: 1.4;
           display: inline-block;
         \`;
@@ -909,7 +909,7 @@ export async function GET(request: Request) {
               margin: 6px 6px 6px 0;
               border-radius: 20px;
               cursor: pointer;
-              font-size: 14px;
+              font-size: \${currentSize.fontSize};
               font-weight: 500;
               transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
               box-shadow: 0 2px 8px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.1);
