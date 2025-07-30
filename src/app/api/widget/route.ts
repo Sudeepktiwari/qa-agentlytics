@@ -73,7 +73,9 @@ export async function GET(request: Request) {
     autoOpenProactive: getBoolAttr('data-auto-open-proactive', true),
     voiceEnabled: getBoolAttr('data-voice-enabled', true),
     voiceGender: getAttr('data-voice-gender', 'female'), // 'male' or 'female'
-    enhancedDetection: getBoolAttr('data-enhanced-detection', true) // Enable enhanced page detection by default
+    enhancedDetection: getBoolAttr('data-enhanced-detection', true), // Enable enhanced page detection by default
+    botAvatar: getAttr('data-bot-avatar', null), // Custom bot avatar URL
+    userAvatar: getAttr('data-user-avatar', null) // Custom user avatar URL (optional)
   };
   
   // Theme configurations
@@ -229,6 +231,66 @@ export async function GET(request: Request) {
     formatted = formatted.replace(/^>\\s*(.+)$/gm, '<div style="border-left: 3px solid #e5e7eb; padding-left: 12px; margin: 8px 0; font-style: italic; color: #6b7280;">$1</div>');
     
     return formatted;
+  }
+  
+  // Create avatar element
+  function createAvatar(isBot = false) {
+    const avatar = document.createElement('div');
+    avatar.style.cssText = \`
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 500;
+      margin-right: 8px;
+      overflow: hidden;
+    \`;
+    
+    if (isBot) {
+      if (config.botAvatar) {
+        // Use custom bot avatar image
+        const img = document.createElement('img');
+        img.src = config.botAvatar;
+        img.style.cssText = 'width: 100%; height: 100%; object-fit: cover;';
+        img.onerror = () => {
+          // Fallback to default bot avatar if image fails to load
+          avatar.innerHTML = '🤖';
+          avatar.style.background = \`\${currentTheme.primary}\`;
+          avatar.style.color = 'white';
+        };
+        avatar.appendChild(img);
+      } else {
+        // Default bot avatar
+        avatar.innerHTML = '🤖';
+        avatar.style.background = \`\${currentTheme.primary}\`;
+        avatar.style.color = 'white';
+      }
+    } else {
+      if (config.userAvatar) {
+        // Use custom user avatar image
+        const img = document.createElement('img');
+        img.src = config.userAvatar;
+        img.style.cssText = 'width: 100%; height: 100%; object-fit: cover;';
+        img.onerror = () => {
+          // Fallback to default user avatar if image fails to load
+          avatar.innerHTML = '👤';
+          avatar.style.background = '#f1f1f1';
+          avatar.style.color = '#666';
+        };
+        avatar.appendChild(img);
+      } else {
+        // Default user avatar
+        avatar.innerHTML = '👤';
+        avatar.style.background = '#f1f1f1';
+        avatar.style.color = '#666';
+      }
+    }
+    
+    return avatar;
   }  // Text-to-Speech functionality with user interaction handling
   let speechAllowed = false;
   let speechInitialized = false;
@@ -833,7 +895,11 @@ export async function GET(request: Request) {
           margin: 8px 0;
           display: flex;
           justify-content: flex-end;
+          align-items: flex-start;
         \`;
+        
+        const contentWrapper = document.createElement('div');
+        contentWrapper.style.cssText = 'display: flex; align-items: flex-start; max-width: 85%;';
         
         const bubbleDiv = document.createElement('div');
         bubbleDiv.style.cssText = \`
@@ -847,9 +913,17 @@ export async function GET(request: Request) {
           font-size: \${currentSize.fontSize};
           line-height: 1.4;
           display: inline-block;
+          margin-right: 8px;
         \`;
         bubbleDiv.innerHTML = formatMessageText(msg.content);
-        messageDiv.appendChild(bubbleDiv);
+        
+        const userAvatar = createAvatar(false);
+        userAvatar.style.marginRight = '0';
+        userAvatar.style.marginLeft = '8px';
+        
+        contentWrapper.appendChild(bubbleDiv);
+        contentWrapper.appendChild(userAvatar);
+        messageDiv.appendChild(contentWrapper);
         
       } else {
         // Bot message - left aligned with theme color background
@@ -857,7 +931,13 @@ export async function GET(request: Request) {
           margin: 8px 0;
           display: flex;
           justify-content: flex-start;
+          align-items: flex-start;
         \`;
+        
+        const contentWrapper = document.createElement('div');
+        contentWrapper.style.cssText = 'display: flex; align-items: flex-start; max-width: 85%;';
+        
+        const botAvatar = createAvatar(true);
         
         const bubbleDiv = document.createElement('div');
         bubbleDiv.style.cssText = \`
@@ -872,6 +952,10 @@ export async function GET(request: Request) {
           line-height: 1.4;
           display: inline-block;
         \`;
+        
+        contentWrapper.appendChild(botAvatar);
+        contentWrapper.appendChild(bubbleDiv);
+        messageDiv.appendChild(contentWrapper);
         
         // Bot message with potential buttons and email prompt
         const contentDiv = document.createElement('div');
@@ -1369,6 +1453,20 @@ export async function GET(request: Request) {
         voiceGenderRadios.forEach(radio => {
           radio.checked = radio.value === config.voiceGender;
         });
+      },
+      setBotAvatar: (avatarUrl) => {
+        config.botAvatar = avatarUrl;
+        // Re-render messages to update avatars
+        if (isOpen && messages.length > 0) {
+          renderMessages();
+        }
+      },
+      setUserAvatar: (avatarUrl) => {
+        config.userAvatar = avatarUrl;
+        // Re-render messages to update avatars
+        if (isOpen && messages.length > 0) {
+          renderMessages();
+        }
       },
       setAutoOpen: (autoOpen) => {
         config.autoOpenProactive = !!autoOpen;
