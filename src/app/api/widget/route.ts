@@ -785,7 +785,7 @@ export async function GET(request: Request) {
       const messageDiv = document.createElement('div');
       
       if (msg.role === 'user') {
-        // User message - right aligned with theme color background
+        // User message - right aligned with gray background
         messageDiv.style.cssText = \`
           margin: 8px 0;
           display: flex;
@@ -794,8 +794,8 @@ export async function GET(request: Request) {
         
         const bubbleDiv = document.createElement('div');
         bubbleDiv.style.cssText = \`
-          background: \${currentTheme.primary};
-          color: white;
+          background: #f1f1f1;
+          color: #333;
           padding: 12px 16px;
           border-radius: 18px;
           max-width: 100%;
@@ -809,7 +809,7 @@ export async function GET(request: Request) {
         messageDiv.appendChild(bubbleDiv);
         
       } else {
-        // Bot message - left aligned with light gray background
+        // Bot message - left aligned with theme color background
         messageDiv.style.cssText = \`
           margin: 8px 0;
           display: flex;
@@ -818,8 +818,8 @@ export async function GET(request: Request) {
         
         const bubbleDiv = document.createElement('div');
         bubbleDiv.style.cssText = \`
-          background: #f1f1f1;
-          color: #333;
+          background: \${currentTheme.primary};
+          color: white;
           padding: 12px 16px;
           border-radius: 18px;
           max-width: 100%;
