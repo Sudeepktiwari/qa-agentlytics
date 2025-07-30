@@ -1034,7 +1034,7 @@ export async function GET(request: Request) {
           
           const promptText = document.createElement('div');
           promptText.textContent = msg.emailPrompt;
-          promptText.style.cssText = 'margin-bottom: 8px; color: #666; font-size: 13px;';
+          promptText.style.cssText = 'margin-bottom: 8px; color: white; font-size: 13px;';
           emailDiv.appendChild(promptText);
           
           const emailForm = document.createElement('form');
