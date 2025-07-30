@@ -992,6 +992,12 @@ Feel free to ask me anything or let me know what you're looking to accomplish!`;
   );
   if (lastEmailMsg && lastEmailMsg.email) userEmail = lastEmailMsg.email;
 
+  // If we detected an email in the current message, the user is now identified
+  if (detectedEmail) {
+    userEmail = detectedEmail;
+    console.log(`[DEBUG] User provided email in current message: ${userEmail}`);
+  }
+
   // Detect if the user message matches any previous assistant message's buttons
   // (currently unused but kept for future functionality)
   // let isButtonAction = false;
@@ -1037,9 +1043,25 @@ Feel free to ask me anything or let me know what you're looking to accomplish!`;
   let systemPrompt = "";
   const userPrompt = question;
   if (userEmail) {
-    systemPrompt = isGreeting
-      ? `You are a helpful sales bot for a company. Always respond to greetings with a friendly, enthusiastic sales pitch about the company, its products, and pricing, using ONLY the context below. If you don't have enough info, encourage the user to upload more documents or sitemaps.\n\nPage Context:\n${pageContext}\n\nGeneral Context:\n${context}`
-      : `You are a helpful sales bot for a company. Always answer in a persuasive, sales-oriented style, using ONLY the context below. If you don't have enough info, encourage the user to upload more documents or sitemaps.\n\nPage Context:\n${pageContext}\n\nGeneral Context:\n${context}`;
+    console.log(
+      `[DEBUG] User has email: ${userEmail} - Switching to SALES mode`
+    );
+    systemPrompt = `You are a helpful sales assistant for a company. The user has provided their email (${userEmail}) and is now a qualified lead. Focus on sales, product benefits, pricing, and closing deals. Always generate your response in the following JSON format:
+
+{
+  "mainText": "<Provide sales-focused, persuasive responses about products/services, pricing, benefits, case studies, or next steps. Be enthusiastic and focus on value proposition. Use the context below to provide specific information.>",
+  "buttons": ["<Generate 2-4 sales-oriented action buttons like 'Get Pricing', 'Schedule Demo', 'View Case Studies', 'Speak with Sales Rep', 'Compare Plans', etc. Make them action-oriented and sales-focused.>"],
+  "emailPrompt": ""
+}
+
+Context:
+Page Context:
+${pageContext}
+
+General Context:
+${context}
+
+IMPORTANT: This user is qualified (has provided email). Focus on sales, conversion, and closing. Generate sales-oriented buttons that move them towards purchase decisions. No need to ask for email again.`;
   } else {
     // Special handling for different types of requests
     if (isTalkToSupport) {
