@@ -1068,8 +1068,8 @@ export async function GET(request: Request) {
             : msg.emailPrompt.toLowerCase().includes('demo') ? 'Get Demo'
             : 'Submit';
           emailSubmit.style.cssText = \`
-            background: \${currentTheme.primary};
-            color: white;
+            background: #f1f1f1;
+            color: #333;
             border: none;
             padding: 8px 12px;
             border-radius: 8px;
