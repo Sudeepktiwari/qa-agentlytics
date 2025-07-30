@@ -896,12 +896,15 @@ Feel free to ask me anything or let me know what you're looking to accomplish!`;
       console.log(
         `[Followup] Simple fallback followup for session ${sessionId}`
       );
-      return NextResponse.json({
-        mainText:
-          "Is there anything else you'd like to know about the available features?",
-        buttons: ["Learn More Features", "Get Demo", "Contact Support"],
-        emailPrompt: "Want me to send you more details? Share your email!",
-      });
+      return NextResponse.json(
+        {
+          mainText:
+            "Is there anything else you'd like to know about the available features?",
+          buttons: ["Learn More Features", "Get Demo", "Contact Support"],
+          emailPrompt: "Want me to send you more details? Share your email!",
+        },
+        { headers: corsHeaders }
+      );
     }
   }
 
@@ -927,11 +930,14 @@ Feel free to ask me anything or let me know what you're looking to accomplish!`;
           `[Followup] Sending generic followup ${followupCount} for session ${sessionId}`
         );
 
-        return NextResponse.json({
-          mainText: message,
-          buttons: ["Learn More Features", "Get Demo", "Contact Support"],
-          emailPrompt: "Want me to send you more details? Share your email!",
-        });
+        return NextResponse.json(
+          {
+            mainText: message,
+            buttons: ["Learn More Features", "Get Demo", "Contact Support"],
+            emailPrompt: "Want me to send you more details? Share your email!",
+          },
+          { headers: corsHeaders }
+        );
       } else {
         console.log(
           `[Followup] No more generic followups for session ${sessionId}`
@@ -943,7 +949,7 @@ Feel free to ask me anything or let me know what you're looking to accomplish!`;
         `[Followup] Error in generic followup for session ${sessionId}:`,
         error
       );
-      return NextResponse.json({});
+      return NextResponse.json({}, { headers: corsHeaders });
     }
   }
 
@@ -1011,10 +1017,13 @@ Feel free to ask me anything or let me know what you're looking to accomplish!`;
 
   // If no context, refer to sales team and ask for contact
   if (!context.trim() && !pageContext.trim()) {
-    return NextResponse.json({
-      answer:
-        "I'm not sure about that. I'll refer your question to our sales team. Could you please share your email or phone number so we can follow up?",
-    });
+    return NextResponse.json(
+      {
+        answer:
+          "I'm not sure about that. I'll refer your question to our sales team. Could you please share your email or phone number so we can follow up?",
+      },
+      { headers: corsHeaders }
+    );
   }
 
   // Detect specific user intents for special handling
