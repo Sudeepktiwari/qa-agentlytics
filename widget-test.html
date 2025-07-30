@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Widget Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        background-color: #f0f0f0;
+      }
+      .content {
+        max-width: 800px;
+        margin: 0 auto;
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        color: #333;
+      }
+      .test-info {
+        background: #e8f4f8;
+        padding: 15px;
+        border-left: 4px solid #10b981;
+        margin: 20px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="content">
+      <h1>Chatbot Widget Test Page</h1>
+
+      <div class="test-info">
+        <h3>Testing Configuration:</h3>
+        <ul>
+          <li>
+            <strong>API Key:</strong>
+            ak_e9c3475fd9b9371577ab09f5a0a7fcd1c635ef055b7e66374ed424162d80c9ac
+          </li>
+          <li><strong>Theme:</strong> Green</li>
+          <li><strong>Size:</strong> Large</li>
+          <li><strong>Voice:</strong> Enabled (Female)</li>
+          <li><strong>Auto-open Proactive:</strong> Enabled</li>
+        </ul>
+      </div>
+
+      <p>
+        This is a test page to verify the chatbot widget functionality. The
+        widget should appear in the bottom-right corner of the screen.
+      </p>
+
+      <h2>What to Check:</h2>
+      <ol>
+        <li>Widget button appears in bottom-right corner</li>
+        <li>Button has green theme color</li>
+        <li>Button size is large (70px)</li>
+        <li>Clicking opens the chat window</li>
+        <li>Auto-proactive message should appear after a few seconds</li>
+      </ol>
+
+      <h2>Troubleshooting:</h2>
+      <ul>
+        <li>Open browser developer tools (F12)</li>
+        <li>Check the Console tab for any error messages</li>
+        <li>Check the Network tab to see if the script loads successfully</li>
+        <li>Look for any CORS or loading errors</li>
+      </ul>
+
+      <div style="height: 200px; margin-top: 50px">
+        <p><em>Scroll down to test widget positioning...</em></p>
+      </div>
+
+      <div
+        style="
+          height: 500px;
+          background: linear-gradient(45deg, #f0f0f0, #e0e0e0);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 8px;
+          margin: 20px 0;
+        "
+      >
+        <p style="font-size: 18px; color: #666">
+          More content to test widget positioning
+        </p>
+      </div>
+
+      <p>
+        The widget should remain fixed in the bottom-right corner regardless of
+        scrolling.
+      </p>
+    </div>
+
+    <!-- Your exact widget script -->
+    <script
+      src="https://sample-chatbot-nine.vercel.app/api/widget"
+      data-api-key="ak_e9c3475fd9b9371577ab09f5a0a7fcd1c635ef055b7e66374ed424162d80c9ac"
+      data-theme="green"
+      data-size="large"
+      data-voice-enabled="true"
+      data-voice-gender="female"
+      data-auto-open-proactive="true"
+    ></script>
+
+    <!-- Debug script to check widget loading -->
+    <script>
+      console.log("=== Widget Debug Info ===");
+      console.log("Page loaded at:", new Date().toISOString());
+
+      // Check if script loaded
+      setTimeout(() => {
+        const scriptElements = document.querySelectorAll(
+          'script[src*="/api/widget"]'
+        );
+        console.log("Widget scripts found:", scriptElements.length);
+
+        // Check if widget elements exist in DOM
+        const widgetElements = document.querySelectorAll(
+          '[id*="widget"], [class*="widget"], [id*="chatbot"], [class*="chatbot"]'
+        );
+        console.log("Widget DOM elements found:", widgetElements.length);
+
+        if (widgetElements.length > 0) {
+          console.log("Widget elements:", widgetElements);
+        } else {
+          console.warn(
+            "No widget elements found in DOM - widget may not have initialized"
+          );
+        }
+
+        // Check for global widget variables
+        if (window.chatbotWidget) {
+          console.log("Global chatbotWidget found:", window.chatbotWidget);
+        } else {
+          console.warn("Global chatbotWidget not found");
+        }
+      }, 3000);
+
+      // Listen for any errors
+      window.addEventListener("error", (e) => {
+        console.error("Page error:", e.error, e.filename, e.lineno);
+      });
+    </script>
+  </body>
+</html>

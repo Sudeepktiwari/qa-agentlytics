@@ -859,9 +859,9 @@ export async function GET(request: Request) {
             button.appendChild(icon);
             
             button.style.cssText = \`
-              background: linear-gradient(135deg, \${currentTheme.primary} 0%, \${currentTheme.primary}dd 100%);
-              color: white;
-              border: 2px solid \${currentTheme.primary}22;
+              background: #f1f1f1;
+              color: #333;
+              border: 2px solid #e5e7eb;
               padding: 10px 16px;
               margin: 6px 6px 6px 0;
               border-radius: 20px;
@@ -869,7 +869,7 @@ export async function GET(request: Request) {
               font-size: 14px;
               font-weight: 500;
               transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-              box-shadow: 0 2px 8px \${currentTheme.primary}33, 0 1px 3px rgba(0,0,0,0.1);
+              box-shadow: 0 2px 8px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.1);
               position: relative;
               overflow: hidden;
               display: inline-flex;
@@ -931,23 +931,23 @@ export async function GET(request: Request) {
             
             button.addEventListener('mouseenter', () => {
               button.style.transform = 'translateY(-2px) scale(1.02)';
-              button.style.boxShadow = \`0 6px 20px \${currentTheme.primary}44, 0 3px 6px rgba(0,0,0,0.15)\`;
-              button.style.background = \`linear-gradient(135deg, \${currentTheme.primary} 0%, \${currentTheme.primary}ee 100%)\`;
+              button.style.boxShadow = \`0 6px 20px rgba(0,0,0,0.12), 0 3px 6px rgba(0,0,0,0.15)\`;
+              button.style.background = \`#e5e7eb\`;
               icon.style.transform = 'translateX(4px)';
               shine.style.left = '100%';
             });
             
             button.addEventListener('mouseleave', () => {
               button.style.transform = 'translateY(0) scale(1)';
-              button.style.boxShadow = \`0 2px 8px \${currentTheme.primary}33, 0 1px 3px rgba(0,0,0,0.1)\`;
-              button.style.background = \`linear-gradient(135deg, \${currentTheme.primary} 0%, \${currentTheme.primary}dd 100%)\`;
+              button.style.boxShadow = \`0 2px 8px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.1)\`;
+              button.style.background = \`#f1f1f1\`;
               icon.style.transform = 'translateX(0)';
               shine.style.left = '-100%';
             });
             
             button.addEventListener('mousedown', () => {
               button.style.transform = 'translateY(1px) scale(0.98)';
-              button.style.boxShadow = \`0 1px 4px \${currentTheme.primary}44, 0 1px 2px rgba(0,0,0,0.1)\`;
+              button.style.boxShadow = \`0 1px 4px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.1)\`;
             });
             
             button.addEventListener('mouseup', () => {
