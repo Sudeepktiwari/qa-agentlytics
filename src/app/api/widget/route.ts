@@ -899,7 +899,7 @@ export async function GET(request: Request) {
         \`;
         
         const contentWrapper = document.createElement('div');
-        contentWrapper.style.cssText = 'display: flex; align-items: flex-start; max-width: 85%;';
+        contentWrapper.style.cssText = 'display: flex; align-items: flex-start; max-width: 70%;';
         
         const bubbleDiv = document.createElement('div');
         bubbleDiv.style.cssText = \`
@@ -914,6 +914,7 @@ export async function GET(request: Request) {
           line-height: 1.4;
           display: inline-block;
           margin-right: 8px;
+          flex: 1;
         \`;
         bubbleDiv.innerHTML = formatMessageText(msg.content);
         
@@ -935,7 +936,7 @@ export async function GET(request: Request) {
         \`;
         
         const contentWrapper = document.createElement('div');
-        contentWrapper.style.cssText = 'display: flex; align-items: flex-start; max-width: 85%;';
+        contentWrapper.style.cssText = 'display: flex; align-items: flex-start; max-width: 70%;';
         
         const botAvatar = createAvatar(true);
         
@@ -951,6 +952,7 @@ export async function GET(request: Request) {
           font-size: \${currentSize.fontSize};
           line-height: 1.4;
           display: inline-block;
+          flex: 1;
         \`;
         
         contentWrapper.appendChild(botAvatar);
