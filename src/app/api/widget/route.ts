@@ -907,12 +907,11 @@ export async function GET(request: Request) {
           color: #333;
           padding: 12px 16px;
           border-radius: 18px;
-          max-width: calc(100% - 40px);
-          min-width: fit-content;
+          min-width: 0;
           word-wrap: break-word;
+          word-break: break-word;
           font-size: \${currentSize.fontSize};
           line-height: 1.4;
-          display: inline-block;
           margin-right: 8px;
           flex: 1;
         \`;
@@ -946,12 +945,11 @@ export async function GET(request: Request) {
           color: white;
           padding: 12px 16px;
           border-radius: 18px;
-          max-width: calc(100% - 40px);
-          min-width: fit-content;
+          min-width: 0;
           word-wrap: break-word;
+          word-break: break-word;
           font-size: \${currentSize.fontSize};
           line-height: 1.4;
-          display: inline-block;
           flex: 1;
         \`;
         
