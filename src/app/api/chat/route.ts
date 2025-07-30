@@ -543,25 +543,18 @@ Extract key requirements (2-3 bullet points max, be concise):`;
         let summaryPrompt;
 
         if (!hasBeenGreeted) {
-          // First time greeting - use the original format
+          // First time greeting - let AI create natural varied openings
           summaryPrompt = `The user is viewing: ${pageUrl}. Their likely intent is: ${detectedIntent}.
 
-Create a proactive greeting message following this exact format and style:
-
-👋 Hello there! Looks like you're exploring [specific feature/solution] — designed to simplify how you [specific benefit based on detected intent].
-
-With features like [list 2-3 key features], this helps you focus on [main outcome] — without the admin burden.
-
-> I'd love to learn more about what you're planning!
-What type of [relevant context] are you organizing, or what challenges are you hoping to solve with [relevant area]?
+Create a natural, engaging proactive greeting message. Be welcoming and specific to what they're viewing.
 
 Requirements:
-- Start with 👋 Hello there!
-- Use em dashes (—) for better flow
-- Include specific relevant features from the page content
-- Use a quote block (>) for the transition
+- Create a natural, varied opening (no fixed templates)
+- Be specific to the detected intent and page content
+- Include 2-3 relevant features from the page content
 - End with an open-ended question about their needs
 - Keep it conversational and engaging
+- Use emojis naturally (not forced)
 
 Content to reference:\n${summaryContext}`;
         } else {
@@ -581,24 +574,16 @@ ${
     : "This appears to be a new page for them."
 }
 
-Create a contextual follow-up message that feels natural and helpful. AVOID repetitive greetings.
-
-Use one of these opening patterns (pick the most natural one):
-- "I see you're checking out [specific feature/solution]..."
-- "Looks like you've moved to [page/section]..."  
-- "I noticed you're exploring [relevant area]..."
-- "You seem interested in [specific topic]..."
-
-Continue with helpful information about this page and end with a relevant question.
+Create a natural, contextual follow-up message. Avoid repetitive greetings since they've already been welcomed.
 
 Requirements:
-- NO generic greetings like "Hello there!" since they've been greeted
+- Create a natural, conversational opening (no templates)
 - Be contextual to what they're currently viewing
 - Reference relevant features from the page content  
-- Sound conversational, not robotic
+- Sound helpful and natural
 - Use emojis sparingly and naturally
 - End with a specific question about their current interest
-- Keep it concise but informative
+- Keep it concise and informative
 
 Content to reference:\n${summaryContext}`;
         }
@@ -882,12 +867,20 @@ ${previousQnA}
       console.log(
         `[DEBUG] Returning generic proactive message - no page context found`
       );
-      const proactiveMsg = `👋 Hello there! I'm here to help you learn more about the products and services available.
+      const welcomeMessages = [
+        "I'm here to help you learn more about the products and services available.",
+        "I can assist you with any questions about our offerings.",
+        "I'm ready to help you explore what we have available.",
+        "I can help you find exactly what you're looking for.",
+        "I'm here to guide you through our available options.",
+      ];
+      const randomWelcome =
+        welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
+      const proactiveMsg = `${randomWelcome}
 
 I can help answer questions, provide information, and guide you through available options based on your specific needs.
 
-> What would you like to know more about?
-Feel free to ask me anything or let me know what you're looking to accomplish!`;
+What would you like to know more about? Feel free to ask me anything or let me know what you're looking to accomplish!`;
       return NextResponse.json(
         { answer: proactiveMsg },
         { headers: corsHeaders }
