@@ -480,129 +480,155 @@ async function extractLinksUsingBrowser(pageUrl: string): Promise<string[]> {
 }
 
 async function extractLinksFromPage(pageUrl: string): Promise<string[]> {
-  const res = await fetch(pageUrl);
-  if (!res.ok) throw new Error(`Failed to fetch page: ${pageUrl}`);
-  const html = await res.text();
-  const $ = cheerio.load(html);
+  try {
+    const res = await fetch(pageUrl, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; Sitemap-Crawler/1.0)",
+        Accept:
+          "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.5",
+        "Accept-Encoding": "gzip, deflate",
+        Connection: "keep-alive",
+        "Upgrade-Insecure-Requests": "1",
+      },
+      redirect: "follow",
+    });
 
-  const links = new Set<string>();
+    console.log(
+      `[LinkExtract] Response for ${pageUrl}: ${res.status} ${res.statusText}`
+    );
 
-  // Add the original page itself
-  links.add(pageUrl);
-
-  // Extract all links from the page with more comprehensive selectors
-  $("a[href]").each((_, element) => {
-    const href = $(element).attr("href");
-    if (href) {
-      try {
-        // Convert relative URLs to absolute
-        const absoluteUrl = new URL(href, pageUrl).href;
-
-        // Only include HTTP/HTTPS URLs from the same domain
-        const pageUrlObj = new URL(pageUrl);
-        const linkUrlObj = new URL(absoluteUrl);
-
-        if (
-          linkUrlObj.protocol.startsWith("http") &&
-          linkUrlObj.hostname === pageUrlObj.hostname
-        ) {
-          // Remove fragments and query parameters for cleaner URLs
-          let cleanUrl = absoluteUrl.split("#")[0];
-          // Remove common tracking parameters but keep important query params
-          const url = new URL(cleanUrl);
-          const paramsToRemove = [
-            "utm_source",
-            "utm_medium",
-            "utm_campaign",
-            "utm_term",
-            "utm_content",
-            "ref",
-            "source",
-          ];
-          paramsToRemove.forEach((param) => url.searchParams.delete(param));
-          cleanUrl = url.toString();
-
-          const extension = cleanUrl.split(".").pop()?.toLowerCase();
-          const skipExtensions = [
-            "pdf",
-            "doc",
-            "docx",
-            "xls",
-            "xlsx",
-            "ppt",
-            "pptx",
-            "zip",
-            "rar",
-            "exe",
-            "dmg",
-            "jpg",
-            "jpeg",
-            "png",
-            "gif",
-            "svg",
-            "mp4",
-            "mp3",
-            "avi",
-            "mov",
-            "css",
-            "js",
-            "ico",
-            "woff",
-            "woff2",
-            "ttf",
-            "eot",
-          ];
-
-          // Skip URLs that end with file extensions we can't crawl
-          const hasSkipExtension =
-            extension && skipExtensions.includes(extension);
-
-          // Skip common non-content URLs
-          const skipPatterns = [
-            "/wp-admin/",
-            "/admin/",
-            "/login",
-            "/register",
-            "/contact",
-            "/privacy",
-            "/terms",
-            "/sitemap",
-            "mailto:",
-            "tel:",
-            "#",
-          ];
-
-          const hasSkipPattern = skipPatterns.some((pattern) =>
-            cleanUrl.includes(pattern)
-          );
-
-          if (!hasSkipExtension && !hasSkipPattern && cleanUrl !== pageUrl) {
-            links.add(cleanUrl);
-            console.log(`[LinkExtract] Found link: ${cleanUrl}`);
-          }
-        }
-      } catch {
-        // Skip invalid URLs
-        console.log(`[LinkExtract] Skipping invalid URL: ${href}`);
-      }
+    if (!res.ok) {
+      throw new Error(
+        `Failed to fetch page: ${pageUrl} (Status: ${res.status} ${res.statusText})`
+      );
     }
-  });
 
-  const pageLinks = Array.from(links);
+    const html = await res.text();
+    const $ = cheerio.load(html);
 
-  console.log(
-    `[LinkExtract] Total links found on ${pageUrl}: ${pageLinks.length}`
-  );
+    const links = new Set<string>();
 
-  const intelligentAnalysis = analyzeUrlPatterns(pageLinks, pageUrl);
-  console.log(`[LinkExtract] Intelligent content analysis:`, {
-    contentUrls: intelligentAnalysis.contentUrls.length,
-    patterns: intelligentAnalysis.detectedPatterns
-      .map((p) => `${p.name}: ${p.count}`)
-      .join(", "),
-  });
+    // Add the original page itself
+    links.add(pageUrl);
 
-  return pageLinks;
+    // Extract all links from the page with more comprehensive selectors
+    $("a[href]").each((_, element) => {
+      const href = $(element).attr("href");
+      if (href) {
+        try {
+          // Convert relative URLs to absolute
+          const absoluteUrl = new URL(href, pageUrl).href;
+
+          // Only include HTTP/HTTPS URLs from the same domain
+          const pageUrlObj = new URL(pageUrl);
+          const linkUrlObj = new URL(absoluteUrl);
+
+          if (
+            linkUrlObj.protocol.startsWith("http") &&
+            linkUrlObj.hostname === pageUrlObj.hostname
+          ) {
+            // Remove fragments and query parameters for cleaner URLs
+            let cleanUrl = absoluteUrl.split("#")[0];
+            // Remove common tracking parameters but keep important query params
+            const url = new URL(cleanUrl);
+            const paramsToRemove = [
+              "utm_source",
+              "utm_medium",
+              "utm_campaign",
+              "utm_term",
+              "utm_content",
+              "ref",
+              "source",
+            ];
+            paramsToRemove.forEach((param) => url.searchParams.delete(param));
+            cleanUrl = url.toString();
+
+            const extension = cleanUrl.split(".").pop()?.toLowerCase();
+            const skipExtensions = [
+              "pdf",
+              "doc",
+              "docx",
+              "xls",
+              "xlsx",
+              "ppt",
+              "pptx",
+              "zip",
+              "rar",
+              "exe",
+              "dmg",
+              "jpg",
+              "jpeg",
+              "png",
+              "gif",
+              "svg",
+              "mp4",
+              "mp3",
+              "avi",
+              "mov",
+              "css",
+              "js",
+              "ico",
+              "woff",
+              "woff2",
+              "ttf",
+              "eot",
+            ];
+
+            // Skip URLs that end with file extensions we can't crawl
+            const hasSkipExtension =
+              extension && skipExtensions.includes(extension);
+
+            // Skip common non-content URLs
+            const skipPatterns = [
+              "/wp-admin/",
+              "/admin/",
+              "/login",
+              "/register",
+              "/contact",
+              "/privacy",
+              "/terms",
+              "/sitemap",
+              "mailto:",
+              "tel:",
+              "#",
+            ];
+
+            const hasSkipPattern = skipPatterns.some((pattern) =>
+              cleanUrl.includes(pattern)
+            );
+
+            if (!hasSkipExtension && !hasSkipPattern && cleanUrl !== pageUrl) {
+              links.add(cleanUrl);
+              console.log(`[LinkExtract] Found link: ${cleanUrl}`);
+            }
+          }
+        } catch {
+          // Skip invalid URLs
+          console.log(`[LinkExtract] Skipping invalid URL: ${href}`);
+        }
+      }
+    });
+
+    const pageLinks = Array.from(links);
+
+    console.log(
+      `[LinkExtract] Total links found on ${pageUrl}: ${pageLinks.length}`
+    );
+
+    const intelligentAnalysis = analyzeUrlPatterns(pageLinks, pageUrl);
+    console.log(`[LinkExtract] Intelligent content analysis:`, {
+      contentUrls: intelligentAnalysis.contentUrls.length,
+      patterns: intelligentAnalysis.detectedPatterns
+        .map((p) => `${p.name}: ${p.count}`)
+        .join(", "),
+    });
+
+    return pageLinks;
+  } catch (error) {
+    console.log(`[LinkExtract] Error fetching ${pageUrl}:`, error);
+    throw error;
+  }
 }
 
 // Intelligent URL pattern analysis
@@ -1212,10 +1238,29 @@ export async function POST(req: NextRequest) {
   if (!sitemapUrl)
     return NextResponse.json({ error: "Missing URL" }, { status: 400 });
 
+  // Normalize URL to ensure HTTPS and proper format
+  let normalizedUrl = sitemapUrl.trim();
+
+  // Add protocol if missing
+  if (
+    !normalizedUrl.startsWith("http://") &&
+    !normalizedUrl.startsWith("https://")
+  ) {
+    normalizedUrl = "https://" + normalizedUrl;
+  }
+
+  // Convert HTTP to HTTPS for better compatibility
+  if (normalizedUrl.startsWith("http://")) {
+    normalizedUrl = normalizedUrl.replace("http://", "https://");
+  }
+
+  console.log(`[Crawl] Original URL: ${sitemapUrl}`);
+  console.log(`[Crawl] Normalized URL: ${normalizedUrl}`);
+
   let urls: string[] = [];
   let discoveryType: "sitemap" | "webpage" | "javascript" = "sitemap";
   try {
-    const result = await discoverUrls(sitemapUrl);
+    const result = await discoverUrls(normalizedUrl);
     urls = result.urls;
     discoveryType = result.type;
     console.log(`[Crawl] Discovered ${urls.length} URLs via ${discoveryType}`);
