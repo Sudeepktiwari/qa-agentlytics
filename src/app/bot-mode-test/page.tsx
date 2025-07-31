@@ -101,12 +101,15 @@ export default function BotModeTest() {
         <strong>What you should see:</strong>
         <ul>
           <li>Two chatbot headers with different colored badges</li>
-          <li>Purple "LEAD MODE" badge in the first one</li>
-          <li>Blue "SALES MODE • test@example.com" badge in the second one</li>
+          <li>Purple &quot;LEAD MODE&quot; badge in the first one</li>
+          <li>
+            Blue &quot;SALES MODE • test@example.com&quot; badge in the second
+            one
+          </li>
           <li>Console log when clicking the button</li>
         </ul>
 
-        <strong>If you don't see the badges:</strong>
+        <strong>If you don&apos;t see the badges:</strong>
         <ul>
           <li>There might be a CSS styling issue</li>
           <li>Check browser zoom level (try 100%)</li>
