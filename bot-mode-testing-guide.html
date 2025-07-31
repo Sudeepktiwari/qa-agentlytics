@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bot Mode Testing Guide</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .step {
+        background: #f5f5f5;
+        padding: 15px;
+        margin: 10px 0;
+        border-radius: 5px;
+      }
+      .indicator {
+        background: #e3f2fd;
+        padding: 10px;
+        border-left: 4px solid #2196f3;
+        margin: 10px 0;
+      }
+      .expected {
+        background: #f3e5f5;
+        padding: 10px;
+        border-left: 4px solid #7b1fa2;
+        margin: 10px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🤖 Bot Mode Testing Guide</h1>
+
+    <h2>Step-by-Step Testing Process</h2>
+
+    <div class="step">
+      <h3>1. Initial State (Lead Mode)</h3>
+      <p><strong>Action:</strong> Load a page with the chatbot widget</p>
+      <div class="expected">
+        <strong>Expected Indicator:</strong> Purple badge showing "LEAD MODE"
+      </div>
+      <p><strong>Browser Console Check:</strong></p>
+      <code>
+        // API Response should show:<br />
+        { "botMode": "lead_generation", "userEmail": null }
+      </code>
+    </div>
+
+    <div class="step">
+      <h3>2. Lead Generation Conversation</h3>
+      <p><strong>Actions:</strong></p>
+      <ul>
+        <li>Ask: "What services do you offer?"</li>
+        <li>Ask: "How much does it cost?"</li>
+        <li>Ask: "Can you help me with my project?"</li>
+      </ul>
+      <div class="expected">
+        <strong>Expected Indicator:</strong> Purple badge stays "LEAD MODE"
+      </div>
+      <p>
+        <strong>Bot Behavior:</strong> Should ask qualifying questions, try to
+        capture email
+      </p>
+    </div>
+
+    <div class="step">
+      <h3>3. Email Submission (Mode Switch)</h3>
+      <p><strong>Actions:</strong></p>
+      <ul>
+        <li>Provide your email when prompted</li>
+        <li>Or type: "My email is test@example.com"</li>
+      </ul>
+      <div class="indicator">
+        <strong>Expected Mode Switch:</strong> Blue badge showing "SALES MODE •
+        test@example.com"
+      </div>
+      <p><strong>Browser Console Check:</strong></p>
+      <code>
+        // API Response should show:<br />
+        { "botMode": "sales", "userEmail": "test@example.com" }
+      </code>
+    </div>
+
+    <div class="step">
+      <h3>4. Sales Mode Conversation</h3>
+      <p><strong>Actions:</strong></p>
+      <ul>
+        <li>Ask: "What's the next step?"</li>
+        <li>Ask: "When can we schedule a call?"</li>
+        <li>Ask: "What are the pricing options?"</li>
+      </ul>
+      <div class="indicator">
+        <strong>Expected Indicator:</strong> Blue badge stays "SALES MODE •
+        test@example.com"
+      </div>
+      <p>
+        <strong>Bot Behavior:</strong> Should focus on sales process,
+        scheduling, next steps
+      </p>
+    </div>
+
+    <h2>🔍 Debugging Checklist</h2>
+
+    <div class="step">
+      <h3>Visual Indicators Not Showing?</h3>
+      <ul>
+        <li>Check if you're using the updated Chatbot.tsx component</li>
+        <li>Verify the widget is loading the latest version</li>
+        <li>Look for CSS styling conflicts</li>
+      </ul>
+    </div>
+
+    <div class="step">
+      <h3>Mode Not Switching?</h3>
+      <ul>
+        <li>Check email detection regex in chat API route</li>
+        <li>Verify email is being saved to database</li>
+        <li>Look at browser console for API response data</li>
+      </ul>
+    </div>
+
+    <div class="step">
+      <h3>Wrong Bot Responses?</h3>
+      <ul>
+        <li>Check which system prompt is being used</li>
+        <li>Verify botMode is correctly passed to OpenAI</li>
+        <li>Review conversation history in database</li>
+      </ul>
+    </div>
+
+    <script>
+      console.log("🤖 Bot Mode Testing Guide Loaded");
+      console.log(
+        "Open your chatbot widget and follow the testing steps above"
+      );
+      console.log(
+        "Watch this console for API response data containing botMode information"
+      );
+    </script>
+  </body>
+</html>

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bot Mode Indicator Test - Simple</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .container {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .debug-info {
+        background: #fff3cd;
+        padding: 15px;
+        border-radius: 6px;
+        margin-bottom: 20px;
+        border: 1px solid #ffeaa7;
+      }
+      .chatbot-container {
+        margin-top: 20px;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🤖 Bot Mode Indicator Debug Test</h1>
+
+      <div class="debug-info">
+        <h3>🔍 Debug Steps:</h3>
+        <ol>
+          <li>
+            <strong>Look for the indicator:</strong> Top-right corner of chatbot
+            widget
+          </li>
+          <li>
+            <strong>Initial state:</strong> Should show purple "LEAD MODE" badge
+          </li>
+          <li>
+            <strong>After email:</strong> Should switch to blue "SALES MODE"
+            badge
+          </li>
+          <li>
+            <strong>Open browser console:</strong> Check for any JavaScript
+            errors
+          </li>
+          <li>
+            <strong>Network tab:</strong> Verify API responses include botMode
+            field
+          </li>
+        </ol>
+      </div>
+
+      <div class="chatbot-container">
+        <p>
+          <strong>Expected Widget Location:</strong> The chatbot should appear
+          below with a mode indicator in the header.
+        </p>
+
+        <!-- Import the actual Chatbot component -->
+        <div id="chatbot-widget">
+          <!-- This is where the actual React component should be rendered -->
+          <p style="color: #666; font-style: italic">
+            ⚠️ This is a test page. The actual widget needs to be properly
+            embedded here.
+          </p>
+          <p style="color: #666; font-size: 14px">
+            Are you testing this on a page where the chatbot widget is actually
+            loaded?
+          </p>
+        </div>
+      </div>
+
+      <div
+        style="
+          margin-top: 30px;
+          padding: 20px;
+          background: #e3f2fd;
+          border-radius: 6px;
+        "
+      >
+        <h3>🚨 Troubleshooting Checklist</h3>
+        <ul>
+          <li>
+            <strong>Widget not showing at all?</strong>
+            <ul>
+              <li>
+                Check if you're on a page where the widget is properly embedded
+              </li>
+              <li>Verify the React component is actually being rendered</li>
+              <li>Look for JavaScript console errors</li>
+            </ul>
+          </li>
+          <li>
+            <strong>Widget showing but no indicator?</strong>
+            <ul>
+              <li>Check if you're using the updated Chatbot.tsx component</li>
+              <li>Verify the component has been rebuilt/redeployed</li>
+              <li>Look for CSS conflicts hiding the indicator</li>
+            </ul>
+          </li>
+          <li>
+            <strong>Indicator not updating?</strong>
+            <ul>
+              <li>Check browser console for API response data</li>
+              <li>Verify botMode field is present in API responses</li>
+              <li>Check React state in browser dev tools</li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <script>
+      console.log("🔍 Bot Mode Debug Test Page Loaded");
+      console.log("📋 Debugging checklist:");
+      console.log("1. Is the chatbot widget actually visible on this page?");
+      console.log("2. Are there any JavaScript errors in the console?");
+      console.log(
+        "3. When you interact with the bot, do you see API requests in Network tab?"
+      );
+      console.log("4. Do the API responses contain botMode field?");
+
+      // Debug function to check for the chatbot component
+      function checkForChatbot() {
+        const chatbotElements = document.querySelectorAll(
+          '[style*="border: 1px solid #ccc"]'
+        );
+        console.log(
+          "🤖 Found potential chatbot elements:",
+          chatbotElements.length
+        );
+
+        if (chatbotElements.length > 0) {
+          chatbotElements.forEach((el, index) => {
+            console.log(`Chatbot element ${index}:`, el);
+            const indicator = el.querySelector('[style*="borderRadius: 12"]');
+            console.log(`Mode indicator found:`, indicator);
+          });
+        } else {
+          console.log(
+            "❌ No chatbot elements found. Are you on the right page?"
+          );
+        }
+      }
+
+      // Check for chatbot every 2 seconds
+      setInterval(checkForChatbot, 2000);
+    </script>
+  </body>
+</html>
