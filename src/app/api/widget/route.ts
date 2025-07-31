@@ -536,6 +536,11 @@ export async function GET(request: Request) {
       
       console.log('[ChatWidget] API response for proactive request:', data);
       
+      // Update bot mode indicator
+      if (data.botMode) {
+        updateBotModeIndicator(data.botMode, data.userEmail);
+      }
+      
       if (data.answer) {
         console.log('[ChatWidget] Received proactive message from API:', data.answer.substring(0, 100) + '...');
         // Send proactive message if auto-open is enabled
@@ -553,6 +558,26 @@ export async function GET(request: Request) {
       }
     } catch (error) {
       console.error('[ChatWidget] Failed to load page context:', error);
+    }
+  }
+  
+  // Update bot mode indicator
+  function updateBotModeIndicator(botMode, userEmail) {
+    const indicator = document.getElementById('appointy-bot-mode-indicator');
+    if (!indicator) return;
+    
+    console.log('[Widget] Updating bot mode indicator:', { botMode, userEmail });
+    
+    if (botMode === 'sales') {
+      indicator.style.backgroundColor = 'rgba(227, 242, 253, 0.9)';
+      indicator.style.color = '#1976d2';
+      indicator.style.border = '1px solid rgba(187, 222, 251, 0.7)';
+      indicator.textContent = userEmail ? \`SALES MODE • \${userEmail}\` : 'SALES MODE';
+    } else {
+      indicator.style.backgroundColor = 'rgba(243, 229, 245, 0.9)';
+      indicator.style.color = '#7b1fa2';
+      indicator.style.border = '1px solid rgba(225, 190, 231, 0.7)';
+      indicator.textContent = 'LEAD MODE';
     }
   }
   
@@ -596,7 +621,12 @@ export async function GET(request: Request) {
     return \`
       <div style="display: flex; flex-direction: column; height: 100%; background: white; border-radius: 12px; overflow: hidden;">
         <div style="background: \${currentTheme.primary}; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center;">
-          <h3 style="margin: 0; font-size: 16px; font-weight: 600;">\${config.chatTitle}</h3>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <h3 style="margin: 0; font-size: 16px; font-weight: 600;">\${config.chatTitle}</h3>
+            <div id="appointy-bot-mode-indicator" style="padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; background-color: rgba(243, 229, 245, 0.9); color: #7b1fa2; border: 1px solid rgba(225, 190, 231, 0.7);">
+              LEAD MODE
+            </div>
+          </div>
           <div style="display: flex; gap: 8px; align-items: center;">
             <button id="appointy-settings-btn" style="background: none; border: none; color: white; font-size: 18px; cursor: pointer; padding: 4px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 4px;" title="Voice Settings">⚙️</button>
             <button id="appointy-close-btn" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer; padding: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">×</button>
@@ -733,6 +763,11 @@ export async function GET(request: Request) {
       
       console.log('[Widget] Followup API response:', data);
       
+      // Update bot mode indicator
+      if (data.botMode) {
+        updateBotModeIndicator(data.botMode, data.userEmail);
+      }
+      
       if (data.mainText || data.answer) {
         const botMessage = {
           role: 'assistant',
@@ -794,6 +829,11 @@ export async function GET(request: Request) {
     
     // Hide typing indicator
     hideTypingIndicator();
+    
+    // Update bot mode indicator
+    if (data.botMode) {
+      updateBotModeIndicator(data.botMode, data.userEmail);
+    }
     
     let botResponse = '';
     if (data.error) {
