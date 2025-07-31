@@ -592,7 +592,7 @@ Content to reference:\n${summaryContext}`;
           messages: [
             {
               role: "system",
-              content: `You are a proactive assistant. Create engaging, professional messages with emojis and proper formatting. Follow the exact format provided in the user prompt. Focus on being warm, informative, and encouraging engagement.`,
+              content: `You are a proactive assistant. Create engaging, professional messages with emojis and proper formatting. Follow the exact format provided in the user prompt. Focus on being warm, informative, and encouraging engagement. KEEP MESSAGES SHORT: Use 2-3 short sentences max. Break content into bullet points (•) with line breaks for better readability in chat format.`,
             },
             { role: "user", content: summaryPrompt },
           ],
@@ -697,6 +697,14 @@ Content to reference:\n${summaryContext}`;
         // Use followupCount from request body to determine follow-up stage
         const followupCount =
           typeof body.followupCount === "number" ? body.followupCount : 0;
+
+        // Check if user already has email (sales mode)
+        const lastEmailMsg = await chats.findOne(
+          { sessionId, email: { $exists: true } },
+          { sort: { createdAt: -1 } }
+        );
+        const userHasEmail = lastEmailMsg && lastEmailMsg.email;
+
         let followupSystemPrompt = "";
         let followupUserPrompt = "";
         if (followupCount === 0) {
@@ -706,7 +714,7 @@ You are a helpful sales assistant. The user has not provided an email yet.
 
 You will receive page and general context, the detected intent, and the previous conversation. Always generate your response in the following JSON format:
 {
-  "mainText": "<A single, creative, engaging, and highly specific nudge for the user, based on the page context, detected intent, and their last action. Reference details from the page context, detected intent, or last action if possible. Do NOT ask a generic or repetitive question. Do NOT repeat or rephrase any of the last few questions. Do NOT include a summary or multiple questions. Vary the nudge text for each follow-up.>",
+  "mainText": "<A single, creative, engaging, and highly specific nudge for the user, based on the page context, detected intent, and their last action. Reference details from the page context, detected intent, or last action if possible. Do NOT ask a generic or repetitive question. Do NOT repeat or rephrase any of the last few questions. Do NOT include a summary or multiple questions. Vary the nudge text for each follow-up. KEEP SHORT: Use 1-2 sentences max with emojis for engagement.>",
   "buttons": ["<2-4 actionable, context-aware options for the user to choose from, based on the nudge, detected intent, and page context. Make them relevant to the user's needs or the page content. Do not use generic options.>"],
   "emailPrompt": ""
 }
@@ -738,7 +746,7 @@ You are a helpful sales assistant. The user has not provided an email yet.
 
 You will receive page and general context, the detected intent, and the previous conversation. Always generate your response in the following JSON format:
 {
-  "mainText": "<A micro-conversion nudge—a small, low-friction ask (e.g., 'Want to save this setup guide to your email?' or 'Should I show how others customize their services?'), based on the user's last action, detected intent, page context, or detected intent. Do NOT ask for a discovery call or email directly. Vary the nudge text for each follow-up.>",
+  "mainText": "<A micro-conversion nudge—a small, low-friction ask (e.g., 'Want to save this setup guide to your email?' or 'Should I show how others customize their services?'), based on the user's last action, detected intent, page context, or detected intent. Do NOT ask for a discovery call or email directly. Vary the nudge text for each follow-up. KEEP SHORT: Use 1-2 sentences max with casual, friendly tone.>",
   "buttons": ["<2-4 actionable, context-aware options for the user to choose from, based on the nudge, detected intent, and page context. Make them relevant to the user's needs or the page content. Do not use generic options.>"],
   "emailPrompt": ""
 }
@@ -756,8 +764,34 @@ ${previousQnA}
 - Your mainText must be a micro-conversion nudge, referencing the user's last action, detected intent, page context, or detected intent. Do NOT ask for a discovery call or email directly. Vary the nudge text for each follow-up.`;
           followupUserPrompt = `Ask a micro-conversion nudge—a small, low-friction ask (e.g., 'Want to save this setup guide to your email?' or 'Should I show how others customize their services?'), based on the user's last action, detected intent, page context, or detected intent. Do NOT ask for a discovery call or email directly. Vary the nudge text for each follow-up. Only output the JSON format as instructed.`;
         } else if (followupCount === 2) {
-          // Third follow-up: ask for email, tip is optional
-          followupSystemPrompt = `
+          // Third follow-up: check if user already has email
+          if (userHasEmail) {
+            // User is in sales mode - provide value-added engagement instead of asking for email
+            followupSystemPrompt = `
+You are a helpful sales assistant. The user has already provided their email and is in sales mode.
+
+You will receive page and general context, the detected intent, and the previous conversation. Always generate your response in the following JSON format:
+{
+  "mainText": "<Offer value-added help like scheduling a personalized demo, connecting to an expert, providing additional resources, or suggesting next steps based on their page context and detected intent. Be specific and actionable. KEEP SHORT: Use 1-2 sentences max with professional, confident tone.>",
+  "buttons": ["<2-3 high-value options like 'Schedule a demo', 'Talk to specialist', 'Get custom quote', etc. based on page context>"],
+  "emailPrompt": ""
+}
+Context:
+Page Context:
+${pageChunks.slice(0, 3).join("\n---\n")}
+General Context:
+${pageChunks.join(" ")}
+Detected Intent:
+${detectedIntent}
+Previous Conversation:
+${previousQnA}
+- Only use the above JSON format.
+- Do not answer in any other way.
+- Your mainText must offer value-added help since the user is already a qualified lead with email provided.`;
+            followupUserPrompt = `Offer value-added help like scheduling a demo, connecting to an expert, or suggesting next steps. The user has already provided their email so focus on high-value actions. Only output the JSON format as instructed.`;
+          } else {
+            // User hasn't provided email yet - ask for it
+            followupSystemPrompt = `
 You are a helpful sales assistant. The user has not provided an email yet.
 
 You will receive page and general context, the detected intent, and the previous conversation. Always generate your response in the following JSON format:
@@ -778,10 +812,27 @@ ${previousQnA}
 - Only use the above JSON format.
 - Do not answer in any other way.
 - Your mainText must be a friendly, direct request for the user's email, referencing the page context or detected intent if possible. Do NOT ask another qualifying question or repeat previous questions.`;
-          followupUserPrompt = `Ask the user for their email in a friendly, direct way, explaining why you need it to send them setup instructions, a demo, or connect them to support for this page. Reference the page context or detected intent if possible. Do NOT ask another qualifying question. Do NOT include any buttons. Only output the JSON format as instructed.`;
+            followupUserPrompt = `Ask the user for their email in a friendly, direct way, explaining why you need it to send them setup instructions, a demo, or connect them to support for this page. Reference the page context or detected intent if possible. Do NOT ask another qualifying question. Do NOT include any buttons. Only output the JSON format as instructed.`;
+          }
         } else if (followupCount === 3) {
-          // Final nudge for abandoners: offer to email a summary, tip is optional
-          followupSystemPrompt = `
+          // Final nudge: check if user already has email
+          if (userHasEmail) {
+            // User is in sales mode - provide a final high-value offer
+            followupSystemPrompt = `You are a helpful sales assistant. The user has already provided their email and is in sales mode. Always generate your response in the following JSON format:
+{
+  "mainText": "<Final high-value offer like exclusive access, priority support, limited-time bonus, or direct connection to decision maker. Make it compelling and time-sensitive based on their page context.>",
+  "buttons": ["<2-3 high-value final options>"],
+  "emailPrompt": ""
+}
+Context: Page Context: ${pageChunks
+              .slice(0, 3)
+              .join("\\n---\\n")} General Context: ${pageChunks.join(
+              " "
+            )} Detected Intent: ${detectedIntent} Previous Conversation: ${previousQnA} - Only use the above JSON format. - Do not answer in any other way. - Your mainText must be a final high-value offer since the user is already qualified.`;
+            followupUserPrompt = `Make a final high-value offer like exclusive access, priority support, or direct connection to decision maker. The user already provided email so focus on conversion. Only output the JSON format as instructed.`;
+          } else {
+            // User hasn't provided email yet - final summary offer
+            followupSystemPrompt = `
 You are a helpful sales assistant. The user has not provided an email yet and has not responded to several nudges.
 
 You will receive page and general context, the detected intent, and the previous conversation. Always generate your response in the following JSON format:
@@ -802,7 +853,8 @@ ${previousQnA}
 - Only use the above JSON format.
 - Do not answer in any other way.
 - Your mainText must summarize the user's last few actions or options and offer to email a summary.`;
-          followupUserPrompt = `Offer to email the user a summary of their options, summarizing their last few actions or options in a friendly way. Only output the JSON format as instructed.`;
+            followupUserPrompt = `Offer to email the user a summary of their options, summarizing their last few actions or options in a friendly way. Only output the JSON format as instructed.`;
+          }
         } else {
           // No more follow-ups after 4
           console.log(
@@ -1113,7 +1165,7 @@ What would you like to know more about? Feel free to ask me anything or let me k
     systemPrompt = `You are a helpful sales assistant for a company. The user has provided their email (${userEmail}) and is now a qualified lead. Focus on sales, product benefits, pricing, and closing deals. Always generate your response in the following JSON format:
 
 {
-  "mainText": "<Provide sales-focused, persuasive responses about products/services, pricing, benefits, case studies, or next steps. Be enthusiastic and focus on value proposition. Use the context below to provide specific information.>",
+  "mainText": "<Provide sales-focused, persuasive responses about products/services, pricing, benefits, case studies, or next steps. Be enthusiastic and focus on value proposition. Use the context below to provide specific information. KEEP MESSAGES SHORT: Use 2-3 short sentences max. Break longer content into bullet points with line breaks. Use emojis sparingly for emphasis.>",
   "buttons": ["<Generate 2-4 sales-oriented action buttons like 'Get Pricing', 'Schedule Demo', 'View Case Studies', 'Speak with Sales Rep', 'Compare Plans', etc. Make them action-oriented and sales-focused.>"],
   "emailPrompt": ""
 }
@@ -1125,14 +1177,14 @@ ${pageContext}
 General Context:
 ${context}
 
-IMPORTANT: This user is qualified (has provided email). Focus on sales, conversion, and closing. Generate sales-oriented buttons that move them towards purchase decisions. No need to ask for email again.`;
+IMPORTANT: This user is qualified (has provided email). Focus on sales, conversion, and closing. Generate sales-oriented buttons that move them towards purchase decisions. No need to ask for email again. KEEP ALL RESPONSES CONCISE AND SCANNABLE.`;
   } else {
     // Special handling for different types of requests
     if (isTalkToSupport) {
       systemPrompt = `You are a helpful support assistant. The user wants to talk to support. Provide a helpful, specific support response based on the context and their needs. Always generate your response in the following JSON format:
 
 {
-  "mainText": "<A helpful, specific support response that addresses their likely needs based on the context. Be warm and professional. Provide specific next steps or information about how to get help.>",
+  "mainText": "<A helpful, specific support response that addresses their likely needs based on the context. Be warm and professional. Provide specific next steps or information about how to get help. KEEP MESSAGES SHORT: Use 2-3 short sentences max. Break steps into bullet points with line breaks. Use emojis sparingly for clarity.>",
   "buttons": ["<Generate 2-3 relevant support-related actions like 'Schedule Support Call', 'Check Help Center', 'Report Technical Issue', etc. Make them specific to their context.>"],
   "emailPrompt": ""
 }
@@ -1144,12 +1196,12 @@ ${pageContext}
 General Context:
 ${context}
 
-IMPORTANT: Focus on being helpful and supportive. Don't ask for email unless it's specifically needed for support. Generate contextual support-related buttons.`;
+IMPORTANT: Focus on being helpful and supportive. Don't ask for email unless it's specifically needed for support. Generate contextual support-related buttons. KEEP ALL RESPONSES CONCISE AND ACTIONABLE.`;
     } else if (isEmailRequest) {
       systemPrompt = `You are a helpful sales assistant. The user is asking about email or wanting something sent to their email. Always generate your response in the following JSON format:
 
 {
-  "mainText": "<Acknowledge their email request and explain what you can send them. Be specific about what information or resources you'll provide.>",
+  "mainText": "<Acknowledge their email request and explain what you can send them. Be specific about what information or resources you'll provide. KEEP MESSAGES SHORT: Use 1-2 short sentences max. Be direct and clear about what they'll receive.>",
   "buttons": [],
   "emailPrompt": "Please enter your email address and I'll send you the information right away!"
 }
@@ -1161,9 +1213,9 @@ ${pageContext}
 General Context:
 ${context}
 
-IMPORTANT: Don't provide other action buttons when user is requesting email. Focus on the email collection.`;
+IMPORTANT: Don't provide other action buttons when user is requesting email. Focus on the email collection. KEEP RESPONSE BRIEF AND FOCUSED.`;
     } else {
-      systemPrompt = `You are a helpful sales assistant. The user has not provided an email yet.\n\nYou will receive page and general context. Always generate your response in the following JSON format:\n\n{\n  "mainText": "<A dynamic, page-aware summary or answer, using the context below.>",\n  "buttons": ["<Generate 2-4 contextually relevant action buttons based on the user's question and the content you provided. These should be specific to their query and help them take the next logical step. For example, if they ask about hosting, buttons could be 'Learn About Security', 'Compare Plans', 'Contact Hosting Team'. Make buttons actionable and relevant to the specific topic discussed.>"],\n  "emailPrompt": "<Create a contextual email prompt that relates to the specific topic discussed, offering to send more detailed information about that topic specifically.>"\n}\n\nContext:\nPage Context:\n${pageContext}\n\nGeneral Context:\n${context}\n\nIMPORTANT: Generate buttons and email prompt that are directly related to the user's specific question and your answer. Do not use generic buttons. Make them actionable and relevant to the conversation topic.`;
+      systemPrompt = `You are a helpful sales assistant. The user has not provided an email yet.\n\nYou will receive page and general context. Always generate your response in the following JSON format:\n\n{\n  "mainText": "<A dynamic, page-aware summary or answer, using the context below. KEEP MESSAGES SHORT: Use 2-3 short sentences max. Break longer content into bullet points with line breaks (•). Use emojis sparingly for emphasis. Make responses scannable and easy to read in chat format.>",\n  "buttons": ["<Generate 2-4 contextually relevant action buttons based on the user's question and the content you provided. These should be specific to their query and help them take the next logical step. For example, if they ask about hosting, buttons could be 'Learn About Security', 'Compare Plans', 'Contact Hosting Team'. Make buttons actionable and relevant to the specific topic discussed.>"],\n  "emailPrompt": "<Create a contextual email prompt that relates to the specific topic discussed, offering to send more detailed information about that topic specifically.>"\n}\n\nContext:\nPage Context:\n${pageContext}\n\nGeneral Context:\n${context}\n\nIMPORTANT: Generate buttons and email prompt that are directly related to the user's specific question and your answer. Do not use generic buttons. Make them actionable and relevant to the conversation topic. KEEP ALL RESPONSES CONCISE, SCANNABLE, AND CHAT-FRIENDLY.`;
     }
   }
 
