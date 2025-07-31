@@ -731,8 +731,8 @@ You are a helpful sales assistant. The user has not provided an email yet.
 
 You will receive page and general context, the detected intent, and the previous conversation. Always generate your response in the following JSON format:
 {
-  "mainText": "<A single, creative, engaging, and highly specific nudge for the user, based on the page context, detected intent, and their last action. Reference details from the page context, detected intent, or last action if possible. Do NOT ask a generic or repetitive question. Do NOT repeat or rephrase any of the last few questions. Do NOT include a summary or multiple questions. Vary the nudge text for each follow-up. KEEP SHORT: Use 1-2 sentences max with emojis for engagement. If multiple points needed, format: 'Short intro\\n\\n• Point 1\\n\\n• Point 2'.>",
-  "buttons": ["<2-4 actionable, context-aware options for the user to choose from, based on the nudge, detected intent, and page context. Make them relevant to the user's needs or the page content. Do not use generic options.>"],
+  "mainText": "<A single, creative, engaging nudge for the user. STRICT LIMITS: Maximum 30 words total. Be specific to page context and detected intent. Do NOT repeat previous questions. Keep it super concise and engaging with emojis. Format: 'Short intro\\n\\n• Point 1\\n\\n• Point 2' if needed.>",
+  "buttons": ["<Generate exactly 3 buttons, each must be 3-4 words maximum. Make them actionable and context-specific. Examples: 'See Pricing', 'Get Demo', 'Learn More', 'Contact Sales'>"],
   "emailPrompt": ""
 }
 Context:
@@ -746,16 +746,16 @@ Previous Conversation:
 ${previousQnA}
 - Only use the above JSON format.
 - Do not answer in any other way.
-- Your mainText must be a single, creative, engaging, and highly specific nudge that references the page context, detected intent, or last action if possible. Do NOT repeat or rephrase any of these previous questions: ${lastFewQuestions
+- Your mainText must be maximum 30 words. Be creative, engaging, and specific to page context. Do NOT repeat previous questions: ${lastFewQuestions
             .map((q) => `"${getText(q)}"`)
             .join(", ")}. Do NOT include a summary or multiple questions.
-- For the 'buttons' array, generate 2-4 actionable, context-aware options for the user to choose from, based on the nudge, detected intent, and page context. Make them relevant to the user's needs or the page content. Do not use generic options.
+- Generate exactly 3 buttons, each 3-4 words maximum. Be relevant to user needs.
 - Vary the nudge text for each follow-up.`;
-          followupUserPrompt = `Ask only one, creative, engaging, and highly specific nudge to further engage the user. Use the page context, detected intent, and last action below to make your nudge relevant and interesting. Do NOT ask a generic or repetitive question. Do NOT repeat or rephrase any of these previous questions: ${lastFewQuestions
+          followupUserPrompt = `Create ONE nudge (max 30 words) to engage user. Use page context and intent. Do NOT repeat questions: ${lastFewQuestions
             .map((q) => `"${getText(q)}"`)
             .join(
               ", "
-            )}. Do NOT include a summary or multiple questions. For the 'buttons' array, generate 2-4 actionable, context-aware options for the user to choose from, based on the nudge, detected intent, and page context. Make them relevant to the user's needs or the page content. Do not use generic options. Vary the nudge text for each follow-up. Only output the JSON format as instructed.`;
+            )}. Generate exactly 3 buttons (3-4 words each). JSON format only.`;
         } else if (followupCount === 1) {
           // Second follow-up: micro-conversion nudge, tip is optional
           followupSystemPrompt = `
@@ -763,8 +763,8 @@ You are a helpful sales assistant. The user has not provided an email yet.
 
 You will receive page and general context, the detected intent, and the previous conversation. Always generate your response in the following JSON format:
 {
-  "mainText": "<A micro-conversion nudge—a small, low-friction ask (e.g., 'Want to save this setup guide to your email?' or 'Should I show how others customize their services?'), based on the user's last action, detected intent, page context, or detected intent. Do NOT ask for a discovery call or email directly. Vary the nudge text for each follow-up. KEEP SHORT: Use 1-2 sentences max with casual, friendly tone. If multiple benefits, format: 'Short question\\n\\n• Benefit 1\\n\\n• Benefit 2'.>",
-  "buttons": ["<2-4 actionable, context-aware options for the user to choose from, based on the nudge, detected intent, and page context. Make them relevant to the user's needs or the page content. Do not use generic options.>"],
+  "mainText": "<A micro-conversion nudge—small, low-friction ask. STRICT LIMITS: Maximum 30 words total. Examples: 'Want this setup guide emailed?' or 'Should I show customization options?' Use casual, friendly tone. Be specific to their context.>",
+  "buttons": ["<Generate exactly 3 buttons, each must be 3-4 words maximum. Make them actionable and context-specific. Examples: 'Yes Please', 'Show Options', 'Learn More'>"],
   "emailPrompt": ""
 }
 Context:
@@ -813,7 +813,7 @@ You are a helpful sales assistant. The user has not provided an email yet.
 
 You will receive page and general context, the detected intent, and the previous conversation. Always generate your response in the following JSON format:
 {
-  "mainText": "<A friendly, direct request for the user's email, explaining why you need it to send them personalized setup instructions, a demo, or other page-relevant action. Reference the page context or detected intent if possible. Do NOT ask another qualifying question.>",
+  "mainText": "<A friendly, direct request for email. STRICT LIMITS: Maximum 30 words total. Explain briefly why you need it. Reference page context. Example: 'Quick! Want the setup guide emailed? Takes 2 seconds! 📧'>",
   "buttons": [],
   "emailPrompt": "<Create a contextual email prompt that relates to the specific page content and detected intent. Explain what specific information or help you'll send them based on what they're viewing.>"
 }
@@ -837,8 +837,8 @@ ${previousQnA}
             // User is in sales mode - provide a final high-value offer
             followupSystemPrompt = `You are a helpful sales assistant. The user has already provided their email and is in sales mode. Always generate your response in the following JSON format:
 {
-  "mainText": "<Final high-value offer like exclusive access, priority support, limited-time bonus, or direct connection to decision maker. Make it compelling and time-sensitive based on their page context.>",
-  "buttons": ["<2-3 high-value final options>"],
+  "mainText": "<Final high-value offer. STRICT LIMITS: Maximum 30 words total. Make it compelling and time-sensitive. Examples: 'Exclusive early access available! Limited spots for priority onboarding. Ready to secure yours? 🚀'>",
+  "buttons": ["<Generate exactly 3 buttons, each must be 3-4 words maximum. High-value options like 'Secure Access', 'Book Call', 'Get Started'>"],
   "emailPrompt": ""
 }
 Context: Page Context: ${pageChunks
@@ -854,8 +854,8 @@ You are a helpful sales assistant. The user has not provided an email yet and ha
 
 You will receive page and general context, the detected intent, and the previous conversation. Always generate your response in the following JSON format:
 {
-  "mainText": "<Looks like you stepped away. I’ve saved all your options—want a summary emailed to you? Summarize the user's last few actions or options in a friendly way.>",
-  "buttons": ["Yes, email me a summary", "No, thanks"],
+  "mainText": "<Looks like you stepped away. I’ve saved all your options! Want a quick summary emailed? 📧 STRICT LIMITS: Maximum 30 words total. Be friendly.>",
+  "buttons": ["Yes Email Me", "No Thanks", "Keep Browsing"],
   "emailPrompt": "If you'd like a summary or more help, I can email it to you."
 }
 Context:
