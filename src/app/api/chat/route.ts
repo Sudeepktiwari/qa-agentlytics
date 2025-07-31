@@ -815,7 +815,7 @@ You will receive page and general context, the detected intent, and the previous
 {
   "mainText": "<A friendly, direct request for the user's email, explaining why you need it to send them personalized setup instructions, a demo, or other page-relevant action. Reference the page context or detected intent if possible. Do NOT ask another qualifying question.>",
   "buttons": [],
-  "emailPrompt": "Please enter your email so I can send you the exact steps, demo, or connect you to support for this page!"
+  "emailPrompt": "<Create a contextual email prompt that relates to the specific page content and detected intent. Explain what specific information or help you'll send them based on what they're viewing.>"
 }
 Context:
 Page Context:
@@ -1025,7 +1025,7 @@ What would you like to know more about? Feel free to ask me anything or let me k
           mainText:
             "Is there anything else you'd like to know about the available features?",
           buttons: ["Learn More Features", "Get Demo", "Contact Support"],
-          emailPrompt: "Want me to send you more details? Share your email!",
+          emailPrompt: "",
           botMode,
           userEmail: userEmail || null,
         },
@@ -1069,7 +1069,7 @@ What would you like to know more about? Feel free to ask me anything or let me k
           {
             mainText: message,
             buttons: ["Learn More Features", "Get Demo", "Contact Support"],
-            emailPrompt: "Want me to send you more details? Share your email!",
+            emailPrompt: "",
             botMode,
             userEmail: userEmail || null,
           },
@@ -1220,7 +1220,7 @@ IMPORTANT: Focus on being helpful and supportive. Don't ask for email unless it'
 {
   "mainText": "<Acknowledge their email request and explain what you can send them. Be specific about what information or resources you'll provide. MANDATORY FORMATTING: Use 1-2 short sentences maximum. Be direct and clear about what they'll receive. NO BULLET POINTS needed for simple email acknowledgments.>",
   "buttons": [],
-  "emailPrompt": "Please enter your email address and I'll send you the information right away!"
+  "emailPrompt": "<Create a contextual email prompt specific to what they requested. Be clear about what exactly you'll send them based on their request.>"
 }
 
 Context:
