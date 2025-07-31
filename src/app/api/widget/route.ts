@@ -569,15 +569,11 @@ export async function GET(request: Request) {
     console.log('[Widget] Updating bot mode indicator:', { botMode, userEmail });
     
     if (botMode === 'sales') {
-      indicator.style.backgroundColor = 'rgba(227, 242, 253, 0.9)';
-      indicator.style.color = '#1976d2';
-      indicator.style.border = '1px solid rgba(187, 222, 251, 0.7)';
-      indicator.textContent = userEmail ? \`SALES MODE • \${userEmail}\` : 'SALES MODE';
+      indicator.style.backgroundColor = '#4caf50'; // Green for sales
+      indicator.title = userEmail ? \`Sales Mode • \${userEmail}\` : 'Sales Mode';
     } else {
-      indicator.style.backgroundColor = 'rgba(243, 229, 245, 0.9)';
-      indicator.style.color = '#7b1fa2';
-      indicator.style.border = '1px solid rgba(225, 190, 231, 0.7)';
-      indicator.textContent = 'LEAD MODE';
+      indicator.style.backgroundColor = '#7b1fa2'; // Purple for lead
+      indicator.title = 'Lead Mode';
     }
   }
   
@@ -623,8 +619,7 @@ export async function GET(request: Request) {
         <div style="background: \${currentTheme.primary}; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center;">
           <div style="display: flex; align-items: center; gap: 12px;">
             <h3 style="margin: 0; font-size: 16px; font-weight: 600;">\${config.chatTitle}</h3>
-            <div id="appointy-bot-mode-indicator" style="padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; background-color: rgba(243, 229, 245, 0.9); color: #7b1fa2; border: 1px solid rgba(225, 190, 231, 0.7);">
-              LEAD MODE
+            <div id="appointy-bot-mode-indicator" style="width: 12px; height: 12px; border-radius: 50%; background-color: #7b1fa2; flex-shrink: 0;" title="Lead Mode">
             </div>
           </div>
           <div style="display: flex; gap: 8px; align-items: center;">

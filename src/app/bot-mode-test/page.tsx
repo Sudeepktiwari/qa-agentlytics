@@ -8,7 +8,7 @@ export default function BotModeTest() {
       <h1>🤖 Direct Bot Mode Indicator Test</h1>
 
       <div style={{ marginBottom: "20px" }}>
-        <h3>Test 1: Static Lead Mode Indicator</h3>
+        <h3>Test 1: Static Lead Mode Circle (Purple)</h3>
         <div
           style={{
             display: "flex",
@@ -24,22 +24,19 @@ export default function BotModeTest() {
           <h3 style={{ color: "#000000", margin: 0 }}>Chatbot</h3>
           <div
             style={{
-              padding: "4px 8px",
-              borderRadius: 12,
-              fontSize: "12px",
-              fontWeight: "bold",
-              backgroundColor: "#f3e5f5",
-              color: "#7b1fa2",
-              border: "1px solid #e1bee7",
+              width: 12,
+              height: 12,
+              borderRadius: "50%",
+              backgroundColor: "#7b1fa2",
+              flexShrink: 0,
             }}
-          >
-            LEAD MODE
-          </div>
+            title="Lead Mode"
+          ></div>
         </div>
       </div>
 
       <div style={{ marginBottom: "20px" }}>
-        <h3>Test 2: Static Sales Mode Indicator</h3>
+        <h3>Test 2: Static Sales Mode Circle (Green)</h3>
         <div
           style={{
             display: "flex",
@@ -55,20 +52,14 @@ export default function BotModeTest() {
           <h3 style={{ color: "#000000", margin: 0 }}>Chatbot</h3>
           <div
             style={{
-              padding: "4px 8px",
-              borderRadius: 12,
-              fontSize: "12px",
-              fontWeight: "bold",
-              backgroundColor: "#e3f2fd",
-              color: "#1976d2",
-              border: "1px solid #bbdefb",
+              width: 12,
+              height: 12,
+              borderRadius: "50%",
+              backgroundColor: "#4caf50",
+              flexShrink: 0,
             }}
-          >
-            SALES MODE
-            <span style={{ marginLeft: 4, opacity: 0.7 }}>
-              • test@example.com
-            </span>
-          </div>
+            title="Sales Mode • test@example.com"
+          ></div>
         </div>
       </div>
 
@@ -102,16 +93,14 @@ export default function BotModeTest() {
       >
         <strong>What you should see:</strong>
         <ul>
-          <li>Two chatbot headers with different colored badges</li>
-          <li>Purple &quot;LEAD MODE&quot; badge in the first one</li>
-          <li>
-            Blue &quot;SALES MODE • test@example.com&quot; badge in the second
-            one
-          </li>
+          <li>Two chatbot headers with different colored circles</li>
+          <li>Purple circle in the first one (Lead Mode)</li>
+          <li>Green circle in the second one (Sales Mode with email)</li>
           <li>Console log when clicking the button</li>
+          <li>Hover over circles to see tooltip with mode info</li>
         </ul>
 
-        <strong>If you don&apos;t see the badges:</strong>
+        <strong>If you don&apos;t see the circles:</strong>
         <ul>
           <li>There might be a CSS styling issue</li>
           <li>Check browser zoom level (try 100%)</li>
