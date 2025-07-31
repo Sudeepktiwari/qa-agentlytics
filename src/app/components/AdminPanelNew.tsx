@@ -31,6 +31,12 @@ const AdminPanel: React.FC = () => {
   const [sitemapStatus, setSitemapStatus] = useState<string | null>(null);
   const [sitemapLoading, setSitemapLoading] = useState(false);
 
+  // Auto-continue crawling state
+  const [autoContinue, setAutoContinue] = useState(false);
+  const [continueCrawling, setContinueCrawling] = useState(false);
+  const [totalProcessed, setTotalProcessed] = useState(0);
+  const [totalRemaining, setTotalRemaining] = useState(0);
+
   // Page URL dropdown state
   const [sitemapUrls, setSitemapUrls] = useState<
     { url: string; crawled: boolean }[]
@@ -138,33 +144,105 @@ const AdminPanel: React.FC = () => {
     }
   };
 
-  // Sitemap submission handler
+  // Sitemap submission handler with auto-continue support
   const handleSitemapSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSitemapStatus(null);
     setSitemapLoading(true);
+    setTotalProcessed(0);
+    setTotalRemaining(0);
+    await crawlBatch(sitemapUrl, true);
+  };
+
+  // Recursive crawling function
+  const crawlBatch = async (url: string, isInitial: boolean = false) => {
     try {
       const res = await fetch("/api/sitemap", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sitemapUrl }),
+        body: JSON.stringify({ sitemapUrl: url }),
       });
+
       const data = await res.json();
+
       if (res.ok) {
+        const newTotalProcessed = isInitial
+          ? data.crawled
+          : totalProcessed + data.crawled;
+        setTotalProcessed(newTotalProcessed);
+        setTotalRemaining(data.totalRemaining);
+
+        // Update status with progress information
+        const progressInfo = data.totalDiscovered
+          ? `Progress: ${newTotalProcessed}/${
+              data.totalDiscovered
+            } pages (${Math.round(
+              (newTotalProcessed / data.totalDiscovered) * 100
+            )}%)`
+          : `Processed: ${newTotalProcessed} pages`;
+
         setSitemapStatus(
-          `Success: Crawled ${data.crawled} pages, ${data.totalChunks} total chunks`
+          `✅ Batch Complete: ${data.crawled} pages crawled, ${data.totalChunks} chunks created\n` +
+            `📊 ${progressInfo}\n` +
+            `⏱️ Execution time: ${Math.round(data.executionTime / 1000)}s\n` +
+            `${data.message}`
         );
-        // Refresh sitemap URLs
+
+        // Auto-continue if there are more pages and auto-continue is enabled
+        if (data.hasMorePages && (autoContinue || continueCrawling)) {
+          setSitemapStatus(
+            (prev) => prev + `\n\n🔄 Auto-continuing in 2 seconds...`
+          );
+
+          // Wait 2 seconds before continuing to prevent overwhelming the server
+          setTimeout(() => {
+            crawlBatch(url, false);
+          }, 2000);
+        } else if (data.hasMorePages) {
+          setSitemapStatus(
+            (prev) =>
+              prev +
+              `\n\n💡 ${data.totalRemaining} pages remaining. Enable auto-continue or click "Continue Crawling" to process more.`
+          );
+          setSitemapLoading(false);
+        } else {
+          setSitemapStatus(
+            (prev) => prev + `\n\n🎉 All pages have been crawled successfully!`
+          );
+          setSitemapLoading(false);
+          setContinueCrawling(false);
+        }
+
+        // Refresh sitemap URLs after each batch
         fetchSitemapUrls();
       } else {
-        setSitemapStatus(`Error: ${data.error}`);
+        setSitemapStatus(`❌ Error: ${data.error}`);
+        setSitemapLoading(false);
+        setContinueCrawling(false);
       }
     } catch (err) {
-      setSitemapStatus("Failed to crawl sitemap");
+      setSitemapStatus("❌ Failed to crawl sitemap");
       console.error("Sitemap crawl exception:", err);
-    } finally {
       setSitemapLoading(false);
+      setContinueCrawling(false);
     }
+  };
+
+  // Continue crawling handler
+  const handleContinueCrawling = () => {
+    if (sitemapUrl && totalRemaining > 0) {
+      setContinueCrawling(true);
+      setSitemapLoading(true);
+      crawlBatch(sitemapUrl, false);
+    }
+  };
+
+  // Stop auto-continue handler
+  const handleStopCrawling = () => {
+    setAutoContinue(false);
+    setContinueCrawling(false);
+    setSitemapLoading(false);
+    setSitemapStatus((prev) => prev + `\n\n⏹️ Crawling stopped by user.`);
   };
 
   // Logout handler
@@ -374,8 +452,15 @@ const AdminPanel: React.FC = () => {
             sitemapUrl={sitemapUrl}
             sitemapStatus={sitemapStatus}
             sitemapLoading={sitemapLoading}
+            autoContinue={autoContinue}
+            continueCrawling={continueCrawling}
+            totalProcessed={totalProcessed}
+            totalRemaining={totalRemaining}
             onSitemapUrlChange={setSitemapUrl}
             onSitemapSubmit={handleSitemapSubmit}
+            onAutoContinueChange={setAutoContinue}
+            onContinueCrawling={handleContinueCrawling}
+            onStopCrawling={handleStopCrawling}
           />
 
           <ApiKeyManagementSection
