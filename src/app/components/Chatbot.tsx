@@ -90,6 +90,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
     return () => {
       console.log("[Chatbot] Component unmounting");
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Remove getEffectivePageUrl and getPreviousQuestions from component scope
