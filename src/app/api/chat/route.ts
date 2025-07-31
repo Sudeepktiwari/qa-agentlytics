@@ -520,7 +520,7 @@ Extract key requirements (2-3 bullet points max, be concise):`;
               messages: [
                 {
                   role: "system",
-                  content: `You are a proactive assistant. Your goal is to help users plan or organize their next steps. Create engaging, emoji-enhanced messages with proper formatting. Use emojis strategically and break content into digestible sections with proper spacing.`,
+                  content: `You are a proactive assistant. Your goal is to help users plan or organize their next steps. Create engaging, emoji-enhanced messages with proper formatting. MANDATORY: Use emojis strategically with double line breaks \\n\\n after them. Break content into digestible sections with proper spacing. Always use **bold** for important keywords and features.`,
                 },
                 { role: "user", content: chunk },
               ],
@@ -549,12 +549,15 @@ Extract key requirements (2-3 bullet points max, be concise):`;
 Create a natural, engaging proactive greeting message. Be welcoming and specific to what they're viewing.
 
 Requirements:
-- Create a natural, varied opening (no fixed templates)
+- Create a natural, varied opening - NEVER start with "I see you're..." or similar repetitive phrases
+- Use creative, eye-catching openings like "Welcome to...", "Exploring...", "Looking for...", "Perfect timing!", "Great choice!", etc.
 - Be specific to the detected intent and page content
-- Include 2-3 relevant features from the page content
-- End with an open-ended question about their needs
+- Include 2-3 relevant features from the page content with **bold keywords**
+- MANDATORY FORMATTING: Use double line breaks \\n\\n after emojis and before bullet points
+- Format: 'Creative opening! 🚀\\n\\nHere's what stands out:\\n\\n• **Bold keyword**: Feature 1\\n\\n• **Bold keyword**: Feature 2\\n\\n• **Bold keyword**: Feature 3'
+- End with an engaging question about their specific needs
+- Always use **bold** for important keywords and features
 - Keep it conversational and engaging
-- Use emojis naturally (not forced)
 
 Content to reference:\n${summaryContext}`;
         } else {
@@ -577,11 +580,14 @@ ${
 Create a natural, contextual follow-up message. Avoid repetitive greetings since they've already been welcomed.
 
 Requirements:
-- Create a natural, conversational opening (no templates)
+- Create a creative, engaging opening - AVOID "I see you're...", "Looks like...", or similar repetitive phrases
+- Use varied openings like "Perfect!", "Great choice!", "Smart move!", "This is exciting!", "You're in the right place!", etc.
 - Be contextual to what they're currently viewing
-- Reference relevant features from the page content  
-- Sound helpful and natural
-- Use emojis sparingly and naturally
+- Reference relevant features with **bold keywords** 
+- MANDATORY FORMATTING: Use double line breaks \\n\\n after emojis and before bullet points
+- Format: 'Creative opening! 🎯\\n\\nHere's what makes this special:\\n\\n• **Bold feature**: Description\\n\\n• **Bold benefit**: Value prop\\n\\n• **Bold advantage**: Key point'
+- Sound helpful and natural, not robotic
+- Always use **bold** for important keywords, features, and benefits
 - End with a specific question about their current interest
 - Keep it concise and informative
 
@@ -592,7 +598,18 @@ Content to reference:\n${summaryContext}`;
           messages: [
             {
               role: "system",
-              content: `You are a proactive assistant. Create engaging, professional messages with emojis and proper formatting. Follow the exact format provided in the user prompt. Focus on being warm, informative, and encouraging engagement. KEEP MESSAGES SHORT: Use 1-2 short sentences max for intro, then break content into bullet points (•) with \\n line breaks for better readability in chat format. Format like: 'Short intro\\n\\n• Point 1\\n• Point 2'.`,
+              content: `You are a proactive assistant. Create engaging, professional messages with emojis and proper formatting. Follow the exact format provided in the user prompt. Focus on being warm, informative, and encouraging engagement. 
+
+MANDATORY FORMATTING RULES:
+1. NEVER start with "I see you're..." - be creative and varied
+2. Use eye-catching openings like "Welcome!", "Perfect timing!", "Great choice!", "This is exciting!"
+3. Always add double line breaks \\n\\n after emojis before continuing text
+4. Use bullet points with • symbol for features/benefits
+5. Add double line breaks \\n\\n after each bullet point for spacing
+6. Always use **bold** for important keywords, features, and benefits
+7. Format: 'Creative opening! 🚀\\n\\nHere's what stands out:\\n\\n• **Bold keyword**: Description\\n\\n• **Bold feature**: Benefit\\n\\n• **Bold advantage**: Value'
+8. End with engaging, specific questions
+9. Be creative and avoid robotic repetition`,
             },
             { role: "user", content: summaryPrompt },
           ],
@@ -714,7 +731,7 @@ You are a helpful sales assistant. The user has not provided an email yet.
 
 You will receive page and general context, the detected intent, and the previous conversation. Always generate your response in the following JSON format:
 {
-  "mainText": "<A single, creative, engaging, and highly specific nudge for the user, based on the page context, detected intent, and their last action. Reference details from the page context, detected intent, or last action if possible. Do NOT ask a generic or repetitive question. Do NOT repeat or rephrase any of the last few questions. Do NOT include a summary or multiple questions. Vary the nudge text for each follow-up. KEEP SHORT: Use 1-2 sentences max with emojis for engagement. If multiple points needed, format: 'Short intro\\n\\n• Point 1\\n• Point 2'.>",
+  "mainText": "<A single, creative, engaging, and highly specific nudge for the user, based on the page context, detected intent, and their last action. Reference details from the page context, detected intent, or last action if possible. Do NOT ask a generic or repetitive question. Do NOT repeat or rephrase any of the last few questions. Do NOT include a summary or multiple questions. Vary the nudge text for each follow-up. KEEP SHORT: Use 1-2 sentences max with emojis for engagement. If multiple points needed, format: 'Short intro\\n\\n• Point 1\\n\\n• Point 2'.>",
   "buttons": ["<2-4 actionable, context-aware options for the user to choose from, based on the nudge, detected intent, and page context. Make them relevant to the user's needs or the page content. Do not use generic options.>"],
   "emailPrompt": ""
 }
@@ -746,7 +763,7 @@ You are a helpful sales assistant. The user has not provided an email yet.
 
 You will receive page and general context, the detected intent, and the previous conversation. Always generate your response in the following JSON format:
 {
-  "mainText": "<A micro-conversion nudge—a small, low-friction ask (e.g., 'Want to save this setup guide to your email?' or 'Should I show how others customize their services?'), based on the user's last action, detected intent, page context, or detected intent. Do NOT ask for a discovery call or email directly. Vary the nudge text for each follow-up. KEEP SHORT: Use 1-2 sentences max with casual, friendly tone. If multiple benefits, format: 'Short question\\n\\n• Benefit 1\\n• Benefit 2'.>",
+  "mainText": "<A micro-conversion nudge—a small, low-friction ask (e.g., 'Want to save this setup guide to your email?' or 'Should I show how others customize their services?'), based on the user's last action, detected intent, page context, or detected intent. Do NOT ask for a discovery call or email directly. Vary the nudge text for each follow-up. KEEP SHORT: Use 1-2 sentences max with casual, friendly tone. If multiple benefits, format: 'Short question\\n\\n• Benefit 1\\n\\n• Benefit 2'.>",
   "buttons": ["<2-4 actionable, context-aware options for the user to choose from, based on the nudge, detected intent, and page context. Make them relevant to the user's needs or the page content. Do not use generic options.>"],
   "emailPrompt": ""
 }
@@ -1165,7 +1182,7 @@ What would you like to know more about? Feel free to ask me anything or let me k
     systemPrompt = `You are a helpful sales assistant for a company. The user has provided their email (${userEmail}) and is now a qualified lead. Focus on sales, product benefits, pricing, and closing deals. Always generate your response in the following JSON format:
 
 {
-  "mainText": "<Provide sales-focused, persuasive responses about products/services, pricing, benefits, case studies, or next steps. Be enthusiastic and focus on value proposition. Use the context below to provide specific information. MANDATORY FORMATTING RULES: \n1. NEVER write long paragraphs - they are hard to read in chat\n2. Start with 1-2 short sentences (max 20 words each)\n3. Add double line break \\n\\n after intro\n4. Use bullet points with • symbol for ANY list of 2+ benefits/features\n5. Add \\n line break between each bullet point\n6. Example format: 'Great question! Here's what makes us special:\\n\\n• Benefit 1\\n• Benefit 2\\n• Benefit 3'\n7. Use emojis sparingly for emphasis\n8. Never use long sentences in paragraphs - break them into bullets>",
+  "mainText": "<Provide sales-focused, persuasive responses about products/services, pricing, benefits, case studies, or next steps. Be enthusiastic and focus on value proposition. Use the context below to provide specific information. MANDATORY FORMATTING RULES: \n1. NEVER write long paragraphs - they are hard to read in chat\n2. Start with 1-2 short sentences (max 20 words each)\n3. Add double line break \\n\\n after intro\n4. Use bullet points with • symbol for ANY list of 2+ benefits/features\n5. Add TWO line breaks \\n\\n after each bullet point for better spacing\n6. Example format: 'Great question! Here's what makes us special:\\n\\n• Benefit 1\\n\\n• Benefit 2\\n\\n• Benefit 3'\n7. Use emojis sparingly for emphasis\n8. Never use long sentences in paragraphs - break them into bullets>",
   "buttons": ["<Generate 2-4 sales-oriented action buttons like 'Get Pricing', 'Schedule Demo', 'View Case Studies', 'Speak with Sales Rep', 'Compare Plans', etc. Make them action-oriented and sales-focused.>"],
   "emailPrompt": ""
 }
@@ -1177,14 +1194,14 @@ ${pageContext}
 General Context:
 ${context}
 
-IMPORTANT: This user is qualified (has provided email). Focus on sales, conversion, and closing. Generate sales-oriented buttons that move them towards purchase decisions. No need to ask for email again. ABSOLUTELY NO LONG PARAGRAPHS - USE BULLET POINTS FOR MULTIPLE BENEFITS/FEATURES.`;
+IMPORTANT: This user is qualified (has provided email). Focus on sales, conversion, and closing. Generate sales-oriented buttons that move them towards purchase decisions. No need to ask for email again. ABSOLUTELY NO LONG PARAGRAPHS - USE BULLET POINTS WITH DOUBLE LINE BREAKS FOR SPACING.`;
   } else {
     // Special handling for different types of requests
     if (isTalkToSupport) {
       systemPrompt = `You are a helpful support assistant. The user wants to talk to support. Provide a helpful, specific support response based on the context and their needs. Always generate your response in the following JSON format:
 
 {
-  "mainText": "<A helpful, specific support response that addresses their likely needs based on the context. Be warm and professional. Provide specific next steps or information about how to get help. MANDATORY FORMATTING RULES: \n1. NEVER write long paragraphs - they are hard to read in chat\n2. Start with 1-2 short sentences (max 20 words each)\n3. Add double line break \\n\\n after intro\n4. Use bullet points with • symbol for ANY steps or multiple items\n5. Add \\n line break between each bullet point\n6. Example format: 'I'm here to help!\\n\\n• Step 1\\n• Step 2\\n• Step 3'\n7. Use emojis sparingly for clarity\n8. Never use long sentences in paragraphs - break them into bullets>",
+  "mainText": "<A helpful, specific support response that addresses their likely needs based on the context. Be warm and professional. Provide specific next steps or information about how to get help. MANDATORY FORMATTING RULES: \n1. NEVER write long paragraphs - they are hard to read in chat\n2. Start with 1-2 short sentences (max 20 words each)\n3. Add double line break \\n\\n after intro\n4. Use bullet points with • symbol for ANY steps or multiple items\n5. Add TWO line breaks \\n\\n after each bullet point for better spacing\n6. Example format: 'I'm here to help!\\n\\n• Step 1\\n\\n• Step 2\\n\\n• Step 3'\n7. Use emojis sparingly for clarity\n8. Never use long sentences in paragraphs - break them into bullets>",
   "buttons": ["<Generate 2-3 relevant support-related actions like 'Schedule Support Call', 'Check Help Center', 'Report Technical Issue', etc. Make them specific to their context.>"],
   "emailPrompt": ""
 }
@@ -1196,7 +1213,7 @@ ${pageContext}
 General Context:
 ${context}
 
-IMPORTANT: Focus on being helpful and supportive. Don't ask for email unless it's specifically needed for support. Generate contextual support-related buttons. ABSOLUTELY NO LONG PARAGRAPHS - USE BULLET POINTS FOR MULTIPLE STEPS.`;
+IMPORTANT: Focus on being helpful and supportive. Don't ask for email unless it's specifically needed for support. Generate contextual support-related buttons. ABSOLUTELY NO LONG PARAGRAPHS - USE BULLET POINTS WITH DOUBLE LINE BREAKS FOR SPACING.`;
     } else if (isEmailRequest) {
       systemPrompt = `You are a helpful sales assistant. The user is asking about email or wanting something sent to their email. Always generate your response in the following JSON format:
 
@@ -1215,7 +1232,7 @@ ${context}
 
 IMPORTANT: Don't provide other action buttons when user is requesting email. Focus on the email collection. KEEP RESPONSE BRIEF AND FOCUSED.`;
     } else {
-      systemPrompt = `You are a helpful sales assistant. The user has not provided an email yet.\n\nYou will receive page and general context. Always generate your response in the following JSON format:\n\n{\n  "mainText": "<A dynamic, page-aware summary or answer, using the context below. MANDATORY FORMATTING RULES: \n1. NEVER write long paragraphs - they are hard to read in chat\n2. Start with 1-2 short sentences (max 20 words each)\n3. Add double line break \\n\\n after intro\n4. Use bullet points with • symbol for ANY list of 2+ items\n5. Add \\n line break between each bullet point\n6. Example format: 'Short intro!\\n\\n• First benefit\\n• Second benefit\\n• Third benefit'\n7. Use emojis sparingly for emphasis\n8. Never use long sentences in paragraphs - break them into bullets>",\n  "buttons": ["<Generate 2-4 contextually relevant action buttons based on the user's question and the content you provided. These should be specific to their query and help them take the next logical step. For example, if they ask about hosting, buttons could be 'Learn About Security', 'Compare Plans', 'Contact Hosting Team'. Make buttons actionable and relevant to the specific topic discussed.>"],\n  "emailPrompt": "<Create a contextual email prompt that relates to the specific topic discussed, offering to send more detailed information about that topic specifically.>"\n}\n\nContext:\nPage Context:\n${pageContext}\n\nGeneral Context:\n${context}\n\nIMPORTANT: Generate buttons and email prompt that are directly related to the user's specific question and your answer. Do not use generic buttons. Make them actionable and relevant to the conversation topic. ABSOLUTELY NO LONG PARAGRAPHS - USE BULLET POINTS FOR MULTIPLE BENEFITS/FEATURES.`;
+      systemPrompt = `You are a helpful sales assistant. The user has not provided an email yet.\n\nYou will receive page and general context. Always generate your response in the following JSON format:\n\n{\n  "mainText": "<A dynamic, page-aware summary or answer, using the context below. MANDATORY FORMATTING RULES: \n1. NEVER write long paragraphs - they are hard to read in chat\n2. Start with 1-2 short sentences (max 20 words each)\n3. Add double line break \\n\\n after intro\n4. Use bullet points with • symbol for ANY list of 2+ items\n5. Add TWO line breaks \\n\\n after each bullet point for better spacing\n6. Example format: 'Short intro!\\n\\n• First benefit\\n\\n• Second benefit\\n\\n• Third benefit'\n7. Use emojis sparingly for emphasis\n8. Never use long sentences in paragraphs - break them into bullets>",\n  "buttons": ["<Generate 2-4 contextually relevant action buttons based on the user's question and the content you provided. These should be specific to their query and help them take the next logical step. For example, if they ask about hosting, buttons could be 'Learn About Security', 'Compare Plans', 'Contact Hosting Team'. Make buttons actionable and relevant to the specific topic discussed.>"],\n  "emailPrompt": "<Create a contextual email prompt that relates to the specific topic discussed, offering to send more detailed information about that topic specifically.>"\n}\n\nContext:\nPage Context:\n${pageContext}\n\nGeneral Context:\n${context}\n\nIMPORTANT: Generate buttons and email prompt that are directly related to the user's specific question and your answer. Do not use generic buttons. Make them actionable and relevant to the conversation topic. ABSOLUTELY NO LONG PARAGRAPHS - USE BULLET POINTS WITH DOUBLE LINE BREAKS FOR SPACING.`;
     }
   }
 
