@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bot Mode Indicator Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .container {
+        background-color: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .test-info {
+        background-color: #e3f2fd;
+        padding: 15px;
+        border-radius: 6px;
+        margin-bottom: 20px;
+        border-left: 4px solid #2196f3;
+      }
+      .instructions {
+        background-color: #fff3e0;
+        padding: 15px;
+        border-radius: 6px;
+        margin-bottom: 20px;
+        border-left: 4px solid #ff9800;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🤖 Bot Mode Indicator Test</h1>
+
+      <div class="test-info">
+        <h3>📋 Test Purpose</h3>
+        <p>
+          This page tests the new bot mode indicator feature that shows whether
+          the chatbot is in "LEAD MODE" or "SALES MODE".
+        </p>
+      </div>
+
+      <div class="instructions">
+        <h3>🧪 Testing Instructions</h3>
+        <ol>
+          <li>
+            <strong>Initial State:</strong> The bot should start in "LEAD MODE"
+            (purple badge)
+          </li>
+          <li>
+            <strong>Ask Questions:</strong> Try asking general questions about
+            services
+          </li>
+          <li>
+            <strong>Provide Email:</strong> When prompted or when you share your
+            email, the mode should switch to "SALES MODE" (blue badge)
+          </li>
+          <li>
+            <strong>Check Indicator:</strong>
+            <ul>
+              <li>LEAD MODE: Purple badge with "LEAD MODE" text</li>
+              <li>
+                SALES MODE: Blue badge with "SALES MODE" text + your email
+              </li>
+            </ul>
+          </li>
+        </ol>
+      </div>
+
+      <h3>💬 Chatbot Widget</h3>
+      <p>
+        The chatbot should appear below with the mode indicator in the top-right
+        corner:
+      </p>
+
+      <!-- The chatbot widget will be embedded here when the page loads -->
+      <div id="chatbot-container">
+        <p style="text-align: center; color: #666; font-style: italic">
+          Loading chatbot widget...
+        </p>
+      </div>
+    </div>
+
+    <script>
+      // Load the chatbot widget
+      (function () {
+        console.log("Loading chatbot widget for bot mode indicator test...");
+
+        // For this test, we'll simulate loading the widget
+        // In a real scenario, this would load from your deployed widget
+
+        // Create iframe or script tag to load the actual widget
+        const widgetContainer = document.getElementById("chatbot-container");
+
+        // You would replace this with the actual widget loading code
+        widgetContainer.innerHTML = `
+                <div style="border: 2px dashed #ccc; padding: 40px; text-align: center; border-radius: 8px;">
+                    <p style="margin: 0; color: #666;">
+                        📝 <strong>Note:</strong> This is a test page for the bot mode indicator feature.
+                    </p>
+                    <p style="margin: 10px 0 0 0; color: #666; font-size: 14px;">
+                        To see the actual widget with the mode indicator, deploy the updated code and test on a live page.
+                    </p>
+                </div>
+            `;
+      })();
+    </script>
+  </body>
+</html>

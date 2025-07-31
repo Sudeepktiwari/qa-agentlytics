@@ -23,6 +23,8 @@ interface Message {
   content: string;
   buttons?: string[];
   emailPrompt?: string;
+  botMode?: "sales" | "lead_generation";
+  userEmail?: string | null;
 }
 
 // Type for backend bot response
@@ -30,6 +32,8 @@ interface BotResponse {
   mainText: string;
   buttons?: string[];
   emailPrompt?: string;
+  botMode?: "sales" | "lead_generation";
+  userEmail?: string | null;
 }
 
 interface ChatbotProps {
@@ -53,6 +57,11 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
   // Track user activity to prevent unnecessary followups
   const [userIsActive, setUserIsActive] = useState(false);
   const [lastUserAction, setLastUserAction] = useState<number>(Date.now());
+  // Track current bot mode for display indicator
+  const [currentBotMode, setCurrentBotMode] = useState<
+    "sales" | "lead_generation"
+  >("lead_generation");
+  const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
 
   // Remove getEffectivePageUrl and getPreviousQuestions from component scope
 
@@ -139,8 +148,23 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
             })
             .then((res) => res.json())
             .then((data) => {
+              // Update bot mode tracking
+              if (data.botMode) {
+                setCurrentBotMode(data.botMode);
+              }
+              if (data.userEmail !== undefined) {
+                setCurrentUserEmail(data.userEmail);
+              }
+
               if (data.answer)
-                setMessages([{ role: "assistant", content: data.answer }]);
+                setMessages([
+                  {
+                    role: "assistant",
+                    content: data.answer,
+                    botMode: data.botMode,
+                    userEmail: data.userEmail,
+                  },
+                ]);
               // Start follow-up timer
               if (followupTimer.current) clearTimeout(followupTimer.current);
               setFollowupSent(false);
@@ -177,8 +201,23 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
         })
           .then((res) => res.json())
           .then((data) => {
+            // Update bot mode tracking
+            if (data.botMode) {
+              setCurrentBotMode(data.botMode);
+            }
+            if (data.userEmail !== undefined) {
+              setCurrentUserEmail(data.userEmail);
+            }
+
             if (data.answer)
-              setMessages([{ role: "assistant", content: data.answer }]);
+              setMessages([
+                {
+                  role: "assistant",
+                  content: data.answer,
+                  botMode: data.botMode,
+                  userEmail: data.userEmail,
+                },
+              ]);
             // Start follow-up timer
             if (followupTimer.current) clearTimeout(followupTimer.current);
             setFollowupSent(false);
@@ -275,6 +314,14 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
       })
         .then((res) => res.json())
         .then((data) => {
+          // Update bot mode tracking
+          if (data.botMode) {
+            setCurrentBotMode(data.botMode);
+          }
+          if (data.userEmail !== undefined) {
+            setCurrentUserEmail(data.userEmail);
+          }
+
           // Use parseBotResponse for follow-up responses
           const parsed = parseBotResponse(data);
           setMessages((msgs) => [
@@ -284,6 +331,8 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
               content: parsed.mainText,
               buttons: parsed.buttons,
               emailPrompt: parsed.emailPrompt,
+              botMode: data.botMode,
+              userEmail: data.userEmail,
             },
           ]);
           setFollowupCount((c) => c + 1);
@@ -373,6 +422,15 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
         }),
       });
       const data = await res.json();
+
+      // Update bot mode tracking
+      if (data.botMode) {
+        setCurrentBotMode(data.botMode);
+      }
+      if (data.userEmail !== undefined) {
+        setCurrentUserEmail(data.userEmail);
+      }
+
       const parsed = parseBotResponse(data);
       setMessages((msgs) => [
         ...msgs,
@@ -381,6 +439,8 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
           content: parsed.mainText,
           buttons: parsed.buttons,
           emailPrompt: parsed.emailPrompt,
+          botMode: data.botMode,
+          userEmail: data.userEmail,
         },
       ]);
       // Clear follow-up timer on user message
@@ -479,7 +539,36 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
         color: "#000000",
       }}
     >
-      <h3 style={{ color: "#000000" }}>Chatbot</h3>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: 8,
+        }}
+      >
+        <h3 style={{ color: "#000000", margin: 0 }}>Chatbot</h3>
+        <div
+          style={{
+            padding: "4px 8px",
+            borderRadius: 12,
+            fontSize: "12px",
+            fontWeight: "bold",
+            backgroundColor: currentBotMode === "sales" ? "#e3f2fd" : "#f3e5f5",
+            color: currentBotMode === "sales" ? "#1976d2" : "#7b1fa2",
+            border: `1px solid ${
+              currentBotMode === "sales" ? "#bbdefb" : "#e1bee7"
+            }`,
+          }}
+        >
+          {currentBotMode === "sales" ? "SALES MODE" : "LEAD MODE"}
+          {currentUserEmail && (
+            <span style={{ marginLeft: 4, opacity: 0.7 }}>
+              • {currentUserEmail}
+            </span>
+          )}
+        </div>
+      </div>
       <div
         style={{
           minHeight: 120,

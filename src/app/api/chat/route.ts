@@ -599,8 +599,22 @@ Content to reference:\n${summaryContext}`;
         });
         pageSummary = summaryResp.choices[0].message.content || "";
         const proactiveMsg = pageSummary;
+
+        // Determine bot mode for proactive message
+        let userEmail: string | null = null;
+        const lastEmailMsg = await chats.findOne(
+          { sessionId, email: { $exists: true } },
+          { sort: { createdAt: -1 } }
+        );
+        if (lastEmailMsg && lastEmailMsg.email) userEmail = lastEmailMsg.email;
+        const botMode = userEmail ? "sales" : "lead_generation";
+
         return NextResponse.json(
-          { answer: proactiveMsg },
+          {
+            answer: proactiveMsg,
+            botMode,
+            userEmail: userEmail || null,
+          },
           { headers: corsHeaders }
         );
       } else if (followup) {
@@ -849,7 +863,24 @@ ${previousQnA}
           console.log(
             `[Followup] Successfully generated followup for session ${sessionId}`
           );
-          return NextResponse.json(parsed, { headers: corsHeaders });
+
+          // Add bot mode to followup response
+          let userEmail: string | null = null;
+          const lastEmailMsg = await chats.findOne(
+            { sessionId, email: { $exists: true } },
+            { sort: { createdAt: -1 } }
+          );
+          if (lastEmailMsg && lastEmailMsg.email)
+            userEmail = lastEmailMsg.email;
+          const botMode = userEmail ? "sales" : "lead_generation";
+
+          const followupWithMode = {
+            ...parsed,
+            botMode,
+            userEmail: userEmail || null,
+          };
+
+          return NextResponse.json(followupWithMode, { headers: corsHeaders });
         } catch (error) {
           console.error(
             `[Followup] Error generating followup for session ${sessionId}:`,
@@ -881,20 +912,46 @@ ${previousQnA}
 I can help answer questions, provide information, and guide you through available options based on your specific needs.
 
 What would you like to know more about? Feel free to ask me anything or let me know what you're looking to accomplish!`;
+
+      // Determine bot mode for generic proactive message
+      let userEmail: string | null = null;
+      const lastEmailMsg = await chats.findOne(
+        { sessionId, email: { $exists: true } },
+        { sort: { createdAt: -1 } }
+      );
+      if (lastEmailMsg && lastEmailMsg.email) userEmail = lastEmailMsg.email;
+      const botMode = userEmail ? "sales" : "lead_generation";
+
       return NextResponse.json(
-        { answer: proactiveMsg },
+        {
+          answer: proactiveMsg,
+          botMode,
+          userEmail: userEmail || null,
+        },
         { headers: corsHeaders }
       );
     } else if (followup) {
       console.log(
         `[Followup] Simple fallback followup for session ${sessionId}`
       );
+
+      // Add bot mode to fallback followup
+      let userEmail: string | null = null;
+      const lastEmailMsg = await chats.findOne(
+        { sessionId, email: { $exists: true } },
+        { sort: { createdAt: -1 } }
+      );
+      if (lastEmailMsg && lastEmailMsg.email) userEmail = lastEmailMsg.email;
+      const botMode = userEmail ? "sales" : "lead_generation";
+
       return NextResponse.json(
         {
           mainText:
             "Is there anything else you'd like to know about the available features?",
           buttons: ["Learn More Features", "Get Demo", "Contact Support"],
           emailPrompt: "Want me to send you more details? Share your email!",
+          botMode,
+          userEmail: userEmail || null,
         },
         { headers: corsHeaders }
       );
@@ -923,11 +980,22 @@ What would you like to know more about? Feel free to ask me anything or let me k
           `[Followup] Sending generic followup ${followupCount} for session ${sessionId}`
         );
 
+        // Add bot mode to generic followup
+        let userEmail: string | null = null;
+        const lastEmailMsg = await chats.findOne(
+          { sessionId, email: { $exists: true } },
+          { sort: { createdAt: -1 } }
+        );
+        if (lastEmailMsg && lastEmailMsg.email) userEmail = lastEmailMsg.email;
+        const botMode = userEmail ? "sales" : "lead_generation";
+
         return NextResponse.json(
           {
             mainText: message,
             buttons: ["Learn More Features", "Get Demo", "Contact Support"],
             emailPrompt: "Want me to send you more details? Share your email!",
+            botMode,
+            userEmail: userEmail || null,
           },
           { headers: corsHeaders }
         );
@@ -1161,7 +1229,15 @@ IMPORTANT: Don't provide other action buttons when user is requesting email. Foc
     },
   ]);
 
-  return NextResponse.json(parsed, { headers: corsHeaders });
+  // Add bot mode information to the response
+  const botMode = userEmail ? "sales" : "lead_generation";
+  const responseWithMode = {
+    ...parsed,
+    botMode,
+    userEmail: userEmail || null, // Include for debugging
+  };
+
+  return NextResponse.json(responseWithMode, { headers: corsHeaders });
 }
 
 export async function GET(req: NextRequest) {
