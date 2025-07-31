@@ -64,31 +64,31 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
 
   // Debug logging for bot mode state
-  console.log('[Chatbot] Current bot mode state:', {
+  console.log("[Chatbot] Current bot mode state:", {
     currentBotMode,
     currentUserEmail,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 
   // Track bot mode changes
   useEffect(() => {
-    console.log('[Chatbot] Bot mode state changed:', {
+    console.log("[Chatbot] Bot mode state changed:", {
       currentBotMode,
       currentUserEmail,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }, [currentBotMode, currentUserEmail]);
 
   // Component mount/unmount logging
   useEffect(() => {
-    console.log('[Chatbot] Component mounted with props:', {
+    console.log("[Chatbot] Component mounted with props:", {
       pageUrl,
       adminId,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
-    
+
     return () => {
-      console.log('[Chatbot] Component unmounting');
+      console.log("[Chatbot] Component unmounting");
     };
   }, []);
 
@@ -230,25 +230,35 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
         })
           .then((res) => res.json())
           .then((data) => {
-            console.log('[Chatbot] Proactive API Response:', {
+            console.log("[Chatbot] Proactive API Response:", {
               botMode: data.botMode,
               userEmail: data.userEmail,
               hasAnswer: !!data.answer,
-              timestamp: new Date().toISOString()
+              timestamp: new Date().toISOString(),
             });
-            
+
             // Update bot mode tracking
             if (data.botMode) {
-              console.log('[Chatbot] Proactive - Updating bot mode from:', currentBotMode, 'to:', data.botMode);
+              console.log(
+                "[Chatbot] Proactive - Updating bot mode from:",
+                currentBotMode,
+                "to:",
+                data.botMode
+              );
               setCurrentBotMode(data.botMode);
             } else {
-              console.log('[Chatbot] Proactive - No botMode in API response');
+              console.log("[Chatbot] Proactive - No botMode in API response");
             }
             if (data.userEmail !== undefined) {
-              console.log('[Chatbot] Proactive - Updating user email from:', currentUserEmail, 'to:', data.userEmail);
+              console.log(
+                "[Chatbot] Proactive - Updating user email from:",
+                currentUserEmail,
+                "to:",
+                data.userEmail
+              );
               setCurrentUserEmail(data.userEmail);
             } else {
-              console.log('[Chatbot] Proactive - No userEmail in API response');
+              console.log("[Chatbot] Proactive - No userEmail in API response");
             }
 
             if (data.answer)
@@ -464,26 +474,36 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
         }),
       });
       const data = await res.json();
-      
-      console.log('[Chatbot] API Response received:', {
+
+      console.log("[Chatbot] API Response received:", {
         botMode: data.botMode,
         userEmail: data.userEmail,
         hasAnswer: !!data.answer,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
 
       // Update bot mode tracking
       if (data.botMode) {
-        console.log('[Chatbot] Updating bot mode from:', currentBotMode, 'to:', data.botMode);
+        console.log(
+          "[Chatbot] Updating bot mode from:",
+          currentBotMode,
+          "to:",
+          data.botMode
+        );
         setCurrentBotMode(data.botMode);
       } else {
-        console.log('[Chatbot] No botMode in API response');
+        console.log("[Chatbot] No botMode in API response");
       }
       if (data.userEmail !== undefined) {
-        console.log('[Chatbot] Updating user email from:', currentUserEmail, 'to:', data.userEmail);
+        console.log(
+          "[Chatbot] Updating user email from:",
+          currentUserEmail,
+          "to:",
+          data.userEmail
+        );
         setCurrentUserEmail(data.userEmail);
       } else {
-        console.log('[Chatbot] No userEmail in API response');
+        console.log("[Chatbot] No userEmail in API response");
       }
 
       const parsed = parseBotResponse(data);
@@ -616,21 +636,24 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
             }`,
           }}
           onMouseEnter={() => {
-            console.log('[Chatbot] Indicator hover - Current state:', {
+            console.log("[Chatbot] Indicator hover - Current state:", {
               currentBotMode,
               currentUserEmail,
-              indicatorText: currentBotMode === "sales" ? "SALES MODE" : "LEAD MODE"
+              indicatorText:
+                currentBotMode === "sales" ? "SALES MODE" : "LEAD MODE",
             });
           }}
         >
           {(() => {
-            const indicatorText = currentBotMode === "sales" ? "SALES MODE" : "LEAD MODE";
-            console.log('[Chatbot] Rendering indicator:', {
+            const indicatorText =
+              currentBotMode === "sales" ? "SALES MODE" : "LEAD MODE";
+            console.log("[Chatbot] Rendering indicator:", {
               currentBotMode,
               currentUserEmail,
               indicatorText,
-              backgroundColor: currentBotMode === "sales" ? "#e3f2fd" : "#f3e5f5",
-              timestamp: new Date().toISOString()
+              backgroundColor:
+                currentBotMode === "sales" ? "#e3f2fd" : "#f3e5f5",
+              timestamp: new Date().toISOString(),
             });
             return indicatorText;
           })()}

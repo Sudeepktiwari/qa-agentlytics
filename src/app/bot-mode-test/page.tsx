@@ -1,34 +1,34 @@
-import React from 'react';
+import React from "react";
 
 export default function BotModeTest() {
   return (
-    <div style={{ padding: '20px' }}>
+    <div style={{ padding: "20px" }}>
       <h1>🤖 Direct Bot Mode Indicator Test</h1>
-      
-      <div style={{ marginBottom: '20px' }}>
+
+      <div style={{ marginBottom: "20px" }}>
         <h3>Test 1: Static Lead Mode Indicator</h3>
         <div
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
             marginBottom: 8,
-            border: '1px solid #ccc',
+            border: "1px solid #ccc",
             padding: 16,
             borderRadius: 8,
-            backgroundColor: '#ffffff',
+            backgroundColor: "#ffffff",
           }}
         >
-          <h3 style={{ color: '#000000', margin: 0 }}>Chatbot</h3>
+          <h3 style={{ color: "#000000", margin: 0 }}>Chatbot</h3>
           <div
             style={{
-              padding: '4px 8px',
+              padding: "4px 8px",
               borderRadius: 12,
-              fontSize: '12px',
-              fontWeight: 'bold',
-              backgroundColor: '#f3e5f5',
-              color: '#7b1fa2',
-              border: '1px solid #e1bee7',
+              fontSize: "12px",
+              fontWeight: "bold",
+              backgroundColor: "#f3e5f5",
+              color: "#7b1fa2",
+              border: "1px solid #e1bee7",
             }}
           >
             LEAD MODE
@@ -36,30 +36,30 @@ export default function BotModeTest() {
         </div>
       </div>
 
-      <div style={{ marginBottom: '20px' }}>
+      <div style={{ marginBottom: "20px" }}>
         <h3>Test 2: Static Sales Mode Indicator</h3>
         <div
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
             marginBottom: 8,
-            border: '1px solid #ccc',
+            border: "1px solid #ccc",
             padding: 16,
             borderRadius: 8,
-            backgroundColor: '#ffffff',
+            backgroundColor: "#ffffff",
           }}
         >
-          <h3 style={{ color: '#000000', margin: 0 }}>Chatbot</h3>
+          <h3 style={{ color: "#000000", margin: 0 }}>Chatbot</h3>
           <div
             style={{
-              padding: '4px 8px',
+              padding: "4px 8px",
               borderRadius: 12,
-              fontSize: '12px',
-              fontWeight: 'bold',
-              backgroundColor: '#e3f2fd',
-              color: '#1976d2',
-              border: '1px solid #bbdefb',
+              fontSize: "12px",
+              fontWeight: "bold",
+              backgroundColor: "#e3f2fd",
+              color: "#1976d2",
+              border: "1px solid #bbdefb",
             }}
           >
             SALES MODE
@@ -70,32 +70,34 @@ export default function BotModeTest() {
         </div>
       </div>
 
-      <div style={{ marginBottom: '20px' }}>
+      <div style={{ marginBottom: "20px" }}>
         <h3>Console Log Test</h3>
-        <button 
+        <button
           onClick={() => {
-            console.log('[BotModeTest] Button clicked - testing console logs');
-            alert('Check console for log message');
+            console.log("[BotModeTest] Button clicked - testing console logs");
+            alert("Check console for log message");
           }}
           style={{
-            padding: '10px 20px',
-            backgroundColor: '#2196f3',
-            color: 'white',
-            border: 'none',
+            padding: "10px 20px",
+            backgroundColor: "#2196f3",
+            color: "white",
+            border: "none",
             borderRadius: 5,
-            cursor: 'pointer'
+            cursor: "pointer",
           }}
         >
           Test Console Logging
         </button>
       </div>
 
-      <div style={{ 
-        background: '#f5f5f5', 
-        padding: '15px', 
-        borderRadius: '6px',
-        fontSize: '14px'
-      }}>
+      <div
+        style={{
+          background: "#f5f5f5",
+          padding: "15px",
+          borderRadius: "6px",
+          fontSize: "14px",
+        }}
+      >
         <strong>What you should see:</strong>
         <ul>
           <li>Two chatbot headers with different colored badges</li>
@@ -103,7 +105,7 @@ export default function BotModeTest() {
           <li>Blue "SALES MODE • test@example.com" badge in the second one</li>
           <li>Console log when clicking the button</li>
         </ul>
-        
+
         <strong>If you don't see the badges:</strong>
         <ul>
           <li>There might be a CSS styling issue</li>

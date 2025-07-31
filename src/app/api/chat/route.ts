@@ -609,11 +609,11 @@ Content to reference:\n${summaryContext}`;
         if (lastEmailMsg && lastEmailMsg.email) userEmail = lastEmailMsg.email;
         const botMode = userEmail ? "sales" : "lead_generation";
 
-        console.log('[Chat API] Proactive response:', {
+        console.log("[Chat API] Proactive response:", {
           botMode,
           userEmail: userEmail || null,
           hasProactiveMsg: !!proactiveMsg,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
 
         return NextResponse.json(
@@ -1244,11 +1244,11 @@ IMPORTANT: Don't provide other action buttons when user is requesting email. Foc
     userEmail: userEmail || null, // Include for debugging
   };
 
-  console.log('[Chat API] Main response:', {
+  console.log("[Chat API] Main response:", {
     botMode,
     userEmail: userEmail || null,
     hasResponse: !!parsed.mainText,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 
   return NextResponse.json(responseWithMode, { headers: corsHeaders });
