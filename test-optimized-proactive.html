@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Optimized Proactive Messages Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        line-height: 1.6;
+      }
+      .test-section {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        border-left: 4px solid #007cba;
+      }
+      .success {
+        background: #d4edda;
+        border-left-color: #28a745;
+      }
+      .warning {
+        background: #fff3cd;
+        border-left-color: #ffc107;
+      }
+      .info {
+        background: #d1ecf1;
+        border-left-color: #17a2b8;
+      }
+      .code {
+        background: #f8f9fa;
+        padding: 10px;
+        border-radius: 4px;
+        font-family: monospace;
+        margin: 10px 0;
+      }
+      .button-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 10px;
+        margin: 15px 0;
+      }
+      .test-button {
+        padding: 10px 15px;
+        background: #007cba;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+      }
+      .test-button:hover {
+        background: #005a87;
+      }
+      .example-message {
+        background: #e9ecef;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 10px 0;
+        border-left: 3px solid #6c757d;
+      }
+      .message-type {
+        font-weight: bold;
+        color: #007cba;
+        margin-bottom: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🚀 Optimized Proactive Messages Test</h1>
+
+    <div class="test-section success">
+      <h2>✅ What's Fixed</h2>
+      <ul>
+        <li>
+          <strong>Message Length:</strong> Reduced from 130+ words to under 30
+          words
+        </li>
+        <li>
+          <strong>Page Context:</strong> Messages now adapt to specific page
+          types (pricing, features, contact, etc.)
+        </li>
+        <li>
+          <strong>Clear CTAs:</strong> Contextual buttons that match user intent
+        </li>
+        <li>
+          <strong>No Feature Dumps:</strong> Removed bullet points and long
+          explanations
+        </li>
+        <li>
+          <strong>Conversational Tone:</strong> Friendly and direct, not salesy
+        </li>
+      </ul>
+    </div>
+
+    <div class="test-section info">
+      <h2>📋 Examples by Page Type</h2>
+
+      <div class="example-message">
+        <div class="message-type">Pricing Page:</div>
+        <strong>Before:</strong> "Ready to supercharge your team's productivity?
+        With our team management features, you can automate workflows and
+        streamline scheduling... [130+ words]"<br /><br />
+        <strong>After:</strong> "Need help choosing the right plan? I can
+        recommend options or connect you with our team."<br />
+        <strong>Buttons:</strong> Compare Plans | Get Quote | Talk to Sales
+      </div>
+
+      <div class="example-message">
+        <div class="message-type">Features Page:</div>
+        <strong>Message:</strong> "Questions about our features? I can show you
+        what's most relevant for your needs."<br />
+        <strong>Buttons:</strong> See Demo | Learn More | Get Started
+      </div>
+
+      <div class="example-message">
+        <div class="message-type">Contact Page:</div>
+        <strong>Message:</strong> "Ready to get started? I can help you take the
+        next step or answer any questions."<br />
+        <strong>Buttons:</strong> Get Started | Book Call | Ask Questions
+      </div>
+
+      <div class="example-message">
+        <div class="message-type">About Page:</div>
+        <strong>Message:</strong> "Curious about our story? I can share more
+        about our team or show you our work."<br />
+        <strong>Buttons:</strong> Learn More | See Work | Contact Us
+      </div>
+    </div>
+
+    <div class="test-section">
+      <h2>🧪 Test Different Page Types</h2>
+      <p>
+        Click buttons below to simulate navigation to different page types and
+        see contextual messages:
+      </p>
+
+      <div class="button-grid">
+        <button class="test-button" onclick="testPageType('/pricing')">
+          Test Pricing Page
+        </button>
+        <button class="test-button" onclick="testPageType('/features')">
+          Test Features Page
+        </button>
+        <button class="test-button" onclick="testPageType('/contact')">
+          Test Contact Page
+        </button>
+        <button class="test-button" onclick="testPageType('/about')">
+          Test About Page
+        </button>
+        <button class="test-button" onclick="testPageType('/services')">
+          Test Services Page
+        </button>
+        <button class="test-button" onclick="testPageType('/demo')">
+          Test Demo Page
+        </button>
+      </div>
+    </div>
+
+    <div class="test-section warning">
+      <h2>⚡ Key Improvements</h2>
+      <div class="code">
+        <strong>Old System:</strong><br />
+        • 130+ words before user input<br />
+        • Generic "are you looking to integrate..." questions<br />
+        • Multiple concepts at once<br />
+        • High cognitive load<br /><br />
+
+        <strong>New System:</strong><br />
+        • Under 30 words per message<br />
+        • Page-specific context and buttons<br />
+        • Single, clear question<br />
+        • Immediate actionable help
+      </div>
+    </div>
+
+    <div class="test-section">
+      <h2>🔧 Technical Implementation</h2>
+      <p>The system now:</p>
+      <ul>
+        <li>
+          <strong>Analyzes page URL</strong> to determine context (pricing,
+          features, contact, etc.)
+        </li>
+        <li>
+          <strong>Detects user intent</strong> based on page type and content
+        </li>
+        <li>
+          <strong>Generates contextual buttons</strong> that match what users
+          need on that page
+        </li>
+        <li><strong>Keeps messages short</strong> with word limits enforced</li>
+        <li><strong>Avoids repetition</strong> and generic responses</li>
+      </ul>
+    </div>
+
+    <script>
+      function testPageType(path) {
+        // Simulate navigation using pushState
+        const newUrl = window.location.origin + path;
+        history.pushState({}, "", newUrl);
+
+        // Show what would happen
+        const pageType =
+          path.replace("/", "").charAt(0).toUpperCase() +
+          path.replace("/", "").slice(1);
+
+        let expectedMessage = "";
+        let expectedButtons = [];
+
+        switch (path) {
+          case "/pricing":
+            expectedMessage = "Need help choosing the right plan?";
+            expectedButtons = ["Compare Plans", "Get Quote", "Talk to Sales"];
+            break;
+          case "/features":
+            expectedMessage = "Questions about our features?";
+            expectedButtons = ["See Demo", "Learn More", "Get Started"];
+            break;
+          case "/contact":
+            expectedMessage = "Ready to get started?";
+            expectedButtons = ["Get Started", "Book Call", "Ask Questions"];
+            break;
+          case "/about":
+            expectedMessage = "Curious about our story?";
+            expectedButtons = ["Learn More", "See Work", "Contact Us"];
+            break;
+          case "/services":
+            expectedMessage = "Looking for specific services?";
+            expectedButtons = ["Get Quote", "Book Call", "Learn More"];
+            break;
+          case "/demo":
+            expectedMessage = "Want to see how this works?";
+            expectedButtons = ["Start Demo", "Book Live Demo", "Ask Questions"];
+            break;
+        }
+
+        alert(
+          `🎯 ${pageType} Page Context\n\n` +
+            `Expected Message: "${expectedMessage}"\n\n` +
+            `Expected Buttons: ${expectedButtons.join(" | ")}\n\n` +
+            `✅ Short, contextual, and actionable!`
+        );
+      }
+
+      console.log("🚀 Optimized Proactive Messages Test loaded");
+      console.log(
+        "The chatbot widget will now generate contextual messages based on page type"
+      );
+      console.log(
+        "Try navigating to different page types to see the optimization in action"
+      );
+    </script>
+
+    <!-- Load the optimized chatbot widget -->
+    <script
+      src="http://localhost:3002/api/widget"
+      data-api-key="ak_b17dd57a2e0d78b5d3f1155e94167da890dda703409fe1e36e647c2e6cc8d345"
+      data-voice-enabled="false"
+      data-auto-open-proactive="true"
+      data-proactive-delay="5000"
+    ></script>
+  </body>
+</html>

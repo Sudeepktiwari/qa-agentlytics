@@ -191,6 +191,8 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
                   {
                     role: "assistant",
                     content: data.answer,
+                    buttons: data.buttons || [],
+                    emailPrompt: "",
                     botMode: data.botMode,
                     userEmail: data.userEmail,
                   },
@@ -267,6 +269,8 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
                 {
                   role: "assistant",
                   content: data.answer,
+                  buttons: data.buttons || [],
+                  emailPrompt: "",
                   botMode: data.botMode,
                   userEmail: data.userEmail,
                 },

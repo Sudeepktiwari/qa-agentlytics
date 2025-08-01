@@ -132,7 +132,7 @@ type ChatMessage = {
 
 type MainTextLike = string | { mainText: string };
 
-// Add a simple intent detection function
+// Add a comprehensive intent detection function
 function detectIntent({
   question,
   pageUrl,
@@ -143,57 +143,56 @@ function detectIntent({
   const lowerQ = (question || "").toLowerCase();
   const lowerUrl = (pageUrl || "").toLowerCase();
 
-  // Analytics and technology services intents
-  if (
-    lowerQ.includes("features") ||
-    lowerQ.includes("feature") ||
-    lowerUrl.includes("features")
-  ) {
+  // Page-based intent detection (prioritized)
+  if (lowerUrl.includes("pricing") || lowerUrl.includes("plans")) {
+    return "comparing pricing options";
+  }
+  if (lowerUrl.includes("features") || lowerUrl.includes("capabilities")) {
     return "exploring features";
   }
-  if (
-    lowerQ.includes("how") ||
-    lowerQ.includes("works") ||
-    lowerUrl.includes("how-it-works")
-  ) {
-    return "understanding how it works";
+  if (lowerUrl.includes("about") || lowerUrl.includes("company")) {
+    return "learning about the company";
   }
-  if (
-    lowerQ.includes("solutions") ||
-    lowerQ.includes("solution") ||
-    lowerUrl.includes("solutions")
-  ) {
-    return "exploring solutions";
+  if (lowerUrl.includes("contact") || lowerUrl.includes("get-started")) {
+    return "ready to get started";
   }
-  if (
-    lowerQ.includes("pricing") ||
-    lowerQ.includes("price") ||
-    lowerUrl.includes("pricing")
-  ) {
-    return "pricing information";
-  }
-  if (
-    lowerQ.includes("demo") ||
-    lowerQ.includes("demonstration") ||
-    lowerUrl.includes("demo")
-  ) {
+  if (lowerUrl.includes("demo") || lowerUrl.includes("trial")) {
     return "requesting a demo";
   }
-  if (
-    lowerQ.includes("analytics") ||
-    lowerQ.includes("data") ||
-    lowerUrl.includes("analytics")
-  ) {
-    return "data analytics solutions";
+  if (lowerUrl.includes("services") || lowerUrl.includes("solutions")) {
+    return "exploring services";
   }
-  if (
-    lowerQ.includes("contact") ||
-    lowerQ.includes("get started") ||
-    lowerUrl.includes("contact")
-  ) {
-    return "getting started";
+  if (lowerUrl.includes("support") || lowerUrl.includes("help")) {
+    return "seeking support";
   }
-  // Add more as needed for your specific business
+  if (lowerUrl.includes("blog") || lowerUrl.includes("resources")) {
+    return "researching information";
+  }
+  if (lowerUrl.includes("team") || lowerUrl.includes("leadership")) {
+    return "learning about the team";
+  }
+  if (lowerUrl.includes("careers") || lowerUrl.includes("jobs")) {
+    return "exploring career opportunities";
+  }
+
+  // Question-based intent detection (fallback)
+  if (lowerQ.includes("how") || lowerQ.includes("works")) {
+    return "understanding how it works";
+  }
+  if (lowerQ.includes("pricing") || lowerQ.includes("cost")) {
+    return "pricing information";
+  }
+  if (lowerQ.includes("demo") || lowerQ.includes("demonstration")) {
+    return "requesting a demo";
+  }
+  if (lowerQ.includes("features") || lowerQ.includes("capabilities")) {
+    return "exploring features";
+  }
+  if (lowerQ.includes("contact") || lowerQ.includes("talk")) {
+    return "wanting to connect";
+  }
+
+  // Default based on common page patterns
   return "exploring services";
 }
 
@@ -543,21 +542,30 @@ Extract key requirements (2-3 bullet points max, be concise):`;
         let summaryPrompt;
 
         if (!hasBeenGreeted) {
-          // First time greeting - let AI create natural varied openings
+          // First time greeting - create short, contextual messages for any page type
           summaryPrompt = `The user is viewing: ${pageUrl}. Their likely intent is: ${detectedIntent}.
 
-Create a natural, engaging proactive greeting message. Be welcoming and specific to what they're viewing.
+Create a SHORT, contextual proactive message with helpful buttons. Generate your response in JSON format:
+{
+  "mainText": "<Short message under 30 words. Be direct and helpful. Use conversational tone. End with a specific question.>",
+  "buttons": ["<Generate 3-4 contextual buttons, 2-3 words each. Make them specific to the page context and user intent.>"]
+}
 
-Requirements:
-- Create a natural, varied opening - NEVER start with "I see you're..." or similar repetitive phrases
-- Use creative, eye-catching openings like "Welcome to...", "Exploring...", "Looking for...", "Perfect timing!", "Great choice!", etc.
-- Be specific to the detected intent and page content
-- Include 2-3 relevant features from the page content with **bold keywords**
-- MANDATORY FORMATTING: Use double line breaks \\n\\n after emojis and before bullet points
-- Format: 'Creative opening! 🚀\\n\\nHere's what stands out:\\n\\n• **Bold keyword**: Feature 1\\n\\n• **Bold keyword**: Feature 2\\n\\n• **Bold keyword**: Feature 3'
-- End with an engaging question about their specific needs
-- Always use **bold** for important keywords and features
-- Keep it conversational and engaging
+Requirements for mainText:
+- Keep under 30 words total
+- Be specific to their current page and intent
+- Use conversational, friendly tone
+- NO bullet points or long explanations
+- Use 1 emoji max or none
+- Focus on immediate value/help based on ACTUAL page content
+- End with a specific, actionable question that relates to what they're viewing
+- Be natural and varied - avoid formulaic responses
+
+For buttons:
+- Analyze the actual page content and user intent
+- Generate buttons that match what users actually need on this specific page
+- Be specific to the content, not generic categories
+- Help users take the logical next step for their current context
 
 Content to reference:\n${summaryContext}`;
         } else {
@@ -577,19 +585,27 @@ ${
     : "This appears to be a new page for them."
 }
 
-Create a natural, contextual follow-up message. Avoid repetitive greetings since they've already been welcomed.
+Create a SHORT follow-up message with helpful buttons. Generate your response in JSON format:
+{
+  "mainText": "<Short message under 25 words. Be contextual and helpful. No repetitive greetings.>",
+  "buttons": ["<Generate 3 contextual buttons, 2-3 words each. Be specific to the current page content and what the user actually needs.>"]
+}
 
-Requirements:
-- Create a creative, engaging opening - AVOID "I see you're...", "Looks like...", or similar repetitive phrases
-- Use varied openings like "Perfect!", "Great choice!", "Smart move!", "This is exciting!", "You're in the right place!", etc.
-- Be contextual to what they're currently viewing
-- Reference relevant features with **bold keywords** 
-- MANDATORY FORMATTING: Use double line breaks \\n\\n after emojis and before bullet points
-- Format: 'Creative opening! 🎯\\n\\nHere's what makes this special:\\n\\n• **Bold feature**: Description\\n\\n• **Bold benefit**: Value prop\\n\\n• **Bold advantage**: Key point'
-- Sound helpful and natural, not robotic
-- Always use **bold** for important keywords, features, and benefits
-- End with a specific question about their current interest
-- Keep it concise and informative
+Requirements for mainText:
+- Keep under 25 words total
+- Be contextual to their current page and actual content
+- NO repetitive greetings since they've been welcomed
+- NO bullet points or long lists
+- Use 1 emoji max or none
+- Focus on immediate help/value based on what they're actually viewing
+- End with a specific, actionable question
+- Be natural and varied - avoid patterns or formulas
+
+For buttons:
+- Analyze the specific page content to understand what's available
+- Generate buttons based on actual functionality or information on this page
+- Avoid generic button patterns - be specific to the content
+- Help users access or learn about what's actually on this page
 
 Content to reference:\n${summaryContext}`;
         }
@@ -598,24 +614,84 @@ Content to reference:\n${summaryContext}`;
           messages: [
             {
               role: "system",
-              content: `You are a proactive assistant. Create engaging, professional messages with emojis and proper formatting. Follow the exact format provided in the user prompt. Focus on being warm, informative, and encouraging engagement. 
+              content: `You are a helpful assistant that creates personalized, contextual messages based on actual page content. Your goal is to be genuinely helpful by understanding what the user is viewing and providing relevant assistance.
 
-MANDATORY FORMATTING RULES:
-1. NEVER start with "I see you're..." - be creative and varied
-2. Use eye-catching openings like "Welcome!", "Perfect timing!", "Great choice!", "This is exciting!"
-3. Always add double line breaks \\n\\n after emojis before continuing text
-4. Use bullet points with • symbol for features/benefits
-5. Add double line breaks \\n\\n after each bullet point for spacing
-6. Always use **bold** for important keywords, features, and benefits
-7. Format: 'Creative opening! 🚀\\n\\nHere's what stands out:\\n\\n• **Bold keyword**: Description\\n\\n• **Bold feature**: Benefit\\n\\n• **Bold advantage**: Value'
-8. End with engaging, specific questions
-9. Be creative and avoid robotic repetition`,
+CORE PRINCIPLES:
+1. Analyze the actual page content to understand what's available
+2. Create messages that feel natural and conversational
+3. Avoid repetitive patterns or formulaic responses
+4. Be specific to the actual content, not generic page types
+5. Generate buttons based on real functionality or information available
+6. Keep responses short but meaningful
+7. Sound like a helpful human, not a script
+
+RESPONSE FORMAT:
+- Always return valid JSON with "mainText" and "buttons" fields
+- Keep mainText under 30 words for greetings, 25 for follow-ups
+- Generate 3-4 buttons that are 2-3 words each
+- Base everything on the actual page content provided
+- Be genuinely helpful based on what the user can actually do
+
+AVOID:
+- Hardcoded examples or patterns
+- Generic "Learn More" type buttons unless specific
+- Repetitive greeting styles
+- Formulaic responses
+- Long feature lists or bullet points
+- Overly enthusiastic or salesy tone
+
+Focus on being genuinely useful based on what the user is actually viewing.`,
             },
             { role: "user", content: summaryPrompt },
           ],
         });
         pageSummary = summaryResp.choices[0].message.content || "";
-        const proactiveMsg = pageSummary;
+
+        // Parse the JSON response from the AI
+        let proactiveResponse;
+        try {
+          proactiveResponse = JSON.parse(pageSummary);
+        } catch (error) {
+          // Dynamic fallback based on page content
+          console.log(
+            "[Proactive] Failed to parse JSON, creating dynamic fallback"
+          );
+
+          // Extract key info from page context for fallback
+          const contextKeywords = summaryContext.toLowerCase();
+          let fallbackMessage =
+            "How can I help you with what you're looking for?";
+          let fallbackButtons = ["Get Help", "Ask Questions", "Learn More"];
+
+          // Create contextual fallback based on actual content
+          if (
+            contextKeywords.includes("pricing") ||
+            contextKeywords.includes("plan")
+          ) {
+            fallbackMessage = "Questions about our options?";
+            fallbackButtons = ["See Plans", "Get Quote", "Ask Questions"];
+          } else if (
+            contextKeywords.includes("demo") ||
+            contextKeywords.includes("trial")
+          ) {
+            fallbackMessage = "Ready to try it out?";
+            fallbackButtons = ["Start Demo", "Book Call", "Learn More"];
+          } else if (
+            contextKeywords.includes("contact") ||
+            contextKeywords.includes("support")
+          ) {
+            fallbackMessage = "Need assistance?";
+            fallbackButtons = ["Get Help", "Contact Us", "Ask Questions"];
+          }
+
+          proactiveResponse = {
+            mainText: fallbackMessage,
+            buttons: fallbackButtons,
+          };
+        }
+
+        const proactiveMsg = proactiveResponse.mainText;
+        const buttons = proactiveResponse.buttons || [];
 
         // Determine bot mode for proactive message
         let userEmail: string | null = null;
@@ -636,6 +712,7 @@ MANDATORY FORMATTING RULES:
         return NextResponse.json(
           {
             answer: proactiveMsg,
+            buttons: buttons,
             botMode,
             userEmail: userEmail || null,
           },
@@ -731,8 +808,8 @@ You are a helpful sales assistant. The user has not provided an email yet.
 
 You will receive page and general context, the detected intent, and the previous conversation. Always generate your response in the following JSON format:
 {
-  "mainText": "<A single, creative, engaging nudge for the user. STRICT LIMITS: Maximum 30 words total. Be specific to page context and detected intent. Do NOT repeat previous questions. Keep it super concise and engaging with emojis. Format: 'Short intro\\n\\n• Point 1\\n\\n• Point 2' if needed.>",
-  "buttons": ["<Generate exactly 3 buttons, each must be 3-4 words maximum. Make them actionable and context-specific. Examples: 'See Pricing', 'Get Demo', 'Learn More', 'Contact Sales'>"],
+  "mainText": "<A single, creative, engaging nudge for the user. STRICT LIMITS: Maximum 30 words total. Be specific to page context and detected intent. Do NOT repeat previous questions. Keep it super concise and engaging.>",
+  "buttons": ["<Generate exactly 3 buttons, each must be 3-4 words maximum. Make them actionable and specific to the actual page content and user needs.>"],
   "emailPrompt": ""
 }
 Context:
@@ -749,7 +826,7 @@ ${previousQnA}
 - Your mainText must be maximum 30 words. Be creative, engaging, and specific to page context. Do NOT repeat previous questions: ${lastFewQuestions
             .map((q) => `"${getText(q)}"`)
             .join(", ")}. Do NOT include a summary or multiple questions.
-- Generate exactly 3 buttons, each 3-4 words maximum. Be relevant to user needs.
+- Generate exactly 3 buttons, each 3-4 words maximum. Base them on actual page content and user needs.
 - Vary the nudge text for each follow-up.`;
           followupUserPrompt = `Create ONE nudge (max 30 words) to engage user. Use page context and intent. Do NOT repeat questions: ${lastFewQuestions
             .map((q) => `"${getText(q)}"`)
@@ -763,8 +840,8 @@ You are a helpful sales assistant. The user has not provided an email yet.
 
 You will receive page and general context, the detected intent, and the previous conversation. Always generate your response in the following JSON format:
 {
-  "mainText": "<A micro-conversion nudge—small, low-friction ask. STRICT LIMITS: Maximum 30 words total. Examples: 'Want this setup guide emailed?' or 'Should I show customization options?' Use casual, friendly tone. Be specific to their context.>",
-  "buttons": ["<Generate exactly 3 buttons, each must be 3-4 words maximum. Make them actionable and context-specific. Examples: 'Yes Please', 'Show Options', 'Learn More'>"],
+  "mainText": "<A micro-conversion nudge—small, low-friction ask. STRICT LIMITS: Maximum 30 words total. Use casual, friendly tone. Be specific to their context and what they're actually viewing.>",
+  "buttons": ["<Generate exactly 3 buttons, each must be 3-4 words maximum. Make them actionable and specific to the actual page content.>"],
   "emailPrompt": ""
 }
 Context:
@@ -778,7 +855,7 @@ Previous Conversation:
 ${previousQnA}
 - Only use the above JSON format.
 - Do not answer in any other way.
-- Your mainText must be a micro-conversion nudge, referencing the user's last action, detected intent, page context, or detected intent. Do NOT ask for a discovery call or email directly. Vary the nudge text for each follow-up.`;
+- Your mainText must be a micro-conversion nudge, referencing the user's last action, detected intent, page context, or actual page content. Do NOT ask for a discovery call or email directly. Vary the nudge text for each follow-up.`;
           followupUserPrompt = `Ask a micro-conversion nudge—a small, low-friction ask (e.g., 'Want to save this setup guide to your email?' or 'Should I show how others customize their services?'), based on the user's last action, detected intent, page context, or detected intent. Do NOT ask for a discovery call or email directly. Vary the nudge text for each follow-up. Only output the JSON format as instructed.`;
         } else if (followupCount === 2) {
           // Third follow-up: check if user already has email
@@ -813,7 +890,7 @@ You are a helpful sales assistant. The user has not provided an email yet.
 
 You will receive page and general context, the detected intent, and the previous conversation. Always generate your response in the following JSON format:
 {
-  "mainText": "<A friendly, direct request for email. STRICT LIMITS: Maximum 30 words total. Explain briefly why you need it. Reference page context. Example: 'Quick! Want the setup guide emailed? Takes 2 seconds! 📧'>",
+  "mainText": "<A friendly, direct request for email. STRICT LIMITS: Maximum 30 words total. Explain briefly why you need it based on what they're viewing. Reference actual page content.>",
   "buttons": [],
   "emailPrompt": "<Create a contextual email prompt that relates to the specific page content and detected intent. Explain what specific information or help you'll send them based on what they're viewing.>"
 }
@@ -828,7 +905,7 @@ Previous Conversation:
 ${previousQnA}
 - Only use the above JSON format.
 - Do not answer in any other way.
-- Your mainText must be a friendly, direct request for the user's email, referencing the page context or detected intent if possible. Do NOT ask another qualifying question or repeat previous questions.`;
+- Your mainText must be a friendly, direct request for the user's email, referencing the actual page context or detected intent. Do NOT ask another qualifying question or repeat previous questions.`;
             followupUserPrompt = `Ask the user for their email in a friendly, direct way, explaining why you need it to send them setup instructions, a demo, or connect them to support for this page. Reference the page context or detected intent if possible. Do NOT ask another qualifying question. Do NOT include any buttons. Only output the JSON format as instructed.`;
           }
         } else if (followupCount === 3) {
@@ -837,15 +914,15 @@ ${previousQnA}
             // User is in sales mode - provide a final high-value offer
             followupSystemPrompt = `You are a helpful sales assistant. The user has already provided their email and is in sales mode. Always generate your response in the following JSON format:
 {
-  "mainText": "<Final high-value offer. STRICT LIMITS: Maximum 30 words total. Make it compelling and time-sensitive. Examples: 'Exclusive early access available! Limited spots for priority onboarding. Ready to secure yours? 🚀'>",
-  "buttons": ["<Generate exactly 3 buttons, each must be 3-4 words maximum. High-value options like 'Secure Access', 'Book Call', 'Get Started'>"],
+  "mainText": "<Final high-value offer. STRICT LIMITS: Maximum 30 words total. Make it compelling and time-sensitive based on what they're viewing. Reference actual page content.>",
+  "buttons": ["<Generate exactly 3 buttons, each must be 3-4 words maximum. High-value options specific to the page content and their journey.>"],
   "emailPrompt": ""
 }
 Context: Page Context: ${pageChunks
               .slice(0, 3)
               .join("\\n---\\n")} General Context: ${pageChunks.join(
               " "
-            )} Detected Intent: ${detectedIntent} Previous Conversation: ${previousQnA} - Only use the above JSON format. - Do not answer in any other way. - Your mainText must be a final high-value offer since the user is already qualified.`;
+            )} Detected Intent: ${detectedIntent} Previous Conversation: ${previousQnA} - Only use the above JSON format. - Do not answer in any other way. - Your mainText must be a final high-value offer since the user is already qualified. Base it on actual page content.`;
             followupUserPrompt = `Make a final high-value offer like exclusive access, priority support, or direct connection to decision maker. The user already provided email so focus on conversion. Only output the JSON format as instructed.`;
           } else {
             // User hasn't provided email yet - final summary offer
@@ -869,7 +946,7 @@ Previous Conversation:
 ${previousQnA}
 - Only use the above JSON format.
 - Do not answer in any other way.
-- Your mainText must summarize the user's last few actions or options and offer to email a summary.`;
+- Your mainText must summarize the user's journey and offer to email a summary. Be natural and avoid formulaic language.`;
             followupUserPrompt = `Offer to email the user a summary of their options, summarizing their last few actions or options in a friendly way. Only output the JSON format as instructed.`;
           }
         } else {
@@ -974,20 +1051,32 @@ ${previousQnA}
       console.log(
         `[DEBUG] Returning generic proactive message - no page context found`
       );
-      const welcomeMessages = [
-        "I'm here to help you learn more about the products and services available.",
-        "I can assist you with any questions about our offerings.",
-        "I'm ready to help you explore what we have available.",
-        "I can help you find exactly what you're looking for.",
-        "I'm here to guide you through our available options.",
-      ];
-      const randomWelcome =
-        welcomeMessages[Math.floor(Math.random() * welcomeMessages.length)];
-      const proactiveMsg = `${randomWelcome}
 
-I can help answer questions, provide information, and guide you through available options based on your specific needs.
+      // Generate dynamic generic message based on URL patterns
+      const urlLower = pageUrl.toLowerCase();
+      let contextualMessage =
+        "I'm here to help you find what you're looking for.";
 
-What would you like to know more about? Feel free to ask me anything or let me know what you're looking to accomplish!`;
+      if (urlLower.includes("pricing") || urlLower.includes("plan")) {
+        contextualMessage =
+          "I can help you understand the available options and pricing.";
+      } else if (urlLower.includes("feature") || urlLower.includes("product")) {
+        contextualMessage =
+          "I can explain how our features work and help you get started.";
+      } else if (urlLower.includes("contact") || urlLower.includes("about")) {
+        contextualMessage =
+          "I'm here to help you connect with our team or learn more.";
+      } else if (urlLower.includes("demo") || urlLower.includes("trial")) {
+        contextualMessage =
+          "I can help you try our platform or schedule a demonstration.";
+      } else if (urlLower.includes("support") || urlLower.includes("help")) {
+        contextualMessage =
+          "I'm here to provide support and answer your questions.";
+      }
+
+      const proactiveMsg = `${contextualMessage}
+
+What specific information are you looking for? I'm here to help guide you through the available options and answer any questions you might have.`;
 
       // Determine bot mode for generic proactive message
       let userEmail: string | null = null;
@@ -1045,15 +1134,28 @@ What would you like to know more about? Feel free to ask me anything or let me k
         typeof body.followupCount === "number" ? body.followupCount : 0;
 
       if (followupCount < 3) {
-        const genericFollowups = [
-          "Is there anything else you'd like to know about the available features?",
-          "Would you like to explore how this could help with your specific needs?",
-          "Ready to see how this can streamline your business? Let me know what interests you most!",
-        ];
+        // Generate contextual followup based on URL or previous conversation
+        const urlLower = pageUrl?.toLowerCase() || "";
+        let contextualMessage = "Is there anything else you'd like to explore?";
 
-        const message = genericFollowups[followupCount] || genericFollowups[0];
+        if (urlLower.includes("pricing") || urlLower.includes("plan")) {
+          contextualMessage =
+            "Would you like to discuss pricing options or compare different plans?";
+        } else if (
+          urlLower.includes("feature") ||
+          urlLower.includes("product")
+        ) {
+          contextualMessage =
+            "Interested in seeing how these features could work for your needs?";
+        } else if (urlLower.includes("demo") || urlLower.includes("trial")) {
+          contextualMessage = "Ready to experience the platform firsthand?";
+        } else if (urlLower.includes("contact") || urlLower.includes("about")) {
+          contextualMessage =
+            "Would you like to connect with our team or learn more about our approach?";
+        }
+
         console.log(
-          `[Followup] Sending generic followup ${followupCount} for session ${sessionId}`
+          `[Followup] Sending contextual followup ${followupCount} for session ${sessionId}`
         );
 
         // Add bot mode to generic followup
@@ -1067,8 +1169,8 @@ What would you like to know more about? Feel free to ask me anything or let me k
 
         return NextResponse.json(
           {
-            mainText: message,
-            buttons: ["Learn More Features", "Get Demo", "Contact Support"],
+            mainText: contextualMessage,
+            buttons: ["Learn More", "Get Help", "Contact Us"],
             emailPrompt: "",
             botMode,
             userEmail: userEmail || null,
