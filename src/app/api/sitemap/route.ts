@@ -24,6 +24,113 @@ const pinecone = new Pinecone({
 });
 const index = pinecone.index(process.env.PINECONE_INDEX!);
 
+// Auto-extract personas after crawling is complete
+async function extractPersonasForAdmin(adminId: string, websiteUrl: string) {
+  try {
+    const db = await getDb();
+    const crawledPages = db.collection("crawled_pages");
+    const personas = db.collection("customer_personas");
+
+    // Get crawled content for this admin
+    const pages = await crawledPages
+      .find({ adminId })
+      .limit(20) // Limit to prevent token overflow
+      .toArray();
+
+    const websiteContent = pages.map((page) => page.text || "").filter(Boolean);
+
+    if (websiteContent.length === 0) {
+      console.log(`[Persona] No content found for adminId: ${adminId}`);
+      return;
+    }
+
+    const prompt = `
+Analyze this website content and extract detailed customer persona data. Focus on identifying who the target customers are, their characteristics, and buying patterns.
+
+Website URL: ${websiteUrl}
+Content: ${websiteContent.slice(0, 10).join("\n---\n")}
+
+Extract and return a JSON object with this structure:
+{
+  "websiteUrl": "${websiteUrl}",
+  "targetAudiences": [
+    {
+      "id": "unique_id",
+      "name": "Persona Name",
+      "type": "small_business|enterprise|startup|freelancer|agency",
+      "industries": ["industry1", "industry2"],
+      "companySize": "1-10|11-50|51-200|200+",
+      "painPoints": ["pain point 1", "pain point 2"],
+      "preferredFeatures": ["feature1", "feature2"],
+      "buyingPatterns": ["pattern1", "pattern2"],
+      "budget": "under_500|500_2000|2000_10000|10000_plus",
+      "technicalLevel": "beginner|intermediate|advanced",
+      "urgency": "low|medium|high",
+      "decisionMaker": true|false
+    }
+  ],
+  "industryFocus": ["primary industries served"],
+  "useCaseExamples": ["use case 1", "use case 2"],
+  "competitorMentions": ["competitor1", "competitor2"],
+  "pricingStrategy": "freemium|subscription|one_time|custom"
+}
+
+Guidelines:
+- Create 2-4 distinct personas based on the content
+- Be specific about pain points and preferred features
+- Identify clear buying patterns and budget ranges
+- Look for mentions of company sizes, industries, and use cases
+- Extract actual competitor names mentioned
+- Determine pricing strategy from pricing pages or content
+- Each persona should be distinct and actionable for messaging
+`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4",
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a customer persona analyst. Extract detailed, actionable customer personas from website content. Always return valid JSON.",
+        },
+        { role: "user", content: prompt },
+      ],
+      temperature: 0.3,
+    });
+
+    const extracted = JSON.parse(completion.choices[0].message.content || "{}");
+
+    // Add timestamps and IDs to personas
+    extracted.targetAudiences = extracted.targetAudiences.map(
+      (persona: any, index: number) => ({
+        ...persona,
+        id: persona.id || `persona_${index + 1}`,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+    );
+
+    const personaDocument = {
+      adminId,
+      ...extracted,
+      extractedAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    await personas.replaceOne({ adminId }, personaDocument, { upsert: true });
+
+    console.log(
+      `[Persona] Successfully extracted ${extracted.targetAudiences.length} personas for adminId: ${adminId}`
+    );
+  } catch (error) {
+    console.error(
+      `[Persona] Error extracting personas for adminId ${adminId}:`,
+      error
+    );
+    throw error;
+  }
+}
+
 async function parseSitemap(sitemapUrl: string): Promise<string[]> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout for sitemap fetch
@@ -1704,6 +1811,20 @@ export async function POST(req: NextRequest) {
         ? `Successfully processed ${results.length} pages. ${totalRemaining} pages remaining - auto-continue available.`
         : `All ${urls.length} pages have been successfully processed!`,
     };
+
+    // Auto-extract personas when crawling is complete
+    if (!hasMorePages && results.length > 0) {
+      console.log(
+        `[Persona] Triggering auto-extraction of customer personas...`
+      );
+      try {
+        await extractPersonasForAdmin(adminId, normalizedUrl);
+        console.log(`[Persona] Auto-extraction completed successfully`);
+      } catch (personaError) {
+        console.error(`[Persona] Auto-extraction failed:`, personaError);
+        // Don't fail the main response if persona extraction fails
+      }
+    }
 
     console.log(`[Crawl] Sending response:`, JSON.stringify(response, null, 2));
     return NextResponse.json(response);

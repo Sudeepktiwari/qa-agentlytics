@@ -99,6 +99,213 @@ function countTokens(text: string) {
   return Math.ceil(text.length / 4);
 }
 
+// Detect user persona from conversation history and page behavior
+async function detectUserPersona(
+  sessionId: string,
+  messages: any[],
+  pageUrl: string,
+  adminId: string
+): Promise<any | null> {
+  try {
+    const db = await getDb();
+    const personas = db.collection("customer_personas");
+
+    // Get admin's persona data
+    const personaData = await personas.findOne({ adminId });
+    if (!personaData || !personaData.targetAudiences) {
+      return null;
+    }
+
+    // Analyze conversation for persona signals
+    const conversationText = messages
+      .map((msg) => `${msg.role}: ${msg.content}`)
+      .join("\n");
+
+    const signals = {
+      // Company size indicators
+      mentionsTeam: /team|staff|employees|colleagues/i.test(conversationText),
+      mentionsEnterprise:
+        /enterprise|corporation|department|organization/i.test(
+          conversationText
+        ),
+      mentionsSmallBiz: /small business|startup|freelance|solo/i.test(
+        conversationText
+      ),
+
+      // Budget sensitivity
+      asksPricing: /cost|price|budget|affordable|expensive|cheap/i.test(
+        conversationText
+      ),
+      mentionsBudget: /\$|budget|cost|price|expensive|affordable/i.test(
+        conversationText
+      ),
+
+      // Technical level
+      asksTechnical: /api|integration|webhook|sso|technical|developer/i.test(
+        conversationText
+      ),
+      mentionsIntegration: /integrate|connection|sync|api|plugin/i.test(
+        conversationText
+      ),
+
+      // Urgency level
+      urgentWords: /urgent|asap|immediately|quickly|soon|deadline/i.test(
+        conversationText
+      ),
+      exploratory: /wondering|curious|exploring|looking into|considering/i.test(
+        conversationText
+      ),
+
+      // Decision making
+      decisionLanguage: /decide|decision|choose|purchase|buy|implement/i.test(
+        conversationText
+      ),
+      exploringLanguage: /learn|understand|know more|information|details/i.test(
+        conversationText
+      ),
+
+      // Page behavior
+      onPricingPage: pageUrl.toLowerCase().includes("pricing"),
+      onEnterprisePage: pageUrl.toLowerCase().includes("enterprise"),
+      onContactPage: pageUrl.toLowerCase().includes("contact"),
+    };
+
+    // Score each persona against detected signals
+    let bestMatch = null;
+    let bestScore = 0;
+
+    for (const persona of personaData.targetAudiences) {
+      let score = 0;
+
+      // Company size matching
+      if (
+        persona.companySize === "1-10" &&
+        (signals.mentionsSmallBiz || !signals.mentionsTeam)
+      )
+        score += 2;
+      if (
+        persona.companySize === "11-50" &&
+        signals.mentionsTeam &&
+        !signals.mentionsEnterprise
+      )
+        score += 2;
+      if (persona.companySize === "200+" && signals.mentionsEnterprise)
+        score += 3;
+
+      // Technical level matching
+      if (persona.technicalLevel === "advanced" && signals.asksTechnical)
+        score += 2;
+      if (persona.technicalLevel === "beginner" && !signals.asksTechnical)
+        score += 1;
+
+      // Budget matching
+      if (persona.budget === "under_500" && signals.asksPricing) score += 1;
+      if (persona.budget === "10000_plus" && signals.onEnterprisePage)
+        score += 2;
+
+      // Urgency matching
+      if (persona.urgency === "high" && signals.urgentWords) score += 2;
+      if (persona.urgency === "low" && signals.exploratory) score += 1;
+
+      // Decision maker matching
+      if (persona.decisionMaker && signals.decisionLanguage) score += 2;
+      if (!persona.decisionMaker && signals.exploringLanguage) score += 1;
+
+      // Page context matching
+      if (signals.onPricingPage && persona.budget) score += 1;
+      if (signals.onEnterprisePage && persona.type === "enterprise") score += 2;
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestMatch = persona;
+      }
+    }
+
+    // Only return persona if we have a reasonable confidence level
+    if (bestScore >= 3) {
+      console.log(
+        `[Persona] Detected persona: ${bestMatch.name} (score: ${bestScore})`
+      );
+      return bestMatch;
+    }
+
+    console.log(
+      `[Persona] No strong persona match found (best score: ${bestScore})`
+    );
+    return null;
+  } catch (error) {
+    console.error("[Persona] Error detecting user persona:", error);
+    return null;
+  }
+}
+
+// Generate persona-specific followup message
+async function generatePersonaBasedFollowup(
+  detectedPersona: any,
+  pageContext: string,
+  currentPage: string,
+  conversationHistory: string,
+  followupCount: number
+): Promise<any> {
+  try {
+    const systemPrompt = `
+You are a sales assistant specialized in ${
+      detectedPersona.name
+    } customers. Generate a followup message that resonates with their specific persona.
+
+Customer Persona Profile:
+- Name: ${detectedPersona.name}
+- Type: ${detectedPersona.type}
+- Company Size: ${detectedPersona.companySize}
+- Industries: ${detectedPersona.industries.join(", ")}
+- Pain Points: ${detectedPersona.painPoints.join(", ")}
+- Preferred Features: ${detectedPersona.preferredFeatures.join(", ")}
+- Budget Range: ${detectedPersona.budget}
+- Technical Level: ${detectedPersona.technicalLevel}
+- Urgency: ${detectedPersona.urgency}
+- Decision Maker: ${detectedPersona.decisionMaker ? "Yes" : "No"}
+
+Current Context:
+- Page: ${currentPage}
+- Followup #: ${followupCount + 1}
+- Page Content: ${pageContext.slice(0, 500)}
+- Conversation: ${conversationHistory.slice(-500)}
+
+Generate your response in JSON format:
+{
+  "mainText": "<Persona-specific message under 30 words that addresses their specific pain points and speaks their language>",
+  "buttons": ["<3 buttons specific to what this persona type actually needs on this page>"],
+  "emailPrompt": "<If appropriate for this persona and followup count>"
+}
+
+Guidelines:
+- Reference their specific pain points and preferred features
+- Use language appropriate for their technical level
+- Consider their budget range and company size
+- Match their urgency level and decision-making authority
+- Be specific to their industry context if relevant
+- Avoid generic messaging - make it persona-specific
+`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: systemPrompt },
+        {
+          role: "user",
+          content: "Generate the persona-specific followup message.",
+        },
+      ],
+      temperature: 0.7,
+    });
+
+    return JSON.parse(completion.choices[0].message.content || "{}");
+  } catch (error) {
+    console.error("[Persona] Error generating persona-based followup:", error);
+    return null;
+  }
+}
+
 // Helper to split text into ~n-token chunks
 async function splitTextIntoTokenChunks(text: string, chunkSize: number) {
   const words = text.split(" ");
@@ -381,6 +588,87 @@ Extract key requirements (2-3 bullet points max, be concise):`;
       `[LeadGen] Stored email for session ${sessionId}: ${detectedEmail} with adminId: ${adminId}`
     );
   }
+
+  // ===== INTELLIGENT CUSTOMER PROFILING =====
+  // Strategic profile updates - not on every message, but on smart triggers
+  if (adminId && sessionId) {
+    try {
+      // Get conversation history for profiling analysis
+      const historyDocs = await chats
+        .find({ sessionId })
+        .sort({ createdAt: 1 })
+        .toArray();
+
+      const conversationForProfiling = historyDocs.map((doc) => ({
+        role: doc.role as string,
+        content: doc.content as string,
+        createdAt: doc.createdAt as Date,
+      }));
+
+      // Add current message to conversation
+      if (question) {
+        conversationForProfiling.push({
+          role: "user",
+          content: question,
+          createdAt: now,
+        });
+      }
+
+      const messageCount = conversationForProfiling.length;
+      const timeInSession = visitedPages?.length ? visitedPages.length * 60 : 0; // Rough estimate
+      const pageTransitions = visitedPages || [];
+
+      // Call customer profiling API to determine if update is needed
+      const profileResponse = await fetch(
+        `${req.nextUrl.origin}/api/customer-profiles`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": apiKey || "",
+          },
+          body: JSON.stringify({
+            sessionId,
+            email: detectedEmail,
+            conversation: conversationForProfiling,
+            messageCount,
+            timeInSession,
+            pageTransitions,
+            pageUrl,
+            trigger: detectedEmail ? "email_detection" : undefined,
+          }),
+        }
+      );
+
+      if (profileResponse.ok) {
+        const profileResult = (await profileResponse.json()) as any;
+        if (profileResult.updated) {
+          console.log(
+            `[CustomerProfiling] Profile updated via ${profileResult.trigger} - Confidence: ${profileResult.confidence}`
+          );
+
+          // Store profile data for potential use in response generation
+          if (profileResult.profile?.intelligenceProfile?.buyingReadiness) {
+            console.log(
+              `[CustomerProfiling] Buying readiness: ${profileResult.profile.intelligenceProfile.buyingReadiness}`
+            );
+          }
+        }
+      } else {
+        console.log(
+          "[CustomerProfiling] Profile update request failed:",
+          profileResponse.status
+        );
+      }
+    } catch (error) {
+      console.error(
+        "[CustomerProfiling] Error in profile update process:",
+        error
+      );
+      // Continue with normal chat flow - profiling failures shouldn't break the conversation
+    }
+  }
+
   // Optionally, you could extract adminId from a cookie/JWT if you want admin-specific context
 
   // Proactive page-aware message
@@ -799,8 +1087,59 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
         );
         const userHasEmail = lastEmailMsg && lastEmailMsg.email;
 
+        // Try persona-based followup first
+        console.log(
+          `[Persona] Attempting persona detection for followup ${followupCount}`
+        );
+        const detectedPersona = await detectUserPersona(
+          sessionId,
+          previousChats,
+          pageUrl,
+          adminId || ""
+        );
+
+        let personaFollowup = null;
+        if (detectedPersona && pageChunks.length > 0) {
+          console.log(
+            `[Persona] Generating persona-based followup for: ${detectedPersona.name}`
+          );
+          personaFollowup = await generatePersonaBasedFollowup(
+            detectedPersona,
+            pageChunks.slice(0, 3).join("\n---\n"),
+            pageUrl,
+            previousQnA,
+            followupCount
+          );
+        }
+
         let followupSystemPrompt = "";
         let followupUserPrompt = "";
+
+        // Use persona-based followup if available, otherwise fall back to generic
+        if (personaFollowup && personaFollowup.mainText) {
+          console.log(
+            `[Persona] Using persona-based followup for ${detectedPersona.name}`
+          );
+
+          let userEmail: string | null = null;
+          if (lastEmailMsg && lastEmailMsg.email)
+            userEmail = lastEmailMsg.email;
+          const botMode = userEmail ? "sales" : "lead_generation";
+
+          const followupWithMode = {
+            ...personaFollowup,
+            botMode,
+            userEmail: userEmail || null,
+          };
+
+          return NextResponse.json(followupWithMode, { headers: corsHeaders });
+        }
+
+        // Fall back to generic followup logic
+        console.log(
+          `[Persona] No persona detected or persona followup failed, using generic followup`
+        );
+
         if (followupCount === 0) {
           // First follow-up: context-aware nudge with buttons, tip is optional
           followupSystemPrompt = `

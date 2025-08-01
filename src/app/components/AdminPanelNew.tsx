@@ -12,6 +12,8 @@ import WidgetConfiguratorSection from "./admin/WidgetConfiguratorSection";
 import LeadsManagementSection from "./admin/LeadsManagementSection";
 import TestingSection from "./admin/TestingSection";
 import DocumentManagementSection from "./admin/DocumentManagementSection";
+import CustomerPersonaSection from "./admin/CustomerPersonaSection";
+import CustomerProfilesSection from "./admin/CustomerProfilesSection";
 
 const AdminPanel: React.FC = () => {
   // Authentication state
@@ -80,6 +82,9 @@ const AdminPanel: React.FC = () => {
   const [documentsLoading, setDocumentsLoading] = useState(false);
   const [documentsError, setDocumentsError] = useState("");
   const [documentsExpanded, setDocumentsExpanded] = useState(false);
+
+  // Customer personas state
+  const [personasExpanded, setPersonasExpanded] = useState(false);
 
   // Widget configuration state
   const [widgetConfig, setWidgetConfig] = useState({
@@ -510,6 +515,13 @@ const AdminPanel: React.FC = () => {
             }}
             onCopyToClipboard={copyToClipboard}
           />
+
+          <CustomerPersonaSection
+            expanded={personasExpanded}
+            onToggleExpanded={() => setPersonasExpanded(!personasExpanded)}
+          />
+
+          <CustomerProfilesSection />
 
           <TestingSection
             auth={auth}

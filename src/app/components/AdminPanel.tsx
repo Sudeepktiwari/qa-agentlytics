@@ -12,6 +12,8 @@ import WidgetConfiguratorSection from "./admin/WidgetConfiguratorSection";
 import LeadsManagementSection from "./admin/LeadsManagementSection";
 import TestingSection from "./admin/TestingSection";
 import DocumentManagementSection from "./admin/DocumentManagementSection";
+import CustomerPersonaSection from "./admin/CustomerPersonaSection";
+import CustomerProfilesSection from "./admin/CustomerProfilesSection";
 
 const AdminPanel: React.FC = () => {
   // Authentication state
@@ -88,6 +90,9 @@ const AdminPanel: React.FC = () => {
     voiceGender: "female",
     autoOpenProactive: true,
   });
+
+  // Customer persona section state
+  const [personasExpanded, setPersonasExpanded] = useState(false);
 
   // Check authentication on mount
   useEffect(() => {
@@ -512,6 +517,13 @@ const AdminPanel: React.FC = () => {
             }}
             onCopyToClipboard={copyToClipboard}
           />
+
+          <CustomerPersonaSection
+            expanded={personasExpanded}
+            onToggleExpanded={() => setPersonasExpanded(!personasExpanded)}
+          />
+
+          <CustomerProfilesSection />
 
           <TestingSection
             auth={auth}

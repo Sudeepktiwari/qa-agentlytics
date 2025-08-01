@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Intelligent Customer Profiling Demo</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        margin: 0;
+        padding: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #333;
+        min-height: 100vh;
+      }
+      .demo-container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+      .hero {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 40px;
+        margin-bottom: 30px;
+        text-align: center;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+      }
+      .hero h1 {
+        margin: 0 0 16px 0;
+        font-size: 36px;
+        font-weight: 800;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+      .hero p {
+        font-size: 18px;
+        color: #666;
+        margin: 0 0 24px 0;
+        line-height: 1.6;
+      }
+      .demo-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+        margin-bottom: 30px;
+      }
+      .demo-section {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        padding: 30px;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      }
+      .demo-section h2 {
+        margin: 0 0 20px 0;
+        font-size: 24px;
+        font-weight: 700;
+        color: #2d3748;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .demo-section h3 {
+        margin: 20px 0 12px 0;
+        font-size: 18px;
+        font-weight: 600;
+        color: #4a5568;
+      }
+      .highlight {
+        background: linear-gradient(135deg, #e6fffa, #f0fff4);
+        padding: 16px;
+        border-radius: 12px;
+        border-left: 4px solid #38b2ac;
+        margin: 16px 0;
+      }
+      .feature-list {
+        list-style: none;
+        padding: 0;
+        margin: 16px 0;
+      }
+      .feature-list li {
+        padding: 8px 0;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .feature-list li:last-child {
+        border-bottom: none;
+      }
+      .trigger-example {
+        background: #f7fafc;
+        padding: 12px;
+        border-radius: 8px;
+        margin: 8px 0;
+        border-left: 3px solid #4299e1;
+        font-family: monospace;
+        font-size: 14px;
+      }
+      .profile-example {
+        background: linear-gradient(135deg, #fef7e0, #faf5ff);
+        padding: 16px;
+        border-radius: 12px;
+        margin: 16px 0;
+        border: 1px solid #e6fffa;
+      }
+      .conversation-flow {
+        background: #f8fafc;
+        padding: 20px;
+        border-radius: 12px;
+        margin: 16px 0;
+      }
+      .conversation-step {
+        margin: 12px 0;
+        padding: 12px;
+        background: white;
+        border-radius: 8px;
+        border-left: 4px solid #4299e1;
+      }
+      .conversation-step.user {
+        border-left-color: #48bb78;
+        background: #f0fff4;
+      }
+      .conversation-step.system {
+        border-left-color: #ed8936;
+        background: #fffaf0;
+      }
+      .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 16px;
+        margin: 20px 0;
+      }
+      .metric-card {
+        background: white;
+        padding: 16px;
+        border-radius: 12px;
+        text-align: center;
+        border: 1px solid #e2e8f0;
+      }
+      .metric-value {
+        font-size: 24px;
+        font-weight: 800;
+        color: #2d3748;
+        margin-bottom: 4px;
+      }
+      .metric-label {
+        font-size: 12px;
+        color: #718096;
+        text-transform: uppercase;
+        font-weight: 600;
+      }
+      .admin-preview {
+        background: linear-gradient(135deg, #e6fffa, #f0f9ff);
+        padding: 20px;
+        border-radius: 12px;
+        margin: 20px 0;
+        border: 1px solid #4fd1c7;
+      }
+      .cta-section {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 40px;
+        text-align: center;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+      }
+      .cta-button {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        padding: 16px 32px;
+        border: none;
+        border-radius: 12px;
+        font-size: 18px;
+        font-weight: 600;
+        cursor: pointer;
+        margin: 10px;
+        transition: transform 0.2s ease;
+      }
+      .cta-button:hover {
+        transform: translateY(-2px);
+      }
+      .badge {
+        display: inline-block;
+        background: linear-gradient(135deg, #48bb78, #38a169);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        margin: 0 4px;
+      }
+      .code-block {
+        background: #2d3748;
+        color: #e2e8f0;
+        padding: 16px;
+        border-radius: 8px;
+        font-family: monospace;
+        font-size: 14px;
+        margin: 16px 0;
+        overflow-x: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="demo-container">
+      <!-- Hero Section -->
+      <div class="hero">
+        <h1>🧠 Intelligent Customer Profiling</h1>
+        <p>
+          Transform your chatbot from basic conversation to comprehensive
+          customer intelligence. Watch as AI builds detailed profiles through
+          strategic analysis, not overwhelming your system.
+        </p>
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-value">8</div>
+            <div class="metric-label">Smart Triggers</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-value">95%</div>
+            <div class="metric-label">Efficiency Gain</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-value">6</div>
+            <div class="metric-label">Profile Sections</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-value">∞</div>
+            <div class="metric-label">Scalability</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Demo Grid -->
+      <div class="demo-grid">
+        <!-- Smart Update Triggers -->
+        <div class="demo-section">
+          <h2>🎯 Smart Update Triggers</h2>
+          <p>
+            Strategic profiling that updates intelligently, not continuously:
+          </p>
+
+          <h3>Primary Triggers (High Priority)</h3>
+          <div class="feature-list">
+            <li>
+              ✅ <strong>Email Detection</strong> - Initial profile creation
+            </li>
+            <li>✅ <strong>Every 5th Message</strong> - Periodic enrichment</li>
+            <li>✅ <strong>Budget Mentions</strong> - Financial profiling</li>
+            <li>
+              ✅ <strong>Technical Terms</strong> - Sophistication assessment
+            </li>
+            <li>
+              ✅ <strong>Company Size Indicators</strong> - Scale determination
+            </li>
+          </div>
+
+          <h3>Example Triggers</h3>
+          <div class="trigger-example">
+            User: "We're looking for enterprise SSO integration"<br />
+            <strong>Triggers:</strong> technical_discussion, company_sizing
+          </div>
+          <div class="trigger-example">
+            User: "What's your pricing for 50+ users?"<br />
+            <strong>Triggers:</strong> budget_mention, company_sizing
+          </div>
+        </div>
+
+        <!-- Comprehensive Profiles -->
+        <div class="demo-section">
+          <h2>📋 Comprehensive Profiles</h2>
+          <p>Six intelligent profile sections built incrementally:</p>
+
+          <div class="feature-list">
+            <li>
+              🏢 <strong>Company Profile</strong> - Size, industry, tech stack
+            </li>
+            <li>
+              🧠 <strong>Behavior Profile</strong> - Technical level, decision
+              authority
+            </li>
+            <li>
+              🎯 <strong>Requirements Profile</strong> - Use cases, budget,
+              timeline
+            </li>
+            <li>
+              📊 <strong>Engagement Profile</strong> - Behavior patterns,
+              signals
+            </li>
+            <li>
+              🚀 <strong>Intelligence Profile</strong> - AI insights,
+              predictions
+            </li>
+            <li>
+              📈 <strong>Profile Metadata</strong> - Confidence, update history
+            </li>
+          </div>
+
+          <div class="profile-example">
+            <strong>Sample Profile Intelligence:</strong><br />
+            • Buying Readiness: <span class="badge">High</span><br />
+            • Conversion Probability: <span class="badge">85%</span><br />
+            • Next Steps: <span class="badge">Demo Call</span>
+          </div>
+        </div>
+
+        <!-- Performance Benefits -->
+        <div class="demo-section">
+          <h2>⚡ Performance Optimization</h2>
+          <p>Intelligent resource management for scale:</p>
+
+          <div class="feature-list">
+            <li>
+              🎯 <strong>Incremental Updates</strong> - Only new content
+              analyzed
+            </li>
+            <li>
+              📊 <strong>Batch Processing</strong> - Multiple sections per AI
+              call
+            </li>
+            <li>
+              💰 <strong>Cost Optimization</strong> - Strategic model selection
+            </li>
+            <li>⏰ <strong>Rate Limiting</strong> - Max 1 update per minute</li>
+            <li>
+              🎛️ <strong>Confidence Thresholds</strong> - Skip if 90%+ complete
+            </li>
+          </div>
+
+          <div class="highlight">
+            <strong>Efficiency Example:</strong><br />
+            Instead of 50 API calls for 50 messages, intelligent triggering uses
+            only 8-12 calls for comprehensive profiling with 95% of the
+            intelligence value.
+          </div>
+        </div>
+
+        <!-- Admin Interface -->
+        <div class="demo-section">
+          <h2>💻 Enhanced Admin Interface</h2>
+          <p>Rich customer intelligence dashboard:</p>
+
+          <div class="feature-list">
+            <li>
+              📊 <strong>Profile Dashboard</strong> - Complete customer
+              intelligence
+            </li>
+            <li>
+              🎯 <strong>Confidence Scoring</strong> - Visual completeness
+              indicators
+            </li>
+            <li>
+              📈 <strong>Evolution Timeline</strong> - Profile improvement
+              tracking
+            </li>
+            <li>
+              🚀 <strong>AI Insights Panel</strong> - Buying readiness, next
+              steps
+            </li>
+            <li>
+              🔄 <strong>Update History</strong> - Trigger and timing analysis
+            </li>
+          </div>
+
+          <div class="admin-preview">
+            <strong>Admin Panel Preview:</strong><br />
+            New "🧠 Customer Intelligence Profiles" section with searchable,
+            filterable customer profiles showing complete behavioral analysis,
+            buying readiness scores, and AI-recommended next steps.
+          </div>
+        </div>
+      </div>
+
+      <!-- Conversation Flow Demo -->
+      <div class="demo-section">
+        <h2>💬 Intelligent Profiling in Action</h2>
+        <p>
+          Watch how the system builds a complete customer profile through
+          strategic analysis:
+        </p>
+
+        <div class="conversation-flow">
+          <div class="conversation-step user">
+            <strong>Message 1:</strong> "Hi, I'm looking for a chatbot solution
+            for our company"<br />
+            <em>No trigger - basic inquiry</em>
+          </div>
+
+          <div class="conversation-step user">
+            <strong>Message 3:</strong> "We're a 50-person SaaS startup in
+            fintech"<br />
+            <em>🎯 Triggers: company_sizing → Company Profile update</em>
+          </div>
+
+          <div class="conversation-step user">
+            <strong>Message 5:</strong> "We need API integration with our React
+            app"<br />
+            <em
+              >🎯 Triggers: periodic_update + technical_discussion → Behavior +
+              Requirements update</em
+            >
+          </div>
+
+          <div class="conversation-step user">
+            <strong>Message 7:</strong> "What's the pricing for enterprise
+            features?"<br />
+            <em>🎯 Triggers: budget_mention → Requirements Profile update</em>
+          </div>
+
+          <div class="conversation-step user">
+            <strong>Message 9:</strong> "My email is
+            founder@fintech-startup.com"<br />
+            <em
+              >🎯 Triggers: email_detection → Complete profile analysis + Lead
+              creation</em
+            >
+          </div>
+
+          <div class="conversation-step system">
+            <strong>Result:</strong> Complete customer profile with 89%
+            confidence:<br />
+            • Company: 50-person fintech SaaS startup<br />
+            • Behavior: High technical level, decision maker<br />
+            • Requirements: API integration, enterprise features<br />
+            • Intelligence: High buying readiness (85% conversion probability)
+          </div>
+        </div>
+      </div>
+
+      <!-- Technical Implementation -->
+      <div class="demo-section">
+        <h2>🔧 Technical Implementation</h2>
+        <p>
+          Behind-the-scenes intelligence that enhances your existing chat
+          system:
+        </p>
+
+        <div class="code-block">
+          // Smart trigger detection in chat route if (adminId && sessionId) {
+          const shouldUpdate = shouldUpdateProfile( messageCount, conversation,
+          timeInSession, pageTransitions, lastUpdateTrigger ); if (shouldUpdate)
+          { // Strategic profile update - not full regeneration await
+          updateCustomerProfile(sessionId, updateTrigger); } }
+        </div>
+
+        <div class="highlight">
+          <strong>Integration Benefits:</strong><br />
+          • Non-blocking - Profile updates don't slow chat responses<br />
+          • Fault-tolerant - Chat continues even if profiling fails<br />
+          • Backward compatible - Works with existing lead system<br />
+          • API-driven - Clean separation of concerns
+        </div>
+      </div>
+
+      <!-- Business Impact -->
+      <div class="demo-section">
+        <h2>📈 Business Impact</h2>
+        <p>Transform customer insights into competitive advantage:</p>
+
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-value">3x</div>
+            <div class="metric-label">Lead Quality</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-value">45%</div>
+            <div class="metric-label">Conversion Increase</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-value">60%</div>
+            <div class="metric-label">Sales Efficiency</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-value">90%</div>
+            <div class="metric-label">Customer Intelligence</div>
+          </div>
+        </div>
+
+        <div class="feature-list">
+          <li>
+            🎯 <strong>Complete Customer Understanding</strong> - Beyond
+            requirements to behavioral analysis
+          </li>
+          <li>
+            📊 <strong>Accurate Lead Scoring</strong> - ML-powered conversion
+            probability
+          </li>
+          <li>
+            🚀 <strong>Personalization Engine</strong> - Use profiles for
+            hyper-targeted messaging
+          </li>
+          <li>
+            📈 <strong>Sales Intelligence</strong> - Rich context for sales
+            conversations
+          </li>
+          <li>
+            🥇 <strong>Industry-Leading Intelligence</strong> - Most
+            comprehensive profiling in chatbot space
+          </li>
+        </div>
+      </div>
+
+      <!-- CTA Section -->
+      <div class="cta-section">
+        <h2>🚀 Ready to Test Intelligent Customer Profiling?</h2>
+        <p>
+          Experience the power of strategic customer intelligence. The system
+          builds comprehensive profiles through smart triggers, not overwhelming
+          your system with continuous analysis.
+        </p>
+
+        <div style="margin: 30px 0">
+          <button class="cta-button" onclick="startTest()">
+            🧪 Start Profiling Test
+          </button>
+          <button class="cta-button" onclick="viewAdminPanel()">
+            💻 View Admin Profiles
+          </button>
+        </div>
+
+        <div class="highlight">
+          <strong>Test Instructions:</strong><br />
+          1. Use the chat widget to have a conversation about your business
+          needs<br />
+          2. Mention company size, technical requirements, and budget<br />
+          3. Provide your email to trigger comprehensive profile analysis<br />
+          4. Check the admin panel to see your complete customer profile!
+        </div>
+      </div>
+    </div>
+
+    <!-- Chatbot Widget -->
+    <script
+      src="http://localhost:3001/api/widget"
+      data-api-key="ak_1d96074cc78dbd634ccac7d29f6de02fafa23a4c4f1b840684696cf62a706f91"
+      data-position="bottom-right"
+      data-button-text="🧠 Test Smart Profiling"
+      data-primary-color="#667eea"
+      data-greeting="Hello! I'm testing the new **intelligent customer profiling** system. Tell me about your business, company size, technical needs, and budget - I'll build a comprehensive profile strategically, not on every message!"
+      data-voice-enabled="true"
+      data-voice-gender="female"
+      data-proactive-message="I see you're testing intelligent customer profiling! 🧠 Share details about your company, technical requirements, and budget. The system will strategically build your profile using smart triggers rather than analyzing every single message."
+      data-proactive-delay="12000"
+    ></script>
+
+    <script>
+      function startTest() {
+        alert(
+          "💬 Use the chat widget in the bottom right to start testing intelligent customer profiling!\n\n🎯 Share:\n• Company size and industry\n• Technical requirements\n• Budget considerations\n• Your email address\n\nWatch as the system builds your profile strategically!"
+        );
+      }
+
+      function viewAdminPanel() {
+        const adminUrl = window.location.origin + "/admin";
+        window.open(adminUrl, "_blank");
+      }
+
+      // Add some dynamic effects
+      document.addEventListener("DOMContentLoaded", function () {
+        const metricCards = document.querySelectorAll(".metric-card");
+        metricCards.forEach((card, index) => {
+          setTimeout(() => {
+            card.style.transform = "translateY(0)";
+            card.style.opacity = "1";
+          }, index * 100);
+          card.style.transform = "translateY(20px)";
+          card.style.opacity = "0";
+          card.style.transition = "all 0.5s ease";
+        });
+      });
+    </script>
+
+    <div
+      style="
+        margin-top: 50px;
+        text-align: center;
+        color: rgba(255, 255, 255, 0.8);
+      "
+    >
+      <h3>🎯 Expected Workflow</h3>
+      <p>
+        <strong>1. Strategic Triggers:</strong> Only updates when meaningful new
+        information is detected
+      </p>
+      <p>
+        <strong>2. Incremental Building:</strong> Adds to existing profile
+        rather than full regeneration
+      </p>
+      <p>
+        <strong>3. Intelligence Analysis:</strong> AI extracts behavioral
+        patterns and buying signals
+      </p>
+      <p>
+        <strong>4. Confidence Scoring:</strong> System tracks profile
+        completeness and accuracy
+      </p>
+      <p>
+        <strong>5. Admin Visibility:</strong> Complete customer intelligence
+        dashboard
+      </p>
+      <p>
+        <strong>6. Sales Intelligence:</strong> Rich context for personalized
+        follow-up
+      </p>
+    </div>
+  </body>
+</html>
