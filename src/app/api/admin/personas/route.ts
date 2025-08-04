@@ -56,55 +56,50 @@ async function extractPersonasFromContent(
   websiteUrl: string
 ): Promise<Omit<PersonaData, "adminId" | "extractedAt" | "updatedAt">> {
   const prompt = `
-Analyze this website content and extract detailed customer persona data. Focus on identifying who the target customers are, their characteristics, and buying patterns.
+You are analyzing a website to extract customer personas. Based on the content below, create 2-4 specific customer personas.
+
+IMPORTANT: You must return ONLY a valid JSON object, no other text before or after.
 
 Website URL: ${websiteUrl}
 Number of content pieces: ${websiteContent.length}
 
 Content: ${websiteContent.slice(0, 15).join("\n---CONTENT PIECE---\n")}
 
-Based on this content, extract and return a JSON object with this structure:
+Return this exact JSON structure:
 {
   "websiteUrl": "${websiteUrl}",
   "targetAudiences": [
     {
-      "id": "unique_id",
-      "name": "Persona Name (e.g., 'Small Business Owner', 'Enterprise IT Director')",
-      "type": "small_business|enterprise|startup|freelancer|agency",
-      "industries": ["industry1", "industry2"],
-      "companySize": "1-10|11-50|51-200|200+",
-      "painPoints": ["specific pain point 1", "specific pain point 2"],
-      "preferredFeatures": ["feature1", "feature2"],
-      "buyingPatterns": ["pattern1", "pattern2"],
-      "budget": "under_500|500_2000|2000_10000|10000_plus",
-      "technicalLevel": "beginner|intermediate|advanced",
-      "urgency": "low|medium|high",
-      "decisionMaker": true|false
+      "id": "persona_1",
+      "name": "Persona Name",
+      "type": "small_business",
+      "industries": ["technology"],
+      "companySize": "1-10",
+      "painPoints": ["specific pain point"],
+      "preferredFeatures": ["feature1"],
+      "buyingPatterns": ["pattern1"],
+      "budget": "under_500",
+      "technicalLevel": "beginner",
+      "urgency": "medium",
+      "decisionMaker": true
     }
   ],
-  "industryFocus": ["primary industries this website serves"],
-  "useCaseExamples": ["concrete use case 1", "concrete use case 2"],
-  "competitorMentions": ["competitor1", "competitor2"],
-  "pricingStrategy": "freemium|subscription|one_time|custom|unknown"
+  "industryFocus": ["primary industry"],
+  "useCaseExamples": ["use case 1"],
+  "competitorMentions": [],
+  "pricingStrategy": "subscription"
 }
 
-Guidelines:
-- Create 2-4 distinct personas based on the content
-- Be very specific about pain points (not generic)
-- Look for actual industry mentions, company sizes mentioned
-- Extract real use cases described in the content
-- Identify actual competitor names if mentioned
-- Determine pricing strategy from pricing pages or content
-- Each persona should be distinct and actionable for messaging
-- If uncertain about any field, use reasonable defaults
-- Focus on personas that would actually visit this website
-
-Return only the JSON object, no other text.`;
+Create realistic personas based on the actual content. Even if content is limited, create at least 1-2 basic personas.`;
 
   try {
     console.log("Calling OpenAI for persona extraction...");
     console.log("Content pieces:", websiteContent.length);
     console.log("Website URL:", websiteUrl);
+    console.log(
+      "Sample content preview:",
+      websiteContent[0]?.substring(0, 200) + "..."
+    );
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
@@ -119,14 +114,24 @@ Return only the JSON object, no other text.`;
       temperature: 0.3,
     });
 
-    console.log("OpenAI response received, parsing...");
-    const extracted = JSON.parse(completion.choices[0].message.content || "{}");
+    console.log("OpenAI response received:");
+    console.log("Raw response:", completion.choices[0].message.content);
+    console.log(
+      "Response length:",
+      completion.choices[0].message.content?.length
+    );
 
-    console.log("Parsed extraction result:", {
-      targetAudiences: extracted.targetAudiences?.length || 0,
-      industryFocus: extracted.industryFocus?.length || 0,
-      useCaseExamples: extracted.useCaseExamples?.length || 0,
-    });
+    let extracted;
+    try {
+      extracted = JSON.parse(completion.choices[0].message.content || "{}");
+    } catch (parseError) {
+      console.error("Failed to parse OpenAI response as JSON:", parseError);
+      console.error("Raw response was:", completion.choices[0].message.content);
+      throw new Error("Invalid JSON response from OpenAI");
+    }
+
+    console.log("Parsed extraction result:");
+    console.log("Full parsed object:", JSON.stringify(extracted, null, 2));
 
     // Validate and ensure we have a proper structure
     if (
@@ -268,6 +273,21 @@ export async function POST(req: NextRequest) {
       console.log(
         `${crawledContent.length} pages have content after filtering`
       );
+
+      // Debug: Show sample content
+      if (crawledContent.length > 0) {
+        console.log("Sample crawled content:");
+        console.log("First page URL:", crawledContent[0]?.url);
+        console.log("First page title:", crawledContent[0]?.title);
+        console.log(
+          "First page content length:",
+          crawledContent[0]?.text?.length
+        );
+        console.log(
+          "First page preview:",
+          crawledContent[0]?.text?.substring(0, 300) + "..."
+        );
+      }
 
       // Combine all content sources
       const allContent = crawledContent.map(
