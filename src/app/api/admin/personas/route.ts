@@ -102,6 +102,10 @@ Guidelines:
 Return only the JSON object, no other text.`;
 
   try {
+    console.log("Calling OpenAI for persona extraction...");
+    console.log("Content pieces:", websiteContent.length);
+    console.log("Website URL:", websiteUrl);
+    
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
@@ -115,7 +119,14 @@ Return only the JSON object, no other text.`;
       temperature: 0.3,
     });
 
+    console.log("OpenAI response received, parsing...");
     const extracted = JSON.parse(completion.choices[0].message.content || "{}");
+
+    console.log("Parsed extraction result:", {
+      targetAudiences: extracted.targetAudiences?.length || 0,
+      industryFocus: extracted.industryFocus?.length || 0,
+      useCaseExamples: extracted.useCaseExamples?.length || 0
+    });
 
     // Validate and ensure we have a proper structure
     if (
@@ -203,11 +214,15 @@ export async function POST(req: NextRequest) {
     const personas = db.collection("customer_personas");
 
     if (action === "auto_extract") {
+      console.log("=== PERSONA AUTO-EXTRACTION START ===");
+      console.log("Admin ID:", adminId);
+      
       // Auto-extract personas from crawled content and Pinecone
 
       // First, try to get the admin's domain from previous crawling
       const crawledPages = db.collection("crawled_pages");
       const samplePage = await crawledPages.findOne({ adminId });
+      console.log("Sample crawled page found:", !!samplePage);
 
       let targetWebsiteUrl = websiteUrl;
       if (!targetWebsiteUrl && samplePage?.url) {
@@ -215,12 +230,14 @@ export async function POST(req: NextRequest) {
         try {
           const url = new URL(samplePage.url);
           targetWebsiteUrl = `${url.protocol}//${url.hostname}`;
+          console.log("Auto-detected website URL:", targetWebsiteUrl);
         } catch (e) {
           console.error("Error extracting domain from crawled page:", e);
         }
       }
 
       if (!targetWebsiteUrl) {
+        console.log("No website URL found - returning error");
         return NextResponse.json(
           {
             error:
@@ -237,6 +254,8 @@ export async function POST(req: NextRequest) {
         .sort({ created_at: -1 }) // Get most recent content first
         .toArray();
 
+      console.log(`Found ${pages.length} crawled pages for admin ${adminId}`);
+
       const crawledContent = pages
         .map((page) => ({
           url: page.url,
@@ -246,6 +265,8 @@ export async function POST(req: NextRequest) {
         }))
         .filter((item) => item.text.length > 0);
 
+      console.log(`${crawledContent.length} pages have content after filtering`);
+
       // Combine all content sources
       const allContent = crawledContent.map(
         (item) =>
@@ -253,6 +274,7 @@ export async function POST(req: NextRequest) {
       );
 
       if (allContent.length === 0) {
+        console.log("No content found for extraction - returning error");
         return NextResponse.json(
           {
             error:

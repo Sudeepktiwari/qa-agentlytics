@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 
 // Customer persona interfaces
 interface CustomerPersona {
@@ -81,6 +82,8 @@ const CustomerPersonaSection: React.FC<CustomerPersonaSectionProps> = ({
     setMessage("");
 
     try {
+      console.log("Starting persona auto-extraction...");
+      
       const res = await fetch("/api/admin/personas", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -91,12 +94,15 @@ const CustomerPersonaSection: React.FC<CustomerPersonaSectionProps> = ({
       });
 
       const data = await res.json();
+      console.log("Persona extraction response:", data);
 
       if (res.ok) {
         setPersonaData(data.personas);
         setMessage(data.message);
+        console.log("Successfully extracted personas:", data.personas?.targetAudiences?.length || 0);
       } else {
         setError(data.error || "Failed to extract personas");
+        console.error("Persona extraction failed:", data.error);
       }
     } catch (error) {
       setError("Failed to extract personas");
@@ -733,7 +739,7 @@ const PersonaForm: React.FC<{
     onSave(formData);
   };
 
-  return (
+  const modalContent = (
     <div
       style={{
         position: "fixed",
@@ -741,12 +747,18 @@ const PersonaForm: React.FC<{
         left: 0,
         right: 0,
         bottom: 0,
-        background: "rgba(0, 0, 0, 0.5)",
+        background: "rgba(0, 0, 0, 0.7)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        zIndex: 1000,
+        zIndex: 9999,
         padding: "20px",
+      }}
+      onClick={(e) => {
+        // Close modal if clicking the backdrop
+        if (e.target === e.currentTarget) {
+          onCancel();
+        }
       }}
     >
       <div
@@ -758,7 +770,9 @@ const PersonaForm: React.FC<{
           width: "100%",
           maxHeight: "80vh",
           overflow: "auto",
+          boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
         }}
+        onClick={(e) => e.stopPropagation()} // Prevent modal close when clicking inside
       >
         <h3
           style={{
@@ -1027,9 +1041,7 @@ const PersonaForm: React.FC<{
           </div>
 
           <div style={{ marginTop: "16px" }}>
-            <label
-              style={{ display: "flex", alignItems: "center", gap: "8px" }}
-            >
+            <label style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <input
                 type="checkbox"
                 checked={formData.decisionMaker}
@@ -1080,6 +1092,14 @@ const PersonaForm: React.FC<{
       </div>
     </div>
   );
+
+  // Use portal to render modal outside the parent container
+  if (typeof window !== 'undefined') {
+    return createPortal(modalContent, document.body);
+  }
+  
+  // Fallback for SSR
+  return modalContent;
 };
 
 export default CustomerPersonaSection;
