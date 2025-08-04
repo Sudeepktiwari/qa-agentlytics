@@ -99,6 +99,139 @@ function countTokens(text: string) {
   return Math.ceil(text.length / 4);
 }
 
+// Helper to detect industry/vertical from page URL and content
+function detectVertical(pageUrl: string, pageContent: string = ""): string {
+  const url = pageUrl.toLowerCase();
+  const content = pageContent.toLowerCase();
+
+  // URL-based detection
+  if (url.includes("/consulting") || url.includes("/consultant"))
+    return "consulting";
+  if (
+    url.includes("/legal") ||
+    url.includes("/law") ||
+    url.includes("/attorney")
+  )
+    return "legal";
+  if (
+    url.includes("/accounting") ||
+    url.includes("/finance") ||
+    url.includes("/bookkeeping")
+  )
+    return "accounting";
+  if (
+    url.includes("/staffing") ||
+    url.includes("/recruiting") ||
+    url.includes("/hr")
+  )
+    return "staffing";
+  if (
+    url.includes("/healthcare") ||
+    url.includes("/medical") ||
+    url.includes("/clinic")
+  )
+    return "healthcare";
+  if (
+    url.includes("/education") ||
+    url.includes("/school") ||
+    url.includes("/university")
+  )
+    return "education";
+  if (
+    url.includes("/real-estate") ||
+    url.includes("/realty") ||
+    url.includes("/property")
+  )
+    return "real_estate";
+  if (
+    url.includes("/technology") ||
+    url.includes("/software") ||
+    url.includes("/saas")
+  )
+    return "technology";
+  if (
+    url.includes("/retail") ||
+    url.includes("/ecommerce") ||
+    url.includes("/store")
+  )
+    return "retail";
+
+  // Content-based detection (basic keyword matching)
+  if (content.includes("consultation") || content.includes("advisory"))
+    return "consulting";
+  if (
+    content.includes("legal") ||
+    content.includes("litigation") ||
+    content.includes("attorney")
+  )
+    return "legal";
+  if (
+    content.includes("accounting") ||
+    content.includes("bookkeeping") ||
+    content.includes("tax")
+  )
+    return "accounting";
+  if (
+    content.includes("recruiting") ||
+    content.includes("staffing") ||
+    content.includes("candidates")
+  )
+    return "staffing";
+  if (
+    content.includes("patients") ||
+    content.includes("medical") ||
+    content.includes("healthcare")
+  )
+    return "healthcare";
+
+  return "general";
+}
+
+// Helper to generate vertical-specific messaging
+function getVerticalMessage(
+  vertical: string,
+  productName: string = "our platform"
+): {
+  message: string;
+  buttons: string[];
+} {
+  const verticalMessages: Record<
+    string,
+    { message: string; buttons: string[] }
+  > = {
+    consulting: {
+      message: `Consulting teams use ${productName} to eliminate back‑and‑forth scheduling, increase billable hours, and onboard clients faster.`,
+      buttons: ["Law Firms", "Accounting", "Staffing", "General Consulting"],
+    },
+    legal: {
+      message: `Law firms eliminate manual scheduling so attorneys can focus on cases, reduce no‑shows, and automate intake—leading to higher billable hours.`,
+      buttons: ["Case Studies", "Law Demo", "ROI Calculator"],
+    },
+    accounting: {
+      message: `Accounting firms save hours on coordination using intake forms and automated reminders. Focus on client work, take on more clients efficiently.`,
+      buttons: ["Accounting Demo", "ROI Data", "Integration Options"],
+    },
+    staffing: {
+      message: `Staffing teams streamline candidate calls, interviews, and coordination with round‑robin scheduling and reduced coordination loops.`,
+      buttons: ["ATS Integrations", "Staffing Demo", "Success Stories"],
+    },
+    healthcare: {
+      message: `Healthcare practices reduce no-shows by 60% with automated reminders and streamlined patient scheduling workflows.`,
+      buttons: ["Healthcare Demo", "HIPAA Compliance", "Patient Stories"],
+    },
+    technology: {
+      message: `Tech teams eliminate scheduling friction for demos, onboarding, and support calls. Integrate with your existing tools seamlessly.`,
+      buttons: ["Tech Integrations", "API Demo", "Developer Docs"],
+    },
+    general: {
+      message: `Teams across industries use ${productName} to eliminate scheduling friction and boost productivity. See how it works for your field.`,
+      buttons: ["Explore Industries", "Quick Demo", "Success Stories"],
+    },
+  };
+
+  return verticalMessages[vertical] || verticalMessages.general;
+}
+
 // Detect user persona from conversation history and page behavior
 async function detectUserPersona(
   sessionId: string,
@@ -587,6 +720,37 @@ Extract key requirements (2-3 bullet points max, be concise):`;
     console.log(
       `[LeadGen] Stored email for session ${sessionId}: ${detectedEmail} with adminId: ${adminId}`
     );
+
+    // Immediate SDR-style activation message after email detection
+    const companyName = "Your Company"; // TODO: Make this dynamic from admin settings
+    const productName = "our platform"; // TODO: Make this dynamic from admin settings
+
+    const activationMessage = {
+      mainText: `Hi! I'm ${companyName}'s friendly assistant. I'm here to show how ${productName} can boost your productivity and streamline your workflow.`,
+      buttons: ["Explore Solutions", "See Use Cases", "Book Quick Demo"],
+      emailPrompt: "",
+      botMode: "sales",
+      userEmail: detectedEmail,
+    };
+
+    // Store the activation message immediately
+    await chats.insertOne({
+      sessionId,
+      role: "assistant",
+      content: activationMessage.mainText,
+      buttons: activationMessage.buttons,
+      emailPrompt: activationMessage.emailPrompt,
+      botMode: activationMessage.botMode,
+      userEmail: detectedEmail,
+      email: detectedEmail,
+      adminId,
+      createdAt: now,
+      apiKey,
+      pageUrl,
+    });
+
+    // Return activation message immediately (this becomes the bot's response to the email)
+    return NextResponse.json(activationMessage, { headers: corsHeaders });
   }
 
   // ===== INTELLIGENT CUSTOMER PROFILING =====
@@ -820,9 +984,13 @@ Extract key requirements (2-3 bullet points max, be concise):`;
           );
         }
         const detectedIntent = detectIntent({ pageUrl });
+        const detectedVertical = detectVertical(pageUrl, summaryContext);
+        const verticalInfo = getVerticalMessage(detectedVertical);
+
         console.log(
           `[DEBUG] Detected intent for pageUrl "${pageUrl}": "${detectedIntent}"`
         );
+        console.log(`[DEBUG] Detected vertical: "${detectedVertical}"`);
         console.log(
           `[DEBUG] Conversation state: hasBeenGreeted=${hasBeenGreeted}, proactiveCount=${proactiveMessageCount}, visitedPages=${visitedPages.length}`
         );
@@ -830,8 +998,41 @@ Extract key requirements (2-3 bullet points max, be concise):`;
         let summaryPrompt;
 
         if (!hasBeenGreeted) {
+          // Check if user already has email (sales mode activation)
+          const existingEmail = await chats.findOne(
+            { sessionId, email: { $exists: true } },
+            { sort: { createdAt: -1 } }
+          );
+
+          if (existingEmail && existingEmail.email) {
+            // User has email - use SDR activation with vertical messaging
+            const companyName = "Your Company"; // TODO: Make dynamic
+            const productName = "our platform"; // TODO: Make dynamic
+
+            const sdrMessage = {
+              mainText: `Hi! I'm ${companyName}'s friendly assistant. ${verticalInfo.message}`,
+              buttons: verticalInfo.buttons,
+            };
+
+            return NextResponse.json(
+              {
+                answer: sdrMessage.mainText,
+                buttons: sdrMessage.buttons,
+                botMode: "sales",
+                userEmail: existingEmail.email,
+              },
+              { headers: corsHeaders }
+            );
+          }
+
           // First time greeting - create short, contextual messages for any page type
           summaryPrompt = `The user is viewing: ${pageUrl}. Their likely intent is: ${detectedIntent}.
+Detected industry/vertical: ${detectedVertical}.
+${
+  detectedVertical !== "general"
+    ? `Vertical-specific context: ${verticalInfo.message}`
+    : ""
+}
 
 Create a SHORT, contextual proactive message with helpful buttons. Generate your response in JSON format:
 {
@@ -842,6 +1043,11 @@ Create a SHORT, contextual proactive message with helpful buttons. Generate your
 Requirements for mainText:
 - Keep under 30 words total
 - Be specific to their current page and intent
+- ${
+            detectedVertical !== "general"
+              ? `Reference the ${detectedVertical} industry context when relevant`
+              : "Use general business context"
+          }
 - Use conversational, friendly tone
 - NO bullet points or long explanations
 - Use 1 emoji max or none
@@ -852,6 +1058,13 @@ Requirements for mainText:
 For buttons:
 - Analyze the actual page content and user intent
 - Generate buttons that match what users actually need on this specific page
+- ${
+            detectedVertical !== "general"
+              ? `Include industry-specific options like "${verticalInfo.buttons.join(
+                  '", "'
+                )}" when relevant`
+              : "Use general business categories"
+          }
 - Be specific to the content, not generic categories
 - Help users take the logical next step for their current context
 
