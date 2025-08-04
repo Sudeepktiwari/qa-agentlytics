@@ -1,224 +1,283 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Persona Auto-Extraction Debug Test</title>
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            margin: 20px;
-            background: #f5f5f5;
-        }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        button {
-            background: #007bff;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 6px;
-            cursor: pointer;
-            margin: 10px 0;
-            font-size: 16px;
-        }
-        button:hover {
-            background: #0056b3;
-        }
-        button:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-        .result {
-            margin: 20px 0;
-            padding: 15px;
-            border-radius: 6px;
-            white-space: pre-wrap;
-            font-family: monospace;
-            font-size: 14px;
-        }
-        .success {
-            background: #d4edda;
-            border: 1px solid #c3e6cb;
-            color: #155724;
-        }
-        .error {
-            background: #f8d7da;
-            border: 1px solid #f5c6cb;
-            color: #721c24;
-        }
-        .info {
-            background: #d1ecf1;
-            border: 1px solid #bee5eb;
-            color: #0c5460;
-        }
-        .debug {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            color: #495057;
-            max-height: 300px;
-            overflow-y: auto;
-        }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        margin: 20px;
+        background: #f5f5f5;
+      }
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      button {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        margin: 10px 0;
+        font-size: 16px;
+      }
+      button:hover {
+        background: #0056b3;
+      }
+      button:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+      }
+      .result {
+        margin: 20px 0;
+        padding: 15px;
+        border-radius: 6px;
+        white-space: pre-wrap;
+        font-family: monospace;
+        font-size: 14px;
+      }
+      .success {
+        background: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+      }
+      .error {
+        background: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+      }
+      .info {
+        background: #d1ecf1;
+        border: 1px solid #bee5eb;
+        color: #0c5460;
+      }
+      .debug {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        color: #495057;
+        max-height: 300px;
+        overflow-y: auto;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="container">
-        <h1>🔧 Persona Auto-Extraction Debug Tool</h1>
-        <p>Use this tool to test and debug the persona auto-extraction feature.</p>
-        
-        <div>
-            <h3>Step 1: Check Prerequisites</h3>
-            <button onclick="checkPrerequisites()">Check Database & Content</button>
-            <div id="prereq-result"></div>
-        </div>
+      <h1>🔧 Persona Auto-Extraction Debug Tool</h1>
+      <p>
+        Use this tool to test and debug the persona auto-extraction feature.
+      </p>
 
-        <div>
-            <h3>Step 2: Test Auto-Extraction</h3>
-            <button onclick="testAutoExtraction()" id="extract-btn">🧠 Auto-Extract Personas</button>
-            <div id="extraction-result"></div>
-        </div>
+      <div>
+        <h3>Step 1: Check Prerequisites</h3>
+        <button onclick="checkPrerequisites()">Check Database & Content</button>
+        <div id="prereq-result"></div>
+      </div>
 
-        <div>
-            <h3>Step 3: View Debug Logs</h3>
-            <button onclick="clearLogs()">Clear Logs</button>
-            <div id="debug-logs" class="result debug"></div>
-        </div>
+      <div>
+        <h3>Step 2: Test Auto-Extraction</h3>
+        <button onclick="testAutoExtraction()" id="extract-btn">
+          🧠 Auto-Extract Personas
+        </button>
+        <div id="extraction-result"></div>
+      </div>
 
-        <div>
-            <h3>Modal Test</h3>
-            <button onclick="testModal()">Test Modal Display</button>
-        </div>
+      <div>
+        <h3>Step 3: View Debug Logs</h3>
+        <button onclick="clearLogs()">Clear Logs</button>
+        <div id="debug-logs" class="result debug"></div>
+      </div>
+
+      <div>
+        <h3>Modal Test</h3>
+        <button onclick="testModal()">Test Modal Display</button>
+      </div>
     </div>
 
     <!-- Test Modal -->
-    <div id="test-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
-        <div style="background: white; padding: 30px; border-radius: 10px; max-width: 500px; width: 90%;">
-            <h3>Test Modal</h3>
-            <p>This modal should appear centered on the screen with a dark overlay behind it.</p>
-            <button onclick="closeModal()">Close Modal</button>
-        </div>
+    <div
+      id="test-modal"
+      style="
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+      "
+    >
+      <div
+        style="
+          background: white;
+          padding: 30px;
+          border-radius: 10px;
+          max-width: 500px;
+          width: 90%;
+        "
+      >
+        <h3>Test Modal</h3>
+        <p>
+          This modal should appear centered on the screen with a dark overlay
+          behind it.
+        </p>
+        <button onclick="closeModal()">Close Modal</button>
+      </div>
     </div>
 
     <script>
-        let logs = [];
+      let logs = [];
 
-        function log(message, type = 'info') {
-            const timestamp = new Date().toLocaleTimeString();
-            logs.push(`[${timestamp}] ${type.toUpperCase()}: ${message}`);
-            updateDebugLogs();
+      function log(message, type = "info") {
+        const timestamp = new Date().toLocaleTimeString();
+        logs.push(`[${timestamp}] ${type.toUpperCase()}: ${message}`);
+        updateDebugLogs();
+      }
+
+      function updateDebugLogs() {
+        const debugElement = document.getElementById("debug-logs");
+        debugElement.textContent = logs.join("\n");
+        debugElement.scrollTop = debugElement.scrollHeight;
+      }
+
+      function clearLogs() {
+        logs = [];
+        updateDebugLogs();
+      }
+
+      function showResult(elementId, content, type = "info") {
+        const element = document.getElementById(elementId);
+        element.className = `result ${type}`;
+        element.textContent = content;
+      }
+
+      async function checkPrerequisites() {
+        log("Checking prerequisites...");
+        showResult("prereq-result", "Checking...", "info");
+
+        try {
+          // Check if we can reach the personas API
+          const response = await fetch("/api/admin/personas", {
+            method: "GET",
+          });
+
+          const data = await response.json();
+          log(`API Response: ${JSON.stringify(data)}`);
+
+          if (response.ok) {
+            showResult(
+              "prereq-result",
+              `✅ API accessible\n✅ Current personas: ${
+                data.personas?.targetAudiences?.length || 0
+              }\n✅ Authentication working`,
+              "success"
+            );
+            log("Prerequisites check passed");
+          } else {
+            showResult(
+              "prereq-result",
+              `❌ API Error: ${data.error || "Unknown error"}`,
+              "error"
+            );
+            log(`Prerequisites check failed: ${data.error}`);
+          }
+        } catch (error) {
+          showResult(
+            "prereq-result",
+            `❌ Network Error: ${error.message}`,
+            "error"
+          );
+          log(`Prerequisites check failed: ${error.message}`, "error");
         }
+      }
 
-        function updateDebugLogs() {
-            const debugElement = document.getElementById('debug-logs');
-            debugElement.textContent = logs.join('\n');
-            debugElement.scrollTop = debugElement.scrollHeight;
-        }
+      async function testAutoExtraction() {
+        const btn = document.getElementById("extract-btn");
+        btn.disabled = true;
+        btn.textContent = "⏳ Extracting...";
 
-        function clearLogs() {
-            logs = [];
-            updateDebugLogs();
-        }
+        log("Starting auto-extraction test...");
+        showResult("extraction-result", "Starting extraction...", "info");
 
-        function showResult(elementId, content, type = 'info') {
-            const element = document.getElementById(elementId);
-            element.className = `result ${type}`;
-            element.textContent = content;
-        }
+        try {
+          const response = await fetch("/api/admin/personas", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              action: "auto_extract",
+            }),
+          });
 
-        async function checkPrerequisites() {
-            log('Checking prerequisites...');
-            showResult('prereq-result', 'Checking...', 'info');
+          const data = await response.json();
+          log(`Extraction response: ${JSON.stringify(data, null, 2)}`);
 
-            try {
-                // Check if we can reach the personas API
-                const response = await fetch('/api/admin/personas', {
-                    method: 'GET',
-                });
+          if (response.ok) {
+            const personaCount = data.personas?.targetAudiences?.length || 0;
+            const message = `✅ Success!\n${
+              data.message
+            }\nPersonas extracted: ${personaCount}\nWebsite: ${
+              data.personas?.websiteUrl || "Unknown"
+            }`;
 
-                const data = await response.json();
-                log(`API Response: ${JSON.stringify(data)}`);
+            showResult("extraction-result", message, "success");
+            log(`Extraction successful: ${personaCount} personas`);
 
-                if (response.ok) {
-                    showResult('prereq-result', `✅ API accessible\n✅ Current personas: ${data.personas?.targetAudiences?.length || 0}\n✅ Authentication working`, 'success');
-                    log('Prerequisites check passed');
-                } else {
-                    showResult('prereq-result', `❌ API Error: ${data.error || 'Unknown error'}`, 'error');
-                    log(`Prerequisites check failed: ${data.error}`);
-                }
-            } catch (error) {
-                showResult('prereq-result', `❌ Network Error: ${error.message}`, 'error');
-                log(`Prerequisites check failed: ${error.message}`, 'error');
+            if (personaCount > 0) {
+              log(
+                "Sample persona: " +
+                  JSON.stringify(data.personas.targetAudiences[0], null, 2)
+              );
             }
+          } else {
+            showResult(
+              "extraction-result",
+              `❌ Extraction Failed:\n${data.error}`,
+              "error"
+            );
+            log(`Extraction failed: ${data.error}`, "error");
+          }
+        } catch (error) {
+          showResult(
+            "extraction-result",
+            `❌ Network Error:\n${error.message}`,
+            "error"
+          );
+          log(`Extraction error: ${error.message}`, "error");
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "🧠 Auto-Extract Personas";
         }
+      }
 
-        async function testAutoExtraction() {
-            const btn = document.getElementById('extract-btn');
-            btn.disabled = true;
-            btn.textContent = '⏳ Extracting...';
-            
-            log('Starting auto-extraction test...');
-            showResult('extraction-result', 'Starting extraction...', 'info');
+      function testModal() {
+        log("Testing modal display...");
+        const modal = document.getElementById("test-modal");
+        modal.style.display = "flex";
+      }
 
-            try {
-                const response = await fetch('/api/admin/personas', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        action: 'auto_extract'
-                    })
-                });
+      function closeModal() {
+        log("Closing modal...");
+        const modal = document.getElementById("test-modal");
+        modal.style.display = "none";
+      }
 
-                const data = await response.json();
-                log(`Extraction response: ${JSON.stringify(data, null, 2)}`);
-
-                if (response.ok) {
-                    const personaCount = data.personas?.targetAudiences?.length || 0;
-                    const message = `✅ Success!\n${data.message}\nPersonas extracted: ${personaCount}\nWebsite: ${data.personas?.websiteUrl || 'Unknown'}`;
-                    
-                    showResult('extraction-result', message, 'success');
-                    log(`Extraction successful: ${personaCount} personas`);
-
-                    if (personaCount > 0) {
-                        log('Sample persona: ' + JSON.stringify(data.personas.targetAudiences[0], null, 2));
-                    }
-                } else {
-                    showResult('extraction-result', `❌ Extraction Failed:\n${data.error}`, 'error');
-                    log(`Extraction failed: ${data.error}`, 'error');
-                }
-            } catch (error) {
-                showResult('extraction-result', `❌ Network Error:\n${error.message}`, 'error');
-                log(`Extraction error: ${error.message}`, 'error');
-            } finally {
-                btn.disabled = false;
-                btn.textContent = '🧠 Auto-Extract Personas';
-            }
-        }
-
-        function testModal() {
-            log('Testing modal display...');
-            const modal = document.getElementById('test-modal');
-            modal.style.display = 'flex';
-        }
-
-        function closeModal() {
-            log('Closing modal...');
-            const modal = document.getElementById('test-modal');
-            modal.style.display = 'none';
-        }
-
-        // Auto-run prerequisite check on load
-        window.addEventListener('load', () => {
-            log('Debug tool loaded');
-            setTimeout(checkPrerequisites, 1000);
-        });
+      // Auto-run prerequisite check on load
+      window.addEventListener("load", () => {
+        log("Debug tool loaded");
+        setTimeout(checkPrerequisites, 1000);
+      });
     </script>
-</body>
+  </body>
 </html>

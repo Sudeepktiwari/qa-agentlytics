@@ -83,7 +83,7 @@ const CustomerPersonaSection: React.FC<CustomerPersonaSectionProps> = ({
 
     try {
       console.log("Starting persona auto-extraction...");
-      
+
       const res = await fetch("/api/admin/personas", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -99,7 +99,10 @@ const CustomerPersonaSection: React.FC<CustomerPersonaSectionProps> = ({
       if (res.ok) {
         setPersonaData(data.personas);
         setMessage(data.message);
-        console.log("Successfully extracted personas:", data.personas?.targetAudiences?.length || 0);
+        console.log(
+          "Successfully extracted personas:",
+          data.personas?.targetAudiences?.length || 0
+        );
       } else {
         setError(data.error || "Failed to extract personas");
         console.error("Persona extraction failed:", data.error);
@@ -770,7 +773,8 @@ const PersonaForm: React.FC<{
           width: "100%",
           maxHeight: "80vh",
           overflow: "auto",
-          boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+          boxShadow:
+            "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
         }}
         onClick={(e) => e.stopPropagation()} // Prevent modal close when clicking inside
       >
@@ -1041,7 +1045,9 @@ const PersonaForm: React.FC<{
           </div>
 
           <div style={{ marginTop: "16px" }}>
-            <label style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <label
+              style={{ display: "flex", alignItems: "center", gap: "8px" }}
+            >
               <input
                 type="checkbox"
                 checked={formData.decisionMaker}
@@ -1094,10 +1100,10 @@ const PersonaForm: React.FC<{
   );
 
   // Use portal to render modal outside the parent container
-  if (typeof window !== 'undefined') {
+  if (typeof window !== "undefined") {
     return createPortal(modalContent, document.body);
   }
-  
+
   // Fallback for SSR
   return modalContent;
 };

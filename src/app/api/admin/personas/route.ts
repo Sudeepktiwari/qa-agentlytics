@@ -105,7 +105,7 @@ Return only the JSON object, no other text.`;
     console.log("Calling OpenAI for persona extraction...");
     console.log("Content pieces:", websiteContent.length);
     console.log("Website URL:", websiteUrl);
-    
+
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
@@ -125,7 +125,7 @@ Return only the JSON object, no other text.`;
     console.log("Parsed extraction result:", {
       targetAudiences: extracted.targetAudiences?.length || 0,
       industryFocus: extracted.industryFocus?.length || 0,
-      useCaseExamples: extracted.useCaseExamples?.length || 0
+      useCaseExamples: extracted.useCaseExamples?.length || 0,
     });
 
     // Validate and ensure we have a proper structure
@@ -216,7 +216,7 @@ export async function POST(req: NextRequest) {
     if (action === "auto_extract") {
       console.log("=== PERSONA AUTO-EXTRACTION START ===");
       console.log("Admin ID:", adminId);
-      
+
       // Auto-extract personas from crawled content and Pinecone
 
       // First, try to get the admin's domain from previous crawling
@@ -265,7 +265,9 @@ export async function POST(req: NextRequest) {
         }))
         .filter((item) => item.text.length > 0);
 
-      console.log(`${crawledContent.length} pages have content after filtering`);
+      console.log(
+        `${crawledContent.length} pages have content after filtering`
+      );
 
       // Combine all content sources
       const allContent = crawledContent.map(
