@@ -315,7 +315,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
       if (followupCount < 3) {
         // Dynamic timer based on SDR behavior and bot mode
         let timerDelay = 30000; // Default 30 seconds
-        
+
         if (currentBotMode === "sales" && currentUserEmail) {
           // SDR mode: More aggressive timing for qualified leads
           timerDelay = followupCount === 0 ? 8000 : 15000; // 8s first, then 15s
@@ -323,18 +323,22 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
           // Lead generation mode: Still responsive but less aggressive
           timerDelay = followupCount === 0 ? 12000 : 25000; // 12s first, then 25s
         }
-        
+
         console.log(
-          `[Chatbot] Setting inactivity follow-up timer for ${timerDelay/1000} seconds after bot message (mode: ${currentBotMode}, followup: ${followupCount})`
+          `[Chatbot] Setting inactivity follow-up timer for ${
+            timerDelay / 1000
+          } seconds after bot message (mode: ${currentBotMode}, followup: ${followupCount})`
         );
         followupTimer.current = setTimeout(() => {
           // Only send followup if user is not currently active and hasn't interacted recently
           const timeSinceLastAction = Date.now() - lastUserAction;
           const bufferTime = currentBotMode === "sales" ? 5000 : 10000; // Shorter buffer for sales mode
-          
+
           if (!userIsActive && timeSinceLastAction >= bufferTime) {
             console.log(
-              `[Chatbot] Inactivity timer triggered (${timerDelay/1000}s), setting followupSent to true`
+              `[Chatbot] Inactivity timer triggered (${
+                timerDelay / 1000
+              }s), setting followupSent to true`
             );
             setFollowupSent(true);
           } else {

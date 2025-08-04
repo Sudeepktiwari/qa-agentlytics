@@ -233,38 +233,44 @@ function getVerticalMessage(
 }
 
 // Helper to generate conversion-oriented buttons based on vertical and visitor status
-function getConversionButtons(vertical: string, isReturningVisitor: boolean = false): string[] {
-  const conversionButtons: Record<string, { new: string[]; returning: string[] }> = {
+function getConversionButtons(
+  vertical: string,
+  isReturningVisitor: boolean = false
+): string[] {
+  const conversionButtons: Record<
+    string,
+    { new: string[]; returning: string[] }
+  > = {
     consulting: {
       new: ["Book Demo", "See ROI", "Law Firm Case Study"],
-      returning: ["Schedule Call", "Pricing Details", "Implementation"]
+      returning: ["Schedule Call", "Pricing Details", "Implementation"],
     },
     legal: {
       new: ["Legal Demo", "Case Studies", "ROI Calculator"],
-      returning: ["Book Consultation", "Security Overview", "Get Quote"]
+      returning: ["Book Consultation", "Security Overview", "Get Quote"],
     },
     accounting: {
       new: ["Accounting Demo", "ROI Data", "Free Trial"],
-      returning: ["Schedule Setup", "Pricing Call", "Implementation"]
+      returning: ["Schedule Setup", "Pricing Call", "Implementation"],
     },
     staffing: {
       new: ["Staffing Demo", "ATS Integration", "Success Stories"],
-      returning: ["Book Demo", "Integration Call", "Custom Quote"]
+      returning: ["Book Demo", "Integration Call", "Custom Quote"],
     },
     healthcare: {
       new: ["Healthcare Demo", "HIPAA Overview", "Patient Stories"],
-      returning: ["Compliance Call", "Implementation", "Get Quote"]
+      returning: ["Compliance Call", "Implementation", "Get Quote"],
     },
     technology: {
       new: ["Tech Demo", "API Docs", "Integration Guide"],
-      returning: ["Developer Call", "Custom Setup", "Enterprise Demo"]
+      returning: ["Developer Call", "Custom Setup", "Enterprise Demo"],
     },
     general: {
       new: ["Book Demo", "Quick Tour", "Success Stories"],
-      returning: ["Schedule Call", "Get Quote", "Implementation"]
-    }
+      returning: ["Schedule Call", "Get Quote", "Implementation"],
+    },
   };
-  
+
   const buttons = conversionButtons[vertical] || conversionButtons.general;
   return isReturningVisitor ? buttons.returning : buttons.new;
 }
@@ -281,7 +287,7 @@ async function trackSDREvent(
   try {
     const db = await getDb();
     const events = db.collection("sdr_events");
-    
+
     await events.insertOne({
       eventType,
       sessionId,
@@ -291,8 +297,10 @@ async function trackSDREvent(
       adminId: adminId || null,
       timestamp: new Date(),
     });
-    
-    console.log(`[SDR Analytics] Tracked event: ${eventType} for session ${sessionId}`);
+
+    console.log(
+      `[SDR Analytics] Tracked event: ${eventType} for session ${sessionId}`
+    );
   } catch (error) {
     console.error("[SDR Analytics] Failed to track event:", error);
     // Don't break the flow if analytics fails
@@ -789,7 +797,14 @@ Extract key requirements (2-3 bullet points max, be concise):`;
     );
 
     // Track email capture event
-    await trackSDREvent("email_captured", sessionId, detectedEmail, undefined, pageUrl || undefined, adminId || undefined);
+    await trackSDREvent(
+      "email_captured",
+      sessionId,
+      detectedEmail,
+      undefined,
+      pageUrl || undefined,
+      adminId || undefined
+    );
 
     // Immediate SDR-style activation message after email detection
     const companyName = "Your Company"; // TODO: Make this dynamic from admin settings
@@ -1066,8 +1081,15 @@ Extract key requirements (2-3 bullet points max, be concise):`;
         );
 
         // Track vertical detection if it's not 'general'
-        if (detectedVertical !== 'general') {
-          await trackSDREvent("vertical_detected", sessionId, undefined, detectedVertical, pageUrl || undefined, adminId || undefined);
+        if (detectedVertical !== "general") {
+          await trackSDREvent(
+            "vertical_detected",
+            sessionId,
+            undefined,
+            detectedVertical,
+            pageUrl || undefined,
+            adminId || undefined
+          );
         }
 
         let summaryPrompt;
@@ -1083,13 +1105,16 @@ Extract key requirements (2-3 bullet points max, be concise):`;
             // User has email - use SDR activation with vertical messaging
             const companyName = "Your Company"; // TODO: Make dynamic
             const productName = "our platform"; // TODO: Make dynamic
-            
+
             // Enhanced SDR message based on page navigation patterns
             const isReturningVisitor = existingEmail.preservedStatus;
-            const conversionButtons = getConversionButtons(detectedVertical, isReturningVisitor);
+            const conversionButtons = getConversionButtons(
+              detectedVertical,
+              isReturningVisitor
+            );
 
             const sdrMessage = {
-              mainText: isReturningVisitor 
+              mainText: isReturningVisitor
                 ? `Welcome back! Let's continue exploring how ${productName} can help. ${verticalInfo.message}`
                 : `Hi! I'm ${companyName}'s friendly assistant. ${verticalInfo.message}`,
               buttons: conversionButtons,
@@ -2145,7 +2170,7 @@ export async function DELETE(req: NextRequest) {
           userEmail: emailMessage.email,
           adminId: emailMessage.adminId,
         };
-        
+
         console.log(
           `[Chat] Preserving SDR status for ${emailMessage.email} across page navigation`
         );
