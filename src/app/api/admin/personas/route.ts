@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/mongo";
-import { ObjectId } from "mongodb";
 import jwt from "jsonwebtoken";
 import OpenAI from "openai";
 
@@ -60,19 +59,21 @@ async function extractPersonasFromContent(
 Analyze this website content and extract detailed customer persona data. Focus on identifying who the target customers are, their characteristics, and buying patterns.
 
 Website URL: ${websiteUrl}
-Content: ${websiteContent.slice(0, 10).join("\n---\n")}
+Number of content pieces: ${websiteContent.length}
 
-Extract and return a JSON object with this structure:
+Content: ${websiteContent.slice(0, 15).join("\n---CONTENT PIECE---\n")}
+
+Based on this content, extract and return a JSON object with this structure:
 {
   "websiteUrl": "${websiteUrl}",
   "targetAudiences": [
     {
       "id": "unique_id",
-      "name": "Persona Name",
+      "name": "Persona Name (e.g., 'Small Business Owner', 'Enterprise IT Director')",
       "type": "small_business|enterprise|startup|freelancer|agency",
       "industries": ["industry1", "industry2"],
       "companySize": "1-10|11-50|51-200|200+",
-      "painPoints": ["pain point 1", "pain point 2"],
+      "painPoints": ["specific pain point 1", "specific pain point 2"],
       "preferredFeatures": ["feature1", "feature2"],
       "buyingPatterns": ["pattern1", "pattern2"],
       "budget": "under_500|500_2000|2000_10000|10000_plus",
@@ -81,30 +82,33 @@ Extract and return a JSON object with this structure:
       "decisionMaker": true|false
     }
   ],
-  "industryFocus": ["primary industries served"],
-  "useCaseExamples": ["use case 1", "use case 2"],
+  "industryFocus": ["primary industries this website serves"],
+  "useCaseExamples": ["concrete use case 1", "concrete use case 2"],
   "competitorMentions": ["competitor1", "competitor2"],
-  "pricingStrategy": "freemium|subscription|one_time|custom"
+  "pricingStrategy": "freemium|subscription|one_time|custom|unknown"
 }
 
 Guidelines:
 - Create 2-4 distinct personas based on the content
-- Be specific about pain points and preferred features
-- Identify clear buying patterns and budget ranges
-- Look for mentions of company sizes, industries, and use cases
-- Extract actual competitor names mentioned
+- Be very specific about pain points (not generic)
+- Look for actual industry mentions, company sizes mentioned
+- Extract real use cases described in the content
+- Identify actual competitor names if mentioned
 - Determine pricing strategy from pricing pages or content
 - Each persona should be distinct and actionable for messaging
-`;
+- If uncertain about any field, use reasonable defaults
+- Focus on personas that would actually visit this website
+
+Return only the JSON object, no other text.`;
 
   try {
     const completion = await openai.chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-4o-mini",
       messages: [
         {
           role: "system",
           content:
-            "You are a customer persona analyst. Extract detailed, actionable customer personas from website content. Always return valid JSON.",
+            "You are a customer persona analyst. Extract detailed, actionable customer personas from website content. Always return valid JSON with realistic, specific personas.",
         },
         { role: "user", content: prompt },
       ],
@@ -112,6 +116,22 @@ Guidelines:
     });
 
     const extracted = JSON.parse(completion.choices[0].message.content || "{}");
+
+    // Validate and ensure we have a proper structure
+    if (
+      !extracted.targetAudiences ||
+      !Array.isArray(extracted.targetAudiences)
+    ) {
+      console.error("Invalid persona extraction result:", extracted);
+      return {
+        websiteUrl,
+        targetAudiences: [],
+        industryFocus: extracted.industryFocus || [],
+        useCaseExamples: extracted.useCaseExamples || [],
+        competitorMentions: extracted.competitorMentions || [],
+        pricingStrategy: extracted.pricingStrategy || "unknown",
+      };
+    }
 
     // Add timestamps and IDs to personas
     extracted.targetAudiences = extracted.targetAudiences.map(
@@ -123,8 +143,12 @@ Guidelines:
       })
     );
 
+    console.log(
+      `Successfully extracted ${extracted.targetAudiences.length} personas for ${websiteUrl}`
+    );
+
     return extracted;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error extracting personas:", error);
     // Return default structure if extraction fails
     return {
@@ -179,37 +203,72 @@ export async function POST(req: NextRequest) {
     const personas = db.collection("customer_personas");
 
     if (action === "auto_extract") {
-      // Auto-extract personas from crawled content
-      if (!websiteUrl) {
-        return NextResponse.json(
-          { error: "Website URL required for auto-extraction" },
-          { status: 400 }
-        );
+      // Auto-extract personas from crawled content and Pinecone
+
+      // First, try to get the admin's domain from previous crawling
+      const crawledPages = db.collection("crawled_pages");
+      const samplePage = await crawledPages.findOne({ adminId });
+
+      let targetWebsiteUrl = websiteUrl;
+      if (!targetWebsiteUrl && samplePage?.url) {
+        // Extract domain from crawled page URL
+        try {
+          const url = new URL(samplePage.url);
+          targetWebsiteUrl = `${url.protocol}//${url.hostname}`;
+        } catch (e) {
+          console.error("Error extracting domain from crawled page:", e);
+        }
       }
 
-      // Get crawled content for this admin
-      const crawledPages = db.collection("crawled_pages");
-      const pages = await crawledPages
-        .find({ adminId })
-        .limit(20) // Limit to prevent token overflow
-        .toArray();
-
-      const websiteContent = pages
-        .map((page) => page.text || "")
-        .filter(Boolean);
-
-      if (websiteContent.length === 0) {
+      if (!targetWebsiteUrl) {
         return NextResponse.json(
           {
-            error: "No crawled content found. Please crawl your website first.",
+            error:
+              "No website URL found. Please provide a website URL or crawl your website first.",
           },
           { status: 400 }
         );
       }
 
+      // Get crawled content for this admin
+      const pages = await crawledPages
+        .find({ adminId })
+        .limit(30) // Get more content for better persona extraction
+        .sort({ created_at: -1 }) // Get most recent content first
+        .toArray();
+
+      const crawledContent = pages
+        .map((page) => ({
+          url: page.url,
+          title: page.title || "",
+          text: page.text || "",
+          metadata: page.metadata || {},
+        }))
+        .filter((item) => item.text.length > 0);
+
+      // Combine all content sources
+      const allContent = crawledContent.map(
+        (item) =>
+          `URL: ${item.url}\nTitle: ${item.title}\nContent: ${item.text}`
+      );
+
+      if (allContent.length === 0) {
+        return NextResponse.json(
+          {
+            error:
+              "No content found for persona extraction. Please crawl your website first using the sitemap feature.",
+          },
+          { status: 400 }
+        );
+      }
+
+      console.log(
+        `Extracting personas from ${allContent.length} crawled pages for ${targetWebsiteUrl}`
+      );
+
       const extracted = await extractPersonasFromContent(
-        websiteContent,
-        websiteUrl
+        allContent,
+        targetWebsiteUrl
       );
 
       const personaDocument: PersonaData = {

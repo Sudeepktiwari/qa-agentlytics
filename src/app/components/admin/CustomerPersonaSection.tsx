@@ -86,7 +86,7 @@ const CustomerPersonaSection: React.FC<CustomerPersonaSectionProps> = ({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "auto_extract",
-          websiteUrl: window.location.origin, // Use current domain
+          // websiteUrl is now optional - will be auto-detected from crawled content
         }),
       });
 

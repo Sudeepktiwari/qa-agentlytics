@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Persona Auto-Extraction Demo & Troubleshooting</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        margin: 0;
+        padding: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+      }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      }
+      .header {
+        text-align: center;
+        margin-bottom: 40px;
+      }
+      .header h1 {
+        color: #2d3748;
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      .section {
+        margin-bottom: 40px;
+        padding: 30px;
+        border: 2px solid #e2e8f0;
+        border-radius: 15px;
+        background: #f7fafc;
+      }
+      .section h2 {
+        color: #2d3748;
+        margin-bottom: 20px;
+        font-size: 1.5rem;
+      }
+      .step {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        border-left: 4px solid #667eea;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      .step h3 {
+        color: #2d3748;
+        margin-bottom: 15px;
+      }
+      .code {
+        background: #2d3748;
+        color: #e2e8f0;
+        padding: 15px;
+        border-radius: 8px;
+        font-family: "Monaco", "Menlo", monospace;
+        overflow-x: auto;
+        margin: 10px 0;
+      }
+      .success {
+        background: #f0fff4;
+        border: 2px solid #9ae6b4;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 15px 0;
+      }
+      .error {
+        background: #fed7d7;
+        border: 2px solid #fc8181;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 15px 0;
+      }
+      .warning {
+        background: #fef5e7;
+        border: 2px solid #f6ad55;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 15px 0;
+      }
+      .checklist {
+        list-style: none;
+        padding: 0;
+      }
+      .checklist li {
+        padding: 10px 0;
+        border-bottom: 1px solid #e2e8f0;
+        position: relative;
+        padding-left: 30px;
+      }
+      .checklist li:before {
+        content: "✓";
+        position: absolute;
+        left: 0;
+        top: 10px;
+        color: #48bb78;
+        font-weight: bold;
+      }
+      .persona-example {
+        background: #e6fffa;
+        border: 2px solid #4fd1c7;
+        padding: 20px;
+        border-radius: 10px;
+        margin: 20px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>🎯 Persona Auto-Extraction Troubleshooting</h1>
+        <p style="font-size: 1.2rem; color: #4a5568">
+          Debug and Fix Persona Extraction Issues
+        </p>
+      </div>
+
+      <div class="section">
+        <h2>🔍 Current Issue Analysis</h2>
+        <div class="error">
+          <h3>Problem: Auto-Extract Personas Button Returns 0 Personas</h3>
+          <p>
+            The button click should extract customer personas from crawled
+            website content but returns "Successfully extracted 0 personas".
+          </p>
+        </div>
+
+        <div class="step">
+          <h3>Root Cause Analysis</h3>
+          <p>The persona extraction process requires:</p>
+          <ul class="checklist">
+            <li>Crawled website content in the database</li>
+            <li>Valid admin authentication token</li>
+            <li>OpenAI API key for GPT-4 analysis</li>
+            <li>Sufficient content for persona identification</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>🛠️ Enhanced Solution Implementation</h2>
+        <div class="step">
+          <h3>1. Improved Content Detection</h3>
+          <p>The new implementation:</p>
+          <ul>
+            <li>✅ Auto-detects website URL from crawled content</li>
+            <li>✅ Searches for up to 30 crawled pages</li>
+            <li>✅ Combines title, URL, and content for better analysis</li>
+            <li>✅ Better error handling with detailed messages</li>
+          </ul>
+          <div class="code">
+            // Enhanced content gathering const pages = await crawledPages
+            .find({ adminId }) .limit(30) // More content for better extraction
+            .sort({ created_at: -1 }) // Most recent first .toArray(); const
+            crawledContent = pages .map((page) => ({ url: page.url, title:
+            page.title || "", text: page.text || "", metadata: page.metadata ||
+            {} })) .filter(item => item.text.length > 0);
+          </div>
+        </div>
+
+        <div class="step">
+          <h3>2. Smarter Prompt Engineering</h3>
+          <p>Improved GPT-4 prompts for better persona extraction:</p>
+          <div class="code">
+            Website URL: ${websiteUrl} Number of content pieces:
+            ${websiteContent.length} Based on this content, extract customer
+            personas: - Focus on actual visitors to this website - Be specific
+            about pain points (not generic) - Look for real industry mentions
+            and company sizes - Extract concrete use cases described in content
+            - If uncertain, use reasonable defaults
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>📋 Step-by-Step Troubleshooting</h2>
+
+        <div class="step">
+          <h3>Step 1: Verify Crawled Content Exists</h3>
+          <p>Check if your website has been crawled:</p>
+          <div class="code">
+            // In MongoDB or admin panel, check:
+            db.crawled_pages.find({}).count() // Should return > 0 if website
+            has been crawled
+          </div>
+          <div class="warning">
+            <strong>If no crawled content:</strong> Go to Admin Panel → Sitemap
+            section and crawl your website first.
+          </div>
+        </div>
+
+        <div class="step">
+          <h3>Step 2: Check Environment Variables</h3>
+          <p>Ensure required API keys are set:</p>
+          <div class="code">
+            OPENAI_API_KEY=your_openai_key_here
+            MONGODB_URI=your_mongodb_connection_string
+            JWT_SECRET=your_jwt_secret
+          </div>
+          <div class="warning">
+            <strong>Missing OpenAI API key?</strong> Persona extraction requires
+            GPT-4 access.
+          </div>
+        </div>
+
+        <div class="step">
+          <h3>Step 3: Test the Fixed Implementation</h3>
+          <p>Try the auto-extract button again. You should see:</p>
+          <div class="success">
+            <p>
+              <strong>Success message:</strong> "Successfully extracted X
+              personas" where X > 0
+            </p>
+            <p>
+              <strong>Detailed personas</strong> with names, industries, pain
+              points, and buying patterns
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>🎯 Expected Persona Output Example</h2>
+        <div class="persona-example">
+          <h3>Sample Extracted Personas</h3>
+          <div class="code">
+            { "targetAudiences": [ { "id": "persona_1", "name": "Small Business
+            Owner", "type": "small_business", "industries": ["retail",
+            "restaurants", "local_services"], "companySize": "1-10",
+            "painPoints": ["manual scheduling", "no-shows", "time management"],
+            "preferredFeatures": ["simple setup", "mobile access", "basic
+            reporting"], "budget": "under_500", "technicalLevel": "beginner",
+            "urgency": "medium", "decisionMaker": true }, { "id": "persona_2",
+            "name": "Enterprise IT Director", "type": "enterprise",
+            "industries": ["technology", "healthcare", "finance"],
+            "companySize": "200+", "painPoints": ["security compliance",
+            "integration complexity", "scalability"], "preferredFeatures":
+            ["SSO", "API access", "advanced analytics"], "budget": "10000_plus",
+            "technicalLevel": "advanced", "urgency": "low", "decisionMaker":
+            false } ], "industryFocus": ["technology", "healthcare",
+            "professional_services"], "useCaseExamples": ["appointment
+            scheduling", "team coordination", "client meetings"],
+            "competitorMentions": ["calendly", "acuity"], "pricingStrategy":
+            "freemium" }
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>🔧 Advanced Debugging</h2>
+
+        <div class="step">
+          <h3>Check Browser Network Tab</h3>
+          <p>When clicking the auto-extract button:</p>
+          <ul>
+            <li>Open Developer Tools → Network tab</li>
+            <li>Click "Auto-Extract Personas"</li>
+            <li>Look for POST request to `/api/admin/personas`</li>
+            <li>Check response for error details</li>
+          </ul>
+        </div>
+
+        <div class="step">
+          <h3>Common Error Messages & Solutions</h3>
+          <div class="error">
+            <strong>"No content found for persona extraction"</strong><br />
+            → Solution: Crawl your website using the sitemap feature first
+          </div>
+          <div class="error">
+            <strong>"No website URL found"</strong><br />
+            → Solution: The system will now auto-detect from crawled content
+          </div>
+          <div class="error">
+            <strong>"Unauthorized"</strong><br />
+            → Solution: Log out and log back into the admin panel
+          </div>
+        </div>
+
+        <div class="step">
+          <h3>Manual Testing API</h3>
+          <p>Test the API directly:</p>
+          <div class="code">
+            curl -X POST http://localhost:3000/api/admin/personas \ -H
+            "Content-Type: application/json" \ -H "Cookie:
+            auth_token=your_token_here" \ -d '{"action": "auto_extract"}'
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>✅ Verification Checklist</h2>
+        <p>After implementing the fixes, verify:</p>
+        <ul class="checklist">
+          <li>Crawled content exists in database</li>
+          <li>OpenAI API key is valid and has GPT-4 access</li>
+          <li>Admin authentication is working</li>
+          <li>Auto-extract button returns personas count > 0</li>
+          <li>Generated personas have realistic details</li>
+          <li>Personas appear in the admin interface</li>
+          <li>Personas are saved and persist on page refresh</li>
+        </ul>
+      </div>
+
+      <div class="section">
+        <h2>🚀 Next Steps After Fix</h2>
+        <div class="success">
+          <h3>Once Personas Are Working:</h3>
+          <ul>
+            <li>✅ Test persona-based chat responses</li>
+            <li>✅ Verify intelligent followup messaging</li>
+            <li>✅ Check persona detection in live conversations</li>
+            <li>✅ Monitor persona analytics and performance</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
