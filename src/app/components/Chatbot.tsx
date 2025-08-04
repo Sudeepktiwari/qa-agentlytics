@@ -313,16 +313,28 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
       setFollowupSent(false);
       setUserIsActive(false); // Reset user activity state
       if (followupCount < 3) {
+        // Dynamic timer based on SDR behavior and bot mode
+        let timerDelay = 30000; // Default 30 seconds
+        
+        if (currentBotMode === "sales" && currentUserEmail) {
+          // SDR mode: More aggressive timing for qualified leads
+          timerDelay = followupCount === 0 ? 8000 : 15000; // 8s first, then 15s
+        } else {
+          // Lead generation mode: Still responsive but less aggressive
+          timerDelay = followupCount === 0 ? 12000 : 25000; // 12s first, then 25s
+        }
+        
         console.log(
-          "[Chatbot] Setting inactivity follow-up timer for 30 seconds after bot message"
+          `[Chatbot] Setting inactivity follow-up timer for ${timerDelay/1000} seconds after bot message (mode: ${currentBotMode}, followup: ${followupCount})`
         );
         followupTimer.current = setTimeout(() => {
           // Only send followup if user is not currently active and hasn't interacted recently
           const timeSinceLastAction = Date.now() - lastUserAction;
-          if (!userIsActive && timeSinceLastAction >= 25000) {
-            // 25 seconds buffer
+          const bufferTime = currentBotMode === "sales" ? 5000 : 10000; // Shorter buffer for sales mode
+          
+          if (!userIsActive && timeSinceLastAction >= bufferTime) {
             console.log(
-              "[Chatbot] Inactivity timer triggered, setting followupSent to true"
+              `[Chatbot] Inactivity timer triggered (${timerDelay/1000}s), setting followupSent to true`
             );
             setFollowupSent(true);
           } else {
@@ -330,7 +342,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
               "[Chatbot] Skipping followup - user was active recently or currently typing"
             );
           }
-        }, 30000); // 30 seconds
+        }, timerDelay);
       }
     } else if (lastMsg.role === "user") {
       if (followupTimer.current) {

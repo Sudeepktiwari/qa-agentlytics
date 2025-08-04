@@ -232,6 +232,73 @@ function getVerticalMessage(
   return verticalMessages[vertical] || verticalMessages.general;
 }
 
+// Helper to generate conversion-oriented buttons based on vertical and visitor status
+function getConversionButtons(vertical: string, isReturningVisitor: boolean = false): string[] {
+  const conversionButtons: Record<string, { new: string[]; returning: string[] }> = {
+    consulting: {
+      new: ["Book Demo", "See ROI", "Law Firm Case Study"],
+      returning: ["Schedule Call", "Pricing Details", "Implementation"]
+    },
+    legal: {
+      new: ["Legal Demo", "Case Studies", "ROI Calculator"],
+      returning: ["Book Consultation", "Security Overview", "Get Quote"]
+    },
+    accounting: {
+      new: ["Accounting Demo", "ROI Data", "Free Trial"],
+      returning: ["Schedule Setup", "Pricing Call", "Implementation"]
+    },
+    staffing: {
+      new: ["Staffing Demo", "ATS Integration", "Success Stories"],
+      returning: ["Book Demo", "Integration Call", "Custom Quote"]
+    },
+    healthcare: {
+      new: ["Healthcare Demo", "HIPAA Overview", "Patient Stories"],
+      returning: ["Compliance Call", "Implementation", "Get Quote"]
+    },
+    technology: {
+      new: ["Tech Demo", "API Docs", "Integration Guide"],
+      returning: ["Developer Call", "Custom Setup", "Enterprise Demo"]
+    },
+    general: {
+      new: ["Book Demo", "Quick Tour", "Success Stories"],
+      returning: ["Schedule Call", "Get Quote", "Implementation"]
+    }
+  };
+  
+  const buttons = conversionButtons[vertical] || conversionButtons.general;
+  return isReturningVisitor ? buttons.returning : buttons.new;
+}
+
+// Helper to track SDR events for analytics
+async function trackSDREvent(
+  eventType: string,
+  sessionId: string,
+  email?: string,
+  vertical?: string,
+  pageUrl?: string,
+  adminId?: string
+) {
+  try {
+    const db = await getDb();
+    const events = db.collection("sdr_events");
+    
+    await events.insertOne({
+      eventType,
+      sessionId,
+      email: email || null,
+      vertical: vertical || null,
+      pageUrl: pageUrl || null,
+      adminId: adminId || null,
+      timestamp: new Date(),
+    });
+    
+    console.log(`[SDR Analytics] Tracked event: ${eventType} for session ${sessionId}`);
+  } catch (error) {
+    console.error("[SDR Analytics] Failed to track event:", error);
+    // Don't break the flow if analytics fails
+  }
+}
+
 // Detect user persona from conversation history and page behavior
 async function detectUserPersona(
   sessionId: string,
@@ -721,6 +788,9 @@ Extract key requirements (2-3 bullet points max, be concise):`;
       `[LeadGen] Stored email for session ${sessionId}: ${detectedEmail} with adminId: ${adminId}`
     );
 
+    // Track email capture event
+    await trackSDREvent("email_captured", sessionId, detectedEmail, undefined, pageUrl || undefined, adminId || undefined);
+
     // Immediate SDR-style activation message after email detection
     const companyName = "Your Company"; // TODO: Make this dynamic from admin settings
     const productName = "our platform"; // TODO: Make this dynamic from admin settings
@@ -995,10 +1065,15 @@ Extract key requirements (2-3 bullet points max, be concise):`;
           `[DEBUG] Conversation state: hasBeenGreeted=${hasBeenGreeted}, proactiveCount=${proactiveMessageCount}, visitedPages=${visitedPages.length}`
         );
 
+        // Track vertical detection if it's not 'general'
+        if (detectedVertical !== 'general') {
+          await trackSDREvent("vertical_detected", sessionId, undefined, detectedVertical, pageUrl || undefined, adminId || undefined);
+        }
+
         let summaryPrompt;
 
         if (!hasBeenGreeted) {
-          // Check if user already has email (sales mode activation)
+          // Check if user already has email (sales mode activation) or preserved SDR status
           const existingEmail = await chats.findOne(
             { sessionId, email: { $exists: true } },
             { sort: { createdAt: -1 } }
@@ -1008,11 +1083,32 @@ Extract key requirements (2-3 bullet points max, be concise):`;
             // User has email - use SDR activation with vertical messaging
             const companyName = "Your Company"; // TODO: Make dynamic
             const productName = "our platform"; // TODO: Make dynamic
+            
+            // Enhanced SDR message based on page navigation patterns
+            const isReturningVisitor = existingEmail.preservedStatus;
+            const conversionButtons = getConversionButtons(detectedVertical, isReturningVisitor);
 
             const sdrMessage = {
-              mainText: `Hi! I'm ${companyName}'s friendly assistant. ${verticalInfo.message}`,
-              buttons: verticalInfo.buttons,
+              mainText: isReturningVisitor 
+                ? `Welcome back! Let's continue exploring how ${productName} can help. ${verticalInfo.message}`
+                : `Hi! I'm ${companyName}'s friendly assistant. ${verticalInfo.message}`,
+              buttons: conversionButtons,
             };
+
+            // Store the SDR continuation message
+            await chats.insertOne({
+              sessionId,
+              role: "assistant",
+              content: sdrMessage.mainText,
+              buttons: sdrMessage.buttons,
+              botMode: "sales",
+              userEmail: existingEmail.email,
+              email: existingEmail.email,
+              adminId: existingEmail.adminId,
+              createdAt: new Date(),
+              pageUrl,
+              sdrContinuation: true,
+            });
 
             return NextResponse.json(
               {
@@ -1412,16 +1508,17 @@ ${previousQnA}
         } else if (followupCount === 2) {
           // Third follow-up: check if user already has email
           if (userHasEmail) {
-            // User is in sales mode - provide value-added engagement instead of asking for email
+            // User is in sales mode - aggressive SDR-style conversion focus
             followupSystemPrompt = `
-You are a helpful sales assistant. The user has already provided their email and is in sales mode.
+You are a confident sales assistant. The user has already provided their email and is a qualified lead in sales mode.
 
 You will receive page and general context, the detected intent, and the previous conversation. Always generate your response in the following JSON format:
 {
-  "mainText": "<Offer value-added help like scheduling a personalized demo, connecting to an expert, providing additional resources, or suggesting next steps based on their page context and detected intent. Be specific and actionable. KEEP SHORT: Use 1-2 sentences max with professional, confident tone.>",
-  "buttons": ["<2-3 high-value options like 'Schedule a demo', 'Talk to specialist', 'Get custom quote', etc. based on page context>"],
+  "mainText": "<Direct, value-focused message. Reference specific ROI, time savings, or competitive advantage. Be consultative but assertive. Maximum 30 words. Use numbers/statistics when possible.>",
+  "buttons": ["<2-3 high-conversion actions like 'Book 15-min Demo', 'Get Custom Quote', 'Talk to Specialist', 'See ROI Calculator'>"],
   "emailPrompt": ""
 }
+
 Context:
 Page Context:
 ${pageChunks.slice(0, 3).join("\n---\n")}
@@ -1431,10 +1528,15 @@ Detected Intent:
 ${detectedIntent}
 Previous Conversation:
 ${previousQnA}
-- Only use the above JSON format.
-- Do not answer in any other way.
-- Your mainText must offer value-added help since the user is already a qualified lead with email provided.`;
-            followupUserPrompt = `Offer value-added help like scheduling a demo, connecting to an expert, or suggesting next steps. The user has already provided their email so focus on high-value actions. Only output the JSON format as instructed.`;
+
+SDR Guidelines:
+- Reference specific business outcomes (save X hours, increase Y%, reduce Z cost)
+- Create urgency with limited-time value
+- Use consultative language ("Based on what you're viewing...")
+- Be confident about the solution fit
+- Focus on next concrete step in sales process
+- Only use the above JSON format.`;
+            followupUserPrompt = `Create an SDR-style value proposition with specific benefits. The user has email so focus on conversion. Reference ROI, time savings, or competitive advantage. Be assertive but consultative. Only output the JSON format as instructed.`;
           } else {
             // User hasn't provided email yet - ask for it
             followupSystemPrompt = `
@@ -1461,21 +1563,33 @@ ${previousQnA}
             followupUserPrompt = `Ask the user for their email in a friendly, direct way, explaining why you need it to send them setup instructions, a demo, or connect them to support for this page. Reference the page context or detected intent if possible. Do NOT ask another qualifying question. Do NOT include any buttons. Only output the JSON format as instructed.`;
           }
         } else if (followupCount === 3) {
-          // Final nudge: check if user already has email
+          // Final nudge: aggressive conversion attempt for sales mode
           if (userHasEmail) {
-            // User is in sales mode - provide a final high-value offer
-            followupSystemPrompt = `You are a helpful sales assistant. The user has already provided their email and is in sales mode. Always generate your response in the following JSON format:
+            // User is in sales mode - final high-pressure but helpful conversion push
+            followupSystemPrompt = `You are a confident sales assistant. The user has already provided their email and is a qualified lead. This is your final conversion attempt.
+
+Always generate your response in the following JSON format:
 {
-  "mainText": "<Final high-value offer. STRICT LIMITS: Maximum 30 words total. Make it compelling and time-sensitive based on what they're viewing. Reference actual page content.>",
-  "buttons": ["<Generate exactly 3 buttons, each must be 3-4 words maximum. High-value options specific to the page content and their journey.>"],
+  "mainText": "<Final conversion push. Create urgency with specific value proposition. Reference what they've viewed and time-sensitive opportunity. Maximum 30 words. Be direct but helpful.>",
+  "buttons": ["<Generate exactly 3 conversion-focused buttons like 'Book Call Now', 'Get Quote Today', 'Priority Demo'>"],
   "emailPrompt": ""
 }
-Context: Page Context: ${pageChunks
-              .slice(0, 3)
-              .join("\\n---\\n")} General Context: ${pageChunks.join(
-              " "
-            )} Detected Intent: ${detectedIntent} Previous Conversation: ${previousQnA} - Only use the above JSON format. - Do not answer in any other way. - Your mainText must be a final high-value offer since the user is already qualified. Base it on actual page content.`;
-            followupUserPrompt = `Make a final high-value offer like exclusive access, priority support, or direct connection to decision maker. The user already provided email so focus on conversion. Only output the JSON format as instructed.`;
+
+Context: 
+Page Context: ${pageChunks.slice(0, 3).join("\\n---\\n")} 
+General Context: ${pageChunks.join(" ")} 
+Detected Intent: ${detectedIntent} 
+Previous Conversation: ${previousQnA} 
+
+Final Conversion Guidelines:
+- Create time-sensitive urgency ("limited spots", "this week only", "priority access")
+- Reference their specific viewing behavior
+- Offer exclusive value (priority support, custom setup, direct expert access)
+- Use scarcity psychology appropriately
+- Be confident about solution fit based on their engagement
+- Focus on immediate next step that moves them to purchase/demo
+- Only use the above JSON format.`;
+            followupUserPrompt = `Make a final conversion push with urgency and exclusive value. User has email so this is pure sales conversion. Reference their page viewing and create time-sensitive opportunity. Only output the JSON format as instructed.`;
           } else {
             // User hasn't provided email yet - final summary offer
             followupSystemPrompt = `
@@ -2009,6 +2123,12 @@ export async function DELETE(req: NextRequest) {
       const db = await getDb();
       const chats = db.collection("chats");
 
+      // First, check if user has email (to preserve SDR status)
+      const emailMessage = await chats.findOne(
+        { sessionId, email: { $exists: true } },
+        { sort: { createdAt: -1 } }
+      );
+
       // Delete all chat history for this session
       const result = await chats.deleteMany({ sessionId });
 
@@ -2016,11 +2136,40 @@ export async function DELETE(req: NextRequest) {
         `[Chat] Cleared ${result.deletedCount} messages for session ${sessionId}`
       );
 
+      // If user had email, preserve their SDR status for cross-page activation
+      let preservedEmailStatus = null;
+      if (emailMessage && emailMessage.email) {
+        preservedEmailStatus = {
+          email: emailMessage.email,
+          botMode: emailMessage.botMode || "sales",
+          userEmail: emailMessage.email,
+          adminId: emailMessage.adminId,
+        };
+        
+        console.log(
+          `[Chat] Preserving SDR status for ${emailMessage.email} across page navigation`
+        );
+
+        // Store a minimal record to maintain SDR status
+        await chats.insertOne({
+          sessionId,
+          role: "system",
+          content: "SDR_STATUS_PRESERVED",
+          email: emailMessage.email,
+          botMode: emailMessage.botMode || "sales",
+          userEmail: emailMessage.email,
+          adminId: emailMessage.adminId,
+          createdAt: new Date(),
+          preservedStatus: true,
+        });
+      }
+
       return NextResponse.json(
         {
           success: true,
           deletedCount: result.deletedCount,
           message: "Chat history cleared successfully",
+          preservedEmailStatus,
         },
         { headers: corsHeaders }
       );
