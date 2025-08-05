@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Page Context Analysis Test</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        background: #f5f7fa;
+      }
+      .container {
+        background: white;
+        border-radius: 15px;
+        padding: 40px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        color: #2c3e50;
+        text-align: center;
+        margin-bottom: 30px;
+      }
+      .issue-section {
+        background: #fff3cd;
+        border: 2px solid #ffc107;
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+      }
+      .fix-section {
+        background: #d1ecf1;
+        border: 2px solid #17a2b8;
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+      }
+      .test-content {
+        background: #e9ecef;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 15px 0;
+        font-family: monospace;
+        white-space: pre-wrap;
+      }
+      .expected-output {
+        background: #d4edda;
+        border: 2px solid #28a745;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 15px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🔍 Page Context Analysis & Followup Test</h1>
+
+      <div class="issue-section">
+        <h2>❌ Current Issue</h2>
+        <p>
+          <strong>Problem:</strong> Followups are generating generic responses:
+        </p>
+        <ul>
+          <li>"Enhance client satisfaction by automating bookings..."</li>
+          <li>
+            Buttons: "Scheduling Chaos", "Payment Automation", "Affordable
+            Plans"
+          </li>
+          <li>These are generic and not specific to actual page content</li>
+          <li>Buttons are repeating between followups</li>
+        </ul>
+      </div>
+
+      <div class="fix-section">
+        <h2>✅ Enhanced System</h2>
+        <p><strong>Solution Implemented:</strong></p>
+        <ul>
+          <li>Added critical instructions to analyze ACTUAL page content</li>
+          <li>
+            Banned generic terms like "Scheduling Chaos", "Auto Scheduling"
+          </li>
+          <li>
+            Required extraction of specific industry terms from page content
+          </li>
+          <li>Enhanced both system and user prompts for better compliance</li>
+        </ul>
+      </div>
+
+      <div class="expected-output">
+        <h3>🎯 Expected Followup Based on THIS Page Content</h3>
+        <p>
+          <strong>Page Analysis:</strong> This is a fitness studio management
+          platform
+        </p>
+        <p>
+          <strong>Followup #1 (Growth Focus):</strong> "Ready to expand your
+          fitness studio locations?"
+        </p>
+        <p>
+          <strong>Buttons:</strong> "Multi-Location", "Franchise Support",
+          "Growth Analytics"
+        </p>
+        <p>
+          <strong>Followup #2 (Revenue Focus):</strong> "Want to optimize your
+          membership pricing?"
+        </p>
+        <p>
+          <strong>Buttons:</strong> "Dynamic Pricing", "Membership Tiers",
+          "Revenue Tracking"
+        </p>
+      </div>
+
+      <h2>🧪 Rich Page Content for Testing</h2>
+      <div class="test-content">
+        This page should provide rich, specific content for the AI to extract
+        from: FITNESS STUDIO MANAGEMENT PLATFORM Features: - Multi-location
+        franchise management - Dynamic membership pricing optimization -
+        Advanced member retention analytics - Wearable device integrations
+        (Fitbit, Apple Watch) - Virtual training session scheduling - Nutrition
+        plan management - Personal trainer performance tracking - Equipment
+        maintenance scheduling - Member body composition analysis - Group class
+        capacity optimization - Revenue forecasting dashboards - Social media
+        integration for member engagement - Mobile app for member check-ins -
+        Biometric access control systems - Custom workout plan builder -
+        Supplement inventory management - Marketing campaign automation - Member
+        referral tracking - Staff payroll and commission management - Energy
+        consumption monitoring Business Benefits: - Increase member retention by
+        40% - Optimize class schedules for maximum capacity - Track equipment
+        utilization rates - Automate marketing to lapsed members - Monitor
+        trainer performance metrics - Reduce energy costs through smart
+        scheduling - Boost supplement sales through targeted recommendations -
+        Streamline franchise operations across locations - Enhance member
+        experience with personalized workouts - Maximize revenue through dynamic
+        pricing
+      </div>
+
+      <h2>📊 Testing Instructions</h2>
+      <ol>
+        <li><strong>Load this page</strong> and wait for followup messages</li>
+        <li>
+          <strong>Check if followups mention:</strong>
+          <ul>
+            <li>Specific fitness industry terms (not generic "scheduling")</li>
+            <li>Actual features from the content above</li>
+            <li>Industry-specific pain points and solutions</li>
+          </ul>
+        </li>
+        <li>
+          <strong>Verify button evolution:</strong>
+          <ul>
+            <li>
+              Followup #1: Growth-focused buttons with fitness terminology
+            </li>
+            <li>Followup #2: Revenue-focused buttons with different terms</li>
+            <li>No repetition of button concepts</li>
+          </ul>
+        </li>
+      </ol>
+
+      <div class="expected-output">
+        <h3>✅ Success Criteria</h3>
+        <ul>
+          <li>Messages reference actual fitness studio features</li>
+          <li>Buttons use specific terms from page content above</li>
+          <li>No generic "scheduling chaos" or "auto scheduling"</li>
+          <li>Each followup explores different business aspects</li>
+          <li>Industry-specific and contextually relevant responses</li>
+        </ul>
+      </div>
+    </div>
+
+    <script>
+      console.log("Page Context Analysis Test Loaded");
+      console.log(
+        "Rich content includes: fitness studio, franchise, dynamic pricing, retention analytics, wearable integrations"
+      );
+      console.log(
+        "Expected: Industry-specific followups that reference actual page content"
+      );
+    </script>
+  </body>
+</html>

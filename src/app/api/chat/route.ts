@@ -1880,7 +1880,44 @@ MANDATORY RULES FOR FOLLOWUP #1:
 - Pick ONE topic focus and stick to it completely
 - Extract specific elements from page content that relate to your chosen focus
 - Create buttons that explore that specific angle deeply
-- Avoid generic "scheduling" or "management" - be specific to your chosen focus area
+- Use terminology that appears on the actual page content
+- Focus on customer business profiling and pain point discovery
+
+CRITICAL PAGE CONTENT ANALYSIS FOR CUSTOMER PROFILING:
+1. BUSINESS TYPE: Identify the industry/vertical from page content (fitness, healthcare, legal, etc.)
+2. CUSTOMER PAIN POINTS: Extract specific challenges mentioned (member retention, double bookings, staff coordination, etc.)
+3. BUSINESS NEEDS: Identify what type of business would visit this page (small business, enterprise, startup, etc.)
+4. FEATURE RELEVANCE: Match page features to customer profile and business type
+5. PROFILING OPPORTUNITY: Create buttons that reveal customer business size, urgency, technical level
+
+CUSTOMER BUSINESS PROFILING STRATEGY:
+- If page mentions "franchise management" → Buttons should explore multi-location challenges
+- If page mentions "member retention" → Buttons should explore client relationship strategies  
+- If page mentions "staff scheduling" → Buttons should explore team management needs
+- If page mentions "revenue optimization" → Buttons should explore business growth goals
+- If page mentions "compliance tracking" → Buttons should explore regulatory requirements
+
+BUSINESS INTELLIGENCE GATHERING:
+- Button 1: Discover business size/type ("Multi-Location", "Solo Practice", "Growing Team")
+- Button 2: Identify pain severity ("Critical Issue", "Nice to Have", "Exploring Options") 
+- Button 3: Understand timeline/urgency ("Immediate Need", "Planning Ahead", "Research Phase")
+
+REQUIRED: Use specific, industry-relevant terms from the actual page content provided above for intelligent customer profiling.
+
+**EXAMPLE OF SMART PAGE CONTEXT USAGE:**
+If page mentions "fitness studio management", "member retention", "equipment tracking":
+✅ GOOD: "Struggling with member retention?" with buttons like "Retention Strategies", "Member Engagement", "Churn Analysis"
+
+If page mentions "legal case management", "client billing", "document automation":
+✅ GOOD: "Managing complex caseloads?" with buttons like "Case Workflows", "Billing Automation", "Document Templates"
+
+**CUSTOMER PROFILING THROUGH BUTTONS:**
+Create buttons that help identify:
+- Business size: "Solo Practice" vs "Multi-Location" vs "Enterprise Team"
+- Urgency level: "Urgent Need" vs "Evaluating Options" vs "Future Planning"  
+- Technical sophistication: "Simple Setup" vs "Custom Integration" vs "Advanced Features"
+
+**MANDATORY:** Extract and use ACTUAL terminology from the page content provided above for intelligent customer business profiling.
 
 CREATIVE OPENING PATTERNS - Use variety, avoid repetition:
 - Curiosity: "Ready to...", "Want to...", "Curious how...", "Ever wondered..."
@@ -1906,6 +1943,9 @@ STRICT VARIETY ENFORCEMENT:
 AVOID: Starting with "Tired of...", "Struggling with..." or repetitive patterns
 
 Context:
+
+‼️ CRITICAL INSTRUCTION: You MUST analyze and use the following page content to create industry-specific, relevant responses. DO NOT create generic "scheduling" or "management" responses. Extract actual terms, features, and pain points from the content below:
+
 Page Context:
 ${pageChunks.slice(0, 3).join("\n---\n")}
 General Context:
@@ -1921,11 +1961,13 @@ ${previousQnA}
             .join(", ")}. Do NOT include a summary or multiple questions.
 - Generate exactly 3 buttons, each 3-4 words maximum. Base them on actual page content and user needs.
 - Vary the nudge text for each follow-up.`;
-          followupUserPrompt = `Create ONE nudge (max 30 words) to engage user. Use page context and intent. Do NOT repeat questions: ${lastFewQuestions
+          followupUserPrompt = `CRITICAL: You MUST create a response based on the ACTUAL page content provided above. Do NOT use generic terms like "scheduling chaos" or "auto scheduling". 
+
+Create ONE nudge (max 30 words) that is specific to the page content and industry. Extract real features, benefits, or services from the page content provided. Do NOT repeat questions: ${lastFewQuestions
             .map((q) => `"${getText(q)}"`)
-            .join(
-              ", "
-            )}. Generate exactly 3 buttons (3-4 words each). JSON format only.`;
+            .join(", ")}. 
+
+Generate exactly 3 buttons (3-4 words each) using ACTUAL terms from the page content. JSON format only.`;
         } else if (followupCount === 1) {
           // Second follow-up: micro-conversion nudge with enforced button differentiation
 
@@ -1996,6 +2038,43 @@ MANDATORY RULES FOR FOLLOWUP #2:
 - Extract completely different page elements for your chosen focus
 - Create buttons that explore an entirely different aspect of their business
 - Ensure zero conceptual overlap with previous followups
+- ABSOLUTELY REQUIRED: Base message and buttons on ACTUAL page content provided
+
+CRITICAL PAGE CONTENT ANALYSIS FOR DEEPER CUSTOMER PROFILING:
+1. BUSINESS DEPTH: Dive deeper into different aspects of their business needs
+2. CUSTOMER SEGMENTATION: Identify if they're small business, mid-market, or enterprise
+3. PAIN POINT SEVERITY: Understand urgency and impact of their challenges
+4. DECISION AUTHORITY: Determine if they're decision maker, influencer, or researcher
+5. TECHNICAL REQUIREMENTS: Assess their technical sophistication and integration needs
+
+ADVANCED CUSTOMER PROFILING STRATEGY:
+- If Followup #1 explored growth → Followup #2 explores operational efficiency from page content
+- If Followup #1 explored revenue → Followup #2 explores customer experience from page content
+- If Followup #1 explored technology → Followup #2 explores business processes from page content
+- Always use different features/benefits mentioned on the page
+
+BUSINESS INTELLIGENCE DEEPENING:
+- Button 1: Explore business maturity ("Startup Phase", "Scaling Business", "Established Company")
+- Button 2: Assess integration complexity ("Standalone Tool", "System Integration", "Full Ecosystem")
+- Button 3: Understand decision process ("Need Demo", "Budget Approval", "Team Buy-in")
+
+REQUIRED: Use specific, industry-relevant terms from the actual page content that represent a DIFFERENT business aspect than Followup #1.
+
+**EXAMPLE OF INTELLIGENT CUSTOMER PROFILING:**
+If Followup #1 was about growth and page mentions "revenue optimization", "pricing strategies", "profit tracking":
+✅ GOOD: "What's your biggest revenue challenge?" with buttons like "Pricing Strategy", "Revenue Tracking", "Profit Optimization"
+
+If Followup #1 was about efficiency and page mentions "team collaboration", "project management", "workflow automation":
+✅ GOOD: "How large is your team?" with buttons like "Solo Operation", "Small Team", "Department Scale"
+
+**CUSTOMER PROFILING OBJECTIVES:**
+- Understand business size and complexity
+- Identify pain point severity and urgency  
+- Assess technical requirements and integration needs
+- Determine decision-making authority and process
+- Profile budget considerations and timeline
+
+**MANDATORY:** Extract and use ACTUAL terminology from the page content that's DIFFERENT from Followup #1.
 
 You will receive page and general context, the detected intent, and the previous conversation. Always generate your response in the following JSON format:
 {
@@ -2038,6 +2117,9 @@ ABSOLUTE VARIETY REQUIREMENTS:
 AVOID: "Tired of...", "Struggling with..." or repetitive openings from previous messages
 
 Context:
+
+‼️ CRITICAL INSTRUCTION: You MUST analyze and use the following page content to create industry-specific, relevant responses. DO NOT create generic "scheduling" or "management" responses. Extract actual terms, features, and pain points from the content below that are DIFFERENT from Followup #1:
+
 Page Context:
 ${pageChunks.slice(0, 3).join("\n---\n")}
 General Context:
@@ -2049,7 +2131,11 @@ ${previousQnA}
 - Only use the above JSON format.
 - Do not answer in any other way.
 - Your mainText must be a micro-conversion nudge, referencing the user's last action, detected intent, page context, or actual page content. Do NOT ask for a discovery call or email directly. Vary the nudge text for each follow-up.`;
-          followupUserPrompt = `Ask a micro-conversion nudge—a small, low-friction ask (e.g., 'Want to save this setup guide to your email?' or 'Should I show how others customize their services?'), based on the user's last action, detected intent, page context, or detected intent. Do NOT ask for a discovery call or email directly. Vary the nudge text for each follow-up. Only output the JSON format as instructed.`;
+          followupUserPrompt = `CRITICAL: You MUST create a response based on the ACTUAL page content provided above that is DIFFERENT from Followup #1. Do NOT use generic terms like "scheduling chaos" or "auto scheduling" or any similar concepts to previous followups.
+
+Ask a micro-conversion nudge—a small, low-friction ask that's specific to the page content and represents a DIFFERENT business aspect than Followup #1. Extract real features, benefits, or services from the page content. Do NOT ask for a discovery call or email directly. 
+
+Generate exactly 3 buttons using ACTUAL terms from the page content that are COMPLETELY DIFFERENT from previous buttons. JSON format only.`;
         } else if (followupCount === 2) {
           // Third follow-up: Value-focused with complete topic diversification
 
