@@ -520,7 +520,7 @@ Generate your response in JSON format:
 {
   "mainText": "<Segment-specific message under 30 words that addresses their pain points using situational language, NOT personal names>",
   "buttons": ["<3 buttons specific to what this customer segment actually needs>"],
-  "emailPrompt": "<If appropriate for this segment and followup count>"
+  "emailPrompt": "<ONLY include this if followupCount >= 2 AND user hasn't provided email yet. Otherwise leave empty string.>"
 }
 
 IMPORTANT GUIDELINES:
@@ -530,6 +530,13 @@ IMPORTANT GUIDELINES:
 - Address pain points relevant to their company size/type
 - Speak in their preferred technical level
 - Focus on business context, not personal identity
+
+LEAD PROGRESSION RULES:
+- Followup #1 (followupCount=0): Give contextual question with 3 option buttons, NO email ask
+- Followup #2 (followupCount=1): More specific micro-conversion nudge with 3 buttons, NO email ask  
+- Followup #3 (followupCount=2): ONLY NOW ask for email if user hasn't provided it
+- Keep emailPrompt empty for first 2 followups
+- Match the user's current stage in the lead generation flow
 - Reference their specific pain points and preferred features
 - Use language appropriate for their technical level
 - Consider their budget range and company size
@@ -1611,8 +1618,13 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
             userEmail = lastEmailMsg.email;
           const botMode = userEmail ? "sales" : "lead_generation";
 
+          // Respect lead progression - only ask for email on 3rd followup
+          const shouldAskForEmail =
+            followupCount >= 2 && !userEmail && personaFollowup.emailPrompt;
+
           const followupWithMode = {
             ...personaFollowup,
+            emailPrompt: shouldAskForEmail ? personaFollowup.emailPrompt : "",
             botMode,
             userEmail: userEmail || null,
           };

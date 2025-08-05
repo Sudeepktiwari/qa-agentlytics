@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lead Progression Fix Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .test-container {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .message {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 10px 0;
+        border-left: 4px solid #007bff;
+      }
+      .buttons {
+        display: flex;
+        gap: 10px;
+        margin: 10px 0;
+      }
+      .button {
+        background: #007bff;
+        color: white;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .email-prompt {
+        background: #fff3cd;
+        color: #856404;
+        padding: 10px;
+        border-radius: 4px;
+        margin: 10px 0;
+        border: 1px solid #ffeaa7;
+      }
+      .test-step {
+        background: #e7f3ff;
+        padding: 10px;
+        border-radius: 4px;
+        margin: 10px 0;
+        border-left: 4px solid #0066cc;
+      }
+      .success {
+        background: #d4edda;
+        color: #155724;
+        padding: 10px;
+        border-radius: 4px;
+        border: 1px solid #c3e6cb;
+      }
+      .test-button {
+        background: #28a745;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin: 5px;
+      }
+      .followup-count {
+        font-weight: bold;
+        color: #dc3545;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🎯 Lead Progression Fix Test</h1>
+    <p>
+      This test verifies that the lead generation flow now follows the proper
+      3-step progression:
+    </p>
+    <ul>
+      <li><strong>Followup #1:</strong> Options & engagement, NO email ask</li>
+      <li><strong>Followup #2:</strong> More specific options, NO email ask</li>
+      <li><strong>Followup #3:</strong> Finally ask for email</li>
+    </ul>
+
+    <div class="test-container">
+      <h2>Test Scenario: Lead Generation Progression</h2>
+      <div class="test-step">
+        <strong>Test Steps:</strong><br />
+        1. Send initial message to start conversation<br />
+        2. Send followup #1 (should give options, no email)<br />
+        3. Send followup #2 (should give more options, no email)<br />
+        4. Send followup #3 (should finally ask for email)
+      </div>
+
+      <button class="test-button" onclick="testLeadProgression()">
+        🚀 Start Lead Progression Test
+      </button>
+      <div id="testResults"></div>
+    </div>
+
+    <div class="test-container">
+      <h2>Expected Behavior</h2>
+      <div class="message">
+        <strong
+          >Followup Count: <span class="followup-count">0</span> (First
+          Followup)</strong
+        ><br />
+        Should provide: Context-aware question with 3 buttons<br />
+        Should NOT include: Email prompt
+      </div>
+      <div class="message">
+        <strong
+          >Followup Count: <span class="followup-count">1</span> (Second
+          Followup)</strong
+        ><br />
+        Should provide: More specific micro-conversion nudge with 3 buttons<br />
+        Should NOT include: Email prompt
+      </div>
+      <div class="message">
+        <strong
+          >Followup Count: <span class="followup-count">2</span> (Third
+          Followup)</strong
+        ><br />
+        Should provide: Final question with 3 buttons<br />
+        Should INCLUDE: Email prompt (only now!)
+      </div>
+    </div>
+
+    <script>
+      async function testLeadProgression() {
+        const resultsDiv = document.getElementById("testResults");
+        resultsDiv.innerHTML = "<p>🔄 Testing lead progression...</p>";
+
+        try {
+          // Test Followup #1 (count = 0)
+          await testFollowup(0, "Initial message", resultsDiv);
+
+          // Test Followup #2 (count = 1)
+          await testFollowup(1, "Second interaction", resultsDiv);
+
+          // Test Followup #3 (count = 2)
+          await testFollowup(2, "Third interaction", resultsDiv);
+
+          resultsDiv.innerHTML +=
+            '<div class="success">✅ All tests completed! Check results above.</div>';
+        } catch (error) {
+          resultsDiv.innerHTML += `<div style="background: #f8d7da; color: #721c24; padding: 10px; border-radius: 4px;">❌ Test Error: ${error.message}</div>`;
+        }
+      }
+
+      async function testFollowup(followupCount, message, resultsDiv) {
+        resultsDiv.innerHTML += `<div class="test-step">Testing Followup #${
+          followupCount + 1
+        } (count=${followupCount})...</div>`;
+
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            messages: [{ role: "user", content: message }],
+            adminId: "test-admin",
+            url: window.location.href,
+            metadata: {
+              title: "Lead Progression Test Page",
+              description: "Testing the 3-step lead progression",
+            },
+          }),
+        });
+
+        const data = await response.json();
+
+        // Check if email prompt is present
+        const hasEmailPrompt =
+          data.emailPrompt && data.emailPrompt.trim().length > 0;
+        const shouldHaveEmail = followupCount >= 2;
+
+        let resultHTML = `<div class="message">
+                <strong>Followup #${followupCount + 1} Result:</strong><br>
+                Main Text: ${data.mainText || "No main text"}<br>
+                Buttons: ${
+                  data.buttons ? data.buttons.join(", ") : "No buttons"
+                }<br>
+                Email Prompt: ${
+                  hasEmailPrompt ? "✅ Present" : "❌ Not present"
+                }<br>
+                Expected Email: ${
+                  shouldHaveEmail ? "✅ Should have" : "❌ Should NOT have"
+                }<br>
+            `;
+
+        if (hasEmailPrompt === shouldHaveEmail) {
+          resultHTML +=
+            '<span style="color: #28a745;">✅ CORRECT BEHAVIOR</span>';
+        } else {
+          resultHTML +=
+            '<span style="color: #dc3545;">❌ INCORRECT BEHAVIOR</span>';
+        }
+
+        resultHTML += "</div>";
+        resultsDiv.innerHTML += resultHTML;
+
+        // Small delay between tests
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+    </script>
+  </body>
+</html>
