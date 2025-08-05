@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Page-Contextual Followups Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .test-section {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .page-content {
+        background: #e3f2fd;
+        padding: 15px;
+        border-radius: 5px;
+        margin: 10px 0;
+        border-left: 4px solid #2196f3;
+      }
+      .expected-followup {
+        background: #e8f5e8;
+        padding: 15px;
+        border-radius: 5px;
+        margin: 10px 0;
+        border-left: 4px solid #4caf50;
+      }
+      .followup-number {
+        background: #ff9800;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 15px;
+        font-size: 12px;
+        font-weight: bold;
+        margin-right: 10px;
+      }
+      .button-example {
+        background: #2196f3;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 4px;
+        margin: 3px;
+        display: inline-block;
+        font-size: 12px;
+      }
+      .scenario-title {
+        color: #1976d2;
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 15px;
+      }
+      .requirement {
+        background: #fff3e0;
+        padding: 10px;
+        border-radius: 4px;
+        margin: 10px 0;
+        border-left: 3px solid #ff9800;
+      }
+      .page-features {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 10px;
+        margin: 15px 0;
+      }
+      .feature-item {
+        background: #f3e5f5;
+        padding: 8px;
+        border-radius: 4px;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🎯 Page-Contextual Followups Testing Guide</h1>
+
+    <div class="test-section">
+      <h2>📋 Enhancement Overview</h2>
+      <div class="requirement">
+        <strong>Core Requirement:</strong> All followup messages and buttons
+        must be based on ACTUAL page content, extracting different features,
+        pain points, and solutions for each followup to create comprehensive
+        customer profiling.
+      </div>
+
+      <h3>Key Changes Made:</h3>
+      <ul>
+        <li>
+          ✅ <strong>Page Content Extraction:</strong> Each followup scans
+          actual page content for features, solutions, pain points
+        </li>
+        <li>
+          ✅ <strong>Different Business Angles:</strong> Each followup explores
+          different aspect of business from page content
+        </li>
+        <li>
+          ✅ <strong>Content-Based Buttons:</strong> Buttons use actual
+          terminology found on the page
+        </li>
+        <li>
+          ✅ <strong>Customer Profiling:</strong> Progressive intelligence
+          gathering through page-specific content
+        </li>
+        <li>
+          ✅ <strong>10 Chunks Context:</strong> Increased from 3 to 10 chunks
+          for richer page understanding
+        </li>
+      </ul>
+    </div>
+
+    <div class="test-section">
+      <div class="scenario-title">
+        🏋️ Scenario 1: Fitness Studio Management Page
+      </div>
+
+      <div class="page-content">
+        <strong>Page Content Available:</strong>
+        <div class="page-features">
+          <div class="feature-item">Class Scheduling System</div>
+          <div class="feature-item">Member Check-ins</div>
+          <div class="feature-item">Payment Processing</div>
+          <div class="feature-item">Instructor Management</div>
+          <div class="feature-item">Member Retention Analytics</div>
+          <div class="feature-item">Equipment Booking</div>
+          <div class="feature-item">Automated Billing</div>
+          <div class="feature-item">Mobile App Access</div>
+          <div class="feature-item">Waitlist Management</div>
+          <div class="feature-item">Performance Tracking</div>
+        </div>
+      </div>
+
+      <div class="expected-followup">
+        <span class="followup-number">Followup #1</span>
+        <strong>Extract: Class Scheduling Focus</strong><br />
+        Expected: "Ready to automate class bookings?"<br />
+        Buttons:
+        <span class="button-example">Class Scheduling</span>
+        <span class="button-example">Member Check-ins</span>
+        <span class="button-example">Booking System</span>
+      </div>
+
+      <div class="expected-followup">
+        <span class="followup-number">Followup #2</span>
+        <strong>Extract: Revenue/Payment Focus</strong><br />
+        Expected: "Want to streamline member payments?"<br />
+        Buttons:
+        <span class="button-example">Payment Processing</span>
+        <span class="button-example">Automated Billing</span>
+        <span class="button-example">Revenue Tracking</span>
+      </div>
+
+      <div class="expected-followup">
+        <span class="followup-number">Followup #3</span>
+        <strong>Extract: Analytics/Performance Focus</strong><br />
+        Expected: "Need member retention insights?"<br />
+        Buttons:
+        <span class="button-example">Retention Analytics</span>
+        <span class="button-example">Performance Tracking</span>
+        <span class="button-example">Member Insights</span>
+      </div>
+    </div>
+
+    <div class="test-section">
+      <div class="scenario-title">⚖️ Scenario 2: Law Firm Management Page</div>
+
+      <div class="page-content">
+        <strong>Page Content Available:</strong>
+        <div class="page-features">
+          <div class="feature-item">Case Management System</div>
+          <div class="feature-item">Client Billing Automation</div>
+          <div class="feature-item">Document Management</div>
+          <div class="feature-item">Court Calendar Integration</div>
+          <div class="feature-item">Time Tracking</div>
+          <div class="feature-item">Client Portal Access</div>
+          <div class="feature-item">Compliance Monitoring</div>
+          <div class="feature-item">Legal Research Tools</div>
+          <div class="feature-item">Task Assignment</div>
+          <div class="feature-item">Invoice Generation</div>
+        </div>
+      </div>
+
+      <div class="expected-followup">
+        <span class="followup-number">Followup #1</span>
+        <strong>Extract: Case Management Focus</strong><br />
+        Expected: "Streamline complex case workflows?"<br />
+        Buttons:
+        <span class="button-example">Case Management</span>
+        <span class="button-example">Task Assignment</span>
+        <span class="button-example">Court Calendar</span>
+      </div>
+
+      <div class="expected-followup">
+        <span class="followup-number">Followup #2</span>
+        <strong>Extract: Billing/Revenue Focus</strong><br />
+        Expected: "Automate client billing process?"<br />
+        Buttons:
+        <span class="button-example">Billing Automation</span>
+        <span class="button-example">Time Tracking</span>
+        <span class="button-example">Invoice Generation</span>
+      </div>
+
+      <div class="expected-followup">
+        <span class="followup-number">Followup #3</span>
+        <strong>Extract: Client/Document Focus</strong><br />
+        Expected: "Improve client communication?"<br />
+        Buttons:
+        <span class="button-example">Client Portal</span>
+        <span class="button-example">Document Management</span>
+        <span class="button-example">Legal Research</span>
+      </div>
+    </div>
+
+    <div class="test-section">
+      <div class="scenario-title">🏥 Scenario 3: Healthcare Practice Page</div>
+
+      <div class="page-content">
+        <strong>Page Content Available:</strong>
+        <div class="page-features">
+          <div class="feature-item">Patient Appointment Scheduling</div>
+          <div class="feature-item">Electronic Health Records</div>
+          <div class="feature-item">Insurance Verification</div>
+          <div class="feature-item">Telehealth Integration</div>
+          <div class="feature-item">Prescription Management</div>
+          <div class="feature-item">Patient Reminders</div>
+          <div class="feature-item">HIPAA Compliance</div>
+          <div class="feature-item">Billing & Claims</div>
+          <div class="feature-item">Lab Results Integration</div>
+          <div class="feature-item">Patient Portal</div>
+        </div>
+      </div>
+
+      <div class="expected-followup">
+        <span class="followup-number">Followup #1</span>
+        <strong>Extract: Scheduling/Access Focus</strong><br />
+        Expected: "Reduce appointment no-shows?"<br />
+        Buttons:
+        <span class="button-example">Patient Scheduling</span>
+        <span class="button-example">Appointment Reminders</span>
+        <span class="button-example">Telehealth Setup</span>
+      </div>
+
+      <div class="expected-followup">
+        <span class="followup-number">Followup #2</span>
+        <strong>Extract: Records/Compliance Focus</strong><br />
+        Expected: "Streamline patient records?"<br />
+        Buttons:
+        <span class="button-example">Health Records</span>
+        <span class="button-example">HIPAA Compliance</span>
+        <span class="button-example">Lab Integration</span>
+      </div>
+
+      <div class="expected-followup">
+        <span class="followup-number">Followup #3</span>
+        <strong>Extract: Billing/Operations Focus</strong><br />
+        Expected: "Optimize insurance claims?"<br />
+        Buttons:
+        <span class="button-example">Insurance Verification</span>
+        <span class="button-example">Billing & Claims</span>
+        <span class="button-example">Patient Portal</span>
+      </div>
+    </div>
+
+    <div class="test-section">
+      <div class="scenario-title">🛍️ Scenario 4: E-commerce Platform Page</div>
+
+      <div class="page-content">
+        <strong>Page Content Available:</strong>
+        <div class="page-features">
+          <div class="feature-item">Inventory Management</div>
+          <div class="feature-item">Order Processing</div>
+          <div class="feature-item">Customer Analytics</div>
+          <div class="feature-item">Multi-channel Selling</div>
+          <div class="feature-item">Shipping Integration</div>
+          <div class="feature-item">Payment Gateway</div>
+          <div class="feature-item">Marketing Automation</div>
+          <div class="feature-item">Product Catalog</div>
+          <div class="feature-item">Customer Support</div>
+          <div class="feature-item">Performance Reports</div>
+        </div>
+      </div>
+
+      <div class="expected-followup">
+        <span class="followup-number">Followup #1</span>
+        <strong>Extract: Inventory/Operations Focus</strong><br />
+        Expected: "Struggling with inventory tracking?"<br />
+        Buttons:
+        <span class="button-example">Inventory Management</span>
+        <span class="button-example">Order Processing</span>
+        <span class="button-example">Multi-channel Selling</span>
+      </div>
+
+      <div class="expected-followup">
+        <span class="followup-number">Followup #2</span>
+        <strong>Extract: Customer/Marketing Focus</strong><br />
+        Expected: "Want to boost customer retention?"<br />
+        Buttons:
+        <span class="button-example">Customer Analytics</span>
+        <span class="button-example">Marketing Automation</span>
+        <span class="button-example">Customer Support</span>
+      </div>
+
+      <div class="expected-followup">
+        <span class="followup-number">Followup #3</span>
+        <strong>Extract: Revenue/Performance Focus</strong><br />
+        Expected: "Need better sales insights?"<br />
+        Buttons:
+        <span class="button-example">Performance Reports</span>
+        <span class="button-example">Payment Gateway</span>
+        <span class="button-example">Product Catalog</span>
+      </div>
+    </div>
+
+    <div class="test-section">
+      <h2>🧪 Testing Instructions</h2>
+
+      <div class="requirement">
+        <strong>How to Test:</strong>
+        <ol>
+          <li>
+            <strong>Visit Page:</strong> Go to any of your website pages with
+            rich content
+          </li>
+          <li>
+            <strong>Wait for Followup #1:</strong> Should extract and reference
+            specific features from page
+          </li>
+          <li><strong>Interact:</strong> Click a button or type a response</li>
+          <li>
+            <strong>Wait for Followup #2:</strong> Should reference DIFFERENT
+            page content/features
+          </li>
+          <li><strong>Interact:</strong> Click another button or respond</li>
+          <li>
+            <strong>Wait for Followup #3:</strong> Should reference yet
+            DIFFERENT page content/features
+          </li>
+        </ol>
+      </div>
+
+      <h3>✅ Success Criteria:</h3>
+      <ul>
+        <li>
+          <strong>Content Extraction:</strong> Each followup references actual
+          features/services from the page
+        </li>
+        <li>
+          <strong>Topic Diversification:</strong> Each followup explores
+          different business aspect
+        </li>
+        <li>
+          <strong>Button Relevance:</strong> Buttons use real terminology found
+          on the page
+        </li>
+        <li>
+          <strong>Customer Profiling:</strong> Questions reveal different
+          business needs and priorities
+        </li>
+        <li>
+          <strong>No Repetition:</strong> No overlap in concepts, features, or
+          terminology between followups
+        </li>
+      </ul>
+
+      <h3>❌ Failure Indicators:</h3>
+      <ul>
+        <li>
+          Generic messages like "Tired of scheduling chaos" not based on page
+          content
+        </li>
+        <li>Buttons with generic terms not found on the actual page</li>
+        <li>Repetition of same business aspect across multiple followups</li>
+        <li>
+          Messages that could apply to any business, not specific to page
+          content
+        </li>
+      </ul>
+    </div>
+
+    <div class="test-section">
+      <h2>🎯 Customer Profiling Strategy</h2>
+
+      <p>
+        Each followup should build a comprehensive customer profile by
+        extracting different aspects from page content:
+      </p>
+
+      <div class="page-features">
+        <div class="feature-item">
+          <strong>Followup #1:</strong> Business Operations & Core Features
+        </div>
+        <div class="feature-item">
+          <strong>Followup #2:</strong> Revenue & Customer Experience
+        </div>
+        <div class="feature-item">
+          <strong>Followup #3:</strong> Analytics & Strategic Growth
+        </div>
+      </div>
+
+      <div class="requirement">
+        <strong>Result:</strong> By the end of 3 followups, you should
+        understand:
+        <ul>
+          <li>What features they're most interested in (from page content)</li>
+          <li>
+            Their primary business challenges (extracted from page pain points)
+          </li>
+          <li>Their business priorities (operations vs revenue vs growth)</li>
+          <li>
+            Their technical sophistication (based on feature complexity chosen)
+          </li>
+          <li>Their decision-making stage (based on interaction patterns)</li>
+        </ul>
+      </div>
+    </div>
+
+    <script>
+      // Add some interactive feedback
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("🎯 Page-Contextual Followups Test Guide Loaded");
+        console.log(
+          "📋 Test your chatbot followups to ensure they extract content from actual page features"
+        );
+
+        // Add click tracking for better analysis
+        document.querySelectorAll(".button-example").forEach((button) => {
+          button.addEventListener("click", function () {
+            console.log("🔘 Example button clicked:", this.textContent);
+          });
+        });
+      });
+    </script>
+  </body>
+</html>
