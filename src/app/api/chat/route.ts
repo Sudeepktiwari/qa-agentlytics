@@ -966,7 +966,7 @@ Extract key requirements (2-3 bullet points max, be concise):`;
             if (adminId) {
               const pageChunks = await getChunksByPageUrl(adminId, pageUrl);
               if (pageChunks.length > 0) {
-                pageContent = pageChunks.slice(0, 3).join("\n");
+                pageContent = pageChunks.slice(0, 10).join("\n");
                 detectedVertical = detectVertical(pageUrl, pageContent);
               }
             }
@@ -1270,7 +1270,7 @@ Extract key requirements (2-3 bullet points max, be concise):`;
     if (pageChunks.length > 0) {
       if (proactive) {
         // Summarize the page content and ask a relevant question
-        let summaryContext = pageChunks.slice(0, 3).join("\n---\n");
+        let summaryContext = pageChunks.slice(0, 10).join("\n---\n");
         const fullPageText = pageChunks.join(" ");
         const tokenCount = countTokens(fullPageText);
         console.log(`[Proactive] Page content token count: ${tokenCount}`);
@@ -1790,7 +1790,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
           );
           personaFollowup = await generatePersonaBasedFollowup(
             detectedPersona,
-            pageChunks.slice(0, 3).join("\n---\n"),
+            pageChunks.slice(0, 10).join("\n---\n"),
             pageUrl,
             previousQnA,
             followupCount
@@ -1947,7 +1947,7 @@ Context:
 ‼️ CRITICAL INSTRUCTION: You MUST analyze and use the following page content to create industry-specific, relevant responses. DO NOT create generic "scheduling" or "management" responses. Extract actual terms, features, and pain points from the content below:
 
 Page Context:
-${pageChunks.slice(0, 3).join("\n---\n")}
+${pageChunks.slice(0, 10).join("\n---\n")}
 General Context:
 ${pageChunks.join(" ")}
 Detected Intent:
@@ -2121,7 +2121,7 @@ Context:
 ‼️ CRITICAL INSTRUCTION: You MUST analyze and use the following page content to create industry-specific, relevant responses. DO NOT create generic "scheduling" or "management" responses. Extract actual terms, features, and pain points from the content below that are DIFFERENT from Followup #1:
 
 Page Context:
-${pageChunks.slice(0, 3).join("\n---\n")}
+${pageChunks.slice(0, 10).join("\n---\n")}
 General Context:
 ${pageChunks.join(" ")}
 Detected Intent:
@@ -2180,7 +2180,7 @@ You will receive page and general context, the detected intent, and the previous
 
 Context:
 Page Context:
-${pageChunks.slice(0, 3).join("\n---\n")}
+${pageChunks.slice(0, 10).join("\n---\n")}
 General Context:
 ${pageChunks.join(" ")}
 Detected Intent:
@@ -2258,7 +2258,7 @@ You will receive page and general context, the detected intent, and the previous
 }
 Context:
 Page Context:
-${pageChunks.slice(0, 3).join("\n---\n")}
+${pageChunks.slice(0, 10).join("\n---\n")}
 General Context:
 ${pageChunks.join(" ")}
 Detected Intent:
@@ -2284,7 +2284,7 @@ Always generate your response in the following JSON format:
 }
 
 Context: 
-Page Context: ${pageChunks.slice(0, 3).join("\\n---\\n")} 
+Page Context: ${pageChunks.slice(0, 10).join("\\n---\\n")} 
 General Context: ${pageChunks.join(" ")} 
 Detected Intent: ${detectedIntent} 
 Previous Conversation: ${previousQnA} 
@@ -2311,7 +2311,7 @@ You will receive page and general context, the detected intent, and the previous
 }
 Context:
 Page Context:
-${pageChunks.slice(0, 3).join("\n---\n")}
+${pageChunks.slice(0, 10).join("\n---\n")}
 General Context:
 ${pageChunks.join(" ")}
 Detected Intent:
@@ -2586,7 +2586,7 @@ What specific information are you looking for? I'm here to help guide you throug
   if (adminId && pageUrl) {
     const pageChunks = await getChunksByPageUrl(adminId, pageUrl);
     if (pageChunks.length > 0) {
-      pageContext = pageChunks.slice(0, 3).join("\n---\n");
+      pageContext = pageChunks.slice(0, 10).join("\n---\n");
     }
   }
 
