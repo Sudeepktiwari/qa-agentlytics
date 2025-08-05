@@ -412,5 +412,23 @@ The persona-based followup system is now **fully implemented and ready for produ
 2. **Detect user personas** in real-time during conversations
 3. **Generate targeted followups** that speak directly to each persona type
 4. **Continuously learn** from conversation patterns to improve detection
+5. **🆕 Preserve engagement during tab switching** - followup timers continue even when page is hidden
+6. **🆕 Accelerated re-engagement** - faster followups (5-8s) when users return to the page
 
-Your chatbot now has **genuine customer intelligence** - it doesn't just know what page users are on, but understands **who they are** and **what they need**. This transforms every conversation from generic to genuinely personal! 🎉
+### **🚀 Advanced Lead Generation Features**
+
+**Page Visibility Intelligence:**
+
+- **Uninterrupted Engagement:** Followup timers continue running when users switch tabs
+- **Smart Re-engagement:** Accelerated followups when users return (5-8s vs normal 12-30s)
+- **No Lost Opportunities:** Maintain lead nurturing even during multitasking
+- **Optimized Timing:** Balance persistence with user experience
+
+**3-Button Framework for Lead Qualification:**
+
+- **Button 1:** Customer pain point based on page context
+- **Button 2:** Specific solution/feature mentioned on page
+- **Button 3:** Customer requirements or page context option
+- **Progressive Profiling:** Each followup builds deeper customer intelligence
+
+Your chatbot now has **genuine customer intelligence** - it doesn't just know what page users are on, but understands **who they are**, **what they need**, and **when to re-engage them** for maximum conversion! 🎉

@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lead Bot: Page Visibility Timer Test</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+      }
+      .container {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        color: #2c3e50;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+      .subtitle {
+        text-align: center;
+        color: #7f8c8d;
+        margin-bottom: 30px;
+      }
+      .test-section {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+        border-left: 4px solid #3498db;
+      }
+      .visibility-status {
+        background: #e8f5e8;
+        border: 2px solid #4caf50;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 15px 0;
+        text-align: center;
+        font-weight: bold;
+      }
+      .visibility-status.hidden {
+        background: #fff3e0;
+        border-color: #ff9800;
+      }
+      .timer-info {
+        background: #f0f8ff;
+        border: 1px solid #add8e6;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 15px 0;
+      }
+      .test-button {
+        background: #3498db;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 16px;
+        margin: 10px 5px;
+        transition: all 0.3s;
+      }
+      .test-button:hover {
+        background: #2980b9;
+        transform: translateY(-2px);
+      }
+      .instructions {
+        background: #fff9c4;
+        border: 1px solid #f1c40f;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 20px 0;
+      }
+      .log-output {
+        background: #2c3e50;
+        color: #ecf0f1;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 15px 0;
+        font-family: "Courier New", monospace;
+        font-size: 12px;
+        max-height: 300px;
+        overflow-y: auto;
+      }
+      .strategy-highlight {
+        background: #e8f5e8;
+        border-left: 4px solid #27ae60;
+        padding: 15px;
+        margin: 15px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🎯 Lead Bot: Page Visibility Timer Test</h1>
+      <p class="subtitle">
+        Testing followup timer behavior when page becomes hidden/visible
+      </p>
+
+      <div class="test-section">
+        <h2>📊 Current Page Status</h2>
+        <div class="visibility-status" id="visibilityStatus">
+          Page is currently: <span id="pageStatus">VISIBLE</span>
+        </div>
+
+        <div class="timer-info">
+          <strong>Followup Timer Status:</strong>
+          <span id="timerStatus">Monitoring...</span><br />
+          <strong>Last Activity:</strong> <span id="lastActivity">Just now</span
+          ><br />
+          <strong>Page Hidden Duration:</strong>
+          <span id="hiddenDuration">0 seconds</span>
+        </div>
+      </div>
+
+      <div class="test-section">
+        <h2>🎯 Lead Generation Strategy</h2>
+        <div class="strategy-highlight">
+          <h3>✅ Timer Preservation Strategy</h3>
+          <ul>
+            <li>
+              <strong>Page Hidden:</strong> Followup timer continues running (no
+              interruption)
+            </li>
+            <li>
+              <strong>Page Visible Again:</strong> Timer gets accelerated for
+              faster re-engagement
+            </li>
+            <li>
+              <strong>User Returns:</strong> 5-8 second accelerated followup vs
+              normal 12-30 seconds
+            </li>
+            <li>
+              <strong>Continuous Engagement:</strong> No interruption in lead
+              nurturing process
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="test-section">
+        <h2>🧪 Testing Instructions</h2>
+        <div class="instructions">
+          <h3>How to Test:</h3>
+          <ol>
+            <li>
+              <strong>Trigger Followup:</strong> Click "Start Followup Timer" to
+              begin a 30-second timer
+            </li>
+            <li>
+              <strong>Hide Page:</strong> Switch tabs or minimize browser (timer
+              should continue)
+            </li>
+            <li>
+              <strong>Return to Page:</strong> Come back and see accelerated
+              re-engagement
+            </li>
+            <li>
+              <strong>Monitor Console:</strong> Check browser console for
+              detailed timer logs
+            </li>
+          </ol>
+
+          <p>
+            <em
+              ><strong>Expected Behavior:</strong> Timer continues when hidden,
+              accelerates when you return</em
+            >
+          </p>
+        </div>
+
+        <button class="test-button" onclick="startFollowupTimer()">
+          Start Followup Timer (30s)
+        </button>
+        <button class="test-button" onclick="simulateUserReturn()">
+          Simulate User Return
+        </button>
+        <button class="test-button" onclick="clearAllTimers()">
+          Clear All Timers
+        </button>
+        <button class="test-button" onclick="clearLogs()">Clear Logs</button>
+      </div>
+
+      <div class="test-section">
+        <h2>📝 Real-Time Logs</h2>
+        <div class="log-output" id="logOutput">
+          Waiting for visibility change events...<br />
+        </div>
+      </div>
+
+      <div class="test-section">
+        <h2>💡 Business Impact</h2>
+        <ul>
+          <li>
+            <strong>Uninterrupted Engagement:</strong> Continue nurturing leads
+            even when they browse other tabs
+          </li>
+          <li>
+            <strong>Re-engagement Strategy:</strong> Faster followup when users
+            return shows renewed interest
+          </li>
+          <li>
+            <strong>Higher Conversion:</strong> No lost opportunities due to tab
+            switching
+          </li>
+          <li>
+            <strong>Better User Experience:</strong> Timely but not intrusive
+            re-engagement
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <script>
+      let followupTimer = null;
+      let hiddenStartTime = null;
+      let lastActivityTime = Date.now();
+
+      function log(message) {
+        const timestamp = new Date().toLocaleTimeString();
+        const logOutput = document.getElementById("logOutput");
+        logOutput.innerHTML += `[${timestamp}] ${message}<br>`;
+        logOutput.scrollTop = logOutput.scrollHeight;
+        console.log(`[PageVisibilityTest] ${message}`);
+      }
+
+      function updateStatus() {
+        const statusElement = document.getElementById("pageStatus");
+        const containerElement = document.getElementById("visibilityStatus");
+        const timerElement = document.getElementById("timerStatus");
+        const activityElement = document.getElementById("lastActivity");
+        const hiddenElement = document.getElementById("hiddenDuration");
+
+        if (document.hidden) {
+          statusElement.textContent = "HIDDEN";
+          containerElement.classList.add("hidden");
+        } else {
+          statusElement.textContent = "VISIBLE";
+          containerElement.classList.remove("hidden");
+        }
+
+        // Update timer status
+        timerElement.textContent = followupTimer
+          ? "Active followup timer running"
+          : "No active timer";
+
+        // Update last activity
+        const timeSinceActivity = Date.now() - lastActivityTime;
+        activityElement.textContent = `${Math.floor(
+          timeSinceActivity / 1000
+        )} seconds ago`;
+
+        // Update hidden duration
+        if (document.hidden && hiddenStartTime) {
+          const hiddenTime = Date.now() - hiddenStartTime;
+          hiddenElement.textContent = `${Math.floor(
+            hiddenTime / 1000
+          )} seconds`;
+        } else {
+          hiddenElement.textContent = "0 seconds";
+        }
+      }
+
+      function handleVisibilityChange() {
+        if (document.hidden) {
+          hiddenStartTime = Date.now();
+          log(
+            "🙈 Page HIDDEN - Lead Strategy: Preserving followup timer for continued engagement"
+          );
+          // DO NOT clear the followup timer - this is the key for lead generation
+        } else {
+          const hiddenDuration = hiddenStartTime
+            ? Date.now() - hiddenStartTime
+            : 0;
+          log(
+            `👀 Page VISIBLE - User returned after ${Math.floor(
+              hiddenDuration / 1000
+            )}s`
+          );
+
+          lastActivityTime = Date.now();
+          hiddenStartTime = null;
+
+          // Lead Generation Strategy: Accelerate timer if user returned
+          if (followupTimer) {
+            log(
+              "⚡ LEAD STRATEGY: User returned - accelerating followup timer"
+            );
+            clearTimeout(followupTimer);
+
+            // Accelerated timer (5-8 seconds instead of normal 30 seconds)
+            const acceleratedDelay = 6000; // 6 seconds for returning users
+
+            followupTimer = setTimeout(() => {
+              log(
+                "🎯 ACCELERATED FOLLOWUP TRIGGERED - Re-engaging returning user"
+              );
+              alert(
+                "🎯 Accelerated Followup: Welcome back! Ready to continue where we left off?"
+              );
+              followupTimer = null;
+              updateStatus();
+            }, acceleratedDelay);
+
+            log(
+              `⏰ Set accelerated timer for ${
+                acceleratedDelay / 1000
+              }s (vs normal 30s)`
+            );
+          }
+        }
+        updateStatus();
+      }
+
+      function startFollowupTimer() {
+        if (followupTimer) {
+          clearTimeout(followupTimer);
+        }
+
+        log("🚀 Starting 30-second followup timer...");
+        lastActivityTime = Date.now();
+
+        followupTimer = setTimeout(() => {
+          log("⏰ NORMAL FOLLOWUP TRIGGERED after 30 seconds");
+          alert("⏰ Normal Followup: Need any help with what you're viewing?");
+          followupTimer = null;
+          updateStatus();
+        }, 30000);
+
+        updateStatus();
+      }
+
+      function simulateUserReturn() {
+        log("🔄 Simulating user return behavior...");
+        lastActivityTime = Date.now();
+
+        if (followupTimer) {
+          log("⚡ Accelerating existing timer for returning user");
+          clearTimeout(followupTimer);
+
+          followupTimer = setTimeout(() => {
+            log("🎯 SIMULATED ACCELERATED FOLLOWUP");
+            alert(
+              "🎯 Quick Re-engagement: Welcome back! Continuing our conversation..."
+            );
+            followupTimer = null;
+            updateStatus();
+          }, 3000); // 3 seconds for simulation
+        } else {
+          log("❌ No active timer to accelerate");
+        }
+        updateStatus();
+      }
+
+      function clearAllTimers() {
+        if (followupTimer) {
+          clearTimeout(followupTimer);
+          followupTimer = null;
+          log("🛑 All timers cleared");
+        } else {
+          log("ℹ️ No timers to clear");
+        }
+        updateStatus();
+      }
+
+      function clearLogs() {
+        document.getElementById("logOutput").innerHTML = "Logs cleared...<br>";
+      }
+
+      // Set up visibility change listener
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+
+      // Update status every second
+      setInterval(updateStatus, 1000);
+
+      // Initial setup
+      log("🎯 Page Visibility Test initialized");
+      log(
+        "💡 Lead Strategy: Followup timers will continue running when page is hidden"
+      );
+      updateStatus();
+
+      // Log current page visibility API support
+      if (typeof document.hidden !== "undefined") {
+        log("✅ Page Visibility API supported");
+      } else {
+        log("❌ Page Visibility API not supported");
+      }
+    </script>
+  </body>
+</html>

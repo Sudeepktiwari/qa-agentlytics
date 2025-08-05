@@ -93,6 +93,55 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Lead Generation Strategy: Keep followup timer running even when page is hidden
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        console.log(
+          "[LeadGen] Page hidden - preserving followup timer for continued engagement"
+        );
+        // DO NOT clear the followup timer when page becomes hidden
+        // This allows us to continue engaging users even when they switch tabs
+      } else {
+        console.log(
+          "[LeadGen] Page visible - user returned, updating engagement strategy"
+        );
+        // Update last user action time when they return to the page
+        setLastUserAction(Date.now());
+
+        // Lead Generation Strategy: If user returns and there's an active timer,
+        // slightly accelerate it to re-engage them faster
+        if (followupTimer.current && !followupSent) {
+          console.log(
+            "[LeadGen] User returned to page - accelerating followup timer"
+          );
+          clearTimeout(followupTimer.current);
+
+          // Shorter timer since they just returned (shows renewed interest)
+          const acceleratedDelay = currentBotMode === "sales" ? 5000 : 8000; // 5s for sales, 8s for lead gen
+
+          followupTimer.current = setTimeout(() => {
+            const timeSinceLastAction = Date.now() - lastUserAction;
+            const bufferTime = 3000; // Shorter buffer for returning users
+
+            if (!userIsActive && timeSinceLastAction >= bufferTime) {
+              console.log(
+                "[LeadGen] Accelerated followup triggered after user return"
+              );
+              setFollowupSent(true);
+            }
+          }, acceleratedDelay);
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [followupSent, currentBotMode, userIsActive, lastUserAction]);
+
   // Remove getEffectivePageUrl and getPreviousQuestions from component scope
 
   useEffect(() => {
