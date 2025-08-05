@@ -524,21 +524,31 @@ Generate your response in JSON format:
 }
 
 CREATIVE OPENING PATTERNS - Use variety, avoid repetition:
-- Curiosity: "Ready to...", "Want to...", "Looking to..."
-- Benefit-focused: "Save 15 hours weekly with...", "Cut costs by 40% using..."
-- Question-based: "Managing a team?", "Growing fast?", "Need better..."
-- Solution-oriented: "Here's how...", "Perfect for...", "Ideal when..."
-- Industry-specific: "For [industry]...", "Most [role] find...", "Popular with..."
-- Problem-solving: "No more...", "Skip the...", "Avoid..."
-- Value proposition: "Get [benefit] without [pain]", "[Number]% of [segment] choose..."
-- Achievement: "Join [others] who...", "Like [similar companies]..."
+- Curiosity: "Ready to...", "Want to...", "Looking to...", "Curious how..."
+- Benefit-focused: "Save 15 hours weekly with...", "Cut costs by 40% using...", "Boost revenue by..."
+- Question-based: "Growing fast?", "Need better...", "Exploring options?", "Time for an upgrade?"
+- Solution-oriented: "Here's how...", "Perfect for...", "Ideal when...", "Great solution for..."
+- Industry-specific: "For [industry]...", "Most [role] find...", "Popular with...", "[Industry] leaders use..."
+- Problem-solving: "No more...", "Skip the...", "Avoid...", "Eliminate..."
+- Value proposition: "Get [benefit] without [pain]", "[Number]% of [segment] choose...", "Most see results in..."
+- Achievement: "Join [others] who...", "Like [similar companies]...", "Proven to help..."
+- Direct benefit: "Double your...", "Cut your...", "Automate your...", "Transform your..."
+- Social proof: "Over 1000 companies...", "Top brands rely on...", "Industry leaders prefer..."
 
-AVOID REPETITIVE PATTERNS:
-- Don't start every message with "Struggling with..."
-- Don't use the same opening style consecutively  
-- Vary sentence structure and tone
-- Mix questions, statements, and benefits
-- Use different emotional hooks (curiosity, urgency, social proof, value)
+ABSOLUTELY AVOID THESE REPETITIVE PATTERNS:
+- "Struggling with..." (overused)
+- "Managing..." (becoming repetitive)
+- "Looking to..." (if used recently)
+- "Need help with..." (generic)
+- Starting every message the same way
+- Using the same sentence structure repeatedly
+
+VARIETY ENFORCEMENT RULES:
+- Each message MUST use a different opening pattern
+- Rotate between question, statement, and benefit formats
+- Mix emotional tones: curiosity, urgency, excitement, social proof
+- Use numbers and specifics when possible ("Save 15 hours", "Join 500+ users")
+- Vary sentence length and complexity
 
 IMPORTANT GUIDELINES:
 - NEVER use personal names like "Hi John" or "Hello Sarah"
@@ -1668,12 +1678,22 @@ You will receive page and general context, the detected intent, and the previous
 }
 
 CREATIVE OPENING PATTERNS - Use variety, avoid repetition:
-- Curiosity: "Ready to...", "Want to...", "Looking to..."
-- Benefit-focused: "Save time with...", "Boost results using..."
-- Question-based: "Need help with...", "Exploring options?"
-- Solution-oriented: "Here's how...", "Perfect for...", "Great when..."
-- Value proposition: "Get [benefit] in minutes", "Most users find..."
-- Achievement: "Join others who...", "Popular choice for..."
+- Curiosity: "Ready to...", "Want to...", "Curious how...", "Ever wondered..."
+- Benefit-focused: "Save time with...", "Boost results using...", "Double your efficiency with..."
+- Question-based: "Exploring options?", "Time for an upgrade?", "Growing fast?", "Need a solution?"
+- Solution-oriented: "Here's how...", "Perfect for...", "Great when...", "Ideal solution when..."
+- Value proposition: "Get [benefit] in minutes", "Most users find...", "Popular choice for..."
+- Achievement: "Join others who...", "Popular choice for...", "Proven to help..."
+- Direct action: "Skip the hassle with...", "Automate your...", "Streamline your..."
+- Numbers/proof: "Over 1000 users...", "Save 15 hours weekly...", "Cut costs by 40%..."
+
+STRICT VARIETY ENFORCEMENT:
+- NEVER start with "Managing..." (becoming repetitive)
+- NEVER start with "Struggling with..." (overused) 
+- NEVER start with "Need help with..." (too generic)
+- NEVER use the same opening pattern twice in a row
+- Use DIFFERENT emotional hooks: curiosity, urgency, social proof, benefits
+- Rotate between questions, statements, and benefit-focused openings
 
 AVOID: Starting with "Struggling with..." or repetitive patterns
 
@@ -1711,12 +1731,22 @@ You will receive page and general context, the detected intent, and the previous
 }
 
 CREATIVE MICRO-CONVERSION PATTERNS - Use variety:
-- Benefit-focused: "Save [time/money] with...", "Get [result] in minutes"
-- Social proof: "Join [number] who...", "Popular with [audience]"
-- Curiosity: "See how...", "Discover why..."
-- Value: "Free [benefit]", "Quick [solution]"
-- Progress: "Next step:", "Here's how:", "Ready to..."
-- Comparison: "Better than [alternative]", "Upgrade from..."
+- Benefit-focused: "Save [time/money] with...", "Get [result] in minutes", "Boost efficiency by..."
+- Social proof: "Join [number] who...", "Popular with [audience]", "Most [users] choose..."
+- Curiosity: "See how...", "Discover why...", "Find out what...", "Learn why..."
+- Value: "Free [benefit]", "Quick [solution]", "No-cost [feature]", "Instant [result]"
+- Progress: "Next step:", "Here's how:", "Ready to...", "Time to..."
+- Comparison: "Better than [alternative]", "Upgrade from...", "Unlike [competitor]..."
+- Urgency: "Don't miss...", "Limited time...", "Quick opportunity...", "Fast track..."
+- Achievement: "Unlock [benefit]...", "Access [feature]...", "Enable [capability]..."
+
+ABSOLUTE VARIETY REQUIREMENTS:
+- NEVER start with "Managing..." (too repetitive now)
+- NEVER start with "Struggling with..." (completely overused)
+- NEVER start with "Looking to..." (if used in previous message)
+- NEVER repeat the same opening structure
+- MUST use different emotional tone than first followup
+- MUST use different sentence pattern (question vs statement vs benefit)
 
 AVOID: "Struggling with..." or repetitive openings from previous messages
 
