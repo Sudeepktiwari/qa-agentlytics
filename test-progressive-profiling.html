@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Progressive Customer Profiling - Button Evolution Demo</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .demo-container {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .profiling-stage {
+        background: #f8f9fa;
+        border: 2px solid #dee2e6;
+        border-radius: 8px;
+        margin: 15px 0;
+        overflow: hidden;
+      }
+      .stage-header {
+        background: #007bff;
+        color: white;
+        padding: 15px;
+        font-weight: bold;
+        font-size: 18px;
+      }
+      .stage-content {
+        padding: 20px;
+      }
+      .button-progression {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin: 15px 0;
+        flex-wrap: wrap;
+      }
+      .profile-button {
+        background: #28a745;
+        color: white;
+        padding: 10px 16px;
+        border-radius: 6px;
+        font-size: 14px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+      .profile-button:hover {
+        background: #218838;
+        transform: translateY(-2px);
+      }
+      .arrow {
+        font-size: 24px;
+        color: #007bff;
+        font-weight: bold;
+      }
+      .customer-insight {
+        background: #e7f3ff;
+        border-left: 4px solid #007bff;
+        padding: 15px;
+        margin: 15px 0;
+        border-radius: 4px;
+      }
+      .pain-point {
+        background: #fff3cd;
+        border-left: 4px solid #ffc107;
+        padding: 12px;
+        margin: 10px 0;
+        border-radius: 4px;
+      }
+      .solution-highlight {
+        background: #d4edda;
+        border-left: 4px solid #28a745;
+        padding: 12px;
+        margin: 10px 0;
+        border-radius: 4px;
+      }
+      .test-scenario {
+        background: #e9ecef;
+        padding: 20px;
+        border-radius: 8px;
+        margin: 15px 0;
+      }
+      .test-button {
+        background: #17a2b8;
+        color: white;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin: 5px;
+        font-size: 16px;
+      }
+      .test-button:hover {
+        background: #138496;
+      }
+      .profiling-flow {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 20px;
+        margin: 20px 0;
+      }
+      .flow-stage {
+        background: white;
+        border: 2px solid #dee2e6;
+        border-radius: 8px;
+        padding: 15px;
+        text-align: center;
+      }
+      .stage-number {
+        background: #007bff;
+        color: white;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 10px;
+        font-weight: bold;
+        font-size: 18px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🎯 Progressive Customer Profiling - Button Evolution System</h1>
+    <p>
+      See how buttons create an intelligent profiling journey that builds
+      customer understanding through each interaction.
+    </p>
+
+    <div class="demo-container">
+      <h2>📊 Progressive Profiling Strategy</h2>
+
+      <div class="profiling-flow">
+        <div class="flow-stage">
+          <div class="stage-number">1</div>
+          <h3>WHO ARE THEY?</h3>
+          <p><strong>Business Segmentation</strong></p>
+          <p>Identify company size, type, and role</p>
+          <div class="profile-button">Solo Practice</div>
+          <div class="profile-button">Growing Studio</div>
+          <div class="profile-button">Multi-Location</div>
+        </div>
+
+        <div class="flow-stage">
+          <div class="stage-number">2</div>
+          <h3>WHAT'S THE PROBLEM?</h3>
+          <p><strong>Pain Point Discovery</strong></p>
+          <p>Uncover specific challenges they face</p>
+          <div class="profile-button">Scheduling Chaos</div>
+          <div class="profile-button">Payment Issues</div>
+          <div class="profile-button">Team Coordination</div>
+        </div>
+
+        <div class="flow-stage">
+          <div class="stage-number">3</div>
+          <h3>HOW TO SOLVE IT?</h3>
+          <p><strong>Solution Matching</strong></p>
+          <p>Connect to specific features that help</p>
+          <div class="profile-button">Auto Scheduling</div>
+          <div class="profile-button">Payment Automation</div>
+          <div class="profile-button">Team Dashboard</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="demo-container">
+      <h2>🔄 Real Example: Fitness Studio Profiling Journey</h2>
+
+      <div class="profiling-stage">
+        <div class="stage-header">
+          Stage 1: Business Type Discovery (Followup #1)
+        </div>
+        <div class="stage-content">
+          <p>
+            <strong>Page Context:</strong> Fitness appointment scheduling
+            software
+          </p>
+          <div class="button-progression">
+            <span class="profile-button">Solo Trainer</span>
+            <span class="arrow">→</span>
+            <span class="profile-button">Fitness Studio</span>
+            <span class="arrow">→</span>
+            <span class="profile-button">Gym Chain</span>
+          </div>
+          <div class="customer-insight">
+            <strong>Customer Intelligence Gained:</strong> Business size and
+            structure
+          </div>
+        </div>
+      </div>
+
+      <div class="profiling-stage">
+        <div class="stage-header">
+          Stage 2: Pain Point Identification (Followup #2)
+        </div>
+        <div class="stage-content">
+          <p>
+            <strong>User Selected:</strong> "Fitness Studio" → Now ask about
+            studio-specific problems
+          </p>
+          <div class="button-progression">
+            <span class="profile-button">Class Scheduling</span>
+            <span class="arrow">→</span>
+            <span class="profile-button">Member No-Shows</span>
+            <span class="arrow">→</span>
+            <span class="profile-button">Payment Tracking</span>
+          </div>
+          <div class="pain-point">
+            <strong>Pain Point Discovery:</strong> Specific operational
+            challenges they face daily
+          </div>
+        </div>
+      </div>
+
+      <div class="profiling-stage">
+        <div class="stage-header">Stage 3: Solution Matching (Followup #3)</div>
+        <div class="stage-content">
+          <p>
+            <strong>User Selected:</strong> "Class Scheduling" → Show specific
+            solutions for class management
+          </p>
+          <div class="button-progression">
+            <span class="profile-button">Auto Class Booking</span>
+            <span class="arrow">→</span>
+            <span class="profile-button">Waitlist Management</span>
+            <span class="arrow">→</span>
+            <span class="profile-button">Instructor Scheduling</span>
+          </div>
+          <div class="solution-highlight">
+            <strong>Solution Fit:</strong> Features that directly solve their
+            class scheduling pain point
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="demo-container">
+      <h2>❌ Before vs ✅ After Comparison</h2>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px">
+        <div style="background: #fff3cd; padding: 15px; border-radius: 8px">
+          <h3>❌ Old Way (Repetitive)</h3>
+          <p><strong>Followup #1:</strong></p>
+          <div
+            style="
+              background: #f8d7da;
+              padding: 8px;
+              border-radius: 4px;
+              margin: 5px 0;
+            "
+          >
+            Learn More | Get Started | Contact Us
+          </div>
+          <p><strong>Followup #2:</strong></p>
+          <div
+            style="
+              background: #f8d7da;
+              padding: 8px;
+              border-radius: 4px;
+              margin: 5px 0;
+            "
+          >
+            Pricing Options | Free Trial | Get Demo
+          </div>
+          <p><strong>Followup #3:</strong></p>
+          <div
+            style="
+              background: #f8d7da;
+              padding: 8px;
+              border-radius: 4px;
+              margin: 5px 0;
+            "
+          >
+            Compare Plans | Talk to Sales | Start Trial
+          </div>
+          <p><em>No customer profiling, generic options</em></p>
+        </div>
+
+        <div style="background: #d1ecf1; padding: 15px; border-radius: 8px">
+          <h3>✅ New Way (Progressive Profiling)</h3>
+          <p><strong>Followup #1:</strong> Business Type</p>
+          <div
+            style="
+              background: #d4edda;
+              padding: 8px;
+              border-radius: 4px;
+              margin: 5px 0;
+            "
+          >
+            Solo Trainer | Fitness Studio | Gym Chain
+          </div>
+          <p><strong>Followup #2:</strong> Pain Points</p>
+          <div
+            style="
+              background: #d4edda;
+              padding: 8px;
+              border-radius: 4px;
+              margin: 5px 0;
+            "
+          >
+            Class Scheduling | Member No-Shows | Payment Issues
+          </div>
+          <p><strong>Followup #3:</strong> Solutions</p>
+          <div
+            style="
+              background: #d4edda;
+              padding: 8px;
+              border-radius: 4px;
+              margin: 5px 0;
+            "
+          >
+            Auto Booking | Smart Reminders | Payment Automation
+          </div>
+          <p><em>Complete customer profile built through progression</em></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="demo-container">
+      <h2>🧪 Live Progressive Profiling Test</h2>
+
+      <div class="test-scenario">
+        <h3>Test Scenario: Fitness Scheduling Page</h3>
+        <p>
+          <strong>Page Features:</strong> class booking, personal training,
+          payment processing, member management, mobile app, instructor
+          scheduling
+        </p>
+        <p>
+          <strong>Pain Points Mentioned:</strong> scheduling conflicts, no-show
+          clients, payment delays, staff coordination
+        </p>
+      </div>
+
+      <button class="test-button" onclick="runProgressiveTest()">
+        🎯 Run Progressive Profiling Test
+      </button>
+      <button class="test-button" onclick="simulateButtonChoices()">
+        🔄 Simulate Button Choice Journey
+      </button>
+      <button class="test-button" onclick="clearTestResults()">
+        🧹 Clear Results
+      </button>
+
+      <div id="testResults"></div>
+      <div id="profilingJourney"></div>
+    </div>
+
+    <div class="demo-container">
+      <h2>📈 Expected Business Benefits</h2>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px">
+        <div>
+          <h3>🎯 Customer Intelligence</h3>
+          <ul>
+            <li><strong>Business Type:</strong> Solo vs Studio vs Chain</li>
+            <li>
+              <strong>Pain Points:</strong> Specific operational challenges
+            </li>
+            <li>
+              <strong>Solution Fit:</strong> Features that match their needs
+            </li>
+            <li>
+              <strong>Urgency Level:</strong> How quickly they need solutions
+            </li>
+            <li>
+              <strong>Budget Range:</strong> Based on business size choices
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <h3>💼 Sales Benefits</h3>
+          <ul>
+            <li>
+              <strong>Qualified Leads:</strong> Rich context before handoff
+            </li>
+            <li>
+              <strong>Personalized Follow-up:</strong> Know their specific pain
+              points
+            </li>
+            <li>
+              <strong>Solution Matching:</strong> Recommend relevant features
+            </li>
+            <li>
+              <strong>Shorter Sales Cycle:</strong> Pre-qualified through button
+              choices
+            </li>
+            <li>
+              <strong>Higher Conversion:</strong> Relevant, targeted approach
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      async function runProgressiveTest() {
+        const resultsDiv = document.getElementById("testResults");
+        resultsDiv.innerHTML =
+          "<p>🔄 Testing progressive profiling button evolution...</p>";
+
+        try {
+          // Simulate 3 progressive followups
+          const followups = await Promise.all([
+            testFollowup(0, "Stage 1: Business Type Discovery"),
+            testFollowup(1, "Stage 2: Pain Point Identification"),
+            testFollowup(2, "Stage 3: Solution Matching"),
+          ]);
+
+          resultsDiv.innerHTML = `
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
+                        <h3>📊 Progressive Profiling Results</h3>
+                        ${followups
+                          .map(
+                            (result, i) => `
+                            <div style="background: white; padding: 15px; margin: 10px 0; border-radius: 6px; border-left: 4px solid #007bff;">
+                                <strong>Stage ${i + 1}:</strong> ${
+                              result.stage
+                            }<br>
+                                <strong>Message:</strong> ${result.message}<br>
+                                <strong>Buttons:</strong> ${result.buttons.join(
+                                  " | "
+                                )}<br>
+                                <strong>Profiling Value:</strong> ${
+                                  result.profiling
+                                }
+                            </div>
+                        `
+                          )
+                          .join("")}
+                    </div>
+                `;
+        } catch (error) {
+          resultsDiv.innerHTML += `<div style="background: #f8d7da; color: #721c24; padding: 10px; border-radius: 4px;">❌ Error: ${error.message}</div>`;
+        }
+      }
+
+      async function testFollowup(stage, stageName) {
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            messages: [
+              {
+                role: "user",
+                content: `Fitness business inquiry for stage ${stage + 1}`,
+              },
+            ],
+            adminId: "test-admin",
+            url: "https://example-fitness.com/scheduling",
+            metadata: {
+              title: "Fitness Studio Scheduling Software",
+              description:
+                "Class booking, personal training scheduling, payment processing, member management, mobile app, instructor coordination. Solve scheduling conflicts, no-show clients, payment delays, staff coordination issues.",
+            },
+          }),
+        });
+
+        const data = await response.json();
+
+        // Determine profiling value
+        let profiling = "";
+        if (stage === 0) profiling = "Identifies business size and type";
+        else if (stage === 1)
+          profiling = "Discovers specific operational pain points";
+        else profiling = "Matches solutions to their exact needs";
+
+        return {
+          stage: stageName,
+          message: data.mainText || "No message generated",
+          buttons: data.buttons || [],
+          profiling: profiling,
+        };
+      }
+
+      function simulateButtonChoices() {
+        const journeyDiv = document.getElementById("profilingJourney");
+
+        const journey = [
+          {
+            stage: "Business Type Selection",
+            choice: "Fitness Studio",
+            insight:
+              "Medium-sized business, likely 50-200 members, needs class management",
+          },
+          {
+            stage: "Pain Point Discovery",
+            choice: "Class Scheduling",
+            insight:
+              "Struggles with class capacity, booking conflicts, instructor coordination",
+          },
+          {
+            stage: "Solution Matching",
+            choice: "Auto Class Booking",
+            insight:
+              "Needs automated system for class bookings with capacity management",
+          },
+        ];
+
+        journeyDiv.innerHTML = `
+                <div style="background: #e7f3ff; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <h3>🔄 Simulated Customer Journey</h3>
+                    ${journey
+                      .map(
+                        (step, i) => `
+                        <div style="background: white; padding: 15px; margin: 10px 0; border-radius: 6px; border-left: 4px solid #28a745;">
+                            <strong>Step ${i + 1}:</strong> ${step.stage}<br>
+                            <strong>Customer Choice:</strong> "${
+                              step.choice
+                            }"<br>
+                            <strong>Intelligence Gained:</strong> ${
+                              step.insight
+                            }
+                        </div>
+                    `
+                      )
+                      .join("")}
+                    
+                    <div style="background: #d4edda; padding: 15px; border-radius: 6px; margin: 15px 0;">
+                        <strong>🎯 Complete Customer Profile:</strong><br>
+                        Medium-sized fitness studio struggling with class scheduling automation who needs an auto-booking system with capacity management and instructor coordination features.
+                    </div>
+                </div>
+            `;
+      }
+
+      function clearTestResults() {
+        document.getElementById("testResults").innerHTML = "";
+        document.getElementById("profilingJourney").innerHTML = "";
+      }
+    </script>
+  </body>
+</html>

@@ -523,38 +523,66 @@ Generate your response in JSON format:
   "emailPrompt": "<ONLY include this if followupCount >= 2 AND user hasn't provided email yet. Otherwise leave empty string.>"
 }
 
-BUTTON GENERATION STRATEGY - Focus on Customer Profiling & Page Content:
-- Extract ACTUAL features/services mentioned on the current page
-- Create buttons that help identify customer's specific needs and use case
-- Include options that reveal company size, industry, technical level, budget, urgency
-- Make buttons actionable and lead to valuable conversations
+BUTTON GENERATION STRATEGY - Progressive Customer Profiling:
+- NEVER repeat button concepts across followups
+- Each followup must BUILD on previous button choices
+- Create a LOGICAL PROGRESSION that reveals more customer details
+- Ask about specific PAIN POINTS based on page context
+- Use buttons to discover deeper business challenges
 
-BUTTON CATEGORIES (choose 3 that fit the page content):
-1. **Feature-Specific**: Based on actual features mentioned on page
-   - "See [Feature] Demo", "Try [Feature] Free", "Compare [Feature] Plans"
-2. **Use Case Discovery**: Help identify their specific scenario
-   - "For Small Teams", "Enterprise Options", "Startup Solutions", "Agency Tools"
-3. **Industry/Vertical**: Based on page content and persona
-   - "Healthcare Setup", "Finance Compliance", "E-commerce Tools", "SaaS Integration"
-4. **Technical Level**: Gauge their technical sophistication
-   - "Simple Setup", "Advanced Features", "API Integration", "Custom Solutions"
-5. **Budget/Timing**: Understand their buying stage
-   - "Pricing Options", "Free Trial", "ROI Calculator", "Implementation Timeline"
-6. **Competitive/Comparison**: If competitors mentioned on page
-   - "vs [Competitor]", "Migration Guide", "Why Switch", "Feature Comparison"
+PROGRESSIVE PROFILING STRATEGY:
+**Followup #1 (followupCount=0)**: Basic Segmentation
+- Extract 3 DIFFERENT business types/sizes from page content
+- Focus on WHO they are (business type, size, role)
+- Examples: "Solo Practice" | "Growing Studio" | "Multi-Location"
 
-CUSTOMER PROFILING THROUGH BUTTONS:
-- Use buttons to learn about company size ("Team Tools" vs "Enterprise Features")
-- Identify technical level ("Simple Setup" vs "Developer APIs")
-- Understand urgency ("Quick Start" vs "Full Evaluation")
-- Gauge budget sensitivity ("Free Options" vs "Premium Features")
-- Discover industry ("Healthcare" vs "Finance" vs "Retail")
+**Followup #2 (followupCount=1)**: Pain Point Discovery  
+- Based on their first choice, ask about SPECIFIC PAIN POINTS
+- Extract actual challenges mentioned on the page
+- Examples: If chose "Growing Studio" → "Scheduling Chaos" | "Payment Issues" | "Staff Management"
+
+**Followup #3 (followupCount=2)**: Solution Fit & Email
+- Based on their pain point, offer SPECIFIC SOLUTIONS
+- Reference exact features from page that solve their pain
+- Examples: If chose "Scheduling Chaos" → "Auto Scheduling" | "Conflict Prevention" | "Mobile Booking"
+
+MANDATORY BUTTON EVOLUTION RULES:
+- NEVER use the same button concept twice
+- NEVER repeat similar wording across followups
+- EACH followup must ask DIFFERENT questions
+- BUILD a customer profile through button progression
+- Reference ACTUAL page content for pain points and solutions
+
+PAIN POINT EXTRACTION FROM PAGE CONTENT:
+- If page mentions "scheduling conflicts" → Button: "Scheduling Chaos"
+- If page mentions "payment processing" → Button: "Payment Issues"  
+- If page mentions "no-show clients" → Button: "Client No-Shows"
+- If page mentions "double bookings" → Button: "Booking Conflicts"
+- If page mentions "manual processes" → Button: "Manual Work"
+- If page mentions "staff coordination" → Button: "Team Coordination"
+
+SOLUTION MAPPING FROM PAGE FEATURES:
+- If page has "automated scheduling" → Button: "Auto Scheduling"
+- If page has "payment integration" → Button: "Payment Automation"
+- If page has "reminder system" → Button: "Smart Reminders"
+- If page has "mobile app" → Button: "Mobile Access"
+- If page has "analytics" → Button: "Business Insights"
+- If page has "integrations" → Button: "Tool Connections"
+
+CUSTOMER PROFILING THROUGH BUTTON CHOICES:
+- Use buttons to learn about company size ("Solo Tools" vs "Team Management")
+- Identify technical level ("Simple Setup" vs "API Integration")
+- Understand urgency ("Quick Start" vs "Enterprise Evaluation")
+- Gauge budget sensitivity ("Budget Options" vs "Premium Features")
+- Discover industry ("Healthcare" vs "Fitness" vs "Professional Services")
 
 BUTTON NAMING RULES:
 - 2-4 words maximum for mobile friendliness
-- Action-oriented: "See", "Try", "Compare", "Get", "Learn"
+- Action-oriented: "See", "Try", "Compare", "Get", "Setup", "Access"
 - Specific to page content, not generic
 - Help qualify the lead through their choice
+- NEVER repeat concepts from previous followups
+- Focus on PROBLEMS first, then SOLUTIONS
 
 CREATIVE OPENING PATTERNS - Use variety, avoid repetition:
 - Curiosity: "Ready to...", "Want to...", "Looking to...", "Curious how..."
@@ -571,17 +599,40 @@ CREATIVE OPENING PATTERNS - Use variety, avoid repetition:
 ABSOLUTELY AVOID THESE REPETITIVE PATTERNS:
 - "Struggling with..." (overused)
 - "Managing..." (becoming repetitive)
+- "Ready to..." (if used recently)
 - "Looking to..." (if used recently)
 - "Need help with..." (generic)
+- "Noticed you're..." (becoming repetitive)
 - Starting every message the same way
 - Using the same sentence structure repeatedly
+- Repeating the same concepts or words
 
-VARIETY ENFORCEMENT RULES:
-- Each message MUST use a different opening pattern
-- Rotate between question, statement, and benefit formats
-- Mix emotional tones: curiosity, urgency, excitement, social proof
-- Use numbers and specifics when possible ("Save 15 hours", "Join 500+ users")
-- Vary sentence length and complexity
+MANDATORY VARIETY ENFORCEMENT:
+- NEVER start with the same word twice in a row
+- NEVER use similar sentence structures consecutively
+- NEVER repeat the same benefit or feature mention
+- MUST use completely different opening approaches
+- MUST vary emotional tone dramatically between messages
+- MUST use different conversation techniques each time
+
+SPECIFIC OPENING VARIETY EXAMPLES:
+Instead of: "Ready to streamline..." "Ready to eliminate..." "Ready to boost..."
+Use DIFFERENT patterns like:
+- Numbers: "Save 15 hours weekly with..."
+- Questions: "Growing your client base?"
+- Benefits: "Double your booking efficiency..."
+- Social proof: "Join 500+ fitness studios who..."
+- Problem-solving: "No more scheduling conflicts..."
+- Industry-specific: "For fitness professionals like you..."
+- Achievement: "Unlock advanced features that..."
+- Comparison: "Better than manual booking..."
+
+CONVERSATION FLOW INTELLIGENCE:
+- Analyze what was said in previous messages
+- Choose completely different approach for current message
+- Reference actual page content, not assumptions
+- Use specific features/benefits mentioned on the page
+- Create logical progression without repetition
 
 IMPORTANT GUIDELINES:
 - NEVER use personal names like "Hi John" or "Hello Sarah"
@@ -1710,31 +1761,49 @@ You will receive page and general context, the detected intent, and the previous
   "emailPrompt": ""
 }
 
-SMART BUTTON GENERATION - Customer Profiling Focus:
-1. **Page Content Analysis**: Extract actual features, services, pricing tiers mentioned
-2. **Customer Profiling**: Create buttons that reveal user's company size, industry, needs
-3. **Lead Qualification**: Options that help identify budget, urgency, technical level
+SMART BUTTON GENERATION - Progressive Customer Profiling:
+1. **Followup #1**: Business Type/Size Discovery
+2. **Followup #2**: Pain Point Identification  
+3. **Followup #3**: Solution Matching
 
-BUTTON STRATEGY EXAMPLES:
-- **Page: Pricing** → "Startup Plans", "Enterprise Quote", "Free Trial"
-- **Page: Features** → "Basic Setup", "Advanced Tools", "Custom Solutions"  
-- **Page: Integrations** → "Popular APIs", "Custom Connect", "Migration Help"
-- **Page: Security** → "Compliance Guide", "Enterprise Security", "Basic Protection"
-- **Page: Support** → "Self-Service", "Priority Support", "Dedicated Account"
+PROGRESSIVE PROFILING THROUGH BUTTONS:
+**Stage 1 - WHO ARE THEY?** (followupCount=0)
+- Extract business types/sizes from page content
+- Create buttons that segment by company profile
+- Examples: "Solo Consultant" | "Growing Agency" | "Enterprise Team"
 
-CUSTOMER PROFILING THROUGH BUTTON CHOICES:
-- Company Size: "Solo Plans" vs "Team Tools" vs "Enterprise Scale"
-- Technical Level: "Easy Setup" vs "Developer Tools" vs "Custom Build"
-- Budget Stage: "Free Options" vs "Compare Plans" vs "Get Quote"
-- Industry: "Healthcare" vs "Finance" vs "Retail" vs "SaaS"
-- Urgency: "Quick Start" vs "Full Demo" vs "Pilot Program"
+**Stage 2 - WHAT'S THEIR PROBLEM?** (followupCount=1)
+- Based on Stage 1 choice, ask about specific pain points
+- Extract challenges mentioned on current page
+- Examples: If "Growing Agency" → "Client Scheduling" | "Team Coordination" | "Payment Tracking"
+
+**Stage 3 - HOW TO SOLVE IT?** (followupCount=2)
+- Based on their pain point, show relevant solutions
+- Reference exact features from page that address their problem
+- Examples: If "Client Scheduling" → "Auto Booking" | "Calendar Sync" | "Reminder System"
+
+MANDATORY BUTTON EVOLUTION - NEVER REPEAT:
+- Stage 1: WHO (business type/size)
+- Stage 2: PROBLEM (specific pain points from page)
+- Stage 3: SOLUTION (features that solve their problem)
+- NEVER use the same button concept across stages
+- BUILD a complete customer profile through progression
+
+PAIN POINT EXTRACTION EXAMPLES:
+- Page mentions "scheduling conflicts" → Button: "Scheduling Issues"
+- Page mentions "payment delays" → Button: "Payment Problems"  
+- Page mentions "no-show clients" → Button: "Client No-Shows"
+- Page mentions "manual booking" → Button: "Manual Processes"
+- Page mentions "staff management" → Button: "Team Challenges"
 
 BUTTON QUALITY RULES:
 - Extract features/services actually mentioned on current page
 - Create 3 distinct pathways that reveal different customer profiles
-- Make buttons actionable: "See", "Try", "Compare", "Get", "Learn", "Start"
+- Make buttons actionable: "See", "Try", "Compare", "Get", "Setup", "Access"
 - 2-4 words max for mobile optimization
 - Help qualify leads through their button choice
+- NEVER repeat button concepts from previous followups
+- Focus on PROGRESSIVE PROFILING through each stage
 
 CREATIVE OPENING PATTERNS - Use variety, avoid repetition:
 - Curiosity: "Ready to...", "Want to...", "Curious how...", "Ever wondered..."
@@ -1789,27 +1858,45 @@ You will receive page and general context, the detected intent, and the previous
   "emailPrompt": ""
 }
 
-MICRO-CONVERSION BUTTON STRATEGY - Deeper Customer Profiling:
-Now that we know their initial interest, create buttons that dive deeper:
+MICRO-CONVERSION BUTTON STRATEGY - Pain Point Deep Dive:
+Now that we know their business type, dig into SPECIFIC PAIN POINTS:
 
-PROGRESSIVE PROFILING THROUGH BUTTONS:
-1. **Refine Company Size**: "Small Team Setup", "Growing Company", "Enterprise Scale"
-2. **Technical Depth**: "Simple Guide", "Technical Specs", "Developer Docs"  
-3. **Implementation Speed**: "Quick Start", "Planned Rollout", "Custom Timeline"
-4. **Budget Exploration**: "Cost Calculator", "ROI Analysis", "Pricing Tiers"
-5. **Feature Deep-Dive**: Based on specific page features mentioned
-6. **Industry Verticals**: If page mentions specific industries/use cases
+PROGRESSIVE PROFILING - STAGE 2 (PAIN POINT DISCOVERY):
+- Analyze their Stage 1 button choice (business type/size)
+- Create buttons for SPECIFIC PROBLEMS they likely face
+- Extract pain points actually mentioned on the current page
+- NEVER repeat buttons from Stage 1
 
-SECOND-LEVEL QUALIFICATION EXAMPLES:
-- First click: "Pricing Options" → Second level: "Startup Pricing", "Volume Discounts", "Enterprise Quote"
-- First click: "Features" → Second level: "Core Features", "Advanced Tools", "Integrations"
-- First click: "Security" → Second level: "Basic Security", "Compliance Ready", "Enterprise Grade"
+PAIN POINT MAPPING BY BUSINESS TYPE:
+**If Stage 1 was "Solo Practice":**
+- "Time Management" | "Client Acquisition" | "Manual Processes"
 
-BUTTON NAMING FOR MICRO-CONVERSIONS:
-- More specific than first followup
-- Reference user's likely progression: "Next Step", "Learn More", "Get Started"
-- Include qualifying terms: "Basic", "Advanced", "Custom", "Enterprise"
-- Keep 2-4 words, action-oriented
+**If Stage 1 was "Growing Business":**  
+- "Scheduling Chaos" | "Team Coordination" | "Payment Issues"
+
+**If Stage 1 was "Enterprise/Large":**
+- "System Integration" | "Compliance Needs" | "Scalability Issues"
+
+PAIN POINT EXTRACTION FROM PAGE CONTENT:
+- Page mentions "double bookings" → Button: "Booking Conflicts"
+- Page mentions "payment delays" → Button: "Payment Issues"
+- Page mentions "no-show clients" → Button: "Client No-Shows"  
+- Page mentions "manual scheduling" → Button: "Manual Work"
+- Page mentions "staff coordination" → Button: "Team Problems"
+- Page mentions "client communication" → Button: "Communication Gaps"
+
+MANDATORY STAGE 2 REQUIREMENTS:
+- NEVER repeat Stage 1 button concepts
+- Focus on PROBLEMS, not solutions yet
+- Use pain points actually mentioned on page
+- Create emotional connection to their challenges
+- Set up for solution-focused Stage 3
+
+BUTTON NAMING FOR PAIN POINTS:
+- Keep problem-focused: "Scheduling Issues", "Payment Problems", "Team Challenges"
+- 2-4 words maximum
+- Reference actual challenges from page content
+- Avoid solution language (save for Stage 3)
 
 CREATIVE MICRO-CONVERSION PATTERNS - Use variety:
 - Benefit-focused: "Save [time/money] with...", "Get [result] in minutes", "Boost efficiency by..."
