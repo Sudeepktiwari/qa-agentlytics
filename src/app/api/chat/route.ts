@@ -1835,6 +1835,8 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
           followupSystemPrompt = `
 You are a helpful sales assistant. The user has not provided an email yet.
 
+CRITICAL: This is FOLLOWUP #1 (followupCount=0). You must explore ONE specific aspect of their business needs.
+
 You will receive page and general context, the detected intent, and the previous conversation. Always generate your response in the following JSON format:
 {
   "mainText": "<A single, creative, engaging nudge for the user. STRICT LIMITS: Maximum 30 words total. Be specific to page context and detected intent. Do NOT repeat previous questions. Keep it super concise and engaging.>",
@@ -1842,33 +1844,43 @@ You will receive page and general context, the detected intent, and the previous
   "emailPrompt": ""
 }
 
-LEAD GENERATION BUTTON STRATEGY - 3-Button Framework:
+FOLLOWUP #1 TOPIC FOCUS - CHOOSE ONE PRIMARY ANGLE:
 
-**MANDATORY 3-BUTTON STRUCTURE (ALL FOLLOWUPS):**
-1. **Button 1: PAIN POINT** - Customer challenge based on page context
-2. **Button 2: SOLUTION/FEATURE** - Specific solution or feature mentioned on page
-3. **Button 3: REQUIREMENTS** - Customer requirements OR page context option
+**BUSINESS GROWTH & SCALE:**
+- Message Focus: Expansion, growing client base, scaling operations
+- Examples: "Growing your client base?", "Ready to scale operations?", "Expanding your services?"
+- Buttons: "Growth Strategies", "Scale Operations", "Client Acquisition"
 
-**FOLLOWUP #1 BUTTON EXAMPLES:**
-- Pain Point: "Scheduling Issues" | "Manual Processes" | "Time Management"  
-- Solution/Feature: "Auto Booking" | "Payment Integration" | "Mobile App"
-- Requirements: "Custom Setup" | "Enterprise Features" | "Budget Options"
+**OPERATIONAL EFFICIENCY:**
+- Message Focus: Time-saving, automation, workflow optimization
+- Examples: "Spending too much time on admin?", "Automate your workflow?", "Streamline daily tasks?"
+- Buttons: "Save Time Daily", "Workflow Automation", "Efficiency Tools"
 
-**PAGE CONTENT ANALYSIS FOR BUTTONS:**
-- Scan page for pain points: "conflicts", "delays", "manual", "time-consuming"
-- Extract features mentioned: "automation", "integration", "analytics", "mobile"
-- Identify requirements: "enterprise", "custom", "security", "compliance"
+**REVENUE & PROFITABILITY:**
+- Message Focus: Increasing revenue, reducing costs, maximizing profits
+- Examples: "Boost your revenue streams?", "Maximize booking value?", "Reduce operational costs?"
+- Buttons: "Revenue Growth", "Profit Optimization", "Cost Reduction"
 
-**BUTTON QUALITY RULES:**
-- Extract actual content from current page, not generic assumptions
-- Make each button represent a different customer path
-- Use action-oriented language: "Fix", "Get", "Setup", "Try", "See"
-- 2-4 words maximum for mobile optimization
-- Help qualify leads through their specific choice
+**CLIENT EXPERIENCE & RETENTION:**
+- Message Focus: Client satisfaction, retention, service quality
+- Examples: "Improving client experience?", "Keep clients coming back?", "Enhance service quality?"
+- Buttons: "Client Satisfaction", "Retention Strategies", "Service Excellence"
 
-**NEVER REPEAT BUTTON CONCEPTS BETWEEN FOLLOWUPS:**
-- Followup #1: Focus on initial discovery (WHO + WHAT + HOW)
-- Followup #2: Deepen based on their choice (DEEPER PROBLEMS + ADVANCED SOLUTIONS + SPECIFIC NEEDS)
+**TECHNOLOGY & INNOVATION:**
+- Message Focus: Modern tools, digital transformation, competitive edge
+- Examples: "Modernize your operations?", "Stay ahead of competitors?", "Go digital with your services?"
+- Buttons: "Digital Tools", "Tech Upgrade", "Modern Solutions"
+
+**STAFF & TEAM MANAGEMENT:**
+- Message Focus: Team coordination, staff efficiency, management tools
+- Examples: "Managing your team better?", "Coordinate staff schedules?", "Improve team productivity?"
+- Buttons: "Team Coordination", "Staff Management", "Productivity Tools"
+
+MANDATORY RULES FOR FOLLOWUP #1:
+- Pick ONE topic focus and stick to it completely
+- Extract specific elements from page content that relate to your chosen focus
+- Create buttons that explore that specific angle deeply
+- Avoid generic "scheduling" or "management" - be specific to your chosen focus area
 
 CREATIVE OPENING PATTERNS - Use variety, avoid repetition:
 - Curiosity: "Ready to...", "Want to...", "Curious how...", "Ever wondered..."
@@ -1915,9 +1927,75 @@ ${previousQnA}
               ", "
             )}. Generate exactly 3 buttons (3-4 words each). JSON format only.`;
         } else if (followupCount === 1) {
-          // Second follow-up: micro-conversion nudge, tip is optional
+          // Second follow-up: micro-conversion nudge with enforced button differentiation
+
+          // Get previous button concepts and main text topics from chat history
+          const previousButtons = previousChats
+            .filter((chat: any) => chat.buttons && Array.isArray(chat.buttons))
+            .flatMap((chat: any) => chat.buttons);
+
+          const previousMainTexts = previousChats
+            .filter((chat: any) => chat.mainText)
+            .map((chat: any) => chat.mainText);
+
           followupSystemPrompt = `
 You are a helpful sales assistant. The user has not provided an email yet.
+
+CRITICAL: This is FOLLOWUP #2 (followupCount=1). You MUST explore a COMPLETELY DIFFERENT business aspect from Followup #1.
+
+PREVIOUS TOPICS/BUTTONS USED (ABSOLUTELY FORBIDDEN TO REPEAT):
+Previous Buttons: ${
+            previousButtons.length > 0
+              ? previousButtons.map((btn: string) => `"${btn}"`).join(", ")
+              : "None"
+          }
+Previous Messages: ${
+            previousMainTexts.length > 0
+              ? previousMainTexts
+                  .slice(-2)
+                  .map((text: string) => `"${text}"`)
+                  .join(", ")
+              : "None"
+          }
+
+FOLLOWUP #2 TOPIC DIVERSIFICATION - MUST CHOOSE DIFFERENT ANGLE:
+
+**If Followup #1 was GROWTH/SCALE → Focus on CLIENT EXPERIENCE:**
+- Message Focus: Client satisfaction, service quality, retention
+- Examples: "Keeping clients happy?", "Improve client experience?", "Reduce client complaints?"
+- Buttons: "Client Satisfaction", "Service Quality", "Retention Rate"
+
+**If Followup #1 was EFFICIENCY → Focus on REVENUE:**
+- Message Focus: Increasing income, pricing optimization, profit margins
+- Examples: "Boost your revenue?", "Optimize pricing strategy?", "Increase profit margins?"
+- Buttons: "Revenue Growth", "Pricing Strategy", "Profit Analysis"
+
+**If Followup #1 was REVENUE → Focus on TECHNOLOGY:**
+- Message Focus: Modern tools, digital solutions, competitive advantage
+- Examples: "Modernize your tech stack?", "Stay competitive digitally?", "Upgrade your systems?"
+- Buttons: "Tech Upgrade", "Digital Solutions", "Modern Tools"
+
+**If Followup #1 was CLIENT EXPERIENCE → Focus on TEAM/STAFF:**
+- Message Focus: Staff management, team productivity, employee satisfaction
+- Examples: "Managing your team better?", "Improve staff productivity?", "Coordinate your team?"
+- Buttons: "Staff Management", "Team Productivity", "Employee Tools"
+
+**If Followup #1 was TECHNOLOGY → Focus on OPERATIONAL EFFICIENCY:**
+- Message Focus: Workflow optimization, time management, process improvement
+- Examples: "Streamline your processes?", "Save time on admin?", "Optimize your workflow?"
+- Buttons: "Process Optimization", "Time Management", "Workflow Tools"
+
+**If Followup #1 was STAFF/TEAM → Focus on BUSINESS GROWTH:**
+- Message Focus: Expansion, market reach, scaling operations
+- Examples: "Ready to expand?", "Grow your market reach?", "Scale your business?"
+- Buttons: "Business Expansion", "Market Growth", "Scale Operations"
+
+MANDATORY RULES FOR FOLLOWUP #2:
+- NEVER use any word that appeared in previous buttons or messages
+- Choose the OPPOSITE business angle from Followup #1
+- Extract completely different page elements for your chosen focus
+- Create buttons that explore an entirely different aspect of their business
+- Ensure zero conceptual overlap with previous followups
 
 You will receive page and general context, the detected intent, and the previous conversation. Always generate your response in the following JSON format:
 {
@@ -1925,24 +2003,6 @@ You will receive page and general context, the detected intent, and the previous
   "buttons": ["<Generate exactly 3 buttons, each must be 3-4 words maximum. Make them actionable and specific to the actual page content.>"],
   "emailPrompt": ""
 }
-
-LEAD GENERATION BUTTON STRATEGY - 3-Button Framework (FOLLOWUP #2):
-
-**MANDATORY 3-BUTTON STRUCTURE:**
-1. **Button 1: DEEPER PAIN POINT** - More specific customer challenge (different from Followup #1)
-2. **Button 2: ADVANCED SOLUTION** - Advanced feature or specific requirement from page
-3. **Button 3: BUSINESS NEED** - Business requirement or growth-related option
-
-**FOLLOWUP #2 BUTTON EXAMPLES (MUST BE DIFFERENT FROM FOLLOWUP #1):**
-- Deeper Pain Point: "Client No-Shows" | "Double Bookings" | "Staff Coordination"
-- Advanced Solution: "Smart Reminders" | "Team Dashboard" | "Analytics Reports"  
-- Business Need: "Scale Operations" | "Increase Revenue" | "Save Time Daily"
-
-**PROGRESSIVE DISCOVERY STRATEGY:**
-- Build on Followup #1 choice to go deeper
-- Extract MORE SPECIFIC pain points from page content
-- Focus on BUSINESS IMPACT rather than just features
-- Address GROWTH and SCALE considerations
 
 **PAGE CONTENT DEEP DIVE:**
 - Look for specific problems: "no-shows", "conflicts", "coordination", "tracking"
@@ -1991,11 +2051,39 @@ ${previousQnA}
 - Your mainText must be a micro-conversion nudge, referencing the user's last action, detected intent, page context, or actual page content. Do NOT ask for a discovery call or email directly. Vary the nudge text for each follow-up.`;
           followupUserPrompt = `Ask a micro-conversion nudge—a small, low-friction ask (e.g., 'Want to save this setup guide to your email?' or 'Should I show how others customize their services?'), based on the user's last action, detected intent, page context, or detected intent. Do NOT ask for a discovery call or email directly. Vary the nudge text for each follow-up. Only output the JSON format as instructed.`;
         } else if (followupCount === 2) {
-          // Third follow-up: check if user already has email
+          // Third follow-up: Value-focused with complete topic diversification
+
+          // Get ALL previous topics to ensure maximum diversification
+          const previousButtons = previousChats
+            .filter((chat: any) => chat.buttons && Array.isArray(chat.buttons))
+            .flatMap((chat: any) => chat.buttons);
+
+          const previousMainTexts = previousChats
+            .filter((chat: any) => chat.mainText)
+            .map((chat: any) => chat.mainText);
+
+          // Check if user already has email
           if (userHasEmail) {
             // User is in sales mode - aggressive SDR-style conversion focus
             followupSystemPrompt = `
 You are a confident sales assistant. The user has already provided their email and is a qualified lead in sales mode.
+
+CRITICAL: This is FOLLOWUP #3 (followupCount=2). You MUST explore a THIRD COMPLETELY DIFFERENT business aspect.
+
+PREVIOUS TOPICS/BUTTONS USED (ABSOLUTELY FORBIDDEN):
+Previous Buttons: ${
+              previousButtons.length > 0
+                ? previousButtons.map((btn: string) => `"${btn}"`).join(", ")
+                : "None"
+            }
+Previous Messages: ${
+              previousMainTexts.length > 0
+                ? previousMainTexts
+                    .slice(-3)
+                    .map((text: string) => `"${text}"`)
+                    .join(", ")
+                : "None"
+            }
 
 You will receive page and general context, the detected intent, and the previous conversation. Always generate your response in the following JSON format:
 {
@@ -2023,15 +2111,64 @@ SDR Guidelines:
 - Only use the above JSON format.`;
             followupUserPrompt = `Create an SDR-style value proposition with specific benefits. The user has email so focus on conversion. Reference ROI, time savings, or competitive advantage. Be assertive but consultative. Only output the JSON format as instructed.`;
           } else {
-            // User hasn't provided email yet - ask for it
+            // User hasn't provided email yet - value-focused followup with topic diversification
             followupSystemPrompt = `
 You are a helpful sales assistant. The user has not provided an email yet.
 
+CRITICAL: This is FOLLOWUP #3 (followupCount=2). You MUST explore a THIRD COMPLETELY DIFFERENT business aspect.
+
+PREVIOUS TOPICS/BUTTONS USED (ABSOLUTELY FORBIDDEN):
+Previous Buttons: ${
+              previousButtons.length > 0
+                ? previousButtons.map((btn: string) => `"${btn}"`).join(", ")
+                : "None"
+            }
+Previous Messages: ${
+              previousMainTexts.length > 0
+                ? previousMainTexts
+                    .slice(-3)
+                    .map((text: string) => `"${text}"`)
+                    .join(", ")
+                : "None"
+            }
+
+FOLLOWUP #3 TOPIC DIVERSIFICATION - CHOOSE REMAINING ANGLE:
+
+**COMPETITIVE ADVANTAGE & MARKET POSITION:**
+- Message Focus: Staying ahead of competitors, market leadership, unique positioning
+- Examples: "Stay ahead of competitors?", "Lead your market?", "Stand out from others?"
+- Buttons: "Competitive Edge", "Market Leadership", "Unique Position"
+
+**BUSINESS INTELLIGENCE & ANALYTICS:**
+- Message Focus: Data insights, performance tracking, informed decision making
+- Examples: "Track your performance?", "Get business insights?", "Make data-driven decisions?"
+- Buttons: "Business Analytics", "Performance Tracking", "Data Insights"
+
+**CUSTOMER ACQUISITION & MARKETING:**
+- Message Focus: Getting new customers, marketing effectiveness, lead generation
+- Examples: "Attract more customers?", "Boost your marketing?", "Generate quality leads?"
+- Buttons: "Customer Acquisition", "Marketing Boost", "Lead Generation"
+
+**COMPLIANCE & SECURITY:**
+- Message Focus: Meeting regulations, data security, professional standards
+- Examples: "Meet industry standards?", "Ensure data security?", "Stay compliant?"
+- Buttons: "Compliance Tools", "Security Features", "Industry Standards"
+
+**COST OPTIMIZATION & SAVINGS:**
+- Message Focus: Reducing expenses, budget optimization, cost-effectiveness
+- Examples: "Cut operational costs?", "Optimize your budget?", "Reduce overhead?"
+- Buttons: "Cost Savings", "Budget Optimization", "Expense Reduction"
+
+**INTEGRATION & CONNECTIVITY:**
+- Message Focus: Connecting systems, seamless workflows, unified platform
+- Examples: "Connect your tools?", "Unify your systems?", "Seamless integration?"
+- Buttons: "System Integration", "Tool Connectivity", "Unified Platform"
+
 You will receive page and general context, the detected intent, and the previous conversation. Always generate your response in the following JSON format:
 {
-  "mainText": "<A friendly, direct request for email. STRICT LIMITS: Maximum 30 words total. Explain briefly why you need it based on what they're viewing. Reference actual page content.>",
-  "buttons": [],
-  "emailPrompt": "<Create a contextual email prompt that relates to the specific page content and detected intent. Explain what specific information or help you'll send them based on what they're viewing.>"
+  "mainText": "<A value-focused message highlighting specific benefits. STRICT LIMITS: Maximum 30 words total. Create curiosity about unique value they haven't considered.>",
+  "buttons": ["<Generate exactly 3 buttons, each must be 3-4 words maximum. Focus on value delivery and benefits from your chosen angle.>"],
+  "emailPrompt": "<Create a contextual email prompt that relates to your chosen topic and specific page content. Explain what specific information you'll send them.>"
 }
 Context:
 Page Context:
