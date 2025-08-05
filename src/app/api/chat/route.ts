@@ -523,6 +523,39 @@ Generate your response in JSON format:
   "emailPrompt": "<ONLY include this if followupCount >= 2 AND user hasn't provided email yet. Otherwise leave empty string.>"
 }
 
+BUTTON GENERATION STRATEGY - Focus on Customer Profiling & Page Content:
+- Extract ACTUAL features/services mentioned on the current page
+- Create buttons that help identify customer's specific needs and use case
+- Include options that reveal company size, industry, technical level, budget, urgency
+- Make buttons actionable and lead to valuable conversations
+
+BUTTON CATEGORIES (choose 3 that fit the page content):
+1. **Feature-Specific**: Based on actual features mentioned on page
+   - "See [Feature] Demo", "Try [Feature] Free", "Compare [Feature] Plans"
+2. **Use Case Discovery**: Help identify their specific scenario
+   - "For Small Teams", "Enterprise Options", "Startup Solutions", "Agency Tools"
+3. **Industry/Vertical**: Based on page content and persona
+   - "Healthcare Setup", "Finance Compliance", "E-commerce Tools", "SaaS Integration"
+4. **Technical Level**: Gauge their technical sophistication
+   - "Simple Setup", "Advanced Features", "API Integration", "Custom Solutions"
+5. **Budget/Timing**: Understand their buying stage
+   - "Pricing Options", "Free Trial", "ROI Calculator", "Implementation Timeline"
+6. **Competitive/Comparison**: If competitors mentioned on page
+   - "vs [Competitor]", "Migration Guide", "Why Switch", "Feature Comparison"
+
+CUSTOMER PROFILING THROUGH BUTTONS:
+- Use buttons to learn about company size ("Team Tools" vs "Enterprise Features")
+- Identify technical level ("Simple Setup" vs "Developer APIs")
+- Understand urgency ("Quick Start" vs "Full Evaluation")
+- Gauge budget sensitivity ("Free Options" vs "Premium Features")
+- Discover industry ("Healthcare" vs "Finance" vs "Retail")
+
+BUTTON NAMING RULES:
+- 2-4 words maximum for mobile friendliness
+- Action-oriented: "See", "Try", "Compare", "Get", "Learn"
+- Specific to page content, not generic
+- Help qualify the lead through their choice
+
 CREATIVE OPENING PATTERNS - Use variety, avoid repetition:
 - Curiosity: "Ready to...", "Want to...", "Looking to...", "Curious how..."
 - Benefit-focused: "Save 15 hours weekly with...", "Cut costs by 40% using...", "Boost revenue by..."
@@ -1677,6 +1710,32 @@ You will receive page and general context, the detected intent, and the previous
   "emailPrompt": ""
 }
 
+SMART BUTTON GENERATION - Customer Profiling Focus:
+1. **Page Content Analysis**: Extract actual features, services, pricing tiers mentioned
+2. **Customer Profiling**: Create buttons that reveal user's company size, industry, needs
+3. **Lead Qualification**: Options that help identify budget, urgency, technical level
+
+BUTTON STRATEGY EXAMPLES:
+- **Page: Pricing** → "Startup Plans", "Enterprise Quote", "Free Trial"
+- **Page: Features** → "Basic Setup", "Advanced Tools", "Custom Solutions"  
+- **Page: Integrations** → "Popular APIs", "Custom Connect", "Migration Help"
+- **Page: Security** → "Compliance Guide", "Enterprise Security", "Basic Protection"
+- **Page: Support** → "Self-Service", "Priority Support", "Dedicated Account"
+
+CUSTOMER PROFILING THROUGH BUTTON CHOICES:
+- Company Size: "Solo Plans" vs "Team Tools" vs "Enterprise Scale"
+- Technical Level: "Easy Setup" vs "Developer Tools" vs "Custom Build"
+- Budget Stage: "Free Options" vs "Compare Plans" vs "Get Quote"
+- Industry: "Healthcare" vs "Finance" vs "Retail" vs "SaaS"
+- Urgency: "Quick Start" vs "Full Demo" vs "Pilot Program"
+
+BUTTON QUALITY RULES:
+- Extract features/services actually mentioned on current page
+- Create 3 distinct pathways that reveal different customer profiles
+- Make buttons actionable: "See", "Try", "Compare", "Get", "Learn", "Start"
+- 2-4 words max for mobile optimization
+- Help qualify leads through their button choice
+
 CREATIVE OPENING PATTERNS - Use variety, avoid repetition:
 - Curiosity: "Ready to...", "Want to...", "Curious how...", "Ever wondered..."
 - Benefit-focused: "Save time with...", "Boost results using...", "Double your efficiency with..."
@@ -1729,6 +1788,28 @@ You will receive page and general context, the detected intent, and the previous
   "buttons": ["<Generate exactly 3 buttons, each must be 3-4 words maximum. Make them actionable and specific to the actual page content.>"],
   "emailPrompt": ""
 }
+
+MICRO-CONVERSION BUTTON STRATEGY - Deeper Customer Profiling:
+Now that we know their initial interest, create buttons that dive deeper:
+
+PROGRESSIVE PROFILING THROUGH BUTTONS:
+1. **Refine Company Size**: "Small Team Setup", "Growing Company", "Enterprise Scale"
+2. **Technical Depth**: "Simple Guide", "Technical Specs", "Developer Docs"  
+3. **Implementation Speed**: "Quick Start", "Planned Rollout", "Custom Timeline"
+4. **Budget Exploration**: "Cost Calculator", "ROI Analysis", "Pricing Tiers"
+5. **Feature Deep-Dive**: Based on specific page features mentioned
+6. **Industry Verticals**: If page mentions specific industries/use cases
+
+SECOND-LEVEL QUALIFICATION EXAMPLES:
+- First click: "Pricing Options" → Second level: "Startup Pricing", "Volume Discounts", "Enterprise Quote"
+- First click: "Features" → Second level: "Core Features", "Advanced Tools", "Integrations"
+- First click: "Security" → Second level: "Basic Security", "Compliance Ready", "Enterprise Grade"
+
+BUTTON NAMING FOR MICRO-CONVERSIONS:
+- More specific than first followup
+- Reference user's likely progression: "Next Step", "Learn More", "Get Started"
+- Include qualifying terms: "Basic", "Advanced", "Custom", "Enterprise"
+- Keep 2-4 words, action-oriented
 
 CREATIVE MICRO-CONVERSION PATTERNS - Use variety:
 - Benefit-focused: "Save [time/money] with...", "Get [result] in minutes", "Boost efficiency by..."
