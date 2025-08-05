@@ -104,86 +104,127 @@ function detectVertical(pageUrl: string, pageContent: string = ""): string {
   const url = pageUrl.toLowerCase();
   const content = pageContent.toLowerCase();
 
+  console.log(`[VERTICAL DEBUG] Analyzing pageUrl: ${pageUrl}`);
+  console.log(`[VERTICAL DEBUG] Content length: ${pageContent.length} chars`);
+  console.log(
+    `[VERTICAL DEBUG] Content preview: ${content.substring(0, 200)}...`
+  );
+
   // URL-based detection
-  if (url.includes("/consulting") || url.includes("/consultant"))
+  if (url.includes("/consulting") || url.includes("/consultant")) {
+    console.log(`[VERTICAL DEBUG] Detected 'consulting' from URL: ${pageUrl}`);
     return "consulting";
+  }
   if (
     url.includes("/legal") ||
     url.includes("/law") ||
     url.includes("/attorney")
-  )
+  ) {
+    console.log(`[VERTICAL DEBUG] Detected 'legal' from URL: ${pageUrl}`);
     return "legal";
+  }
   if (
     url.includes("/accounting") ||
     url.includes("/finance") ||
     url.includes("/bookkeeping")
-  )
+  ) {
+    console.log(`[VERTICAL DEBUG] Detected 'accounting' from URL: ${pageUrl}`);
     return "accounting";
+  }
   if (
     url.includes("/staffing") ||
     url.includes("/recruiting") ||
     url.includes("/hr")
-  )
+  ) {
+    console.log(`[VERTICAL DEBUG] Detected 'staffing' from URL: ${pageUrl}`);
     return "staffing";
+  }
   if (
     url.includes("/healthcare") ||
     url.includes("/medical") ||
     url.includes("/clinic")
-  )
+  ) {
+    console.log(`[VERTICAL DEBUG] Detected 'healthcare' from URL: ${pageUrl}`);
     return "healthcare";
+  }
   if (
     url.includes("/education") ||
     url.includes("/school") ||
     url.includes("/university")
-  )
+  ) {
+    console.log(`[VERTICAL DEBUG] Detected 'education' from URL: ${pageUrl}`);
     return "education";
+  }
   if (
     url.includes("/real-estate") ||
     url.includes("/realty") ||
     url.includes("/property")
-  )
+  ) {
+    console.log(`[VERTICAL DEBUG] Detected 'real_estate' from URL: ${pageUrl}`);
     return "real_estate";
+  }
   if (
     url.includes("/technology") ||
     url.includes("/software") ||
     url.includes("/saas")
-  )
+  ) {
+    console.log(`[VERTICAL DEBUG] Detected 'technology' from URL: ${pageUrl}`);
     return "technology";
+  }
   if (
     url.includes("/retail") ||
     url.includes("/ecommerce") ||
     url.includes("/store")
-  )
+  ) {
+    console.log(`[VERTICAL DEBUG] Detected 'retail' from URL: ${pageUrl}`);
     return "retail";
+  }
 
   // Content-based detection (basic keyword matching)
-  if (content.includes("consultation") || content.includes("advisory"))
+  if (content.includes("consultation") || content.includes("advisory")) {
+    console.log(`[VERTICAL DEBUG] Detected 'consulting' from content keywords`);
     return "consulting";
+  }
   if (
     content.includes("legal") ||
     content.includes("litigation") ||
     content.includes("attorney")
-  )
+  ) {
+    console.log(
+      `[VERTICAL DEBUG] Detected 'legal' from content keywords: legal=${content.includes(
+        "legal"
+      )}, litigation=${content.includes(
+        "litigation"
+      )}, attorney=${content.includes("attorney")}`
+    );
     return "legal";
+  }
   if (
     content.includes("accounting") ||
     content.includes("bookkeeping") ||
     content.includes("tax")
-  )
+  ) {
+    console.log(`[VERTICAL DEBUG] Detected 'accounting' from content keywords`);
     return "accounting";
+  }
   if (
     content.includes("recruiting") ||
     content.includes("staffing") ||
     content.includes("candidates")
-  )
+  ) {
+    console.log(`[VERTICAL DEBUG] Detected 'staffing' from content keywords`);
     return "staffing";
+  }
   if (
     content.includes("patients") ||
     content.includes("medical") ||
     content.includes("healthcare")
-  )
+  ) {
+    console.log(`[VERTICAL DEBUG] Detected 'healthcare' from content keywords`);
     return "healthcare";
+  }
 
+  console.log(`[VERTICAL DEBUG] No vertical detected, returning 'general'`);
   return "general";
 }
 
@@ -773,13 +814,73 @@ Extract key requirements (2-3 bullet points max, be concise):`;
             ? conversationHistory[0].content
             : question || "";
 
+        // Gather context for lead enrichment
+        let pageContext = {};
+
+        // Try to detect intent and vertical for current context
+        if (pageUrl) {
+          try {
+            const detectedIntent = detectIntent({ question, pageUrl });
+            let detectedVertical = "general";
+            let pageContent = "";
+
+            // Get page content if available for better vertical detection
+            if (adminId) {
+              const pageChunks = await getChunksByPageUrl(adminId, pageUrl);
+              if (pageChunks.length > 0) {
+                pageContent = pageChunks.slice(0, 3).join("\n");
+                detectedVertical = detectVertical(pageUrl, pageContent);
+              }
+            }
+
+            // Get visited pages from session
+            const sessionMessages = await chats.find({ sessionId }).toArray();
+            const visitedPages = [
+              ...new Set(
+                sessionMessages
+                  .map((m) => m.pageUrl)
+                  .filter((url) => url && url !== pageUrl)
+              ),
+            ];
+
+            // Extract any questions asked and user responses
+            const proactiveQuestions = sessionMessages
+              .filter(
+                (m) =>
+                  m.role === "assistant" && m.content && m.content.includes("?")
+              )
+              .map((m) => m.content);
+
+            const userResponses = sessionMessages
+              .filter((m) => m.role === "user")
+              .map((m) => m.content);
+
+            pageContext = {
+              pageContent: pageContent.substring(0, 500), // Limit size
+              detectedIntent,
+              detectedVertical,
+              proactiveQuestions: proactiveQuestions.slice(-3), // Last 3 questions
+              userResponses: userResponses.slice(-5), // Last 5 responses
+              visitedPages: visitedPages.slice(-10), // Last 10 unique pages
+            };
+
+            console.log(
+              `[LeadGen] Enhanced context: intent=${detectedIntent}, vertical=${detectedVertical}, pages=${visitedPages.length}`
+            );
+          } catch (contextError) {
+            console.error("[LeadGen] Error gathering context:", contextError);
+            // Continue with basic context
+          }
+        }
+
         await createOrUpdateLead(
           adminId,
           detectedEmail,
           sessionId,
           extractedRequirements,
           pageUrl || undefined,
-          firstMessage
+          firstMessage,
+          pageContext
         );
 
         console.log(
@@ -1146,97 +1247,137 @@ Extract key requirements (2-3 bullet points max, be concise):`;
             );
           }
 
-          // First time greeting - create short, contextual messages for any page type
-          summaryPrompt = `The user is viewing: ${pageUrl}. Their likely intent is: ${detectedIntent}.
-Detected industry/vertical: ${detectedVertical}.
+          // First time greeting - create intelligent, page-specific messages
+          summaryPrompt = `CONTEXT ANALYSIS:
+Page URL: ${pageUrl}
+User Intent: ${detectedIntent}
+Industry Detected: ${detectedVertical}
+Page Content Preview: ${summaryContext.substring(0, 800)}...
+
+TASK: Create an intelligent proactive message that demonstrates understanding of this specific page and asks a contextual question to understand the user's needs.
+
+ANALYSIS REQUIRED:
+1. What is this page actually about? (features, pricing, use cases, etc.)
+2. What would someone visiting this page likely be trying to accomplish?
+3. What questions would help understand their specific needs or situation?
+4. What are the most relevant next actions available on this page?
+
+Generate response in JSON format:
+{
+  "mainText": "<Context-aware message (under 30 words) that shows you understand what they're viewing and asks a specific question about their needs/situation>",
+  "buttons": ["<3-4 specific actions based on actual page content>"]
+}
+
+EXAMPLE APPROACH:
+Instead of: "Hi! How can I help?"
+Create: "I see you're exploring [specific feature/page]. Are you looking to solve [specific problem] or are you in the [situation] phase?"
+
+MAINTEXT REQUIREMENTS:
+- Reference the actual page content or purpose
+- Ask a specific question that helps understand their situation, needs, or goals
+- Be conversational and natural (like a knowledgeable consultant would ask)
+- Under 30 words total
+- End with a question that reveals their intent/needs
+- Show understanding of what they're viewing
+
+BUTTONS REQUIREMENTS:
+- Based on actual functionality/content available on this page
+- Help them accomplish what they likely came to do
+- Be specific and actionable (not generic categories)
+- Match what a user would naturally want to do next on this specific page
+
 ${
   detectedVertical !== "general"
-    ? `Vertical-specific context: ${verticalInfo.message}`
+    ? `Industry Context: This appears to be a ${detectedVertical} business, so tailor the question and options accordingly.`
     : ""
-}
-
-Create a SHORT, contextual proactive message with helpful buttons. Generate your response in JSON format:
-{
-  "mainText": "<Short message under 30 words. Be direct and helpful. Use conversational tone. End with a specific question.>",
-  "buttons": ["<Generate 3-4 contextual buttons, 2-3 words each. Make them specific to the page context and user intent.>"]
-}
-
-Requirements for mainText:
-- Keep under 30 words total
-- Be specific to their current page and intent
-- ${
-            detectedVertical !== "general"
-              ? `Reference the ${detectedVertical} industry context when relevant`
-              : "Use general business context"
-          }
-- Use conversational, friendly tone
-- NO bullet points or long explanations
-- Use 1 emoji max or none
-- Focus on immediate value/help based on ACTUAL page content
-- End with a specific, actionable question that relates to what they're viewing
-- Be natural and varied - avoid formulaic responses
-
-For buttons:
-- Analyze the actual page content and user intent
-- Generate buttons that match what users actually need on this specific page
-- ${
-            detectedVertical !== "general"
-              ? `Include industry-specific options like "${verticalInfo.buttons.join(
-                  '", "'
-                )}" when relevant`
-              : "Use general business categories"
-          }
-- Be specific to the content, not generic categories
-- Help users take the logical next step for their current context
-
-Content to reference:\n${summaryContext}`;
+}`;
         } else {
-          // Follow-up proactive message - more contextual and varied
+          // Follow-up proactive message - deeper context analysis
           const isRevisit = visitedPages.some((page: string) =>
             pageUrl.includes(page)
           );
 
-          summaryPrompt = `The user has already been greeted and is now viewing: ${pageUrl}. 
-This is proactive message #${proactiveMessageCount + 1}. They have visited ${
+          summaryPrompt = `FOLLOW-UP CONTEXT ANALYSIS:
+Current Page: ${pageUrl}
+User Journey: Message #${proactiveMessageCount + 1}, visited ${
             visitedPages.length
-          } pages before.
-Their likely intent is: ${detectedIntent}.
-${
-  isRevisit
-    ? "They have visited a similar page before."
-    : "This appears to be a new page for them."
-}
+          } pages
+Page Content: ${summaryContext.substring(0, 600)}...
+Revisiting Similar Page: ${isRevisit}
 
-Create a SHORT follow-up message with helpful buttons. Generate your response in JSON format:
+TASK: Create an intelligent follow-up that builds on their browsing behavior and asks a deeper question about their specific needs or decision process.
+
+BEHAVIORAL ANALYSIS:
+1. They've been exploring for a while - what might they be comparing or deciding between?
+2. Based on this specific page content, what stage of evaluation/decision are they in?
+3. What specific concern or question would help them move forward?
+4. What obstacles or uncertainties might they have at this point?
+
+Generate response in JSON format:
 {
-  "mainText": "<Short message under 25 words. Be contextual and helpful. No repetitive greetings.>",
-  "buttons": ["<Generate 3 contextual buttons, 2-3 words each. Be specific to the current page content and what the user actually needs.>"]
+  "mainText": "<Context-aware follow-up (under 25 words) that acknowledges their exploration and asks about specific needs/concerns>",
+  "buttons": ["<3 specific actions relevant to their current evaluation stage>"]
 }
 
-Requirements for mainText:
-- Keep under 25 words total
-- Be contextual to their current page and actual content
-- NO repetitive greetings since they've been welcomed
-- NO bullet points or long lists
-- Use 1 emoji max or none
-- Focus on immediate help/value based on what they're actually viewing
-- End with a specific, actionable question
-- Be natural and varied - avoid patterns or formulas
+FOLLOW-UP APPROACH:
+Instead of: "Need help with anything?"
+Create: "I see you're comparing [feature/option]. What's most important for your [specific situation]?" or "Since you're exploring [specific area], are you trying to [specific goal] or [alternative goal]?"
 
-For buttons:
-- Analyze the specific page content to understand what's available
-- Generate buttons based on actual functionality or information on this page
-- Avoid generic button patterns - be specific to the content
-- Help users access or learn about what's actually on this page
+MAINTEXT REQUIREMENTS:
+- Acknowledge they've been exploring (no repetitive greetings)
+- Reference the specific page/content they're viewing
+- Ask about their decision criteria, priorities, or specific concerns
+- Under 25 words total
+- Show progression in the conversation (building on their journey)
+- Ask questions that reveal decision factors or obstacles
 
-Content to reference:\n${summaryContext}`;
+BUTTONS REQUIREMENTS:
+- Match their current evaluation stage (comparing, learning details, etc.)
+- Provide specific resources or actions that help with decision-making
+- Based on actual page content and functionality
+- Help them get answers to likely concerns at this stage`;
         }
         const summaryResp = await openai.chat.completions.create({
           model: "gpt-4o-mini",
           messages: [
             {
               role: "system",
-              content: `You are a helpful assistant that creates personalized, contextual messages based on actual page content. Your goal is to be genuinely helpful by understanding what the user is viewing and providing relevant assistance.
+              content: `You are an intelligent sales consultant that creates personalized, context-aware messages. Your expertise is understanding what users are viewing and asking the right questions to uncover their specific needs and decision criteria.
+
+CORE INTELLIGENCE:
+1. CONTENT ANALYSIS: Deeply understand what's on the page (features, benefits, use cases, pricing, etc.)
+2. USER PSYCHOLOGY: Consider what someone viewing this content is trying to accomplish
+3. NEEDS DISCOVERY: Ask questions that reveal their situation, priorities, and decision factors
+4. CONTEXTUAL RELEVANCE: Reference specific elements they can actually see and interact with
+
+CONVERSATION PRINCIPLES:
+- Act like a knowledgeable consultant who's reviewed their current page
+- Ask questions that sales professionals would ask to understand needs
+- Show you understand their current context and exploration process
+- Help them identify what matters most for their specific situation
+- Guide toward meaningful next steps based on their actual needs
+
+QUESTION STRATEGY:
+- Ask about their current situation or challenges
+- Understand their decision criteria or priorities
+- Identify their timeline or urgency
+- Uncover what's most important to them
+- Help them compare or evaluate options
+
+RESPONSE FORMAT:
+- Always return valid JSON with "mainText" and "buttons"
+- Keep responses conversational and consultative
+- Reference actual page content when relevant
+- Ask questions that lead to meaningful lead qualification
+- Provide buttons that help them get specific answers or take relevant actions
+
+LEAD QUALIFICATION FOCUS:
+- Company size or role (when relevant to the page content)
+- Specific use cases or challenges they're trying to solve
+- Decision timeline and process
+- Budget considerations (when contextually appropriate)
+- Technical requirements or preferences
+- Current solutions or alternatives they're considering
 
 CORE PRINCIPLES:
 1. Analyze the actual page content to understand what's available

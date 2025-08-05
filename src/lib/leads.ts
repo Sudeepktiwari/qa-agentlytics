@@ -8,7 +8,15 @@ export async function createOrUpdateLead(
   sessionId: string,
   requirements: string | null,
   sourceUrl?: string,
-  firstMessage?: string
+  firstMessage?: string,
+  pageContext?: {
+    pageContent?: string;
+    detectedIntent?: string;
+    detectedVertical?: string;
+    proactiveQuestions?: string[];
+    userResponses?: string[];
+    visitedPages?: string[];
+  }
 ) {
   try {
     const db = await getDb();
@@ -24,6 +32,9 @@ export async function createOrUpdateLead(
         lastSessionId: string;
         conversationCount: number;
         requirements?: string;
+        pageContext?: any;
+        lastDetectedIntent?: string;
+        lastDetectedVertical?: string;
         $push?: { sessionIds: string };
       } = {
         lastContact: new Date(),
@@ -34,6 +45,13 @@ export async function createOrUpdateLead(
       // Update requirements if we have new ones
       if (requirements && requirements !== "General inquiry") {
         updateData.requirements = requirements;
+      }
+
+      // Update page context and insights
+      if (pageContext) {
+        updateData.pageContext = pageContext;
+        updateData.lastDetectedIntent = pageContext.detectedIntent;
+        updateData.lastDetectedVertical = pageContext.detectedVertical;
       }
 
       // Update the existing lead
@@ -60,6 +78,17 @@ export async function createOrUpdateLead(
         status: "new", // new, contacted, qualified, converted, lost
         source: sourceUrl || null,
         firstMessage: firstMessage || null,
+
+        // Enhanced context data
+        pageContext: pageContext || null,
+        detectedIntent: pageContext?.detectedIntent || null,
+        detectedVertical: pageContext?.detectedVertical || null,
+        lastDetectedIntent: pageContext?.detectedIntent || null,
+        lastDetectedVertical: pageContext?.detectedVertical || null,
+        proactiveQuestions: pageContext?.proactiveQuestions || [],
+        userResponses: pageContext?.userResponses || [],
+        visitedPages: pageContext?.visitedPages || [],
+
         firstContact: new Date(),
         lastContact: new Date(),
         conversationCount: 1,
