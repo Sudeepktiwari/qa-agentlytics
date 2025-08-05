@@ -523,35 +523,49 @@ Generate your response in JSON format:
   "emailPrompt": "<ONLY include this if followupCount >= 2 AND user hasn't provided email yet. Otherwise leave empty string.>"
 }
 
-BUTTON GENERATION STRATEGY - Progressive Customer Profiling:
-- NEVER repeat button concepts across followups
-- Each followup must BUILD on previous button choices
-- Create a LOGICAL PROGRESSION that reveals more customer details
-- Ask about specific PAIN POINTS based on page context
-- Use buttons to discover deeper business challenges
+CRITICAL: NEVER use these BANNED opening patterns:
+- "Tired of..." (COMPLETELY BANNED)
+- "Struggling with..." (COMPLETELY BANNED)  
+- "Managing..." (COMPLETELY BANNED)
+- "Exhausted from..." (COMPLETELY BANNED)
+- "Sick of..." (COMPLETELY BANNED)
+- "Need help with..." (COMPLETELY BANNED)
+- "Ready to..." (only if used recently)
+- "Looking to..." (only if used recently)
 
-PROGRESSIVE PROFILING STRATEGY:
-**Followup #1 (followupCount=0)**: Basic Segmentation
-- Extract 3 DIFFERENT business types/sizes from page content
-- Focus on WHO they are (business type, size, role)
-- Examples: "Solo Practice" | "Growing Studio" | "Multi-Location"
+MANDATORY: Check conversation history and NEVER repeat similar opening patterns.
+Previous conversation context: ${conversationHistory.slice(-200)}
 
-**Followup #2 (followupCount=1)**: Pain Point Discovery  
-- Based on their first choice, ask about SPECIFIC PAIN POINTS
-- Extract actual challenges mentioned on the page
-- Examples: If chose "Growing Studio" → "Scheduling Chaos" | "Payment Issues" | "Staff Management"
+LEAD GENERATION BUTTON STRATEGY - 3-Button Framework (PERSONA-BASED):
 
-**Followup #3 (followupCount=2)**: Solution Fit & Email
-- Based on their pain point, offer SPECIFIC SOLUTIONS
-- Reference exact features from page that solve their pain
-- Examples: If chose "Scheduling Chaos" → "Auto Scheduling" | "Conflict Prevention" | "Mobile Booking"
+**MANDATORY 3-BUTTON STRUCTURE FOR ALL PERSONA FOLLOWUPS:**
+1. **Button 1: PERSONA PAIN POINT** - Specific challenge for this customer type based on page context
+2. **Button 2: PERSONA SOLUTION** - Feature/solution relevant to their persona mentioned on page
+3. **Button 3: PERSONA REQUIREMENT** - Specific need for their customer type or growth stage
 
-MANDATORY BUTTON EVOLUTION RULES:
-- NEVER use the same button concept twice
-- NEVER repeat similar wording across followups
-- EACH followup must ask DIFFERENT questions
-- BUILD a customer profile through button progression
-- Reference ACTUAL page content for pain points and solutions
+**PERSONA BUTTON MAPPING:**
+
+**Small Business Persona:**
+- Pain Point: "Time Constraints" | "Manual Work" | "Budget Limits"
+- Solution: "Simple Setup" | "Quick Start" | "Basic Features"  
+- Requirement: "Affordable Plans" | "Easy Integration" | "Fast ROI"
+
+**Enterprise Persona:**
+- Pain Point: "Scale Issues" | "Security Needs" | "Compliance"
+- Solution: "Enterprise Features" | "Advanced Security" | "Custom Integration"
+- Requirement: "Volume Pricing" | "Dedicated Support" | "SLA Guarantee"
+
+**SaaS/Startup Persona:**
+- Pain Point: "Growth Scaling" | "Team Coordination" | "System Integration"  
+- Solution: "API Access" | "Team Dashboard" | "Growth Analytics"
+- Requirement: "Startup Pricing" | "Technical Support" | "Scalable Plans"
+
+**PERSONA BUTTON EVOLUTION RULES:**
+- NEVER repeat button concepts across followups for same persona
+- Each followup must BUILD on previous button choice
+- Extract pain points and solutions actually mentioned on current page
+- Tailor language to persona sophistication level (simple for SMB, technical for Enterprise)
+- DIFFERENT buttons for different followup numbers but same persona focus
 
 PAIN POINT EXTRACTION FROM PAGE CONTENT:
 - If page mentions "scheduling conflicts" → Button: "Scheduling Chaos"
@@ -597,12 +611,15 @@ CREATIVE OPENING PATTERNS - Use variety, avoid repetition:
 - Social proof: "Over 1000 companies...", "Top brands rely on...", "Industry leaders prefer..."
 
 ABSOLUTELY AVOID THESE REPETITIVE PATTERNS:
-- "Struggling with..." (overused)
-- "Managing..." (becoming repetitive)
-- "Ready to..." (if used recently)
-- "Looking to..." (if used recently)
-- "Need help with..." (generic)
-- "Noticed you're..." (becoming repetitive)
+- "Tired of..." (BANNED - overused)
+- "Struggling with..." (BANNED - overused)
+- "Managing..." (BANNED - becoming repetitive)
+- "Ready to..." (BANNED - if used recently)
+- "Looking to..." (BANNED - if used recently)
+- "Need help with..." (BANNED - generic)
+- "Noticed you're..." (BANNED - becoming repetitive)
+- "Exhausted from..." (BANNED - similar to tired)
+- "Sick of..." (BANNED - similar to tired)
 - Starting every message the same way
 - Using the same sentence structure repeatedly
 - Repeating the same concepts or words
@@ -1401,6 +1418,26 @@ MAINTEXT REQUIREMENTS:
 - End with a question that reveals their intent/needs
 - Show understanding of what they're viewing
 
+CREATIVE VARIETY ENFORCEMENT - AVOID THESE BANNED PATTERNS:
+- "Tired of..." (BANNED - overused)
+- "Struggling with..." (BANNED - overused)
+- "Managing..." (BANNED - becoming repetitive)
+- "Ready to..." (BANNED - if used recently)
+- "Looking to..." (BANNED - if used recently)
+- "Need help with..." (BANNED - generic)
+- "Noticed you're..." (BANNED - becoming repetitive)
+- "Exhausted from..." (BANNED - similar to tired)
+- "Sick of..." (BANNED - similar to tired)
+
+PREFERRED CREATIVE OPENINGS:
+- Question-based: "Growing fast?", "Exploring options?", "Time for an upgrade?"
+- Benefit-focused: "Save 15 hours weekly...", "Double your efficiency..."
+- Industry-specific: "For [industry]...", "Most [role] find...", "Popular with..."
+- Problem-solving: "No more...", "Skip the...", "Avoid...", "Eliminate..."
+- Achievement: "Join [others] who...", "Like [similar companies]..."
+- Direct benefit: "Automate your...", "Transform your...", "Optimize your..."
+- Social proof: "Over 1000 companies...", "Top brands rely on..."
+
 BUTTONS REQUIREMENTS:
 - Based on actual functionality/content available on this page
 - Help them accomplish what they likely came to do
@@ -1448,6 +1485,24 @@ MAINTEXT REQUIREMENTS:
 - Acknowledge they've been exploring (no repetitive greetings)
 - Reference the specific page/content they're viewing
 - Ask about their decision criteria, priorities, or specific concerns
+
+CREATIVE VARIETY ENFORCEMENT - AVOID THESE BANNED PATTERNS:
+- "Tired of..." (BANNED - overused)
+- "Struggling with..." (BANNED - overused)
+- "Managing..." (BANNED - becoming repetitive)
+- "Ready to..." (BANNED - if used recently)
+- "Looking to..." (BANNED - if used recently)
+- "Need help with..." (BANNED - generic)
+- "Noticed you're..." (BANNED - becoming repetitive)
+- "Exhausted from..." (BANNED - similar to tired)
+- "Sick of..." (BANNED - similar to tired)
+
+PREFERRED CREATIVE OPENINGS FOR FOLLOW-UPS:
+- Progress-based: "I see you're comparing...", "Since you're exploring..."
+- Decision-focused: "What's most important for your...", "Which matters more..."
+- Situation-aware: "For your [type] business...", "At your growth stage..."
+- Solution-oriented: "Most companies like yours...", "The top choice for..."
+- Stage-specific: "Ready to decide?", "Still evaluating?", "Need specifics on..."
 - Under 25 words total
 - Show progression in the conversation (building on their journey)
 - Ask questions that reveal decision factors or obstacles
@@ -1646,6 +1701,32 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
         ): boolean {
           const newText = getText(newQ);
           if (!newText || newText.length < 10) return true; // Skip very short responses
+
+          // Check for banned patterns FIRST
+          const bannedPatterns = [
+            "tired of",
+            "struggling with",
+            "managing",
+            "exhausted from",
+            "sick of",
+            "need help with",
+            "noticed you're",
+            "ready to",
+          ];
+
+          const lowerText = newText.toLowerCase();
+          const hasBannedPattern = bannedPatterns.some(
+            (pattern) =>
+              lowerText.startsWith(pattern) || lowerText.includes(pattern)
+          );
+
+          if (hasBannedPattern) {
+            console.log(
+              `[VARIETY] Rejected message for banned pattern: "${newText}"`
+            );
+            return true; // Reject this message as too similar
+          }
+
           const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
           const normalizedNew = norm(newText);
 
@@ -1761,49 +1842,33 @@ You will receive page and general context, the detected intent, and the previous
   "emailPrompt": ""
 }
 
-SMART BUTTON GENERATION - Progressive Customer Profiling:
-1. **Followup #1**: Business Type/Size Discovery
-2. **Followup #2**: Pain Point Identification  
-3. **Followup #3**: Solution Matching
+LEAD GENERATION BUTTON STRATEGY - 3-Button Framework:
 
-PROGRESSIVE PROFILING THROUGH BUTTONS:
-**Stage 1 - WHO ARE THEY?** (followupCount=0)
-- Extract business types/sizes from page content
-- Create buttons that segment by company profile
-- Examples: "Solo Consultant" | "Growing Agency" | "Enterprise Team"
+**MANDATORY 3-BUTTON STRUCTURE (ALL FOLLOWUPS):**
+1. **Button 1: PAIN POINT** - Customer challenge based on page context
+2. **Button 2: SOLUTION/FEATURE** - Specific solution or feature mentioned on page
+3. **Button 3: REQUIREMENTS** - Customer requirements OR page context option
 
-**Stage 2 - WHAT'S THEIR PROBLEM?** (followupCount=1)
-- Based on Stage 1 choice, ask about specific pain points
-- Extract challenges mentioned on current page
-- Examples: If "Growing Agency" → "Client Scheduling" | "Team Coordination" | "Payment Tracking"
+**FOLLOWUP #1 BUTTON EXAMPLES:**
+- Pain Point: "Scheduling Issues" | "Manual Processes" | "Time Management"  
+- Solution/Feature: "Auto Booking" | "Payment Integration" | "Mobile App"
+- Requirements: "Custom Setup" | "Enterprise Features" | "Budget Options"
 
-**Stage 3 - HOW TO SOLVE IT?** (followupCount=2)
-- Based on their pain point, show relevant solutions
-- Reference exact features from page that address their problem
-- Examples: If "Client Scheduling" → "Auto Booking" | "Calendar Sync" | "Reminder System"
+**PAGE CONTENT ANALYSIS FOR BUTTONS:**
+- Scan page for pain points: "conflicts", "delays", "manual", "time-consuming"
+- Extract features mentioned: "automation", "integration", "analytics", "mobile"
+- Identify requirements: "enterprise", "custom", "security", "compliance"
 
-MANDATORY BUTTON EVOLUTION - NEVER REPEAT:
-- Stage 1: WHO (business type/size)
-- Stage 2: PROBLEM (specific pain points from page)
-- Stage 3: SOLUTION (features that solve their problem)
-- NEVER use the same button concept across stages
-- BUILD a complete customer profile through progression
+**BUTTON QUALITY RULES:**
+- Extract actual content from current page, not generic assumptions
+- Make each button represent a different customer path
+- Use action-oriented language: "Fix", "Get", "Setup", "Try", "See"
+- 2-4 words maximum for mobile optimization
+- Help qualify leads through their specific choice
 
-PAIN POINT EXTRACTION EXAMPLES:
-- Page mentions "scheduling conflicts" → Button: "Scheduling Issues"
-- Page mentions "payment delays" → Button: "Payment Problems"  
-- Page mentions "no-show clients" → Button: "Client No-Shows"
-- Page mentions "manual booking" → Button: "Manual Processes"
-- Page mentions "staff management" → Button: "Team Challenges"
-
-BUTTON QUALITY RULES:
-- Extract features/services actually mentioned on current page
-- Create 3 distinct pathways that reveal different customer profiles
-- Make buttons actionable: "See", "Try", "Compare", "Get", "Setup", "Access"
-- 2-4 words max for mobile optimization
-- Help qualify leads through their button choice
-- NEVER repeat button concepts from previous followups
-- Focus on PROGRESSIVE PROFILING through each stage
+**NEVER REPEAT BUTTON CONCEPTS BETWEEN FOLLOWUPS:**
+- Followup #1: Focus on initial discovery (WHO + WHAT + HOW)
+- Followup #2: Deepen based on their choice (DEEPER PROBLEMS + ADVANCED SOLUTIONS + SPECIFIC NEEDS)
 
 CREATIVE OPENING PATTERNS - Use variety, avoid repetition:
 - Curiosity: "Ready to...", "Want to...", "Curious how...", "Ever wondered..."
@@ -1816,14 +1881,17 @@ CREATIVE OPENING PATTERNS - Use variety, avoid repetition:
 - Numbers/proof: "Over 1000 users...", "Save 15 hours weekly...", "Cut costs by 40%..."
 
 STRICT VARIETY ENFORCEMENT:
-- NEVER start with "Managing..." (becoming repetitive)
-- NEVER start with "Struggling with..." (overused) 
-- NEVER start with "Need help with..." (too generic)
+- NEVER start with "Tired of..." (BANNED - overused)
+- NEVER start with "Managing..." (BANNED - becoming repetitive)
+- NEVER start with "Struggling with..." (BANNED - overused) 
+- NEVER start with "Need help with..." (BANNED - too generic)
+- NEVER start with "Exhausted from..." (BANNED - similar to tired)
+- NEVER start with "Sick of..." (BANNED - similar to tired)
 - NEVER use the same opening pattern twice in a row
 - Use DIFFERENT emotional hooks: curiosity, urgency, social proof, benefits
 - Rotate between questions, statements, and benefit-focused openings
 
-AVOID: Starting with "Struggling with..." or repetitive patterns
+AVOID: Starting with "Tired of...", "Struggling with..." or repetitive patterns
 
 Context:
 Page Context:
@@ -1858,45 +1926,33 @@ You will receive page and general context, the detected intent, and the previous
   "emailPrompt": ""
 }
 
-MICRO-CONVERSION BUTTON STRATEGY - Pain Point Deep Dive:
-Now that we know their business type, dig into SPECIFIC PAIN POINTS:
+LEAD GENERATION BUTTON STRATEGY - 3-Button Framework (FOLLOWUP #2):
 
-PROGRESSIVE PROFILING - STAGE 2 (PAIN POINT DISCOVERY):
-- Analyze their Stage 1 button choice (business type/size)
-- Create buttons for SPECIFIC PROBLEMS they likely face
-- Extract pain points actually mentioned on the current page
-- NEVER repeat buttons from Stage 1
+**MANDATORY 3-BUTTON STRUCTURE:**
+1. **Button 1: DEEPER PAIN POINT** - More specific customer challenge (different from Followup #1)
+2. **Button 2: ADVANCED SOLUTION** - Advanced feature or specific requirement from page
+3. **Button 3: BUSINESS NEED** - Business requirement or growth-related option
 
-PAIN POINT MAPPING BY BUSINESS TYPE:
-**If Stage 1 was "Solo Practice":**
-- "Time Management" | "Client Acquisition" | "Manual Processes"
+**FOLLOWUP #2 BUTTON EXAMPLES (MUST BE DIFFERENT FROM FOLLOWUP #1):**
+- Deeper Pain Point: "Client No-Shows" | "Double Bookings" | "Staff Coordination"
+- Advanced Solution: "Smart Reminders" | "Team Dashboard" | "Analytics Reports"  
+- Business Need: "Scale Operations" | "Increase Revenue" | "Save Time Daily"
 
-**If Stage 1 was "Growing Business":**  
-- "Scheduling Chaos" | "Team Coordination" | "Payment Issues"
+**PROGRESSIVE DISCOVERY STRATEGY:**
+- Build on Followup #1 choice to go deeper
+- Extract MORE SPECIFIC pain points from page content
+- Focus on BUSINESS IMPACT rather than just features
+- Address GROWTH and SCALE considerations
 
-**If Stage 1 was "Enterprise/Large":**
-- "System Integration" | "Compliance Needs" | "Scalability Issues"
+**PAGE CONTENT DEEP DIVE:**
+- Look for specific problems: "no-shows", "conflicts", "coordination", "tracking"
+- Find advanced features: "analytics", "reporting", "automation", "insights"
+- Identify business goals: "revenue", "efficiency", "growth", "scale"
 
-PAIN POINT EXTRACTION FROM PAGE CONTENT:
-- Page mentions "double bookings" → Button: "Booking Conflicts"
-- Page mentions "payment delays" → Button: "Payment Issues"
-- Page mentions "no-show clients" → Button: "Client No-Shows"  
-- Page mentions "manual scheduling" → Button: "Manual Work"
-- Page mentions "staff coordination" → Button: "Team Problems"
-- Page mentions "client communication" → Button: "Communication Gaps"
-
-MANDATORY STAGE 2 REQUIREMENTS:
-- NEVER repeat Stage 1 button concepts
-- Focus on PROBLEMS, not solutions yet
-- Use pain points actually mentioned on page
-- Create emotional connection to their challenges
-- Set up for solution-focused Stage 3
-
-BUTTON NAMING FOR PAIN POINTS:
-- Keep problem-focused: "Scheduling Issues", "Payment Problems", "Team Challenges"
-- 2-4 words maximum
-- Reference actual challenges from page content
-- Avoid solution language (save for Stage 3)
+**DIFFERENTIATION FROM FOLLOWUP #1:**
+- Followup #1: Basic discovery (general pain + basic solution + basic need)
+- Followup #2: Deeper analysis (specific pain + advanced solution + business impact)
+- NEVER use similar button concepts between followups
 
 CREATIVE MICRO-CONVERSION PATTERNS - Use variety:
 - Benefit-focused: "Save [time/money] with...", "Get [result] in minutes", "Boost efficiency by..."
@@ -1909,14 +1965,17 @@ CREATIVE MICRO-CONVERSION PATTERNS - Use variety:
 - Achievement: "Unlock [benefit]...", "Access [feature]...", "Enable [capability]..."
 
 ABSOLUTE VARIETY REQUIREMENTS:
-- NEVER start with "Managing..." (too repetitive now)
-- NEVER start with "Struggling with..." (completely overused)
-- NEVER start with "Looking to..." (if used in previous message)
+- NEVER start with "Tired of..." (BANNED - overused)
+- NEVER start with "Managing..." (BANNED - too repetitive now)
+- NEVER start with "Struggling with..." (BANNED - completely overused)
+- NEVER start with "Looking to..." (BANNED - if used in previous message)
+- NEVER start with "Exhausted from..." (BANNED - similar to tired)
+- NEVER start with "Sick of..." (BANNED - similar to tired)
 - NEVER repeat the same opening structure
 - MUST use different emotional tone than first followup
 - MUST use different sentence pattern (question vs statement vs benefit)
 
-AVOID: "Struggling with..." or repetitive openings from previous messages
+AVOID: "Tired of...", "Struggling with..." or repetitive openings from previous messages
 
 Context:
 Page Context:

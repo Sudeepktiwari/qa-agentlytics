@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lead Bot: 3-Button Strategy Test</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+      }
+      .container {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        color: #2c3e50;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+      .subtitle {
+        text-align: center;
+        color: #7f8c8d;
+        margin-bottom: 30px;
+      }
+      .strategy-section {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+        border-left: 4px solid #3498db;
+      }
+      .button-framework {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 15px;
+        margin: 20px 0;
+      }
+      .button-type {
+        background: white;
+        border-radius: 8px;
+        padding: 15px;
+        text-align: center;
+        border: 2px solid #e74c3c;
+      }
+      .button-type.pain-point {
+        border-color: #e74c3c;
+      }
+      .button-type.solution {
+        border-color: #3498db;
+      }
+      .button-type.requirement {
+        border-color: #27ae60;
+      }
+      .test-button {
+        background: #3498db;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 16px;
+        margin: 10px 5px;
+        transition: all 0.3s;
+      }
+      .test-button:hover {
+        background: #2980b9;
+        transform: translateY(-2px);
+      }
+      .results {
+        background: #f1f2f6;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+        min-height: 100px;
+      }
+      .followup-result {
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 15px 0;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .button-analysis {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 10px;
+        margin: 10px 0;
+      }
+      .button-check {
+        padding: 8px;
+        border-radius: 4px;
+        text-align: center;
+        font-size: 12px;
+      }
+      .button-check.correct {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
+      .button-check.incorrect {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+      }
+      .comparison-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin: 20px 0;
+      }
+      .comparison-card {
+        background: white;
+        border-radius: 8px;
+        padding: 15px;
+        border: 2px solid #ecf0f1;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🎯 Lead Bot: 3-Button Strategy Test</h1>
+      <p class="subtitle">
+        Testing the new mandatory 3-button framework for lead generation
+      </p>
+
+      <div class="strategy-section">
+        <h2>📋 New 3-Button Framework</h2>
+        <p>Every followup must follow this exact button structure:</p>
+
+        <div class="button-framework">
+          <div class="button-type pain-point">
+            <h3>🔴 Button 1</h3>
+            <strong>PAIN POINT</strong>
+            <p>Customer challenge based on page context</p>
+            <em
+              >Examples: "Scheduling Issues", "Manual Work", "Time
+              Constraints"</em
+            >
+          </div>
+          <div class="button-type solution">
+            <h3>🔵 Button 2</h3>
+            <strong>SOLUTION/FEATURE</strong>
+            <p>Specific solution or feature mentioned on page</p>
+            <em
+              >Examples: "Auto Booking", "Payment Integration", "Mobile App"</em
+            >
+          </div>
+          <div class="button-type requirement">
+            <h3>🟢 Button 3</h3>
+            <strong>REQUIREMENT</strong>
+            <p>Customer requirements or page context option</p>
+            <em
+              >Examples: "Custom Setup", "Enterprise Features", "Budget
+              Options"</em
+            >
+          </div>
+        </div>
+      </div>
+
+      <div class="strategy-section">
+        <h2>🔄 Followup Differentiation Strategy</h2>
+        <div class="comparison-grid">
+          <div class="comparison-card">
+            <h3>Followup #1 Focus</h3>
+            <ul>
+              <li><strong>Pain Point:</strong> General challenges</li>
+              <li><strong>Solution:</strong> Basic features</li>
+              <li><strong>Requirement:</strong> General needs</li>
+            </ul>
+            <p>
+              <em
+                >Examples: "Scheduling Issues" | "Auto Booking" | "Custom
+                Setup"</em
+              >
+            </p>
+          </div>
+          <div class="comparison-card">
+            <h3>Followup #2 Focus</h3>
+            <ul>
+              <li><strong>Pain Point:</strong> Specific deeper problems</li>
+              <li><strong>Solution:</strong> Advanced features</li>
+              <li><strong>Requirement:</strong> Business impact needs</li>
+            </ul>
+            <p>
+              <em
+                >Examples: "Client No-Shows" | "Smart Reminders" | "Scale
+                Operations"</em
+              >
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="strategy-section">
+        <h2>🧪 Live Testing</h2>
+        <p>
+          Test both followup stages to ensure proper button differentiation:
+        </p>
+
+        <button class="test-button" onclick="testFollowup(0)">
+          Test Followup #1
+        </button>
+        <button class="test-button" onclick="testFollowup(1)">
+          Test Followup #2
+        </button>
+        <button class="test-button" onclick="testBothFollowups()">
+          Test Both & Compare
+        </button>
+        <button class="test-button" onclick="testPersonaButtons()">
+          Test Persona Buttons
+        </button>
+
+        <div class="results" id="testResults">
+          <p><em>Click buttons above to test the 3-button framework...</em></p>
+        </div>
+      </div>
+
+      <div class="strategy-section">
+        <h2>✅ Success Criteria</h2>
+        <ul>
+          <li>
+            <strong>Button 1 Always:</strong> Pain point related to page content
+          </li>
+          <li>
+            <strong>Button 2 Always:</strong> Solution/feature mentioned on page
+          </li>
+          <li>
+            <strong>Button 3 Always:</strong> Customer requirement or page
+            context
+          </li>
+          <li>
+            <strong>No Repetition:</strong> Followup #2 buttons different from
+            Followup #1
+          </li>
+          <li>
+            <strong>Page Context:</strong> All buttons extracted from actual
+            page content
+          </li>
+          <li>
+            <strong>Lead Qualification:</strong> Each button choice reveals
+            customer profile
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <script>
+      const API_BASE = window.location.origin;
+
+      function analyzeButtonStructure(buttons) {
+        if (!buttons || buttons.length !== 3) {
+          return {
+            structure: "incorrect",
+            issues: ["Must have exactly 3 buttons"],
+            button1: { type: "unknown", correct: false },
+            button2: { type: "unknown", correct: false },
+            button3: { type: "unknown", correct: false },
+          };
+        }
+
+        // Pain point keywords
+        const painPointKeywords = [
+          "issues",
+          "problems",
+          "chaos",
+          "conflicts",
+          "manual",
+          "time",
+          "constraints",
+          "delays",
+          "management",
+          "coordination",
+          "shows",
+        ];
+
+        // Solution/feature keywords
+        const solutionKeywords = [
+          "auto",
+          "smart",
+          "booking",
+          "integration",
+          "app",
+          "dashboard",
+          "analytics",
+          "reminders",
+          "setup",
+          "access",
+          "features",
+        ];
+
+        // Requirement keywords
+        const requirementKeywords = [
+          "custom",
+          "enterprise",
+          "budget",
+          "plans",
+          "options",
+          "pricing",
+          "support",
+          "scale",
+          "operations",
+          "growth",
+        ];
+
+        function categorizeButton(button) {
+          const lower = button.toLowerCase();
+          if (painPointKeywords.some((keyword) => lower.includes(keyword))) {
+            return "pain-point";
+          } else if (
+            solutionKeywords.some((keyword) => lower.includes(keyword))
+          ) {
+            return "solution";
+          } else if (
+            requirementKeywords.some((keyword) => lower.includes(keyword))
+          ) {
+            return "requirement";
+          } else {
+            return "unknown";
+          }
+        }
+
+        const analysis = {
+          button1: {
+            text: buttons[0],
+            type: categorizeButton(buttons[0]),
+            correct: categorizeButton(buttons[0]) === "pain-point",
+          },
+          button2: {
+            text: buttons[1],
+            type: categorizeButton(buttons[1]),
+            correct: categorizeButton(buttons[1]) === "solution",
+          },
+          button3: {
+            text: buttons[2],
+            type: categorizeButton(buttons[2]),
+            correct: categorizeButton(buttons[2]) === "requirement",
+          },
+        };
+
+        const correctCount = [
+          analysis.button1.correct,
+          analysis.button2.correct,
+          analysis.button3.correct,
+        ].filter(Boolean).length;
+
+        return {
+          ...analysis,
+          structure:
+            correctCount === 3
+              ? "perfect"
+              : correctCount >= 2
+              ? "good"
+              : "needs-improvement",
+          score: `${correctCount}/3`,
+          issues: [],
+        };
+      }
+
+      async function testFollowup(followupNumber) {
+        const resultsDiv = document.getElementById("testResults");
+        resultsDiv.innerHTML = `<p>🔄 Testing followup #${
+          followupNumber + 1
+        } for 3-button structure...</p>`;
+
+        try {
+          const response = await fetch(`${API_BASE}/api/chat`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-api-key": "test-key",
+            },
+            body: JSON.stringify({
+              pageUrl: "https://example.com/fitness-scheduling-automation",
+              proactive: true,
+              followup: followupNumber,
+              message: "",
+              adminId: "test-admin",
+            }),
+          });
+
+          const result = await response.json();
+          const buttons = result.buttons || [];
+          const analysis = analyzeButtonStructure(buttons);
+
+          let structureIcon = "";
+          let structureColor = "";
+          if (analysis.structure === "perfect") {
+            structureIcon = "✅";
+            structureColor = "#27ae60";
+          } else if (analysis.structure === "good") {
+            structureIcon = "⚠️";
+            structureColor = "#f39c12";
+          } else {
+            structureIcon = "❌";
+            structureColor = "#e74c3c";
+          }
+
+          resultsDiv.innerHTML = `
+                    <div class="followup-result">
+                        <h3>${structureIcon} Followup #${
+            followupNumber + 1
+          } Results (Score: ${analysis.score})</h3>
+                        <div style="color: ${structureColor}; font-weight: bold; margin: 10px 0;">
+                            Structure Quality: ${analysis.structure.toUpperCase()}
+                        </div>
+                        
+                        <div><strong>Message:</strong> ${
+                          result.answer || "No message"
+                        }</div>
+                        
+                        <div class="button-analysis">
+                            <div class="button-check ${
+                              analysis.button1.correct ? "correct" : "incorrect"
+                            }">
+                                <strong>Button 1</strong> (Pain Point)<br>
+                                "${analysis.button1.text}"<br>
+                                <em>Detected: ${analysis.button1.type}</em>
+                            </div>
+                            <div class="button-check ${
+                              analysis.button2.correct ? "correct" : "incorrect"
+                            }">
+                                <strong>Button 2</strong> (Solution/Feature)<br>
+                                "${analysis.button2.text}"<br>
+                                <em>Detected: ${analysis.button2.type}</em>
+                            </div>
+                            <div class="button-check ${
+                              analysis.button3.correct ? "correct" : "incorrect"
+                            }">
+                                <strong>Button 3</strong> (Requirement)<br>
+                                "${analysis.button3.text}"<br>
+                                <em>Detected: ${analysis.button3.type}</em>
+                            </div>
+                        </div>
+
+                        ${
+                          analysis.structure !== "perfect"
+                            ? `
+                            <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px; padding: 10px; margin-top: 10px;">
+                                <strong>Improvement Needed:</strong> Ensure Button 1 = Pain Point, Button 2 = Solution/Feature, Button 3 = Requirement
+                            </div>
+                        `
+                            : ""
+                        }
+                    </div>
+                `;
+        } catch (error) {
+          resultsDiv.innerHTML = `<p style="color: #e74c3c;">Error: ${error.message}</p>`;
+        }
+      }
+
+      async function testBothFollowups() {
+        const resultsDiv = document.getElementById("testResults");
+        resultsDiv.innerHTML =
+          "<p>🔄 Testing both followups to check differentiation...</p>";
+
+        try {
+          // Test both followups
+          const results = [];
+          for (let i = 0; i < 2; i++) {
+            const response = await fetch(`${API_BASE}/api/chat`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "x-api-key": "test-key",
+              },
+              body: JSON.stringify({
+                pageUrl: "https://example.com/fitness-scheduling-automation",
+                proactive: true,
+                followup: i,
+                message: "",
+                adminId: "test-admin",
+              }),
+            });
+
+            const result = await response.json();
+            const analysis = analyzeButtonStructure(result.buttons || []);
+            results.push({
+              followupNumber: i + 1,
+              buttons: result.buttons || [],
+              message: result.answer || "",
+              analysis: analysis,
+            });
+          }
+
+          // Check for button repetition
+          const allButtons = [...results[0].buttons, ...results[1].buttons];
+          const uniqueButtons = new Set(allButtons.map((b) => b.toLowerCase()));
+          const hasRepetition = uniqueButtons.size < allButtons.length;
+
+          let resultsHTML = `
+                    <h3>📊 Both Followups Comparison</h3>
+                    <div style="background: ${
+                      hasRepetition ? "#f8d7da" : "#d4edda"
+                    }; border-radius: 8px; padding: 15px; margin: 15px 0;">
+                        <strong>Button Differentiation: ${
+                          hasRepetition
+                            ? "❌ REPETITION DETECTED"
+                            : "✅ UNIQUE BUTTONS"
+                        }</strong><br>
+                        <em>Unique buttons: ${uniqueButtons.size}/${
+            allButtons.length
+          }</em>
+                    </div>
+                `;
+
+          results.forEach((result) => {
+            const structureIcon =
+              result.analysis.structure === "perfect"
+                ? "✅"
+                : result.analysis.structure === "good"
+                ? "⚠️"
+                : "❌";
+
+            resultsHTML += `
+                        <div class="followup-result">
+                            <h4>${structureIcon} Followup #${
+              result.followupNumber
+            } (Score: ${result.analysis.score})</h4>
+                            <div><strong>Message:</strong> ${
+                              result.message
+                            }</div>
+                            <div class="button-analysis">
+                                <div class="button-check ${
+                                  result.analysis.button1.correct
+                                    ? "correct"
+                                    : "incorrect"
+                                }">
+                                    <strong>Pain Point</strong><br>"${
+                                      result.analysis.button1.text
+                                    }"
+                                </div>
+                                <div class="button-check ${
+                                  result.analysis.button2.correct
+                                    ? "correct"
+                                    : "incorrect"
+                                }">
+                                    <strong>Solution/Feature</strong><br>"${
+                                      result.analysis.button2.text
+                                    }"
+                                </div>
+                                <div class="button-check ${
+                                  result.analysis.button3.correct
+                                    ? "correct"
+                                    : "incorrect"
+                                }">
+                                    <strong>Requirement</strong><br>"${
+                                      result.analysis.button3.text
+                                    }"
+                                </div>
+                            </div>
+                        </div>
+                    `;
+          });
+
+          resultsDiv.innerHTML = resultsHTML;
+        } catch (error) {
+          resultsDiv.innerHTML = `<p style="color: #e74c3c;">Error: ${error.message}</p>`;
+        }
+      }
+
+      async function testPersonaButtons() {
+        const resultsDiv = document.getElementById("testResults");
+        resultsDiv.innerHTML =
+          "<p>🔄 Testing persona-based button generation...</p>";
+
+        try {
+          const response = await fetch(`${API_BASE}/api/chat`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-api-key": "test-key",
+            },
+            body: JSON.stringify({
+              pageUrl: "https://example.com/enterprise-scheduling-solution",
+              proactive: true,
+              followup: 0,
+              message: "Hi, I run a small business and need scheduling help",
+              adminId: "test-admin",
+            }),
+          });
+
+          const result = await response.json();
+          const analysis = analyzeButtonStructure(result.buttons || []);
+
+          const structureIcon =
+            analysis.structure === "perfect"
+              ? "✅"
+              : analysis.structure === "good"
+              ? "⚠️"
+              : "❌";
+
+          resultsDiv.innerHTML = `
+                    <div class="followup-result">
+                        <h3>${structureIcon} Persona-Based Button Test (Score: ${
+            analysis.score
+          })</h3>
+                        <div><strong>User Context:</strong> "I run a small business and need scheduling help"</div>
+                        <div><strong>Generated Message:</strong> ${
+                          result.answer || "No message"
+                        }</div>
+                        
+                        <div class="button-analysis">
+                            <div class="button-check ${
+                              analysis.button1.correct ? "correct" : "incorrect"
+                            }">
+                                <strong>Pain Point</strong><br>
+                                "${analysis.button1.text}"<br>
+                                <em>Should address small business pain points</em>
+                            </div>
+                            <div class="button-check ${
+                              analysis.button2.correct ? "correct" : "incorrect"
+                            }">
+                                <strong>Solution/Feature</strong><br>
+                                "${analysis.button2.text}"<br>
+                                <em>Should offer relevant solution</em>
+                            </div>
+                            <div class="button-check ${
+                              analysis.button3.correct ? "correct" : "incorrect"
+                            }">
+                                <strong>Requirement</strong><br>
+                                "${analysis.button3.text}"<br>
+                                <em>Should match small business needs</em>
+                            </div>
+                        </div>
+                    </div>
+                `;
+        } catch (error) {
+          resultsDiv.innerHTML = `<p style="color: #e74c3c;">Error: ${error.message}</p>`;
+        }
+      }
+
+      // Test on page load
+      window.addEventListener("load", () => {
+        console.log("🎯 Lead Bot 3-Button Strategy Test Page Loaded");
+      });
+    </script>
+  </body>
+</html>

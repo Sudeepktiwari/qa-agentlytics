@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test: Tired of... Pattern Fixed</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+      }
+      .container {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        color: #2c3e50;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+      .subtitle {
+        text-align: center;
+        color: #7f8c8d;
+        margin-bottom: 30px;
+      }
+      .test-section {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+        border-left: 4px solid #3498db;
+      }
+      .issue-box {
+        background: #ffe6e6;
+        border: 1px solid #ff9999;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 15px 0;
+      }
+      .fix-box {
+        background: #e6ffe6;
+        border: 1px solid #99ff99;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 15px 0;
+      }
+      .example {
+        font-style: italic;
+        color: #555;
+        margin: 10px 0;
+        padding: 10px;
+        background: #ffffff;
+        border-radius: 5px;
+      }
+      .test-button {
+        background: #3498db;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 16px;
+        margin: 10px 5px;
+        transition: all 0.3s;
+      }
+      .test-button:hover {
+        background: #2980b9;
+        transform: translateY(-2px);
+      }
+      .results {
+        background: #f1f2f6;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+        min-height: 100px;
+      }
+      .message-preview {
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 10px 0;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .banned-pattern {
+        color: #e74c3c;
+        font-weight: bold;
+        text-decoration: line-through;
+      }
+      .good-pattern {
+        color: #27ae60;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🎯 Lead Generation Bot: "Tired of..." Pattern Fix</h1>
+      <p class="subtitle">
+        Testing creative variety enforcement to eliminate repetitive message
+        openings
+      </p>
+
+      <div class="test-section">
+        <h2>🚨 The Problem We Fixed</h2>
+        <div class="issue-box">
+          <h3>❌ Repetitive Pattern Found:</h3>
+          <div class="example">
+            <span class="banned-pattern"
+              >"Tired of juggling appointments and managing clients?"</span
+            ><br />
+            <span class="banned-pattern"
+              >"Tired of juggling appointments and client management?"</span
+            ><br />
+            <span class="banned-pattern"
+              >"Tired of scheduling conflicts impacting your client
+              sessions?"</span
+            >
+          </div>
+          <p>
+            <strong>Issue:</strong> All 3 followup messages started with "Tired
+            of..." making the bot seem robotic and repetitive.
+          </p>
+        </div>
+
+        <div class="fix-box">
+          <h3>✅ What We Implemented:</h3>
+          <ul>
+            <li>
+              <strong>Banned "Tired of..."</strong> from ALL message generation
+              prompts
+            </li>
+            <li>
+              <strong>Enhanced creative variety enforcement</strong> with 10+
+              opening patterns
+            </li>
+            <li>
+              <strong>Progressive profiling system</strong> - each followup
+              builds customer intelligence
+            </li>
+            <li>
+              <strong>Page content analysis</strong> for contextual,
+              non-repetitive messages
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="test-section">
+        <h2>🧪 Live Testing</h2>
+        <p>
+          Test the fixed system with multiple followup messages to ensure
+          variety:
+        </p>
+
+        <button class="test-button" onclick="testFollowup(1)">
+          Test Followup #1
+        </button>
+        <button class="test-button" onclick="testFollowup(2)">
+          Test Followup #2
+        </button>
+        <button class="test-button" onclick="testFollowup(3)">
+          Test Followup #3
+        </button>
+        <button class="test-button" onclick="testMultiple()">
+          Test 5 Messages Rapid-Fire
+        </button>
+
+        <div class="results" id="testResults">
+          <p>
+            <em
+              >Click buttons above to test the fixed creative variety
+              system...</em
+            >
+          </p>
+        </div>
+      </div>
+
+      <div class="test-section">
+        <h2>🎯 Expected Creative Variety</h2>
+        <div class="example">
+          <h4>✅ Good Opening Patterns (What We Should See Now):</h4>
+          <p>
+            <span class="good-pattern">"Growing your fitness business?"</span>
+            <em>(Question-based)</em>
+          </p>
+          <p>
+            <span class="good-pattern"
+              >"Save 15 hours weekly with automated scheduling..."</span
+            >
+            <em>(Benefit-focused)</em>
+          </p>
+          <p>
+            <span class="good-pattern"
+              >"Over 500 fitness studios choose our platform..."</span
+            >
+            <em>(Social proof)</em>
+          </p>
+          <p>
+            <span class="good-pattern"
+              >"Perfect for personal trainers managing multiple
+              clients..."</span
+            >
+            <em>(Industry-specific)</em>
+          </p>
+          <p>
+            <span class="good-pattern"
+              >"Automate your booking conflicts..."</span
+            >
+            <em>(Solution-oriented)</em>
+          </p>
+          <p>
+            <span class="good-pattern">"No more scheduling headaches..."</span>
+            <em>(Problem-solving)</em>
+          </p>
+        </div>
+
+        <div class="example">
+          <h4>❌ Banned Patterns (Should NEVER Appear):</h4>
+          <p>
+            <span class="banned-pattern">"Tired of..."</span>
+            <em>(Overused - BANNED)</em>
+          </p>
+          <p>
+            <span class="banned-pattern">"Struggling with..."</span>
+            <em>(Repetitive - BANNED)</em>
+          </p>
+          <p>
+            <span class="banned-pattern">"Managing..."</span>
+            <em>(Generic - BANNED)</em>
+          </p>
+          <p>
+            <span class="banned-pattern">"Exhausted from..."</span>
+            <em>(Similar to tired - BANNED)</em>
+          </p>
+          <p>
+            <span class="banned-pattern">"Sick of..."</span>
+            <em>(Similar to tired - BANNED)</em>
+          </p>
+        </div>
+      </div>
+
+      <div class="test-section">
+        <h2>🚀 Progressive Profiling Strategy</h2>
+        <p>Our 3-stage customer intelligence gathering system:</p>
+
+        <div class="example">
+          <h4>Stage 1: WHO ARE THEY? (Business Type Discovery)</h4>
+          <p><strong>Goal:</strong> Segment by business type/size</p>
+          <p>
+            <strong>Example Buttons:</strong> "Solo Trainer" | "Growing Studio"
+            | "Multi-Location"
+          </p>
+        </div>
+
+        <div class="example">
+          <h4>Stage 2: WHAT'S THEIR PROBLEM? (Pain Point Identification)</h4>
+          <p><strong>Goal:</strong> Discover specific challenges</p>
+          <p>
+            <strong>Example Buttons:</strong> "Scheduling Chaos" | "Payment
+            Issues" | "Client No-Shows"
+          </p>
+        </div>
+
+        <div class="example">
+          <h4>Stage 3: HOW TO SOLVE IT? (Solution Matching)</h4>
+          <p><strong>Goal:</strong> Connect pain points to features</p>
+          <p>
+            <strong>Example Buttons:</strong> "Auto Scheduling" | "Payment
+            Automation" | "Smart Reminders"
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const API_BASE = window.location.origin;
+
+      async function testFollowup(followupNumber) {
+        const resultsDiv = document.getElementById("testResults");
+        resultsDiv.innerHTML = `<p>🔄 Testing followup #${followupNumber}...</p>`;
+
+        try {
+          const response = await fetch(`${API_BASE}/api/chat`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-api-key": "test-key",
+            },
+            body: JSON.stringify({
+              pageUrl: "https://example.com/fitness-scheduling",
+              proactive: true,
+              followup: followupNumber - 1, // 0-indexed
+              message: "",
+              adminId: "test-admin",
+            }),
+          });
+
+          const result = await response.json();
+
+          // Check for banned patterns
+          const message = result.answer || "";
+          const bannedPatterns = [
+            "Tired of",
+            "Struggling with",
+            "Managing",
+            "Exhausted from",
+            "Sick of",
+          ];
+          const foundBanned = bannedPatterns.find((pattern) =>
+            message.includes(pattern)
+          );
+
+          let patternCheck = "";
+          if (foundBanned) {
+            patternCheck = `<div style="color: #e74c3c; font-weight: bold;">⚠️ BANNED PATTERN DETECTED: "${foundBanned}"</div>`;
+          } else {
+            patternCheck = `<div style="color: #27ae60; font-weight: bold;">✅ No banned patterns found - Good variety!</div>`;
+          }
+
+          resultsDiv.innerHTML = `
+                    <h3>Followup #${followupNumber} Results:</h3>
+                    ${patternCheck}
+                    <div class="message-preview">
+                        <strong>Message:</strong> ${message}<br>
+                        <strong>Buttons:</strong> ${
+                          result.buttons ? result.buttons.join(" | ") : "None"
+                        }
+                    </div>
+                `;
+        } catch (error) {
+          resultsDiv.innerHTML = `<p style="color: #e74c3c;">Error: ${error.message}</p>`;
+        }
+      }
+
+      async function testMultiple() {
+        const resultsDiv = document.getElementById("testResults");
+        resultsDiv.innerHTML =
+          "<p>🔄 Testing 5 rapid-fire messages for variety...</p>";
+
+        const messages = [];
+        const bannedPatterns = [
+          "Tired of",
+          "Struggling with",
+          "Managing",
+          "Exhausted from",
+          "Sick of",
+        ];
+
+        for (let i = 0; i < 5; i++) {
+          try {
+            const response = await fetch(`${API_BASE}/api/chat`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "x-api-key": "test-key",
+              },
+              body: JSON.stringify({
+                pageUrl: "https://example.com/fitness-scheduling",
+                proactive: true,
+                followup: Math.floor(Math.random() * 3), // Random followup stage
+                message: "",
+                adminId: "test-admin",
+              }),
+            });
+
+            const result = await response.json();
+            const message = result.answer || "";
+            const foundBanned = bannedPatterns.find((pattern) =>
+              message.includes(pattern)
+            );
+
+            messages.push({
+              number: i + 1,
+              message: message,
+              buttons: result.buttons || [],
+              hasBannedPattern: !!foundBanned,
+              bannedPattern: foundBanned,
+            });
+          } catch (error) {
+            messages.push({
+              number: i + 1,
+              message: `Error: ${error.message}`,
+              buttons: [],
+              hasBannedPattern: false,
+            });
+          }
+        }
+
+        // Calculate variety metrics
+        const totalBanned = messages.filter((m) => m.hasBannedPattern).length;
+        const uniqueOpenings = new Set(
+          messages.map((m) => m.message.split(" ").slice(0, 3).join(" "))
+        ).size;
+
+        let resultsHTML = `
+                <h3>5-Message Variety Test Results:</h3>
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                    <strong>Variety Metrics:</strong><br>
+                    • Banned patterns found: ${totalBanned}/5 ${
+          totalBanned === 0 ? "✅" : "❌"
+        }<br>
+                    • Unique opening patterns: ${uniqueOpenings}/5 ${
+          uniqueOpenings >= 4 ? "✅" : "⚠️"
+        }<br>
+                    • Overall variety: ${
+                      totalBanned === 0 && uniqueOpenings >= 4
+                        ? "EXCELLENT ✅"
+                        : "NEEDS IMPROVEMENT ❌"
+                    }
+                </div>
+            `;
+
+        messages.forEach((msg) => {
+          const statusIcon = msg.hasBannedPattern ? "❌" : "✅";
+          const statusColor = msg.hasBannedPattern ? "#e74c3c" : "#27ae60";
+
+          resultsHTML += `
+                    <div class="message-preview">
+                        <strong>${statusIcon} Message #${
+            msg.number
+          }:</strong><br>
+                        <div style="color: ${statusColor};">
+                            ${msg.message}
+                        </div>
+                        ${
+                          msg.hasBannedPattern
+                            ? `<div style="color: #e74c3c; font-size: 12px;">⚠️ Contains banned pattern: "${msg.bannedPattern}"</div>`
+                            : ""
+                        }
+                        <div style="font-size: 12px; color: #666; margin-top: 5px;">
+                            Buttons: ${msg.buttons.join(" | ") || "None"}
+                        </div>
+                    </div>
+                `;
+        });
+
+        resultsDiv.innerHTML = resultsHTML;
+      }
+
+      // Test on page load
+      window.addEventListener("load", () => {
+        console.log(
+          '🎯 Lead Generation Bot - "Tired of..." Pattern Fix Test Page Loaded'
+        );
+        console.log(
+          "📊 This page tests the creative variety enforcement system"
+        );
+      });
+    </script>
+  </body>
+</html>
