@@ -71,7 +71,7 @@ Return this exact JSON structure:
   "targetAudiences": [
     {
       "id": "persona_1",
-      "name": "Persona Name",
+      "name": "Customer Segment Name (e.g., 'Small Business Owner', 'Enterprise IT Director', 'SaaS Startup Founder')",
       "type": "small_business",
       "industries": ["technology"],
       "companySize": "1-10",
@@ -89,6 +89,13 @@ Return this exact JSON structure:
   "competitorMentions": [],
   "pricingStrategy": "subscription"
 }
+
+IMPORTANT GUIDELINES:
+- "name" field should be a customer segment/role (e.g., "Small Business Owner", "Enterprise Decision Maker")
+- NEVER use personal names like "John", "Sarah", "Mike" - these are business segments, not individuals
+- Focus on business roles, company types, and professional contexts
+- Create personas that represent customer archetypes/segments for targeting
+- These will be used for messaging personalization based on business context, not personal identity
 
 Create realistic personas based on the actual content. Even if content is limited, create at least 1-2 basic personas.`;
 

@@ -498,16 +498,12 @@ async function generatePersonaBasedFollowup(
 ): Promise<any> {
   try {
     const systemPrompt = `
-You are a sales assistant specialized in ${
-      detectedPersona.name
-    } customers. Generate a followup message that resonates with their specific persona.
+You are a sales assistant specialized in understanding different customer segments. Generate a followup message that resonates with this specific customer type without using personal names.
 
-Customer Persona Profile:
-- Name: ${detectedPersona.name}
-- Type: ${detectedPersona.type}
-- Company Size: ${detectedPersona.companySize}
+Customer Segment Profile:
+- Segment: ${detectedPersona.type} (${detectedPersona.companySize} company)
 - Industries: ${detectedPersona.industries.join(", ")}
-- Pain Points: ${detectedPersona.painPoints.join(", ")}
+- Key Pain Points: ${detectedPersona.painPoints.join(", ")}
 - Preferred Features: ${detectedPersona.preferredFeatures.join(", ")}
 - Budget Range: ${detectedPersona.budget}
 - Technical Level: ${detectedPersona.technicalLevel}
@@ -522,12 +518,18 @@ Current Context:
 
 Generate your response in JSON format:
 {
-  "mainText": "<Persona-specific message under 30 words that addresses their specific pain points and speaks their language>",
-  "buttons": ["<3 buttons specific to what this persona type actually needs on this page>"],
-  "emailPrompt": "<If appropriate for this persona and followup count>"
+  "mainText": "<Segment-specific message under 30 words that addresses their pain points using situational language, NOT personal names>",
+  "buttons": ["<3 buttons specific to what this customer segment actually needs>"],
+  "emailPrompt": "<If appropriate for this segment and followup count>"
 }
 
-Guidelines:
+IMPORTANT GUIDELINES:
+- NEVER use personal names like "Hi John" or "Hello Sarah"
+- Use situational language like "Running a startup?", "Managing a team?", "Looking for enterprise features?"
+- Reference their likely situation, not a specific person
+- Address pain points relevant to their company size/type
+- Speak in their preferred technical level
+- Focus on business context, not personal identity
 - Reference their specific pain points and preferred features
 - Use language appropriate for their technical level
 - Consider their budget range and company size
@@ -1370,6 +1372,8 @@ RESPONSE FORMAT:
 - Reference actual page content when relevant
 - Ask questions that lead to meaningful lead qualification
 - Provide buttons that help them get specific answers or take relevant actions
+- NEVER use personal names (no "Hi John", "Hello Sarah", etc.)
+- Use situational language instead ("Running a startup?", "Managing a team?")
 
 LEAD QUALIFICATION FOCUS:
 - Company size or role (when relevant to the page content)
@@ -1378,6 +1382,12 @@ LEAD QUALIFICATION FOCUS:
 - Budget considerations (when contextually appropriate)
 - Technical requirements or preferences
 - Current solutions or alternatives they're considering
+
+MESSAGING APPROACH:
+- Use business/situational context, not personal identity
+- Address their likely role or company stage
+- Reference their business challenges, not personal details
+- Focus on what they're trying to accomplish professionally
 
 CORE PRINCIPLES:
 1. Analyze the actual page content to understand what's available
