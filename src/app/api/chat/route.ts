@@ -523,6 +523,23 @@ Generate your response in JSON format:
   "emailPrompt": "<ONLY include this if followupCount >= 2 AND user hasn't provided email yet. Otherwise leave empty string.>"
 }
 
+CREATIVE OPENING PATTERNS - Use variety, avoid repetition:
+- Curiosity: "Ready to...", "Want to...", "Looking to..."
+- Benefit-focused: "Save 15 hours weekly with...", "Cut costs by 40% using..."
+- Question-based: "Managing a team?", "Growing fast?", "Need better..."
+- Solution-oriented: "Here's how...", "Perfect for...", "Ideal when..."
+- Industry-specific: "For [industry]...", "Most [role] find...", "Popular with..."
+- Problem-solving: "No more...", "Skip the...", "Avoid..."
+- Value proposition: "Get [benefit] without [pain]", "[Number]% of [segment] choose..."
+- Achievement: "Join [others] who...", "Like [similar companies]..."
+
+AVOID REPETITIVE PATTERNS:
+- Don't start every message with "Struggling with..."
+- Don't use the same opening style consecutively  
+- Vary sentence structure and tone
+- Mix questions, statements, and benefits
+- Use different emotional hooks (curiosity, urgency, social proof, value)
+
 IMPORTANT GUIDELINES:
 - NEVER use personal names like "Hi John" or "Hello Sarah"
 - Use situational language like "Running a startup?", "Managing a team?", "Looking for enterprise features?"
@@ -530,6 +547,7 @@ IMPORTANT GUIDELINES:
 - Address pain points relevant to their company size/type
 - Speak in their preferred technical level
 - Focus on business context, not personal identity
+- BE CREATIVE with openings - use different patterns each time
 
 LEAD PROGRESSION RULES:
 - Followup #1 (followupCount=0): Give contextual question with 3 option buttons, NO email ask
@@ -1648,6 +1666,17 @@ You will receive page and general context, the detected intent, and the previous
   "buttons": ["<Generate exactly 3 buttons, each must be 3-4 words maximum. Make them actionable and specific to the actual page content and user needs.>"],
   "emailPrompt": ""
 }
+
+CREATIVE OPENING PATTERNS - Use variety, avoid repetition:
+- Curiosity: "Ready to...", "Want to...", "Looking to..."
+- Benefit-focused: "Save time with...", "Boost results using..."
+- Question-based: "Need help with...", "Exploring options?"
+- Solution-oriented: "Here's how...", "Perfect for...", "Great when..."
+- Value proposition: "Get [benefit] in minutes", "Most users find..."
+- Achievement: "Join others who...", "Popular choice for..."
+
+AVOID: Starting with "Struggling with..." or repetitive patterns
+
 Context:
 Page Context:
 ${pageChunks.slice(0, 3).join("\n---\n")}
@@ -1680,6 +1709,17 @@ You will receive page and general context, the detected intent, and the previous
   "buttons": ["<Generate exactly 3 buttons, each must be 3-4 words maximum. Make them actionable and specific to the actual page content.>"],
   "emailPrompt": ""
 }
+
+CREATIVE MICRO-CONVERSION PATTERNS - Use variety:
+- Benefit-focused: "Save [time/money] with...", "Get [result] in minutes"
+- Social proof: "Join [number] who...", "Popular with [audience]"
+- Curiosity: "See how...", "Discover why..."
+- Value: "Free [benefit]", "Quick [solution]"
+- Progress: "Next step:", "Here's how:", "Ready to..."
+- Comparison: "Better than [alternative]", "Upgrade from..."
+
+AVOID: "Struggling with..." or repetitive openings from previous messages
+
 Context:
 Page Context:
 ${pageChunks.slice(0, 3).join("\n---\n")}
