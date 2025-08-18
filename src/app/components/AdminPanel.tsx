@@ -76,7 +76,7 @@ const AdminPanel: React.FC = () => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [documentsLoading, setDocumentsLoading] = useState(false);
   const [documentsError, setDocumentsError] = useState("");
-  const [documentsExpanded, setDocumentsExpanded] = useState(true); // Start expanded by default
+  const [documentsExpanded, setDocumentsExpanded] = useState(false);
 
   // Crawled pages management state
   interface CrawledPage {
@@ -91,13 +91,6 @@ const AdminPanel: React.FC = () => {
   const [crawledPages, setCrawledPages] = useState<CrawledPage[]>([]);
   const [crawledPagesLoading, setCrawledPagesLoading] = useState(false);
   const [crawledPagesError, setCrawledPagesError] = useState("");
-
-  // Auto-expand documents section when crawled pages are available
-  useEffect(() => {
-    if (crawledPages && crawledPages.length > 0) {
-      setDocumentsExpanded(true);
-    }
-  }, [crawledPages]);
   const [showSummaryModal, setShowSummaryModal] = useState(false);
   const [selectedPageForSummary, setSelectedPageForSummary] =
     useState<CrawledPage | null>(null);

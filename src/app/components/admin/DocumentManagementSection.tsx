@@ -64,69 +64,37 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
           marginBottom: "32px",
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: "16px",
-          }}
-        >
-          <h2 style={{ margin: 0 }}>
-            📚 Crawled Pages Library ({crawledPages.length} pages)
-          </h2>
-          <button
-            onClick={onToggleDocumentsExpanded}
-            style={{
-              background: documentsExpanded ? "#dc3545" : "#007bff",
-              color: "white",
-              border: "none",
-              padding: "8px 16px",
-              borderRadius: "4px",
-              cursor: "pointer",
-            }}
-          >
-            {documentsExpanded ? "🔼 Collapse" : "🔽 Expand"}
-          </button>
-        </div>
-        {!documentsExpanded && crawledPages.length > 0 && (
-          <p style={{ color: "#666", margin: "0 0 16px 0" }}>
-            Click "🔽 Expand" to view {crawledPages.length} crawled pages with
-            summaries
-          </p>
-        )}
-        {documentsExpanded && (
-          <div>
-            {crawledPagesLoading ? (
-              <div>Loading crawled pages...</div>
-            ) : (
-              <div>
-                {crawledPages.map((page) => (
-                  <div
-                    key={page._id}
-                    style={{
-                      padding: "16px",
-                      border: "1px solid #ccc",
-                      margin: "8px 0",
-                    }}
-                  >
-                    <div>{page.url}</div>
-                    <div>
-                      <button onClick={() => onViewPageSummary?.(page)}>
-                        {page.hasStructuredSummary
-                          ? "👁️ View Summary"
-                          : "⚡ Generate Summary"}
-                      </button>
-                      <button onClick={() => onDeleteCrawledPage?.(page)}>
-                        🗑️ Delete
-                      </button>
-                    </div>
+        <h2>📚 Crawled Pages Library</h2>
+        <div>
+          {crawledPagesLoading ? (
+            <div>Loading crawled pages...</div>
+          ) : (
+            <div>
+              {crawledPages.map((page) => (
+                <div
+                  key={page._id}
+                  style={{
+                    padding: "16px",
+                    border: "1px solid #ccc",
+                    margin: "8px 0",
+                  }}
+                >
+                  <div>{page.url}</div>
+                  <div>
+                    <button onClick={() => onViewPageSummary?.(page)}>
+                      {page.hasStructuredSummary
+                        ? "👁️ View Summary"
+                        : "⚡ Generate Summary"}
+                    </button>
+                    <button onClick={() => onDeleteCrawledPage?.(page)}>
+                      🗑️ Delete
+                    </button>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     );
   }
@@ -140,36 +108,7 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
         marginBottom: "32px",
       }}
     >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "16px",
-        }}
-      >
-        <h2 style={{ margin: 0 }}>
-          📚 Document Library ({documents.length} files)
-        </h2>
-        <button
-          onClick={onToggleDocumentsExpanded}
-          style={{
-            background: documentsExpanded ? "#dc3545" : "#007bff",
-            color: "white",
-            border: "none",
-            padding: "8px 16px",
-            borderRadius: "4px",
-            cursor: "pointer",
-          }}
-        >
-          {documentsExpanded ? "🔼 Collapse" : "🔽 Expand"}
-        </button>
-      </div>
-      {!documentsExpanded && documents.length > 0 && (
-        <p style={{ color: "#666", margin: "0 0 16px 0" }}>
-          Click "🔽 Expand" to view {documents.length} uploaded documents
-        </p>
-      )}
+      <h2>📚 Document Library</h2>
       {documentsExpanded && (
         <div>
           {documentsLoading ? (
