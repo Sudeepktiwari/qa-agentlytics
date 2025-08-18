@@ -113,8 +113,10 @@
         id="apiKey"
         class="api-key-input"
         placeholder="Enter your API key (ak_...)"
+        value="ak_f175e023a6512641baaba1076abcde68"
       />
       <button class="btn" onclick="loadPages()">Load Pages</button>
+      <button class="btn secondary" onclick="debugAPI()">🔍 Debug API</button>
     </div>
 
     <div class="test-section">
@@ -470,6 +472,45 @@
 
       function closeSummaryModal() {
         document.getElementById("summaryModal").style.display = "none";
+      }
+
+      async function debugAPI() {
+        const apiKey = document.getElementById("apiKey").value;
+        console.log("🔍 Debug API called with key:", apiKey);
+
+        try {
+          const response = await fetch("/api/crawled-pages", {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              "x-api-key": apiKey,
+            },
+          });
+
+          const data = await response.json();
+          console.log("📊 API Response:", data);
+          console.log("📊 Response status:", response.status);
+
+          if (data.pages) {
+            console.log("📄 Pages summary:");
+            data.pages.forEach((page, i) => {
+              console.log(
+                `   ${i + 1}. ${page.url} - hasStructuredSummary: ${
+                  page.hasStructuredSummary
+                }`
+              );
+            });
+          }
+
+          alert(
+            `API Debug:\nStatus: ${response.status}\nPages found: ${
+              data.pages?.length || 0
+            }\nCheck console for details`
+          );
+        } catch (error) {
+          console.error("❌ Debug API error:", error);
+          alert(`Debug Error: ${error.message}`);
+        }
       }
 
       // Close modal when clicking outside

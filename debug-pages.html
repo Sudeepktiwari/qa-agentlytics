@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Debug Crawled Pages</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      .section {
+        margin: 20px 0;
+        padding: 20px;
+        border: 1px solid #ddd;
+      }
+      .btn {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        margin: 5px;
+        cursor: pointer;
+      }
+      .btn.success {
+        background: #28a745;
+      }
+      .btn.warning {
+        background: #ffc107;
+        color: black;
+      }
+      .page-item {
+        margin: 10px 0;
+        padding: 10px;
+        border: 1px solid #eee;
+        background: #f9f9f9;
+      }
+      .status-true {
+        color: green;
+        font-weight: bold;
+      }
+      .status-false {
+        color: orange;
+        font-weight: bold;
+      }
+      pre {
+        background: #f4f4f4;
+        padding: 10px;
+        overflow-x: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🔍 Debug Crawled Pages API</h1>
+
+    <div class="section">
+      <h2>🔑 API Configuration</h2>
+      <label>API Key: </label>
+      <input
+        type="text"
+        id="apiKey"
+        value="ak_f175e023a6512641baaba1076abcde68"
+        style="width: 300px"
+      />
+      <button class="btn" onclick="testAPI()">🧪 Test API</button>
+      <button class="btn success" onclick="loadPages()">📄 Load Pages</button>
+    </div>
+
+    <div class="section">
+      <h2>📊 API Response</h2>
+      <div id="apiResponse">Click "Test API" to see the raw response</div>
+    </div>
+
+    <div class="section">
+      <h2>📋 Pages List</h2>
+      <div id="pagesList">Click "Load Pages" to see the parsed pages</div>
+    </div>
+
+    <div class="section">
+      <h2>🔬 Summary Test</h2>
+      <div id="summaryTest">Select a page to test summary functionality</div>
+    </div>
+
+    <script>
+      let currentApiKey = "";
+      let allPages = [];
+
+      async function testAPI() {
+        const apiKey = document.getElementById("apiKey").value;
+        currentApiKey = apiKey;
+
+        console.log("Testing API with key:", apiKey);
+
+        try {
+          const response = await fetch("/api/crawled-pages", {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              "x-api-key": apiKey,
+            },
+          });
+
+          const data = await response.json();
+
+          document.getElementById("apiResponse").innerHTML = `
+                    <h3>Response Status: ${response.status}</h3>
+                    <h4>Raw JSON Response:</h4>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+
+          console.log("API Response:", data);
+        } catch (error) {
+          document.getElementById("apiResponse").innerHTML = `
+                    <h3 style="color: red;">Error:</h3>
+                    <p>${error.message}</p>
+                `;
+          console.error("API Error:", error);
+        }
+      }
+
+      async function loadPages() {
+        const apiKey = document.getElementById("apiKey").value;
+        currentApiKey = apiKey;
+
+        try {
+          const response = await fetch("/api/crawled-pages", {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              "x-api-key": apiKey,
+            },
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            document.getElementById(
+              "pagesList"
+            ).innerHTML = `<p style="color: red;">Error: ${data.error}</p>`;
+            return;
+          }
+
+          allPages = data.pages || [];
+          displayPages(allPages);
+        } catch (error) {
+          document.getElementById(
+            "pagesList"
+          ).innerHTML = `<p style="color: red;">Network error: ${error.message}</p>`;
+        }
+      }
+
+      function displayPages(pages) {
+        const container = document.getElementById("pagesList");
+
+        if (!pages || pages.length === 0) {
+          container.innerHTML = "<p>No pages found</p>";
+          return;
+        }
+
+        let html = `<h3>Found ${pages.length} pages:</h3>`;
+
+        pages.forEach((page, index) => {
+          const hasSum = page.hasStructuredSummary;
+          const statusClass = hasSum ? "status-true" : "status-false";
+          const buttonText = hasSum ? "👁️ View Summary" : "⚡ Generate Summary";
+          const buttonClass = hasSum ? "btn success" : "btn warning";
+
+          html += `
+                    <div class="page-item">
+                        <div><strong>URL:</strong> ${page.url}</div>
+                        <div><strong>Has Summary:</strong> <span class="${statusClass}">${hasSum}</span></div>
+                        <div><strong>Created:</strong> ${new Date(
+                          page.createdAt
+                        ).toLocaleString()}</div>
+                        <div style="margin-top: 10px;">
+                            <button class="${buttonClass}" onclick="testSummary('${
+            page.url
+          }', ${hasSum})">
+                                ${buttonText}
+                            </button>
+                            <button class="btn" onclick="showPageDetails(${index})">🔍 Details</button>
+                        </div>
+                    </div>
+                `;
+        });
+
+        container.innerHTML = html;
+      }
+
+      function showPageDetails(index) {
+        const page = allPages[index];
+        const details = `
+                <h3>📄 Page Details</h3>
+                <p><strong>URL:</strong> ${page.url}</p>
+                <p><strong>Has Structured Summary:</strong> ${
+                  page.hasStructuredSummary
+                }</p>
+                <p><strong>Text Length:</strong> ${
+                  page.text?.length || 0
+                } characters</p>
+                <p><strong>Basic Summary:</strong> ${page.summary || "None"}</p>
+                ${
+                  page.structuredSummary
+                    ? `
+                    <h4>🎯 Structured Summary:</h4>
+                    <pre>${JSON.stringify(
+                      page.structuredSummary,
+                      null,
+                      2
+                    )}</pre>
+                `
+                    : "<p><em>No structured summary available</em></p>"
+                }
+            `;
+        document.getElementById("summaryTest").innerHTML = details;
+      }
+
+      async function testSummary(url, hasSummary) {
+        document.getElementById("summaryTest").innerHTML = `
+                <h3>🔄 Testing Summary for: ${url}</h3>
+                <p>Has existing summary: ${hasSummary}</p>
+                <p>Loading...</p>
+            `;
+
+        try {
+          const response = await fetch("/api/crawled-pages", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-api-key": currentApiKey,
+            },
+            body: JSON.stringify({ url }),
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            document.getElementById("summaryTest").innerHTML = `
+                        <h3>❌ Error testing summary</h3>
+                        <p>Status: ${response.status}</p>
+                        <p>Error: ${data.error}</p>
+                    `;
+            return;
+          }
+
+          document.getElementById("summaryTest").innerHTML = `
+                    <h3>✅ Summary Test Results</h3>
+                    <p><strong>URL:</strong> ${url}</p>
+                    <p><strong>Cached:</strong> ${data.cached}</p>
+                    <h4>📊 Summary Data:</h4>
+                    <pre>${JSON.stringify(data.summary, null, 2)}</pre>
+                `;
+
+          // Reload pages to see updated status
+          loadPages();
+        } catch (error) {
+          document.getElementById("summaryTest").innerHTML = `
+                    <h3>❌ Network Error</h3>
+                    <p>${error.message}</p>
+                `;
+        }
+      }
+
+      // Auto-test on page load
+      window.onload = function () {
+        console.log("Debug page loaded, testing API...");
+        testAPI();
+      };
+    </script>
+  </body>
+</html>

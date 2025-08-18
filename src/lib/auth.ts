@@ -1,4 +1,4 @@
-import { getUsersCollection } from "@/lib/mongo";
+import { getDb } from "@/lib/mongo";
 
 // Utility function to verify API key
 export async function verifyApiKey(apiKey: string) {
@@ -7,16 +7,17 @@ export async function verifyApiKey(apiKey: string) {
   }
 
   try {
-    const users = await getUsersCollection();
-    const user = await users.findOne({ apiKey });
+    const db = await getDb();
+    const apiKeys = db.collection("api_keys");
+    const keyRecord = await apiKeys.findOne({ apiKey });
 
-    if (!user) {
+    if (!keyRecord) {
       return null;
     }
 
     return {
-      adminId: user._id.toString(),
-      email: user.email,
+      adminId: keyRecord.adminId,
+      email: keyRecord.email,
     };
   } catch {
     return null;
