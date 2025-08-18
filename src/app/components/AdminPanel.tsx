@@ -12,6 +12,7 @@ import WidgetConfiguratorSection from "./admin/WidgetConfiguratorSection";
 import LeadsManagementSection from "./admin/LeadsManagementSection";
 import TestingSection from "./admin/TestingSection";
 import DocumentManagementSection from "./admin/DocumentManagementSection";
+import CrawledPagesSection from "./admin/CrawledPagesSection";
 import CustomerPersonaSection from "./admin/CustomerPersonaSection";
 import CustomerProfilesSection from "./admin/CustomerProfilesSection";
 import SummaryModal from "./admin/SummaryModal";
@@ -724,6 +725,10 @@ const AdminPanel: React.FC = () => {
             }
             onRefreshDocuments={fetchDocuments}
             onDeleteDocument={deleteDocumentFile}
+          />
+
+          {/* Crawled Pages Section */}
+          <CrawledPagesSection
             crawledPages={crawledPages}
             crawledPagesLoading={crawledPagesLoading}
             crawledPagesError={crawledPagesError}
