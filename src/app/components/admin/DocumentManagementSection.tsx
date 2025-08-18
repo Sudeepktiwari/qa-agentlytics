@@ -389,11 +389,10 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
                                 alignItems: "center",
                               }}
                             >
-                              {/* Show View Summary/Generate Summary button for URLs that exist in crawled_pages */}
+                              {/* Show View Summary/Generate Summary button for all URLs */}
                               {(doc.filename.startsWith("http://") ||
                                 doc.filename.startsWith("https://")) &&
-                                onViewSummary &&
-                                urlExistsInCrawledPages[doc.filename] && (
+                                onViewSummary && (
                                   <button
                                     onClick={() => onViewSummary(doc.filename)}
                                     style={{
@@ -436,30 +435,10 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
                                   >
                                     {urlSummaryStatus[doc.filename]
                                       ? "👁️ View Summary"
-                                      : "⚡ Generate Summary"}
+                                      : urlExistsInCrawledPages[doc.filename]
+                                      ? "⚡ Generate Summary"
+                                      : "🧩 Generate from Chunks"}
                                   </button>
-                                )}
-                              {/* Show info badge for URLs that don't exist in crawled_pages */}
-                              {(doc.filename.startsWith("http://") ||
-                                doc.filename.startsWith("https://")) &&
-                                !urlExistsInCrawledPages[doc.filename] && (
-                                  <span
-                                    style={{
-                                      background:
-                                        "linear-gradient(135deg, #a0aec020, #71809620)",
-                                      color: "#718096",
-                                      border: "1px solid #e2e8f0",
-                                      borderRadius: "8px",
-                                      padding: "8px 16px",
-                                      fontSize: "12px",
-                                      fontWeight: "600",
-                                      display: "flex",
-                                      alignItems: "center",
-                                      gap: "4px",
-                                    }}
-                                  >
-                                    📄 Document Chunks Only
-                                  </span>
                                 )}
                               <button
                                 onClick={() => onDeleteDocument(doc.filename)}

@@ -99,28 +99,120 @@ export async function POST(request: NextRequest) {
 
       // Check if the URL exists in pinecone_vectors (meaning it was crawled but not in crawled_pages)
       const vectorCollection = db.collection("pinecone_vectors");
-      const vectorExists = await vectorCollection.findOne({
+      const vectorChunks = await vectorCollection.find({
         adminId,
         filename: url,
-      });
+      }).toArray();
 
-      if (!vectorExists) {
+      if (!vectorChunks || vectorChunks.length === 0) {
         console.log("[API] URL not found in pinecone_vectors either");
         return NextResponse.json({ error: "Page not found" }, { status: 404 });
       }
 
       console.log(
-        "[API] URL found in pinecone_vectors but not in crawled_pages"
+        `[API] URL found in pinecone_vectors with ${vectorChunks.length} chunks, reconstructing content...`
       );
-      // For URLs that only exist in pinecone_vectors, we can't generate summaries
-      // because we don't have the full page text
-      return NextResponse.json(
-        {
-          error:
-            "This page was processed as document chunks but doesn't have full text available for summary generation",
-        },
-        { status: 400 }
-      );
+      
+      // Reconstruct content from chunks
+      const reconstructedContent = vectorChunks
+        .sort((a, b) => (a.chunkIndex || 0) - (b.chunkIndex || 0)) // Sort by chunk index if available
+        .map(chunk => chunk.text || chunk.content || '')
+        .filter(text => text.length > 0)
+        .join('\n\n');
+
+      if (!reconstructedContent || reconstructedContent.length < 50) {
+        console.log("[API] Reconstructed content too short:", reconstructedContent.length);
+        return NextResponse.json(
+          { error: "Insufficient content in chunks to generate summary" },
+          { status: 400 }
+        );
+      }
+
+      console.log("[API] Content reconstructed from chunks, length:", reconstructedContent.length);
+      
+      // Use reconstructed content for summary generation
+      const pageContent = reconstructedContent;
+      
+      // Generate structured summary using GPT-4o-mini
+      console.log("[API] Calling OpenAI to generate summary from chunks...");
+      const summaryResponse = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are an expert web page analyzer. Analyze the provided web page content and extract key business information. Return ONLY a valid JSON object with the specified structure. Do not include any markdown formatting or additional text.",
+          },
+          {
+            role: "user",
+            content: `Analyze this web page content and extract key information:
+
+${pageContent}
+
+Extract and return a JSON object with:
+{
+  "pageType": "homepage|pricing|features|about|contact|blog|product|service",
+  "businessVertical": "fitness|healthcare|legal|restaurant|saas|ecommerce|consulting|other",
+  "primaryFeatures": ["feature1", "feature2", "feature3"],
+  "painPointsAddressed": ["pain1", "pain2", "pain3"],
+  "solutions": ["solution1", "solution2", "solution3"],
+  "targetCustomers": ["small business", "enterprise", "startups"],
+  "businessOutcomes": ["outcome1", "outcome2"],
+  "competitiveAdvantages": ["advantage1", "advantage2"],
+  "industryTerms": ["term1", "term2", "term3"],
+  "pricePoints": ["free", "$X/month", "enterprise"],
+  "integrations": ["tool1", "tool2"],
+  "useCases": ["usecase1", "usecase2"],
+  "callsToAction": ["Get Started", "Book Demo"],
+  "trustSignals": ["testimonial", "certification", "clientcount"]
+}`,
+          },
+        ],
+        temperature: 0.3,
+        max_tokens: 1500,
+      });
+
+      const summaryContent = summaryResponse.choices[0]?.message?.content;
+      if (!summaryContent) {
+        console.log("[API] OpenAI returned empty response");
+        return NextResponse.json(
+          { error: "Failed to generate summary content" },
+          { status: 500 }
+        );
+      }
+
+      let structuredSummary;
+      try {
+        structuredSummary = JSON.parse(summaryContent);
+        console.log("[API] Summary generated successfully from chunks");
+      } catch (parseError) {
+        console.error("[API] Failed to parse summary JSON:", parseError);
+        return NextResponse.json(
+          { error: "Invalid summary format generated" },
+          { status: 500 }
+        );
+      }
+
+      // Create a new entry in crawled_pages with the reconstructed content and summary
+      const newPageEntry = {
+        adminId,
+        url,
+        text: pageContent,
+        structuredSummary,
+        summaryGeneratedAt: new Date(),
+        createdAt: new Date(),
+        source: 'reconstructed_from_chunks'
+      };
+
+      await collection.insertOne(newPageEntry);
+      console.log("[API] Created new crawled_pages entry from chunks");
+
+      return NextResponse.json({
+        success: true,
+        summary: structuredSummary,
+        cached: false,
+        source: 'chunks'
+      });
     }
 
     console.log(
