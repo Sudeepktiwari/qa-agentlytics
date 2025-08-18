@@ -410,29 +410,33 @@ const AdminPanel: React.FC = () => {
     });
     setShowSummaryModal(true);
 
-    // Try to fetch the actual summary data
+    // Fetch the actual summary data from crawled pages collection
     try {
       const res = await fetch("/api/crawled-pages", {
-        method: "POST",
+        method: "GET",
         headers: {
           "Content-Type": "application/json",
           "x-api-key": apiKey,
         },
-        body: JSON.stringify({ url }),
       });
 
-      const data = await res.json();
-      if (res.ok && data.summary) {
-        // Update the modal with actual summary data
-        setSelectedPageForSummary({
-          _id: url,
-          url,
-          hasStructuredSummary: true,
-          createdAt: data.createdAt || new Date().toISOString(),
-          text: data.text,
-          summary: data.summary,
-          structuredSummary: data.structuredSummary,
-        });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.pages) {
+          // Find the specific page by URL
+          const pageData = data.pages.find((page: any) => page.url === url);
+          if (pageData) {
+            setSelectedPageForSummary({
+              _id: pageData._id,
+              url: pageData.url,
+              hasStructuredSummary: !!pageData.structuredSummary,
+              createdAt: pageData.createdAt,
+              text: pageData.text,
+              summary: pageData.summary,
+              structuredSummary: pageData.structuredSummary,
+            });
+          }
+        }
       }
     } catch (error) {
       console.error("Error fetching summary:", error);
@@ -474,15 +478,16 @@ const AdminPanel: React.FC = () => {
           ...page,
           hasStructuredSummary: true,
           summary: result.summary,
-          structuredSummary: result.structuredSummary,
+          structuredSummary: result.summary, // API returns summary as the structured data
         });
 
         // Refresh the documents list to show updated summary status
         fetchDocuments();
         alert("Summary generated successfully!");
       } else {
-        console.error("Failed to generate summary");
-        alert("Failed to generate summary. Please try again.");
+        const errorData = await response.json();
+        console.error("Failed to generate summary:", errorData);
+        alert(`Failed to generate summary: ${errorData.error || "Unknown error"}`);
       }
     } catch (error) {
       console.error("Error generating summary:", error);
