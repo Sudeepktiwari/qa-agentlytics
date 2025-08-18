@@ -57,33 +57,47 @@ export async function GET(request: NextRequest) {
 // POST - Generate structured summary for existing page (on-demand)
 export async function POST(request: NextRequest) {
   try {
+    console.log("[API] POST /api/crawled-pages - Starting request");
+    
     // Verify API key
     const apiKey = request.headers.get("x-api-key");
     if (!apiKey) {
+      console.log("[API] No API key provided");
       return NextResponse.json({ error: "API key required" }, { status: 401 });
     }
 
+    console.log("[API] Verifying API key...");
     const verification = await verifyApiKey(apiKey);
     if (!verification) {
+      console.log("[API] API key verification failed");
       return NextResponse.json({ error: "Invalid API key" }, { status: 401 });
     }
 
     const adminId = verification.adminId;
-    const { url, regenerate } = await request.json();
+    console.log("[API] API key verified for adminId:", adminId);
 
+    const { url, regenerate } = await request.json();
+    console.log("[API] Request data:", { url, regenerate });
+
+    console.log("[API] Connecting to MongoDB...");
     await client.connect();
     const db = client.db("test");
     const collection = db.collection("crawled_pages");
 
     // Check if structured summary already exists
+    console.log("[API] Looking for existing page:", { adminId, url });
     const existingPage = await collection.findOne({ adminId, url });
 
     if (!existingPage) {
+      console.log("[API] Page not found in database");
       return NextResponse.json({ error: "Page not found" }, { status: 404 });
     }
 
+    console.log("[API] Found existing page, has summary:", !!existingPage.structuredSummary);
+
     // If regenerate is true, skip the existing summary check
     if (existingPage.structuredSummary && !regenerate) {
+      console.log("[API] Returning cached summary");
       return NextResponse.json({
         success: true,
         summary: existingPage.structuredSummary,
@@ -93,14 +107,17 @@ export async function POST(request: NextRequest) {
 
     // Get content from the page record itself (it should have 'text' field)
     const pageContent = existingPage.text; // Use the stored text content
+    console.log("[API] Page content length:", pageContent?.length || 0);
 
     if (!pageContent || pageContent.length < 50) {
+      console.log("[API] Page content too short or missing");
       return NextResponse.json(
         { error: "Page content is too short to analyze" },
         { status: 400 }
       );
     }
 
+    console.log("[API] Calling OpenAI to generate summary...");
     // Generate structured summary using GPT-4o-mini
     const summaryResponse = await openai.chat.completions.create({
       model: "gpt-4o-mini",
@@ -139,18 +156,23 @@ Extract and return a JSON object with:
       temperature: 0.3,
     });
 
+    console.log("[API] OpenAI response received");
     const summaryText = summaryResponse.choices[0]?.message?.content;
+    console.log("[API] Summary text length:", summaryText?.length || 0);
 
     if (!summaryText) {
+      console.log("[API] No summary text returned from OpenAI");
       return NextResponse.json(
         { error: "Failed to generate summary" },
         { status: 500 }
       );
     }
 
+    console.log("[API] Parsing summary JSON...");
     let structuredSummary;
     try {
       structuredSummary = JSON.parse(summaryText);
+      console.log("[API] Summary parsed successfully");
     } catch {
       console.error("Failed to parse summary JSON:", summaryText);
       return NextResponse.json(
@@ -159,6 +181,7 @@ Extract and return a JSON object with:
       );
     }
 
+    console.log("[API] Updating MongoDB with structured summary...");
     // Store structured summary in MongoDB
     await collection.updateOne(
       { adminId, url },
@@ -170,6 +193,7 @@ Extract and return a JSON object with:
       }
     );
 
+    console.log("[API] Summary generation completed successfully");
     return NextResponse.json({
       success: true,
       summary: structuredSummary,
@@ -177,8 +201,15 @@ Extract and return a JSON object with:
     });
   } catch (error) {
     console.error("Error generating summary:", error);
+    console.error("Error details:", {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     return NextResponse.json(
-      { error: "Failed to generate summary" },
+      { 
+        error: "Failed to generate summary", 
+        details: error instanceof Error ? error.message : String(error) 
+      },
       { status: 500 }
     );
   } finally {
