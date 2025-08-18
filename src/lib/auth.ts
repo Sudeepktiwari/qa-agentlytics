@@ -8,15 +8,15 @@ export async function verifyApiKey(apiKey: string) {
 
   try {
     const db = await getDb();
-    const apiKeys = db.collection("api_keys");
-    const keyRecord = await apiKeys.findOne({ apiKey });
+    const users = db.collection("users");
+    const keyRecord = await users.findOne({ apiKey });
 
     if (!keyRecord) {
       return null;
     }
 
     return {
-      adminId: keyRecord.adminId,
+      adminId: keyRecord.adminId || keyRecord.email, // fallback to email if no adminId
       email: keyRecord.email,
     };
   } catch {
