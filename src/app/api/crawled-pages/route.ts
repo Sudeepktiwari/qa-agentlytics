@@ -88,13 +88,30 @@ export async function POST(request: NextRequest) {
     client = new MongoClient(process.env.MONGODB_URI!);
     await client.connect();
     const db = client.db("test");
-    const collection = db.collection("crawled_pages"); // Check if structured summary already exists
+    const collection = db.collection("crawled_pages");
+
+    // Check if structured summary already exists
     console.log("[API] Looking for existing page:", { adminId, url });
     const existingPage = await collection.findOne({ adminId, url });
 
     if (!existingPage) {
-      console.log("[API] Page not found in database");
-      return NextResponse.json({ error: "Page not found" }, { status: 404 });
+      console.log("[API] Page not found in crawled_pages collection");
+      
+      // Check if the URL exists in pinecone_vectors (meaning it was crawled but not in crawled_pages)
+      const vectorCollection = db.collection("pinecone_vectors");
+      const vectorExists = await vectorCollection.findOne({ adminId, filename: url });
+      
+      if (!vectorExists) {
+        console.log("[API] URL not found in pinecone_vectors either");
+        return NextResponse.json({ error: "Page not found" }, { status: 404 });
+      }
+      
+      console.log("[API] URL found in pinecone_vectors but not in crawled_pages");
+      // For URLs that only exist in pinecone_vectors, we can't generate summaries
+      // because we don't have the full page text
+      return NextResponse.json({ 
+        error: "This page was processed as document chunks but doesn't have full text available for summary generation" 
+      }, { status: 400 });
     }
 
     console.log(
