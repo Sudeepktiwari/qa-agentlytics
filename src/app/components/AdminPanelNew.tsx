@@ -604,6 +604,12 @@ const AdminPanel: React.FC = () => {
             }
             onRefreshDocuments={fetchDocuments}
             onDeleteDocument={deleteDocumentFile}
+            crawledPages={[]}
+            crawledPagesLoading={false}
+            crawledPagesError=""
+            onRefreshCrawledPages={() => {}}
+            onViewPageSummary={() => {}}
+            onDeleteCrawledPage={() => {}}
           />
         </div>
       )}
