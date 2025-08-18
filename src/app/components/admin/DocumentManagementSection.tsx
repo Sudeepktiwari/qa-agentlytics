@@ -72,7 +72,9 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
             marginBottom: "16px",
           }}
         >
-          <h2 style={{ margin: 0 }}>📚 Crawled Pages Library</h2>
+          <h2 style={{ margin: 0 }}>
+            📚 Crawled Pages Library ({crawledPages.length} pages)
+          </h2>
           <button
             onClick={onToggleDocumentsExpanded}
             style={{
@@ -87,6 +89,12 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
             {documentsExpanded ? "🔼 Collapse" : "🔽 Expand"}
           </button>
         </div>
+        {!documentsExpanded && crawledPages.length > 0 && (
+          <p style={{ color: "#666", margin: "0 0 16px 0" }}>
+            Click "🔽 Expand" to view {crawledPages.length} crawled pages with
+            summaries
+          </p>
+        )}
         {documentsExpanded && (
           <div>
             {crawledPagesLoading ? (
@@ -140,7 +148,9 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
           marginBottom: "16px",
         }}
       >
-        <h2 style={{ margin: 0 }}>📚 Document Library</h2>
+        <h2 style={{ margin: 0 }}>
+          📚 Document Library ({documents.length} files)
+        </h2>
         <button
           onClick={onToggleDocumentsExpanded}
           style={{
@@ -155,6 +165,11 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
           {documentsExpanded ? "🔼 Collapse" : "🔽 Expand"}
         </button>
       </div>
+      {!documentsExpanded && documents.length > 0 && (
+        <p style={{ color: "#666", margin: "0 0 16px 0" }}>
+          Click "🔽 Expand" to view {documents.length} uploaded documents
+        </p>
+      )}
       {documentsExpanded && (
         <div>
           {documentsLoading ? (
