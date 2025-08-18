@@ -439,6 +439,57 @@ const AdminPanel: React.FC = () => {
     }
   };
 
+  // Generate summary function that replaces existing summary
+  const generateSummary = async (page: CrawledPage) => {
+    if (!apiKey) {
+      alert("API key required to generate summary");
+      return;
+    }
+
+    try {
+      // Show loading state
+      setSelectedPageForSummary({
+        ...page,
+        hasStructuredSummary: false,
+      });
+
+      const response = await fetch("/api/crawled-pages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
+        },
+        body: JSON.stringify({
+          url: page.url,
+          regenerate: true, // Force regeneration
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log("Summary generated successfully:", result);
+
+        // Update the modal with new summary data
+        setSelectedPageForSummary({
+          ...page,
+          hasStructuredSummary: true,
+          summary: result.summary,
+          structuredSummary: result.structuredSummary,
+        });
+
+        // Refresh the documents list to show updated summary status
+        fetchDocuments();
+        alert("Summary generated successfully!");
+      } else {
+        console.error("Failed to generate summary");
+        alert("Failed to generate summary. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error generating summary:", error);
+      alert("Error generating summary. Please try again.");
+    }
+  };
+
   const deleteLead = async (email: string) => {
     if (!window.confirm(`Delete all conversation data for ${email}?`)) return;
 
@@ -678,6 +729,7 @@ const AdminPanel: React.FC = () => {
           setShowSummaryModal(false);
           setSelectedPageForSummary(null);
         }}
+        onGenerateSummary={generateSummary}
       />
     </div>
   );

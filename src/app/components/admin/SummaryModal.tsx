@@ -5,6 +5,9 @@ export interface CrawledPage {
   url: string;
   title?: string;
   hasStructuredSummary: boolean;
+  createdAt: string;
+  text?: string;
+  summary?: string;
   structuredSummary?: Record<string, unknown>;
 }
 
@@ -12,12 +15,14 @@ interface SummaryModalProps {
   page: CrawledPage | null;
   isOpen: boolean;
   onClose: () => void;
+  onGenerateSummary?: (page: CrawledPage) => Promise<void>;
 }
 
 const SummaryModal: React.FC<SummaryModalProps> = ({
   page,
   isOpen,
   onClose,
+  onGenerateSummary,
 }) => {
   // Helper function to safely access structured summary properties
   const getStructuredSummaryValue = (key: string): unknown => {
@@ -421,9 +426,45 @@ const SummaryModal: React.FC<SummaryModalProps> = ({
             background: "#f8fafc",
             borderRadius: "0 0 20px 20px",
             display: "flex",
-            justifyContent: "flex-end",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: "16px",
           }}
         >
+          {/* Generate Summary Button */}
+          {page && onGenerateSummary && (
+            <button
+              onClick={() => onGenerateSummary(page)}
+              style={{
+                background: "linear-gradient(135deg, #ed8f36 0%, #dd6968 100%)",
+                color: "white",
+                border: "none",
+                borderRadius: "12px",
+                padding: "12px 24px",
+                fontSize: "14px",
+                fontWeight: "600",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                boxShadow: "0 4px 12px rgba(237, 143, 54, 0.3)",
+              }}
+              onMouseEnter={(e) => {
+                const target = e.target as HTMLButtonElement;
+                target.style.transform = "translateY(-2px)";
+                target.style.boxShadow = "0 8px 25px rgba(237, 143, 54, 0.4)";
+              }}
+              onMouseLeave={(e) => {
+                const target = e.target as HTMLButtonElement;
+                target.style.transform = "translateY(0)";
+                target.style.boxShadow = "0 4px 12px rgba(237, 143, 54, 0.3)";
+              }}
+            >
+              ⚡ Generate New Summary
+            </button>
+          )}
+
           <button
             onClick={onClose}
             style={{

@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
     }
 
     const adminId = verification.adminId;
-    const { url } = await request.json();
+    const { url, regenerate } = await request.json();
 
     await client.connect();
     const db = client.db("test");
@@ -82,7 +82,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Page not found" }, { status: 404 });
     }
 
-    if (existingPage.structuredSummary) {
+    // If regenerate is true, skip the existing summary check
+    if (existingPage.structuredSummary && !regenerate) {
       return NextResponse.json({
         success: true,
         summary: existingPage.structuredSummary,
