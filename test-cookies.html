@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Cookie Test</title>
+  </head>
+  <body>
+    <h1>Cookie Test</h1>
+    <button onclick="checkCookies()">Check Cookies</button>
+    <button onclick="testLogin()">Test Login</button>
+    <div id="output"></div>
+
+    <script>
+      function log(message) {
+        const output = document.getElementById("output");
+        output.innerHTML += "<p>" + message + "</p>";
+        console.log(message);
+      }
+
+      function checkCookies() {
+        log("All cookies: " + document.cookie);
+        log(
+          "Cookie count: " +
+            document.cookie.split(";").filter((c) => c.trim()).length
+        );
+      }
+
+      async function testLogin() {
+        try {
+          // Clear output
+          document.getElementById("output").innerHTML = "";
+
+          log("🔍 Testing login flow...");
+
+          // Step 1: Try login
+          const loginRes = await fetch("/api/auth", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              action: "login",
+              email: "admin@test.com", // Use your actual credentials
+              password: "admin123",
+            }),
+            credentials: "include", // Important for cookies
+          });
+
+          log("Login status: " + loginRes.status);
+          const loginData = await loginRes.json();
+          log("Login response: " + JSON.stringify(loginData));
+
+          if (!loginRes.ok) {
+            log("❌ Login failed");
+            return;
+          }
+
+          log("✅ Login successful");
+          checkCookies();
+
+          // Step 2: Wait a moment and test auth verification
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+
+          log("🔍 Testing auth verification...");
+          const verifyRes = await fetch("/api/auth/verify", {
+            credentials: "include", // Important for cookies
+          });
+
+          log("Verify status: " + verifyRes.status);
+          const verifyData = await verifyRes.json();
+          log("Verify response: " + JSON.stringify(verifyData));
+
+          if (verifyRes.ok) {
+            log("✅ Auth verification successful");
+
+            // Step 3: Test API key fetch
+            log("🔍 Testing API key fetch...");
+            const apiKeyRes = await fetch("/api/auth/api-key", {
+              credentials: "include",
+            });
+            log("API Key status: " + apiKeyRes.status);
+            const apiKeyData = await apiKeyRes.json();
+            log("API Key response: " + JSON.stringify(apiKeyData));
+          } else {
+            log("❌ Auth verification failed");
+          }
+        } catch (error) {
+          log("❌ Error: " + error.message);
+        }
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Debug Admin Panel Flow</title>
+  </head>
+  <body>
+    <h1>Debug Admin Panel Flow</h1>
+    <button onclick="testFlow()">Test Admin Flow</button>
+    <div id="output"></div>
+
+    <script>
+      function log(message) {
+        const output = document.getElementById("output");
+        output.innerHTML += "<p>" + message + "</p>";
+        console.log(message);
+      }
+
+      async function testFlow() {
+        const output = document.getElementById("output");
+        output.innerHTML = "";
+
+        try {
+          // Step 1: Check auth
+          log("🔍 Step 1: Checking authentication...");
+          const authRes = await fetch("/api/auth/verify");
+          const authData = await authRes.json();
+          log("Auth Status: " + authRes.status);
+          log("Auth Data: " + JSON.stringify(authData));
+
+          if (!authRes.ok) {
+            log("❌ Not authenticated - trying to login...");
+
+            // Try to login (you'll need to modify this with actual credentials)
+            const loginRes = await fetch("/api/auth", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                action: "login",
+                email: "test@test.com", // Replace with your test email
+                password: "password123", // Replace with your test password
+              }),
+            });
+
+            if (loginRes.ok) {
+              log("✅ Login successful");
+            } else {
+              log("❌ Login failed");
+              return;
+            }
+          }
+
+          // Step 2: Get API key
+          log("🔍 Step 2: Getting API key...");
+          const apiKeyRes = await fetch("/api/auth/api-key");
+          const apiKeyData = await apiKeyRes.json();
+          log("API Key Status: " + apiKeyRes.status);
+          log("API Key exists: " + !!apiKeyData.apiKey);
+
+          if (!apiKeyRes.ok || !apiKeyData.apiKey) {
+            log("🔧 Generating API key...");
+            const genRes = await fetch("/api/auth/api-key", { method: "POST" });
+            const genData = await genRes.json();
+            if (genRes.ok) {
+              log(
+                "✅ API key generated: " +
+                  genData.apiKey.substring(0, 10) +
+                  "..."
+              );
+              apiKeyData.apiKey = genData.apiKey;
+            } else {
+              log("❌ Failed to generate API key");
+              return;
+            }
+          }
+
+          // Step 3: Test crawled pages API
+          log("🔍 Step 3: Testing crawled pages API...");
+          const crawledRes = await fetch("/api/crawled-pages", {
+            headers: {
+              "x-api-key": apiKeyData.apiKey,
+            },
+          });
+          const crawledData = await crawledRes.json();
+          log("Crawled Pages Status: " + crawledRes.status);
+          log("Crawled Pages Count: " + (crawledData.pages?.length || 0));
+
+          if (crawledData.pages && crawledData.pages.length > 0) {
+            log("✅ Found crawled pages:");
+            crawledData.pages.slice(0, 3).forEach((page) => {
+              log(
+                "- " +
+                  page.url +
+                  " (Has Summary: " +
+                  page.hasStructuredSummary +
+                  ")"
+              );
+            });
+          } else {
+            log("ℹ️ No crawled pages found - need to crawl some pages first");
+          }
+
+          // Step 4: Test documents API
+          log("🔍 Step 4: Testing documents API...");
+          const docsRes = await fetch("/api/admin-docs?admin=1");
+          const docsData = await docsRes.json();
+          log("Documents Status: " + docsRes.status);
+          log("Documents Count: " + (docsData.documents?.length || 0));
+
+          if (docsData.documents && docsData.documents.length > 0) {
+            log("✅ Found documents:");
+            docsData.documents.slice(0, 3).forEach((doc) => {
+              log("- " + doc.filename + " (" + doc.count + " chunks)");
+            });
+          } else {
+            log("ℹ️ No documents found - need to upload some documents first");
+          }
+        } catch (error) {
+          log("❌ Error: " + error.message);
+        }
+      }
+    </script>
+  </body>
+</html>
