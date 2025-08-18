@@ -445,7 +445,8 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
                                 !urlExistsInCrawledPages[doc.filename] && (
                                   <span
                                     style={{
-                                      background: "linear-gradient(135deg, #a0aec020, #71809620)",
+                                      background:
+                                        "linear-gradient(135deg, #a0aec020, #71809620)",
                                       color: "#718096",
                                       border: "1px solid #e2e8f0",
                                       borderRadius: "8px",

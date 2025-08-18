@@ -500,15 +500,20 @@ const AdminPanel: React.FC = () => {
       } else {
         const errorData = await response.json();
         console.error("Failed to generate summary:", errorData);
-        
+
         // Show more user-friendly error messages
         let errorMessage = errorData.error || "Unknown error";
         if (errorData.error === "Page not found") {
-          errorMessage = "This URL wasn't found in the crawled pages database. Try refreshing the page list first.";
-        } else if (errorData.error && errorData.error.includes("document chunks")) {
-          errorMessage = "This page was processed as document chunks but doesn't have the full text needed for summary generation.";
+          errorMessage =
+            "This URL wasn't found in the crawled pages database. Try refreshing the page list first.";
+        } else if (
+          errorData.error &&
+          errorData.error.includes("document chunks")
+        ) {
+          errorMessage =
+            "This page was processed as document chunks but doesn't have the full text needed for summary generation.";
         }
-        
+
         alert(`Failed to generate summary: ${errorMessage}`);
       }
     } catch (error) {
