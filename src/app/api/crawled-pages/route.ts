@@ -3,13 +3,10 @@ import { MongoClient } from "mongodb";
 import { Pinecone } from "@pinecone-database/pinecone";
 import OpenAI from "openai";
 import { verifyApiKey } from "@/lib/auth";
-import jwt from "jsonwebtoken";
 
 const client = new MongoClient(process.env.MONGODB_URI!);
 const pc = new Pinecone({ apiKey: process.env.PINECONE_KEY! });
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
-
-const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
 
 // GET - List all crawled pages with summary status
 export async function GET(request: NextRequest) {
@@ -94,7 +91,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get content from the page record itself (it should have 'text' field)
-    let pageContent = existingPage.text; // Use the stored text content
+    const pageContent = existingPage.text; // Use the stored text content
 
     if (!pageContent || pageContent.length < 50) {
       return NextResponse.json(
@@ -153,7 +150,7 @@ Extract and return a JSON object with:
     let structuredSummary;
     try {
       structuredSummary = JSON.parse(summaryText);
-    } catch (parseError) {
+    } catch {
       console.error("Failed to parse summary JSON:", summaryText);
       return NextResponse.json(
         { error: "Invalid summary format generated" },
