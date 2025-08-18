@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
   let client: MongoClient | null = null;
   try {
     console.log("[API] POST /api/crawled-pages - Starting request");
-    
+
     // Verify API key
     const apiKey = request.headers.get("x-api-key");
     if (!apiKey) {
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
     client = new MongoClient(process.env.MONGODB_URI!);
     await client.connect();
     const db = client.db("test");
-    const collection = db.collection("crawled_pages");    // Check if structured summary already exists
+    const collection = db.collection("crawled_pages"); // Check if structured summary already exists
     console.log("[API] Looking for existing page:", { adminId, url });
     const existingPage = await collection.findOne({ adminId, url });
 
