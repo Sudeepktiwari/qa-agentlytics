@@ -15,6 +15,7 @@ interface DocumentManagementSectionProps {
   onToggleDocumentsExpanded: () => void;
   onRefreshDocuments: () => void;
   onDeleteDocument: (filename: string) => void;
+  onViewSummary?: (filename: string) => void;
 }
 
 const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
@@ -25,6 +26,7 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
   onToggleDocumentsExpanded,
   onRefreshDocuments,
   onDeleteDocument,
+  onViewSummary,
 }) => {
   return (
     <div
@@ -375,39 +377,87 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
                               textAlign: "center",
                             }}
                           >
-                            <button
-                              onClick={() => onDeleteDocument(doc.filename)}
+                            <div
                               style={{
-                                background:
-                                  "linear-gradient(135deg, #f56565 0%, #e53e3e 100%)",
-                                color: "white",
-                                border: "none",
-                                borderRadius: "8px",
-                                padding: "8px 16px",
-                                fontSize: "12px",
-                                fontWeight: "600",
-                                cursor: "pointer",
-                                transition: "all 0.2s ease",
                                 display: "flex",
+                                gap: "8px",
+                                justifyContent: "center",
                                 alignItems: "center",
-                                gap: "4px",
-                                margin: "0 auto",
-                              }}
-                              onMouseEnter={(e) => {
-                                const target = e.target as HTMLButtonElement;
-                                target.style.transform = "translateY(-1px)";
-                                target.style.boxShadow =
-                                  "0 8px 25px rgba(245, 101, 101, 0.4)";
-                              }}
-                              onMouseLeave={(e) => {
-                                const target = e.target as HTMLButtonElement;
-                                target.style.transform = "translateY(0)";
-                                target.style.boxShadow =
-                                  "0 4px 12px rgba(245, 101, 101, 0.3)";
                               }}
                             >
-                              🗑️ Delete
-                            </button>
+                              {/* Show View Summary button for URLs (crawled pages) */}
+                              {(doc.filename.startsWith("http://") ||
+                                doc.filename.startsWith("https://")) &&
+                                onViewSummary && (
+                                  <button
+                                    onClick={() => onViewSummary(doc.filename)}
+                                    style={{
+                                      background:
+                                        "linear-gradient(135deg, #48bb78 0%, #38a169 100%)",
+                                      color: "white",
+                                      border: "none",
+                                      borderRadius: "8px",
+                                      padding: "8px 16px",
+                                      fontSize: "12px",
+                                      fontWeight: "600",
+                                      cursor: "pointer",
+                                      transition: "all 0.2s ease",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: "4px",
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      const target =
+                                        e.target as HTMLButtonElement;
+                                      target.style.transform =
+                                        "translateY(-1px)";
+                                      target.style.boxShadow =
+                                        "0 8px 25px rgba(72, 187, 120, 0.4)";
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      const target =
+                                        e.target as HTMLButtonElement;
+                                      target.style.transform = "translateY(0)";
+                                      target.style.boxShadow =
+                                        "0 4px 12px rgba(72, 187, 120, 0.3)";
+                                    }}
+                                  >
+                                    👁️ View Summary
+                                  </button>
+                                )}
+                              <button
+                                onClick={() => onDeleteDocument(doc.filename)}
+                                style={{
+                                  background:
+                                    "linear-gradient(135deg, #f56565 0%, #e53e3e 100%)",
+                                  color: "white",
+                                  border: "none",
+                                  borderRadius: "8px",
+                                  padding: "8px 16px",
+                                  fontSize: "12px",
+                                  fontWeight: "600",
+                                  cursor: "pointer",
+                                  transition: "all 0.2s ease",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "4px",
+                                }}
+                                onMouseEnter={(e) => {
+                                  const target = e.target as HTMLButtonElement;
+                                  target.style.transform = "translateY(-1px)";
+                                  target.style.boxShadow =
+                                    "0 8px 25px rgba(245, 101, 101, 0.4)";
+                                }}
+                                onMouseLeave={(e) => {
+                                  const target = e.target as HTMLButtonElement;
+                                  target.style.transform = "translateY(0)";
+                                  target.style.boxShadow =
+                                    "0 4px 12px rgba(245, 101, 101, 0.3)";
+                                }}
+                              >
+                                🗑️ Delete
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}

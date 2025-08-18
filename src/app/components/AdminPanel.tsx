@@ -14,6 +14,7 @@ import TestingSection from "./admin/TestingSection";
 import DocumentManagementSection from "./admin/DocumentManagementSection";
 import CustomerPersonaSection from "./admin/CustomerPersonaSection";
 import CustomerProfilesSection from "./admin/CustomerProfilesSection";
+import SummaryModal from "./admin/SummaryModal";
 
 const AdminPanel: React.FC = () => {
   // Authentication state
@@ -76,6 +77,20 @@ const AdminPanel: React.FC = () => {
   const [documentsLoading, setDocumentsLoading] = useState(false);
   const [documentsError, setDocumentsError] = useState("");
   const [documentsExpanded, setDocumentsExpanded] = useState(true);
+
+  // Summary modal state
+  interface CrawledPage {
+    _id: string;
+    url: string;
+    hasStructuredSummary: boolean;
+    createdAt: string;
+    text?: string;
+    summary?: string;
+    structuredSummary?: Record<string, unknown>;
+  }
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
+  const [selectedPageForSummary, setSelectedPageForSummary] =
+    useState<CrawledPage | null>(null);
 
   // Widget configuration state
   const [widgetConfig, setWidgetConfig] = useState({
@@ -380,6 +395,50 @@ const AdminPanel: React.FC = () => {
     }
   };
 
+  // View summary function for crawled pages
+  const viewSummary = async (url: string) => {
+    if (!apiKey) {
+      alert("API key required to view summary");
+      return;
+    }
+
+    setSelectedPageForSummary({
+      _id: url, // Use URL as ID for now
+      url,
+      hasStructuredSummary: false,
+      createdAt: new Date().toISOString(),
+    });
+    setShowSummaryModal(true);
+
+    // Try to fetch the actual summary data
+    try {
+      const res = await fetch("/api/crawled-pages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
+        },
+        body: JSON.stringify({ url }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.summary) {
+        // Update the modal with actual summary data
+        setSelectedPageForSummary({
+          _id: url,
+          url,
+          hasStructuredSummary: true,
+          createdAt: data.createdAt || new Date().toISOString(),
+          text: data.text,
+          summary: data.summary,
+          structuredSummary: data.structuredSummary,
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching summary:", error);
+    }
+  };
+
   const deleteLead = async (email: string) => {
     if (!window.confirm(`Delete all conversation data for ${email}?`)) return;
 
@@ -606,9 +665,20 @@ const AdminPanel: React.FC = () => {
             }
             onRefreshDocuments={fetchDocuments}
             onDeleteDocument={deleteDocumentFile}
+            onViewSummary={viewSummary}
           />
         </div>
       )}
+
+      {/* Summary Modal */}
+      <SummaryModal
+        page={selectedPageForSummary}
+        isOpen={showSummaryModal}
+        onClose={() => {
+          setShowSummaryModal(false);
+          setSelectedPageForSummary(null);
+        }}
+      />
     </div>
   );
 };
