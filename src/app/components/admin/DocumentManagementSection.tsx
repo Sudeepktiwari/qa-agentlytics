@@ -7,16 +7,6 @@ interface Document {
   count: number;
 }
 
-interface CrawledPage {
-  _id: string;
-  url: string;
-  hasStructuredSummary: boolean;
-  createdAt: string;
-  text?: string;
-  summary?: string;
-  structuredSummary?: Record<string, unknown>;
-}
-
 interface DocumentManagementSectionProps {
   documents: Document[];
   documentsLoading: boolean;
@@ -25,12 +15,6 @@ interface DocumentManagementSectionProps {
   onToggleDocumentsExpanded: () => void;
   onRefreshDocuments: () => void;
   onDeleteDocument: (filename: string) => void;
-  crawledPages: CrawledPage[];
-  crawledPagesLoading: boolean;
-  crawledPagesError: string;
-  onRefreshCrawledPages: () => void;
-  onViewPageSummary: (page: CrawledPage) => void;
-  onDeleteCrawledPage: (page: CrawledPage) => void;
 }
 
 const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
@@ -41,12 +25,6 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
   onToggleDocumentsExpanded,
   onRefreshDocuments,
   onDeleteDocument,
-  crawledPages,
-  crawledPagesLoading,
-  crawledPagesError,
-  onRefreshCrawledPages,
-  onViewPageSummary,
-  onDeleteCrawledPage,
 }) => {
   return (
     <div
@@ -57,7 +35,6 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
         padding: "32px",
         boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
         border: "1px solid rgba(255, 255, 255, 0.2)",
-        marginBottom: "24px",
       }}
     >
       <div style={{ marginBottom: "24px" }}>
@@ -105,11 +82,11 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
                   fontWeight: "600",
                 }}
               >
-                {documents.length + crawledPages.length} items
+                {documents.length} docs
               </span>
             </h2>
             <p style={{ color: "#718096", fontSize: "16px", margin: 0 }}>
-              Manage documents and crawled pages - View summaries for pages
+              Manage your uploaded documents and view chunk statistics
             </p>
           </div>
           <div
@@ -140,8 +117,8 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
 
       {documentsExpanded && (
         <div>
-          {/* Refresh Buttons */}
-          <div style={{ marginBottom: "24px", display: "flex", gap: "12px" }}>
+          {/* Refresh Button */}
+          <div style={{ marginBottom: "24px" }}>
             <button
               onClick={onRefreshDocuments}
               disabled={documentsLoading}
@@ -166,34 +143,10 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
             >
               {documentsLoading ? "⏳ Loading..." : "🔄 Refresh Documents"}
             </button>
-            <button
-              onClick={onRefreshCrawledPages}
-              disabled={crawledPagesLoading}
-              style={{
-                padding: "12px 20px",
-                background: crawledPagesLoading
-                  ? "#a0aec0"
-                  : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                color: "white",
-                border: "none",
-                borderRadius: "12px",
-                fontSize: "14px",
-                fontWeight: "600",
-                cursor: crawledPagesLoading ? "not-allowed" : "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                boxShadow: crawledPagesLoading
-                  ? "none"
-                  : "0 4px 12px rgba(102, 126, 234, 0.3)",
-              }}
-            >
-              {crawledPagesLoading ? "⏳ Loading..." : "📄 Refresh Pages"}
-            </button>
           </div>
 
           {/* Error Display */}
-          {(documentsError || crawledPagesError) && (
+          {documentsError && (
             <div
               style={{
                 padding: "16px 20px",
@@ -204,13 +157,12 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
                 marginBottom: "24px",
               }}
             >
-              {documentsError && <div>Documents: {documentsError}</div>}
-              {crawledPagesError && <div>Pages: {crawledPagesError}</div>}
+              {documentsError}
             </div>
           )}
 
-          {/* Content */}
-          {documentsLoading || crawledPagesLoading ? (
+          {/* Documents Content */}
+          {documentsLoading ? (
             <div
               style={{
                 textAlign: "center",
@@ -220,9 +172,9 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
               }}
             >
               <div style={{ fontSize: "40px", marginBottom: "16px" }}>⏳</div>
-              Loading documents and pages...
+              Loading documents...
             </div>
-          ) : documents.length === 0 && crawledPages.length === 0 ? (
+          ) : documents.length === 0 ? (
             <div
               style={{
                 textAlign: "center",
@@ -232,229 +184,306 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
             >
               <div style={{ fontSize: "40px", marginBottom: "16px" }}>📭</div>
               <h3 style={{ margin: "0 0 8px 0", color: "#4a5568" }}>
-                No content available
+                No documents uploaded
               </h3>
               <p style={{ margin: 0, fontSize: "16px" }}>
-                Upload documents or crawl pages to get started!
+                Upload your first document above to get started!
               </p>
             </div>
           ) : (
             <>
-              {/* Simple unified list */}
-              <div style={{ display: "grid", gap: "12px" }}>
-                {/* Documents */}
-                {documents.map((doc) => (
+              {/* Stats */}
+              <div
+                style={{
+                  background: "linear-gradient(135deg, #f7fafc10, #edf2f710)",
+                  borderRadius: "16px",
+                  padding: "20px",
+                  marginBottom: "24px",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "16px",
+                    flexWrap: "wrap",
+                  }}
+                >
                   <div
-                    key={`doc-${doc.filename}`}
                     style={{
-                      background: "white",
-                      borderRadius: "12px",
-                      padding: "16px 20px",
-                      border: "1px solid #e2e8f0",
-                      boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)",
                       display: "flex",
                       alignItems: "center",
-                      justifyContent: "space-between",
-                      transition: "all 0.2s ease",
-                    }}
-                    onMouseEnter={(e) => {
-                      const target = e.currentTarget as HTMLDivElement;
-                      target.style.boxShadow = "0 4px 16px rgba(0, 0, 0, 0.1)";
-                      target.style.transform = "translateY(-1px)";
-                    }}
-                    onMouseLeave={(e) => {
-                      const target = e.currentTarget as HTMLDivElement;
-                      target.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.05)";
-                      target.style.transform = "translateY(0)";
+                      gap: "8px",
                     }}
                   >
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "12px",
-                        flex: 1,
-                      }}
-                    >
-                      <span style={{ fontSize: "20px" }}>📄</span>
-                      <div>
-                        <div
-                          style={{
-                            fontWeight: "600",
-                            color: "#2d3748",
-                            fontSize: "16px",
-                          }}
-                        >
-                          {doc.filename}
-                        </div>
-                        <div style={{ fontSize: "12px", color: "#718096" }}>
-                          Document • {doc.count} chunks
-                        </div>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => onDeleteDocument(doc.filename)}
-                      style={{
-                        background:
-                          "linear-gradient(135deg, #f56565 0%, #e53e3e 100%)",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "8px",
-                        padding: "8px 16px",
-                        fontSize: "12px",
-                        fontWeight: "600",
-                        cursor: "pointer",
-                        transition: "all 0.2s ease",
-                      }}
-                      onMouseEnter={(e) => {
-                        const target = e.target as HTMLButtonElement;
-                        target.style.transform = "translateY(-1px)";
-                      }}
-                      onMouseLeave={(e) => {
-                        const target = e.target as HTMLButtonElement;
-                        target.style.transform = "translateY(0)";
-                      }}
-                    >
-                      🗑️ Delete
-                    </button>
+                    <span style={{ fontSize: "20px" }}>📊</span>
+                    <strong style={{ color: "#2d3748" }}>
+                      Total Documents: {documents.length}
+                    </strong>
                   </div>
-                ))}
-
-                {/* Crawled Pages */}
-                {crawledPages.map((page) => (
                   <div
-                    key={`page-${page._id}`}
                     style={{
-                      background: "white",
-                      borderRadius: "12px",
-                      padding: "16px 20px",
-                      border: "1px solid #e2e8f0",
-                      boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)",
                       display: "flex",
                       alignItems: "center",
-                      justifyContent: "space-between",
-                      transition: "all 0.2s ease",
-                    }}
-                    onMouseEnter={(e) => {
-                      const target = e.currentTarget as HTMLDivElement;
-                      target.style.boxShadow = "0 4px 16px rgba(0, 0, 0, 0.1)";
-                      target.style.transform = "translateY(-1px)";
-                    }}
-                    onMouseLeave={(e) => {
-                      const target = e.currentTarget as HTMLDivElement;
-                      target.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.05)";
-                      target.style.transform = "translateY(0)";
+                      gap: "8px",
                     }}
                   >
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "12px",
-                        flex: 1,
-                      }}
-                    >
-                      <span style={{ fontSize: "20px" }}>🌐</span>
-                      <div>
-                        <div
-                          style={{
-                            fontWeight: "600",
-                            color: "#2d3748",
-                            fontSize: "16px",
-                            wordBreak: "break-all",
-                          }}
-                        >
-                          {page.url}
-                        </div>
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "8px",
-                          }}
-                        >
-                          <span style={{ fontSize: "12px", color: "#718096" }}>
-                            Web Page •{" "}
-                            {new Date(page.createdAt).toLocaleDateString()}
-                          </span>
-                          <span
-                            style={{
-                              fontSize: "12px",
-                              padding: "2px 6px",
-                              borderRadius: "4px",
-                              background: page.hasStructuredSummary
-                                ? "linear-gradient(135deg, #48bb7820, #38a16920)"
-                                : "linear-gradient(135deg, #ed8f3620, #dd696820)",
-                              color: page.hasStructuredSummary
-                                ? "#38a169"
-                                : "#dd6968",
-                              fontWeight: "600",
-                            }}
-                          >
-                            {page.hasStructuredSummary
-                              ? "Has Summary"
-                              : "Needs Summary"}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <div style={{ display: "flex", gap: "8px" }}>
-                      <button
-                        onClick={() => onViewPageSummary(page)}
-                        style={{
-                          background: page.hasStructuredSummary
-                            ? "linear-gradient(135deg, #48bb78 0%, #38a169 100%)"
-                            : "linear-gradient(135deg, #ed8f36 0%, #dd6968 100%)",
-                          color: "white",
-                          border: "none",
-                          borderRadius: "8px",
-                          padding: "8px 16px",
-                          fontSize: "12px",
-                          fontWeight: "600",
-                          cursor: "pointer",
-                          transition: "all 0.2s ease",
-                        }}
-                        onMouseEnter={(e) => {
-                          const target = e.target as HTMLButtonElement;
-                          target.style.transform = "translateY(-1px)";
-                        }}
-                        onMouseLeave={(e) => {
-                          const target = e.target as HTMLButtonElement;
-                          target.style.transform = "translateY(0)";
-                        }}
-                      >
-                        {page.hasStructuredSummary
-                          ? "👁️ View Summary"
-                          : "⚡ Generate Summary"}
-                      </button>
-                      <button
-                        onClick={() => onDeleteCrawledPage(page)}
+                    <span style={{ fontSize: "20px" }}>🧩</span>
+                    <strong style={{ color: "#2d3748" }}>
+                      Total Chunks:{" "}
+                      {documents.reduce((sum, doc) => sum + doc.count, 0)}
+                    </strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* Documents Table */}
+              <div
+                style={{
+                  background: "white",
+                  borderRadius: "16px",
+                  overflow: "hidden",
+                  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
+                  border: "1px solid #e2e8f0",
+                }}
+              >
+                <div style={{ overflowX: "auto" }}>
+                  <table
+                    style={{
+                      width: "100%",
+                      borderCollapse: "collapse",
+                      fontSize: "14px",
+                    }}
+                  >
+                    <thead>
+                      <tr
                         style={{
                           background:
-                            "linear-gradient(135deg, #f56565 0%, #e53e3e 100%)",
-                          color: "white",
-                          border: "none",
-                          borderRadius: "8px",
-                          padding: "8px 12px",
-                          fontSize: "12px",
-                          fontWeight: "600",
-                          cursor: "pointer",
-                          transition: "all 0.2s ease",
-                        }}
-                        onMouseEnter={(e) => {
-                          const target = e.target as HTMLButtonElement;
-                          target.style.transform = "translateY(-1px)";
-                        }}
-                        onMouseLeave={(e) => {
-                          const target = e.target as HTMLButtonElement;
-                          target.style.transform = "translateY(0)";
+                            "linear-gradient(135deg, #f7fafc, #edf2f7)",
                         }}
                       >
-                        🗑️
-                      </button>
-                    </div>
+                        <th
+                          style={{
+                            padding: "16px 20px",
+                            textAlign: "left",
+                            borderBottom: "2px solid #e2e8f0",
+                            color: "#4a5568",
+                            fontWeight: "600",
+                          }}
+                        >
+                          📄 Document Name
+                        </th>
+                        <th
+                          style={{
+                            padding: "16px 20px",
+                            textAlign: "center",
+                            borderBottom: "2px solid #e2e8f0",
+                            color: "#4a5568",
+                            fontWeight: "600",
+                          }}
+                        >
+                          🧩 Chunks
+                        </th>
+                        <th
+                          style={{
+                            padding: "16px 20px",
+                            textAlign: "center",
+                            borderBottom: "2px solid #e2e8f0",
+                            color: "#4a5568",
+                            fontWeight: "600",
+                          }}
+                        >
+                          ⚡ Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {documents.map((doc, index) => (
+                        <tr
+                          key={doc.filename}
+                          style={{
+                            backgroundColor:
+                              index % 2 === 0 ? "#fff" : "#f8fafc",
+                            transition: "background-color 0.2s ease",
+                          }}
+                          onMouseEnter={(e) => {
+                            const target =
+                              e.currentTarget as HTMLTableRowElement;
+                            target.style.backgroundColor = "#f1f5f9";
+                          }}
+                          onMouseLeave={(e) => {
+                            const target =
+                              e.currentTarget as HTMLTableRowElement;
+                            target.style.backgroundColor =
+                              index % 2 === 0 ? "#fff" : "#f8fafc";
+                          }}
+                        >
+                          <td
+                            style={{
+                              padding: "16px 20px",
+                              borderBottom: "1px solid #e2e8f0",
+                              maxWidth: "400px",
+                            }}
+                          >
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "8px",
+                              }}
+                            >
+                              <span style={{ fontSize: "16px" }}>📄</span>
+                              <span
+                                style={{
+                                  fontWeight: "600",
+                                  color: "#2d3748",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  whiteSpace: "nowrap",
+                                }}
+                                title={doc.filename}
+                              >
+                                {doc.filename}
+                              </span>
+                            </div>
+                          </td>
+                          <td
+                            style={{
+                              padding: "16px 20px",
+                              borderBottom: "1px solid #e2e8f0",
+                              textAlign: "center",
+                            }}
+                          >
+                            <span
+                              style={{
+                                background:
+                                  "linear-gradient(135deg, #667eea20, #764ba220)",
+                                color: "#667eea",
+                                padding: "4px 12px",
+                                borderRadius: "20px",
+                                fontSize: "12px",
+                                fontWeight: "600",
+                              }}
+                            >
+                              {doc.count} chunks
+                            </span>
+                          </td>
+                          <td
+                            style={{
+                              padding: "16px 20px",
+                              borderBottom: "1px solid #e2e8f0",
+                              textAlign: "center",
+                            }}
+                          >
+                            <button
+                              onClick={() => onDeleteDocument(doc.filename)}
+                              style={{
+                                background:
+                                  "linear-gradient(135deg, #f56565 0%, #e53e3e 100%)",
+                                color: "white",
+                                border: "none",
+                                borderRadius: "8px",
+                                padding: "8px 16px",
+                                fontSize: "12px",
+                                fontWeight: "600",
+                                cursor: "pointer",
+                                transition: "all 0.2s ease",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "4px",
+                                margin: "0 auto",
+                              }}
+                              onMouseEnter={(e) => {
+                                const target = e.target as HTMLButtonElement;
+                                target.style.transform = "translateY(-1px)";
+                                target.style.boxShadow =
+                                  "0 8px 25px rgba(245, 101, 101, 0.4)";
+                              }}
+                              onMouseLeave={(e) => {
+                                const target = e.target as HTMLButtonElement;
+                                target.style.transform = "translateY(0)";
+                                target.style.boxShadow =
+                                  "0 4px 12px rgba(245, 101, 101, 0.3)";
+                              }}
+                            >
+                              🗑️ Delete
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Info Box */}
+              <div
+                style={{
+                  marginTop: "24px",
+                  background: "linear-gradient(135deg, #e6fffa10, #b2f5ea10)",
+                  borderRadius: "16px",
+                  padding: "20px",
+                }}
+              >
+                <h4
+                  style={{
+                    margin: "0 0 16px 0",
+                    color: "#4a5568",
+                    fontSize: "16px",
+                    fontWeight: "600",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                  }}
+                >
+                  💡 About Document Processing
+                </h4>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+                    gap: "16px",
+                  }}
+                >
+                  <div
+                    style={{
+                      color: "#4a5568",
+                      fontSize: "14px",
+                      padding: "12px",
+                      background: "rgba(255, 255, 255, 0.6)",
+                      borderRadius: "8px",
+                    }}
+                  >
+                    <strong>📄 Chunks:</strong> Large documents are split into
+                    smaller text chunks for better AI processing and more
+                    accurate responses.
                   </div>
-                ))}
+                  <div
+                    style={{
+                      color: "#4a5568",
+                      fontSize: "14px",
+                      padding: "12px",
+                      background: "rgba(255, 255, 255, 0.6)",
+                      borderRadius: "8px",
+                    }}
+                  >
+                    <strong>🔍 Search:</strong> When users ask questions, the AI
+                    searches through all chunks to find the most relevant
+                    information.
+                  </div>
+                  <div
+                    style={{
+                      color: "#4a5568",
+                      fontSize: "14px",
+                      padding: "12px",
+                      background: "rgba(255, 255, 255, 0.6)",
+                      borderRadius: "8px",
+                    }}
+                  >
+                    <strong>🗑️ Deletion:</strong> Deleting a document removes
+                    all its chunks from the knowledge base permanently.
+                  </div>
+                </div>
               </div>
             </>
           )}
