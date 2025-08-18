@@ -92,6 +92,9 @@ const AdminPanel: React.FC = () => {
   const [selectedPageForSummary, setSelectedPageForSummary] =
     useState<CrawledPage | null>(null);
 
+  // URL summary status tracking
+  const [urlSummaryStatus, setUrlSummaryStatus] = useState<Record<string, boolean>>({});
+
   // Widget configuration state
   const [widgetConfig, setWidgetConfig] = useState({
     theme: "blue",
@@ -356,6 +359,8 @@ const AdminPanel: React.FC = () => {
       const data = await res.json();
       if (res.ok) {
         setDocuments(data.documents || []);
+        // Also fetch URL summary status when documents are loaded
+        fetchUrlSummaryStatus();
       } else {
         setDocumentsError(data.error || "Failed to fetch documents");
       }
@@ -483,6 +488,8 @@ const AdminPanel: React.FC = () => {
 
         // Refresh the documents list to show updated summary status
         fetchDocuments();
+        // Also refresh URL summary status
+        fetchUrlSummaryStatus();
         alert("Summary generated successfully!");
       } else {
         const errorData = await response.json();
@@ -494,6 +501,34 @@ const AdminPanel: React.FC = () => {
     } catch (error) {
       console.error("Error generating summary:", error);
       alert("Error generating summary. Please try again.");
+    }
+  };
+
+  // Fetch URL summary status for all crawled pages
+  const fetchUrlSummaryStatus = async () => {
+    if (!apiKey) return;
+    
+    try {
+      const response = await fetch('/api/crawled-pages', {
+        method: 'GET',
+        headers: { 'x-api-key': apiKey }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const statusMap: Record<string, boolean> = {};
+        
+        if (data.pages && Array.isArray(data.pages)) {
+          data.pages.forEach((page: any) => {
+            statusMap[page.url] = !!page.structuredSummary;
+          });
+        }
+        
+        setUrlSummaryStatus(statusMap);
+        console.log("URL summary status updated:", statusMap);
+      }
+    } catch (error) {
+      console.error('Error fetching URL summary status:', error);
     }
   };
 
@@ -718,6 +753,7 @@ const AdminPanel: React.FC = () => {
             documentsLoading={documentsLoading}
             documentsError={documentsError}
             documentsExpanded={documentsExpanded}
+            urlSummaryStatus={urlSummaryStatus}
             onToggleDocumentsExpanded={() =>
               setDocumentsExpanded(!documentsExpanded)
             }
