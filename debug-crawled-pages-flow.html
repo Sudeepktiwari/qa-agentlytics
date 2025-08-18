@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Debug Crawled Pages</title>
+  </head>
+  <body>
+    <h1>Debug Crawled Pages Flow</h1>
+    <div id="output"></div>
+
+    <script>
+      async function debugFlow() {
+        const output = document.getElementById("output");
+
+        function log(message) {
+          output.innerHTML += "<p>" + message + "</p>";
+          console.log(message);
+        }
+
+        try {
+          // Step 1: Check auth
+          log("🔍 Step 1: Checking authentication...");
+          const authRes = await fetch("/api/auth/verify");
+          const authData = await authRes.json();
+          log("Auth Status: " + authRes.status);
+          log("Auth Data: " + JSON.stringify(authData));
+
+          if (!authRes.ok) {
+            log("❌ Authentication failed - please login first");
+            return;
+          }
+
+          // Step 2: Get API key
+          log("🔍 Step 2: Getting API key...");
+          const apiKeyRes = await fetch("/api/auth/api-key");
+          const apiKeyData = await apiKeyRes.json();
+          log("API Key Status: " + apiKeyRes.status);
+          log("API Key Data: " + JSON.stringify(apiKeyData));
+
+          if (!apiKeyRes.ok || !apiKeyData.apiKey) {
+            log("❌ No API key found - need to generate one");
+            return;
+          }
+
+          // Step 3: Test crawled pages API
+          log("🔍 Step 3: Testing crawled pages API...");
+          const crawledRes = await fetch("/api/crawled-pages", {
+            headers: {
+              "x-api-key": apiKeyData.apiKey,
+            },
+          });
+          const crawledData = await crawledRes.json();
+          log("Crawled Pages Status: " + crawledRes.status);
+          log("Crawled Pages Data: " + JSON.stringify(crawledData));
+
+          if (crawledRes.ok) {
+            log(
+              "✅ Success! Found " +
+                (crawledData.pages?.length || 0) +
+                " crawled pages"
+            );
+          } else {
+            log("❌ Failed to fetch crawled pages: " + crawledData.error);
+          }
+        } catch (error) {
+          log("❌ Error: " + error.message);
+        }
+      }
+
+      // Run debug on page load
+      debugFlow();
+    </script>
+  </body>
+</html>

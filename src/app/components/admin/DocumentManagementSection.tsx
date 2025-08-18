@@ -7,6 +7,16 @@ interface Document {
   count: number;
 }
 
+interface CrawledPage {
+  _id: string;
+  url: string;
+  hasStructuredSummary: boolean;
+  createdAt: string;
+  text?: string;
+  summary?: string;
+  structuredSummary?: any;
+}
+
 interface DocumentManagementSectionProps {
   documents: Document[];
   documentsLoading: boolean;
@@ -15,6 +25,12 @@ interface DocumentManagementSectionProps {
   onToggleDocumentsExpanded: () => void;
   onRefreshDocuments: () => void;
   onDeleteDocument: (filename: string) => void;
+  crawledPages: CrawledPage[];
+  crawledPagesLoading: boolean;
+  crawledPagesError: string;
+  onRefreshCrawledPages: () => void;
+  onViewPageSummary: (page: CrawledPage) => void;
+  onDeleteCrawledPage: (page: CrawledPage) => void;
 }
 
 const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
@@ -25,6 +41,12 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
   onToggleDocumentsExpanded,
   onRefreshDocuments,
   onDeleteDocument,
+  crawledPages,
+  crawledPagesLoading,
+  crawledPagesError,
+  onRefreshCrawledPages,
+  onViewPageSummary,
+  onDeleteCrawledPage,
 }) => {
   return (
     <div
@@ -82,11 +104,11 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
                   fontWeight: "600",
                 }}
               >
-                {documents.length} docs
+                {documents.length + crawledPages.length} items
               </span>
             </h2>
             <p style={{ color: "#718096", fontSize: "16px", margin: 0 }}>
-              Manage your uploaded documents and view chunk statistics
+              Manage your uploaded documents and crawled pages
             </p>
           </div>
           <div
@@ -117,8 +139,8 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
 
       {documentsExpanded && (
         <div>
-          {/* Refresh Button */}
-          <div style={{ marginBottom: "24px" }}>
+          {/* Refresh Buttons */}
+          <div style={{ marginBottom: "24px", display: "flex", gap: "12px" }}>
             <button
               onClick={onRefreshDocuments}
               disabled={documentsLoading}
@@ -143,10 +165,34 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
             >
               {documentsLoading ? "⏳ Loading..." : "🔄 Refresh Documents"}
             </button>
+            <button
+              onClick={onRefreshCrawledPages}
+              disabled={crawledPagesLoading}
+              style={{
+                padding: "12px 20px",
+                background: crawledPagesLoading
+                  ? "#a0aec0"
+                  : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                color: "white",
+                border: "none",
+                borderRadius: "12px",
+                fontSize: "14px",
+                fontWeight: "600",
+                cursor: crawledPagesLoading ? "not-allowed" : "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                boxShadow: crawledPagesLoading
+                  ? "none"
+                  : "0 4px 12px rgba(102, 126, 234, 0.3)",
+              }}
+            >
+              {crawledPagesLoading ? "⏳ Loading..." : "📄 Refresh Pages"}
+            </button>
           </div>
 
           {/* Error Display */}
-          {documentsError && (
+          {(documentsError || crawledPagesError) && (
             <div
               style={{
                 padding: "16px 20px",
@@ -157,12 +203,13 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
                 marginBottom: "24px",
               }}
             >
-              {documentsError}
+              {documentsError && <div>Documents: {documentsError}</div>}
+              {crawledPagesError && <div>Pages: {crawledPagesError}</div>}
             </div>
           )}
 
           {/* Documents Content */}
-          {documentsLoading ? (
+          {documentsLoading || crawledPagesLoading ? (
             <div
               style={{
                 textAlign: "center",
@@ -172,9 +219,9 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
               }}
             >
               <div style={{ fontSize: "40px", marginBottom: "16px" }}>⏳</div>
-              Loading documents...
+              Loading documents and pages...
             </div>
-          ) : documents.length === 0 ? (
+          ) : documents.length === 0 && crawledPages.length === 0 ? (
             <div
               style={{
                 textAlign: "center",
@@ -184,10 +231,10 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
             >
               <div style={{ fontSize: "40px", marginBottom: "16px" }}>📭</div>
               <h3 style={{ margin: "0 0 8px 0", color: "#4a5568" }}>
-                No documents uploaded
+                No content available
               </h3>
               <p style={{ margin: 0, fontSize: "16px" }}>
-                Upload your first document above to get started!
+                Upload documents or crawl pages to get started!
               </p>
             </div>
           ) : (
@@ -218,7 +265,19 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
                   >
                     <span style={{ fontSize: "20px" }}>📊</span>
                     <strong style={{ color: "#2d3748" }}>
-                      Total Documents: {documents.length}
+                      Documents: {documents.length}
+                    </strong>
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                    }}
+                  >
+                    <span style={{ fontSize: "20px" }}>📄</span>
+                    <strong style={{ color: "#2d3748" }}>
+                      Pages: {crawledPages.length}
                     </strong>
                   </div>
                   <div
@@ -230,14 +289,14 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
                   >
                     <span style={{ fontSize: "20px" }}>🧩</span>
                     <strong style={{ color: "#2d3748" }}>
-                      Total Chunks:{" "}
+                      Doc Chunks:{" "}
                       {documents.reduce((sum, doc) => sum + doc.count, 0)}
                     </strong>
                   </div>
                 </div>
               </div>
 
-              {/* Documents Table */}
+              {/* Combined Content */}
               <div
                 style={{
                   background: "white",
@@ -271,7 +330,7 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
                             fontWeight: "600",
                           }}
                         >
-                          📄 Document Name
+                          📄 Name / URL
                         </th>
                         <th
                           style={{
@@ -282,7 +341,18 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
                             fontWeight: "600",
                           }}
                         >
-                          🧩 Chunks
+                          🏷️ Type
+                        </th>
+                        <th
+                          style={{
+                            padding: "16px 20px",
+                            textAlign: "center",
+                            borderBottom: "2px solid #e2e8f0",
+                            color: "#4a5568",
+                            fontWeight: "600",
+                          }}
+                        >
+                          📊 Info
                         </th>
                         <th
                           style={{
@@ -298,9 +368,10 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
                       </tr>
                     </thead>
                     <tbody>
+                      {/* Documents */}
                       {documents.map((doc, index) => (
                         <tr
-                          key={doc.filename}
+                          key={`doc-${doc.filename}`}
                           style={{
                             backgroundColor:
                               index % 2 === 0 ? "#fff" : "#f8fafc",
@@ -346,6 +417,27 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
                                 {doc.filename}
                               </span>
                             </div>
+                          </td>
+                          <td
+                            style={{
+                              padding: "16px 20px",
+                              borderBottom: "1px solid #e2e8f0",
+                              textAlign: "center",
+                            }}
+                          >
+                            <span
+                              style={{
+                                background:
+                                  "linear-gradient(135deg, #48bb7820, #38a16920)",
+                                color: "#38a169",
+                                padding: "4px 12px",
+                                borderRadius: "20px",
+                                fontSize: "12px",
+                                fontWeight: "600",
+                              }}
+                            >
+                              Document
+                            </span>
                           </td>
                           <td
                             style={{
@@ -411,6 +503,185 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
                           </td>
                         </tr>
                       ))}
+
+                      {/* Crawled Pages */}
+                      {crawledPages.map((page, index) => {
+                        const totalIndex = documents.length + index;
+                        return (
+                          <tr
+                            key={`page-${page._id}`}
+                            style={{
+                              backgroundColor:
+                                totalIndex % 2 === 0 ? "#fff" : "#f8fafc",
+                              transition: "background-color 0.2s ease",
+                            }}
+                            onMouseEnter={(e) => {
+                              const target =
+                                e.currentTarget as HTMLTableRowElement;
+                              target.style.backgroundColor = "#f1f5f9";
+                            }}
+                            onMouseLeave={(e) => {
+                              const target =
+                                e.currentTarget as HTMLTableRowElement;
+                              target.style.backgroundColor =
+                                totalIndex % 2 === 0 ? "#fff" : "#f8fafc";
+                            }}
+                          >
+                            <td
+                              style={{
+                                padding: "16px 20px",
+                                borderBottom: "1px solid #e2e8f0",
+                                maxWidth: "400px",
+                              }}
+                            >
+                              <div
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "8px",
+                                }}
+                              >
+                                <span style={{ fontSize: "16px" }}>🌐</span>
+                                <span
+                                  style={{
+                                    fontWeight: "600",
+                                    color: "#2d3748",
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                    whiteSpace: "nowrap",
+                                  }}
+                                  title={page.url}
+                                >
+                                  {page.url}
+                                </span>
+                              </div>
+                            </td>
+                            <td
+                              style={{
+                                padding: "16px 20px",
+                                borderBottom: "1px solid #e2e8f0",
+                                textAlign: "center",
+                              }}
+                            >
+                              <span
+                                style={{
+                                  background:
+                                    "linear-gradient(135deg, #667eea20, #764ba220)",
+                                  color: "#667eea",
+                                  padding: "4px 12px",
+                                  borderRadius: "20px",
+                                  fontSize: "12px",
+                                  fontWeight: "600",
+                                }}
+                              >
+                                Web Page
+                              </span>
+                            </td>
+                            <td
+                              style={{
+                                padding: "16px 20px",
+                                borderBottom: "1px solid #e2e8f0",
+                                textAlign: "center",
+                              }}
+                            >
+                              <span
+                                style={{
+                                  background: page.hasStructuredSummary
+                                    ? "linear-gradient(135deg, #48bb7820, #38a16920)"
+                                    : "linear-gradient(135deg, #ed8f3620, #dd696820)",
+                                  color: page.hasStructuredSummary
+                                    ? "#38a169"
+                                    : "#dd6968",
+                                  padding: "4px 12px",
+                                  borderRadius: "20px",
+                                  fontSize: "12px",
+                                  fontWeight: "600",
+                                }}
+                              >
+                                {page.hasStructuredSummary
+                                  ? "✅ Has Summary"
+                                  : "⚡ Needs Summary"}
+                              </span>
+                            </td>
+                            <td
+                              style={{
+                                padding: "16px 20px",
+                                borderBottom: "1px solid #e2e8f0",
+                                textAlign: "center",
+                              }}
+                            >
+                              <div
+                                style={{
+                                  display: "flex",
+                                  gap: "8px",
+                                  justifyContent: "center",
+                                }}
+                              >
+                                <button
+                                  onClick={() => onViewPageSummary(page)}
+                                  style={{
+                                    background: page.hasStructuredSummary
+                                      ? "linear-gradient(135deg, #48bb78 0%, #38a169 100%)"
+                                      : "linear-gradient(135deg, #ed8f36 0%, #dd6968 100%)",
+                                    color: "white",
+                                    border: "none",
+                                    borderRadius: "8px",
+                                    padding: "8px 16px",
+                                    fontSize: "12px",
+                                    fontWeight: "600",
+                                    cursor: "pointer",
+                                    transition: "all 0.2s ease",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "4px",
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    const target =
+                                      e.target as HTMLButtonElement;
+                                    target.style.transform = "translateY(-1px)";
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    const target =
+                                      e.target as HTMLButtonElement;
+                                    target.style.transform = "translateY(0)";
+                                  }}
+                                >
+                                  {page.hasStructuredSummary
+                                    ? "👁️ View Summary"
+                                    : "⚡ Generate Summary"}
+                                </button>
+                                <button
+                                  onClick={() => onDeleteCrawledPage(page)}
+                                  style={{
+                                    background:
+                                      "linear-gradient(135deg, #f56565 0%, #e53e3e 100%)",
+                                    color: "white",
+                                    border: "none",
+                                    borderRadius: "8px",
+                                    padding: "8px 12px",
+                                    fontSize: "12px",
+                                    fontWeight: "600",
+                                    cursor: "pointer",
+                                    transition: "all 0.2s ease",
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    const target =
+                                      e.target as HTMLButtonElement;
+                                    target.style.transform = "translateY(-1px)";
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    const target =
+                                      e.target as HTMLButtonElement;
+                                    target.style.transform = "translateY(0)";
+                                  }}
+                                >
+                                  🗑️
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

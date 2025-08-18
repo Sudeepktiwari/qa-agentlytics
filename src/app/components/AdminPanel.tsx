@@ -751,15 +751,6 @@ const AdminPanel: React.FC = () => {
             />
           </div>
 
-          <CrawledPagesSection
-            crawledPages={crawledPages}
-            crawledPagesLoading={crawledPagesLoading}
-            crawledPagesError={crawledPagesError}
-            onRefreshCrawledPages={fetchCrawledPages}
-            onViewPageSummary={viewPageSummary}
-            onDeleteCrawledPage={deleteCrawledPage}
-          />
-
           <DocumentManagementSection
             documents={documents}
             documentsLoading={documentsLoading}
@@ -770,6 +761,12 @@ const AdminPanel: React.FC = () => {
             }
             onRefreshDocuments={fetchDocuments}
             onDeleteDocument={deleteDocumentFile}
+            crawledPages={crawledPages}
+            crawledPagesLoading={crawledPagesLoading}
+            crawledPagesError={crawledPagesError}
+            onRefreshCrawledPages={fetchCrawledPages}
+            onViewPageSummary={viewPageSummary}
+            onDeleteCrawledPage={deleteCrawledPage}
           />
         </div>
       )}
