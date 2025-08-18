@@ -14,6 +14,7 @@ import TestingSection from "./admin/TestingSection";
 import DocumentManagementSection from "./admin/DocumentManagementSection";
 import CustomerPersonaSection from "./admin/CustomerPersonaSection";
 import CustomerProfilesSection from "./admin/CustomerProfilesSection";
+import SummaryModal from "./admin/SummaryModal";
 
 const AdminPanel: React.FC = () => {
   // Authentication state
@@ -76,6 +77,25 @@ const AdminPanel: React.FC = () => {
   const [documentsLoading, setDocumentsLoading] = useState(false);
   const [documentsError, setDocumentsError] = useState("");
   const [documentsExpanded, setDocumentsExpanded] = useState(false);
+
+  // Crawled pages management state
+  interface CrawledPage {
+    _id: string;
+    url: string;
+    hasStructuredSummary: boolean;
+    createdAt: string;
+    text?: string;
+    summary?: string;
+    structuredSummary?: any;
+  }
+  const [crawledPages, setCrawledPages] = useState<CrawledPage[]>([]);
+  const [crawledPagesLoading, setCrawledPagesLoading] = useState(false);
+  const [crawledPagesError, setCrawledPagesError] = useState("");
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
+  const [selectedPageForSummary, setSelectedPageForSummary] =
+    useState<CrawledPage | null>(null);
+  const [currentSummary, setCurrentSummary] = useState<any>(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
 
   // Widget configuration state
   const [widgetConfig, setWidgetConfig] = useState({
@@ -380,6 +400,133 @@ const AdminPanel: React.FC = () => {
     }
   };
 
+  // Crawled pages management functions
+  const fetchCrawledPages = async () => {
+    if (!apiKey) {
+      setCrawledPagesError("API key required to fetch crawled pages");
+      return;
+    }
+
+    setCrawledPagesLoading(true);
+    setCrawledPagesError("");
+    try {
+      const res = await fetch("/api/crawled-pages", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
+        },
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setCrawledPages(data.pages || []);
+      } else {
+        setCrawledPagesError(data.error || "Failed to fetch crawled pages");
+      }
+    } catch (error) {
+      setCrawledPagesError("Failed to fetch crawled pages");
+      console.error("Error fetching crawled pages:", error);
+    } finally {
+      setCrawledPagesLoading(false);
+    }
+  };
+
+  const viewPageSummary = async (page: CrawledPage) => {
+    setSelectedPageForSummary(page);
+    setShowSummaryModal(true);
+
+    if (!page.hasStructuredSummary) {
+      // No summary exists, show option to generate
+      setCurrentSummary(null);
+      return;
+    }
+
+    // Fetch the existing summary
+    setSummaryLoading(true);
+    try {
+      const res = await fetch("/api/crawled-pages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
+        },
+        body: JSON.stringify({ url: page.url }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setCurrentSummary(data.summary);
+      } else {
+        setCrawledPagesError(data.error || "Failed to fetch summary");
+      }
+    } catch (error) {
+      setCrawledPagesError("Failed to fetch summary");
+      console.error("Error fetching summary:", error);
+    } finally {
+      setSummaryLoading(false);
+    }
+  };
+
+  const generatePageSummary = async (page: CrawledPage) => {
+    setSummaryLoading(true);
+    try {
+      const res = await fetch("/api/crawled-pages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
+        },
+        body: JSON.stringify({ url: page.url }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setCurrentSummary(data.summary);
+        // Refresh the pages list to update the summary status
+        fetchCrawledPages();
+      } else {
+        setCrawledPagesError(data.error || "Failed to generate summary");
+      }
+    } catch (error) {
+      setCrawledPagesError("Failed to generate summary");
+      console.error("Error generating summary:", error);
+    } finally {
+      setSummaryLoading(false);
+    }
+  };
+
+  const deleteCrawledPage = async (page: CrawledPage) => {
+    if (
+      !window.confirm(
+        `Delete crawled page "${page.url}"? This will remove it from the knowledge base.`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/crawled-pages", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
+        },
+        body: JSON.stringify({ url: page.url }),
+      });
+
+      if (res.ok) {
+        fetchCrawledPages(); // Refresh the list
+      } else {
+        const data = await res.json();
+        setCrawledPagesError(data.error || "Failed to delete page");
+      }
+    } catch (error) {
+      setCrawledPagesError("Failed to delete page");
+      console.error("Error deleting page:", error);
+    }
+  };
+
   const deleteLead = async (email: string) => {
     if (!window.confirm(`Delete all conversation data for ${email}?`)) return;
 
@@ -433,6 +580,13 @@ const AdminPanel: React.FC = () => {
       fetchDocuments();
     }
   }, [auth, fetchLeads]);
+
+  // Fetch crawled pages when API key becomes available
+  useEffect(() => {
+    if (auth && apiKey) {
+      fetchCrawledPages();
+    }
+  }, [auth, apiKey]);
 
   return (
     <div
@@ -606,9 +760,25 @@ const AdminPanel: React.FC = () => {
             }
             onRefreshDocuments={fetchDocuments}
             onDeleteDocument={deleteDocumentFile}
+            crawledPages={crawledPages}
+            crawledPagesLoading={crawledPagesLoading}
+            crawledPagesError={crawledPagesError}
+            onRefreshCrawledPages={fetchCrawledPages}
+            onViewPageSummary={viewPageSummary}
+            onDeleteCrawledPage={deleteCrawledPage}
           />
         </div>
       )}
+
+      {/* Summary Modal */}
+      <SummaryModal
+        page={selectedPageForSummary}
+        isOpen={showSummaryModal}
+        onClose={() => {
+          setShowSummaryModal(false);
+          setSelectedPageForSummary(null);
+        }}
+      />
     </div>
   );
 };
