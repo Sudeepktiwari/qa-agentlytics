@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     console.log("[API] POST /api/crawled-pages - Starting request");
-    
+
     // Verify API key
     const apiKey = request.headers.get("x-api-key");
     if (!apiKey) {
@@ -93,7 +93,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Page not found" }, { status: 404 });
     }
 
-    console.log("[API] Found existing page, has summary:", !!existingPage.structuredSummary);
+    console.log(
+      "[API] Found existing page, has summary:",
+      !!existingPage.structuredSummary
+    );
 
     // If regenerate is true, skip the existing summary check
     if (existingPage.structuredSummary && !regenerate) {
@@ -206,9 +209,9 @@ Extract and return a JSON object with:
       stack: error instanceof Error ? error.stack : undefined,
     });
     return NextResponse.json(
-      { 
-        error: "Failed to generate summary", 
-        details: error instanceof Error ? error.message : String(error) 
+      {
+        error: "Failed to generate summary",
+        details: error instanceof Error ? error.message : String(error),
       },
       { status: 500 }
     );
