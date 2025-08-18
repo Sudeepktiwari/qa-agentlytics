@@ -86,7 +86,7 @@ const AdminPanel: React.FC = () => {
     createdAt: string;
     text?: string;
     summary?: string;
-    structuredSummary?: any;
+    structuredSummary?: Record<string, unknown>;
   }
   const [crawledPages, setCrawledPages] = useState<CrawledPage[]>([]);
   const [crawledPagesLoading, setCrawledPagesLoading] = useState(false);
@@ -94,8 +94,6 @@ const AdminPanel: React.FC = () => {
   const [showSummaryModal, setShowSummaryModal] = useState(false);
   const [selectedPageForSummary, setSelectedPageForSummary] =
     useState<CrawledPage | null>(null);
-  const [currentSummary, setCurrentSummary] = useState<any>(null);
-  const [summaryLoading, setSummaryLoading] = useState(false);
 
   // Widget configuration state
   const [widgetConfig, setWidgetConfig] = useState({
@@ -401,7 +399,7 @@ const AdminPanel: React.FC = () => {
   };
 
   // Crawled pages management functions
-  const fetchCrawledPages = async () => {
+  const fetchCrawledPages = useCallback(async () => {
     if (!apiKey) {
       setCrawledPagesError("API key required to fetch crawled pages");
       return;
@@ -430,7 +428,7 @@ const AdminPanel: React.FC = () => {
     } finally {
       setCrawledPagesLoading(false);
     }
-  };
+  }, [apiKey]);
 
   const viewPageSummary = async (page: CrawledPage) => {
     setSelectedPageForSummary(page);
@@ -438,12 +436,8 @@ const AdminPanel: React.FC = () => {
 
     if (!page.hasStructuredSummary) {
       // No summary exists, show option to generate
-      setCurrentSummary(null);
       return;
     }
-
-    // Fetch the existing summary
-    setSummaryLoading(true);
     try {
       const res = await fetch("/api/crawled-pages", {
         method: "POST",
@@ -456,43 +450,13 @@ const AdminPanel: React.FC = () => {
 
       const data = await res.json();
       if (res.ok) {
-        setCurrentSummary(data.summary);
+        // Summary fetched successfully
       } else {
         setCrawledPagesError(data.error || "Failed to fetch summary");
       }
     } catch (error) {
       setCrawledPagesError("Failed to fetch summary");
       console.error("Error fetching summary:", error);
-    } finally {
-      setSummaryLoading(false);
-    }
-  };
-
-  const generatePageSummary = async (page: CrawledPage) => {
-    setSummaryLoading(true);
-    try {
-      const res = await fetch("/api/crawled-pages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": apiKey,
-        },
-        body: JSON.stringify({ url: page.url }),
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        setCurrentSummary(data.summary);
-        // Refresh the pages list to update the summary status
-        fetchCrawledPages();
-      } else {
-        setCrawledPagesError(data.error || "Failed to generate summary");
-      }
-    } catch (error) {
-      setCrawledPagesError("Failed to generate summary");
-      console.error("Error generating summary:", error);
-    } finally {
-      setSummaryLoading(false);
     }
   };
 
@@ -586,7 +550,7 @@ const AdminPanel: React.FC = () => {
     if (auth && apiKey) {
       fetchCrawledPages();
     }
-  }, [auth, apiKey]);
+  }, [auth, apiKey, fetchCrawledPages]);
 
   return (
     <div

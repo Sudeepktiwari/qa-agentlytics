@@ -9,7 +9,7 @@ interface CrawledPage {
   createdAt: string;
   text?: string;
   summary?: string;
-  structuredSummary?: any;
+  structuredSummary?: Record<string, unknown>;
 }
 
 interface CrawledPagesSectionProps {

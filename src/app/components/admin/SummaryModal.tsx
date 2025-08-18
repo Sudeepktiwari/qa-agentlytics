@@ -5,14 +5,7 @@ export interface CrawledPage {
   url: string;
   title?: string;
   hasStructuredSummary: boolean;
-  structuredSummary?: {
-    pageType: string;
-    keyFeatures: string[];
-    targetCustomers: string[];
-    painPointsAddressed: string[];
-    competitiveAdvantages: string[];
-    businessIntelligence: string;
-  };
+  structuredSummary?: Record<string, unknown>;
 }
 
 interface SummaryModalProps {
@@ -26,6 +19,29 @@ const SummaryModal: React.FC<SummaryModalProps> = ({
   isOpen,
   onClose,
 }) => {
+  // Helper function to safely access structured summary properties
+  const getStructuredSummaryValue = (key: string): unknown => {
+    if (
+      !page?.structuredSummary ||
+      typeof page.structuredSummary !== "object"
+    ) {
+      return null;
+    }
+    return (page.structuredSummary as Record<string, unknown>)[key];
+  };
+
+  const pageType = getStructuredSummaryValue("pageType") as string;
+  const keyFeatures =
+    (getStructuredSummaryValue("keyFeatures") as string[]) || [];
+  const targetCustomers =
+    (getStructuredSummaryValue("targetCustomers") as string[]) || [];
+  const painPointsAddressed =
+    (getStructuredSummaryValue("painPointsAddressed") as string[]) || [];
+  const competitiveAdvantages =
+    (getStructuredSummaryValue("competitiveAdvantages") as string[]) || [];
+  const businessIntelligence = getStructuredSummaryValue(
+    "businessIntelligence"
+  ) as string;
   if (!isOpen || !page) return null;
 
   return (
@@ -153,8 +169,8 @@ const SummaryModal: React.FC<SummaryModalProps> = ({
                 No Summary Available
               </h3>
               <p style={{ margin: 0, fontSize: "16px" }}>
-                This page doesn't have a structured summary yet. Use the
-                "Generate Summary" button to create one.
+                This page doesn&apos;t have a structured summary yet. Use the
+                &quot;Generate Summary&quot; button to create one.
               </p>
             </div>
           ) : (
@@ -191,7 +207,7 @@ const SummaryModal: React.FC<SummaryModalProps> = ({
                     fontWeight: "500",
                   }}
                 >
-                  {page.structuredSummary.pageType}
+                  {pageType}
                 </p>
               </div>
 
@@ -228,16 +244,14 @@ const SummaryModal: React.FC<SummaryModalProps> = ({
                   <ul
                     style={{ margin: 0, paddingLeft: "20px", color: "#234e52" }}
                   >
-                    {page.structuredSummary.keyFeatures.map(
-                      (feature, index) => (
-                        <li
-                          key={index}
-                          style={{ marginBottom: "8px", fontSize: "14px" }}
-                        >
-                          {feature}
-                        </li>
-                      )
-                    )}
+                    {keyFeatures.map((feature: string, index: number) => (
+                      <li
+                        key={index}
+                        style={{ marginBottom: "8px", fontSize: "14px" }}
+                      >
+                        {feature}
+                      </li>
+                    ))}
                   </ul>
                 </div>
 
@@ -266,16 +280,14 @@ const SummaryModal: React.FC<SummaryModalProps> = ({
                   <ul
                     style={{ margin: 0, paddingLeft: "20px", color: "#7b341e" }}
                   >
-                    {page.structuredSummary.targetCustomers.map(
-                      (customer, index) => (
-                        <li
-                          key={index}
-                          style={{ marginBottom: "8px", fontSize: "14px" }}
-                        >
-                          {customer}
-                        </li>
-                      )
-                    )}
+                    {targetCustomers.map((customer: string, index: number) => (
+                      <li
+                        key={index}
+                        style={{ marginBottom: "8px", fontSize: "14px" }}
+                      >
+                        {customer}
+                      </li>
+                    ))}
                   </ul>
                 </div>
               </div>
@@ -313,16 +325,14 @@ const SummaryModal: React.FC<SummaryModalProps> = ({
                   <ul
                     style={{ margin: 0, paddingLeft: "20px", color: "#742a2a" }}
                   >
-                    {page.structuredSummary.painPointsAddressed.map(
-                      (pain, index) => (
-                        <li
-                          key={index}
-                          style={{ marginBottom: "8px", fontSize: "14px" }}
-                        >
-                          {pain}
-                        </li>
-                      )
-                    )}
+                    {painPointsAddressed.map((pain: string, index: number) => (
+                      <li
+                        key={index}
+                        style={{ marginBottom: "8px", fontSize: "14px" }}
+                      >
+                        {pain}
+                      </li>
+                    ))}
                   </ul>
                 </div>
 
@@ -351,8 +361,8 @@ const SummaryModal: React.FC<SummaryModalProps> = ({
                   <ul
                     style={{ margin: 0, paddingLeft: "20px", color: "#22543d" }}
                   >
-                    {page.structuredSummary.competitiveAdvantages.map(
-                      (advantage, index) => (
+                    {competitiveAdvantages.map(
+                      (advantage: string, index: number) => (
                         <li
                           key={index}
                           style={{ marginBottom: "8px", fontSize: "14px" }}
@@ -396,7 +406,7 @@ const SummaryModal: React.FC<SummaryModalProps> = ({
                     whiteSpace: "pre-wrap",
                   }}
                 >
-                  {page.structuredSummary.businessIntelligence}
+                  {businessIntelligence}
                 </p>
               </div>
             </div>
