@@ -13,6 +13,7 @@ interface DocumentManagementSectionProps {
   documentsError: string;
   documentsExpanded: boolean;
   urlSummaryStatus?: Record<string, boolean>;
+  urlExistsInCrawledPages?: Record<string, boolean>;
   onToggleDocumentsExpanded: () => void;
   onRefreshDocuments: () => void;
   onDeleteDocument: (filename: string) => void;
@@ -25,6 +26,7 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
   documentsError,
   documentsExpanded,
   urlSummaryStatus = {},
+  urlExistsInCrawledPages = {},
   onToggleDocumentsExpanded,
   onRefreshDocuments,
   onDeleteDocument,
@@ -387,10 +389,11 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
                                 alignItems: "center",
                               }}
                             >
-                              {/* Show View Summary/Generate Summary button for URLs (crawled pages) */}
+                              {/* Show View Summary/Generate Summary button for URLs that exist in crawled_pages */}
                               {(doc.filename.startsWith("http://") ||
                                 doc.filename.startsWith("https://")) &&
-                                onViewSummary && (
+                                onViewSummary &&
+                                urlExistsInCrawledPages[doc.filename] && (
                                   <button
                                     onClick={() => onViewSummary(doc.filename)}
                                     style={{
@@ -435,6 +438,27 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
                                       ? "👁️ View Summary"
                                       : "⚡ Generate Summary"}
                                   </button>
+                                )}
+                              {/* Show info badge for URLs that don't exist in crawled_pages */}
+                              {(doc.filename.startsWith("http://") ||
+                                doc.filename.startsWith("https://")) &&
+                                !urlExistsInCrawledPages[doc.filename] && (
+                                  <span
+                                    style={{
+                                      background: "linear-gradient(135deg, #a0aec020, #71809620)",
+                                      color: "#718096",
+                                      border: "1px solid #e2e8f0",
+                                      borderRadius: "8px",
+                                      padding: "8px 16px",
+                                      fontSize: "12px",
+                                      fontWeight: "600",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: "4px",
+                                    }}
+                                  >
+                                    📄 Document Chunks Only
+                                  </span>
                                 )}
                               <button
                                 onClick={() => onDeleteDocument(doc.filename)}

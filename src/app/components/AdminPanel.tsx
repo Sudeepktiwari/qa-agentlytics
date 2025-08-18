@@ -96,6 +96,10 @@ const AdminPanel: React.FC = () => {
   const [urlSummaryStatus, setUrlSummaryStatus] = useState<
     Record<string, boolean>
   >({});
+  // Track which URLs actually exist in crawled_pages collection (can generate summaries)
+  const [urlExistsInCrawledPages, setUrlExistsInCrawledPages] = useState<
+    Record<string, boolean>
+  >({});
 
   // Widget configuration state
   const [widgetConfig, setWidgetConfig] = useState({
@@ -496,9 +500,16 @@ const AdminPanel: React.FC = () => {
       } else {
         const errorData = await response.json();
         console.error("Failed to generate summary:", errorData);
-        alert(
-          `Failed to generate summary: ${errorData.error || "Unknown error"}`
-        );
+        
+        // Show more user-friendly error messages
+        let errorMessage = errorData.error || "Unknown error";
+        if (errorData.error === "Page not found") {
+          errorMessage = "This URL wasn't found in the crawled pages database. Try refreshing the page list first.";
+        } else if (errorData.error && errorData.error.includes("document chunks")) {
+          errorMessage = "This page was processed as document chunks but doesn't have the full text needed for summary generation.";
+        }
+        
+        alert(`Failed to generate summary: ${errorMessage}`);
       }
     } catch (error) {
       console.error("Error generating summary:", error);
@@ -519,15 +530,19 @@ const AdminPanel: React.FC = () => {
       if (response.ok) {
         const data = await response.json();
         const statusMap: Record<string, boolean> = {};
+        const existsMap: Record<string, boolean> = {};
 
         if (data.pages && Array.isArray(data.pages)) {
           data.pages.forEach((page: any) => {
             statusMap[page.url] = !!page.structuredSummary;
+            existsMap[page.url] = true; // This URL exists in crawled_pages
           });
         }
 
         setUrlSummaryStatus(statusMap);
+        setUrlExistsInCrawledPages(existsMap);
         console.log("URL summary status updated:", statusMap);
+        console.log("URL exists mapping updated:", existsMap);
       }
     } catch (error) {
       console.error("Error fetching URL summary status:", error);
@@ -756,6 +771,7 @@ const AdminPanel: React.FC = () => {
             documentsError={documentsError}
             documentsExpanded={documentsExpanded}
             urlSummaryStatus={urlSummaryStatus}
+            urlExistsInCrawledPages={urlExistsInCrawledPages}
             onToggleDocumentsExpanded={() =>
               setDocumentsExpanded(!documentsExpanded)
             }
