@@ -4,12 +4,12 @@ import { Pinecone } from "@pinecone-database/pinecone";
 import OpenAI from "openai";
 import { verifyApiKey } from "@/lib/auth";
 
-const client = new MongoClient(process.env.MONGODB_URI!);
 const pc = new Pinecone({ apiKey: process.env.PINECONE_KEY! });
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 
 // GET - List all crawled pages with summary status
 export async function GET(request: NextRequest) {
+  let client: MongoClient | null = null;
   try {
     // Verify API key
     const apiKey = request.headers.get("x-api-key");
@@ -23,6 +23,8 @@ export async function GET(request: NextRequest) {
     }
 
     const adminId = verification.adminId;
+
+    client = new MongoClient(process.env.MONGODB_URI!);
 
     await client.connect();
     const db = client.db("test");
@@ -50,15 +52,18 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   } finally {
-    await client.close();
+    if (client) {
+      await client.close();
+    }
   }
 }
 
 // POST - Generate structured summary for existing page (on-demand)
 export async function POST(request: NextRequest) {
+  let client: MongoClient | null = null;
   try {
     console.log("[API] POST /api/crawled-pages - Starting request");
-
+    
     // Verify API key
     const apiKey = request.headers.get("x-api-key");
     if (!apiKey) {
@@ -80,11 +85,10 @@ export async function POST(request: NextRequest) {
     console.log("[API] Request data:", { url, regenerate });
 
     console.log("[API] Connecting to MongoDB...");
+    client = new MongoClient(process.env.MONGODB_URI!);
     await client.connect();
     const db = client.db("test");
-    const collection = db.collection("crawled_pages");
-
-    // Check if structured summary already exists
+    const collection = db.collection("crawled_pages");    // Check if structured summary already exists
     console.log("[API] Looking for existing page:", { adminId, url });
     const existingPage = await collection.findOne({ adminId, url });
 
@@ -216,12 +220,15 @@ Extract and return a JSON object with:
       { status: 500 }
     );
   } finally {
-    await client.close();
+    if (client) {
+      await client.close();
+    }
   }
 }
 
 // DELETE - Remove specific page
 export async function DELETE(request: NextRequest) {
+  let client: MongoClient | null = null;
   try {
     // Verify API key
     const apiKey = request.headers.get("x-api-key");
@@ -237,6 +244,7 @@ export async function DELETE(request: NextRequest) {
     const adminId = verification.adminId;
     const { url } = await request.json();
 
+    client = new MongoClient(process.env.MONGODB_URI!);
     await client.connect();
     const db = client.db("test");
     const collection = db.collection("crawled_pages");
@@ -257,7 +265,7 @@ export async function DELETE(request: NextRequest) {
 
       if (vectors.length > 0) {
         const index = pc.index(process.env.PINECONE_INDEX!);
-        const vectorIds = vectors.map((v) => v.vectorId);
+        const vectorIds = vectors.map((v: any) => v.vectorId);
         await index.deleteMany(vectorIds);
 
         // Remove vector tracking records
@@ -276,6 +284,8 @@ export async function DELETE(request: NextRequest) {
       { status: 500 }
     );
   } finally {
-    await client.close();
+    if (client) {
+      await client.close();
+    }
   }
 }
