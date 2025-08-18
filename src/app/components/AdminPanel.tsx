@@ -487,7 +487,9 @@ const AdminPanel: React.FC = () => {
       } else {
         const errorData = await response.json();
         console.error("Failed to generate summary:", errorData);
-        alert(`Failed to generate summary: ${errorData.error || "Unknown error"}`);
+        alert(
+          `Failed to generate summary: ${errorData.error || "Unknown error"}`
+        );
       }
     } catch (error) {
       console.error("Error generating summary:", error);
