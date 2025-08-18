@@ -387,7 +387,7 @@ const AdminPanel: React.FC = () => {
   // Crawled pages management functions
   const fetchCrawledPages = async () => {
     if (!apiKey) return;
-    
+
     setCrawledPagesLoading(true);
     setCrawledPagesError("");
     try {
@@ -411,17 +411,21 @@ const AdminPanel: React.FC = () => {
 
   const deleteCrawledPage = async (page: CrawledPage) => {
     if (!apiKey) return;
-    
-    if (!window.confirm(`Delete crawled page "${page.url}"? This action cannot be undone.`)) {
+
+    if (
+      !window.confirm(
+        `Delete crawled page "${page.url}"? This action cannot be undone.`
+      )
+    ) {
       return;
     }
 
     try {
       const res = await fetch("/api/crawled-pages", {
         method: "DELETE",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
-          "x-api-key": apiKey 
+          "x-api-key": apiKey,
         },
         body: JSON.stringify({ url: page.url }),
       });
