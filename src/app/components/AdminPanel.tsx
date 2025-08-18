@@ -12,6 +12,7 @@ import WidgetConfiguratorSection from "./admin/WidgetConfiguratorSection";
 import LeadsManagementSection from "./admin/LeadsManagementSection";
 import TestingSection from "./admin/TestingSection";
 import DocumentManagementSection from "./admin/DocumentManagementSection";
+import CrawledPagesSection from "./admin/CrawledPagesSection";
 import CustomerPersonaSection from "./admin/CustomerPersonaSection";
 import CustomerProfilesSection from "./admin/CustomerProfilesSection";
 import SummaryModal from "./admin/SummaryModal";
@@ -77,6 +78,11 @@ const AdminPanel: React.FC = () => {
   const [documentsLoading, setDocumentsLoading] = useState(false);
   const [documentsError, setDocumentsError] = useState("");
   const [documentsExpanded, setDocumentsExpanded] = useState(true);
+
+  // Crawled pages management state
+  const [crawledPages, setCrawledPages] = useState<CrawledPage[]>([]);
+  const [crawledPagesLoading, setCrawledPagesLoading] = useState(false);
+  const [crawledPagesError, setCrawledPagesError] = useState("");
 
   // Summary modal state
   interface CrawledPage {
@@ -378,6 +384,61 @@ const AdminPanel: React.FC = () => {
     }
   };
 
+  // Crawled pages management functions
+  const fetchCrawledPages = async () => {
+    if (!apiKey) return;
+    
+    setCrawledPagesLoading(true);
+    setCrawledPagesError("");
+    try {
+      const res = await fetch("/api/crawled-pages", {
+        method: "GET",
+        headers: { "x-api-key": apiKey },
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setCrawledPages(data.pages || []);
+      } else {
+        setCrawledPagesError(data.error || "Failed to fetch crawled pages");
+      }
+    } catch (error) {
+      setCrawledPagesError("Failed to fetch crawled pages");
+      console.error("Error fetching crawled pages:", error);
+    } finally {
+      setCrawledPagesLoading(false);
+    }
+  };
+
+  const deleteCrawledPage = async (page: CrawledPage) => {
+    if (!apiKey) return;
+    
+    if (!window.confirm(`Delete crawled page "${page.url}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/crawled-pages", {
+        method: "DELETE",
+        headers: { 
+          "Content-Type": "application/json",
+          "x-api-key": apiKey 
+        },
+        body: JSON.stringify({ url: page.url }),
+      });
+
+      if (res.ok) {
+        fetchCrawledPages(); // Refresh the list
+        fetchDocuments(); // Also refresh documents as it might affect the unified view
+      } else {
+        const data = await res.json();
+        setCrawledPagesError(data.error || "Failed to delete crawled page");
+      }
+    } catch (error) {
+      setCrawledPagesError("Failed to delete crawled page");
+      console.error("Error deleting crawled page:", error);
+    }
+  };
+
   const deleteDocumentFile = async (filename: string) => {
     if (
       !window.confirm(
@@ -496,6 +557,8 @@ const AdminPanel: React.FC = () => {
         fetchDocuments();
         // Also refresh URL summary status
         fetchUrlSummaryStatus();
+        // Refresh crawled pages to show updated status
+        fetchCrawledPages();
         alert("Summary generated successfully!");
       } else {
         const errorData = await response.json();
@@ -605,8 +668,16 @@ const AdminPanel: React.FC = () => {
       fetchApiKey();
       fetchLeads();
       fetchDocuments();
+      fetchCrawledPages();
     }
   }, [auth, fetchLeads]);
+
+  // Fetch crawled pages when API key becomes available
+  useEffect(() => {
+    if (apiKey && auth) {
+      fetchCrawledPages();
+    }
+  }, [apiKey, auth]);
 
   return (
     <div
@@ -783,6 +854,18 @@ const AdminPanel: React.FC = () => {
             onRefreshDocuments={fetchDocuments}
             onDeleteDocument={deleteDocumentFile}
             onViewSummary={viewSummary}
+          />
+
+          <CrawledPagesSection
+            crawledPages={crawledPages}
+            crawledPagesLoading={crawledPagesLoading}
+            crawledPagesError={crawledPagesError}
+            onRefreshCrawledPages={fetchCrawledPages}
+            onViewPageSummary={(page) => {
+              setSelectedPageForSummary(page);
+              setShowSummaryModal(true);
+            }}
+            onDeleteCrawledPage={deleteCrawledPage}
           />
         </div>
       )}
