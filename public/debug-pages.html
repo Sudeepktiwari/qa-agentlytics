@@ -109,6 +109,12 @@
                 `;
 
           console.log("API Response:", data);
+
+          // Auto-load pages if API test is successful
+          if (response.ok && data.success) {
+            allPages = data.pages || [];
+            displayPages(allPages);
+          }
         } catch (error) {
           document.getElementById("apiResponse").innerHTML = `
                     <h3 style="color: red;">Error:</h3>
@@ -265,6 +271,9 @@
       window.onload = function () {
         console.log("Debug page loaded, testing API...");
         testAPI();
+        setTimeout(() => {
+          loadPages();
+        }, 1000);
       };
     </script>
   </body>

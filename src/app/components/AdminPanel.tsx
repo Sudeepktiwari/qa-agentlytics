@@ -91,6 +91,13 @@ const AdminPanel: React.FC = () => {
   const [crawledPages, setCrawledPages] = useState<CrawledPage[]>([]);
   const [crawledPagesLoading, setCrawledPagesLoading] = useState(false);
   const [crawledPagesError, setCrawledPagesError] = useState("");
+
+  // Auto-expand documents section when crawled pages are available
+  useEffect(() => {
+    if (crawledPages && crawledPages.length > 0 && !documentsExpanded) {
+      setDocumentsExpanded(true);
+    }
+  }, [crawledPages, documentsExpanded]);
   const [showSummaryModal, setShowSummaryModal] = useState(false);
   const [selectedPageForSummary, setSelectedPageForSummary] =
     useState<CrawledPage | null>(null);

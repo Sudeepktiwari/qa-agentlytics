@@ -48,12 +48,45 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
   onViewPageSummary,
   onDeleteCrawledPage,
 }) => {
-  const showCrawledPages = crawledPages !== undefined && onRefreshCrawledPages && onViewPageSummary && onDeleteCrawledPage;
+  const showCrawledPages =
+    crawledPages !== undefined &&
+    onRefreshCrawledPages &&
+    onViewPageSummary &&
+    onDeleteCrawledPage;
 
   if (showCrawledPages) {
     return (
-      <div style={{ background: "white", borderRadius: "20px", padding: "32px", marginBottom: "32px" }}>
-        <h2>📚 Crawled Pages Library</h2>
+      <div
+        style={{
+          background: "white",
+          borderRadius: "20px",
+          padding: "32px",
+          marginBottom: "32px",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "16px",
+          }}
+        >
+          <h2 style={{ margin: 0 }}>📚 Crawled Pages Library</h2>
+          <button
+            onClick={onToggleDocumentsExpanded}
+            style={{
+              background: documentsExpanded ? "#dc3545" : "#007bff",
+              color: "white",
+              border: "none",
+              padding: "8px 16px",
+              borderRadius: "4px",
+              cursor: "pointer",
+            }}
+          >
+            {documentsExpanded ? "🔼 Collapse" : "🔽 Expand"}
+          </button>
+        </div>
         {documentsExpanded && (
           <div>
             {crawledPagesLoading ? (
@@ -61,13 +94,24 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
             ) : (
               <div>
                 {crawledPages.map((page) => (
-                  <div key={page._id} style={{ padding: "16px", border: "1px solid #ccc", margin: "8px 0" }}>
+                  <div
+                    key={page._id}
+                    style={{
+                      padding: "16px",
+                      border: "1px solid #ccc",
+                      margin: "8px 0",
+                    }}
+                  >
                     <div>{page.url}</div>
                     <div>
                       <button onClick={() => onViewPageSummary?.(page)}>
-                        {page.hasStructuredSummary ? "👁️ View Summary" : "⚡ Generate Summary"}
+                        {page.hasStructuredSummary
+                          ? "👁️ View Summary"
+                          : "⚡ Generate Summary"}
                       </button>
-                      <button onClick={() => onDeleteCrawledPage?.(page)}>🗑️ Delete</button>
+                      <button onClick={() => onDeleteCrawledPage?.(page)}>
+                        🗑️ Delete
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -80,8 +124,37 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
   }
 
   return (
-    <div style={{ background: "white", borderRadius: "20px", padding: "32px", marginBottom: "32px" }}>
-      <h2>📚 Document Library</h2>
+    <div
+      style={{
+        background: "white",
+        borderRadius: "20px",
+        padding: "32px",
+        marginBottom: "32px",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "16px",
+        }}
+      >
+        <h2 style={{ margin: 0 }}>📚 Document Library</h2>
+        <button
+          onClick={onToggleDocumentsExpanded}
+          style={{
+            background: documentsExpanded ? "#dc3545" : "#007bff",
+            color: "white",
+            border: "none",
+            padding: "8px 16px",
+            borderRadius: "4px",
+            cursor: "pointer",
+          }}
+        >
+          {documentsExpanded ? "🔼 Collapse" : "🔽 Expand"}
+        </button>
+      </div>
       {documentsExpanded && (
         <div>
           {documentsLoading ? (
@@ -89,9 +162,20 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
           ) : (
             <div>
               {documents.map((doc) => (
-                <div key={doc.filename} style={{ padding: "16px", border: "1px solid #ccc", margin: "8px 0" }}>
-                  <div>{doc.filename} ({doc.count} chunks)</div>
-                  <button onClick={() => onDeleteDocument(doc.filename)}>Delete</button>
+                <div
+                  key={doc.filename}
+                  style={{
+                    padding: "16px",
+                    border: "1px solid #ccc",
+                    margin: "8px 0",
+                  }}
+                >
+                  <div>
+                    {doc.filename} ({doc.count} chunks)
+                  </div>
+                  <button onClick={() => onDeleteDocument(doc.filename)}>
+                    Delete
+                  </button>
                 </div>
               ))}
             </div>
