@@ -93,7 +93,9 @@ const AdminPanel: React.FC = () => {
     useState<CrawledPage | null>(null);
 
   // URL summary status tracking
-  const [urlSummaryStatus, setUrlSummaryStatus] = useState<Record<string, boolean>>({});
+  const [urlSummaryStatus, setUrlSummaryStatus] = useState<
+    Record<string, boolean>
+  >({});
 
   // Widget configuration state
   const [widgetConfig, setWidgetConfig] = useState({
@@ -507,28 +509,28 @@ const AdminPanel: React.FC = () => {
   // Fetch URL summary status for all crawled pages
   const fetchUrlSummaryStatus = async () => {
     if (!apiKey) return;
-    
+
     try {
-      const response = await fetch('/api/crawled-pages', {
-        method: 'GET',
-        headers: { 'x-api-key': apiKey }
+      const response = await fetch("/api/crawled-pages", {
+        method: "GET",
+        headers: { "x-api-key": apiKey },
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         const statusMap: Record<string, boolean> = {};
-        
+
         if (data.pages && Array.isArray(data.pages)) {
           data.pages.forEach((page: any) => {
             statusMap[page.url] = !!page.structuredSummary;
           });
         }
-        
+
         setUrlSummaryStatus(statusMap);
         console.log("URL summary status updated:", statusMap);
       }
     } catch (error) {
-      console.error('Error fetching URL summary status:', error);
+      console.error("Error fetching URL summary status:", error);
     }
   };
 

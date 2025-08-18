@@ -414,7 +414,9 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
                                         e.target as HTMLButtonElement;
                                       target.style.transform =
                                         "translateY(-1px)";
-                                      target.style.boxShadow = urlSummaryStatus[doc.filename]
+                                      target.style.boxShadow = urlSummaryStatus[
+                                        doc.filename
+                                      ]
                                         ? "0 8px 25px rgba(72, 187, 120, 0.4)"
                                         : "0 8px 25px rgba(237, 143, 54, 0.4)";
                                     }}
@@ -422,7 +424,9 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
                                       const target =
                                         e.target as HTMLButtonElement;
                                       target.style.transform = "translateY(0)";
-                                      target.style.boxShadow = urlSummaryStatus[doc.filename]
+                                      target.style.boxShadow = urlSummaryStatus[
+                                        doc.filename
+                                      ]
                                         ? "0 4px 12px rgba(72, 187, 120, 0.3)"
                                         : "0 4px 12px rgba(237, 143, 54, 0.3)";
                                     }}

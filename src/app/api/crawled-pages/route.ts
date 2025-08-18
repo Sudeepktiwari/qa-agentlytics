@@ -99,12 +99,12 @@ export async function POST(request: NextRequest) {
 
       // Check if the URL exists in pinecone_vectors (meaning it was crawled but not in crawled_pages)
       const vectorCollection = db.collection("pinecone_vectors");
-      const vectorChunks = await vectorCollection.find({
+      const vectorExists = await vectorCollection.findOne({
         adminId,
         filename: url,
-      }).toArray();
+      });
 
-      if (vectorChunks.length === 0) {
+      if (!vectorExists) {
         console.log("[API] URL not found in pinecone_vectors either");
         return NextResponse.json({ error: "Page not found" }, { status: 404 });
       }
@@ -112,103 +112,15 @@ export async function POST(request: NextRequest) {
       console.log(
         "[API] URL found in pinecone_vectors but not in crawled_pages"
       );
-      console.log("[API] Found", vectorChunks.length, "vector chunks, attempting to reconstruct content");
-      
-      // Try to reconstruct content from vector chunks
-      const reconstructedContent = vectorChunks
-        .map(chunk => chunk.text || chunk.content || '')
-        .filter(text => text.length > 0)
-        .join('\n\n');
-      
-      if (reconstructedContent.length < 100) {
-        console.log("[API] Reconstructed content too short:", reconstructedContent.length);
-        return NextResponse.json({ 
-          error: "Insufficient content available for summary generation" 
-        }, { status: 400 });
-      }
-      
-      console.log("[API] Successfully reconstructed content, length:", reconstructedContent.length);
-      
-      // Generate summary from reconstructed content
-      console.log("[API] Calling OpenAI to generate summary from reconstructed content...");
-      const summaryResponse = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [
-          {
-            role: "system",
-            content: "You are an expert web page analyzer. Analyze the provided web page content and extract key business information. Return ONLY a valid JSON object with the specified structure. Do not include any markdown formatting or additional text.",
-          },
-          {
-            role: "user",
-            content: `Analyze this web page content and extract key information:
-
-${reconstructedContent}
-
-Extract and return a JSON object with:
-{
-  "pageType": "homepage|pricing|features|about|contact|blog|product|service",
-  "businessVertical": "fitness|healthcare|legal|restaurant|saas|ecommerce|consulting|other",
-  "primaryFeatures": ["feature1", "feature2", "feature3"],
-  "painPointsAddressed": ["pain1", "pain2", "pain3"],
-  "solutions": ["solution1", "solution2", "solution3"],
-  "targetCustomers": ["small business", "enterprise", "startups"],
-  "businessOutcomes": ["outcome1", "outcome2"],
-  "competitiveAdvantages": ["advantage1", "advantage2"],
-  "industryTerms": ["term1", "term2", "term3"],
-  "pricePoints": ["free", "$X/month", "enterprise"],
-  "integrations": ["tool1", "tool2"],
-  "useCases": ["usecase1", "usecase2"],
-  "callsToAction": ["Get Started", "Book Demo"],
-  "trustSignals": ["testimonial", "certification", "clientcount"]
-}`,
-          },
-        ],
-        max_tokens: 800,
-        temperature: 0.3,
-      });
-
-      console.log("[API] OpenAI response received for reconstructed content");
-      const summaryText = summaryResponse.choices[0]?.message?.content;
-
-      if (!summaryText) {
-        console.log("[API] No summary text returned from OpenAI");
-        return NextResponse.json(
-          { error: "Failed to generate summary" },
-          { status: 500 }
-        );
-      }
-
-      let structuredSummary;
-      try {
-        structuredSummary = JSON.parse(summaryText);
-        console.log("[API] Summary parsed successfully from reconstructed content");
-      } catch {
-        console.error("Failed to parse summary JSON:", summaryText);
-        return NextResponse.json(
-          { error: "Invalid summary format generated" },
-          { status: 500 }
-        );
-      }
-
-      // Create a new entry in crawled_pages with the reconstructed content and summary
-      console.log("[API] Creating new crawled_pages entry from vector chunks...");
-      await collection.insertOne({
-        adminId,
-        url,
-        text: reconstructedContent,
-        structuredSummary,
-        summaryGeneratedAt: new Date(),
-        createdAt: new Date(),
-        reconstructedFromVectors: true
-      });
-
-      console.log("[API] Summary generation completed successfully from vector chunks");
-      return NextResponse.json({
-        success: true,
-        summary: structuredSummary,
-        cached: false,
-        reconstructedFromVectors: true
-      });
+      // For URLs that only exist in pinecone_vectors, we can't generate summaries
+      // because we don't have the full page text
+      return NextResponse.json(
+        {
+          error:
+            "This page was processed as document chunks but doesn't have full text available for summary generation",
+        },
+        { status: 400 }
+      );
     }
 
     console.log(
