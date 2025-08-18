@@ -75,7 +75,7 @@ const AdminPanel: React.FC = () => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [documentsLoading, setDocumentsLoading] = useState(false);
   const [documentsError, setDocumentsError] = useState("");
-  const [documentsExpanded, setDocumentsExpanded] = useState(false);
+  const [documentsExpanded, setDocumentsExpanded] = useState(true);
 
   // Widget configuration state
   const [widgetConfig, setWidgetConfig] = useState({

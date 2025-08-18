@@ -82,18 +82,8 @@ export async function listDocuments(adminId?: string) {
     ])
     .toArray();
 
-  // Filter out URLs (crawled pages) and only return actual document files
-  // URLs typically start with http:// or https://
-  const documentFiles = docs.filter((d) => {
-    const filename = d._id;
-    return (
-      filename &&
-      !filename.startsWith("http://") &&
-      !filename.startsWith("https://")
-    );
-  });
-
-  return documentFiles.map((d) => ({ filename: d._id, count: d.count }));
+  // Return ALL documents - both uploaded files AND crawled pages
+  return docs.map((d) => ({ filename: d._id, count: d.count }));
 }
 
 export async function deleteDocument(filename: string, adminId?: string) {
