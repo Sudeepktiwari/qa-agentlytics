@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Crawled Pages Summary Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .test-section {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .page-item {
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 15px;
+        margin: 10px 0;
+        background: #f9f9f9;
+      }
+      .btn {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        margin: 5px;
+      }
+      .btn:hover {
+        background: #0056b3;
+      }
+      .btn.secondary {
+        background: #6c757d;
+      }
+      .btn.danger {
+        background: #dc3545;
+      }
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+      }
+      .modal-content {
+        background-color: white;
+        margin: 5% auto;
+        padding: 20px;
+        border-radius: 8px;
+        width: 80%;
+        max-width: 800px;
+        max-height: 80vh;
+        overflow-y: auto;
+      }
+      .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+      }
+      .close:hover {
+        color: black;
+      }
+      .summary-section {
+        background: #f8f9fa;
+        padding: 15px;
+        margin: 10px 0;
+        border-radius: 4px;
+        border-left: 4px solid #007bff;
+      }
+      .loading {
+        text-align: center;
+        padding: 20px;
+      }
+      .error {
+        background: #f8d7da;
+        border-left-color: #dc3545;
+        color: #721c24;
+      }
+      .list-item {
+        margin: 5px 0;
+        padding-left: 10px;
+      }
+      .api-key-input {
+        width: 100%;
+        padding: 8px;
+        margin: 10px 0;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🔍 Crawled Pages Summary Test</h1>
+
+    <div class="test-section">
+      <h2>API Configuration</h2>
+      <input
+        type="text"
+        id="apiKey"
+        class="api-key-input"
+        placeholder="Enter your API key (ak_...)"
+      />
+      <button class="btn" onclick="loadPages()">Load Pages</button>
+    </div>
+
+    <div class="test-section">
+      <h2>Crawled Pages</h2>
+      <div id="pagesContainer">
+        <p>
+          Enter your API key and click "Load Pages" to see your crawled pages.
+        </p>
+      </div>
+    </div>
+
+    <!-- Summary Modal -->
+    <div id="summaryModal" class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeSummaryModal()">&times;</span>
+        <h2>Page Summary</h2>
+        <div id="summaryContent">
+          <div class="loading">Loading...</div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let currentApiKey = "";
+
+      async function loadPages() {
+        const apiKey = document.getElementById("apiKey").value;
+        if (!apiKey.startsWith("ak_")) {
+          alert('Please enter a valid API key starting with "ak_"');
+          return;
+        }
+
+        currentApiKey = apiKey;
+        const container = document.getElementById("pagesContainer");
+        container.innerHTML = '<div class="loading">Loading pages...</div>';
+
+        try {
+          const response = await fetch("/api/crawled-pages", {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              "x-api-key": apiKey,
+            },
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            container.innerHTML = `<div class="error">Error: ${data.error}</div>`;
+            return;
+          }
+
+          if (!data.pages || data.pages.length === 0) {
+            container.innerHTML = "<p>No crawled pages found.</p>";
+            return;
+          }
+
+          displayPages(data.pages);
+        } catch (error) {
+          container.innerHTML = `<div class="error">Network error: ${error.message}</div>`;
+        }
+      }
+
+      function displayPages(pages) {
+        const container = document.getElementById("pagesContainer");
+        container.innerHTML = "";
+
+        pages.forEach((page) => {
+          const pageDiv = document.createElement("div");
+          pageDiv.className = "page-item";
+
+          const summaryStatus = page.hasStructuredSummary
+            ? '<span style="color: green;">✅ Has Summary</span>'
+            : '<span style="color: orange;">⏳ No Summary</span>';
+
+          pageDiv.innerHTML = `
+                    <div><strong>URL:</strong> ${page.url}</div>
+                    <div><strong>Summary Status:</strong> ${summaryStatus}</div>
+                    <div><strong>Created:</strong> ${new Date(
+                      page.createdAt
+                    ).toLocaleString()}</div>
+                    <div style="margin-top: 10px;">
+                        <button class="btn" onclick="viewSummary('${
+                          page.url
+                        }', ${page.hasStructuredSummary})">
+                            ${
+                              page.hasStructuredSummary
+                                ? "View Summary"
+                                : "Generate Summary"
+                            }
+                        </button>
+                        <button class="btn danger" onclick="deletePage('${
+                          page.url
+                        }')">Delete</button>
+                    </div>
+                `;
+
+          container.appendChild(pageDiv);
+        });
+      }
+
+      async function viewSummary(url, hasSummary) {
+        document.getElementById("summaryModal").style.display = "block";
+        const summaryContent = document.getElementById("summaryContent");
+
+        if (hasSummary) {
+          summaryContent.innerHTML =
+            '<div class="loading">Loading existing summary...</div>';
+        } else {
+          summaryContent.innerHTML = `
+                    <div style="text-align: center; padding: 20px;">
+                        <p>No structured summary available for this page.</p>
+                        <button class="btn" onclick="generateSummary('${url}')">Generate Summary</button>
+                    </div>
+                `;
+          return;
+        }
+
+        try {
+          const response = await fetch("/api/crawled-pages", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-api-key": currentApiKey,
+            },
+            body: JSON.stringify({ url }),
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            summaryContent.innerHTML = `<div class="error">Error: ${data.error}</div>`;
+            return;
+          }
+
+          displaySummary(data.summary, data.cached);
+        } catch (error) {
+          summaryContent.innerHTML = `<div class="error">Network error: ${error.message}</div>`;
+        }
+      }
+
+      async function generateSummary(url) {
+        const summaryContent = document.getElementById("summaryContent");
+        summaryContent.innerHTML =
+          '<div class="loading">Generating structured summary...</div>';
+
+        try {
+          const response = await fetch("/api/crawled-pages", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-api-key": currentApiKey,
+            },
+            body: JSON.stringify({ url }),
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            summaryContent.innerHTML = `<div class="error">Error: ${data.error}</div>`;
+            return;
+          }
+
+          displaySummary(data.summary, data.cached);
+
+          // Reload pages to update the status
+          loadPages();
+        } catch (error) {
+          summaryContent.innerHTML = `<div class="error">Network error: ${error.message}</div>`;
+        }
+      }
+
+      function displaySummary(summary, cached) {
+        const summaryContent = document.getElementById("summaryContent");
+
+        const cacheStatus = cached
+          ? '<div style="color: blue; margin-bottom: 15px;">📋 Loaded from cache</div>'
+          : '<div style="color: green; margin-bottom: 15px;">✨ Newly generated</div>';
+
+        summaryContent.innerHTML = `
+                ${cacheStatus}
+                
+                <div class="summary-section">
+                    <h3>📊 Basic Information</h3>
+                    <div><strong>Page Type:</strong> ${summary.pageType}</div>
+                    <div><strong>Business Vertical:</strong> ${
+                      summary.businessVertical
+                    }</div>
+                </div>
+
+                <div class="summary-section">
+                    <h3>🎯 Primary Features</h3>
+                    ${summary.primaryFeatures
+                      .map(
+                        (feature) => `<div class="list-item">• ${feature}</div>`
+                      )
+                      .join("")}
+                </div>
+
+                <div class="summary-section">
+                    <h3>💡 Solutions Offered</h3>
+                    ${summary.solutions
+                      .map(
+                        (solution) =>
+                          `<div class="list-item">• ${solution}</div>`
+                      )
+                      .join("")}
+                </div>
+
+                <div class="summary-section">
+                    <h3>😔 Pain Points Addressed</h3>
+                    ${summary.painPointsAddressed
+                      .map((pain) => `<div class="list-item">• ${pain}</div>`)
+                      .join("")}
+                </div>
+
+                <div class="summary-section">
+                    <h3>👥 Target Customers</h3>
+                    <div>${summary.targetCustomers.join(", ")}</div>
+                </div>
+
+                ${
+                  summary.businessOutcomes.length > 0
+                    ? `
+                <div class="summary-section">
+                    <h3>📈 Business Outcomes</h3>
+                    ${summary.businessOutcomes
+                      .map(
+                        (outcome) => `<div class="list-item">• ${outcome}</div>`
+                      )
+                      .join("")}
+                </div>
+                `
+                    : ""
+                }
+
+                ${
+                  summary.competitiveAdvantages.length > 0
+                    ? `
+                <div class="summary-section">
+                    <h3>🏆 Competitive Advantages</h3>
+                    ${summary.competitiveAdvantages
+                      .map(
+                        (advantage) =>
+                          `<div class="list-item">• ${advantage}</div>`
+                      )
+                      .join("")}
+                </div>
+                `
+                    : ""
+                }
+
+                ${
+                  summary.pricePoints.length > 0
+                    ? `
+                <div class="summary-section">
+                    <h3>💰 Price Points</h3>
+                    <div>${summary.pricePoints.join(", ")}</div>
+                </div>
+                `
+                    : ""
+                }
+
+                ${
+                  summary.callsToAction.length > 0
+                    ? `
+                <div class="summary-section">
+                    <h3>📢 Calls to Action</h3>
+                    <div>${summary.callsToAction.join(", ")}</div>
+                </div>
+                `
+                    : ""
+                }
+
+                ${
+                  summary.integrations.length > 0
+                    ? `
+                <div class="summary-section">
+                    <h3>🔗 Integrations</h3>
+                    <div>${summary.integrations.join(", ")}</div>
+                </div>
+                `
+                    : ""
+                }
+
+                ${
+                  summary.useCases.length > 0
+                    ? `
+                <div class="summary-section">
+                    <h3>💼 Use Cases</h3>
+                    ${summary.useCases
+                      .map(
+                        (useCase) => `<div class="list-item">• ${useCase}</div>`
+                      )
+                      .join("")}
+                </div>
+                `
+                    : ""
+                }
+
+                ${
+                  summary.industryTerms.length > 0
+                    ? `
+                <div class="summary-section">
+                    <h3>🏭 Industry Terms</h3>
+                    <div>${summary.industryTerms.join(", ")}</div>
+                </div>
+                `
+                    : ""
+                }
+
+                ${
+                  summary.trustSignals.length > 0
+                    ? `
+                <div class="summary-section">
+                    <h3>🛡️ Trust Signals</h3>
+                    <div>${summary.trustSignals.join(", ")}</div>
+                </div>
+                `
+                    : ""
+                }
+            `;
+      }
+
+      async function deletePage(url) {
+        if (!confirm(`Are you sure you want to delete the page: ${url}?`)) {
+          return;
+        }
+
+        try {
+          const response = await fetch("/api/crawled-pages", {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+              "x-api-key": currentApiKey,
+            },
+            body: JSON.stringify({ url }),
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            alert(`Error: ${data.error}`);
+            return;
+          }
+
+          alert("Page deleted successfully!");
+          loadPages(); // Reload the list
+        } catch (error) {
+          alert(`Network error: ${error.message}`);
+        }
+      }
+
+      function closeSummaryModal() {
+        document.getElementById("summaryModal").style.display = "none";
+      }
+
+      // Close modal when clicking outside
+      window.onclick = function (event) {
+        const modal = document.getElementById("summaryModal");
+        if (event.target == modal) {
+          modal.style.display = "none";
+        }
+      };
+    </script>
+  </body>
+</html>

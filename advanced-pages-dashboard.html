@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Crawled Pages Analytics Dashboard</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background-color: #f5f7fa;
+        color: #333;
+      }
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 10px;
+        margin-bottom: 30px;
+        text-align: center;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      .dashboard {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 30px;
+        margin-bottom: 30px;
+      }
+      .panel {
+        background: white;
+        border-radius: 10px;
+        padding: 25px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 15px;
+        margin-bottom: 20px;
+      }
+      .stat-card {
+        background: #f8fafc;
+        padding: 15px;
+        border-radius: 8px;
+        text-align: center;
+        border-left: 4px solid #667eea;
+      }
+      .stat-number {
+        font-size: 2em;
+        font-weight: bold;
+        color: #667eea;
+      }
+      .stat-label {
+        font-size: 0.9em;
+        color: #64748b;
+        margin-top: 5px;
+      }
+      .api-config {
+        margin-bottom: 20px;
+      }
+      .form-group {
+        margin-bottom: 15px;
+      }
+      .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 600;
+        color: #374151;
+      }
+      .form-control {
+        width: 100%;
+        padding: 10px;
+        border: 2px solid #e5e7eb;
+        border-radius: 6px;
+        font-size: 14px;
+        transition: border-color 0.3s;
+      }
+      .form-control:focus {
+        outline: none;
+        border-color: #667eea;
+      }
+      .btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: transform 0.2s;
+        margin: 5px;
+      }
+      .btn:hover {
+        transform: translateY(-2px);
+      }
+      .btn.secondary {
+        background: #6b7280;
+      }
+      .btn.danger {
+        background: #ef4444;
+      }
+      .btn.success {
+        background: #10b981;
+      }
+      .page-grid {
+        display: grid;
+        gap: 15px;
+      }
+      .page-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 20px;
+        transition: box-shadow 0.3s;
+      }
+      .page-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      }
+      .page-url {
+        font-weight: 600;
+        color: #1f2937;
+        margin-bottom: 10px;
+        word-break: break-all;
+      }
+      .page-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        font-size: 0.9em;
+        color: #6b7280;
+      }
+      .status-badge {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.8em;
+        font-weight: 600;
+      }
+      .status-has-summary {
+        background: #d1fae5;
+        color: #065f46;
+      }
+      .status-no-summary {
+        background: #fef3c7;
+        color: #92400e;
+      }
+      .page-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(5px);
+      }
+      .modal-content {
+        background-color: white;
+        margin: 3% auto;
+        padding: 0;
+        border-radius: 15px;
+        width: 90%;
+        max-width: 1000px;
+        max-height: 85vh;
+        overflow: hidden;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+      }
+      .modal-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .modal-body {
+        padding: 30px;
+        overflow-y: auto;
+        max-height: calc(85vh - 80px);
+      }
+      .close {
+        color: white;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+        opacity: 0.8;
+        transition: opacity 0.3s;
+      }
+      .close:hover {
+        opacity: 1;
+      }
+      .summary-section {
+        background: #f8fafc;
+        padding: 20px;
+        margin: 15px 0;
+        border-radius: 8px;
+        border-left: 4px solid #667eea;
+      }
+      .summary-section h3 {
+        margin-top: 0;
+        color: #374151;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .loading {
+        text-align: center;
+        padding: 40px;
+      }
+      .spinner {
+        border: 3px solid #f3f4f6;
+        border-top: 3px solid #667eea;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 20px;
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+      .error {
+        background: #fef2f2;
+        border-left-color: #ef4444;
+        color: #991b1b;
+      }
+      .success {
+        background: #f0fdf4;
+        border-left-color: #10b981;
+        color: #065f46;
+      }
+      .list-item {
+        margin: 8px 0;
+        padding-left: 15px;
+        position: relative;
+      }
+      .list-item:before {
+        content: "•";
+        color: #667eea;
+        font-weight: bold;
+        position: absolute;
+        left: 0;
+      }
+      .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #6b7280;
+      }
+      .empty-state-icon {
+        font-size: 4em;
+        margin-bottom: 20px;
+        opacity: 0.5;
+      }
+      .analytics-panel {
+        grid-column: 1 / -1;
+        margin-top: 20px;
+      }
+      .summary-types {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin: 20px 0;
+      }
+      .summary-type-card {
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+        text-align: center;
+      }
+      .summary-type-number {
+        font-size: 1.5em;
+        font-weight: bold;
+        color: #667eea;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>📊 Crawled Pages Analytics Dashboard</h1>
+      <p>
+        Comprehensive overview of your crawled pages with structured business
+        intelligence
+      </p>
+    </div>
+
+    <div class="dashboard">
+      <!-- Control Panel -->
+      <div class="panel">
+        <h2>🎛️ Control Panel</h2>
+
+        <div class="api-config">
+          <div class="form-group">
+            <label for="apiKey">API Key</label>
+            <input
+              type="text"
+              id="apiKey"
+              class="form-control"
+              placeholder="Enter your API key (ak_...)"
+            />
+          </div>
+
+          <button class="btn" onclick="loadPages()">📥 Load Pages</button>
+          <button class="btn secondary" onclick="refreshStats()">
+            🔄 Refresh Stats
+          </button>
+        </div>
+
+        <div class="stats-grid" id="statsGrid">
+          <div class="stat-card">
+            <div class="stat-number" id="totalPages">-</div>
+            <div class="stat-label">Total Pages</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="withSummary">-</div>
+            <div class="stat-label">With Summary</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="completionRate">-</div>
+            <div class="stat-label">Completion %</div>
+          </div>
+        </div>
+
+        <h3>🏷️ Quick Actions</h3>
+        <button class="btn success" onclick="generateAllSummaries()">
+          ⚡ Generate All Missing
+        </button>
+        <button class="btn secondary" onclick="exportData()">
+          📤 Export Data
+        </button>
+      </div>
+
+      <!-- Pages Overview -->
+      <div class="panel">
+        <h2>📄 Pages Overview</h2>
+        <div id="pagesContainer">
+          <div class="empty-state">
+            <div class="empty-state-icon">📋</div>
+            <p>
+              Enter your API key and click "Load Pages" to see your crawled
+              pages.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Analytics Panel -->
+    <div class="panel analytics-panel">
+      <h2>📈 Business Intelligence Analytics</h2>
+      <div id="analyticsContainer">
+        <div class="empty-state">
+          <div class="empty-state-icon">📊</div>
+          <p>Load pages with summaries to see analytics</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary Modal -->
+    <div id="summaryModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>🔍 Page Summary Analysis</h2>
+          <span class="close" onclick="closeSummaryModal()">&times;</span>
+        </div>
+        <div class="modal-body" id="summaryContent">
+          <div class="loading">
+            <div class="spinner"></div>
+            <p>Loading...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let currentApiKey = "";
+      let allPages = [];
+
+      async function loadPages() {
+        const apiKey = document.getElementById("apiKey").value;
+        if (!apiKey.startsWith("ak_")) {
+          alert('Please enter a valid API key starting with "ak_"');
+          return;
+        }
+
+        currentApiKey = apiKey;
+        const container = document.getElementById("pagesContainer");
+        container.innerHTML =
+          '<div class="loading"><div class="spinner"></div><p>Loading pages...</p></div>';
+
+        try {
+          const response = await fetch("/api/crawled-pages", {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              "x-api-key": apiKey,
+            },
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            container.innerHTML = `<div class="summary-section error">Error: ${data.error}</div>`;
+            return;
+          }
+
+          if (!data.pages || data.pages.length === 0) {
+            container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📭</div>
+                            <p>No crawled pages found.</p>
+                        </div>
+                    `;
+            return;
+          }
+
+          allPages = data.pages;
+          displayPages(data.pages);
+          updateStats(data.pages);
+          updateAnalytics(data.pages);
+        } catch (error) {
+          container.innerHTML = `<div class="summary-section error">Network error: ${error.message}</div>`;
+        }
+      }
+
+      function displayPages(pages) {
+        const container = document.getElementById("pagesContainer");
+        container.innerHTML = "";
+
+        pages.forEach((page) => {
+          const pageDiv = document.createElement("div");
+          pageDiv.className = "page-card";
+
+          const statusClass = page.hasStructuredSummary
+            ? "status-has-summary"
+            : "status-no-summary";
+          const statusText = page.hasStructuredSummary
+            ? "✅ Has Summary"
+            : "⏳ No Summary";
+
+          pageDiv.innerHTML = `
+                    <div class="page-url">${page.url}</div>
+                    <div class="page-meta">
+                        <span class="status-badge ${statusClass}">${statusText}</span>
+                        <span>${new Date(
+                          page.createdAt
+                        ).toLocaleDateString()}</span>
+                    </div>
+                    <div class="page-actions">
+                        <button class="btn" onclick="viewSummary('${
+                          page.url
+                        }', ${page.hasStructuredSummary})">
+                            ${
+                              page.hasStructuredSummary
+                                ? "👁️ View Summary"
+                                : "🔄 Generate Summary"
+                            }
+                        </button>
+                        <button class="btn danger" onclick="deletePage('${
+                          page.url
+                        }')">🗑️ Delete</button>
+                    </div>
+                `;
+
+          container.appendChild(pageDiv);
+        });
+      }
+
+      function updateStats(pages) {
+        const total = pages.length;
+        const withSummary = pages.filter((p) => p.hasStructuredSummary).length;
+        const completionRate =
+          total > 0 ? Math.round((withSummary / total) * 100) : 0;
+
+        document.getElementById("totalPages").textContent = total;
+        document.getElementById("withSummary").textContent = withSummary;
+        document.getElementById(
+          "completionRate"
+        ).textContent = `${completionRate}%`;
+      }
+
+      function updateAnalytics(pages) {
+        const pagesWithSummary = pages.filter((p) => p.hasStructuredSummary);
+
+        if (pagesWithSummary.length === 0) {
+          document.getElementById("analyticsContainer").innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📊</div>
+                        <p>No pages with summaries found. Generate some summaries to see analytics.</p>
+                    </div>
+                `;
+          return;
+        }
+
+        // This would require fetching the actual summary data
+        // For now, show basic stats
+        const analyticsHtml = `
+                <div class="summary-types">
+                    <div class="summary-type-card">
+                        <div class="summary-type-number">${
+                          pagesWithSummary.length
+                        }</div>
+                        <div>Pages with Business Intelligence</div>
+                    </div>
+                    <div class="summary-type-card">
+                        <div class="summary-type-number">${
+                          pages.length - pagesWithSummary.length
+                        }</div>
+                        <div>Pending Analysis</div>
+                    </div>
+                </div>
+                <p>📊 Analytics based on ${
+                  pagesWithSummary.length
+                } analyzed pages. Use "View Summary" to see detailed business intelligence for each page.</p>
+            `;
+
+        document.getElementById("analyticsContainer").innerHTML = analyticsHtml;
+      }
+
+      async function viewSummary(url, hasSummary) {
+        document.getElementById("summaryModal").style.display = "block";
+        const summaryContent = document.getElementById("summaryContent");
+
+        if (!hasSummary) {
+          summaryContent.innerHTML = `
+                    <div style="text-align: center; padding: 40px;">
+                        <h3>🔄 Generate Business Intelligence Summary</h3>
+                        <p>No structured summary available for this page. Generate one to see detailed business intelligence including features, target customers, competitive advantages, and more.</p>
+                        <button class="btn" onclick="generateSummary('${url}')">✨ Generate Summary</button>
+                    </div>
+                `;
+          return;
+        }
+
+        summaryContent.innerHTML =
+          '<div class="loading"><div class="spinner"></div><p>Loading summary...</p></div>';
+
+        try {
+          const response = await fetch("/api/crawled-pages", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-api-key": currentApiKey,
+            },
+            body: JSON.stringify({ url }),
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            summaryContent.innerHTML = `<div class="summary-section error">Error: ${data.error}</div>`;
+            return;
+          }
+
+          displaySummary(data.summary, data.cached, url);
+        } catch (error) {
+          summaryContent.innerHTML = `<div class="summary-section error">Network error: ${error.message}</div>`;
+        }
+      }
+
+      async function generateSummary(url) {
+        const summaryContent = document.getElementById("summaryContent");
+        summaryContent.innerHTML =
+          '<div class="loading"><div class="spinner"></div><p>Generating structured business intelligence summary...</p></div>';
+
+        try {
+          const response = await fetch("/api/crawled-pages", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-api-key": currentApiKey,
+            },
+            body: JSON.stringify({ url }),
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            summaryContent.innerHTML = `<div class="summary-section error">Error: ${data.error}</div>`;
+            return;
+          }
+
+          displaySummary(data.summary, data.cached, url);
+
+          // Reload pages to update the status
+          loadPages();
+        } catch (error) {
+          summaryContent.innerHTML = `<div class="summary-section error">Network error: ${error.message}</div>`;
+        }
+      }
+
+      function displaySummary(summary, cached, url) {
+        const summaryContent = document.getElementById("summaryContent");
+
+        const cacheStatus = cached
+          ? '<div class="summary-section success">📋 Loaded from cache</div>'
+          : '<div class="summary-section success">✨ Newly generated</div>';
+
+        summaryContent.innerHTML = `
+                ${cacheStatus}
+                
+                <div style="margin-bottom: 20px;">
+                    <strong>🌐 URL:</strong> <a href="${url}" target="_blank">${url}</a>
+                </div>
+
+                <div class="summary-section">
+                    <h3>📊 Basic Information</h3>
+                    <div><strong>Page Type:</strong> ${summary.pageType}</div>
+                    <div><strong>Business Vertical:</strong> ${
+                      summary.businessVertical
+                    }</div>
+                </div>
+
+                <div class="summary-section">
+                    <h3>🎯 Primary Features</h3>
+                    ${summary.primaryFeatures
+                      .map(
+                        (feature) => `<div class="list-item">${feature}</div>`
+                      )
+                      .join("")}
+                </div>
+
+                <div class="summary-section">
+                    <h3>💡 Solutions Offered</h3>
+                    ${summary.solutions
+                      .map(
+                        (solution) => `<div class="list-item">${solution}</div>`
+                      )
+                      .join("")}
+                </div>
+
+                <div class="summary-section">
+                    <h3>😔 Pain Points Addressed</h3>
+                    ${summary.painPointsAddressed
+                      .map((pain) => `<div class="list-item">${pain}</div>`)
+                      .join("")}
+                </div>
+
+                <div class="summary-section">
+                    <h3>👥 Target Customers</h3>
+                    <div>${summary.targetCustomers.join(", ")}</div>
+                </div>
+
+                ${
+                  summary.businessOutcomes.length > 0
+                    ? `
+                <div class="summary-section">
+                    <h3>📈 Business Outcomes</h3>
+                    ${summary.businessOutcomes
+                      .map(
+                        (outcome) => `<div class="list-item">${outcome}</div>`
+                      )
+                      .join("")}
+                </div>
+                `
+                    : ""
+                }
+
+                ${
+                  summary.competitiveAdvantages.length > 0
+                    ? `
+                <div class="summary-section">
+                    <h3>🏆 Competitive Advantages</h3>
+                    ${summary.competitiveAdvantages
+                      .map(
+                        (advantage) =>
+                          `<div class="list-item">${advantage}</div>`
+                      )
+                      .join("")}
+                </div>
+                `
+                    : ""
+                }
+
+                ${
+                  summary.pricePoints.length > 0
+                    ? `
+                <div class="summary-section">
+                    <h3>💰 Price Points</h3>
+                    <div>${summary.pricePoints.join(", ")}</div>
+                </div>
+                `
+                    : ""
+                }
+
+                ${
+                  summary.callsToAction.length > 0
+                    ? `
+                <div class="summary-section">
+                    <h3>📢 Calls to Action</h3>
+                    <div>${summary.callsToAction.join(", ")}</div>
+                </div>
+                `
+                    : ""
+                }
+
+                ${
+                  summary.integrations.length > 0
+                    ? `
+                <div class="summary-section">
+                    <h3>🔗 Integrations</h3>
+                    <div>${summary.integrations.join(", ")}</div>
+                </div>
+                `
+                    : ""
+                }
+
+                ${
+                  summary.useCases.length > 0
+                    ? `
+                <div class="summary-section">
+                    <h3>💼 Use Cases</h3>
+                    ${summary.useCases
+                      .map(
+                        (useCase) => `<div class="list-item">${useCase}</div>`
+                      )
+                      .join("")}
+                </div>
+                `
+                    : ""
+                }
+
+                ${
+                  summary.industryTerms.length > 0
+                    ? `
+                <div class="summary-section">
+                    <h3>🏭 Industry Terms</h3>
+                    <div>${summary.industryTerms.join(", ")}</div>
+                </div>
+                `
+                    : ""
+                }
+
+                ${
+                  summary.trustSignals.length > 0
+                    ? `
+                <div class="summary-section">
+                    <h3>🛡️ Trust Signals</h3>
+                    <div>${summary.trustSignals.join(", ")}</div>
+                </div>
+                `
+                    : ""
+                }
+            `;
+      }
+
+      async function generateAllSummaries() {
+        if (!currentApiKey) {
+          alert("Please enter your API key first");
+          return;
+        }
+
+        const pagesWithoutSummary = allPages.filter(
+          (p) => !p.hasStructuredSummary
+        );
+
+        if (pagesWithoutSummary.length === 0) {
+          alert("All pages already have summaries!");
+          return;
+        }
+
+        if (
+          !confirm(
+            `Generate summaries for ${pagesWithoutSummary.length} pages? This may take a few minutes.`
+          )
+        ) {
+          return;
+        }
+
+        const progressContainer = document.createElement("div");
+        progressContainer.innerHTML = `
+                <div class="summary-section">
+                    <h3>🔄 Generating Summaries</h3>
+                    <div>Progress: <span id="progressText">0/${pagesWithoutSummary.length}</span></div>
+                    <div style="background: #e5e7eb; border-radius: 10px; height: 20px; margin: 10px 0;">
+                        <div id="progressBar" style="background: #667eea; height: 100%; border-radius: 10px; width: 0%; transition: width 0.3s;"></div>
+                    </div>
+                </div>
+            `;
+
+        document
+          .getElementById("analyticsContainer")
+          .prepend(progressContainer);
+
+        let completed = 0;
+        for (const page of pagesWithoutSummary) {
+          try {
+            await fetch("/api/crawled-pages", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "x-api-key": currentApiKey,
+              },
+              body: JSON.stringify({ url: page.url }),
+            });
+
+            completed++;
+            const progress = (completed / pagesWithoutSummary.length) * 100;
+            document.getElementById(
+              "progressText"
+            ).textContent = `${completed}/${pagesWithoutSummary.length}`;
+            document.getElementById("progressBar").style.width = `${progress}%`;
+          } catch (error) {
+            console.error(`Failed to generate summary for ${page.url}:`, error);
+          }
+        }
+
+        progressContainer.remove();
+        loadPages(); // Refresh the data
+        alert(`Successfully generated ${completed} summaries!`);
+      }
+
+      async function deletePage(url) {
+        if (!confirm(`Are you sure you want to delete the page: ${url}?`)) {
+          return;
+        }
+
+        try {
+          const response = await fetch("/api/crawled-pages", {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+              "x-api-key": currentApiKey,
+            },
+            body: JSON.stringify({ url }),
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            alert(`Error: ${data.error}`);
+            return;
+          }
+
+          alert("Page deleted successfully!");
+          loadPages(); // Reload the list
+        } catch (error) {
+          alert(`Network error: ${error.message}`);
+        }
+      }
+
+      function exportData() {
+        if (allPages.length === 0) {
+          alert("No data to export. Load pages first.");
+          return;
+        }
+
+        const exportData = allPages.map((page) => ({
+          url: page.url,
+          hasStructuredSummary: page.hasStructuredSummary,
+          createdAt: page.createdAt,
+        }));
+
+        const dataStr = JSON.stringify(exportData, null, 2);
+        const dataBlob = new Blob([dataStr], { type: "application/json" });
+
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(dataBlob);
+        link.download = `crawled-pages-${
+          new Date().toISOString().split("T")[0]
+        }.json`;
+        link.click();
+      }
+
+      function refreshStats() {
+        if (allPages.length > 0) {
+          updateStats(allPages);
+          updateAnalytics(allPages);
+        }
+      }
+
+      function closeSummaryModal() {
+        document.getElementById("summaryModal").style.display = "none";
+      }
+
+      // Close modal when clicking outside
+      window.onclick = function (event) {
+        const modal = document.getElementById("summaryModal");
+        if (event.target == modal) {
+          modal.style.display = "none";
+        }
+      };
+
+      // Add some helpful keyboard shortcuts
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") {
+          closeSummaryModal();
+        }
+      });
+    </script>
+  </body>
+</html>

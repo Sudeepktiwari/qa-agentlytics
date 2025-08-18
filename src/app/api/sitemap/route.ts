@@ -1681,14 +1681,117 @@ export async function POST(req: NextRequest) {
 
         console.log(`[Crawl] Storing page data in MongoDB...`);
         results.push({ url, text });
-        await pages.insertOne({
+
+        // Generate basic summary (existing functionality)
+        const basicSummaryResponse = await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: [
+            {
+              role: "system",
+              content:
+                "You are a helpful assistant that creates concise summaries of web page content. Focus on the main topics, key information, and important details.",
+            },
+            {
+              role: "user",
+              content: `Please create a concise summary of the following web page content:\n\n${text}`,
+            },
+          ],
+          max_tokens: 300,
+          temperature: 0.3,
+        });
+        const basicSummary =
+          basicSummaryResponse.choices[0]?.message?.content ||
+          "Summary not available";
+
+        // Generate structured summary (NEW - automatic during crawling)
+        let structuredSummary = null;
+        if (text.length >= 100) {
+          // Only generate if we have sufficient content
+          try {
+            console.log(`[Crawl] Generating structured summary for ${url}...`);
+            const structuredSummaryResponse =
+              await openai.chat.completions.create({
+                model: "gpt-4o-mini",
+                messages: [
+                  {
+                    role: "system",
+                    content:
+                      "You are an expert web page analyzer. Analyze the provided web page content and extract key business information. Return ONLY a valid JSON object with the specified structure. Do not include any markdown formatting or additional text.",
+                  },
+                  {
+                    role: "user",
+                    content: `Analyze this web page content and extract key information:
+
+${text}
+
+Extract and return a JSON object with:
+{
+  "pageType": "homepage|pricing|features|about|contact|blog|product|service",
+  "businessVertical": "fitness|healthcare|legal|restaurant|saas|ecommerce|consulting|other",
+  "primaryFeatures": ["feature1", "feature2", "feature3"],
+  "painPointsAddressed": ["pain1", "pain2", "pain3"],
+  "solutions": ["solution1", "solution2", "solution3"],
+  "targetCustomers": ["small business", "enterprise", "startups"],
+  "businessOutcomes": ["outcome1", "outcome2"],
+  "competitiveAdvantages": ["advantage1", "advantage2"],
+  "industryTerms": ["term1", "term2", "term3"],
+  "pricePoints": ["free", "$X/month", "enterprise"],
+  "integrations": ["tool1", "tool2"],
+  "useCases": ["usecase1", "usecase2"],
+  "callsToAction": ["Get Started", "Book Demo"],
+  "trustSignals": ["testimonial", "certification", "clientcount"]
+}`,
+                  },
+                ],
+                max_tokens: 800,
+                temperature: 0.3,
+              });
+
+            const structuredText =
+              structuredSummaryResponse.choices[0]?.message?.content;
+            if (structuredText) {
+              try {
+                structuredSummary = JSON.parse(structuredText);
+                console.log(
+                  `[Crawl] Structured summary generated successfully for ${url}`
+                );
+              } catch (parseError) {
+                console.error(
+                  `[Crawl] Failed to parse structured summary JSON for ${url}:`,
+                  parseError
+                );
+              }
+            }
+          } catch (summaryError) {
+            console.error(
+              `[Crawl] Error generating structured summary for ${url}:`,
+              summaryError
+            );
+          }
+        }
+
+        // Store page data with both summaries
+        const pageData: any = {
           adminId,
           url,
           text,
+          summary: basicSummary,
           filename: url,
           createdAt: new Date(),
-        });
-        console.log(`[Crawl] Page data stored successfully`);
+        };
+
+        // Add structured summary if generated
+        if (structuredSummary) {
+          pageData.structuredSummary = structuredSummary;
+          pageData.summaryGeneratedAt = new Date();
+        }
+
+        await pages.insertOne(pageData);
+        console.log(
+          `[Crawl] Page data stored successfully${
+            structuredSummary ? " with structured summary" : ""
+          }`
+        );
 
         // Mark as crawled in sitemap_urls with specific sitemapUrl context
         console.log(`[Crawl] Marking URL as crawled in sitemap_urls...`);
