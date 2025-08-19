@@ -389,16 +389,20 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
                                 alignItems: "center",
                               }}
                             >
-                              {/* Show View Summary/Generate Summary button for all URLs (crawled pages) */}
+                              {/* Show View Summary/Generate Summary button for all URLs (crawled pages) using hasStructuredSummary if present */}
                               {(doc.filename.startsWith("http://") ||
                                 doc.filename.startsWith("https://")) &&
                                 onViewSummary && (
                                   <button
                                     onClick={() => onViewSummary(doc.filename)}
                                     style={{
-                                      background: urlSummaryStatus[doc.filename]
-                                        ? "linear-gradient(135deg, #48bb78 0%, #38a169 100%)"
-                                        : "linear-gradient(135deg, #ed8f36 0%, #dd6968 100%)",
+                                      background:
+                                        ("hasStructuredSummary" in doc
+                                          ? (doc as any).hasStructuredSummary
+                                          : undefined) ??
+                                        urlSummaryStatus[doc.filename]
+                                          ? "linear-gradient(135deg, #48bb78 0%, #38a169 100%)"
+                                          : "linear-gradient(135deg, #ed8f36 0%, #dd6968 100%)",
                                       color: "white",
                                       border: "none",
                                       borderRadius: "8px",
@@ -416,24 +420,31 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
                                         e.target as HTMLButtonElement;
                                       target.style.transform =
                                         "translateY(-1px)";
-                                      target.style.boxShadow = urlSummaryStatus[
-                                        doc.filename
-                                      ]
-                                        ? "0 8px 25px rgba(72, 187, 120, 0.4)"
-                                        : "0 8px 25px rgba(237, 143, 54, 0.4)";
+                                      target.style.boxShadow =
+                                        ("hasStructuredSummary" in doc
+                                          ? (doc as any).hasStructuredSummary
+                                          : undefined) ??
+                                        urlSummaryStatus[doc.filename]
+                                          ? "0 8px 25px rgba(72, 187, 120, 0.4)"
+                                          : "0 8px 25px rgba(237, 143, 54, 0.4)";
                                     }}
                                     onMouseLeave={(e) => {
                                       const target =
                                         e.target as HTMLButtonElement;
                                       target.style.transform = "translateY(0)";
-                                      target.style.boxShadow = urlSummaryStatus[
-                                        doc.filename
-                                      ]
-                                        ? "0 4px 12px rgba(72, 187, 120, 0.3)"
-                                        : "0 4px 12px rgba(237, 143, 54, 0.3)";
+                                      target.style.boxShadow =
+                                        ("hasStructuredSummary" in doc
+                                          ? (doc as any).hasStructuredSummary
+                                          : undefined) ??
+                                        urlSummaryStatus[doc.filename]
+                                          ? "0 4px 12px rgba(72, 187, 120, 0.3)"
+                                          : "0 4px 12px rgba(237, 143, 54, 0.3)";
                                     }}
                                   >
-                                    {urlSummaryStatus[doc.filename]
+                                    {("hasStructuredSummary" in doc
+                                      ? (doc as any).hasStructuredSummary
+                                      : undefined) ??
+                                    urlSummaryStatus[doc.filename]
                                       ? "👁️ View Summary"
                                       : "⚡ Generate Summary"}
                                   </button>
