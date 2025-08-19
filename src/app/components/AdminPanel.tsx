@@ -709,6 +709,7 @@ const AdminPanel: React.FC = () => {
       fetchApiKey();
       fetchLeads();
       fetchDocuments();
+      fetchUrlSummaryStatus();
       fetchCrawledPages();
     }
   }, [auth, fetchLeads]);
