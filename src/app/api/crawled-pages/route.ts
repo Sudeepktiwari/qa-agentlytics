@@ -90,247 +90,137 @@ export async function POST(request: NextRequest) {
     const db = client.db("test");
     const collection = db.collection("crawled_pages");
 
-    // Check if structured summary already exists
-    console.log("[API] Looking for existing page:", { adminId, url });
-    const existingPage = await collection.findOne({ adminId, url });
-
-    if (!existingPage) {
-      console.log("[API] Page not found in crawled_pages collection");
-
-      // Check if the URL exists in pinecone_vectors (meaning it was crawled but not in crawled_pages)
-      const vectorCollection = db.collection("pinecone_vectors");
-      console.log("[API] Searching pinecone_vectors for:", {
+    // Always use Pinecone chunk data for summary generation
+    const vectorCollection = db.collection("pinecone_vectors");
+    console.log(
+      "[API] Forcing use of pinecone_vectors for summary generation:",
+      {
         adminId,
         filename: url,
-      });
+      }
+    );
 
-      // First, let's see what URLs exist for this admin
-      const allUrls = await vectorCollection.distinct("filename", { adminId });
+    // First, let's see what URLs exist for this admin
+    const allUrls = await vectorCollection.distinct("filename", { adminId });
+    console.log(
+      "[API] All URLs in pinecone_vectors for this admin:",
+      allUrls.slice(0, 10)
+    ); // Show first 10
+
+    const vectorChunks = await vectorCollection
+      .find({
+        adminId,
+        filename: url,
+      })
+      .toArray();
+
+    if (!vectorChunks || vectorChunks.length === 0) {
+      console.log("[API] URL not found in pinecone_vectors either");
       console.log(
-        "[API] All URLs in pinecone_vectors for this admin:",
-        allUrls.slice(0, 10)
-      ); // Show first 10
+        "[API] Exact search failed. Trying case-insensitive search..."
+      );
 
-      const vectorChunks = await vectorCollection
+      // Try case-insensitive search
+      const caseInsensitiveChunks = await vectorCollection
         .find({
           adminId,
-          filename: url,
+          filename: {
+            $regex: new RegExp(
+              `^${url.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`,
+              "i"
+            ),
+          },
         })
         .toArray();
 
-      if (!vectorChunks || vectorChunks.length === 0) {
-        console.log("[API] URL not found in pinecone_vectors either");
+      if (caseInsensitiveChunks && caseInsensitiveChunks.length > 0) {
         console.log(
-          "[API] Exact search failed. Trying case-insensitive search..."
+          "[API] Found URL with case-insensitive search:",
+          caseInsensitiveChunks[0].filename
         );
-
-        // Try case-insensitive search
-        const caseInsensitiveChunks = await vectorCollection
-          .find({
-            adminId,
-            filename: {
-              $regex: new RegExp(
-                `^${url.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`,
-                "i"
-              ),
-            },
-          })
-          .toArray();
-
-        if (caseInsensitiveChunks && caseInsensitiveChunks.length > 0) {
-          console.log(
-            "[API] Found URL with case-insensitive search:",
-            caseInsensitiveChunks[0].filename
-          );
-          console.log("[API] Original URL:", url);
-          console.log("[API] Database URL:", caseInsensitiveChunks[0].filename);
-        }
-
-        return NextResponse.json({ error: "Page not found" }, { status: 404 });
+        console.log("[API] Original URL:", url);
+        console.log("[API] Database URL:", caseInsensitiveChunks[0].filename);
       }
 
-      console.log(
-        `[API] URL found in pinecone_vectors with ${vectorChunks.length} chunks, reconstructing content...`
-      );
-
-      // Reconstruct content from chunks
-      const reconstructedContent = vectorChunks
-        .sort((a, b) => (a.chunkIndex || 0) - (b.chunkIndex || 0)) // Sort by chunk index if available
-        .map((chunk) => chunk.text || chunk.content || "")
-        .filter((text) => text.length > 0)
-        .join("\n\n");
-
-      if (!reconstructedContent || reconstructedContent.length < 50) {
-        console.log(
-          "[API] Reconstructed content too short:",
-          reconstructedContent.length
-        );
-        return NextResponse.json(
-          { error: "Insufficient content in chunks to generate summary" },
-          { status: 400 }
-        );
-      }
-
-      console.log(
-        "[API] Content reconstructed from chunks, length:",
-        reconstructedContent.length
-      );
-
-      // Estimate token count (rough estimate: 1 token ≈ 4 characters)
-      const estimatedTokens = Math.ceil(reconstructedContent.length / 4);
-      const maxTokensForDirect = 30000; // Leave room for prompt + response (GPT-4o-mini limit ~128k)
-
-      let structuredSummary;
-
-      if (estimatedTokens <= maxTokensForDirect) {
-        console.log(
-          `[API] Using direct approach (${estimatedTokens} estimated tokens)`
-        );
-        structuredSummary = await generateDirectSummary(reconstructedContent);
-      } else {
-        console.log(
-          `[API] Using chunked approach (${estimatedTokens} estimated tokens, ${vectorChunks.length} chunks)`
-        );
-        structuredSummary = await generateChunkedSummary(vectorChunks);
-      }
-
-      if (!structuredSummary) {
-        return NextResponse.json(
-          { error: "Failed to generate summary" },
-          { status: 500 }
-        );
-      }
-
-      // Create a new entry in crawled_pages with the reconstructed content and summary
-      const newPageEntry = {
-        adminId,
-        url,
-        text: reconstructedContent,
-        structuredSummary,
-        summaryGeneratedAt: new Date(),
-        createdAt: new Date(),
-        source: "reconstructed_from_chunks",
-      };
-
-      await collection.insertOne(newPageEntry);
-      console.log("[API] Created new crawled_pages entry from chunks");
-
-      return NextResponse.json({
-        success: true,
-        summary: structuredSummary,
-        cached: false,
-        source: "chunks",
-      });
+      return NextResponse.json({ error: "Page not found" }, { status: 404 });
     }
 
     console.log(
-      "[API] Found existing page, has summary:",
-      !!existingPage.structuredSummary
+      `[API] URL found in pinecone_vectors with ${vectorChunks.length} chunks, reconstructing content...`
     );
 
-    // If regenerate is true, skip the existing summary check
-    if (existingPage.structuredSummary && !regenerate) {
-      console.log("[API] Returning cached summary");
-      return NextResponse.json({
-        success: true,
-        summary: existingPage.structuredSummary,
-        cached: true,
-      });
-    }
+    // Reconstruct content from chunks
+    const reconstructedContent = vectorChunks
+      .sort((a, b) => (a.chunkIndex || 0) - (b.chunkIndex || 0)) // Sort by chunk index if available
+      .map((chunk) => chunk.text || chunk.content || "")
+      .filter((text) => text.length > 0)
+      .join("\n\n");
 
-    // Get content from the page record itself (it should have 'text' field)
-    const pageContent = existingPage.text; // Use the stored text content
-    console.log("[API] Page content length:", pageContent?.length || 0);
-
-    if (!pageContent || pageContent.length < 50) {
-      console.log("[API] Page content too short or missing");
+    if (!reconstructedContent || reconstructedContent.length < 50) {
+      console.log(
+        "[API] Reconstructed content too short:",
+        reconstructedContent.length
+      );
       return NextResponse.json(
-        { error: "Page content is too short to analyze" },
+        { error: "Insufficient content in chunks to generate summary" },
         { status: 400 }
       );
     }
 
-    console.log("[API] Calling OpenAI to generate summary...");
-    // Generate structured summary using GPT-4o-mini
-    const summaryResponse = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are an expert web page analyzer. Analyze the provided web page content and extract key business information. Return ONLY a valid JSON object with the specified structure. Do not include any markdown formatting or additional text.",
-        },
-        {
-          role: "user",
-          content: `Analyze this web page content and extract key information:
+    console.log(
+      "[API] Content reconstructed from chunks, length:",
+      reconstructedContent.length
+    );
 
-${pageContent}
+    // Estimate token count (rough estimate: 1 token ≈ 4 characters)
+    const estimatedTokens = Math.ceil(reconstructedContent.length / 4);
+    const maxTokensForDirect = 30000; // Leave room for prompt + response (GPT-4o-mini limit ~128k)
 
-Extract and return a JSON object with:
-{
-  "pageType": "homepage|pricing|features|about|contact|blog|product|service",
-  "businessVertical": "fitness|healthcare|legal|restaurant|saas|ecommerce|consulting|other",
-  "primaryFeatures": ["feature1", "feature2", "feature3"],
-  "painPointsAddressed": ["pain1", "pain2", "pain3"],
-  "solutions": ["solution1", "solution2", "solution3"],
-  "targetCustomers": ["small business", "enterprise", "startups"],
-  "businessOutcomes": ["outcome1", "outcome2"],
-  "competitiveAdvantages": ["advantage1", "advantage2"],
-  "industryTerms": ["term1", "term2", "term3"],
-  "pricePoints": ["free", "$X/month", "enterprise"],
-  "integrations": ["tool1", "tool2"],
-  "useCases": ["usecase1", "usecase2"],
-  "callsToAction": ["Get Started", "Book Demo"],
-  "trustSignals": ["testimonial", "certification", "clientcount"]
-}`,
-        },
-      ],
-      max_tokens: 800,
-      temperature: 0.3,
-    });
+    let structuredSummary;
 
-    console.log("[API] OpenAI response received");
-    const summaryText = summaryResponse.choices[0]?.message?.content;
-    console.log("[API] Summary text length:", summaryText?.length || 0);
+    if (estimatedTokens <= maxTokensForDirect) {
+      console.log(
+        `[API] Using direct approach (${estimatedTokens} estimated tokens)`
+      );
+      structuredSummary = await generateDirectSummary(reconstructedContent);
+    } else {
+      console.log(
+        `[API] Using chunked approach (${estimatedTokens} estimated tokens, ${vectorChunks.length} chunks)`
+      );
+      structuredSummary = await generateChunkedSummary(vectorChunks);
+    }
 
-    if (!summaryText) {
-      console.log("[API] No summary text returned from OpenAI");
+    if (!structuredSummary) {
       return NextResponse.json(
         { error: "Failed to generate summary" },
         { status: 500 }
       );
     }
 
-    console.log("[API] Parsing summary JSON...");
-    let structuredSummary;
-    try {
-      structuredSummary = JSON.parse(summaryText);
-      console.log("[API] Summary parsed successfully");
-    } catch {
-      console.error("Failed to parse summary JSON:", summaryText);
-      return NextResponse.json(
-        { error: "Invalid summary format generated" },
-        { status: 500 }
-      );
-    }
+    // Update or insert the crawled_pages entry with the reconstructed content and summary
+    const newPageEntry = {
+      adminId,
+      url,
+      text: reconstructedContent,
+      structuredSummary,
+      summaryGeneratedAt: new Date(),
+      createdAt: new Date(),
+      source: "reconstructed_from_chunks",
+    };
 
-    console.log("[API] Updating MongoDB with structured summary...");
-    // Store structured summary in MongoDB
+    // Upsert: update if exists, insert if not
     await collection.updateOne(
       { adminId, url },
-      {
-        $set: {
-          structuredSummary,
-          summaryGeneratedAt: new Date(),
-        },
-      }
+      { $set: newPageEntry },
+      { upsert: true }
     );
+    console.log("[API] Upserted crawled_pages entry from chunks");
 
-    console.log("[API] Summary generation completed successfully");
     return NextResponse.json({
       success: true,
       summary: structuredSummary,
       cached: false,
+      source: "chunks",
     });
   } catch (error) {
     console.error("Error generating summary:", error);
