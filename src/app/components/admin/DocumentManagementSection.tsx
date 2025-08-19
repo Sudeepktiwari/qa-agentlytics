@@ -389,7 +389,7 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
                                 alignItems: "center",
                               }}
                             >
-                              {/* Show View Summary/Generate Summary button for all URLs */}
+                              {/* Show View Summary/Generate Summary button for all URLs (crawled pages) */}
                               {(doc.filename.startsWith("http://") ||
                                 doc.filename.startsWith("https://")) &&
                                 onViewSummary && (
@@ -435,9 +435,7 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
                                   >
                                     {urlSummaryStatus[doc.filename]
                                       ? "👁️ View Summary"
-                                      : urlExistsInCrawledPages[doc.filename]
-                                      ? "⚡ Generate Summary"
-                                      : "🧩 Generate from Chunks"}
+                                      : "⚡ Generate Summary"}
                                   </button>
                                 )}
                               <button
