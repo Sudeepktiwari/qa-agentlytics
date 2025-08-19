@@ -100,28 +100,15 @@ export async function POST(request: NextRequest) {
       }
     );
 
-    // First, let's see what URLs exist for this admin
-    const allUrls = await vectorCollection.distinct("filename", { adminId });
-    console.log(
-      "[API] All URLs in pinecone_vectors for this admin:",
-      allUrls.slice(0, 10)
-    ); // Show first 10
-
-    const vectorChunks = await vectorCollection
-      .find({
-        adminId,
-        filename: url,
-      })
+    // Get all vector IDs for this URL and admin
+    const vectorDocs = await vectorCollection
+      .find({ adminId, filename: url })
+      .sort({ chunkIndex: 1 })
       .toArray();
 
-    if (!vectorChunks || vectorChunks.length === 0) {
-      console.log("[API] URL not found in pinecone_vectors either");
-      console.log(
-        "[API] Exact search failed. Trying case-insensitive search..."
-      );
-
+    if (!vectorDocs || vectorDocs.length === 0) {
       // Try case-insensitive search
-      const caseInsensitiveChunks = await vectorCollection
+      const caseInsensitiveDocs = await vectorCollection
         .find({
           adminId,
           filename: {
@@ -131,46 +118,47 @@ export async function POST(request: NextRequest) {
             ),
           },
         })
+        .sort({ chunkIndex: 1 })
         .toArray();
-
-      if (caseInsensitiveChunks && caseInsensitiveChunks.length > 0) {
-        console.log(
-          "[API] Found URL with case-insensitive search:",
-          caseInsensitiveChunks[0].filename
-        );
-        console.log("[API] Original URL:", url);
-        console.log("[API] Database URL:", caseInsensitiveChunks[0].filename);
+      if (!caseInsensitiveDocs || caseInsensitiveDocs.length === 0) {
+        return NextResponse.json({ error: "Page not found" }, { status: 404 });
       }
-
-      return NextResponse.json({ error: "Page not found" }, { status: 404 });
+      // Use the found docs
+      vectorDocs.push(...caseInsensitiveDocs);
     }
 
-    console.log(
-      `[API] URL found in pinecone_vectors with ${vectorChunks.length} chunks, reconstructing content...`
+    // Fetch chunk text from Pinecone using vector IDs
+    const vectorIds = vectorDocs.map((doc) => doc.vectorId);
+    if (!vectorIds.length) {
+      return NextResponse.json(
+        { error: "No chunk vectors found" },
+        { status: 404 }
+      );
+    }
+    const pineconeIndex = pc.index(process.env.PINECONE_INDEX!);
+    const pineconeResult = await pineconeIndex.fetch(vectorIds);
+    // Map vectorId to chunk text
+    const idToChunk = Object.fromEntries(
+      Object.entries(pineconeResult.records || {}).map(([id, rec]) => [
+        id,
+        rec.metadata?.chunk || "",
+      ])
     );
-
-    // Reconstruct content from chunks
-    const reconstructedContent = vectorChunks
-      .sort((a, b) => (a.chunkIndex || 0) - (b.chunkIndex || 0)) // Sort by chunk index if available
-      .map((chunk) => chunk.text || chunk.content || "")
-      .filter((text) => text.length > 0)
+    // Reconstruct content from Pinecone chunk text
+    const reconstructedContent = vectorDocs
+      .map((doc) => {
+        const chunk = idToChunk[doc.vectorId];
+        return typeof chunk === "string" ? chunk : "";
+      })
+      .filter((text) => typeof text === "string" && text.length > 0)
       .join("\n\n");
 
     if (!reconstructedContent || reconstructedContent.length < 50) {
-      console.log(
-        "[API] Reconstructed content too short:",
-        reconstructedContent.length
-      );
       return NextResponse.json(
         { error: "Insufficient content in chunks to generate summary" },
         { status: 400 }
       );
     }
-
-    console.log(
-      "[API] Content reconstructed from chunks, length:",
-      reconstructedContent.length
-    );
 
     // Estimate token count (rough estimate: 1 token ≈ 4 characters)
     const estimatedTokens = Math.ceil(reconstructedContent.length / 4);
@@ -179,15 +167,14 @@ export async function POST(request: NextRequest) {
     let structuredSummary;
 
     if (estimatedTokens <= maxTokensForDirect) {
-      console.log(
-        `[API] Using direct approach (${estimatedTokens} estimated tokens)`
-      );
       structuredSummary = await generateDirectSummary(reconstructedContent);
     } else {
-      console.log(
-        `[API] Using chunked approach (${estimatedTokens} estimated tokens, ${vectorChunks.length} chunks)`
-      );
-      structuredSummary = await generateChunkedSummary(vectorChunks);
+      // For chunked summary, pass the vectorDocs with chunk text from Pinecone
+      const chunkObjs = vectorDocs.map((doc) => ({
+        ...doc,
+        text: idToChunk[doc.vectorId] || "",
+      }));
+      structuredSummary = await generateChunkedSummary(chunkObjs);
     }
 
     if (!structuredSummary) {
@@ -205,7 +192,7 @@ export async function POST(request: NextRequest) {
       structuredSummary,
       summaryGeneratedAt: new Date(),
       createdAt: new Date(),
-      source: "reconstructed_from_chunks",
+      source: "reconstructed_from_pinecone_chunks",
     };
 
     // Upsert: update if exists, insert if not
@@ -214,13 +201,13 @@ export async function POST(request: NextRequest) {
       { $set: newPageEntry },
       { upsert: true }
     );
-    console.log("[API] Upserted crawled_pages entry from chunks");
+    console.log("[API] Upserted crawled_pages entry from Pinecone chunks");
 
     return NextResponse.json({
       success: true,
       summary: structuredSummary,
       cached: false,
-      source: "chunks",
+      source: "pinecone_chunks",
     });
   } catch (error) {
     console.error("Error generating summary:", error);
