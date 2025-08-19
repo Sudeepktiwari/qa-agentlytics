@@ -642,10 +642,15 @@ const AdminPanel: React.FC = () => {
         const existsMap: Record<string, boolean> = {};
 
         if (data.pages && Array.isArray(data.pages)) {
-          data.pages.forEach((page: any) => {
-            statusMap[page.url] = !!page.structuredSummary;
-            existsMap[page.url] = true; // This URL exists in crawled_pages
-          });
+          // pages are sorted by createdAt desc (newest first). Preserve first occurrence per URL.
+          for (const page of data.pages) {
+            if (!(page.url in statusMap)) {
+              statusMap[page.url] = !!page.structuredSummary;
+            }
+            if (!(page.url in existsMap)) {
+              existsMap[page.url] = true; // This URL exists in crawled_pages
+            }
+          }
         }
 
         setUrlSummaryStatus(statusMap);
