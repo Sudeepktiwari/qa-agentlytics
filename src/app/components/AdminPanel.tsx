@@ -549,20 +549,17 @@ const AdminPanel: React.FC = () => {
         const result = await response.json();
         console.log("Summary generated successfully:", result);
 
-        // Update the modal with new summary data
-        setSelectedPageForSummary({
-          ...page,
-          hasStructuredSummary: true,
-          summary: result.summary,
-          structuredSummary: result.summary, // API returns summary as the structured data
-        });
-
         // Refresh the documents list to show updated summary status
         fetchDocuments();
         // Also refresh URL summary status
         fetchUrlSummaryStatus();
         // Refresh crawled pages to show updated status
-        fetchCrawledPages();
+        await fetchCrawledPages();
+
+        // Close the modal and clear selected page so next open uses latest data
+        setShowSummaryModal(false);
+        setSelectedPageForSummary(null);
+
         alert("Summary generated successfully!");
       } else {
         const errorData = await response.json();
