@@ -708,11 +708,16 @@ const AdminPanel: React.FC = () => {
       fetchSitemapUrls();
       fetchApiKey();
       fetchLeads();
-      fetchDocuments();
-      fetchUrlSummaryStatus();
       fetchCrawledPages();
     }
   }, [auth, fetchLeads]);
+
+  // Ensure fetchDocuments runs when apiKey and auth are both available
+  useEffect(() => {
+    if (apiKey && auth) {
+      fetchDocuments();
+    }
+  }, [apiKey, auth]);
 
   // Fetch crawled pages when API key becomes available
   useEffect(() => {
