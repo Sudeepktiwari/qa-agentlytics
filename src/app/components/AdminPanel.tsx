@@ -371,7 +371,7 @@ const AdminPanel: React.FC = () => {
       // Fetch uploaded documents
       const docsRes = await fetch("/api/admin-docs?admin=1");
       const docsData = await docsRes.json();
-      let uploadedDocs = docsRes.ok ? docsData.documents || [] : [];
+      const uploadedDocs = docsRes.ok ? docsData.documents || [] : [];
 
       // Fetch crawled pages (as URLs)
       let crawledPages: any[] = [];
