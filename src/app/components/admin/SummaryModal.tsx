@@ -36,17 +36,86 @@ const SummaryModal: React.FC<SummaryModalProps> = ({
   };
 
   const pageType = getStructuredSummaryValue("pageType") as string;
+  // Prefer backend's "primaryFeatures"; fallback to legacy "keyFeatures"
   const keyFeatures =
-    (getStructuredSummaryValue("keyFeatures") as string[]) || [];
+    (getStructuredSummaryValue("primaryFeatures") as string[]) ||
+    (getStructuredSummaryValue("keyFeatures") as string[]) ||
+    [];
   const targetCustomers =
     (getStructuredSummaryValue("targetCustomers") as string[]) || [];
   const painPointsAddressed =
     (getStructuredSummaryValue("painPointsAddressed") as string[]) || [];
   const competitiveAdvantages =
     (getStructuredSummaryValue("competitiveAdvantages") as string[]) || [];
-  const businessIntelligence = getStructuredSummaryValue(
-    "businessIntelligence"
-  ) as string;
+
+  // Build a readable Business Intelligence summary if not present
+  const getArray = (key: string): string[] => {
+    const val = getStructuredSummaryValue(key);
+    return Array.isArray(val) ? (val as string[]) : [];
+  };
+
+  const businessIntelligenceRaw =
+    (getStructuredSummaryValue("businessIntelligence") as string) || "";
+
+  const businessIntelligence = (() => {
+    const trimmed = businessIntelligenceRaw.trim();
+    if (trimmed) return trimmed;
+
+    const businessVertical =
+      (getStructuredSummaryValue("businessVertical") as string) || "";
+    const solutions = getArray("solutions");
+    const businessOutcomes = getArray("businessOutcomes");
+    const integrations = getArray("integrations");
+    const pricePoints = getArray("pricePoints");
+    const useCases = getArray("useCases");
+    const callsToAction = getArray("callsToAction");
+    const trustSignals = getArray("trustSignals");
+    const industryTerms = getArray("industryTerms");
+
+    const parts: string[] = [];
+    if (pageType || businessVertical) {
+      parts.push(
+        `This ${pageType || "page"} presents a ${
+          businessVertical || "business"
+        } offering.`
+      );
+    }
+    if (keyFeatures.length) {
+      parts.push(`Key features: ${keyFeatures.join(", ")}.)`);
+    }
+    if (solutions.length) {
+      parts.push(`Solutions: ${solutions.join(", ")}.`);
+    }
+    if (painPointsAddressed.length) {
+      parts.push(`Pain points addressed: ${painPointsAddressed.join(", ")}.`);
+    }
+    if (targetCustomers.length) {
+      parts.push(`Target customers: ${targetCustomers.join(", ")}.`);
+    }
+    if (businessOutcomes.length) {
+      parts.push(`Business outcomes: ${businessOutcomes.join(", ")}.`);
+    }
+    if (integrations.length) {
+      parts.push(`Integrations: ${integrations.join(", ")}.`);
+    }
+    if (pricePoints.length) {
+      parts.push(`Price points: ${pricePoints.join(", ")}.`);
+    }
+    if (useCases.length) {
+      parts.push(`Use cases: ${useCases.join(", ")}.`);
+    }
+    if (callsToAction.length) {
+      parts.push(`Calls to action: ${callsToAction.join(", ")}.`);
+    }
+    if (trustSignals.length) {
+      parts.push(`Trust signals: ${trustSignals.join(", ")}.`);
+    }
+    if (industryTerms.length) {
+      parts.push(`Industry terms: ${industryTerms.join(", ")}.`);
+    }
+
+    return parts.join(" ");
+  })();
   if (!isOpen || !page) return null;
 
   return (
