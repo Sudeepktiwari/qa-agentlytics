@@ -190,10 +190,10 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
             >
               <div style={{ fontSize: "40px", marginBottom: "16px" }}>📭</div>
               <h3 style={{ margin: "0 0 8px 0", color: "#4a5568" }}>
-                No documents uploaded
+                No documents or pages found
               </h3>
               <p style={{ margin: 0, fontSize: "16px" }}>
-                Upload your first document above to get started!
+                Upload a document or crawl your site to see items here!
               </p>
             </div>
           ) : (

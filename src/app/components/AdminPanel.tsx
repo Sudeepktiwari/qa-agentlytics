@@ -363,19 +363,47 @@ const AdminPanel: React.FC = () => {
   );
 
   // Documents management functions
+  // Unified fetchDocuments: merges uploaded docs and crawled pages into one list
   const fetchDocuments = async () => {
     setDocumentsLoading(true);
     setDocumentsError("");
     try {
-      const res = await fetch("/api/admin-docs?admin=1");
-      const data = await res.json();
-      if (res.ok) {
-        setDocuments(data.documents || []);
-        // Also fetch URL summary status when documents are loaded
-        fetchUrlSummaryStatus();
-      } else {
-        setDocumentsError(data.error || "Failed to fetch documents");
+      // Fetch uploaded documents
+      const docsRes = await fetch("/api/admin-docs?admin=1");
+      const docsData = await docsRes.json();
+      let uploadedDocs = docsRes.ok ? docsData.documents || [] : [];
+
+      // Fetch crawled pages (as URLs)
+      let crawledPages: any[] = [];
+      if (apiKey) {
+        const pagesRes = await fetch("/api/crawled-pages", {
+          method: "GET",
+          headers: { "x-api-key": apiKey },
+        });
+        const pagesData = await pagesRes.json();
+        if (pagesRes.ok && Array.isArray(pagesData.pages)) {
+          crawledPages = pagesData.pages.map((page: any) => ({
+            filename: page.url, // Use URL as filename
+            count: page.chunksCount || 0, // If available, else 0
+          }));
+        }
       }
+
+      // Merge, deduplicate by filename (URL or doc name)
+      const allDocsMap: Record<string, { filename: string; count: number }> =
+        {};
+      uploadedDocs.forEach((doc: any) => {
+        allDocsMap[doc.filename] = doc;
+      });
+      crawledPages.forEach((pageDoc) => {
+        if (!allDocsMap[pageDoc.filename]) {
+          allDocsMap[pageDoc.filename] = pageDoc;
+        }
+      });
+      const allDocs = Object.values(allDocsMap);
+      setDocuments(allDocs);
+      // Also fetch URL summary status when documents are loaded
+      fetchUrlSummaryStatus();
     } catch (error) {
       setDocumentsError("Failed to fetch documents");
       console.error("Error fetching documents:", error);
@@ -855,18 +883,6 @@ const AdminPanel: React.FC = () => {
             onRefreshDocuments={fetchDocuments}
             onDeleteDocument={deleteDocumentFile}
             onViewSummary={viewSummary}
-          />
-
-          <CrawledPagesSection
-            crawledPages={crawledPages}
-            crawledPagesLoading={crawledPagesLoading}
-            crawledPagesError={crawledPagesError}
-            onRefreshCrawledPages={fetchCrawledPages}
-            onViewPageSummary={(page) => {
-              setSelectedPageForSummary(page);
-              setShowSummaryModal(true);
-            }}
-            onDeleteCrawledPage={deleteCrawledPage}
           />
         </div>
       )}
