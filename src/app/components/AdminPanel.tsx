@@ -385,6 +385,7 @@ const AdminPanel: React.FC = () => {
           crawledPages = pagesData.pages.map((page: any) => ({
             filename: page.url, // Use URL as filename
             count: page.chunksCount || 0, // If available, else 0
+            hasStructuredSummary: !!page.structuredSummary, // Pass summary status for button logic
           }));
         }
       }
