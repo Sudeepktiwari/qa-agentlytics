@@ -398,7 +398,9 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
                                     style={{
                                       background:
                                         ("hasStructuredSummary" in doc
-                                          ? (doc as any).hasStructuredSummary
+                                          ? Boolean(
+                                              (doc as any).hasStructuredSummary
+                                            )
                                           : undefined) ??
                                         urlSummaryStatus[doc.filename]
                                           ? "linear-gradient(135deg, #48bb78 0%, #38a169 100%)"
@@ -442,7 +444,9 @@ const DocumentManagementSection: React.FC<DocumentManagementSectionProps> = ({
                                     }}
                                   >
                                     {("hasStructuredSummary" in doc
-                                      ? (doc as any).hasStructuredSummary
+                                      ? Boolean(
+                                          (doc as any).hasStructuredSummary
+                                        )
                                       : undefined) ??
                                     urlSummaryStatus[doc.filename]
                                       ? "👁️ View Summary"
