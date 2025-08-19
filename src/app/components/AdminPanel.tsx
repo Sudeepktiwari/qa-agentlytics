@@ -383,19 +383,18 @@ const AdminPanel: React.FC = () => {
         });
         const pagesData = await pagesRes.json();
         if (pagesRes.ok && Array.isArray(pagesData.pages)) {
+          // Build summary status map preserving the newest record per URL (pages are newest-first)
+          for (const page of pagesData.pages) {
+            if (urlSummaryStatusMap[page.url] === undefined) {
+              urlSummaryStatusMap[page.url] = !!page.structuredSummary;
+            }
+          }
+          // Map crawled pages to document rows, deriving hasStructuredSummary from the status map
           crawledPages = pagesData.pages.map((page: any) => ({
             filename: page.url, // Use URL as filename
             count: page.chunksCount || 0, // If available, else 0
-            hasStructuredSummary: !!page.structuredSummary, // Pass summary status for button logic
+            hasStructuredSummary: urlSummaryStatusMap[page.url],
           }));
-          // Build summary status map for all URLs
-          urlSummaryStatusMap = pagesData.pages.reduce(
-            (acc: Record<string, boolean>, page: any) => {
-              acc[page.url] = !!page.structuredSummary;
-              return acc;
-            },
-            {}
-          );
         }
       }
 
@@ -410,6 +409,10 @@ const AdminPanel: React.FC = () => {
       crawledPages.forEach((pageDoc) => {
         if (!allDocsMap[pageDoc.filename]) {
           allDocsMap[pageDoc.filename] = pageDoc;
+        } else {
+          // Ensure any existing entry (e.g., uploaded doc) reflects the correct summary status
+          (allDocsMap[pageDoc.filename] as any).hasStructuredSummary =
+            pageDoc.hasStructuredSummary;
         }
       });
       const allDocs = Object.values(allDocsMap);
