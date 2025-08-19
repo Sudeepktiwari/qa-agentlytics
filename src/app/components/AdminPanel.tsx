@@ -375,6 +375,7 @@ const AdminPanel: React.FC = () => {
 
       // Fetch crawled pages (as URLs)
       let crawledPages: any[] = [];
+      let urlSummaryStatusMap: Record<string, boolean> = {};
       if (apiKey) {
         const pagesRes = await fetch("/api/crawled-pages", {
           method: "GET",
@@ -387,12 +388,22 @@ const AdminPanel: React.FC = () => {
             count: page.chunksCount || 0, // If available, else 0
             hasStructuredSummary: !!page.structuredSummary, // Pass summary status for button logic
           }));
+          // Build summary status map for all URLs
+          urlSummaryStatusMap = pagesData.pages.reduce(
+            (acc: Record<string, boolean>, page: any) => {
+              acc[page.url] = !!page.structuredSummary;
+              return acc;
+            },
+            {}
+          );
         }
       }
 
       // Merge, deduplicate by filename (URL or doc name)
-      const allDocsMap: Record<string, { filename: string; count: number }> =
-        {};
+      const allDocsMap: Record<
+        string,
+        { filename: string; count: number; hasStructuredSummary?: boolean }
+      > = {};
       uploadedDocs.forEach((doc: any) => {
         allDocsMap[doc.filename] = doc;
       });
@@ -403,8 +414,8 @@ const AdminPanel: React.FC = () => {
       });
       const allDocs = Object.values(allDocsMap);
       setDocuments(allDocs);
-      // Also fetch URL summary status when documents are loaded
-      fetchUrlSummaryStatus();
+      // Set summary status for all URLs so button state is correct on first render
+      setUrlSummaryStatus(urlSummaryStatusMap);
     } catch (error) {
       setDocumentsError("Failed to fetch documents");
       console.error("Error fetching documents:", error);
