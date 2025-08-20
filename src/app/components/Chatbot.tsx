@@ -560,11 +560,16 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
     const lines = text.split(/\r?\n/);
     const buttons: string[] = [];
     for (const raw of lines) {
-      const line = raw.trim();
-      // Match bullet styles like "• Label" or "- Label" or "* Label"
-      const match = line.match(/^([•\-\*\u2022])\s+(.+?)\s*$/);
-      if (match && match[2]) {
-        const label = match[2].replace(/\s+$/g, "");
+      // Allow for indented bullets, markdown bullets, and ignore leading whitespace
+      const line = raw.replace(/^\s+/, "");
+      // Match bullet styles like "• Label", "- Label", "* Label", or numbered lists "1. Label"
+      const bulletMatch = line.match(/^([•\-\*\u2022]|\d+\.)\s+(.+?)\s*$/);
+      if (bulletMatch && bulletMatch[2]) {
+        let label = bulletMatch[2].replace(/\s+$/g, "");
+        // Remove trailing markdown formatting (e.g., **, __, etc.)
+        label = label.replace(/([*_~`]+)$/g, "").trim();
+        // Remove leading markdown formatting
+        label = label.replace(/^([*_~`]+)(.+)/, "$2");
         if (label.length >= 3 && label.length <= 60) {
           buttons.push(label);
         }
