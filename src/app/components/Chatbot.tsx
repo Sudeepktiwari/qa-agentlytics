@@ -484,12 +484,36 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
     emailPrompt: string;
   } {
     if (!data) return { mainText: "", buttons: [], emailPrompt: "" };
-    if (typeof data === "string")
-      return { mainText: data, buttons: [], emailPrompt: "" };
+    // If data is a string, try to parse as JSON, else treat as plain text
+    if (typeof data === "string") {
+      try {
+        const parsed = JSON.parse(data);
+        if (
+          typeof parsed === "object" &&
+          (parsed.mainText || parsed.buttons || parsed.emailPrompt)
+        ) {
+          return {
+            mainText: parsed.mainText || "",
+            buttons: Array.isArray(parsed.buttons) ? parsed.buttons : [],
+            emailPrompt: parsed.emailPrompt || "",
+          };
+        }
+      } catch {
+        // Not JSON, treat as plain text
+      }
+      // Remove any JSON-like instructions from plain text
+      // Remove JSON-like blocks and instructions (no 's' flag for compatibility)
+      let cleaned = data.replace(/\{[^}]*\}/g, "");
+      cleaned = cleaned.replace(/"buttons":\s*\[[^\]]*\]/g, "");
+      cleaned = cleaned.replace(/"emailPrompt":\s*"[^"]*"/g, "");
+      cleaned = cleaned.replace(/"mainText":\s*"[^"]*"/g, "");
+      return { mainText: cleaned.trim(), buttons: [], emailPrompt: "" };
+    }
+    // If data is an object, extract fields safely
     return {
-      mainText: data.mainText || "",
+      mainText: typeof data.mainText === "string" ? data.mainText : "",
       buttons: Array.isArray(data.buttons) ? data.buttons : [],
-      emailPrompt: data.emailPrompt || "",
+      emailPrompt: typeof data.emailPrompt === "string" ? data.emailPrompt : "",
     };
   }
 
