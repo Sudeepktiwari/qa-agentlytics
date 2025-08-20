@@ -124,6 +124,19 @@ const AdminPanel: React.FC = () => {
   // Customer persona section state
   const [personasExpanded, setPersonasExpanded] = useState(false);
 
+  // Toast state
+  const [toast, setToast] = useState<null | {
+    message: string;
+    type: "success" | "error";
+  }>(null);
+  const showToast = (
+    message: string,
+    type: "success" | "error" = "success"
+  ) => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
   // Check authentication on mount
   useEffect(() => {
     const checkAuth = async () => {
@@ -565,7 +578,7 @@ const AdminPanel: React.FC = () => {
   // Generate summary function that replaces existing summary
   const generateSummary = async (page: CrawledPage) => {
     if (!apiKey) {
-      alert("API key required to generate summary");
+      showToast("API key required to generate summary", "error");
       return;
     }
 
@@ -592,18 +605,24 @@ const AdminPanel: React.FC = () => {
         const result = await response.json();
         console.log("Summary generated successfully:", result);
 
-        // Refresh the documents list to show updated summary status
-        fetchDocuments();
-        // Also refresh URL summary status
+        // Update modal content in-place so summary shows immediately
+        setSelectedPageForSummary((prev) =>
+          prev
+            ? {
+                ...prev,
+                hasStructuredSummary: true,
+                structuredSummary: result.summary || prev.structuredSummary,
+              }
+            : prev
+        );
+
+        // Update local status maps and background lists without closing modal
+        setUrlSummaryStatus((prev) => ({ ...prev, [page.url]: true }));
         fetchUrlSummaryStatus();
-        // Refresh crawled pages to show updated status
-        await fetchCrawledPages();
+        fetchDocuments();
+        fetchCrawledPages();
 
-        // Close the modal and clear selected page so next open uses latest data
-        setShowSummaryModal(false);
-        setSelectedPageForSummary(null);
-
-        alert("Summary generated successfully!");
+        showToast("Summary generated successfully!", "success");
       } else {
         const errorData = await response.json();
         console.error("Failed to generate summary:", errorData);
@@ -621,11 +640,11 @@ const AdminPanel: React.FC = () => {
             "This page was processed as document chunks but doesn't have the full text needed for summary generation.";
         }
 
-        alert(`Failed to generate summary: ${errorMessage}`);
+        showToast(`Failed to generate summary: ${errorMessage}`, "error");
       }
     } catch (error) {
       console.error("Error generating summary:", error);
-      alert("Error generating summary. Please try again.");
+      showToast("Error generating summary. Please try again.", "error");
     }
   };
 
@@ -923,6 +942,30 @@ const AdminPanel: React.FC = () => {
         }}
         onGenerateSummary={generateSummary}
       />
+
+      {/* Toast */}
+      {toast && (
+        <div
+          style={{
+            position: "fixed",
+            right: 20,
+            bottom: 20,
+            background:
+              toast.type === "success"
+                ? "linear-gradient(135deg, #48bb78, #38a169)"
+                : "linear-gradient(135deg, #f56565, #e53e3e)",
+            color: "white",
+            padding: "12px 16px",
+            borderRadius: 12,
+            boxShadow: "0 8px 25px rgba(0,0,0,0.2)",
+            zIndex: 2000,
+            fontSize: 14,
+            fontWeight: 600,
+          }}
+        >
+          {toast.message}
+        </div>
+      )}
     </div>
   );
 };
