@@ -530,6 +530,26 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
     sendMessage(action);
   };
 
+  // Fallback: extract actionable options from plain text bullets when buttons array is empty
+  const extractButtonsFromText = (text: string): string[] => {
+    if (!text) return [];
+    const lines = text.split(/\r?\n/);
+    const buttons: string[] = [];
+    for (const raw of lines) {
+      const line = raw.trim();
+      // Match bullet styles like "• Label" or "- Label" or "* Label"
+      const match = line.match(/^([•\-\*\u2022])\s+(.+?)\s*$/);
+      if (match && match[2]) {
+        const label = match[2].replace(/\s+$/g, "");
+        if (label.length >= 3 && label.length <= 60) {
+          buttons.push(label);
+        }
+      }
+      if (buttons.length >= 5) break;
+    }
+    return buttons;
+  };
+
   const sendMessage = async (userInput: string) => {
     if (!userInput.trim()) return;
 
@@ -776,9 +796,18 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
                   <ReactMarkdown>{msg.content}</ReactMarkdown>
                 </div>
                 {/* Render action buttons if present and no email prompt */}
-                {msg.buttons &&
-                  msg.buttons.length > 0 &&
-                  (!msg.emailPrompt || msg.emailPrompt.trim() === "") && (
+                {(() => {
+                  const derivedButtons =
+                    (!msg.buttons || msg.buttons.length === 0) &&
+                    (!msg.emailPrompt || msg.emailPrompt.trim() === "")
+                      ? extractButtonsFromText(msg.content)
+                      : [];
+                  const finalButtons =
+                    msg.buttons && msg.buttons.length > 0
+                      ? msg.buttons
+                      : derivedButtons;
+                  return finalButtons.length > 0 &&
+                    (!msg.emailPrompt || msg.emailPrompt.trim() === "") ? (
                     <div style={{ marginTop: 8 }}>
                       <div
                         style={{
@@ -787,7 +816,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
                           gap: 8,
                         }}
                       >
-                        {msg.buttons.map((action, idx) => (
+                        {finalButtons.map((action, idx) => (
                           <button
                             key={idx}
                             type="button"
@@ -808,7 +837,8 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
                         ))}
                       </div>
                     </div>
-                  )}
+                  ) : null;
+                })()}
                 {/* Render email prompt/input if present (prioritize email over buttons) */}
                 {msg.emailPrompt && msg.emailPrompt.trim() !== "" && (
                   <div style={{ marginTop: 8, color: "#000000" }}>
