@@ -2225,7 +2225,24 @@ ${previousQnA}
           console.log(
             `[Followup] Skipping followup - user was active within last 25 seconds for session ${sessionId}`
           );
-          return NextResponse.json({}, { headers: corsHeaders });
+          let userEmail: string | null = null;
+          const lastEmailMsg = await chats.findOne(
+            { sessionId, email: { $exists: true } },
+            { sort: { createdAt: -1 } }
+          );
+          if (lastEmailMsg && lastEmailMsg.email)
+            userEmail = lastEmailMsg.email;
+          return NextResponse.json(
+            {
+              mainText:
+                "You're already active! Please continue your conversation.",
+              buttons: [],
+              emailPrompt: "",
+              botMode: userEmail ? "sales" : "lead_generation",
+              userEmail: userEmail || null,
+            },
+            { headers: corsHeaders }
+          );
         }
 
         // Build a list of all previously used option labels to enforce variety
@@ -2300,7 +2317,23 @@ ${previousQnA}
             console.log(
               `[Followup] Skipping followup - too similar to previous questions for session ${sessionId}`
             );
-            return NextResponse.json({}, { headers: corsHeaders });
+            let userEmail: string | null = null;
+            const lastEmailMsg = await chats.findOne(
+              { sessionId, email: { $exists: true } },
+              { sort: { createdAt: -1 } }
+            );
+            if (lastEmailMsg && lastEmailMsg.email)
+              userEmail = lastEmailMsg.email;
+            return NextResponse.json(
+              {
+                mainText: "No new followups available.",
+                buttons: [],
+                emailPrompt: "",
+                botMode: userEmail ? "sales" : "lead_generation",
+                userEmail: userEmail || null,
+              },
+              { headers: corsHeaders }
+            );
           }
 
           // Enforce option uniqueness by filtering out previously used labels and duplicates
@@ -2345,7 +2378,23 @@ ${previousQnA}
             `[Followup] Error generating followup for session ${sessionId}:`,
             error
           );
-          return NextResponse.json({}, { headers: corsHeaders });
+          let userEmail: string | null = null;
+          const lastEmailMsg = await chats.findOne(
+            { sessionId, email: { $exists: true } },
+            { sort: { createdAt: -1 } }
+          );
+          if (lastEmailMsg && lastEmailMsg.email)
+            userEmail = lastEmailMsg.email;
+          return NextResponse.json(
+            {
+              mainText: "Sorry, something went wrong generating a followup.",
+              buttons: [],
+              emailPrompt: "",
+              botMode: userEmail ? "sales" : "lead_generation",
+              userEmail: userEmail || null,
+            },
+            { headers: corsHeaders }
+          );
         }
       }
     }
@@ -2395,7 +2444,9 @@ What specific information are you looking for? I'm here to help guide you throug
 
       return NextResponse.json(
         {
-          answer: proactiveMsg,
+          mainText: proactiveMsg,
+          buttons: [],
+          emailPrompt: "",
           botMode,
           userEmail: userEmail || null,
         },
