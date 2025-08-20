@@ -518,8 +518,8 @@ Current Context:
 
 Generate your response in JSON format:
 {
-  "mainText": "<Under 30 words. Inform about a specific important item on the page and invite a quick response. No personal names>",
-  "buttons": ["<Generate exactly 3 buttons that are actionable and specific to the page>"] ,
+  "mainText": "<Under 30 words. Inform about a specific important item on the page and invite a quick response. End with: 'Please tap an option below.' No personal names>",
+  "buttons": ["<Generate exactly 3 short options (2-4 words) that are actionable and specific to the page>"] ,
   "emailPrompt": "<ONLY include this if followupCount >= 2 AND user hasn't provided email yet. Otherwise empty string>"
 }
 
@@ -1268,7 +1268,7 @@ ANALYSIS REQUIRED:
 Generate response in JSON format:
 {
   "mainText": "<Context-aware message (under 30 words) that shows you understand what they're viewing and asks a specific question about their needs/situation>",
-  "buttons": ["<3-4 specific actions based on actual page content>"]
+  "buttons": ["<3-4 short options (2-4 words) based on actual page content. They should read like tappable choices>"]
 }
 
 EXAMPLE APPROACH:
@@ -1339,7 +1339,7 @@ BEHAVIORAL ANALYSIS:
 Generate response in JSON format:
 {
   "mainText": "<Context-aware follow-up (under 25 words) that acknowledges their exploration and asks about specific needs/concerns>",
-  "buttons": ["<3 specific actions relevant to their current evaluation stage>"]
+  "buttons": ["<3 short options (2-4 words) relevant to their current evaluation stage. End mainText by asking the user to tap one>"]
 }
 
 FOLLOW-UP APPROACH:
@@ -1942,7 +1942,7 @@ If page mentions "team collaboration + project tracking + client communication":
 You will receive page and general context, the detected intent, and the previous conversation. Always generate your response in the following JSON format:
 {
   "mainText": "<A micro-conversion nudge—small, low-friction ask. STRICT LIMITS: Maximum 30 words total. Use casual, friendly tone. Be specific to their context and what they're actually viewing.>",
-  "buttons": ["<Generate exactly 3 buttons, each must be 3-4 words maximum. Make them actionable and specific to the actual page content.>"],
+  "buttons": ["<Generate exactly 3 options, each 2-4 words. They are tappable choices, specific to the page content.>"],
   "emailPrompt": ""
 }
 
@@ -2129,7 +2129,7 @@ Previous Messages: ${
 You will receive page and general context, the detected intent, and the previous conversation. Always generate your response in the following JSON format:
 {
   "mainText": "<A value-focused message highlighting specific benefits. STRICT LIMITS: Maximum 30 words total. Create curiosity about unique value they haven't considered.>",
-  "buttons": ["<Generate exactly 3 buttons, each must be 3-4 words maximum. Focus on value delivery and benefits from your chosen angle.>"],
+  "buttons": ["<Generate exactly 3 options, each 2-4 words. They should read like tappable choices that convey value from your chosen angle.>"],
   "emailPrompt": "<Create a contextual email prompt that relates to your chosen topic and specific page content. Explain what specific information you'll send them.>"
 }
 Context:
