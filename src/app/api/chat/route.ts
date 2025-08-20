@@ -2228,6 +2228,16 @@ ${previousQnA}
           return NextResponse.json({}, { headers: corsHeaders });
         }
 
+        // Build a list of all previously used option labels to enforce variety
+        const previousButtonsAll: string[] = previousChats
+          .filter((chat: any) => chat.buttons && Array.isArray(chat.buttons))
+          .flatMap((chat: any) => chat.buttons)
+          .map((b: string) => (typeof b === "string" ? b.trim() : ""))
+          .filter(Boolean);
+
+        // Helper to normalize a label for comparison
+        const normalizeLabel = (s: string) => s.trim().toLowerCase();
+
         // Start followup generation with error handling
         console.log(
           `[Followup] Starting followup generation for session ${sessionId}, count: ${followupCount}`
@@ -2240,11 +2250,20 @@ ${previousQnA}
             console.log(
               `[Followup] Attempt ${attempt + 1}/2 for session ${sessionId}`
             );
+            // For retries, add explicit constraints to avoid previously used options
+            const augmentedUserPrompt =
+              attempt === 0
+                ? followupUserPrompt
+                : `${followupUserPrompt}\n\nAVOID THESE OPTIONS ENTIRELY (use different wording and topics): ${
+                    previousButtonsAll.length > 0
+                      ? previousButtonsAll.map((b) => `"${b}"`).join(", ")
+                      : "(none)"
+                  }\nGenerate options that are DISTINCT in wording and topic.`;
             const followupResp = await openai.chat.completions.create({
               model: "gpt-4o-mini",
               messages: [
                 { role: "system", content: followupSystemPrompt },
-                { role: "user", content: followupUserPrompt },
+                { role: "user", content: augmentedUserPrompt },
               ],
             });
             followupMsg = followupResp.choices[0].message.content || "";
@@ -2253,7 +2272,28 @@ ${previousQnA}
             } catch {
               parsed = { mainText: followupMsg, buttons: [], emailPrompt: "" };
             }
-            if (!isTooSimilar(parsed.mainText, lastFewQuestions)) break;
+            // Check main text similarity and options overlap
+            const tooSimilar = isTooSimilar(parsed.mainText, lastFewQuestions);
+            const newButtons: string[] = Array.isArray(parsed.buttons)
+              ? parsed.buttons
+              : [];
+            const newButtonsNorm = new Set(
+              newButtons.map((b) => normalizeLabel(String(b || "")))
+            );
+            const prevButtonsNorm = new Set(
+              previousButtonsAll.map((b) => normalizeLabel(String(b || "")))
+            );
+            let overlap = 0;
+            for (const b of newButtonsNorm)
+              if (prevButtonsNorm.has(b)) overlap++;
+
+            if (
+              !tooSimilar &&
+              overlap === 0 &&
+              newButtonsNorm.size === newButtons.length
+            ) {
+              break;
+            }
           }
           // If still too similar, skip sending a new follow-up
           if (isTooSimilar(parsed.mainText, lastFewQuestions)) {
@@ -2261,6 +2301,22 @@ ${previousQnA}
               `[Followup] Skipping followup - too similar to previous questions for session ${sessionId}`
             );
             return NextResponse.json({}, { headers: corsHeaders });
+          }
+
+          // Enforce option uniqueness by filtering out previously used labels and duplicates
+          if (Array.isArray(parsed.buttons)) {
+            const seen = new Set<string>();
+            const prev = new Set(
+              previousButtonsAll.map((b) => normalizeLabel(b))
+            );
+            parsed.buttons = parsed.buttons.filter((b: string) => {
+              const key = normalizeLabel(String(b || ""));
+              if (!key) return false;
+              if (prev.has(key)) return false;
+              if (seen.has(key)) return false;
+              seen.add(key);
+              return true;
+            });
           }
 
           console.log(

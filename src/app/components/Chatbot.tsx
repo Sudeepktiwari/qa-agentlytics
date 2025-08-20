@@ -513,6 +513,23 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
     }
   }
 
+  // Handle clicking an action option button
+  const handleActionClick = (action: string, msg: Message) => {
+    console.log("[Chatbot] Action option clicked", action);
+    // Reset followup timer when button is clicked
+    if (followupTimer.current) {
+      clearTimeout(followupTimer.current);
+      followupTimer.current = null;
+    }
+    setFollowupSent(false);
+    setUserIsActive(false);
+    setLastUserAction(Date.now());
+
+    trackNudge(action, { pageUrl, adminId, message: msg });
+    setInput("");
+    sendMessage(action);
+  };
+
   const sendMessage = async (userInput: string) => {
     if (!userInput.trim()) return;
 
@@ -763,56 +780,33 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
                   msg.buttons.length > 0 &&
                   (!msg.emailPrompt || msg.emailPrompt.trim() === "") && (
                     <div style={{ marginTop: 8 }}>
-                      <form>
+                      <div
+                        style={{
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: 8,
+                        }}
+                      >
                         {msg.buttons.map((action, idx) => (
-                          <div
+                          <button
                             key={idx}
+                            type="button"
+                            onClick={() => handleActionClick(action, msg)}
                             style={{
-                              marginBottom: 4,
-                              display: "flex",
-                              alignItems: "center",
+                              backgroundColor: "#edf2f7",
+                              color: "#1a202c",
+                              border: "1px solid #cbd5e0",
+                              borderRadius: 16,
+                              padding: "6px 10px",
+                              cursor: "pointer",
+                              fontSize: 12,
+                              fontWeight: 600,
                             }}
                           >
-                            <input
-                              type="radio"
-                              id={`action-${i}-${idx}`}
-                              name={`actions-${i}`}
-                              value={idx}
-                              checked={selectedRadio === idx}
-                              onChange={() => {
-                                console.log(
-                                  "[Chatbot] Button clicked, resetting followup timer"
-                                );
-                                setSelectedRadio(idx);
-                                // Reset followup timer when button is clicked
-                                if (followupTimer.current) {
-                                  clearTimeout(followupTimer.current);
-                                  followupTimer.current = null;
-                                }
-                                setFollowupSent(false);
-                                setUserIsActive(false);
-                                setLastUserAction(Date.now());
-
-                                trackNudge(action, {
-                                  pageUrl,
-                                  adminId,
-                                  message: msg,
-                                });
-                                setInput("");
-                                sendMessage(action);
-                                setSelectedRadio(null);
-                              }}
-                              style={{ marginRight: 8, cursor: "pointer" }}
-                            />
-                            <label
-                              htmlFor={`action-${i}-${idx}`}
-                              style={{ cursor: "pointer", color: "#000000" }}
-                            >
-                              {action}
-                            </label>
-                          </div>
+                            {action}
+                          </button>
                         ))}
-                      </form>
+                      </div>
                     </div>
                   )}
                 {/* Render email prompt/input if present (prioritize email over buttons) */}
