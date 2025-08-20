@@ -557,21 +557,32 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
   // Fallback: extract actionable options from plain text bullets when buttons array is empty
   const extractButtonsFromText = (text: string): string[] => {
     if (!text) return [];
-    const lines = text.split(/\r?\n/);
+    // Remove markdown horizontal rules and extra whitespace
+    let cleaned = text.replace(/^---+$/gm, "");
+    cleaned = cleaned.replace(/\n{2,}/g, "\n");
+    const lines = cleaned.split(/\r?\n/);
     const buttons: string[] = [];
     for (const raw of lines) {
-      // Allow for indented bullets, markdown bullets, and ignore leading whitespace
       const line = raw.replace(/^\s+/, "");
       // Match bullet styles like "• Label", "- Label", "* Label", or numbered lists "1. Label"
       const bulletMatch = line.match(/^([•\-\*\u2022]|\d+\.)\s+(.+?)\s*$/);
       if (bulletMatch && bulletMatch[2]) {
         let label = bulletMatch[2].replace(/\s+$/g, "");
-        // Remove trailing markdown formatting (e.g., **, __, etc.)
         label = label.replace(/([*_~`]+)$/g, "").trim();
-        // Remove leading markdown formatting
         label = label.replace(/^([*_~`]+)(.+)/, "$2");
         if (label.length >= 3 && label.length <= 60) {
           buttons.push(label);
+        }
+      } else {
+        // Also match dash bullets with no space (e.g., '-Learn More')
+        const dashMatch = line.match(/^[-\u2013]\s?(.{3,60})$/);
+        if (dashMatch && dashMatch[1]) {
+          let label = dashMatch[1].trim();
+          label = label.replace(/([*_~`]+)$/g, "").trim();
+          label = label.replace(/^([*_~`]+)(.+)/, "$2");
+          if (label.length >= 3 && label.length <= 60) {
+            buttons.push(label);
+          }
         }
       }
       if (buttons.length >= 5) break;
