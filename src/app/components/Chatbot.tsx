@@ -819,19 +819,17 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
                 <div style={{ color: "#000000" }}>
                   <ReactMarkdown>{msg.content}</ReactMarkdown>
                 </div>
-                {/* Render action buttons if present and no email prompt */}
+                {/* Always render action buttons if present */}
                 {(() => {
                   const derivedButtons =
-                    (!msg.buttons || msg.buttons.length === 0) &&
-                    (!msg.emailPrompt || msg.emailPrompt.trim() === "")
+                    !msg.buttons || msg.buttons.length === 0
                       ? extractButtonsFromText(msg.content)
                       : [];
                   const finalButtons =
                     msg.buttons && msg.buttons.length > 0
                       ? msg.buttons
                       : derivedButtons;
-                  return finalButtons.length > 0 &&
-                    (!msg.emailPrompt || msg.emailPrompt.trim() === "") ? (
+                  return finalButtons.length > 0 ? (
                     <div style={{ marginTop: 8 }}>
                       <div
                         style={{
@@ -863,7 +861,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
                     </div>
                   ) : null;
                 })()}
-                {/* Render email prompt/input if present (prioritize email over buttons) */}
+                {/* Always render email prompt/input if present */}
                 {msg.emailPrompt && msg.emailPrompt.trim() !== "" && (
                   <div style={{ marginTop: 8, color: "#000000" }}>
                     <div>{msg.emailPrompt}</div>
@@ -882,7 +880,6 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
                           setFollowupSent(false);
                           setUserIsActive(false);
                           setLastUserAction(Date.now());
-
                           sendMessage(emailInputValue.trim());
                           setEmailInputValue("");
                         }
@@ -933,46 +930,12 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
                 )}
               </>
             ) : (
-              <span style={{ color: "#000000" }}>{msg.content}</span>
+              <span>{msg.content}</span>
             )}
           </div>
         ))}
-        {loading && <div style={{ color: "#000000" }}>Bot is typing...</div>}
       </div>
-      <input
-        type="text"
-        value={input}
-        onChange={handleInputChange}
-        onKeyDown={handleKeyDown}
-        placeholder="Ask a question about your documents..."
-        style={{
-          width: "65%",
-          marginRight: 8,
-          backgroundColor: "#ffffff",
-          color: "#000000",
-          border: "1px solid #ccc",
-          padding: "8px",
-        }}
-        disabled={loading}
-      />
       <button
-        onClick={() => sendMessage(input)}
-        disabled={loading || !input.trim()}
-        style={{
-          backgroundColor: "#0070f3",
-          color: "#ffffff",
-          border: "none",
-          padding: "8px 16px",
-          borderRadius: "4px",
-          cursor: loading || !input.trim() ? "not-allowed" : "pointer",
-          opacity: loading || !input.trim() ? 0.6 : 1,
-          marginRight: "8px",
-        }}
-      >
-        Send
-      </button>
-      <button
-        onClick={resetUser}
         style={{
           backgroundColor: "#dc3545",
           color: "#ffffff",
@@ -983,6 +946,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
           fontSize: "12px",
         }}
         title="Reset user session and start as a new user"
+        onClick={resetUser}
       >
         🔄 Reset User
       </button>
