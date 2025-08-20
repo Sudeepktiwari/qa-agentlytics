@@ -375,7 +375,7 @@ const AdminPanel: React.FC = () => {
 
       // Fetch crawled pages (as URLs)
       let crawledPages: any[] = [];
-      let urlSummaryStatusMap: Record<string, boolean> = {};
+      const urlSummaryStatusMap: Record<string, boolean> = {};
       if (apiKey) {
         const pagesRes = await fetch("/api/crawled-pages", {
           method: "GET",
