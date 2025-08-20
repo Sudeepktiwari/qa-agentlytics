@@ -920,7 +920,6 @@ const AdminPanel: React.FC = () => {
         onClose={() => {
           setShowSummaryModal(false);
           setSelectedPageForSummary(null);
-          fetchDocuments(); // Refresh document list to update summary button state
         }}
         onGenerateSummary={generateSummary}
       />

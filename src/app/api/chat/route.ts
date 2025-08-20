@@ -518,160 +518,25 @@ Current Context:
 
 Generate your response in JSON format:
 {
-  "mainText": "<Segment-specific message under 30 words that addresses their pain points using situational language, NOT personal names>",
-  "buttons": ["<3 buttons specific to what this customer segment actually needs>"],
-  "emailPrompt": "<ONLY include this if followupCount >= 2 AND user hasn't provided email yet. Otherwise leave empty string.>"
+  "mainText": "<Under 30 words. Inform about a specific important item on the page and invite a quick response. No personal names>",
+  "buttons": ["<Generate exactly 3 buttons that are actionable and specific to the page>"] ,
+  "emailPrompt": "<ONLY include this if followupCount >= 2 AND user hasn't provided email yet. Otherwise empty string>"
 }
 
-CRITICAL: NEVER use these BANNED opening patterns:
-- "Tired of..." (COMPLETELY BANNED)
-- "Struggling with..." (COMPLETELY BANNED)  
-- "Managing..." (COMPLETELY BANNED)
-- "Exhausted from..." (COMPLETELY BANNED)
-- "Sick of..." (COMPLETELY BANNED)
-- "Need help with..." (COMPLETELY BANNED)
-- "Ready to..." (only if used recently)
-- "Looking to..." (only if used recently)
-
-MANDATORY: Check conversation history and NEVER repeat similar opening patterns.
-Previous conversation context: ${conversationHistory.slice(-200)}
+STYLE GUIDELINES (no hard blacklist):
+- Prefer informative openings that highlight a concrete feature, benefit, or update from the current page.
+- Vary openings and sentence structures; avoid repeating the same pattern as the last message.
+- Keep tone helpful and business-focused; avoid negative or accusatory phrasing.
+- Stay specific to the page content and segment needs; avoid generic scheduling language.
 
 LEAD GENERATION BUTTON STRATEGY - 3-Button Framework (PERSONA-BASED):
+1) Persona Pain Point  2) Persona Solution  3) Persona Requirement
+- Extract these directly from page content where possible.
+- Buttons must be 2-4 words, actionable, and distinct.
 
-**MANDATORY 3-BUTTON STRUCTURE FOR ALL PERSONA FOLLOWUPS:**
-1. **Button 1: PERSONA PAIN POINT** - Specific challenge for this customer type based on page context
-2. **Button 2: PERSONA SOLUTION** - Feature/solution relevant to their persona mentioned on page
-3. **Button 3: PERSONA REQUIREMENT** - Specific need for their customer type or growth stage
-
-**PERSONA BUTTON MAPPING:**
-
-**Small Business Persona:**
-- Pain Point: "Time Constraints" | "Manual Work" | "Budget Limits"
-- Solution: "Simple Setup" | "Quick Start" | "Basic Features"  
-- Requirement: "Affordable Plans" | "Easy Integration" | "Fast ROI"
-
-**Enterprise Persona:**
-- Pain Point: "Scale Issues" | "Security Needs" | "Compliance"
-- Solution: "Enterprise Features" | "Advanced Security" | "Custom Integration"
-- Requirement: "Volume Pricing" | "Dedicated Support" | "SLA Guarantee"
-
-**SaaS/Startup Persona:**
-- Pain Point: "Growth Scaling" | "Team Coordination" | "System Integration"  
-- Solution: "API Access" | "Team Dashboard" | "Growth Analytics"
-- Requirement: "Startup Pricing" | "Technical Support" | "Scalable Plans"
-
-**PERSONA BUTTON EVOLUTION RULES:**
-- NEVER repeat button concepts across followups for same persona
-- Each followup must BUILD on previous button choice
-- Extract pain points and solutions actually mentioned on current page
-- Tailor language to persona sophistication level (simple for SMB, technical for Enterprise)
-- DIFFERENT buttons for different followup numbers but same persona focus
-
-PAIN POINT EXTRACTION FROM PAGE CONTENT:
-- If page mentions "scheduling conflicts" → Button: "Scheduling Chaos"
-- If page mentions "payment processing" → Button: "Payment Issues"  
-- If page mentions "no-show clients" → Button: "Client No-Shows"
-- If page mentions "double bookings" → Button: "Booking Conflicts"
-- If page mentions "manual processes" → Button: "Manual Work"
-- If page mentions "staff coordination" → Button: "Team Coordination"
-
-SOLUTION MAPPING FROM PAGE FEATURES:
-- If page has "automated scheduling" → Button: "Auto Scheduling"
-- If page has "payment integration" → Button: "Payment Automation"
-- If page has "reminder system" → Button: "Smart Reminders"
-- If page has "mobile app" → Button: "Mobile Access"
-- If page has "analytics" → Button: "Business Insights"
-- If page has "integrations" → Button: "Tool Connections"
-
-CUSTOMER PROFILING THROUGH BUTTON CHOICES:
-- Use buttons to learn about company size ("Solo Tools" vs "Team Management")
-- Identify technical level ("Simple Setup" vs "API Integration")
-- Understand urgency ("Quick Start" vs "Enterprise Evaluation")
-- Gauge budget sensitivity ("Budget Options" vs "Premium Features")
-- Discover industry ("Healthcare" vs "Fitness" vs "Professional Services")
-
-BUTTON NAMING RULES:
-- 2-4 words maximum for mobile friendliness
-- Action-oriented: "See", "Try", "Compare", "Get", "Setup", "Access"
-- Specific to page content, not generic
-- Help qualify the lead through their choice
-- NEVER repeat concepts from previous followups
-- Focus on PROBLEMS first, then SOLUTIONS
-
-CREATIVE OPENING PATTERNS - Use variety, avoid repetition:
-- Curiosity: "Ready to...", "Want to...", "Looking to...", "Curious how..."
-- Benefit-focused: "Save 15 hours weekly with...", "Cut costs by 40% using...", "Boost revenue by..."
-- Question-based: "Growing fast?", "Need better...", "Exploring options?", "Time for an upgrade?"
-- Solution-oriented: "Here's how...", "Perfect for...", "Ideal when...", "Great solution for..."
-- Industry-specific: "For [industry]...", "Most [role] find...", "Popular with...", "[Industry] leaders use..."
-- Problem-solving: "No more...", "Skip the...", "Avoid...", "Eliminate..."
-- Value proposition: "Get [benefit] without [pain]", "[Number]% of [segment] choose...", "Most see results in..."
-- Achievement: "Join [others] who...", "Like [similar companies]...", "Proven to help..."
-- Direct benefit: "Double your...", "Cut your...", "Automate your...", "Transform your..."
-- Social proof: "Over 1000 companies...", "Top brands rely on...", "Industry leaders prefer..."
-
-ABSOLUTELY AVOID THESE REPETITIVE PATTERNS:
-- "Tired of..." (BANNED - overused)
-- "Struggling with..." (BANNED - overused)
-- "Managing..." (BANNED - becoming repetitive)
-- "Ready to..." (BANNED - if used recently)
-- "Looking to..." (BANNED - if used recently)
-- "Need help with..." (BANNED - generic)
-- "Noticed you're..." (BANNED - becoming repetitive)
-- "Exhausted from..." (BANNED - similar to tired)
-- "Sick of..." (BANNED - similar to tired)
-- Starting every message the same way
-- Using the same sentence structure repeatedly
-- Repeating the same concepts or words
-
-MANDATORY VARIETY ENFORCEMENT:
-- NEVER start with the same word twice in a row
-- NEVER use similar sentence structures consecutively
-- NEVER repeat the same benefit or feature mention
-- MUST use completely different opening approaches
-- MUST vary emotional tone dramatically between messages
-- MUST use different conversation techniques each time
-
-SPECIFIC OPENING VARIETY EXAMPLES:
-Instead of: "Ready to streamline..." "Ready to eliminate..." "Ready to boost..."
-Use DIFFERENT patterns like:
-- Numbers: "Save 15 hours weekly with..."
-- Questions: "Growing your client base?"
-- Benefits: "Double your booking efficiency..."
-- Social proof: "Join 500+ fitness studios who..."
-- Problem-solving: "No more scheduling conflicts..."
-- Industry-specific: "For fitness professionals like you..."
-- Achievement: "Unlock advanced features that..."
-- Comparison: "Better than manual booking..."
-
-CONVERSATION FLOW INTELLIGENCE:
-- Analyze what was said in previous messages
-- Choose completely different approach for current message
-- Reference actual page content, not assumptions
-- Use specific features/benefits mentioned on the page
-- Create logical progression without repetition
-
-IMPORTANT GUIDELINES:
-- NEVER use personal names like "Hi John" or "Hello Sarah"
-- Use situational language like "Running a startup?", "Managing a team?", "Looking for enterprise features?"
-- Reference their likely situation, not a specific person
-- Address pain points relevant to their company size/type
-- Speak in their preferred technical level
-- Focus on business context, not personal identity
-- BE CREATIVE with openings - use different patterns each time
-
-LEAD PROGRESSION RULES:
-- Followup #1 (followupCount=0): Give contextual question with 3 option buttons, NO email ask
-- Followup #2 (followupCount=1): More specific micro-conversion nudge with 3 buttons, NO email ask  
-- Followup #3 (followupCount=2): ONLY NOW ask for email if user hasn't provided it
-- Keep emailPrompt empty for first 2 followups
-- Match the user's current stage in the lead generation flow
-- Reference their specific pain points and preferred features
-- Use language appropriate for their technical level
-- Consider their budget range and company size
-- Match their urgency level and decision-making authority
-- Be specific to their industry context if relevant
-- Avoid generic messaging - make it persona-specific
+Conversation Flow Intelligence:
+- Reference actual page content (features, solutions, use cases) and avoid repetition from the last 1-2 messages.
+- Build logically from the previous message; introduce new details.
 `;
 
     const completion = await openai.chat.completions.create({
@@ -1783,6 +1648,54 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
           adminId || ""
         );
 
+        // Build summary-first page context for prompts
+        let pageContextForPrompt = pageChunks.slice(0, 10).join("\n---\n");
+        if (adminId && pageUrl) {
+          try {
+            const db = await getDb();
+            const pageDoc = await db
+              .collection("crawled_pages")
+              .findOne({ adminId, url: pageUrl });
+            const ss: any = pageDoc?.structuredSummary;
+            if (ss && typeof ss === "object") {
+              const parts: string[] = [];
+              if (ss.pageType) parts.push(`Page Type: ${ss.pageType}`);
+              if (
+                Array.isArray(ss.primaryFeatures) &&
+                ss.primaryFeatures.length
+              )
+                parts.push(`Features: ${ss.primaryFeatures.join(", ")}`);
+              if (
+                Array.isArray(ss.painPointsAddressed) &&
+                ss.painPointsAddressed.length
+              )
+                parts.push(`Pain Points: ${ss.painPointsAddressed.join(", ")}`);
+              if (Array.isArray(ss.solutions) && ss.solutions.length)
+                parts.push(`Solutions: ${ss.solutions.join(", ")}`);
+              if (Array.isArray(ss.useCases) && ss.useCases.length)
+                parts.push(`Use Cases: ${ss.useCases.join(", ")}`);
+              if (
+                Array.isArray(ss.businessOutcomes) &&
+                ss.businessOutcomes.length
+              )
+                parts.push(`Outcomes: ${ss.businessOutcomes.join(", ")}`);
+              if (Array.isArray(ss.pricePoints) && ss.pricePoints.length)
+                parts.push(`Price Points: ${ss.pricePoints.join(", ")}`);
+              if (Array.isArray(ss.integrations) && ss.integrations.length)
+                parts.push(`Integrations: ${ss.integrations.join(", ")}`);
+              if (Array.isArray(ss.callsToAction) && ss.callsToAction.length)
+                parts.push(`CTAs: ${ss.callsToAction.join(", ")}`);
+              const summaryCtx = parts.join("\n").trim();
+              if (summaryCtx) pageContextForPrompt = summaryCtx;
+            }
+          } catch (e) {
+            console.log(
+              "[Followup] Summary-first context build failed, using chunks",
+              e
+            );
+          }
+        }
+
         let personaFollowup = null;
         if (detectedPersona && pageChunks.length > 0) {
           console.log(
@@ -1790,7 +1703,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
           );
           personaFollowup = await generatePersonaBasedFollowup(
             detectedPersona,
-            pageChunks.slice(0, 10).join("\n---\n"),
+            pageContextForPrompt,
             pageUrl,
             previousQnA,
             followupCount
@@ -1835,124 +1748,13 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
           followupSystemPrompt = `
 You are a helpful sales assistant. The user has not provided an email yet.
 
-CRITICAL: This is FOLLOWUP #1 (followupCount=0). You must extract and focus on ONE specific business aspect from the page content.
+FOLLOWUP #1 GOAL: Inform about one important item (feature, solution, offer, or outcome) clearly visible on this page and invite a quick response.
 
-**MANDATORY PAGE CONTENT ANALYSIS:**
-1. **Extract Specific Features**: Identify actual features/services mentioned on this page
-2. **Identify Pain Points**: Find real customer problems this page addresses
-3. **Solutions Offered**: What specific solutions does this page present
-4. **Target Customers**: Who is this page designed for (business size, industry, role)
-
-**FOLLOWUP #1 CONTENT REQUIREMENTS:**
-- **Message**: Reference ACTUAL features, services, or solutions from the page content
-- **Buttons**: Use REAL terminology and options found on the page
-- **Focus**: ONE primary business dimension based on page content
-
-**SELECT ONE ANGLE FROM PAGE CONTENT:**
-
-**📈 GROWTH & EXPANSION** (if page mentions growth, scaling, expansion):
-- Extract: Growth features, scaling solutions, expansion tools
-- Message: Reference actual growth-related content from page
-- Buttons: Use specific growth/scaling terms from page
-
-**💰 REVENUE & PROFIT** (if page mentions pricing, ROI, revenue):
-- Extract: Pricing strategies, revenue tools, profit optimization
-- Message: Reference actual revenue/pricing content from page  
-- Buttons: Use specific revenue/pricing terms from page
-
-**👥 CLIENT MANAGEMENT** (if page mentions customers, clients, relationships):
-- Extract: Client tools, customer features, relationship management
-- Message: Reference actual client/customer content from page
-- Buttons: Use specific client management terms from page
-
-**⚡ EFFICIENCY & AUTOMATION** (if page mentions automation, efficiency, time-saving):
-- Extract: Automation features, efficiency tools, time-saving solutions
-- Message: Reference actual efficiency/automation content from page
-- Buttons: Use specific automation/efficiency terms from page
-
-**🛡️ SECURITY & COMPLIANCE** (if page mentions security, compliance, data protection):
-- Extract: Security features, compliance tools, data protection
-- Message: Reference actual security/compliance content from page
-- Buttons: Use specific security/compliance terms from page
-
-**👥 TEAM & COLLABORATION** (if page mentions team, collaboration, management):
-- Extract: Team features, collaboration tools, management solutions
-- Message: Reference actual team/collaboration content from page
-- Buttons: Use specific team/collaboration terms from page
-
-**🏆 COMPETITIVE ADVANTAGE** (if page mentions competition, market position, unique value):
-- Extract: Competitive features, unique solutions, market advantages
-- Message: Reference actual competitive/unique content from page
-- Buttons: Use specific competitive advantage terms from page
-
-**📊 ANALYTICS & INSIGHTS** (if page mentions analytics, reporting, data insights):
-- Extract: Analytics features, reporting tools, data insights
-- Message: Reference actual analytics/reporting content from page
-- Buttons: Use specific analytics/reporting terms from page
-- Examples: "Growing your client base?", "Ready to scale operations?", "Expanding your services?"
-- Buttons: "Growth Strategies", "Scale Operations", "Client Acquisition"
-
-**OPERATIONAL EFFICIENCY:**
-- Message Focus: Time-saving, automation, workflow optimization
-- Examples: "Spending too much time on admin?", "Automate your workflow?", "Streamline daily tasks?"
-- Buttons: "Save Time Daily", "Workflow Automation", "Efficiency Tools"
-
-**REVENUE & PROFITABILITY:**
-- Message Focus: Increasing revenue, reducing costs, maximizing profits
-- Examples: "Boost your revenue streams?", "Maximize booking value?", "Reduce operational costs?"
-- Buttons: "Revenue Growth", "Profit Optimization", "Cost Reduction"
-
-**CLIENT EXPERIENCE & RETENTION:**
-- Message Focus: Client satisfaction, retention, service quality
-- Examples: "Improving client experience?", "Keep clients coming back?", "Enhance service quality?"
-- Buttons: "Client Satisfaction", "Retention Strategies", "Service Excellence"
-
-**TECHNOLOGY & INNOVATION:**
-- Message Focus: Modern tools, digital transformation, competitive edge
-- Examples: "Modernize your operations?", "Stay ahead of competitors?", "Go digital with your services?"
-- Buttons: "Digital Tools", "Tech Upgrade", "Modern Solutions"
-
-**STAFF & TEAM MANAGEMENT:**
-- Message Focus: Team coordination, staff efficiency, management tools
-- Examples: "Managing your team better?", "Coordinate staff schedules?", "Improve team productivity?"
-- Buttons: "Team Coordination", "Staff Management", "Productivity Tools"
-
-MANDATORY RULES FOR FOLLOWUP #1:
-- Pick ONE topic focus and stick to it completely
-- Extract specific elements from page content that relate to your chosen focus
-- Create buttons that explore that specific angle deeply
-- Use terminology that appears on the actual page content
-- Focus on customer business profiling and pain point discovery
-
-CRITICAL PAGE CONTENT ANALYSIS FOR CUSTOMER PROFILING:
-1. BUSINESS TYPE: Identify the industry/vertical from page content (fitness, healthcare, legal, etc.)
-2. CUSTOMER PAIN POINTS: Extract specific challenges mentioned (member retention, double bookings, staff coordination, etc.)
-3. BUSINESS NEEDS: Identify what type of business would visit this page (small business, enterprise, startup, etc.)
-4. FEATURE RELEVANCE: Match page features to customer profile and business type
-5. PROFILING OPPORTUNITY: Create buttons that reveal customer business size, urgency, technical level
-
-CUSTOMER BUSINESS PROFILING STRATEGY:
-- If page mentions "franchise management" → Buttons should explore multi-location challenges
-- If page mentions "member retention" → Buttons should explore client relationship strategies  
-- If page mentions "staff scheduling" → Buttons should explore team management needs
-- If page mentions "revenue optimization" → Buttons should explore business growth goals
-- If page mentions "compliance tracking" → Buttons should explore regulatory requirements
-
-BUSINESS INTELLIGENCE GATHERING:
-- Button 1: Discover business size/type ("Multi-Location", "Solo Practice", "Growing Team")
-- Button 2: Identify pain severity ("Critical Issue", "Nice to Have", "Exploring Options") 
-- Button 3: Understand timeline/urgency ("Immediate Need", "Planning Ahead", "Research Phase")
-
-REQUIRED: Use specific, industry-relevant terms from the actual page content provided above for intelligent customer profiling.
-
-**EXAMPLE OF SMART PAGE CONTEXT USAGE:**
-If page mentions "fitness studio management", "member retention", "equipment tracking":
-You will receive page and general context, the detected intent, and the previous conversation. Always generate your response in the following JSON format:
-{
-  "mainText": "<A single, creative, engaging nudge for the user. STRICT LIMITS: Maximum 30 words total. Be specific to page context and detected intent. Do NOT repeat previous questions. Keep it super concise and engaging.>",
-  "buttons": ["<Generate exactly 3 buttons, each must be 3-4 words maximum. Make them actionable and specific to the actual page content and user needs.>"],
-  "emailPrompt": ""
-}
+CONTENT RULES:
+- Pick ONE focus (feature, solution, pricing point, use case, integration, or outcome) that matters most on this page.
+- Keep "mainText" under 30 words; be specific and non-generic.
+- Generate EXACTLY 3 concise, actionable buttons (2-4 words) using terms from this page.
+- Avoid repeating the last message's opening style or wording.
 
 **EXAMPLES OF PAGE-CONTEXTUAL FOLLOWUPS:**
 
@@ -1997,16 +1799,10 @@ CREATIVE OPENING PATTERNS - Use variety, avoid repetition:
 - Direct action: "Skip the hassle with...", "Automate your...", "Streamline your..."
 - Numbers/proof: "Over 1000 users...", "Save 15 hours weekly...", "Cut costs by 40%..."
 
-STRICT VARIETY ENFORCEMENT:
-- NEVER start with "Tired of..." (BANNED - overused)
-- NEVER start with "Managing..." (BANNED - becoming repetitive)
-- NEVER start with "Struggling with..." (BANNED - overused) 
-- NEVER start with "Need help with..." (BANNED - too generic)
-- NEVER start with "Exhausted from..." (BANNED - similar to tired)
-- NEVER start with "Sick of..." (BANNED - similar to tired)
-- NEVER use the same opening pattern twice in a row
-- Use DIFFERENT emotional hooks: curiosity, urgency, social proof, benefits
-- Rotate between questions, statements, and benefit-focused openings
+VARIETY GUIDELINES (no hard blacklist):
+- Prefer informative openings that highlight a concrete feature, benefit, or update from the current page.
+- Vary openings and sentence structures; avoid repeating the same pattern as the last message.
+- Keep tone helpful and business-focused; avoid negative or accusatory phrasing.
 
 AVOID: Starting with "Tired of...", "Struggling with..." or repetitive patterns
 
@@ -2014,8 +1810,8 @@ Context:
 
 ‼️ CRITICAL INSTRUCTION: You MUST analyze and use the following page content to create industry-specific, relevant responses. DO NOT create generic "scheduling" or "management" responses. Extract actual terms, features, and pain points from the content below:
 
-Page Context:
-${pageChunks.slice(0, 10).join("\n---\n")}
+Page Context (summary-first if available):
+${pageContextForPrompt}
 General Context:
 ${pageChunks.join(" ")}
 Detected Intent:
@@ -2170,16 +1966,10 @@ CREATIVE MICRO-CONVERSION PATTERNS - Use variety:
 - Urgency: "Don't miss...", "Limited time...", "Quick opportunity...", "Fast track..."
 - Achievement: "Unlock [benefit]...", "Access [feature]...", "Enable [capability]..."
 
-ABSOLUTE VARIETY REQUIREMENTS:
-- NEVER start with "Tired of..." (BANNED - overused)
-- NEVER start with "Managing..." (BANNED - too repetitive now)
-- NEVER start with "Struggling with..." (BANNED - completely overused)
-- NEVER start with "Looking to..." (BANNED - if used in previous message)
-- NEVER start with "Exhausted from..." (BANNED - similar to tired)
-- NEVER start with "Sick of..." (BANNED - similar to tired)
-- NEVER repeat the same opening structure
-- MUST use different emotional tone than first followup
-- MUST use different sentence pattern (question vs statement vs benefit)
+VARIETY GUIDELINES (no hard blacklist):
+- Prefer informative openings that highlight a concrete feature, benefit, or update from the current page.
+- Vary openings and sentence structures; avoid repeating the same pattern as the last message.
+- Keep tone helpful and business-focused; avoid negative or accusatory phrasing.
 
 AVOID: "Tired of...", "Struggling with..." or repetitive openings from previous messages
 
@@ -2187,8 +1977,8 @@ Context:
 
 ‼️ CRITICAL INSTRUCTION: You MUST analyze and use the following page content to create industry-specific, relevant responses. DO NOT create generic "scheduling" or "management" responses. Extract actual terms, features, and pain points from the content below that are DIFFERENT from Followup #1:
 
-Page Context:
-${pageChunks.slice(0, 10).join("\n---\n")}
+Page Context (summary-first if available):
+${pageContextForPrompt}
 General Context:
 ${pageChunks.join(" ")}
 Detected Intent:
@@ -2258,8 +2048,8 @@ You will receive page and general context, the detected intent, and the previous
 }
 
 Context:
-Page Context:
-${pageChunks.slice(0, 10).join("\n---\n")}
+Page Context (summary-first if available):
+${pageContextForPrompt}
 General Context:
 ${pageChunks.join(" ")}
 Detected Intent:
@@ -2391,7 +2181,7 @@ You are a helpful sales assistant. The user has not provided an email yet and ha
 
 You will receive page and general context, the detected intent, and the previous conversation. Always generate your response in the following JSON format:
 {
-  "mainText": "<Looks like you stepped away. I’ve saved all your options! Want a quick summary emailed? 📧 STRICT LIMITS: Maximum 30 words total. Be friendly.>",
+  "mainText": "<Looks like you stepped away. I've saved all your options! Want a quick summary emailed? 📧 STRICT LIMITS: Maximum 30 words total. Be friendly.>",
   "buttons": ["Yes Email Me", "No Thanks", "Keep Browsing"],
   "emailPrompt": "If you'd like a summary or more help, I can email it to you."
 }
