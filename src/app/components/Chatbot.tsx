@@ -821,14 +821,16 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
                 </div>
                 {/* Always render action buttons if present */}
                 {(() => {
-                  const derivedButtons =
-                    !msg.buttons || msg.buttons.length === 0
-                      ? extractButtonsFromText(msg.content)
-                      : [];
-                  const finalButtons =
-                    msg.buttons && msg.buttons.length > 0
-                      ? msg.buttons
-                      : derivedButtons;
+                  // Always extract buttons from bullets if no buttons array, or if buttons array is empty
+                  let finalButtons: string[] = [];
+                  if (msg.buttons && msg.buttons.length > 0) {
+                    finalButtons = msg.buttons;
+                  } else {
+                    // Remove any 'Buttons:' or similar label lines before extracting bullets
+                    let content = msg.content;
+                    content = content.replace(/^\s*Buttons?:.*$/gim, "");
+                    finalButtons = extractButtonsFromText(content);
+                  }
                   return finalButtons.length > 0 ? (
                     <div style={{ marginTop: 8 }}>
                       <div
