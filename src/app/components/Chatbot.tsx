@@ -483,7 +483,9 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
     buttons: string[];
     emailPrompt: string;
   } {
+    console.log("[Chatbot] Raw API response:", data);
     if (!data) return { mainText: "", buttons: [], emailPrompt: "" };
+
     // If data is a string, try to parse as JSON, else treat as plain text
     if (typeof data === "string") {
       try {
@@ -492,6 +494,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
           typeof parsed === "object" &&
           (parsed.mainText || parsed.buttons || parsed.emailPrompt)
         ) {
+          console.log("[Chatbot] Parsed JSON from string:", parsed);
           return {
             mainText: parsed.mainText || "",
             buttons: Array.isArray(parsed.buttons) ? parsed.buttons : [],
@@ -500,6 +503,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
         }
       } catch {
         // Not JSON, treat as plain text
+        console.log("[Chatbot] String is not JSON, treating as plain text");
       }
       // Remove any JSON-like instructions from plain text
       // Remove JSON-like blocks and instructions (no 's' flag for compatibility)
@@ -507,14 +511,19 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
       cleaned = cleaned.replace(/"buttons":\s*\[[^\]]*\]/g, "");
       cleaned = cleaned.replace(/"emailPrompt":\s*"[^"]*"/g, "");
       cleaned = cleaned.replace(/"mainText":\s*"[^"]*"/g, "");
+      console.log("[Chatbot] Cleaned string content:", cleaned.trim());
       return { mainText: cleaned.trim(), buttons: [], emailPrompt: "" };
     }
+
     // If data is an object, extract fields safely
-    return {
+    console.log("[Chatbot] Processing object response:", data);
+    const result = {
       mainText: typeof data.mainText === "string" ? data.mainText : "",
       buttons: Array.isArray(data.buttons) ? data.buttons : [],
       emailPrompt: typeof data.emailPrompt === "string" ? data.emailPrompt : "",
     };
+    console.log("[Chatbot] Extracted from object:", result);
+    return result;
   }
 
   // Add a simple nudge tracking function
@@ -673,6 +682,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
         botMode: data.botMode,
         userEmail: data.userEmail,
         hasAnswer: !!data.answer,
+        rawData: data,
         timestamp: new Date().toISOString(),
       });
 
@@ -700,7 +710,8 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
         console.log("[Chatbot] No userEmail in API response");
       }
 
-      const parsed = parseBotResponse(data);
+      const parsed = parseBotResponse(data.answer || data);
+      console.log("[Chatbot] Parsed response:", parsed);
       setMessages((msgs) => [
         ...msgs,
         {
