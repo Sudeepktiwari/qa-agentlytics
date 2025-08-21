@@ -73,7 +73,7 @@ Return this exact JSON structure:
       "id": "persona_1",
       "name": "Customer Segment Name (e.g., 'Small Business Owner', 'Enterprise IT Director', 'SaaS Startup Founder')",
       "type": "small_business",
-      "industries": ["technology"],
+      "industries": ["general"],
       "companySize": "1-10",
       "painPoints": ["specific pain point"],
       "preferredFeatures": ["feature1"],
@@ -94,6 +94,7 @@ IMPORTANT GUIDELINES:
 - "name" field should be a customer segment/role (e.g., "Small Business Owner", "Enterprise Decision Maker")
 - NEVER use personal names like "John", "Sarah", "Mike" - these are business segments, not individuals
 - Focus on business roles, company types, and professional contexts
+- For "industries" field, use ["general"] unless the website is clearly industry-specific (e.g., a dental practice website). Do NOT assume specific industries from generic business content.
 - Create personas that represent customer archetypes/segments for targeting
 - These will be used for messaging personalization based on business context, not personal identity
 

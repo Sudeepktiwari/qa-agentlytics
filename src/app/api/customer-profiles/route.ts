@@ -226,13 +226,13 @@ ${conversationContent}
 Extract and return JSON:
 {
   "size": "solo|small_business|startup|mid_market|enterprise",
-  "industry": "specific industry if mentioned",
+  "industry": "specific industry if explicitly mentioned by the customer",
   "revenue": "under_100k|100k_1m|1m_10m|10m_plus|unknown",
   "techStack": ["mentioned technologies"],
   "currentTools": ["existing tools/software mentioned"]
 }
 
-Focus only on clearly mentioned information. Use "unknown" if unclear.`,
+CRITICAL: For "industry" field, ONLY include a value if the customer has explicitly stated their business type, industry, or profession (e.g., "I'm a lawyer", "We're a dental practice", "Our restaurant"). Do NOT infer or assume industry from page content, context clues, or general conversation. Use "unknown" if the customer has not explicitly stated their business type.`,
 
     behavior: `Analyze this conversation to assess behavioral patterns:
 
@@ -293,7 +293,7 @@ Provide actionable insights based on conversation patterns and profile data.`,
       messages: [
         {
           role: "system",
-          content: `You are an expert customer intelligence analyst. Analyze conversations to extract ${sectionType} insights. Always return valid JSON. Be conservative - only include information that's clearly supported by the conversation.`,
+          content: `You are an expert customer intelligence analyst. Analyze conversations to extract ${sectionType} insights. Always return valid JSON. Be conservative - only include information that's clearly supported by the conversation. NEVER assume or infer business types, industries, or professions unless explicitly stated by the customer.`,
         },
         {
           role: "user",

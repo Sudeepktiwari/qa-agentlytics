@@ -58,7 +58,7 @@ Extract and return a JSON object with this structure:
       "id": "unique_id",
       "name": "Persona Name",
       "type": "small_business|enterprise|startup|freelancer|agency",
-      "industries": ["industry1", "industry2"],
+      "industries": ["general"],
       "companySize": "1-10|11-50|51-200|200+",
       "painPoints": ["pain point 1", "pain point 2"],
       "preferredFeatures": ["feature1", "feature2"],
@@ -79,7 +79,8 @@ Guidelines:
 - Create 2-4 distinct personas based on the content
 - Be specific about pain points and preferred features
 - Identify clear buying patterns and budget ranges
-- Look for mentions of company sizes, industries, and use cases
+- Look for mentions of company sizes and use cases
+- For "industries" field, use ["general"] unless the website is clearly industry-specific (e.g., a dental practice website). Do NOT assume specific industries from generic business content.
 - Extract actual competitor names mentioned
 - Determine pricing strategy from pricing pages or content
 - Each persona should be distinct and actionable for messaging

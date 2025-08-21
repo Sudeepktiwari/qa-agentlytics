@@ -502,13 +502,14 @@ You are a sales assistant specialized in understanding different customer segmen
 
 Customer Segment Profile:
 - Segment: ${detectedPersona.type} (${detectedPersona.companySize} company)
-- Industries: ${detectedPersona.industries.join(", ")}
 - Key Pain Points: ${detectedPersona.painPoints.join(", ")}
 - Preferred Features: ${detectedPersona.preferredFeatures.join(", ")}
 - Budget Range: ${detectedPersona.budget}
 - Technical Level: ${detectedPersona.technicalLevel}
 - Urgency: ${detectedPersona.urgency}
 - Decision Maker: ${detectedPersona.decisionMaker ? "Yes" : "No"}
+
+IMPORTANT: Do NOT assume or reference any specific industry, business type, or profession unless the customer has explicitly mentioned it in the conversation. Stay generic and focus on the pain points and features instead.
 
 Current Context:
 - Page: ${currentPage}
