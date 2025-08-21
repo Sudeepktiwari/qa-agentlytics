@@ -733,6 +733,18 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
       });
       const data = await res.json();
 
+      console.log("[API DEBUG] Raw API response received:", {
+        status: res.status,
+        statusText: res.statusText,
+        headers: Object.fromEntries(res.headers.entries()),
+        data: data,
+        dataType: typeof data,
+        hasAnswer: !!data.answer,
+        hasButtons: !!(data.buttons && Array.isArray(data.buttons)),
+        buttonCount: Array.isArray(data.buttons) ? data.buttons.length : 0,
+        timestamp: new Date().toISOString(),
+      });
+
       console.log("[Chatbot] API Response received:", {
         botMode: data.botMode,
         userEmail: data.userEmail,
@@ -765,19 +777,25 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
         console.log("[Chatbot] No userEmail in API response");
       }
 
+      console.log(
+        "[PARSE DEBUG] About to parse response:",
+        data.answer || data
+      );
       const parsed = parseBotResponse(data.answer || data);
-      console.log("[Chatbot] Parsed response:", parsed);
-      setMessages((msgs) => [
-        ...msgs,
-        {
-          role: "assistant",
-          content: parsed.mainText,
-          buttons: parsed.buttons,
-          emailPrompt: parsed.emailPrompt,
-          botMode: data.botMode,
-          userEmail: data.userEmail,
-        },
-      ]);
+      console.log("[PARSE DEBUG] Parsed response result:", parsed);
+
+      const newMessage = {
+        role: "assistant" as const,
+        content: parsed.mainText,
+        buttons: parsed.buttons,
+        emailPrompt: parsed.emailPrompt,
+        botMode: data.botMode,
+        userEmail: data.userEmail,
+      };
+
+      console.log("[MESSAGE DEBUG] Adding new message to state:", newMessage);
+
+      setMessages((msgs) => [...msgs, newMessage]);
       // Clear follow-up timer on user message
       if (followupTimer.current) clearTimeout(followupTimer.current);
       setFollowupSent(false);
@@ -950,21 +968,40 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
                 </div>
                 {/* Always render action buttons if present */}
                 {(() => {
+                  console.log(
+                    "[BUTTON DEBUG] Starting button processing for message:",
+                    {
+                      messageIndex: i,
+                      messageRole: msg.role,
+                      messageContent: msg.content,
+                      apiButtons: msg.buttons,
+                      hasApiButtons: !!(msg.buttons && msg.buttons.length > 0),
+                    }
+                  );
+
                   // Always extract buttons from bullets if no buttons array, or if buttons array is empty
                   let finalButtons: string[] = [];
                   if (msg.buttons && msg.buttons.length > 0) {
                     finalButtons = msg.buttons;
                     console.log(
-                      "[Chatbot] Using buttons from API response:",
+                      "[BUTTON DEBUG] Using buttons from API response:",
                       finalButtons
                     );
                   } else {
+                    console.log(
+                      "[BUTTON DEBUG] No API buttons found, extracting from content..."
+                    );
                     finalButtons = extractButtonsFromText(msg.content);
                     console.log(
-                      "[Chatbot] Extracted buttons from content:",
+                      "[BUTTON DEBUG] Extracted buttons from content:",
                       finalButtons
                     );
                   }
+
+                  console.log(
+                    "[BUTTON DEBUG] Final buttons to render:",
+                    finalButtons
+                  );
 
                   return finalButtons.length > 0 ? (
                     <div style={{ marginTop: 8 }}>
@@ -975,41 +1012,58 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
                           gap: 8,
                         }}
                       >
-                        {finalButtons.map((action, idx) => (
-                          <button
-                            key={idx}
-                            type="button"
-                            onClick={() => {
-                              console.log("[Chatbot] Button clicked:", action);
-                              handleActionClick(action, msg);
-                            }}
-                            style={{
-                              backgroundColor: "#edf2f7",
-                              color: "#1a202c",
-                              border: "1px solid #cbd5e0",
-                              borderRadius: 16,
-                              padding: "8px 12px",
-                              cursor: "pointer",
-                              fontSize: 13,
-                              fontWeight: 600,
-                              transition: "all 0.2s ease",
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = "#e2e8f0";
-                              e.currentTarget.style.transform =
-                                "translateY(-1px)";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = "#edf2f7";
-                              e.currentTarget.style.transform = "translateY(0)";
-                            }}
-                          >
-                            {action}
-                          </button>
-                        ))}
+                        {finalButtons.map((action, idx) => {
+                          console.log(
+                            `[BUTTON DEBUG] Rendering button ${
+                              idx + 1
+                            }: "${action}"`
+                          );
+                          return (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => {
+                                console.log(
+                                  "[Chatbot] Button clicked:",
+                                  action
+                                );
+                                handleActionClick(action, msg);
+                              }}
+                              style={{
+                                backgroundColor: "#edf2f7",
+                                color: "#1a202c",
+                                border: "1px solid #cbd5e0",
+                                borderRadius: 16,
+                                padding: "8px 12px",
+                                cursor: "pointer",
+                                fontSize: 13,
+                                fontWeight: 600,
+                                transition: "all 0.2s ease",
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor =
+                                  "#e2e8f0";
+                                e.currentTarget.style.transform =
+                                  "translateY(-1px)";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor =
+                                  "#edf2f7";
+                                e.currentTarget.style.transform =
+                                  "translateY(0)";
+                              }}
+                            >
+                              {action}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
-                  ) : null;
+                  ) : (
+                    <div style={{ marginTop: 4, fontSize: 12, color: "#666" }}>
+                      [DEBUG: No buttons found to render]
+                    </div>
+                  );
                 })()}
                 {/* Always render email prompt/input if present */}
                 {msg.emailPrompt && msg.emailPrompt.trim() !== "" && (
