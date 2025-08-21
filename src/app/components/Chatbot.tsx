@@ -511,6 +511,14 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
       cleaned = cleaned.replace(/"buttons":\s*\[[^\]]*\]/g, "");
       cleaned = cleaned.replace(/"emailPrompt":\s*"[^"]*"/g, "");
       cleaned = cleaned.replace(/"mainText":\s*"[^"]*"/g, "");
+
+      // Remove any accidental button sections that might appear in text
+      cleaned = cleaned.replace(
+        /#{1,3}\s*Action\s+Buttons?\s*:?\s*[\r\n]*/gi,
+        ""
+      );
+      cleaned = cleaned.replace(/^[\s]*[-•*]\s*[^:\n]+[\r\n]*/gm, ""); // Remove bullet points that look like buttons
+
       console.log("[Chatbot] Cleaned string content:", cleaned.trim());
       return { mainText: cleaned.trim(), buttons: [], emailPrompt: "" };
     }
@@ -567,22 +575,22 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
   const extractButtonsFromText = (text: string): string[] => {
     if (!text) return [];
 
-    console.log("[DEBUG] Extracting buttons from text:", text);
+    console.log("[BUTTON DEBUG] Extracting buttons from text:", text);
 
-    // Remove ALL possible action/button header variations
+    // Clean up the text and remove button headers
     let cleaned = text.replace(/^---+$/gm, "");
     cleaned = cleaned.replace(/\n{2,}/g, "\n");
 
-    // Remove various header patterns for action buttons
+    // Remove header patterns for action buttons (including the specific pattern from logs)
     cleaned = cleaned.replace(
-      /^\s*(Quick\s+Actions?|Action\s+Buttons?|Buttons?|Options?|Choose\s+from|Select|Available\s+Actions?)\s*:?\s*$/gim,
+      /^\s*(#{1,3}\s*)?(Quick\s+Actions?|Action\s+Buttons?|Buttons?|Options?|Choose\s+from|Select|Available\s+Actions?)\s*:?\s*$/gim,
       ""
     );
 
     const lines = cleaned.split(/\r?\n/);
     const buttons: string[] = [];
 
-    console.log("[DEBUG] All lines found:", lines);
+    console.log("[BUTTON DEBUG] Processing lines:", lines);
 
     for (const raw of lines) {
       const line = raw.trim();
@@ -590,114 +598,44 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
 
       let label = null;
 
-      // Enhanced pattern matching for various bullet styles
-      // 1. Standard bullets: •, -, *, with optional spacing
-      const bulletPattern = /^[\s]*[•\-\*\u2022\u2013\u2014]\s*(.{3,80})$/;
-      const bulletMatch = line.match(bulletPattern);
-      if (bulletMatch && bulletMatch[1]) {
-        label = bulletMatch[1].trim();
-      }
+      // Match bullet points: -, *, •, numbered lists, etc.
+      const patterns = [
+        /^[\s]*[•\-\*\u2022\u2013\u2014]\s*(.+)$/, // Bullets
+        /^[\s]*\d+\.\s*(.+)$/, // Numbered
+        /^\s*[\-\*\u2022]?\s*\[([^\]]+)\]\([^)]*\)/, // Markdown links
+        /^\s*[\-\*\u2022]?\s*\[\s*\]\s*(.+)$/, // Checkboxes
+      ];
 
-      // 2. Numbered lists: 1., 2., etc.
-      else {
-        const numberedPattern = /^[\s]*\d+\.\s*(.{3,80})$/;
-        const numberedMatch = line.match(numberedPattern);
-        if (numberedMatch && numberedMatch[1]) {
-          label = numberedMatch[1].trim();
+      for (const pattern of patterns) {
+        const match = line.match(pattern);
+        if (match && match[1]) {
+          label = match[1].trim();
+          break;
         }
       }
 
-      // 3. Markdown links: [Text](url)
-      if (!label) {
-        const linkPattern = /^\s*[\-\*\u2022]?\s*\[([^\]]{3,60})\]\([^)]*\)/;
-        const linkMatch = line.match(linkPattern);
-        if (linkMatch && linkMatch[1]) {
-          label = linkMatch[1].trim();
-        }
-      }
-
-      // 4. Checkbox style: [ ] Text
-      if (!label) {
-        const checkboxPattern = /^\s*[\-\*\u2022]?\s*\[\s*\]\s*(.{3,60})$/;
-        const checkboxMatch = line.match(checkboxPattern);
-        if (checkboxMatch && checkboxMatch[1]) {
-          label = checkboxMatch[1].trim();
-        }
-      }
-
-      // Clean up the label if found
       if (label) {
-        console.log("[DEBUG] Processing potential button:", label);
+        // Clean up formatting
+        label = label
+          .replace(/^\*+|\*+$/g, "") // asterisks
+          .replace(/^_+|_+$/g, "") // underscores
+          .replace(/^`+|`+$/g, "") // backticks
+          .replace(/[.!?]*$/, ""); // trailing punctuation
 
-        // Remove markdown formatting
-        label = label.replace(/^\*+|\*+$/g, ""); // Remove asterisks
-        label = label.replace(/^_+|_+$/g, ""); // Remove underscores
-        label = label.replace(/^`+|`+$/g, ""); // Remove backticks
-        label = label.replace(/^~+|~+$/g, ""); // Remove tildes
-
-        // Remove trailing punctuation that's not part of the action
-        label = label.replace(/[.!?]*$/, "");
-
-        // Smart filtering: Distinguish informational content from actionable buttons
-        const isInformational =
-          // Too long for a button
-          label.length > 50 ||
-          // Contains explanatory words that indicate informational content
-          label.toLowerCase().includes("reduce no-shows") ||
-          label.toLowerCase().includes("ensure clients") ||
-          label.toLowerCase().includes("save administrative") ||
-          label.toLowerCase().includes("by reminding") ||
-          label.toLowerCase().includes("by automating") ||
-          label.toLowerCase().includes("time by") ||
-          label.toLowerCase().includes("about their") ||
-          // Long descriptive phrases (not action-oriented)
-          (/\b(reduce|ensure|save|by|about|with|for|their|all|necessary|details|like|date|time|location|process)\b/.test(
-            label.toLowerCase()
-          ) &&
-            label.length > 30) ||
-          // Sentences or explanations
-          (label.includes(".") && label.length > 25);
-
-        // Positive indicators of actionable buttons
-        const isActionable =
-          label.toLowerCase().includes("learn") ||
-          label.toLowerCase().includes("explore") ||
-          label.toLowerCase().includes("get started") ||
-          label.toLowerCase().includes("book") ||
-          label.toLowerCase().includes("schedule") ||
-          label.toLowerCase().includes("demo") ||
-          label.toLowerCase().includes("now") ||
-          label.toLowerCase().includes("call") ||
-          label.toLowerCase().includes("contact") ||
-          /^(learn|explore|get|book|schedule|contact|call|demo|start|try|discover|find|see)\b/i.test(
-            label
-          );
-
-        // Only add if it's likely an actionable button
-        if (
-          label.length >= 3 &&
-          label.length <= 80 &&
-          (!isInformational || isActionable)
-        ) {
+        // Simple validation: reasonable length and not empty
+        if (label.length >= 3 && label.length <= 60) {
           buttons.push(label);
-          console.log("[DEBUG] Added button:", label);
+          console.log("[BUTTON DEBUG] Added button:", label);
         } else {
-          console.log(
-            "[DEBUG] Skipped informational text:",
-            label,
-            "- isInformational:",
-            isInformational,
-            "isActionable:",
-            isActionable
-          );
+          console.log("[BUTTON DEBUG] Skipped (length):", label);
         }
       }
 
-      // Limit to 6 buttons max for UI purposes
+      // Limit to 6 buttons max
       if (buttons.length >= 6) break;
     }
 
-    console.log("[Chatbot] Final extracted buttons from text:", buttons);
+    console.log("[BUTTON DEBUG] Final extracted buttons:", buttons);
     return buttons;
   };
 
