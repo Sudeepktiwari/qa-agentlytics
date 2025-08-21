@@ -1756,30 +1756,31 @@ CONTENT RULES:
 - Keep "mainText" under 30 words; be specific and non-generic.
 - Generate EXACTLY 3 concise, actionable buttons (2-4 words) using terms from this page.
 - Avoid repeating the last message's opening style or wording.
+- CRITICAL: Do NOT assume or reference specific industries or business types unless the customer has explicitly mentioned their business.
 
 **EXAMPLES OF PAGE-CONTEXTUAL FOLLOWUPS:**
 
-If page mentions "fitness studio scheduling", "member check-ins", "class bookings":
-✅ GOOD: "Ready to automate class bookings?" with buttons like "Class Scheduling", "Member Check-ins", "Studio Analytics"
+If page mentions "scheduling features", "appointment booking", "calendar management":
+✅ GOOD: "Ready to automate appointment booking?" with buttons like "Schedule Demo", "View Features", "Get Pricing"
 
-If page mentions "restaurant reservations", "table management", "waitlist":
-✅ GOOD: "Want faster table turnover?" with buttons like "Reservation System", "Waitlist Management", "Peak Hour Analytics"
+If page mentions "customer management", "client tracking", "communication tools":
+✅ GOOD: "Want better client tracking?" with buttons like "Client Features", "Management Tools", "Contact Sales"
 
-If page mentions "law firm billing", "case management", "client intake":
-✅ GOOD: "Streamline client intake process?" with buttons like "Case Management", "Automated Billing", "Client Portal"
+If page mentions "billing features", "payment processing", "invoice management":
+✅ GOOD: "Streamline payment processing?" with buttons like "Billing Features", "Payment Options", "Demo Request"
 
-If page mentions "medical appointments", "patient records", "telehealth":
-✅ GOOD: "Reduce appointment no-shows?" with buttons like "Patient Reminders", "Telehealth Setup", "Record Management"
+If page mentions "appointment features", "patient records", "telehealth":
+✅ GOOD: "Reduce appointment no-shows?" with buttons like "Reminder Features", "Telehealth Setup", "Record Management"
 
 **CUSTOMER PROFILING THROUGH CONTENT-BASED BUTTONS:**
 Create buttons that help identify customer needs based on page content:
 - **Feature Interest**: Extract 2-3 main features mentioned on page
 - **Use Case Matching**: Identify specific use cases from page content
-- **Business Context**: Use industry/business-specific terminology from page
+- **Business Context**: Use general business terminology from page, avoid industry-specific assumptions
 
 **MANDATORY CONTENT EXTRACTION:**
 1. **Scan page content** for specific features, tools, services mentioned
-2. **Identify industry context** from page content (fitness, legal, medical, etc.)
+2. **Identify business context** from page content without assuming specific industries
 3. **Extract pain points** specifically mentioned on the page
 4. **Use actual terminology** found on the page, not generic terms
 5. **Reference real solutions** described on the page
@@ -2692,7 +2693,7 @@ ${context}
 
 IMPORTANT: Don't provide other action buttons when user is requesting email. Focus on the email collection. KEEP RESPONSE BRIEF AND FOCUSED.`;
     } else {
-      systemPrompt = `You are a helpful sales assistant. The user has not provided an email yet.\n\nYou will receive page and general context. Always generate your response in the following JSON format:\n\n{\n  "mainText": "<A dynamic, page-aware summary or answer, using the context below. MANDATORY FORMATTING RULES: \n1. NEVER write long paragraphs - they are hard to read in chat\n2. Start with 1-2 short sentences (max 20 words each)\n3. Add double line break \\n\\n after intro\n4. Use bullet points with • symbol for ANY list of 2+ items\n5. Add TWO line breaks \\n\\n after each bullet point for better spacing\n6. Example format: 'Short intro!\\n\\n• First benefit\\n\\n• Second benefit\\n\\n• Third benefit'\n7. Use emojis sparingly for emphasis\n8. Never use long sentences in paragraphs - break them into bullets\n9. CRITICAL: NEVER include action buttons, button lists, or '### Action Buttons:' sections in mainText - buttons go ONLY in the buttons array>",\n  "buttons": ["<Generate 2-4 contextually relevant action buttons based on the user's question and the content you provided. These should be specific to their query and help them take the next logical step. For example, if they ask about hosting, buttons could be 'Learn About Security', 'Compare Plans', 'Contact Hosting Team'. Make buttons actionable and relevant to the specific topic discussed.>"],\n  "emailPrompt": "<Create a contextual email prompt that relates to the specific topic discussed, offering to send more detailed information about that topic specifically.>"\n}\n\nContext:\nPage Context:\n${pageContext}\n\nGeneral Context:\n${context}\n\nIMPORTANT: Generate buttons and email prompt that are directly related to the user's specific question and your answer. Do not use generic buttons. Make them actionable and relevant to the conversation topic. ABSOLUTELY NO LONG PARAGRAPHS - USE BULLET POINTS WITH DOUBLE LINE BREAKS FOR SPACING. NEVER PUT BUTTONS IN MAINTEXT - ONLY IN THE BUTTONS ARRAY.`;
+      systemPrompt = `You are a helpful sales assistant. The user has not provided an email yet.\n\nYou will receive page and general context. Always generate your response in the following JSON format:\n\n{\n  "mainText": "<A dynamic, page-aware summary or answer, using the context below. MANDATORY FORMATTING RULES: \n1. NEVER write long paragraphs - they are hard to read in chat\n2. Start with 1-2 short sentences (max 20 words each)\n3. Add double line break \\n\\n after intro\n4. Use bullet points with • symbol for ANY list of 2+ items\n5. Add TWO line breaks \\n\\n after each bullet point for better spacing\n6. Example format: 'Short intro!\\n\\n• First benefit\\n\\n• Second benefit\\n\\n• Third benefit'\n7. Use emojis sparingly for emphasis\n8. Never use long sentences in paragraphs - break them into bullets\n9. CRITICAL: NEVER include action buttons, button lists, or '### Action Buttons:' sections in mainText - buttons go ONLY in the buttons array\n10. CRITICAL: Do NOT assume or reference specific industries, business types, or professions (like 'legal services', 'tanning salon', etc.) unless the customer has explicitly mentioned their business type>",\n  "buttons": ["<Generate 2-4 contextually relevant action buttons based on the user's question and the content you provided. These should be specific to their query and help them take the next logical step. For example, if they ask about hosting, buttons could be 'Learn About Security', 'Compare Plans', 'Contact Hosting Team'. Make buttons actionable and relevant to the specific topic discussed.>"],\n  "emailPrompt": "<Create a contextual email prompt that relates to the specific topic discussed, offering to send more detailed information about that topic specifically.>"\n}\n\nContext:\nPage Context:\n${pageContext}\n\nGeneral Context:\n${context}\n\nIMPORTANT: Generate buttons and email prompt that are directly related to the user's specific question and your answer. Do not use generic buttons. Make them actionable and relevant to the conversation topic. ABSOLUTELY NO LONG PARAGRAPHS - USE BULLET POINTS WITH DOUBLE LINE BREAKS FOR SPACING. NEVER PUT BUTTONS IN MAINTEXT - ONLY IN THE BUTTONS ARRAY. DO NOT ASSUME BUSINESS TYPES OR INDUSTRIES UNLESS EXPLICITLY STATED BY THE CUSTOMER.`;
     }
   }
 
