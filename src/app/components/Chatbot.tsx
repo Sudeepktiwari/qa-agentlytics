@@ -557,36 +557,83 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
   // Fallback: extract actionable options from plain text bullets when buttons array is empty
   const extractButtonsFromText = (text: string): string[] => {
     if (!text) return [];
-    // Remove markdown horizontal rules and extra whitespace
+
+    // Remove ALL possible action/button header variations
     let cleaned = text.replace(/^---+$/gm, "");
     cleaned = cleaned.replace(/\n{2,}/g, "\n");
+
+    // Remove various header patterns for action buttons
+    cleaned = cleaned.replace(
+      /^\s*(Quick\s+Actions?|Action\s+Buttons?|Buttons?|Options?|Choose\s+from|Select|Available\s+Actions?)\s*:?\s*$/gim,
+      ""
+    );
+
     const lines = cleaned.split(/\r?\n/);
     const buttons: string[] = [];
+
     for (const raw of lines) {
-      const line = raw.replace(/^\s+/, "");
-      // Match bullet styles like "• Label", "- Label", "* Label", or numbered lists "1. Label"
-      const bulletMatch = line.match(/^([•\-\*\u2022]|\d+\.)\s+(.+?)\s*$/);
-      if (bulletMatch && bulletMatch[2]) {
-        let label = bulletMatch[2].replace(/\s+$/g, "");
-        label = label.replace(/([*_~`]+)$/g, "").trim();
-        label = label.replace(/^([*_~`]+)(.+)/, "$2");
-        if (label.length >= 3 && label.length <= 60) {
-          buttons.push(label);
-        }
-      } else {
-        // Also match dash bullets with no space (e.g., '-Learn More')
-        const dashMatch = line.match(/^[-\u2013]\s?(.{3,60})$/);
-        if (dashMatch && dashMatch[1]) {
-          let label = dashMatch[1].trim();
-          label = label.replace(/([*_~`]+)$/g, "").trim();
-          label = label.replace(/^([*_~`]+)(.+)/, "$2");
-          if (label.length >= 3 && label.length <= 60) {
-            buttons.push(label);
-          }
+      const line = raw.trim();
+      if (!line) continue;
+
+      let label = null;
+
+      // Enhanced pattern matching for various bullet styles
+      // 1. Standard bullets: •, -, *, with optional spacing
+      const bulletPattern = /^[\s]*[•\-\*\u2022\u2013\u2014]\s*(.{3,80})$/;
+      const bulletMatch = line.match(bulletPattern);
+      if (bulletMatch && bulletMatch[1]) {
+        label = bulletMatch[1].trim();
+      }
+
+      // 2. Numbered lists: 1., 2., etc.
+      else {
+        const numberedPattern = /^[\s]*\d+\.\s*(.{3,80})$/;
+        const numberedMatch = line.match(numberedPattern);
+        if (numberedMatch && numberedMatch[1]) {
+          label = numberedMatch[1].trim();
         }
       }
-      if (buttons.length >= 5) break;
+
+      // 3. Markdown links: [Text](url)
+      if (!label) {
+        const linkPattern = /^\s*[\-\*\u2022]?\s*\[([^\]]{3,60})\]\([^)]*\)/;
+        const linkMatch = line.match(linkPattern);
+        if (linkMatch && linkMatch[1]) {
+          label = linkMatch[1].trim();
+        }
+      }
+
+      // 4. Checkbox style: [ ] Text
+      if (!label) {
+        const checkboxPattern = /^\s*[\-\*\u2022]?\s*\[\s*\]\s*(.{3,60})$/;
+        const checkboxMatch = line.match(checkboxPattern);
+        if (checkboxMatch && checkboxMatch[1]) {
+          label = checkboxMatch[1].trim();
+        }
+      }
+
+      // Clean up the label if found
+      if (label) {
+        // Remove markdown formatting
+        label = label.replace(/^\*+|\*+$/g, ""); // Remove asterisks
+        label = label.replace(/^_+|_+$/g, ""); // Remove underscores
+        label = label.replace(/^`+|`+$/g, ""); // Remove backticks
+        label = label.replace(/^~+|~+$/g, ""); // Remove tildes
+
+        // Remove trailing punctuation that's not part of the action
+        label = label.replace(/[.!?]*$/, "");
+
+        // Only add if it's a reasonable action button length
+        if (label.length >= 3 && label.length <= 80) {
+          buttons.push(label);
+        }
+      }
+
+      // Limit to 6 buttons max for UI purposes
+      if (buttons.length >= 6) break;
     }
+
+    console.log("[Chatbot] Extracted buttons from text:", buttons);
     return buttons;
   };
 
@@ -841,12 +888,18 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
                   let finalButtons: string[] = [];
                   if (msg.buttons && msg.buttons.length > 0) {
                     finalButtons = msg.buttons;
+                    console.log(
+                      "[Chatbot] Using buttons from API response:",
+                      finalButtons
+                    );
                   } else {
-                    // Remove any 'Buttons:' or similar label lines before extracting bullets
-                    let content = msg.content;
-                    content = content.replace(/^\s*Buttons?:.*$/gim, "");
-                    finalButtons = extractButtonsFromText(content);
+                    finalButtons = extractButtonsFromText(msg.content);
+                    console.log(
+                      "[Chatbot] Extracted buttons from content:",
+                      finalButtons
+                    );
                   }
+
                   return finalButtons.length > 0 ? (
                     <div style={{ marginTop: 8 }}>
                       <div
@@ -860,16 +913,29 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
                           <button
                             key={idx}
                             type="button"
-                            onClick={() => handleActionClick(action, msg)}
+                            onClick={() => {
+                              console.log("[Chatbot] Button clicked:", action);
+                              handleActionClick(action, msg);
+                            }}
                             style={{
                               backgroundColor: "#edf2f7",
                               color: "#1a202c",
                               border: "1px solid #cbd5e0",
                               borderRadius: 16,
-                              padding: "6px 10px",
+                              padding: "8px 12px",
                               cursor: "pointer",
-                              fontSize: 12,
+                              fontSize: 13,
                               fontWeight: 600,
+                              transition: "all 0.2s ease",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = "#e2e8f0";
+                              e.currentTarget.style.transform =
+                                "translateY(-1px)";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = "#edf2f7";
+                              e.currentTarget.style.transform = "translateY(0)";
                             }}
                           >
                             {action}
