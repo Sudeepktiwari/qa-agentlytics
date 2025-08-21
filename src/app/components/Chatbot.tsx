@@ -505,12 +505,76 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
         // Not JSON, treat as plain text
         console.log("[Chatbot] String is not JSON, treating as plain text");
       }
+      // Look for JSON blocks in the text (like {"buttons": [...], "emailPrompt": "..."})
+      const jsonMatch = data.match(/\{[^}]*"buttons"[^}]*\}/);
+      if (jsonMatch) {
+        try {
+          const jsonPart = jsonMatch[0];
+          const parsed = JSON.parse(jsonPart);
+          console.log("[Chatbot] Found and parsed JSON block:", parsed);
+
+          // Extract the main text (everything before the JSON block)
+          let mainText = data.replace(jsonMatch[0], "").trim();
+
+          // Clean up the main text
+          mainText = mainText.replace(/\{[^}]*\}/g, "");
+          mainText = mainText.replace(/"buttons":\s*\[[^\]]*\]/g, "");
+          mainText = mainText.replace(/"emailPrompt":\s*"[^"]*"/g, "");
+          mainText = mainText.replace(
+            /#{1,3}\s*Action\s+Buttons?\s*:?\s*[\r\n]*/gi,
+            ""
+          );
+          mainText = mainText.replace(/^[\s]*[-•*]\s*[^:\n]+[\r\n]*/gm, "");
+          mainText = mainText.replace(/\\n\\n/g, "\n\n");
+          mainText = mainText.replace(/\\n/g, "\n");
+
+          return {
+            mainText: mainText.trim(),
+            buttons: Array.isArray(parsed.buttons) ? parsed.buttons : [],
+            emailPrompt: parsed.emailPrompt || "",
+          };
+        } catch (e) {
+          console.log("[Chatbot] Failed to parse JSON block:", e);
+        }
+      }
+
+      // Look for buttons array in text format like: Buttons: ["item1", "item2"]
+      const buttonsMatch = data.match(/Buttons:\s*\[([\s\S]*?)\]/);
+      let extractedButtons: string[] = [];
+      if (buttonsMatch) {
+        try {
+          const buttonsArray = JSON.parse(`[${buttonsMatch[1]}]`);
+          if (Array.isArray(buttonsArray)) {
+            extractedButtons = buttonsArray;
+            console.log(
+              "[Chatbot] Extracted buttons from text format:",
+              extractedButtons
+            );
+          }
+        } catch (e) {
+          console.log("[Chatbot] Failed to parse buttons from text:", e);
+        }
+      }
+
+      // Look for email prompt in text format like: Email Prompt: "message"
+      const emailMatch = data.match(/Email Prompt:\s*"([^"]+)"/);
+      let extractedEmailPrompt = "";
+      if (emailMatch) {
+        extractedEmailPrompt = emailMatch[1];
+        console.log(
+          "[Chatbot] Extracted email prompt from text:",
+          extractedEmailPrompt
+        );
+      }
+
       // Remove any JSON-like instructions from plain text
       // Remove JSON-like blocks and instructions (no 's' flag for compatibility)
       let cleaned = data.replace(/\{[^}]*\}/g, "");
       cleaned = cleaned.replace(/"buttons":\s*\[[^\]]*\]/g, "");
       cleaned = cleaned.replace(/"emailPrompt":\s*"[^"]*"/g, "");
       cleaned = cleaned.replace(/"mainText":\s*"[^"]*"/g, "");
+      cleaned = cleaned.replace(/Buttons:\s*\[[\s\S]*?\]/g, "");
+      cleaned = cleaned.replace(/Email Prompt:\s*"[^"]*"/g, "");
 
       // Remove any accidental button sections that might appear in text
       cleaned = cleaned.replace(
@@ -519,14 +583,31 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
       );
       cleaned = cleaned.replace(/^[\s]*[-•*]\s*[^:\n]+[\r\n]*/gm, ""); // Remove bullet points that look like buttons
 
+      // Fix literal \n\n strings that should be actual line breaks
+      cleaned = cleaned.replace(/\\n\\n/g, "\n\n");
+      cleaned = cleaned.replace(/\\n/g, "\n");
+
       console.log("[Chatbot] Cleaned string content:", cleaned.trim());
-      return { mainText: cleaned.trim(), buttons: [], emailPrompt: "" };
+      return {
+        mainText: cleaned.trim(),
+        buttons: extractedButtons,
+        emailPrompt: extractedEmailPrompt,
+      };
     }
 
     // If data is an object, extract fields safely
     console.log("[Chatbot] Processing object response:", data);
+
+    let mainText = typeof data.mainText === "string" ? data.mainText : "";
+
+    // Fix literal \n\n strings in mainText if present
+    if (mainText) {
+      mainText = mainText.replace(/\\n\\n/g, "\n\n");
+      mainText = mainText.replace(/\\n/g, "\n");
+    }
+
     const result = {
-      mainText: typeof data.mainText === "string" ? data.mainText : "",
+      mainText,
       buttons: Array.isArray(data.buttons) ? data.buttons : [],
       emailPrompt: typeof data.emailPrompt === "string" ? data.emailPrompt : "",
     };

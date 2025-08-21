@@ -307,7 +307,33 @@ Provide actionable insights based on conversation patterns and profile data.`,
     const result = completion.choices[0].message.content?.trim();
     if (!result) return null;
 
-    return JSON.parse(result);
+    // Extract JSON from markdown code blocks if present
+    let jsonContent = result;
+
+    // Check if the result is wrapped in markdown code blocks
+    const codeBlockMatch = result.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+    if (codeBlockMatch) {
+      jsonContent = codeBlockMatch[1].trim();
+    }
+
+    // Remove any remaining markdown formatting
+    jsonContent = jsonContent
+      .replace(/^```json\s*/i, "")
+      .replace(/\s*```$/, "");
+
+    try {
+      return JSON.parse(jsonContent);
+    } catch (parseError) {
+      console.error(
+        `[CustomerProfiling] JSON parse error for ${sectionType}:`,
+        {
+          error: parseError,
+          originalResult: result,
+          cleanedContent: jsonContent,
+        }
+      );
+      return null;
+    }
   } catch (error) {
     console.error(`[CustomerProfiling] Error analyzing ${sectionType}:`, error);
     return null;
