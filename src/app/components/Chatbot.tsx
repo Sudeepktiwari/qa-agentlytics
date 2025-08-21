@@ -567,6 +567,8 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
   const extractButtonsFromText = (text: string): string[] => {
     if (!text) return [];
 
+    console.log("[DEBUG] Extracting buttons from text:", text);
+
     // Remove ALL possible action/button header variations
     let cleaned = text.replace(/^---+$/gm, "");
     cleaned = cleaned.replace(/\n{2,}/g, "\n");
@@ -579,6 +581,8 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
 
     const lines = cleaned.split(/\r?\n/);
     const buttons: string[] = [];
+
+    console.log("[DEBUG] All lines found:", lines);
 
     for (const raw of lines) {
       const line = raw.trim();
@@ -623,6 +627,8 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
 
       // Clean up the label if found
       if (label) {
+        console.log("[DEBUG] Processing potential button:", label);
+
         // Remove markdown formatting
         label = label.replace(/^\*+|\*+$/g, ""); // Remove asterisks
         label = label.replace(/^_+|_+$/g, ""); // Remove underscores
@@ -632,9 +638,58 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
         // Remove trailing punctuation that's not part of the action
         label = label.replace(/[.!?]*$/, "");
 
-        // Only add if it's a reasonable action button length
-        if (label.length >= 3 && label.length <= 80) {
+        // Smart filtering: Distinguish informational content from actionable buttons
+        const isInformational =
+          // Too long for a button
+          label.length > 50 ||
+          // Contains explanatory words that indicate informational content
+          label.toLowerCase().includes("reduce no-shows") ||
+          label.toLowerCase().includes("ensure clients") ||
+          label.toLowerCase().includes("save administrative") ||
+          label.toLowerCase().includes("by reminding") ||
+          label.toLowerCase().includes("by automating") ||
+          label.toLowerCase().includes("time by") ||
+          label.toLowerCase().includes("about their") ||
+          // Long descriptive phrases (not action-oriented)
+          (/\b(reduce|ensure|save|by|about|with|for|their|all|necessary|details|like|date|time|location|process)\b/.test(
+            label.toLowerCase()
+          ) &&
+            label.length > 30) ||
+          // Sentences or explanations
+          (label.includes(".") && label.length > 25);
+
+        // Positive indicators of actionable buttons
+        const isActionable =
+          label.toLowerCase().includes("learn") ||
+          label.toLowerCase().includes("explore") ||
+          label.toLowerCase().includes("get started") ||
+          label.toLowerCase().includes("book") ||
+          label.toLowerCase().includes("schedule") ||
+          label.toLowerCase().includes("demo") ||
+          label.toLowerCase().includes("now") ||
+          label.toLowerCase().includes("call") ||
+          label.toLowerCase().includes("contact") ||
+          /^(learn|explore|get|book|schedule|contact|call|demo|start|try|discover|find|see)\b/i.test(
+            label
+          );
+
+        // Only add if it's likely an actionable button
+        if (
+          label.length >= 3 &&
+          label.length <= 80 &&
+          (!isInformational || isActionable)
+        ) {
           buttons.push(label);
+          console.log("[DEBUG] Added button:", label);
+        } else {
+          console.log(
+            "[DEBUG] Skipped informational text:",
+            label,
+            "- isInformational:",
+            isInformational,
+            "isActionable:",
+            isActionable
+          );
         }
       }
 
@@ -642,7 +697,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
       if (buttons.length >= 6) break;
     }
 
-    console.log("[Chatbot] Extracted buttons from text:", buttons);
+    console.log("[Chatbot] Final extracted buttons from text:", buttons);
     return buttons;
   };
 
