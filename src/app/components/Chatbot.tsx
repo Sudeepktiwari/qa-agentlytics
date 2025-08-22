@@ -631,9 +631,13 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
     console.log("[Chatbot] Processing object response:", data);
 
     let mainText = typeof data.mainText === "string" ? data.mainText : "";
-    
+
     // If no mainText but we have buttons or emailPrompt, provide a default message
-    if (!mainText && ((Array.isArray(data.buttons) && data.buttons.length > 0) || data.emailPrompt)) {
+    if (
+      !mainText &&
+      ((Array.isArray(data.buttons) && data.buttons.length > 0) ||
+        data.emailPrompt)
+    ) {
       mainText = "Here are some options for you:";
     }
 
