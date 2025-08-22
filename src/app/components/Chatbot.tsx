@@ -63,6 +63,31 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
   >("lead_generation");
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
 
+  // Helper function to clean malformed JSON strings
+  const cleanJsonString = (jsonStr: string): string => {
+    try {
+      // Remove extra comma-separated strings that break JSON syntax
+      let cleaned = jsonStr
+        // Remove lines with just quoted strings like "\n\n",
+        .replace(/,?\s*"[^"]*",?\s*(?=\s*["}])/g, '')
+        // Remove trailing commas before closing braces/brackets
+        .replace(/,(\s*[}\]])/g, '$1')
+        // Remove multiple commas
+        .replace(/,+/g, ',')
+        // Remove comma at start after opening brace
+        .replace(/({|\[)\s*,/g, '$1')
+        // Clean up whitespace
+        .trim();
+      
+      // Validate by trying to parse
+      JSON.parse(cleaned);
+      return cleaned;
+    } catch {
+      // If still invalid, return original
+      return jsonStr;
+    }
+  };
+
   // Debug logging for bot mode state
   console.log("[Chatbot] Current bot mode state:", {
     currentBotMode,
@@ -172,10 +197,13 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
             data.history.map((msg: Message) => {
               if (msg.role === "assistant") {
                 try {
+                  const cleanedContent = typeof msg.content === "string" 
+                    ? cleanJsonString(msg.content) 
+                    : msg.content;
                   const parsed =
-                    typeof msg.content === "string"
-                      ? JSON.parse(msg.content)
-                      : msg.content;
+                    typeof cleanedContent === "string"
+                      ? JSON.parse(cleanedContent)
+                      : cleanedContent;
                   return {
                     ...msg,
                     content: parsed.mainText || "",
@@ -489,7 +517,8 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
     // If data is a string, try to parse as JSON, else treat as plain text
     if (typeof data === "string") {
       try {
-        const parsed = JSON.parse(data);
+        const cleanedData = cleanJsonString(data);
+        const parsed = JSON.parse(cleanedData);
         if (
           typeof parsed === "object" &&
           (parsed.mainText || parsed.buttons || parsed.emailPrompt)
@@ -509,7 +538,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
       const jsonMatch = data.match(/\{[^}]*"buttons"[^}]*\}/);
       if (jsonMatch) {
         try {
-          const jsonPart = jsonMatch[0];
+          const jsonPart = cleanJsonString(jsonMatch[0]);
           const parsed = JSON.parse(jsonPart);
           console.log("[Chatbot] Found and parsed JSON block:", parsed);
 
@@ -543,7 +572,9 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
       let extractedButtons: string[] = [];
       if (buttonsMatch) {
         try {
-          const buttonsArray = JSON.parse(`[${buttonsMatch[1]}]`);
+          const buttonsArrayStr = `[${buttonsMatch[1]}]`;
+          const cleanedButtonsStr = cleanJsonString(buttonsArrayStr);
+          const buttonsArray = JSON.parse(cleanedButtonsStr);
           if (Array.isArray(buttonsArray)) {
             extractedButtons = buttonsArray;
             console.log(
