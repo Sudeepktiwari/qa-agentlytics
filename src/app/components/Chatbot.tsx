@@ -507,33 +507,79 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
   ]);
 
   // Helper: Parse backend response (now JSON with mainText, buttons, emailPrompt)
-  function parseBotResponse(data: BotResponse | string): {
+  function parseBotResponse(data: any): {
     mainText: string;
     buttons: string[];
     emailPrompt: string;
   } {
-    console.log("[Chatbot] Raw API response:", data);
-    if (!data) return { mainText: "", buttons: [], emailPrompt: "" };
+    console.log("🔬 [PARSE] Starting parseBotResponse with:", {
+      dataType: typeof data,
+      dataValue: data,
+      isString: typeof data === "string",
+      isObject: typeof data === "object" && data !== null,
+      isNull: data === null,
+      isUndefined: data === undefined
+    });
+    
+    if (!data) {
+      console.log("❌ [PARSE] No data provided, returning empty response");
+      return { mainText: "", buttons: [], emailPrompt: "" };
+    }
 
     // If data is a string, try to parse as JSON, else treat as plain text
     if (typeof data === "string") {
+      console.log("📄 [PARSE] Processing string data:", {
+        stringLength: data.length,
+        stringPreview: data.substring(0, 200) + (data.length > 200 ? "..." : ""),
+        looksLikeJSON: data.trim().startsWith("{") && data.trim().endsWith("}"),
+        containsButtons: data.includes('"buttons"'),
+        containsEmailPrompt: data.includes('"emailPrompt"')
+      });
+      
       try {
         const cleanedData = cleanJsonString(data);
+        console.log("🧹 [PARSE] Cleaned JSON string:", {
+          originalLength: data.length,
+          cleanedLength: cleanedData.length,
+          cleanedPreview: cleanedData.substring(0, 200) + (cleanedData.length > 200 ? "..." : ""),
+          changes: data !== cleanedData
+        });
+        
         const parsed = JSON.parse(cleanedData);
         if (
           typeof parsed === "object" &&
           (parsed.mainText || parsed.buttons || parsed.emailPrompt)
         ) {
-          console.log("[Chatbot] Parsed JSON from string:", parsed);
+          console.log("✅ [PARSE] Successfully parsed JSON from string:", {
+            hasMainText: !!parsed.mainText,
+            mainTextLength: parsed.mainText ? parsed.mainText.length : 0,
+            hasButtons: !!(parsed.buttons && Array.isArray(parsed.buttons)),
+            buttonsCount: Array.isArray(parsed.buttons) ? parsed.buttons.length : 0,
+            buttons: parsed.buttons,
+            hasEmailPrompt: !!parsed.emailPrompt,
+            emailPrompt: parsed.emailPrompt,
+            fullParsed: parsed
+          });
+          
           return {
             mainText: parsed.mainText || "Here are some options for you:",
             buttons: Array.isArray(parsed.buttons) ? parsed.buttons : [],
             emailPrompt: parsed.emailPrompt || "",
           };
+        } else {
+          console.log("⚠️ [PARSE] Parsed JSON but missing expected fields:", {
+            parsedType: typeof parsed,
+            parsedKeys: Object.keys(parsed || {}),
+            parsed: parsed
+          });
         }
-      } catch {
+      } catch (parseError) {
         // Not JSON, treat as plain text
-        console.log("[Chatbot] String is not JSON, treating as plain text");
+        console.log("❌ [PARSE] JSON parsing failed, treating as plain text:", {
+          error: parseError instanceof Error ? parseError.message : String(parseError),
+          stringLength: data.length,
+          stringStart: data.substring(0, 100)
+        });
       }
       // Look for JSON blocks in the text (like {"buttons": [...], "emailPrompt": "..."})
       const jsonMatch = data.match(/\{[^}]*"buttons"[^}]*\}/);
@@ -628,9 +674,30 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
     }
 
     // If data is an object, extract fields safely
-    console.log("[Chatbot] Processing object response:", data);
+    console.log("🗂️ [PARSE] Processing object response:", {
+      dataType: typeof data,
+      dataKeys: Object.keys(data || {}),
+      hasMainText: "mainText" in data,
+      mainTextType: typeof data.mainText,
+      mainTextValue: data.mainText,
+      hasButtons: "buttons" in data,
+      buttonsType: typeof data.buttons,
+      buttonsIsArray: Array.isArray(data.buttons),
+      buttonsLength: Array.isArray(data.buttons) ? data.buttons.length : "N/A",
+      buttonsValue: data.buttons,
+      hasEmailPrompt: "emailPrompt" in data,
+      emailPromptType: typeof data.emailPrompt,
+      emailPromptValue: data.emailPrompt,
+      fullObject: data
+    });
 
     let mainText = typeof data.mainText === "string" ? data.mainText : "";
+    
+    console.log("📝 [PARSE] Initial mainText extraction:", {
+      foundMainText: !!mainText,
+      mainTextLength: mainText.length,
+      mainTextPreview: mainText.substring(0, 100)
+    });
 
     // If no mainText but we have buttons or emailPrompt, provide a default message
     if (
@@ -638,6 +705,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
       ((Array.isArray(data.buttons) && data.buttons.length > 0) ||
         data.emailPrompt)
     ) {
+      console.log("🎯 [PARSE] No mainText found but has buttons/emailPrompt, using default message");
       mainText = "Here are some options for you:";
     }
 
@@ -652,9 +720,19 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
       buttons: Array.isArray(data.buttons) ? data.buttons : [],
       emailPrompt: typeof data.emailPrompt === "string" ? data.emailPrompt : "",
     };
-    console.log("[Chatbot] Final parsed result:", result);
-    console.log("[Chatbot] Buttons count:", result.buttons.length);
-    console.log("[Chatbot] Has emailPrompt:", !!result.emailPrompt);
+    
+    console.log("🎉 [PARSE] Final parsed result from object:", {
+      finalMainText: result.mainText,
+      finalMainTextLength: result.mainText.length,
+      finalButtons: result.buttons,
+      finalButtonsCount: result.buttons.length,
+      finalEmailPrompt: result.emailPrompt,
+      hasContent: !!result.mainText,
+      hasButtons: result.buttons.length > 0,
+      hasEmailPrompt: !!result.emailPrompt,
+      completeResult: result
+    });
+    
     return result;
   }
 
@@ -780,9 +858,30 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
     setMessages((msgs) => [...msgs, userMsg]);
     setInput("");
     setLoading(true);
+    
+    console.log("🚀 [CHAT DEBUG] Starting message send process:", {
+      userInput,
+      sessionId: getSessionId(),
+      pageUrl: pageUrl || getPageUrl(),
+      adminId,
+      timestamp: new Date().toISOString()
+    });
+    
     try {
       const sessionId = getSessionId();
       const effectivePageUrl = pageUrl || getPageUrl();
+      
+      console.log("📤 [CHAT DEBUG] Sending API request:", {
+        method: "POST",
+        url: "/api/chat",
+        body: {
+          question: userMsg.content,
+          sessionId,
+          pageUrl: effectivePageUrl,
+          ...(adminId ? { adminId } : {})
+        }
+      });
+      
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -793,7 +892,23 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
           ...(adminId ? { adminId } : {}),
         }),
       });
+      
+      console.log("📥 [CHAT DEBUG] Raw response received:", {
+        status: res.status,
+        statusText: res.statusText,
+        ok: res.ok,
+        headers: Object.fromEntries(res.headers.entries()),
+        contentType: res.headers.get('content-type'),
+      });
+      
       const data = await res.json();
+      
+      console.log("🔍 [CHAT DEBUG] JSON parsed successfully:", {
+        dataType: typeof data,
+        dataKeys: Object.keys(data || {}),
+        fullData: data,
+        stringify: JSON.stringify(data, null, 2)
+      });
 
       console.log("[API DEBUG] Raw API response received:", {
         status: res.status,
@@ -840,10 +955,29 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
       }
 
       console.log(
-        "[PARSE DEBUG] About to parse response:",
-        data.answer || data
+        "🧠 [PARSE DEBUG] About to parse response:",
+        {
+          hasAnswer: !!data.answer,
+          answerType: typeof data.answer,
+          answerContent: data.answer,
+          hasDirectButtons: !!(data.buttons && Array.isArray(data.buttons)),
+          directButtons: data.buttons,
+          hasDirectEmailPrompt: !!data.emailPrompt,
+          directEmailPrompt: data.emailPrompt,
+          willParse: data.answer || data
+        }
       );
       const parsed = parseBotResponse(data.answer || data);
+      
+      console.log("✅ [PARSE DEBUG] Response parsed successfully:", {
+        parsedMainText: parsed.mainText,
+        parsedButtons: parsed.buttons,
+        parsedButtonsCount: parsed.buttons ? parsed.buttons.length : 0,
+        parsedEmailPrompt: parsed.emailPrompt,
+        hasContent: !!parsed.mainText,
+        hasButtons: !!(parsed.buttons && parsed.buttons.length > 0),
+        hasEmailPrompt: !!parsed.emailPrompt
+      });
       console.log("[PARSE DEBUG] Parsed response result:", parsed);
 
       const newMessage = {
@@ -855,9 +989,28 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
         userEmail: data.userEmail,
       };
 
-      console.log("[MESSAGE DEBUG] Adding new message to state:", newMessage);
+      console.log("💬 [MESSAGE DEBUG] Creating new bot message:", {
+        messageContent: newMessage.content,
+        messageContentLength: newMessage.content.length,
+        messageButtons: newMessage.buttons,
+        messageButtonsCount: newMessage.buttons ? newMessage.buttons.length : 0,
+        messageEmailPrompt: newMessage.emailPrompt,
+        messageBotMode: newMessage.botMode,
+        messageUserEmail: newMessage.userEmail,
+        fullMessage: newMessage
+      });
 
-      setMessages((msgs) => [...msgs, newMessage]);
+      console.log("📋 [STATE DEBUG] Adding message to messages array");
+      setMessages((msgs) => {
+        const newMessages = [...msgs, newMessage];
+        console.log("📊 [STATE DEBUG] Updated messages array:", {
+          previousLength: msgs.length,
+          newLength: newMessages.length,
+          lastMessage: newMessages[newMessages.length - 1],
+          allMessages: newMessages
+        });
+        return newMessages;
+      });
       // Clear follow-up timer on user message
       if (followupTimer.current) clearTimeout(followupTimer.current);
       setFollowupSent(false);
