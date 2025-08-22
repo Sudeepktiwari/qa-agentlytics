@@ -589,20 +589,42 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
           stringStart: data.substring(0, 100),
         });
       }
-      // Look for JSON blocks in the text (like {"buttons": [...], "emailPrompt": "..."})
-      const jsonMatch = data.match(/\{[^}]*"buttons"[^}]*\}/);
+      // Look for JSON blocks in the text - improved regex for multi-line JSON with arrays
+      const jsonMatch = data.match(/\{[\s\S]*?"buttons"[\s\S]*?\}/);
       if (jsonMatch) {
+        console.log("🔍 [PARSE] Found potential JSON block:", {
+          matchedText: jsonMatch[0],
+          matchLength: jsonMatch[0].length,
+          originalDataLength: data.length,
+        });
+
         try {
           const jsonPart = cleanJsonString(jsonMatch[0]);
+          console.log("🧹 [PARSE] Cleaned JSON part:", jsonPart);
+
           const parsed = JSON.parse(jsonPart);
-          console.log("[Chatbot] Found and parsed JSON block:", parsed);
+          console.log("✅ [PARSE] Successfully parsed JSON block from text:", {
+            originalJsonMatch: jsonMatch[0],
+            cleanedJson: jsonPart,
+            parsedResult: parsed,
+            hasButtons: !!(parsed.buttons && Array.isArray(parsed.buttons)),
+            buttonCount: Array.isArray(parsed.buttons)
+              ? parsed.buttons.length
+              : 0,
+          });
 
           // Extract the main text (everything before the JSON block)
           let mainText = data.replace(jsonMatch[0], "").trim();
 
-          // Clean up the main text
-          mainText = mainText.replace(/\{[^}]*\}/g, "");
-          mainText = mainText.replace(/"buttons":\s*\[[^\]]*\]/g, "");
+          console.log("📝 [PARSE] Extracted main text before cleaning:", {
+            mainTextLength: mainText.length,
+            mainTextPreview: mainText.substring(0, 200),
+            removedJsonLength: jsonMatch[0].length,
+          });
+
+          // Clean up the main text - remove any remaining JSON artifacts
+          mainText = mainText.replace(/\{[\s\S]*?\}/g, "");
+          mainText = mainText.replace(/"buttons":\s*\[[\s\S]*?\]/g, "");
           mainText = mainText.replace(/"emailPrompt":\s*"[^"]*"/g, "");
           mainText = mainText.replace(
             /#{1,3}\s*Action\s+Buttons?\s*:?\s*[\r\n]*/gi,
@@ -612,13 +634,32 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
           mainText = mainText.replace(/\\n\\n/g, "\n\n");
           mainText = mainText.replace(/\\n/g, "\n");
 
+          console.log("🎉 [PARSE] Final result from JSON block extraction:", {
+            finalMainText: mainText.trim(),
+            finalMainTextLength: mainText.trim().length,
+            finalButtons: Array.isArray(parsed.buttons) ? parsed.buttons : [],
+            finalButtonCount: Array.isArray(parsed.buttons)
+              ? parsed.buttons.length
+              : 0,
+            finalEmailPrompt: parsed.emailPrompt || "",
+            hasAllComponents: !!(
+              mainText.trim() &&
+              Array.isArray(parsed.buttons) &&
+              parsed.buttons.length > 0
+            ),
+          });
+
           return {
             mainText: mainText.trim(),
             buttons: Array.isArray(parsed.buttons) ? parsed.buttons : [],
             emailPrompt: parsed.emailPrompt || "",
           };
         } catch (e) {
-          console.log("[Chatbot] Failed to parse JSON block:", e);
+          console.log("❌ [PARSE] Failed to parse JSON block:", {
+            error: e instanceof Error ? e.message : String(e),
+            jsonMatchedText: jsonMatch[0],
+            dataLength: data.length,
+          });
         }
       }
 

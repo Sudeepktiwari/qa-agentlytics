@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>JSON Parsing Test</title>
+  </head>
+  <body>
+    <h1>JSON Parsing Test</h1>
+    <p>Testing the specific message format you provided</p>
+
+    <script>
+      // Test the exact message format you showed
+      const testMessage = `Integrating Google Calendar with Appointy is simple and effective! Here's how it can benefit you:
+
+• Sync all your appointments and events seamlessly across platforms.
+
+• Automatically avoid scheduling conflicts by integrating your availability with Google Calendar.
+
+• Receive real-time reminders and updates for all your bookings in one consolidated place.
+
+Integrating with Google Calendar helps you manage your time more efficiently!
+
+If you have more questions, feel free to ask.
+
+{"buttons":["Learn How to Integrate","Contact Support for Assistance","Explore Other Integrations"],"emailPrompt":"Would you like me to send you detailed instructions on how to integrate Google Calendar with Appointy?"}`;
+
+      console.log("🧪 Testing message format:");
+      console.log("Original message:", testMessage);
+      console.log("Message length:", testMessage.length);
+
+      // Test the improved regex
+      const jsonMatch = testMessage.match(/\{[\s\S]*?"buttons"[\s\S]*?\}/);
+      console.log("\n🔍 Regex test:");
+      console.log("JSON match found:", !!jsonMatch);
+
+      if (jsonMatch) {
+        console.log("Matched JSON:", jsonMatch[0]);
+
+        try {
+          const parsed = JSON.parse(jsonMatch[0]);
+          console.log("✅ Parsed successfully:", parsed);
+          console.log("Buttons found:", parsed.buttons);
+          console.log("Email prompt found:", parsed.emailPrompt);
+
+          // Test main text extraction
+          const mainText = testMessage.replace(jsonMatch[0], "").trim();
+          console.log("\n📝 Main text extraction:");
+          console.log("Extracted main text:", mainText);
+          console.log("Main text length:", mainText.length);
+
+          // Show final result
+          const result = {
+            mainText: mainText,
+            buttons: parsed.buttons || [],
+            emailPrompt: parsed.emailPrompt || "",
+          };
+
+          console.log("\n🎉 Final parsing result:");
+          console.log(result);
+
+          // Display results on page
+          document.body.innerHTML += `
+                    <div style="border: 1px solid #ccc; padding: 20px; margin: 20px 0;">
+                        <h3>✅ Parsing Result</h3>
+                        <p><strong>Main Text:</strong> ${result.mainText}</p>
+                        <p><strong>Buttons (${
+                          result.buttons.length
+                        }):</strong></p>
+                        <ul>
+                            ${result.buttons
+                              .map((btn) => `<li>${btn}</li>`)
+                              .join("")}
+                        </ul>
+                        <p><strong>Email Prompt:</strong> ${
+                          result.emailPrompt
+                        }</p>
+                    </div>
+                `;
+        } catch (error) {
+          console.error("❌ JSON parsing failed:", error);
+          document.body.innerHTML += `
+                    <div style="border: 1px solid red; padding: 20px; margin: 20px 0; background: #ffe6e6;">
+                        <h3>❌ Parsing Failed</h3>
+                        <p>Error: ${error.message}</p>
+                    </div>
+                `;
+        }
+      } else {
+        console.error("❌ No JSON match found");
+        document.body.innerHTML += `
+                <div style="border: 1px solid red; padding: 20px; margin: 20px 0; background: #ffe6e6;">
+                    <h3>❌ No JSON Found</h3>
+                    <p>The regex didn't match any JSON in the message</p>
+                </div>
+            `;
+      }
+    </script>
+  </body>
+</html>
