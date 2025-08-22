@@ -961,6 +961,14 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
         stringify: JSON.stringify(data, null, 2),
       });
 
+      // 🤖 AI RESPONSE LOGGING - Clear display of the AI response
+      console.log("🤖 [AI RESPONSE] Raw AI Answer received:");
+      console.log("==========================================");
+      console.log(data.answer || "No answer field in response");
+      console.log("==========================================");
+      console.log("🤖 [AI RESPONSE] Complete API Data:");
+      console.log(JSON.stringify(data, null, 2));
+
       console.log("[API DEBUG] Raw API response received:", {
         status: res.status,
         statusText: res.statusText,
@@ -1016,6 +1024,14 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
         willParse: data.answer || data,
       });
       const parsed = parseBotResponse(data.answer || data);
+
+      // 🎯 PARSED RESULT LOGGING - Show exactly what was extracted
+      console.log("🎯 [PARSED RESULT] Final extracted content:");
+      console.log("==========================================");
+      console.log("Main Text:", parsed.mainText);
+      console.log("Buttons:", parsed.buttons);
+      console.log("Email Prompt:", parsed.emailPrompt);
+      console.log("==========================================");
 
       console.log("✅ [PARSE DEBUG] Response parsed successfully:", {
         parsedMainText: parsed.mainText,
