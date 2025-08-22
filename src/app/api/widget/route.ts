@@ -426,7 +426,7 @@ export async function GET(request: Request) {
       return;
     }
     
-    console.log('[ChatWidget] Sending proactive message:', text.substring(0, 100) + '...');
+    console.log('🎯 [WIDGET PROACTIVE] Sending proactive message:', text.substring(0, 100) + '...');
     
     // Update conversation state tracking
     if (!hasBeenGreeted) {
@@ -453,47 +453,47 @@ export async function GET(request: Request) {
     };
     
     messages.push(proactiveMessage);
-    console.log('[ChatWidget] Proactive message added to messages array. Total messages:', messages.length);
+    console.log('📝 [WIDGET PROACTIVE] Proactive message added to messages array. Total messages:', messages.length);
     
     // Auto-open chat if configured and currently closed
     if (config.autoOpenProactive && !isOpen) {
-      console.log('[ChatWidget] Auto-opening chat widget for proactive message');
+      console.log('🚪 [WIDGET PROACTIVE] Auto-opening chat widget for proactive message');
       toggleWidget();
       // Small delay to ensure widget is opened before rendering
       setTimeout(() => {
         renderMessages();
       }, 100);
     } else if (isOpen) {
-      console.log('[ChatWidget] Chat already open, rendering proactive message');
+      console.log('🎨 [WIDGET PROACTIVE] Chat already open, rendering proactive message');
       // Re-render messages if chat is already open
       renderMessages();
     } else {
-      console.log('[ChatWidget] Auto-open disabled, not opening chat for proactive message');
+      console.log('🔒 [WIDGET PROACTIVE] Auto-open disabled, not opening chat for proactive message');
     }
     
     // Only speak if user has already interacted with the page
     if (config.voiceEnabled && speechAllowed) {
-      console.log('[ChatWidget] Speaking proactive message (user interaction detected)');
+      console.log('🔊 [WIDGET PROACTIVE] Speaking proactive message (user interaction detected)');
       // Initialize voices first, then speak
       initializeVoices().then(() => {
         // Small delay to ensure chat is open and visible
         setTimeout(() => {
           speakText(text, true);
-          console.log('[ChatWidget] Speech initiated for proactive message - timer continues independently');
+          console.log('🎵 [WIDGET PROACTIVE] Speech initiated for proactive message - timer continues independently');
         }, 500);
       });
     } else if (config.voiceEnabled) {
-      console.log('Proactive message voice disabled - waiting for user interaction');
+      console.log('🔇 [WIDGET PROACTIVE] Proactive message voice disabled - waiting for user interaction');
     }
     
     // Update bubble if chat is closed (shouldn't happen with auto-open, but just in case)
     if (!isOpen) {
-      console.log('[ChatWidget] Updating bubble for closed chat');
+      console.log('🔔 [WIDGET PROACTIVE] Updating bubble for closed chat');
       updateBubble();
     }
     
     // Start follow-up timer after proactive message (independent of speech)
-    console.log('[ChatWidget] Starting follow-up timer after proactive message - runs independently of speech');
+    console.log('⏰ [WIDGET PROACTIVE] Starting follow-up timer after proactive message - runs independently of speech');
     startFollowupTimer();
   }
   
@@ -726,6 +726,9 @@ export async function GET(request: Request) {
   
   // Send API request
   async function sendApiRequest(endpoint, data) {
+    console.log("🚀 [WIDGET API] Sending request to:", endpoint);
+    console.log("📤 [WIDGET API] Request data:", data);
+    
     try {
       const response = await fetch(\`\${CHATBOT_API_BASE}/api/\${endpoint}\`, {
         method: 'POST',
@@ -735,9 +738,23 @@ export async function GET(request: Request) {
         },
         body: JSON.stringify(data)
       });
-      return await response.json();
+      
+      console.log("📥 [WIDGET API] Response status:", response.status);
+      
+      const responseData = await response.json();
+      
+      console.log("🤖 [WIDGET AI RESPONSE] Raw AI response received:");
+      console.log("==========================================");
+      console.log("Full response data:", responseData);
+      console.log("AI Answer:", responseData.answer || responseData.mainText || "No answer field");
+      console.log("Buttons:", responseData.buttons || "No buttons");
+      console.log("Email Prompt:", responseData.emailPrompt || "No email prompt");
+      console.log("Bot Mode:", responseData.botMode || "No bot mode");
+      console.log("==========================================");
+      
+      return responseData;
     } catch (error) {
-      console.error('Chatbot API error:', error);
+      console.error('❌ [WIDGET API] Error:', error);
       return { error: 'Connection failed' };
     }
   }
@@ -797,6 +814,8 @@ export async function GET(request: Request) {
   async function sendMessage(text) {
     if (!text.trim()) return;
     
+    console.log("💬 [WIDGET MESSAGE] User sending message:", text);
+    
     resetUserActivity();
     
     // Ensure we have the latest page URL
@@ -805,6 +824,7 @@ export async function GET(request: Request) {
     // Add user message
     const userMessage = { role: 'user', content: text };
     messages.push(userMessage);
+    console.log("📝 [WIDGET MESSAGE] User message added to chat, total messages:", messages.length);
     renderMessages();
     
     // Clear input
@@ -813,6 +833,8 @@ export async function GET(request: Request) {
     
     // Show typing indicator
     showTypingIndicator();
+    
+    console.log("🔄 [WIDGET MESSAGE] Sending to API...");
     
     // Send to API with current page context
     const data = await sendApiRequest('chat', {
@@ -825,6 +847,8 @@ export async function GET(request: Request) {
     // Hide typing indicator
     hideTypingIndicator();
     
+    console.log("✅ [WIDGET MESSAGE] API response processed");
+    
     // Update bot mode indicator
     if (data.botMode) {
       updateBotModeIndicator(data.botMode, data.userEmail);
@@ -832,10 +856,16 @@ export async function GET(request: Request) {
     
     let botResponse = '';
     if (data.error) {
+      console.log("❌ [WIDGET MESSAGE] Error in API response:", data.error);
       const errorMessage = { role: 'assistant', content: 'Sorry, something went wrong. Please try again.' };
       messages.push(errorMessage);
       botResponse = errorMessage.content;
     } else {
+      console.log("🎯 [WIDGET MESSAGE] Creating bot response:");
+      console.log("Main Text:", data.mainText || data.answer || 'I received your message.');
+      console.log("Buttons:", data.buttons || []);
+      console.log("Email Prompt:", data.emailPrompt || '');
+      
       const botMessage = {
         role: 'assistant',
         content: data.mainText || data.answer || 'I received your message.',
@@ -848,14 +878,18 @@ export async function GET(request: Request) {
       startFollowupTimer();
     }
     
+    console.log("🎨 [WIDGET MESSAGE] Rendering messages to UI");
     renderMessages();
     
     // Speak bot response if voice is enabled and allowed
     if (config.voiceEnabled && speechAllowed && botResponse) {
+      console.log("🔊 [WIDGET MESSAGE] Speaking bot response");
       setTimeout(() => {
         speakText(botResponse, false);
       }, 500);
     }
+    
+    console.log("✨ [WIDGET MESSAGE] Message processing complete");
   }
   
   // Smooth scroll to bottom function with enhanced reliability
@@ -1117,6 +1151,7 @@ export async function GET(request: Request) {
               button.style.boxShadow = \`0 6px 20px \${currentTheme.primary}44, 0 3px 6px rgba(0,0,0,0.15)\`;
             });
             button.addEventListener('click', () => {
+              console.log("🔘 [WIDGET BUTTON] Button clicked:", buttonText);
               resetUserActivity();
               sendMessage(buttonText);
             });
