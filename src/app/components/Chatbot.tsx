@@ -526,7 +526,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
         ) {
           console.log("[Chatbot] Parsed JSON from string:", parsed);
           return {
-            mainText: parsed.mainText || "",
+            mainText: parsed.mainText || "Here are some options for you:",
             buttons: Array.isArray(parsed.buttons) ? parsed.buttons : [],
             emailPrompt: parsed.emailPrompt || "",
           };
@@ -631,6 +631,11 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
     console.log("[Chatbot] Processing object response:", data);
 
     let mainText = typeof data.mainText === "string" ? data.mainText : "";
+    
+    // If no mainText but we have buttons or emailPrompt, provide a default message
+    if (!mainText && ((Array.isArray(data.buttons) && data.buttons.length > 0) || data.emailPrompt)) {
+      mainText = "Here are some options for you:";
+    }
 
     // Fix literal \n\n strings in mainText if present
     if (mainText) {
@@ -643,7 +648,9 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
       buttons: Array.isArray(data.buttons) ? data.buttons : [],
       emailPrompt: typeof data.emailPrompt === "string" ? data.emailPrompt : "",
     };
-    console.log("[Chatbot] Extracted from object:", result);
+    console.log("[Chatbot] Final parsed result:", result);
+    console.log("[Chatbot] Buttons count:", result.buttons.length);
+    console.log("[Chatbot] Has emailPrompt:", !!result.emailPrompt);
     return result;
   }
 
