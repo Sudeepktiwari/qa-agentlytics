@@ -516,12 +516,12 @@ export async function GET(request: Request) {
   // Load page-specific context
   async function loadPageContext() {
     if (isPageContextLoaded) {
-      console.log('[ChatWidget] Page context already loaded, skipping');
+      console.log('📋 [WIDGET CONTEXT] Page context already loaded, skipping');
       return;
     }
     
     try {
-      console.log('[ChatWidget] Loading context for page:', currentPageUrl);
+      console.log('🔍 [WIDGET CONTEXT] Loading context for page:', currentPageUrl);
       
       // Get page-specific proactive message
       const data = await sendApiRequest('chat', {
@@ -534,7 +534,7 @@ export async function GET(request: Request) {
         // Don't specify adminId - let the API extract it from the API key
       });
       
-      console.log('[ChatWidget] API response for proactive request:', data);
+      console.log('📨 [WIDGET CONTEXT] API response for proactive request:', data);
       
       // Update bot mode indicator
       if (data.botMode) {
@@ -542,22 +542,22 @@ export async function GET(request: Request) {
       }
       
       if (data.answer) {
-        console.log('[ChatWidget] Received proactive message from API:', data.answer.substring(0, 100) + '...');
+        console.log('✉️ [WIDGET CONTEXT] Received proactive message from API:', data.answer.substring(0, 100) + '...');
         // Send proactive message if auto-open is enabled
         if (config.autoOpenProactive) {
-          console.log('[ChatWidget] Auto-open enabled, sending proactive message');
+          console.log('🎯 [WIDGET CONTEXT] Auto-open enabled, sending proactive message');
           sendProactiveMessage(data.answer);
         } else {
-          console.log('[ChatWidget] Auto-open disabled, not sending proactive message');
+          console.log('🔒 [WIDGET CONTEXT] Auto-open disabled, not sending proactive message');
         }
         isPageContextLoaded = true;
-        console.log('[ChatWidget] Page context loaded successfully');
+        console.log('✅ [WIDGET CONTEXT] Page context loaded successfully');
       } else {
-        console.log('[ChatWidget] No proactive message received from API');
-        console.log('[ChatWidget] Full API response:', data);
+        console.log('❌ [WIDGET CONTEXT] No proactive message received from API');
+        console.log('🔍 [WIDGET CONTEXT] Full API response:', data);
       }
     } catch (error) {
-      console.error('[ChatWidget] Failed to load page context:', error);
+      console.error('❌ [WIDGET CONTEXT] Failed to load page context:', error);
     }
   }
   
@@ -1447,6 +1447,8 @@ export async function GET(request: Request) {
   
   // Initialize widget
   function init() {
+    console.log("🚀 [WIDGET INIT] Starting widget initialization...");
+    
     // Add widget HTML
     widgetContainer.innerHTML = createWidgetHTML();
     
@@ -1457,8 +1459,12 @@ export async function GET(request: Request) {
     // Add main container to page
     document.body.appendChild(widgetMainContainer);
     
+    console.log("🎨 [WIDGET INIT] Widget HTML added to page");
+    
     // Setup events
     setupEventListeners();
+    
+    console.log("🔗 [WIDGET INIT] Event listeners setup complete");
     
     // Initialize voices for speech functionality
     if (config.voiceEnabled) {
@@ -1468,13 +1474,14 @@ export async function GET(request: Request) {
     // Start page monitoring and load initial context (if enhanced detection is enabled)
     setTimeout(() => {
       if (config.enhancedDetection) {
+        console.log("📡 [WIDGET INIT] Starting page monitoring and loading context");
         startPageMonitoring();
         // Load initial page context
         loadPageContext();
       }
     }, 1000);
     
-    console.log('[ChatWidget] Widget initialized successfully');    // Add cleanup function for page monitoring
+    console.log('✅ [WIDGET INIT] Widget initialized successfully');    // Add cleanup function for page monitoring
     window.addEventListener('beforeunload', cleanupPageMonitoring);
   }
   
