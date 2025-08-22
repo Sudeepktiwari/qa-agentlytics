@@ -69,16 +69,16 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
       // Remove extra comma-separated strings that break JSON syntax
       let cleaned = jsonStr
         // Remove lines with just quoted strings like "\n\n",
-        .replace(/,?\s*"[^"]*",?\s*(?=\s*["}])/g, '')
+        .replace(/,?\s*"[^"]*",?\s*(?=\s*["}])/g, "")
         // Remove trailing commas before closing braces/brackets
-        .replace(/,(\s*[}\]])/g, '$1')
+        .replace(/,(\s*[}\]])/g, "$1")
         // Remove multiple commas
-        .replace(/,+/g, ',')
+        .replace(/,+/g, ",")
         // Remove comma at start after opening brace
-        .replace(/({|\[)\s*,/g, '$1')
+        .replace(/({|\[)\s*,/g, "$1")
         // Clean up whitespace
         .trim();
-      
+
       // Validate by trying to parse
       JSON.parse(cleaned);
       return cleaned;
@@ -197,9 +197,10 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
             data.history.map((msg: Message) => {
               if (msg.role === "assistant") {
                 try {
-                  const cleanedContent = typeof msg.content === "string" 
-                    ? cleanJsonString(msg.content) 
-                    : msg.content;
+                  const cleanedContent =
+                    typeof msg.content === "string"
+                      ? cleanJsonString(msg.content)
+                      : msg.content;
                   const parsed =
                     typeof cleanedContent === "string"
                       ? JSON.parse(cleanedContent)
