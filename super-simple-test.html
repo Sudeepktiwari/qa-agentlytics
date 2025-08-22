@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>SUPER SIMPLE TEST</title>
+  </head>
+  <body>
+    <h1>SUPER SIMPLE TEST</h1>
+    <p>Open console. You should see widget logs.</p>
+
+    <script>
+      // Log before widget loads
+      console.log("BEFORE WIDGET SCRIPT");
+
+      // Check for button every second
+      let count = 0;
+      const interval = setInterval(() => {
+        count++;
+        const button = document.getElementById("appointy-chatbot-toggle");
+        console.log(`Check ${count}: Button found = ${!!button}`);
+
+        if (button) {
+          console.log("WIDGET BUTTON FOUND!");
+          clearInterval(interval);
+          document.body.style.backgroundColor = "green";
+          document.body.innerHTML +=
+            '<h2 style="color:white;">WIDGET WORKS!</h2>';
+        }
+
+        if (count > 10) {
+          console.log("WIDGET FAILED AFTER 10 CHECKS");
+          clearInterval(interval);
+          document.body.style.backgroundColor = "red";
+          document.body.innerHTML +=
+            '<h2 style="color:white;">WIDGET FAILED!</h2>';
+        }
+      }, 1000);
+    </script>
+
+    <!-- WIDGET SCRIPT -->
+    <script
+      src="http://localhost:3001/api/widget"
+      data-api-key="ak_e8a971aee600130a0dcc93ca0fbb8831e366c4566f6b80426991b4ed6c8f9848"
+    ></script>
+
+    <script>
+      console.log("AFTER WIDGET SCRIPT");
+    </script>
+  </body>
+</html>
