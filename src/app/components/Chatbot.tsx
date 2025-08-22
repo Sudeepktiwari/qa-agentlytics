@@ -67,7 +67,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
   const cleanJsonString = (jsonStr: string): string => {
     try {
       // Remove extra comma-separated strings that break JSON syntax
-      let cleaned = jsonStr
+      const cleaned = jsonStr
         // Remove lines with just quoted strings like "\n\n",
         .replace(/,?\s*"[^"]*",?\s*(?=\s*["}])/g, "")
         // Remove trailing commas before closing braces/brackets
