@@ -518,9 +518,9 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
       isString: typeof data === "string",
       isObject: typeof data === "object" && data !== null,
       isNull: data === null,
-      isUndefined: data === undefined
+      isUndefined: data === undefined,
     });
-    
+
     if (!data) {
       console.log("❌ [PARSE] No data provided, returning empty response");
       return { mainText: "", buttons: [], emailPrompt: "" };
@@ -530,21 +530,24 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
     if (typeof data === "string") {
       console.log("📄 [PARSE] Processing string data:", {
         stringLength: data.length,
-        stringPreview: data.substring(0, 200) + (data.length > 200 ? "..." : ""),
+        stringPreview:
+          data.substring(0, 200) + (data.length > 200 ? "..." : ""),
         looksLikeJSON: data.trim().startsWith("{") && data.trim().endsWith("}"),
         containsButtons: data.includes('"buttons"'),
-        containsEmailPrompt: data.includes('"emailPrompt"')
+        containsEmailPrompt: data.includes('"emailPrompt"'),
       });
-      
+
       try {
         const cleanedData = cleanJsonString(data);
         console.log("🧹 [PARSE] Cleaned JSON string:", {
           originalLength: data.length,
           cleanedLength: cleanedData.length,
-          cleanedPreview: cleanedData.substring(0, 200) + (cleanedData.length > 200 ? "..." : ""),
-          changes: data !== cleanedData
+          cleanedPreview:
+            cleanedData.substring(0, 200) +
+            (cleanedData.length > 200 ? "..." : ""),
+          changes: data !== cleanedData,
         });
-        
+
         const parsed = JSON.parse(cleanedData);
         if (
           typeof parsed === "object" &&
@@ -554,13 +557,15 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
             hasMainText: !!parsed.mainText,
             mainTextLength: parsed.mainText ? parsed.mainText.length : 0,
             hasButtons: !!(parsed.buttons && Array.isArray(parsed.buttons)),
-            buttonsCount: Array.isArray(parsed.buttons) ? parsed.buttons.length : 0,
+            buttonsCount: Array.isArray(parsed.buttons)
+              ? parsed.buttons.length
+              : 0,
             buttons: parsed.buttons,
             hasEmailPrompt: !!parsed.emailPrompt,
             emailPrompt: parsed.emailPrompt,
-            fullParsed: parsed
+            fullParsed: parsed,
           });
-          
+
           return {
             mainText: parsed.mainText || "Here are some options for you:",
             buttons: Array.isArray(parsed.buttons) ? parsed.buttons : [],
@@ -570,15 +575,18 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
           console.log("⚠️ [PARSE] Parsed JSON but missing expected fields:", {
             parsedType: typeof parsed,
             parsedKeys: Object.keys(parsed || {}),
-            parsed: parsed
+            parsed: parsed,
           });
         }
       } catch (parseError) {
         // Not JSON, treat as plain text
         console.log("❌ [PARSE] JSON parsing failed, treating as plain text:", {
-          error: parseError instanceof Error ? parseError.message : String(parseError),
+          error:
+            parseError instanceof Error
+              ? parseError.message
+              : String(parseError),
           stringLength: data.length,
-          stringStart: data.substring(0, 100)
+          stringStart: data.substring(0, 100),
         });
       }
       // Look for JSON blocks in the text (like {"buttons": [...], "emailPrompt": "..."})
@@ -688,15 +696,15 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
       hasEmailPrompt: "emailPrompt" in data,
       emailPromptType: typeof data.emailPrompt,
       emailPromptValue: data.emailPrompt,
-      fullObject: data
+      fullObject: data,
     });
 
     let mainText = typeof data.mainText === "string" ? data.mainText : "";
-    
+
     console.log("📝 [PARSE] Initial mainText extraction:", {
       foundMainText: !!mainText,
       mainTextLength: mainText.length,
-      mainTextPreview: mainText.substring(0, 100)
+      mainTextPreview: mainText.substring(0, 100),
     });
 
     // If no mainText but we have buttons or emailPrompt, provide a default message
@@ -705,7 +713,9 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
       ((Array.isArray(data.buttons) && data.buttons.length > 0) ||
         data.emailPrompt)
     ) {
-      console.log("🎯 [PARSE] No mainText found but has buttons/emailPrompt, using default message");
+      console.log(
+        "🎯 [PARSE] No mainText found but has buttons/emailPrompt, using default message"
+      );
       mainText = "Here are some options for you:";
     }
 
@@ -720,7 +730,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
       buttons: Array.isArray(data.buttons) ? data.buttons : [],
       emailPrompt: typeof data.emailPrompt === "string" ? data.emailPrompt : "",
     };
-    
+
     console.log("🎉 [PARSE] Final parsed result from object:", {
       finalMainText: result.mainText,
       finalMainTextLength: result.mainText.length,
@@ -730,9 +740,9 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
       hasContent: !!result.mainText,
       hasButtons: result.buttons.length > 0,
       hasEmailPrompt: !!result.emailPrompt,
-      completeResult: result
+      completeResult: result,
     });
-    
+
     return result;
   }
 
@@ -858,19 +868,19 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
     setMessages((msgs) => [...msgs, userMsg]);
     setInput("");
     setLoading(true);
-    
+
     console.log("🚀 [CHAT DEBUG] Starting message send process:", {
       userInput,
       sessionId: getSessionId(),
       pageUrl: pageUrl || getPageUrl(),
       adminId,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
-    
+
     try {
       const sessionId = getSessionId();
       const effectivePageUrl = pageUrl || getPageUrl();
-      
+
       console.log("📤 [CHAT DEBUG] Sending API request:", {
         method: "POST",
         url: "/api/chat",
@@ -878,10 +888,10 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
           question: userMsg.content,
           sessionId,
           pageUrl: effectivePageUrl,
-          ...(adminId ? { adminId } : {})
-        }
+          ...(adminId ? { adminId } : {}),
+        },
       });
-      
+
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -892,22 +902,22 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
           ...(adminId ? { adminId } : {}),
         }),
       });
-      
+
       console.log("📥 [CHAT DEBUG] Raw response received:", {
         status: res.status,
         statusText: res.statusText,
         ok: res.ok,
         headers: Object.fromEntries(res.headers.entries()),
-        contentType: res.headers.get('content-type'),
+        contentType: res.headers.get("content-type"),
       });
-      
+
       const data = await res.json();
-      
+
       console.log("🔍 [CHAT DEBUG] JSON parsed successfully:", {
         dataType: typeof data,
         dataKeys: Object.keys(data || {}),
         fullData: data,
-        stringify: JSON.stringify(data, null, 2)
+        stringify: JSON.stringify(data, null, 2),
       });
 
       console.log("[API DEBUG] Raw API response received:", {
@@ -954,21 +964,18 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
         console.log("[Chatbot] No userEmail in API response");
       }
 
-      console.log(
-        "🧠 [PARSE DEBUG] About to parse response:",
-        {
-          hasAnswer: !!data.answer,
-          answerType: typeof data.answer,
-          answerContent: data.answer,
-          hasDirectButtons: !!(data.buttons && Array.isArray(data.buttons)),
-          directButtons: data.buttons,
-          hasDirectEmailPrompt: !!data.emailPrompt,
-          directEmailPrompt: data.emailPrompt,
-          willParse: data.answer || data
-        }
-      );
+      console.log("🧠 [PARSE DEBUG] About to parse response:", {
+        hasAnswer: !!data.answer,
+        answerType: typeof data.answer,
+        answerContent: data.answer,
+        hasDirectButtons: !!(data.buttons && Array.isArray(data.buttons)),
+        directButtons: data.buttons,
+        hasDirectEmailPrompt: !!data.emailPrompt,
+        directEmailPrompt: data.emailPrompt,
+        willParse: data.answer || data,
+      });
       const parsed = parseBotResponse(data.answer || data);
-      
+
       console.log("✅ [PARSE DEBUG] Response parsed successfully:", {
         parsedMainText: parsed.mainText,
         parsedButtons: parsed.buttons,
@@ -976,7 +983,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
         parsedEmailPrompt: parsed.emailPrompt,
         hasContent: !!parsed.mainText,
         hasButtons: !!(parsed.buttons && parsed.buttons.length > 0),
-        hasEmailPrompt: !!parsed.emailPrompt
+        hasEmailPrompt: !!parsed.emailPrompt,
       });
       console.log("[PARSE DEBUG] Parsed response result:", parsed);
 
@@ -997,7 +1004,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
         messageEmailPrompt: newMessage.emailPrompt,
         messageBotMode: newMessage.botMode,
         messageUserEmail: newMessage.userEmail,
-        fullMessage: newMessage
+        fullMessage: newMessage,
       });
 
       console.log("📋 [STATE DEBUG] Adding message to messages array");
@@ -1007,7 +1014,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
           previousLength: msgs.length,
           newLength: newMessages.length,
           lastMessage: newMessages[newMessages.length - 1],
-          allMessages: newMessages
+          allMessages: newMessages,
         });
         return newMessages;
       });
