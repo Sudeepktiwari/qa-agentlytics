@@ -967,7 +967,7 @@ export async function GET(request: Request) {
         \`;
         
         const contentWrapper = document.createElement('div');
-        contentWrapper.style.cssText = 'display: flex; align-items: flex-start; max-width: 100%;';
+        contentWrapper.style.cssText = 'display: flex; align-items: flex-start; width: 100%;';
         
         const bubbleDiv = document.createElement('div');
         bubbleDiv.style.cssText = \`
