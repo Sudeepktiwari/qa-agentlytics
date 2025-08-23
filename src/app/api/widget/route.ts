@@ -1043,44 +1043,38 @@ export async function GET(request: Request) {
           msg.buttons.forEach((buttonText, index) => {
             const button = document.createElement('button');
             
-            // Add arrow icon to make it more enticing
-            const icon = document.createElement('span');
-            icon.textContent = '→';
-            icon.style.cssText = \`
-              margin-left: 8px;
-              transition: transform 0.3s ease;
-              display: inline-block;
+            // Add bullet point before text
+            const bulletSpan = document.createElement('span');
+            bulletSpan.textContent = '• ';
+            bulletSpan.style.cssText = \`
+              color: rgba(255, 255, 255, 0.7);
+              margin-right: 4px;
             \`;
             
             const textSpan = document.createElement('span');
             textSpan.textContent = buttonText;
             
+            button.appendChild(bulletSpan);
             button.appendChild(textSpan);
-            button.appendChild(icon);
             
             button.style.cssText = \`
-              background: #f1f1f1;
-              color: #333;
-              border: 2px solid #e5e7eb;
-              padding: 10px 16px;
-              margin: 6px 6px 6px 0;
-              border-radius: 20px;
+              background: transparent;
+              color: white;
+              border: 1px solid rgba(255, 255, 255, 0.3);
+              padding: 0;
+              margin: 2px 0;
+              border-radius: 4px;
               cursor: pointer;
               font-size: \${currentSize.fontSize};
-              font-weight: 500;
-              transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-              box-shadow: 0 2px 8px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.1);
-              position: relative;
-              overflow: hidden;
-              display: inline-flex;
-              align-items: center;
-              justify-content: center;
-              min-height: 40px;
-              text-align: center;
+              font-weight: 400;
+              transition: all 0.2s ease;
+              display: block;
+              width: 100%;
+              text-align: left;
               user-select: none;
-              transform: translateY(0);
+              padding: 6px 8px;
               opacity: 0;
-              animation: buttonFadeIn 0.5s ease forwards;
+              animation: buttonFadeIn 0.3s ease forwards;
               animation-delay: \${index * 0.1}s;
             \`;
             
@@ -1088,11 +1082,10 @@ export async function GET(request: Request) {
             setTimeout(() => {
               if (button.style.opacity === '0') {
                 button.style.opacity = '1';
-                button.style.transform = 'translateY(0) scale(1)';
               }
-            }, (index * 100) + 600); // Slightly after animation should complete
+            }, (index * 100) + 400);
             
-            // Add CSS keyframes for the fade-in animation
+            // Update keyframes for simpler animation
             if (!document.getElementById('appointy-button-styles')) {
               const style = document.createElement('style');
               style.id = 'appointy-button-styles';
@@ -1100,84 +1093,39 @@ export async function GET(request: Request) {
                 @keyframes buttonFadeIn {
                   from {
                     opacity: 0;
-                    transform: translateY(10px) scale(0.9);
                   }
                   to {
                     opacity: 1;
-                    transform: translateY(0) scale(1);
                   }
-                }
-                @keyframes buttonPulse {
-                  0%, 100% { transform: scale(1); }
-                  50% { transform: scale(1.05); }
                 }
               \`;
               document.head.appendChild(style);
             }
             
-            // Add a subtle shine effect
-            const shine = document.createElement('div');
-            shine.style.cssText = \`
-              position: absolute;
-              top: 0;
-              left: -100%;
-              width: 100%;
-              height: 100%;
-              background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-              transition: left 0.5s;
-              pointer-events: none;
-            \`;
-            button.appendChild(shine);
-            
             button.addEventListener('mouseenter', () => {
-              button.style.transform = 'translateY(-2px) scale(1.02)';
-              button.style.boxShadow = \`0 6px 20px rgba(0,0,0,0.12), 0 3px 6px rgba(0,0,0,0.15)\`;
-              button.style.background = \`#e5e7eb\`;
-              icon.style.transform = 'translateX(4px)';
-              shine.style.left = '100%';
+              button.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+              button.style.borderColor = 'rgba(255, 255, 255, 0.6)';
+              bulletSpan.style.color = 'white';
             });
             
             button.addEventListener('mouseleave', () => {
-              button.style.transform = 'translateY(0) scale(1)';
-              button.style.boxShadow = \`0 2px 8px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.1)\`;
-              button.style.background = \`#f1f1f1\`;
-              icon.style.transform = 'translateX(0)';
-              shine.style.left = '-100%';
+              button.style.backgroundColor = 'transparent';
+              button.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+              bulletSpan.style.color = 'rgba(255, 255, 255, 0.7)';
             });
             
             button.addEventListener('mousedown', () => {
-              button.style.transform = 'translateY(1px) scale(0.98)';
-              button.style.boxShadow = \`0 1px 4px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.1)\`;
+              button.style.backgroundColor = 'rgba(255, 255, 255, 0.2)';
             });
             
             button.addEventListener('mouseup', () => {
-              button.style.transform = 'translateY(-2px) scale(1.02)';
-              button.style.boxShadow = \`0 6px 20px \${currentTheme.primary}44, 0 3px 6px rgba(0,0,0,0.15)\`;
+              button.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
             });
             button.addEventListener('click', () => {
               console.log("🔘 [WIDGET BUTTON] Button clicked:", buttonText);
               resetUserActivity();
               sendMessage(buttonText);
             });
-            
-            // Add subtle pulse animation to draw attention after appearing
-            setTimeout(() => {
-              if (button.parentNode) { // Only if button still exists
-                // Ensure button is fully visible first
-                button.style.opacity = '1';
-                button.style.transform = 'translateY(0) scale(1)';
-                // Apply pulse animation without overriding other properties
-                button.style.animation = 'buttonPulse 2s ease-in-out 3';
-                setTimeout(() => {
-                  if (button.parentNode) {
-                    // Reset to default state instead of removing animation completely
-                    button.style.animation = 'none';
-                    button.style.opacity = '1';
-                    button.style.transform = 'translateY(0) scale(1)';
-                  }
-                }, 6000); // Remove pulse after 6 seconds
-              }
-            }, (index * 100) + 1000); // Start pulse 1 second after fade-in animation
             
             buttonsDiv.appendChild(button);
           });
