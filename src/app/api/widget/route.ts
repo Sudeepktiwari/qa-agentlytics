@@ -981,7 +981,6 @@ export async function GET(request: Request) {
           word-break: break-word;
           font-size: \${currentSize.fontSize};
           line-height: 1.4;
-          margin-right: 8px;
           flex: 1;
         \`;
         bubbleDiv.innerHTML = formatMessageText(msg.content);
@@ -1004,7 +1003,7 @@ export async function GET(request: Request) {
         \`;
         
         const contentWrapper = document.createElement('div');
-        contentWrapper.style.cssText = 'display: flex; align-items: flex-start; max-width: 70%;';
+        contentWrapper.style.cssText = 'display: flex; align-items: flex-start; max-width: 100%;';
         
         const botAvatar = createAvatar(true);
         
