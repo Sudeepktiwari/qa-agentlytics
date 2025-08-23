@@ -1031,8 +1031,12 @@ export async function GET(request: Request) {
         contentDiv.innerHTML = formatMessageText(msg.content);
         bubbleDiv.appendChild(contentDiv);
         
-        // Add buttons if present and no email prompt
-        if (msg.buttons && msg.buttons.length > 0 && (!msg.emailPrompt || !msg.emailPrompt.trim())) {
+        console.log("🔘 [WIDGET RENDER] Message buttons:", msg.buttons);
+        console.log("📧 [WIDGET RENDER] Message emailPrompt:", msg.emailPrompt);
+        
+        // Add buttons if present
+        if (msg.buttons && msg.buttons.length > 0) {
+          console.log("✅ [WIDGET RENDER] Rendering", msg.buttons.length, "buttons");
           const buttonsDiv = document.createElement('div');
           buttonsDiv.style.cssText = 'margin-top: 8px;';
           
