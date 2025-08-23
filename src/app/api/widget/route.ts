@@ -246,7 +246,6 @@ export async function GET(request: Request) {
       justify-content: center;
       font-size: 16px;
       font-weight: 500;
-      margin-right: 8px;
       overflow: hidden;
     \`;
     
@@ -1006,6 +1005,7 @@ export async function GET(request: Request) {
         contentWrapper.style.cssText = 'display: flex; align-items: flex-start; max-width: 100%;';
         
         const botAvatar = createAvatar(true);
+        botAvatar.style.marginRight = '8px';
         
         const bubbleDiv = document.createElement('div');
         bubbleDiv.style.cssText = \`
