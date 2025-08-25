@@ -1110,10 +1110,50 @@ export async function GET(request: Request) {
     
     console.log('📤 [WIDGET MIRROR] Sending section context to API:', sectionData);
     
+    // Generate a contextual question first
+    const questions = [];
+    const { sectionName, sectionContent } = sectionData;
+    
+    // Generate questions based on section
+    if (sectionName.includes('pricing') || sectionContent.hasPricing) {
+      questions.push(
+        "Which pricing plan fits your team size?",
+        "Would you like me to calculate the ROI for your use case?",
+        "Do you have questions about what's included in each plan?"
+      );
+    } else if (sectionName.includes('feature')) {
+      questions.push(
+        "Which of these features interests you most?",
+        "Would you like to see how this feature works?",
+        "How do you currently handle this in your workflow?"
+      );
+    } else if (sectionName.includes('testimonial')) {
+      questions.push(
+        "Are you curious about results like these for your business?",
+        "Would you like to speak with one of these customers?",
+        "What specific outcomes are you hoping to achieve?"
+      );
+    } else if (sectionName.includes('contact') || sectionName.includes('form')) {
+      questions.push(
+        "Would you like help filling out this form?",
+        "Do you have any questions before getting started?",
+        "Ready to see how this could work for your team?"
+      );
+    } else {
+      questions.push(
+        "What questions do you have about this section?",
+        "Would you like me to explain this in more detail?",
+        "How does this relate to your current challenges?"
+      );
+    }
+    
+    const selectedQuestion = questions[0]; // Use first question for now
+    
     try {
       const data = await sendApiRequest('chat', {
         sessionId,
         pageUrl: currentPageUrl,
+        question: selectedQuestion, // Add the generated question
         sectionContext: sectionData,
         contextual: true,
         hasBeenGreeted: hasBeenGreeted,
@@ -2323,9 +2363,10 @@ export async function GET(request: Request) {
           viewportContext: viewportContext
         };
         
-        generateContextualQuestions(sectionData);
-        console.log('🤔 [WIDGET QUESTIONS] Generated questions for current view');
-        return 'Questions generated for current viewport';
+        // Send the generated question to API immediately
+        sendSectionContextToAPI(sectionData);
+        console.log('🤔 [WIDGET QUESTIONS] Generated and sent questions for current view');
+        return 'Questions generated and sent for current viewport';
       },
       
       getViewportContent: () => {
@@ -2342,7 +2383,28 @@ export async function GET(request: Request) {
             timeOnPage: Date.now() - (window.appointyPageLoadTime || Date.now())
           };
           
-          sendContextualQuestion(customQuestion, sectionData);
+          // Send custom question to API
+          sendApiRequest('chat', {
+            sessionId,
+            pageUrl: currentPageUrl,
+            question: customQuestion,
+            sectionContext: sectionData,
+            contextual: true,
+            hasBeenGreeted: hasBeenGreeted,
+            proactiveMessageCount: proactiveMessageCount
+          }).then(data => {
+            if (data.answer && data.answer.trim()) {
+              sendProactiveMessage(data.answer);
+            }
+          }).catch(error => {
+            console.error('❌ [WIDGET QUESTIONS] Failed to send custom question:', error);
+          });
+          
+          console.log('💬 [WIDGET QUESTIONS] Sent custom contextual question:', customQuestion);
+          return 'Custom question sent: ' + customQuestion;
+        }
+        return 'No question provided';
+      },
           return 'Custom question sent';
         }
         return 'No question provided';

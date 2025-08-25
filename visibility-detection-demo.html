@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Visibility Detection Demo</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 20px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background: #f5f5f5;
+      }
+
+      .demo-section {
+        min-height: 80vh;
+        margin: 20px 0;
+        padding: 40px;
+        border-radius: 12px;
+        position: relative;
+        border: 3px solid transparent;
+        transition: all 0.3s ease;
+      }
+
+      .demo-section.visible {
+        border-color: #4caf50;
+        box-shadow: 0 0 20px rgba(76, 175, 80, 0.3);
+      }
+
+      .demo-section.partially-visible {
+        border-color: #ff9800;
+        box-shadow: 0 0 20px rgba(255, 152, 0, 0.3);
+      }
+
+      .section-hero {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+      }
+
+      .section-features {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+      }
+
+      .section-pricing {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+      }
+
+      .section-testimonials {
+        background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        color: white;
+      }
+
+      .section-contact {
+        background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        color: white;
+      }
+
+      .debug-overlay {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: rgba(0, 0, 0, 0.9);
+        color: white;
+        padding: 20px;
+        border-radius: 8px;
+        max-width: 400px;
+        backdrop-filter: blur(10px);
+        z-index: 1000;
+        font-family: monospace;
+        font-size: 12px;
+      }
+
+      .visibility-indicator {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 10px;
+        border-radius: 6px;
+        font-family: monospace;
+        font-size: 11px;
+      }
+
+      .viewport-indicator {
+        position: fixed;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: rgba(255, 0, 0, 0.8);
+        z-index: 999;
+        transition: top 0.1s;
+      }
+
+      .viewport-indicator.top {
+        top: 0;
+      }
+
+      .viewport-indicator.bottom {
+        bottom: 0;
+      }
+
+      .element-highlight {
+        outline: 2px solid #ff0000;
+        outline-offset: 2px;
+        background: rgba(255, 0, 0, 0.1);
+      }
+
+      .visible-elements-list {
+        margin-top: 15px;
+        max-height: 300px;
+        overflow-y: auto;
+      }
+
+      .visible-element {
+        background: rgba(76, 175, 80, 0.2);
+        margin: 3px 0;
+        padding: 5px;
+        border-radius: 3px;
+        font-size: 10px;
+      }
+
+      h1,
+      h2 {
+        margin: 0 0 20px 0;
+      }
+
+      p {
+        margin: 15px 0;
+        line-height: 1.6;
+      }
+
+      .price-box {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 20px;
+        border-radius: 8px;
+        margin: 20px 0;
+        text-align: center;
+        backdrop-filter: blur(5px);
+      }
+
+      .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin: 20px 0;
+      }
+
+      .feature-card {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 20px;
+        border-radius: 8px;
+        backdrop-filter: blur(5px);
+      }
+
+      button {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: 2px solid rgba(255, 255, 255, 0.5);
+        padding: 12px 24px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        margin: 10px 10px 10px 0;
+        transition: all 0.3s;
+      }
+
+      button:hover {
+        background: rgba(255, 255, 255, 0.3);
+        border-color: white;
+      }
+
+      .contact-form {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 30px;
+        border-radius: 8px;
+        backdrop-filter: blur(5px);
+      }
+
+      .form-group {
+        margin: 15px 0;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 600;
+      }
+
+      .form-group input,
+      .form-group textarea {
+        width: 100%;
+        padding: 10px;
+        border: none;
+        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.9);
+        color: #333;
+        box-sizing: border-box;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Viewport indicators -->
+    <div class="viewport-indicator top" id="viewport-top"></div>
+    <div class="viewport-indicator bottom" id="viewport-bottom"></div>
+
+    <!-- Debug overlay -->
+    <div class="debug-overlay">
+      <h4>🔍 Visibility Detection</h4>
+      <div>
+        <strong>Current Section:</strong> <span id="current-section">none</span
+        ><br />
+        <strong>Scroll %:</strong> <span id="scroll-percentage">0</span>%<br />
+        <strong>Viewport Height:</strong>
+        <span id="viewport-height">0</span>px<br />
+        <strong>Page Height:</strong> <span id="page-height">0</span>px
+      </div>
+
+      <div class="visible-elements-list">
+        <strong>Visible Elements (>30%):</strong>
+        <div id="visible-elements"></div>
+      </div>
+
+      <button onclick="highlightVisibleElements()">Highlight Visible</button>
+      <button onclick="clearHighlights()">Clear Highlights</button>
+    </div>
+
+    <!-- Demo sections -->
+    <section class="demo-section section-hero" data-section="hero" id="hero">
+      <div class="visibility-indicator" data-for="hero"></div>
+      <h1>🚀 Hero Section</h1>
+      <p>
+        This is the hero section of our demo page. When this section is visible,
+        the chatbot knows you're looking at the main value proposition.
+      </p>
+      <p>The visibility detection algorithm checks:</p>
+      <ul>
+        <li>✅ If at least 30% of this section is in the viewport</li>
+        <li>✅ The element's getBoundingClientRect() position</li>
+        <li>✅ Scroll position and viewport dimensions</li>
+      </ul>
+      <button>Get Started</button>
+      <button>Learn More</button>
+    </section>
+
+    <section
+      class="demo-section section-features"
+      data-section="features"
+      id="features"
+    >
+      <div class="visibility-indicator" data-for="features"></div>
+      <h1>⚡ Features Section</h1>
+      <p>
+        When you scroll to the features section, the system detects specific
+        elements:
+      </p>
+
+      <div class="feature-grid">
+        <div class="feature-card">
+          <h3>🔄 Real-time Sync</h3>
+          <p>This feature card text gets extracted and analyzed.</p>
+        </div>
+        <div class="feature-card">
+          <h3>📊 Analytics</h3>
+          <p>Each visible element is catalogued with its content.</p>
+        </div>
+        <div class="feature-card">
+          <h3>🔐 Security</h3>
+          <p>The system knows which features you're actually looking at.</p>
+        </div>
+      </div>
+
+      <p>
+        The algorithm identifies: headings, paragraphs, buttons, and special
+        elements like pricing or forms.
+      </p>
+      <button>Explore Features</button>
+    </section>
+
+    <section
+      class="demo-section section-pricing"
+      data-section="pricing"
+      id="pricing"
+    >
+      <div class="visibility-indicator" data-for="pricing"></div>
+      <h1>💰 Pricing Section</h1>
+      <p>
+        This section contains pricing information that the system automatically
+        detects:
+      </p>
+
+      <div class="price-box" data-price="29">
+        <h2>Professional Plan</h2>
+        <div class="price">$29/month</div>
+        <p>The system detects pricing elements through:</p>
+        <ul>
+          <li>🎯 [data-price] attributes</li>
+          <li>🎯 .price class names</li>
+          <li>🎯 Text patterns like "$29"</li>
+        </ul>
+      </div>
+
+      <button>Start Free Trial</button>
+      <button>Contact Sales</button>
+    </section>
+
+    <section
+      class="demo-section section-testimonials"
+      data-section="testimonials"
+      id="testimonials"
+    >
+      <div class="visibility-indicator" data-for="testimonials"></div>
+      <h1>💬 Testimonials Section</h1>
+      <p>
+        Customer testimonials are detected and the chatbot can ask relevant
+        questions about customer success.
+      </p>
+
+      <blockquote
+        style="
+          background: rgba(255, 255, 255, 0.2);
+          padding: 20px;
+          border-radius: 8px;
+          margin: 20px 0;
+        "
+      >
+        "This system increased our conversion rate by 300%. The contextual
+        questions really work!"
+        <footer>- Sarah Johnson, CEO</footer>
+      </blockquote>
+
+      <p>When this section is visible, the bot knows to ask about:</p>
+      <ul>
+        <li>🎯 Customer success stories</li>
+        <li>🎯 ROI expectations</li>
+        <li>🎯 Similar use cases</li>
+      </ul>
+    </section>
+
+    <section
+      class="demo-section section-contact"
+      data-section="contact"
+      id="contact"
+    >
+      <div class="visibility-indicator" data-for="contact"></div>
+      <h1>📞 Contact Section</h1>
+      <p>
+        Forms are automatically detected and the chatbot can offer assistance:
+      </p>
+
+      <div class="contact-form">
+        <form>
+          <div class="form-group">
+            <label for="name">Full Name</label>
+            <input type="text" id="name" name="name" />
+          </div>
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" />
+          </div>
+          <div class="form-group">
+            <label for="message">Message</label>
+            <textarea id="message" name="message"></textarea>
+          </div>
+          <button type="submit">Send Message</button>
+        </form>
+      </div>
+    </section>
+
+    <script>
+      // Simulate the chatbot's visibility detection system
+      let currentSection = "none";
+      let visibleElements = [];
+
+      // Mock the getViewportContext function from the widget
+      function getViewportContext() {
+        const viewportHeight = window.innerHeight;
+        const viewportTop = window.scrollY;
+        const viewportBottom = viewportTop + viewportHeight;
+        const scrollPercentage = Math.round(
+          (window.scrollY /
+            (document.documentElement.scrollHeight - window.innerHeight)) *
+            100
+        );
+
+        // Find all visible elements (same logic as the widget)
+        const visibleElements = [];
+        const elements = document.querySelectorAll(
+          "h1, h2, h3, h4, h5, h6, p, form, button, a, [data-price], .price, .pricing, .feature"
+        );
+
+        elements.forEach((el) => {
+          const rect = el.getBoundingClientRect();
+          const elementTop = viewportTop + rect.top;
+          const elementBottom = elementTop + rect.height;
+
+          // Check if element is at least 30% visible in viewport
+          const visibleHeight =
+            Math.min(elementBottom, viewportBottom) -
+            Math.max(elementTop, viewportTop);
+          const visibilityPercentage = visibleHeight / rect.height;
+
+          if (visibilityPercentage > 0.3) {
+            visibleElements.push({
+              element: el,
+              tagName: el.tagName.toLowerCase(),
+              text: el.textContent.trim().substring(0, 100),
+              className: el.className,
+              id: el.id,
+              isButton: el.tagName.toLowerCase() === "button",
+              isForm: el.tagName.toLowerCase() === "form",
+              isPricing:
+                el.className.includes("price") || el.hasAttribute("data-price"),
+              visibilityPercentage: Math.round(visibilityPercentage * 100),
+            });
+          }
+        });
+
+        return {
+          visibleElements: visibleElements,
+          scrollDepth: scrollPercentage,
+          pageHeight: document.documentElement.scrollHeight,
+          viewportHeight: viewportHeight,
+        };
+      }
+
+      // Setup intersection observer (same as widget)
+      const observerOptions = {
+        root: null,
+        rootMargin: "-20% 0px -20% 0px",
+        threshold: 0.3,
+      };
+
+      const sectionObserver = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          const element = entry.target;
+          const sectionName =
+            element.dataset.section || element.id || "unknown";
+
+          if (entry.isIntersecting) {
+            element.classList.add("visible");
+            if (sectionName !== currentSection) {
+              currentSection = sectionName;
+              console.log("📍 Entered section:", sectionName);
+              updateDebugInfo();
+            }
+          } else {
+            element.classList.remove("visible");
+            if (entry.intersectionRatio > 0) {
+              element.classList.add("partially-visible");
+            } else {
+              element.classList.remove("partially-visible");
+            }
+          }
+        });
+      }, observerOptions);
+
+      // Observe all demo sections
+      document.querySelectorAll(".demo-section").forEach((section) => {
+        sectionObserver.observe(section);
+      });
+
+      // Update debug info
+      function updateDebugInfo() {
+        const context = getViewportContext();
+
+        document.getElementById("current-section").textContent = currentSection;
+        document.getElementById("scroll-percentage").textContent =
+          context.scrollDepth;
+        document.getElementById("viewport-height").textContent =
+          context.viewportHeight;
+        document.getElementById("page-height").textContent = context.pageHeight;
+
+        // Update visible elements list
+        const visibleElementsDiv = document.getElementById("visible-elements");
+        visibleElementsDiv.innerHTML = "";
+
+        context.visibleElements.slice(0, 10).forEach((el) => {
+          const div = document.createElement("div");
+          div.className = "visible-element";
+          div.innerHTML = `
+                    <strong>${el.tagName}</strong> (${el.visibilityPercentage}% visible)<br>
+                    <em>${el.text}</em>
+                `;
+          visibleElementsDiv.appendChild(div);
+        });
+
+        // Update visibility indicators
+        document
+          .querySelectorAll(".visibility-indicator")
+          .forEach((indicator) => {
+            const sectionId = indicator.dataset.for;
+            const section = document.getElementById(sectionId);
+            const rect = section.getBoundingClientRect();
+            const visibilityPercentage = Math.max(
+              0,
+              Math.min(
+                100,
+                ((window.innerHeight - Math.max(0, -rect.top)) /
+                  window.innerHeight) *
+                  100
+              )
+            );
+
+            indicator.innerHTML = `
+                    Section: ${sectionId}<br>
+                    Visibility: ${Math.round(visibilityPercentage)}%<br>
+                    IntersectionObserver: ${
+                      section.classList.contains("visible")
+                        ? "✅ Visible"
+                        : "❌ Not visible"
+                    }
+                `;
+          });
+      }
+
+      // Highlight visible elements
+      function highlightVisibleElements() {
+        clearHighlights();
+        const context = getViewportContext();
+        context.visibleElements.forEach((el) => {
+          el.element.classList.add("element-highlight");
+        });
+      }
+
+      function clearHighlights() {
+        document.querySelectorAll(".element-highlight").forEach((el) => {
+          el.classList.remove("element-highlight");
+        });
+      }
+
+      // Update on scroll
+      window.addEventListener("scroll", () => {
+        updateDebugInfo();
+      });
+
+      // Initial update
+      updateDebugInfo();
+
+      // Simulate viewport indicators
+      setInterval(() => {
+        const viewportTop = window.scrollY;
+        const viewportBottom = viewportTop + window.innerHeight;
+
+        document.getElementById("viewport-top").style.top = "0px";
+        document.getElementById("viewport-bottom").style.bottom = "0px";
+      }, 100);
+    </script>
+  </body>
+</html>
