@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Console Injection Test</title>
+  </head>
+  <body>
+    <h1>Console Injection Test</h1>
+    <p>Open console and run the injection script to test widget insertion</p>
+
+    <div id="status">Ready to test</div>
+
+    <script>
+      // Monitor for JavaScript errors
+      window.addEventListener("error", (event) => {
+        document.getElementById("status").innerHTML =
+          "❌ JavaScript Error: " + event.message;
+        console.error("JS Error:", event.error);
+      });
+
+      console.log("🚀 Page loaded. Run this in console:");
+      console.log(`
+(function() {
+    const s = document.createElement('script');
+    s.src = 'https://sample-chatbot-nine.vercel.app/api/widget';
+    s.setAttribute('data-api-key', 'ak_e8a971aee600130a0dcc93ca0fbb8831e366c4566f6b80426991b4ed6c8f9848');
+    s.setAttribute('data-theme', 'blue');
+    s.setAttribute('data-size', 'large');
+    s.setAttribute('data-voice-enabled', 'false');
+    s.setAttribute('data-voice-gender', 'female');
+    s.setAttribute('data-auto-open-proactive', 'true');
+    document.head.appendChild(s);
+    console.log('✅ Widget script injected');
+})();
+        `);
+    </script>
+  </body>
+</html>

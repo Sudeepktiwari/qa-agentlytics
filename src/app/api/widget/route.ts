@@ -75,7 +75,9 @@ export async function GET(request: Request) {
     voiceGender: getAttr('data-voice-gender', 'female'), // 'male' or 'female'
     enhancedDetection: getBoolAttr('data-enhanced-detection', true), // Enable enhanced page detection by default
     botAvatar: getAttr('data-bot-avatar', null), // Custom bot avatar URL
-    userAvatar: getAttr('data-user-avatar', null) // Custom user avatar URL (optional)
+    userAvatar: getAttr('data-user-avatar', null), // Custom user avatar URL (optional)
+    mirrorMode: getBoolAttr('data-mirror-mode', true), // Enable live page mirror
+    mirrorScale: getAttr('data-mirror-scale', 'auto') // 'auto', 'fit', or custom scale like '0.3'
   };
   
   // Theme configurations
@@ -210,6 +212,15 @@ export async function GET(request: Request) {
   let currentPageUrl = window.location.href;
   let isPageContextLoaded = false;
   let pageChangeCheckInterval = null;
+
+  // Mirror iframe variables
+  let mirrorIframe = null;
+  let mirrorEnabled = config.mirrorMode && window.innerWidth > 768; // Disable on mobile
+  let lastScrollX = window.scrollX;
+  let lastScrollY = window.scrollY;
+  let scrollRaf = null;
+  let currentViewportSection = null;
+  let sectionObserver = null;
 
   // Messages array
   let messages = [];
@@ -599,6 +610,298 @@ export async function GET(request: Request) {
     };
   }
   
+  // Initialize mirror iframe
+  function initializeMirror() {
+    if (!mirrorEnabled || !isOpen) return;
+    
+    console.log('🔍 [WIDGET MIRROR] Initializing page mirror');
+    
+    mirrorIframe = document.getElementById('appointy-mirror');
+    if (!mirrorIframe) return;
+    
+    // Load current page in mirror
+    mirrorIframe.src = window.location.href;
+    
+    // Setup scroll synchronization
+    setupScrollSync();
+    
+    // Setup section observation
+    setupSectionObserver();
+    
+    // Scale mirror if needed
+    setTimeout(() => {
+      scaleMirror();
+    }, 1000);
+    
+    console.log('✅ [WIDGET MIRROR] Mirror initialized');
+  }
+  
+  // Setup scroll synchronization
+  function setupScrollSync() {
+    if (!mirrorIframe) return;
+    
+    console.log('🔄 [WIDGET MIRROR] Setting up scroll sync');
+    
+    const sendScrollUpdate = () => {
+      if (!mirrorIframe || !mirrorIframe.contentWindow) return;
+      
+      const scrollData = {
+        type: 'sync_scroll',
+        x: window.scrollX,
+        y: window.scrollY,
+        windowHeight: window.innerHeight,
+        documentHeight: document.documentElement.scrollHeight,
+        timestamp: Date.now()
+      };
+      
+      try {
+        mirrorIframe.contentWindow.postMessage(scrollData, window.location.origin);
+      } catch (error) {
+        console.warn('[WIDGET MIRROR] Failed to send scroll update:', error);
+      }
+      
+      scrollRaf = null;
+    };
+    
+    const onScroll = () => {
+      const dx = Math.abs(window.scrollX - lastScrollX);
+      const dy = Math.abs(window.scrollY - lastScrollY);
+      
+      lastScrollX = window.scrollX;
+      lastScrollY = window.scrollY;
+      
+      if (!scrollRaf && (dx + dy) > 0) {
+        scrollRaf = requestAnimationFrame(sendScrollUpdate);
+      }
+      
+      // Check if user entered a new section
+      checkViewportSection();
+    };
+    
+    window.addEventListener('scroll', onScroll, { passive: true });
+    
+    // Send initial scroll position
+    setTimeout(sendScrollUpdate, 500);
+  }
+  
+  // Setup section observation for contextual messages
+  function setupSectionObserver() {
+    if (!window.IntersectionObserver) return;
+    
+    console.log('👁️ [WIDGET MIRROR] Setting up section observer');
+    
+    // Observe major page sections
+    const sectionsToObserve = [
+      'header', 'nav', 'main', 'footer',
+      '[data-section]', '.section', '.hero', '.pricing', '.features', '.testimonials', '.contact',
+      'section', 'article', '.about', '.services', '.products'
+    ];
+    
+    const observerOptions = {
+      root: null,
+      rootMargin: '-20% 0px -20% 0px', // Only trigger when section is well within viewport
+      threshold: 0.3
+    };
+    
+    sectionObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const element = entry.target;
+          const sectionName = getSectionName(element);
+          
+          if (sectionName !== currentViewportSection) {
+            console.log('📍 [WIDGET MIRROR] User entered section:', sectionName);
+            currentViewportSection = sectionName;
+            onSectionEnter(sectionName, element);
+          }
+        }
+      });
+    }, observerOptions);
+    
+    // Start observing relevant elements
+    sectionsToObserve.forEach(selector => {
+      document.querySelectorAll(selector).forEach(element => {
+        sectionObserver.observe(element);
+      });
+    });
+  }
+  
+  // Get meaningful section name
+  function getSectionName(element) {
+    // Check for data attributes first
+    if (element.dataset.section) return element.dataset.section;
+    if (element.dataset.component) return element.dataset.component;
+    
+    // Check for ID
+    if (element.id) return element.id;
+    
+    // Check for class names that indicate purpose
+    const meaningfulClasses = ['hero', 'pricing', 'features', 'testimonials', 'contact', 'about', 'services', 'products'];
+    for (const className of meaningfulClasses) {
+      if (element.classList.contains(className)) return className;
+    }
+    
+    // Check for header text content
+    const heading = element.querySelector('h1, h2, h3');
+    if (heading && heading.textContent) {
+      return heading.textContent.toLowerCase().replace(/[^a-z0-9]/g, '-').substring(0, 20);
+    }
+    
+    // Fallback to tag name
+    return element.tagName.toLowerCase();
+  }
+  
+  // Handle section entrance
+  function onSectionEnter(sectionName, element) {
+    // Send contextual data to API for potential proactive messages
+    const sectionData = {
+      sectionName,
+      sectionContent: extractSectionContent(element),
+      scrollPosition: window.scrollY,
+      scrollPercentage: Math.round((window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100),
+      timeOnPage: Date.now() - (window.appointyPageLoadTime || Date.now())
+    };
+    
+    // Debounce section-based proactive messages
+    clearTimeout(window.appointySectionTimeout);
+    window.appointySectionTimeout = setTimeout(() => {
+      sendSectionContextToAPI(sectionData);
+    }, 2000); // Wait 2 seconds before sending section context
+  }
+  
+  // Extract meaningful content from section
+  function extractSectionContent(element) {
+    const content = {
+      headings: [],
+      text: '',
+      links: [],
+      hasForm: false,
+      hasPricing: false,
+      hasVideo: false
+    };
+    
+    // Extract headings
+    element.querySelectorAll('h1, h2, h3, h4').forEach(h => {
+      if (h.textContent.trim()) content.headings.push(h.textContent.trim());
+    });
+    
+    // Extract meaningful text (first paragraph or description)
+    const firstParagraph = element.querySelector('p');
+    if (firstParagraph) content.text = firstParagraph.textContent.trim().substring(0, 200);
+    
+    // Check for special elements
+    content.hasForm = element.querySelector('form') !== null;
+    content.hasPricing = element.querySelector('[class*="price"], [data-price]') !== null;
+    content.hasVideo = element.querySelector('video, iframe[src*="youtube"], iframe[src*="vimeo"]') !== null;
+    
+    // Extract call-to-action links
+    element.querySelectorAll('a').forEach(link => {
+      const text = link.textContent.trim();
+      if (text && (text.toLowerCase().includes('contact') || text.toLowerCase().includes('buy') || 
+                   text.toLowerCase().includes('sign up') || text.toLowerCase().includes('get started'))) {
+        content.links.push(text);
+      }
+    });
+    
+    return content;
+  }
+  
+  // Send section context to API
+  async function sendSectionContextToAPI(sectionData) {
+    if (!isOpen || followupSent) return; // Don't spam if chat is closed or already sent followup
+    
+    console.log('📤 [WIDGET MIRROR] Sending section context to API:', sectionData);
+    
+    try {
+      const data = await sendApiRequest('chat', {
+        sessionId,
+        pageUrl: currentPageUrl,
+        sectionContext: sectionData,
+        contextual: true,
+        hasBeenGreeted: hasBeenGreeted,
+        proactiveMessageCount: proactiveMessageCount
+      });
+      
+      if (data.answer && data.answer.trim()) {
+        console.log('🎯 [WIDGET MIRROR] Received contextual message for section:', sectionData.sectionName);
+        sendProactiveMessage(data.answer);
+      }
+    } catch (error) {
+      console.error('❌ [WIDGET MIRROR] Failed to send section context:', error);
+    }
+  }
+  
+  // Scale mirror to fit widget
+  function scaleMirror() {
+    if (!mirrorIframe || !mirrorEnabled) return;
+    
+    const container = mirrorIframe.parentElement;
+    if (!container) return;
+    
+    const containerWidth = container.clientWidth;
+    const containerHeight = container.clientHeight;
+    
+    let scale;
+    
+    if (config.mirrorScale === 'fit') {
+      // Scale to fit entire page
+      const pageWidth = document.documentElement.scrollWidth;
+      const pageHeight = document.documentElement.scrollHeight;
+      scale = Math.min(containerWidth / pageWidth, containerHeight / pageHeight);
+    } else if (config.mirrorScale === 'auto') {
+      // Scale to show current viewport nicely
+      scale = Math.min(containerWidth / window.innerWidth, containerHeight / window.innerHeight) * 0.8;
+    } else {
+      // Custom scale
+      scale = parseFloat(config.mirrorScale) || 0.3;
+    }
+    
+    scale = Math.max(0.1, Math.min(1, scale)); // Clamp between 0.1 and 1
+    
+    mirrorIframe.style.transform = \`scale(\${scale})\`;
+    mirrorIframe.style.transformOrigin = '0 0';
+    
+    console.log('🔍 [WIDGET MIRROR] Mirror scaled to:', scale);
+  }
+  
+  // Check current viewport section without intersection observer
+  function checkViewportSection() {
+    // Simple fallback for immediate feedback
+    const viewportCenter = window.scrollY + (window.innerHeight / 2);
+    const sections = document.querySelectorAll('section, [data-section], .section');
+    
+    for (const section of sections) {
+      const rect = section.getBoundingClientRect();
+      const sectionTop = window.scrollY + rect.top;
+      const sectionBottom = sectionTop + rect.height;
+      
+      if (viewportCenter >= sectionTop && viewportCenter <= sectionBottom) {
+        const sectionName = getSectionName(section);
+        if (sectionName !== currentViewportSection) {
+          currentViewportSection = sectionName;
+          // Don't trigger proactive message here to avoid spam
+        }
+        break;
+      }
+    }
+  }
+  
+  // Toggle mirror visibility
+  function toggleMirror() {
+    if (!mirrorIframe) return;
+    
+    const isVisible = mirrorIframe.style.display !== 'none';
+    mirrorIframe.style.display = isVisible ? 'none' : 'block';
+    
+    const toggleBtn = document.getElementById('appointy-mirror-toggle');
+    if (toggleBtn) {
+      toggleBtn.innerHTML = isVisible ? '🙈' : '👁️';
+      toggleBtn.title = isVisible ? 'Show Mirror View' : 'Hide Mirror View';
+    }
+    
+    console.log('👁️ [WIDGET MIRROR] Mirror toggled:', !isVisible);
+  }
+  
   // Update bubble to show notification when there are unread messages
   function updateBubble() {
     const unreadCount = messages.filter(msg => msg.role === 'assistant').length;
@@ -613,20 +916,42 @@ export async function GET(request: Request) {
   
   // Create widget HTML
   function createWidgetHTML() {
+    const mirrorHTML = mirrorEnabled ? \`
+      <iframe id="appointy-mirror" 
+              class="appointy-mirror"
+              sandbox="allow-same-origin allow-scripts"
+              src="" 
+              loading="lazy"
+              style="
+                position: absolute;
+                inset: 0;
+                border: 0;
+                width: 100%;
+                height: 100%;
+                pointer-events: none;
+                opacity: 0.4;
+                filter: blur(0.5px);
+                transform-origin: 0 0;
+                background: #f8f9fa;
+              "></iframe>
+    \` : '';
+
     return \`
-      <div style="display: flex; flex-direction: column; height: 100%; background: white; border-radius: 12px; overflow: hidden;">
-        <div style="background: \${currentTheme.primary}; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center;">
+      <div style="display: flex; flex-direction: column; height: 100%; background: white; border-radius: 12px; overflow: hidden; position: relative;">
+        \${mirrorHTML}
+        <div style="background: \${currentTheme.primary}; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 10; backdrop-filter: blur(10px); background: rgba(\${hexToRgb(currentTheme.primary)}, 0.95);">
           <div style="display: flex; align-items: center; gap: 12px;">
             <h3 style="margin: 0; font-size: 16px; font-weight: 600;">\${config.chatTitle}</h3>
             <div id="appointy-bot-mode-indicator" style="width: 12px; height: 12px; border-radius: 50%; background-color: #7b1fa2; flex-shrink: 0;" title="Lead Mode">
             </div>
           </div>
           <div style="display: flex; gap: 8px; align-items: center;">
+            \${mirrorEnabled ? \`<button id="appointy-mirror-toggle" style="background: none; border: none; color: white; font-size: 16px; cursor: pointer; padding: 4px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 4px;" title="Toggle Mirror View">👁️</button>\` : ''}
             <button id="appointy-settings-btn" style="background: none; border: none; color: white; font-size: 18px; cursor: pointer; padding: 4px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 4px;" title="Voice Settings">⚙️</button>
             <button id="appointy-close-btn" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer; padding: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">×</button>
           </div>
         </div>
-        <div id="appointy-settings" style="display: none; background: #f8f9fa; padding: 12px; border-bottom: 1px solid #e5e7eb;">
+        <div id="appointy-settings" style="display: none; background: rgba(248, 249, 250, 0.95); backdrop-filter: blur(10px); padding: 12px; border-bottom: 1px solid #e5e7eb; position: relative; z-index: 10;">
           <div style="margin-bottom: 8px; font-size: 14px; font-weight: 500; color: #374151;">Voice Settings</div>
           <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
             <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: #6b7280;">
@@ -645,11 +970,20 @@ export async function GET(request: Request) {
               Male
             </label>
           </div>
+          \${mirrorEnabled ? \`
+            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
+              <div style="margin-bottom: 8px; font-size: 14px; font-weight: 500; color: #374151;">Mirror Settings</div>
+              <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: #6b7280;">
+                <input type="checkbox" id="appointy-mirror-enabled" checked style="margin: 0;">
+                Enable Page Mirror
+              </label>
+            </div>
+          \` : ''}
         </div>
-        <div id="appointy-messages" style="flex: 1; padding: 15px; overflow-y: auto; max-height: calc(100% - 140px); background: white; font-size: \${currentSize.fontSize};">
+        <div id="appointy-messages" style="flex: 1; padding: 15px; overflow-y: auto; max-height: calc(100% - 140px); background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); font-size: \${currentSize.fontSize}; position: relative; z-index: 5;">
           <div style="color: #666; font-size: \${currentSize.fontSize};">Loading...</div>
         </div>
-        <div style="padding: 15px; border-top: 1px solid #e5e7eb; background: white;">
+        <div style="padding: 15px; border-top: 1px solid #e5e7eb; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); position: relative; z-index: 10;">
           <div style="display: flex; gap: 8px;">
             <input 
               id="appointy-input" 
@@ -667,6 +1001,16 @@ export async function GET(request: Request) {
         </div>
       </div>
     \`;
+  }
+  
+  // Helper function to convert hex to RGB
+  function hexToRgb(hex) {
+    const result = /^#?([a-f\\d]{2})([a-f\\d]{2})([a-f\\d]{2})$/i.exec(hex);
+    if (!result) return '0, 112, 243'; // Default blue fallback
+    const r = parseInt(result[1], 16);
+    const g = parseInt(result[2], 16);
+    const b = parseInt(result[3], 16);
+    return \`\${r}, \${g}, \${b}\`;
   }
   
   // Clear followup timer
@@ -1245,6 +1589,14 @@ export async function GET(request: Request) {
     
     if (isOpen) {
       console.log('[Widget] Widget opened');
+      
+      // Initialize mirror if enabled
+      if (mirrorEnabled) {
+        setTimeout(() => {
+          initializeMirror();
+        }, 100);
+      }
+      
       // If no messages exist, initialize chat
       if (messages.length === 0) {
         console.log('[Widget] No messages, initializing chat');
@@ -1320,6 +1672,13 @@ export async function GET(request: Request) {
       }
     });
     
+    // Mirror toggle button
+    document.addEventListener('click', (e) => {
+      if (e.target.id === 'appointy-mirror-toggle') {
+        toggleMirror();
+      }
+    });
+    
     // Voice settings change handlers
     document.addEventListener('change', (e) => {
       if (e.target.id === 'appointy-voice-enabled') {
@@ -1340,6 +1699,18 @@ export async function GET(request: Request) {
             'Female voice selected' : 'Male voice selected';
           setTimeout(() => speakText(testMessage, false), 200);
         }
+      }
+      
+      if (e.target.id === 'appointy-mirror-enabled') {
+        mirrorEnabled = e.target.checked;
+        if (mirrorEnabled && isOpen) {
+          setTimeout(() => {
+            initializeMirror();
+          }, 100);
+        } else if (!mirrorEnabled && mirrorIframe) {
+          mirrorIframe.style.display = 'none';
+        }
+        console.log('Mirror enabled:', mirrorEnabled);
       }
     });
     
@@ -1400,6 +1771,9 @@ export async function GET(request: Request) {
   function init() {
     console.log("🚀 [WIDGET INIT] Starting widget initialization...");
     
+    // Track page load time for analytics
+    window.appointyPageLoadTime = Date.now();
+    
     // Add widget HTML
     widgetContainer.innerHTML = createWidgetHTML();
     
@@ -1422,6 +1796,11 @@ export async function GET(request: Request) {
       initializeVoices();
     }
     
+    // Add mirror iframe message listener
+    if (mirrorEnabled) {
+      setupMirrorMessageListener();
+    }
+    
     // Start page monitoring and load initial context (if enhanced detection is enabled)
     setTimeout(() => {
       if (config.enhancedDetection) {
@@ -1432,8 +1811,33 @@ export async function GET(request: Request) {
       }
     }, 1000);
     
-    console.log('✅ [WIDGET INIT] Widget initialized successfully');    // Add cleanup function for page monitoring
+    console.log('✅ [WIDGET INIT] Widget initialized successfully');
+    // Add cleanup function for page monitoring
     window.addEventListener('beforeunload', cleanupPageMonitoring);
+  }
+  
+  // Setup message listener for mirror iframe
+  function setupMirrorMessageListener() {
+    window.addEventListener('message', (event) => {
+      // Only accept messages from same origin
+      if (event.origin !== window.location.origin) return;
+      
+      const data = event.data;
+      if (data && data.type === 'mirror_ready') {
+        console.log('🔍 [WIDGET MIRROR] Mirror iframe is ready');
+        // Send initial scroll position
+        if (mirrorIframe && mirrorIframe.contentWindow) {
+          const scrollData = {
+            type: 'sync_scroll',
+            x: window.scrollX,
+            y: window.scrollY,
+            windowHeight: window.innerHeight,
+            documentHeight: document.documentElement.scrollHeight
+          };
+          mirrorIframe.contentWindow.postMessage(scrollData, window.location.origin);
+        }
+      }
+    });
   }
   
   // Cleanup page monitoring
@@ -1441,6 +1845,16 @@ export async function GET(request: Request) {
     if (pageChangeCheckInterval) {
       clearInterval(pageChangeCheckInterval);
       pageChangeCheckInterval = null;
+    }
+    
+    if (sectionObserver) {
+      sectionObserver.disconnect();
+      sectionObserver = null;
+    }
+    
+    if (window.appointySectionTimeout) {
+      clearTimeout(window.appointySectionTimeout);
+      window.appointySectionTimeout = null;
     }
     
     window.removeEventListener('popstate', detectPageChange);
@@ -1536,7 +1950,32 @@ export async function GET(request: Request) {
         return loadPageContext();
       },
       forcePageDetection: () => detectPageChange(),
-      isPageContextLoaded: () => isPageContextLoaded
+      isPageContextLoaded: () => isPageContextLoaded,
+      
+      // Mirror APIs
+      setMirrorEnabled: (enabled) => {
+        mirrorEnabled = !!enabled && window.innerWidth > 768;
+        config.mirrorMode = mirrorEnabled;
+        const checkbox = document.getElementById('appointy-mirror-enabled');
+        if (checkbox) checkbox.checked = mirrorEnabled;
+        
+        if (mirrorEnabled && isOpen) {
+          setTimeout(() => initializeMirror(), 100);
+        } else if (!mirrorEnabled && mirrorIframe) {
+          mirrorIframe.style.display = 'none';
+        }
+        return mirrorEnabled;
+      },
+      toggleMirror: () => {
+        if (mirrorEnabled) toggleMirror();
+      },
+      getMirrorEnabled: () => mirrorEnabled,
+      getCurrentSection: () => currentViewportSection,
+      sendSectionContext: (sectionName, customData) => {
+        if (sectionName) {
+          onSectionEnter(sectionName, document.body);
+        }
+      }
     };
     
     console.log('AI Chatbot Widget loaded successfully');
@@ -1547,6 +1986,65 @@ export async function GET(request: Request) {
   } else {
     init();
   }
+  
+  // Add mirror support script for iframe handling
+  // This script handles messages from the host page when this page is loaded in a mirror iframe
+  (function() {
+    // Only run this in iframe context
+    if (window !== window.parent) {
+      console.log('🔍 [MIRROR] Page loaded in iframe, setting up mirror mode');
+      
+      // Listen for scroll sync messages from host
+      window.addEventListener('message', (event) => {
+        if (event.origin !== window.location.origin) return;
+        
+        const data = event.data;
+        if (data && data.type === 'sync_scroll') {
+          // Sync scroll position with host page
+          const maxY = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+          const clampedY = Math.min(data.y || 0, maxY);
+          window.scrollTo(data.x || 0, clampedY);
+        }
+      });
+      
+      // Notify host that mirror is ready
+      window.parent.postMessage({ type: 'mirror_ready' }, window.location.origin);
+      
+      // Optimize for mirror mode
+      document.addEventListener('DOMContentLoaded', () => {
+        document.body.classList.add('appointy-mirror-mode');
+        
+        // Pause videos and audio
+        document.querySelectorAll('video, audio').forEach(media => {
+          media.muted = true;
+          if (media.pause) media.pause();
+        });
+        
+        // Disable form interactions
+        document.querySelectorAll('input, textarea, button, select').forEach(element => {
+          element.disabled = true;
+        });
+        
+        // Add mirror-specific styles
+        const mirrorStyles = document.createElement('style');
+        mirrorStyles.textContent = \`
+          .appointy-mirror-mode * {
+            animation: none !important;
+            transition: none !important;
+            pointer-events: none !important;
+          }
+          .appointy-mirror-mode video,
+          .appointy-mirror-mode audio {
+            opacity: 0.7;
+          }
+          .appointy-mirror-mode form {
+            opacity: 0.8;
+          }
+        \`;
+        document.head.appendChild(mirrorStyles);
+      });
+    }
+  })();
 })();
 `;
 
