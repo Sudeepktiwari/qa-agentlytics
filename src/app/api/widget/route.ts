@@ -2460,20 +2460,19 @@ export async function GET(request: Request) {
         
         // Add mirror-specific styles
         const mirrorStyles = document.createElement('style');
-        mirrorStyles.textContent = \`
-          .appointy-mirror-mode * {
-            animation: none !important;
-            transition: none !important;
-            pointer-events: none !important;
-          }
-          .appointy-mirror-mode video,
-          .appointy-mirror-mode audio {
-            opacity: 0.7;
-          }
-          .appointy-mirror-mode form {
-            opacity: 0.8;
-          }
-        \`;
+        mirrorStyles.textContent = '' +
+          '.appointy-mirror-mode * {' +
+            'animation: none !important;' +
+            'transition: none !important;' +
+            'pointer-events: none !important;' +
+          '}' +
+          '.appointy-mirror-mode video,' +
+          '.appointy-mirror-mode audio {' +
+            'opacity: 0.7;' +
+          '}' +
+          '.appointy-mirror-mode form {' +
+            'opacity: 0.8;' +
+          '}';
         document.head.appendChild(mirrorStyles);
       });
     }
