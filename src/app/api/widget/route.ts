@@ -662,6 +662,9 @@ export async function GET(request: Request) {
     // Setup section observation
     setupSectionObserver();
     
+    // Setup smart scroll detection for delayed contextual questions
+    setupSmartScrollDetection();
+    
     // Scale mirror if needed
     setTimeout(() => {
       scaleMirror();
@@ -718,6 +721,218 @@ export async function GET(request: Request) {
     setTimeout(sendScrollUpdate, 500);
   }
   
+  // Smart scroll detection variables
+  let isScrolling = false;
+  let scrollTimeout;
+  let lastScrollTime = 0;
+  let scrollStopDelay = 5000; // 5 seconds delay after scrolling stops
+  let lastScrollPosition = 0;
+  
+  // Setup smart scroll detection
+  function setupSmartScrollDetection() {
+    console.log('🧠 [WIDGET SCROLL] Setting up smart scroll detection');
+    
+    function handleScroll() {
+      const currentTime = Date.now();
+      const currentScrollPosition = window.scrollY;
+      
+      // Detect if user is actively scrolling
+      if (Math.abs(currentScrollPosition - lastScrollPosition) > 10) {
+        isScrolling = true;
+        lastScrollTime = currentTime;
+        lastScrollPosition = currentScrollPosition;
+        
+        console.log('📜 [WIDGET SCROLL] User is actively scrolling - delaying messages');
+        
+        // Clear any existing timeout
+        clearTimeout(scrollTimeout);
+        
+        // Mark user as active (prevents followup messages)
+        userIsActive = true;
+        
+        // Set timeout to detect when scrolling stops
+        scrollTimeout = setTimeout(() => {
+          isScrolling = false;
+          userIsActive = false;
+          
+          console.log('⏸️ [WIDGET SCROLL] User stopped scrolling - checking current view');
+          
+          // Generate contextual question based on current viewport
+          handleScrollStop();
+          
+        }, scrollStopDelay);
+      }
+    }
+    
+    // Handle when user stops scrolling
+    function handleScrollStop() {
+      const currentSection = getCurrentVisibleSection();
+      const viewportContext = getViewportContext();
+      
+      console.log('🎯 [WIDGET SCROLL] Scroll stopped on section:', currentSection);
+      
+      if (currentSection && viewportContext.visibleElements.length > 0) {
+        const sectionData = {
+          sectionName: currentSection,
+          sectionContent: extractSectionContent(document.body),
+          scrollPosition: window.scrollY,
+          scrollPercentage: Math.round((window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100),
+          timeOnPage: Date.now() - (window.appointyPageLoadTime || Date.now()),
+          viewportContext: viewportContext,
+          triggeredByScrollStop: true
+        };
+        
+        // Generate and send contextual question immediately
+        generateContextualQuestionForScrollStop(sectionData);
+      }
+    }
+    
+    // Get the most visible section in current viewport
+    function getCurrentVisibleSection() {
+      const sections = document.querySelectorAll('[data-section], .section, .hero, .pricing, .features, .testimonials, .contact, section, article');
+      let mostVisibleSection = null;
+      let maxVisibility = 0;
+      
+      sections.forEach(section => {
+        const rect = section.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+        
+        // Calculate how much of the section is visible
+        const visibleTop = Math.max(0, rect.top);
+        const visibleBottom = Math.min(viewportHeight, rect.bottom);
+        const visibleHeight = Math.max(0, visibleBottom - visibleTop);
+        const sectionHeight = rect.height;
+        
+        if (sectionHeight > 0) {
+          const visibilityPercentage = visibleHeight / Math.min(sectionHeight, viewportHeight);
+          
+          if (visibilityPercentage > maxVisibility && visibilityPercentage > 0.3) {
+            maxVisibility = visibilityPercentage;
+            mostVisibleSection = getSectionName(section);
+          }
+        }
+      });
+      
+      return mostVisibleSection || currentViewportSection;
+    }
+    
+    // Add scroll event listener with throttling
+    let ticking = false;
+    window.addEventListener('scroll', () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          handleScroll();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    }, { passive: true });
+  }
+  
+  // Generate contextual question specifically for scroll stop
+  function generateContextualQuestionForScrollStop(sectionData) {
+    const { sectionName, viewportContext, scrollPercentage } = sectionData;
+    let question = '';
+    
+    console.log('🤔 [WIDGET SCROLL] Generating question for:', sectionName, 'with', viewportContext.visibleElements.length, 'visible elements');
+    
+    // Generate highly specific questions based on what's visible
+    if (sectionName.includes('pricing') || viewportContext.visibleElements.some(el => el.isPricing)) {
+      const questions = [
+        "I see you're looking at our pricing. Which plan interests you most?",
+        "Have questions about what's included in these plans?",
+        "Would you like me to help you choose the right plan for your needs?",
+        "Curious about our ROI or want to see a cost comparison?"
+      ];
+      question = questions[Math.floor(Math.random() * questions.length)];
+    } 
+    else if (sectionName.includes('feature') || sectionName.includes('benefit')) {
+      const questions = [
+        "Which of these features would be most valuable for your workflow?",
+        "Want to see how this feature works in practice?",
+        "How are you currently handling this in your organization?",
+        "Would a demo of these features be helpful?"
+      ];
+      question = questions[Math.floor(Math.random() * questions.length)];
+    }
+    else if (sectionName.includes('testimonial') || sectionName.includes('review')) {
+      const questions = [
+        "Are you curious about achieving similar results for your business?",
+        "Would you like to speak with one of these customers?",
+        "What specific outcomes are you hoping to achieve?",
+        "How do these results compare to your current situation?"
+      ];
+      question = questions[Math.floor(Math.random() * questions.length)];
+    }
+    else if (sectionName.includes('contact') || sectionName.includes('form') || viewportContext.visibleElements.some(el => el.isForm)) {
+      const questions = [
+        "Ready to get started? I can help you with any questions.",
+        "Would you like assistance filling out this form?",
+        "Have any questions before taking the next step?",
+        "What's the best way to get you set up?"
+      ];
+      question = questions[Math.floor(Math.random() * questions.length)];
+    }
+    else if (sectionName.includes('hero') || scrollPercentage < 20) {
+      const questions = [
+        "What brought you here today? I can help you find what you need.",
+        "Are you looking for a specific solution?",
+        "Would you like me to show you our most popular features?",
+        "What challenges are you hoping to solve?"
+      ];
+      question = questions[Math.floor(Math.random() * questions.length)];
+    }
+    else {
+      // Generic contextual questions based on visible content
+      const visibleText = viewportContext.visibleElements
+        .map(el => el.text)
+        .join(' ')
+        .toLowerCase();
+      
+      if (visibleText.includes('demo') || visibleText.includes('trial')) {
+        question = "Interested in seeing a demo or starting a free trial?";
+      } else if (visibleText.includes('integrate') || visibleText.includes('api')) {
+        question = "Have questions about integration or our API capabilities?";
+      } else if (visibleText.includes('support') || visibleText.includes('help')) {
+        question = "Looking for support information? I can help you right now.";
+      } else {
+        question = "What questions do you have about what you're reading?";
+      }
+    }
+    
+    console.log('💡 [WIDGET SCROLL] Generated question:', question);
+    
+    // Send the question to the API
+    if (question) {
+      sendScrollBasedQuestion(question, sectionData);
+    }
+  }
+  
+  // Send scroll-based contextual question to API
+  async function sendScrollBasedQuestion(question, sectionData) {
+    console.log('📤 [WIDGET SCROLL] Sending scroll-based question to API:', question);
+    
+    try {
+      const data = await sendApiRequest('chat', {
+        sessionId,
+        pageUrl: currentPageUrl,
+        question: question,
+        sectionContext: sectionData,
+        contextual: true,
+        scrollTriggered: true, // Flag to indicate this was triggered by scroll
+        hasBeenGreeted: hasBeenGreeted,
+        proactiveMessageCount: proactiveMessageCount
+      });
+      
+      if (data.answer && data.answer.trim()) {
+        console.log('🎯 [WIDGET SCROLL] Received scroll-based response, displaying message');
+        sendProactiveMessage(data.answer);
+      }
+    } catch (error) {
+      console.error('❌ [WIDGET SCROLL] Failed to send scroll-based question:', error);
+    }
+  }
+
   // Setup section observation for contextual messages
   function setupSectionObserver() {
     if (!window.IntersectionObserver) return;
@@ -787,24 +1002,35 @@ export async function GET(request: Request) {
   
   // Handle section entrance
   function onSectionEnter(sectionName, element) {
-    // Send contextual data to API for potential proactive messages
-    const sectionData = {
-      sectionName,
-      sectionContent: extractSectionContent(element),
-      scrollPosition: window.scrollY,
-      scrollPercentage: Math.round((window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100),
-      timeOnPage: Date.now() - (window.appointyPageLoadTime || Date.now()),
-      viewportContext: getViewportContext()
-    };
+    // Skip section messages if user is actively scrolling
+    if (isScrolling) {
+      console.log('📜 [WIDGET MIRROR] Skipping section message - user is actively scrolling');
+      return;
+    }
     
-    // Generate contextual questions immediately
-    generateContextualQuestions(sectionData);
-    
-    // Debounce section-based proactive messages
-    clearTimeout(window.appointySectionTimeout);
-    window.appointySectionTimeout = setTimeout(() => {
-      sendSectionContextToAPI(sectionData);
-    }, 3000); // Wait 3 seconds before sending section context
+    // Only send contextual messages if user isn't currently chatting
+    if (lastUserMessage && (Date.now() - lastUserMessage > 10000) && !userIsActive) {
+      // Send contextual data to API for potential proactive messages
+      const sectionData = {
+        sectionName,
+        sectionContent: extractSectionContent(element),
+        scrollPosition: window.scrollY,
+        scrollPercentage: Math.round((window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100),
+        timeOnPage: Date.now() - (window.appointyPageLoadTime || Date.now()),
+        viewportContext: getViewportContext()
+      };
+      
+      console.log('📊 [WIDGET MIRROR] Section data for', sectionName, ':', sectionData);
+      
+      // Generate contextual questions immediately (but only if not scrolling)
+      generateContextualQuestions(sectionData);
+      
+      // Debounce section-based proactive messages
+      clearTimeout(window.appointySectionTimeout);
+      window.appointySectionTimeout = setTimeout(() => {
+        sendSectionContextToAPI(sectionData);
+      }, 3000); // Wait 3 seconds before sending section context
+    }
   }
   
   // Get current viewport context

@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Scroll Detection Test - Contextual Questions</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+        }
+        
+        .section {
+            min-height: 100vh;
+            padding: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            text-align: center;
+            border-bottom: 3px solid #ddd;
+        }
+        
+        .hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .features {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        
+        .pricing {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+        
+        .testimonials {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            color: white;
+        }
+        
+        .contact {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            color: white;
+        }
+        
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
+        h2 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+            max-width: 1000px;
+        }
+        
+        .feature-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2rem;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+            max-width: 800px;
+        }
+        
+        .price-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2rem;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .price {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 1rem 0;
+        }
+        
+        .testimonial {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2rem;
+            border-radius: 10px;
+            margin: 1rem;
+            backdrop-filter: blur(10px);
+            max-width: 600px;
+        }
+        
+        .contact-form {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2rem;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            max-width: 500px;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+            text-align: left;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
+        
+        input, textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        
+        button {
+            background: #ff6b6b;
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #ff5252;
+        }
+        
+        .scroll-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            z-index: 1000;
+        }
+        
+        .scroll-activity {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            background: rgba(255, 165, 0, 0.9);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            z-index: 1000;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Scroll Activity Indicator -->
+    <div class="scroll-activity" id="scrollActivity">🏃‍♂️ SCROLLING - Questions Delayed</div>
+    
+    <!-- Scroll Position Indicator -->
+    <div class="scroll-indicator" id="scrollIndicator">
+        Scroll: 0% | Section: Loading...
+    </div>
+
+    <!-- Hero Section -->
+    <section class="section hero" data-section="hero">
+        <h1>🚀 Smart Scroll Detection</h1>
+        <p style="font-size: 1.5rem; max-width: 800px;">
+            This page demonstrates intelligent scroll-based contextual questioning. 
+            The chatbot will delay followup messages while you're actively scrolling, 
+            then generate relevant questions 5 seconds after you stop.
+        </p>
+        <p style="font-size: 1.2rem; margin-top: 2rem;">
+            📜 <strong>Try scrolling through each section</strong> and notice how the bot responds!
+        </p>
+    </section>
+
+    <!-- Features Section -->
+    <section class="section features" data-section="features">
+        <h2>✨ Amazing Features</h2>
+        <p style="font-size: 1.3rem; margin-bottom: 2rem;">
+            Discover the powerful capabilities that make our solution unique
+        </p>
+        
+        <div class="feature-grid">
+            <div class="feature-item">
+                <h3>🤖 AI-Powered Intelligence</h3>
+                <p>Advanced machine learning algorithms that understand your business needs and provide intelligent responses.</p>
+            </div>
+            <div class="feature-item">
+                <h3>📊 Real-time Analytics</h3>
+                <p>Comprehensive dashboard with live metrics, conversion tracking, and detailed performance insights.</p>
+            </div>
+            <div class="feature-item">
+                <h3>🔧 Easy Integration</h3>
+                <p>Simple API integration that takes minutes to set up. Compatible with all major platforms and frameworks.</p>
+            </div>
+            <div class="feature-item">
+                <h3>🛡️ Enterprise Security</h3>
+                <p>Bank-level encryption, compliance with GDPR/CCPA, and secure data handling you can trust.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section class="section pricing" data-section="pricing">
+        <h2>💰 Transparent Pricing</h2>
+        <p style="font-size: 1.3rem; margin-bottom: 2rem;">
+            Choose the perfect plan for your business needs
+        </p>
+        
+        <div class="pricing-grid">
+            <div class="price-card">
+                <h3>Starter</h3>
+                <div class="price" data-price="29">$29/month</div>
+                <ul style="text-align: left; margin: 1rem 0;">
+                    <li>Up to 1,000 conversations</li>
+                    <li>Basic analytics</li>
+                    <li>Email support</li>
+                    <li>Standard integrations</li>
+                </ul>
+                <button>Get Started</button>
+            </div>
+            <div class="price-card">
+                <h3>Professional</h3>
+                <div class="price" data-price="79">$79/month</div>
+                <ul style="text-align: left; margin: 1rem 0;">
+                    <li>Up to 10,000 conversations</li>
+                    <li>Advanced analytics</li>
+                    <li>Priority support</li>
+                    <li>Custom integrations</li>
+                    <li>API access</li>
+                </ul>
+                <button>Choose Pro</button>
+            </div>
+            <div class="price-card">
+                <h3>Enterprise</h3>
+                <div class="price" data-price="199">$199/month</div>
+                <ul style="text-align: left; margin: 1rem 0;">
+                    <li>Unlimited conversations</li>
+                    <li>Real-time analytics</li>
+                    <li>24/7 dedicated support</li>
+                    <li>White-label solution</li>
+                    <li>Custom development</li>
+                </ul>
+                <button>Contact Sales</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section class="section testimonials" data-section="testimonials">
+        <h2>🗣️ What Our Customers Say</h2>
+        <p style="font-size: 1.3rem; margin-bottom: 2rem;">
+            Real results from real businesses
+        </p>
+        
+        <div class="testimonial">
+            <p style="font-size: 1.2rem; margin-bottom: 1rem;">
+                "This solution increased our conversion rate by 300% in just 3 months. 
+                The smart contextual responses feel so natural that customers love interacting with it."
+            </p>
+            <strong>- Sarah Johnson, CEO of TechStart Inc.</strong>
+        </div>
+        
+        <div class="testimonial">
+            <p style="font-size: 1.2rem; margin-bottom: 1rem;">
+                "Implementation was incredibly smooth. Our support team saw a 75% reduction in 
+                repetitive inquiries, allowing them to focus on complex customer needs."
+            </p>
+            <strong>- Michael Chen, CTO of GrowthCorp</strong>
+        </div>
+        
+        <div class="testimonial">
+            <p style="font-size: 1.2rem; margin-bottom: 1rem;">
+                "The ROI was immediate. We recovered our investment in the first month and 
+                have seen consistent growth in customer satisfaction scores."
+            </p>
+            <strong>- Emily Rodriguez, Director of Operations at ScaleUp</strong>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section class="section contact" data-section="contact">
+        <h2>📞 Get In Touch</h2>
+        <p style="font-size: 1.3rem; margin-bottom: 2rem;">
+            Ready to transform your customer experience?
+        </p>
+        
+        <div class="contact-form">
+            <form>
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    <input type="text" id="name" name="name" placeholder="Enter your full name">
+                </div>
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" placeholder="Enter your email">
+                </div>
+                <div class="form-group">
+                    <label for="company">Company</label>
+                    <input type="text" id="company" name="company" placeholder="Your company name">
+                </div>
+                <div class="form-group">
+                    <label for="message">Message</label>
+                    <textarea id="message" name="message" rows="4" placeholder="Tell us about your needs..."></textarea>
+                </div>
+                <button type="submit">Send Message</button>
+            </form>
+        </div>
+    </section>
+
+    <!-- Chat Widget -->
+    <script>
+        // Initialize page load time for widget
+        window.appointyPageLoadTime = Date.now();
+        
+        // Load the chatbot widget
+        (function() {
+            const script = document.createElement('script');
+            script.src = 'http://localhost:3000/api/widget?apiKey=test_api_key_123&enableMirror=true';
+            script.async = true;
+            document.head.appendChild(script);
+        })();
+        
+        // Scroll tracking for demonstration
+        let scrollActivity = document.getElementById('scrollActivity');
+        let scrollIndicator = document.getElementById('scrollIndicator');
+        let isScrolling = false;
+        let scrollTimer;
+        
+        function updateScrollIndicator() {
+            const scrollPercentage = Math.round((window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100);
+            const currentSection = getCurrentSection();
+            scrollIndicator.textContent = `Scroll: ${scrollPercentage}% | Section: ${currentSection}`;
+        }
+        
+        function getCurrentSection() {
+            const sections = document.querySelectorAll('[data-section]');
+            let currentSection = 'Unknown';
+            
+            sections.forEach(section => {
+                const rect = section.getBoundingClientRect();
+                if (rect.top <= window.innerHeight / 2 && rect.bottom >= window.innerHeight / 2) {
+                    currentSection = section.dataset.section;
+                }
+            });
+            
+            return currentSection;
+        }
+        
+        window.addEventListener('scroll', () => {
+            // Show scroll activity indicator
+            isScrolling = true;
+            scrollActivity.style.display = 'block';
+            
+            // Update scroll indicator
+            updateScrollIndicator();
+            
+            // Clear existing timer
+            clearTimeout(scrollTimer);
+            
+            // Hide activity indicator after 5 seconds of no scrolling
+            scrollTimer = setTimeout(() => {
+                isScrolling = false;
+                scrollActivity.style.display = 'none';
+                console.log('🎯 User stopped scrolling - Smart bot should ask contextual question now!');
+            }, 5000);
+        });
+        
+        // Initial update
+        updateScrollIndicator();
+        
+        // Form submission prevention (demo purposes)
+        document.querySelector('form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            alert('Demo form - submission prevented!');
+        });
+    </script>
+</body>
+</html>
