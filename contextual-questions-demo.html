@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Contextual Questions Demo - SaaS Product</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background: #f8fafc;
+        line-height: 1.6;
+      }
+
+      .hero {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 80px 20px;
+        text-align: center;
+        min-height: 60vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+      }
+
+      .hero h1 {
+        font-size: 3rem;
+        margin-bottom: 20px;
+        font-weight: 700;
+      }
+
+      .hero p {
+        font-size: 1.3rem;
+        margin-bottom: 30px;
+        opacity: 0.9;
+      }
+
+      .cta-button {
+        background: #fff;
+        color: #667eea;
+        padding: 15px 30px;
+        border: none;
+        border-radius: 8px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.2s;
+      }
+
+      .cta-button:hover {
+        transform: translateY(-2px);
+      }
+
+      .section {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 80px 20px;
+      }
+
+      .features {
+        background: white;
+      }
+
+      .features h2 {
+        text-align: center;
+        font-size: 2.5rem;
+        margin-bottom: 60px;
+        color: #2d3748;
+      }
+
+      .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 40px;
+        margin-bottom: 60px;
+      }
+
+      .feature-card {
+        background: #f7fafc;
+        padding: 30px;
+        border-radius: 12px;
+        text-align: center;
+        border: 1px solid #e2e8f0;
+      }
+
+      .feature-card h3 {
+        color: #2d3748;
+        margin-bottom: 15px;
+      }
+
+      .pricing {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+      }
+
+      .pricing h2 {
+        text-align: center;
+        font-size: 2.5rem;
+        margin-bottom: 20px;
+      }
+
+      .pricing-subtitle {
+        text-align: center;
+        font-size: 1.2rem;
+        margin-bottom: 60px;
+        opacity: 0.9;
+      }
+
+      .pricing-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 30px;
+        margin-bottom: 40px;
+      }
+
+      .pricing-card {
+        background: white;
+        color: #2d3748;
+        padding: 40px 30px;
+        border-radius: 12px;
+        text-align: center;
+        position: relative;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      }
+
+      .pricing-card.popular {
+        transform: scale(1.05);
+        border: 3px solid #ffd700;
+      }
+
+      .pricing-card.popular::before {
+        content: "Most Popular";
+        position: absolute;
+        top: -15px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #ffd700;
+        color: #2d3748;
+        padding: 8px 20px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.9rem;
+      }
+
+      .price {
+        font-size: 3rem;
+        font-weight: 700;
+        margin: 20px 0;
+        color: #667eea;
+      }
+
+      .price-period {
+        font-size: 1rem;
+        color: #718096;
+      }
+
+      .feature-list {
+        list-style: none;
+        padding: 0;
+        margin: 30px 0;
+      }
+
+      .feature-list li {
+        padding: 8px 0;
+        position: relative;
+        padding-left: 25px;
+      }
+
+      .feature-list li::before {
+        content: "✓";
+        position: absolute;
+        left: 0;
+        color: #48bb78;
+        font-weight: bold;
+      }
+
+      .testimonials {
+        background: #2d3748;
+        color: white;
+      }
+
+      .testimonials h2 {
+        text-align: center;
+        font-size: 2.5rem;
+        margin-bottom: 60px;
+      }
+
+      .testimonial-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 40px;
+      }
+
+      .testimonial {
+        background: #4a5568;
+        padding: 30px;
+        border-radius: 12px;
+        position: relative;
+      }
+
+      .testimonial-text {
+        font-style: italic;
+        margin-bottom: 20px;
+        font-size: 1.1rem;
+      }
+
+      .testimonial-author {
+        font-weight: 600;
+        color: #a0aec0;
+      }
+
+      .contact {
+        background: white;
+        text-align: center;
+      }
+
+      .contact h2 {
+        font-size: 2.5rem;
+        margin-bottom: 20px;
+        color: #2d3748;
+      }
+
+      .contact-form {
+        max-width: 600px;
+        margin: 0 auto;
+        background: #f7fafc;
+        padding: 40px;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+        text-align: left;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #2d3748;
+      }
+
+      .form-group input,
+      .form-group textarea {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #cbd5e0;
+        border-radius: 6px;
+        font-size: 1rem;
+        box-sizing: border-box;
+      }
+
+      .form-group textarea {
+        height: 120px;
+        resize: vertical;
+      }
+
+      .submit-btn {
+        background: #667eea;
+        color: white;
+        padding: 15px 40px;
+        border: none;
+        border-radius: 8px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+
+      .submit-btn:hover {
+        background: #5a67d8;
+      }
+
+      .debug-panel {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        background: rgba(0, 0, 0, 0.9);
+        color: white;
+        padding: 20px;
+        border-radius: 8px;
+        font-family: monospace;
+        font-size: 12px;
+        z-index: 999999;
+        max-width: 350px;
+        backdrop-filter: blur(10px);
+      }
+
+      .debug-panel h4 {
+        margin: 0 0 15px 0;
+        color: #ffd700;
+      }
+
+      .debug-panel button {
+        background: #48bb78;
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        margin: 3px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 11px;
+        transition: background 0.2s;
+      }
+
+      .debug-panel button:hover {
+        background: #38a169;
+      }
+
+      .debug-output {
+        background: #1a202c;
+        padding: 10px;
+        border-radius: 4px;
+        margin-top: 10px;
+        font-size: 10px;
+        max-height: 200px;
+        overflow-y: auto;
+      }
+
+      .scroll-indicator {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 4px;
+        background: #667eea;
+        z-index: 999998;
+        transition: width 0.1s;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="scroll-indicator" id="scroll-indicator"></div>
+
+    <div class="debug-panel">
+      <h4>🤖 Question Generator</h4>
+      <button onclick="generateQuestions()">Generate Questions</button>
+      <button onclick="getViewport()">Get Viewport</button>
+      <button onclick="askCustom()">Ask Custom</button>
+      <button onclick="debugBot()">Debug Bot</button>
+      <div class="debug-output" id="debug-output">
+        Scroll down to see contextual questions generated based on what you're
+        viewing!
+      </div>
+    </div>
+
+    <section class="hero">
+      <h1>Transform Your Business</h1>
+      <p>
+        The all-in-one solution that scales with your team and grows your
+        revenue by 300%
+      </p>
+      <button class="cta-button">Start Free Trial</button>
+    </section>
+
+    <section class="section features" data-section="features">
+      <h2>🚀 Powerful Features</h2>
+      <div class="feature-grid">
+        <div class="feature-card">
+          <h3>🔄 Real-time Sync</h3>
+          <p>
+            Keep your team aligned with instant updates across all devices and
+            platforms. No more version conflicts or missed updates.
+          </p>
+        </div>
+        <div class="feature-card">
+          <h3>📊 Advanced Analytics</h3>
+          <p>
+            Get insights that matter with our AI-powered analytics dashboard.
+            Track performance, identify trends, and make data-driven decisions.
+          </p>
+        </div>
+        <div class="feature-card">
+          <h3>🔐 Enterprise Security</h3>
+          <p>
+            Bank-level security with end-to-end encryption, SSO integration, and
+            compliance with SOC 2, GDPR, and HIPAA standards.
+          </p>
+        </div>
+        <div class="feature-card">
+          <h3>🤖 Smart Automation</h3>
+          <p>
+            Automate repetitive tasks and workflows. Our AI learns your patterns
+            and suggests optimizations to save hours every week.
+          </p>
+        </div>
+        <div class="feature-card">
+          <h3>🔗 Seamless Integrations</h3>
+          <p>
+            Connect with 500+ tools including Slack, Salesforce, HubSpot, and
+            Google Workspace. One-click setup for popular integrations.
+          </p>
+        </div>
+        <div class="feature-card">
+          <h3>📱 Mobile First</h3>
+          <p>
+            Full-featured mobile apps for iOS and Android. Work from anywhere
+            with offline sync and push notifications.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section pricing" data-section="pricing">
+      <h2>💰 Simple, Transparent Pricing</h2>
+      <p class="pricing-subtitle">
+        Choose the perfect plan for your team. Start free, scale as you grow.
+      </p>
+
+      <div class="pricing-grid">
+        <div class="pricing-card">
+          <h3>Starter</h3>
+          <div class="price">$9<span class="price-period">/month</span></div>
+          <ul class="feature-list">
+            <li>Up to 5 team members</li>
+            <li>10GB storage</li>
+            <li>Basic integrations</li>
+            <li>Email support</li>
+            <li>Mobile app access</li>
+          </ul>
+          <button class="cta-button">Start Free Trial</button>
+        </div>
+
+        <div class="pricing-card popular">
+          <h3>Professional</h3>
+          <div class="price">$29<span class="price-period">/month</span></div>
+          <ul class="feature-list">
+            <li>Up to 25 team members</li>
+            <li>100GB storage</li>
+            <li>Advanced analytics</li>
+            <li>Priority support</li>
+            <li>Custom integrations</li>
+            <li>Advanced automation</li>
+          </ul>
+          <button class="cta-button">Start Free Trial</button>
+        </div>
+
+        <div class="pricing-card">
+          <h3>Enterprise</h3>
+          <div class="price">
+            Custom<span class="price-period">pricing</span>
+          </div>
+          <ul class="feature-list">
+            <li>Unlimited team members</li>
+            <li>Unlimited storage</li>
+            <li>Advanced security</li>
+            <li>Dedicated support</li>
+            <li>Custom integrations</li>
+            <li>SLA guarantee</li>
+            <li>On-premise deployment</li>
+          </ul>
+          <button class="cta-button">Contact Sales</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="section testimonials" data-section="testimonials">
+      <h2>💬 What Our Customers Say</h2>
+      <div class="testimonial-grid">
+        <div class="testimonial">
+          <div class="testimonial-text">
+            "This platform completely transformed how our team collaborates. We
+            saw a 300% increase in productivity within the first month. The ROI
+            was immediate and continues to grow."
+          </div>
+          <div class="testimonial-author">Sarah Johnson, CEO at TechCorp</div>
+        </div>
+
+        <div class="testimonial">
+          <div class="testimonial-text">
+            "The automation features alone save us 20 hours per week. The
+            customer support is outstanding - they helped us migrate from our
+            old system seamlessly."
+          </div>
+          <div class="testimonial-author">Mike Chen, CTO at StartupXYZ</div>
+        </div>
+
+        <div class="testimonial">
+          <div class="testimonial-text">
+            "Security was our biggest concern, but their enterprise features
+            exceeded our expectations. We're now compliant with all industry
+            standards."
+          </div>
+          <div class="testimonial-author">
+            Lisa Rodriguez, CISO at FinanceInc
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section contact" data-section="contact">
+      <h2>📞 Ready to Get Started?</h2>
+      <p>
+        Join thousands of teams already using our platform. Start your free
+        trial today!
+      </p>
+
+      <form class="contact-form">
+        <div class="form-group">
+          <label for="name">Full Name *</label>
+          <input type="text" id="name" name="name" required />
+        </div>
+
+        <div class="form-group">
+          <label for="email">Business Email *</label>
+          <input type="email" id="email" name="email" required />
+        </div>
+
+        <div class="form-group">
+          <label for="company">Company Name</label>
+          <input type="text" id="company" name="company" />
+        </div>
+
+        <div class="form-group">
+          <label for="team-size">Team Size</label>
+          <select
+            id="team-size"
+            name="team-size"
+            style="
+              width: 100%;
+              padding: 12px;
+              border: 1px solid #cbd5e0;
+              border-radius: 6px;
+              font-size: 1rem;
+            "
+          >
+            <option value="">Select team size</option>
+            <option value="1-5">1-5 people</option>
+            <option value="6-25">6-25 people</option>
+            <option value="26-100">26-100 people</option>
+            <option value="100+">100+ people</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="message">Tell us about your needs</label>
+          <textarea
+            id="message"
+            name="message"
+            placeholder="What challenges are you looking to solve?"
+          ></textarea>
+        </div>
+
+        <button type="submit" class="submit-btn">
+          Get Started - Free Trial
+        </button>
+      </form>
+    </section>
+
+    <script>
+      // Scroll progress indicator
+      window.addEventListener("scroll", () => {
+        const scrolled =
+          (window.scrollY /
+            (document.documentElement.scrollHeight - window.innerHeight)) *
+          100;
+        document.getElementById("scroll-indicator").style.width =
+          scrolled + "%";
+      });
+
+      // Debug functions
+      function generateQuestions() {
+        if (window.appointyChatbot) {
+          const result =
+            window.appointyChatbot.generateQuestionsForCurrentView();
+          updateDebug("Generated: " + result);
+        } else {
+          updateDebug("Chatbot not loaded yet!");
+        }
+      }
+
+      function getViewport() {
+        if (window.appointyChatbot) {
+          const viewport = window.appointyChatbot.getViewportContent();
+          updateDebug(
+            "Viewport: " + viewport.visibleElements.length + " elements visible"
+          );
+          console.log("Viewport Context:", viewport);
+        } else {
+          updateDebug("Chatbot not loaded yet!");
+        }
+      }
+
+      function askCustom() {
+        const question = prompt("Enter a custom question:");
+        if (question && window.appointyChatbot) {
+          const result = window.appointyChatbot.askContextualQuestion(question);
+          updateDebug("Custom question: " + result);
+        }
+      }
+
+      function debugBot() {
+        if (window.appointyChatbot) {
+          const debug = window.appointyChatbot.debugMirror();
+          updateDebug("Debug: " + JSON.stringify(debug));
+          console.log("Bot Debug:", debug);
+        } else {
+          updateDebug("Chatbot not loaded yet!");
+        }
+      }
+
+      function updateDebug(message) {
+        const output = document.getElementById("debug-output");
+        const timestamp = new Date().toLocaleTimeString();
+        output.innerHTML += `<br>[${timestamp}] ${message}`;
+        output.scrollTop = output.scrollHeight;
+      }
+
+      // Auto-generate questions as user scrolls
+      let lastSection = "";
+      setInterval(() => {
+        if (window.appointyChatbot) {
+          const currentSection = window.appointyChatbot.getCurrentSection();
+          if (currentSection && currentSection !== lastSection) {
+            updateDebug(`Entered section: ${currentSection}`);
+            lastSection = currentSection;
+          }
+        }
+      }, 2000);
+
+      // Track form interactions
+      document
+        .querySelector(".contact-form")
+        .addEventListener("focusin", (e) => {
+          if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") {
+            updateDebug(`User focused: ${e.target.name || e.target.id}`);
+          }
+        });
+    </script>
+
+    <!-- Load the chatbot widget -->
+    <script>
+      (function () {
+        // Remove existing widget if any
+        document
+          .querySelectorAll('[id*="chatbot"], [id*="widget"], [id*="appointy"]')
+          .forEach((el) => el.remove());
+
+        // Create and inject script
+        const s = document.createElement("script");
+        s.src = "http://localhost:3000/api/widget";
+        s.onload = () => {
+          console.log("✅ Widget loaded successfully");
+          updateDebug("✅ Widget loaded! Scroll to see contextual questions.");
+        };
+        s.onerror = () => {
+          console.error("❌ Widget failed to load");
+          updateDebug("❌ Widget failed to load!");
+        };
+
+        // Set attributes before adding to DOM
+        [
+          "data-api-key|ak_e8a971aee600130a0dcc93ca0fbb8831e366c4566f6b80426991b4ed6c8f9848",
+          "data-theme|blue",
+          "data-size|large",
+          "data-voice-enabled|false",
+          "data-voice-gender|female",
+          "data-auto-open-proactive|true",
+          "data-mirror-mode|true",
+          "data-mirror-scale|auto",
+        ].forEach((attr) => {
+          const [name, value] = attr.split("|");
+          s.setAttribute(name, value);
+        });
+
+        document.head.appendChild(s);
+      })();
+    </script>
+  </body>
+</html>

@@ -793,14 +793,278 @@ export async function GET(request: Request) {
       sectionContent: extractSectionContent(element),
       scrollPosition: window.scrollY,
       scrollPercentage: Math.round((window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100),
-      timeOnPage: Date.now() - (window.appointyPageLoadTime || Date.now())
+      timeOnPage: Date.now() - (window.appointyPageLoadTime || Date.now()),
+      viewportContext: getViewportContext()
     };
+    
+    // Generate contextual questions immediately
+    generateContextualQuestions(sectionData);
     
     // Debounce section-based proactive messages
     clearTimeout(window.appointySectionTimeout);
     window.appointySectionTimeout = setTimeout(() => {
       sendSectionContextToAPI(sectionData);
-    }, 2000); // Wait 2 seconds before sending section context
+    }, 3000); // Wait 3 seconds before sending section context
+  }
+  
+  // Get current viewport context
+  function getViewportContext() {
+    const viewportHeight = window.innerHeight;
+    const viewportTop = window.scrollY;
+    const viewportBottom = viewportTop + viewportHeight;
+    const scrollPercentage = Math.round((window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100);
+    
+    // Find all visible elements
+    const visibleElements = [];
+    const elements = document.querySelectorAll('h1, h2, h3, h4, h5, h6, p, form, button, a, [data-price], .price, .pricing, .feature, .benefit');
+    
+    elements.forEach(el => {
+      const rect = el.getBoundingClientRect();
+      const elementTop = viewportTop + rect.top;
+      const elementBottom = elementTop + rect.height;
+      
+      // Check if element is at least 30% visible in viewport
+      const visibleHeight = Math.min(elementBottom, viewportBottom) - Math.max(elementTop, viewportTop);
+      const visibilityPercentage = visibleHeight / rect.height;
+      
+      if (visibilityPercentage > 0.3) {
+        visibleElements.push({
+          tagName: el.tagName.toLowerCase(),
+          text: el.textContent.trim().substring(0, 200),
+          className: el.className,
+          id: el.id,
+          isButton: el.tagName.toLowerCase() === 'button' || el.getAttribute('role') === 'button',
+          isForm: el.tagName.toLowerCase() === 'form',
+          isPricing: el.className.includes('price') || el.hasAttribute('data-price'),
+          href: el.href || null,
+          visibilityPercentage: Math.round(visibilityPercentage * 100)
+        });
+      }
+    });
+    
+    return {
+      visibleElements: visibleElements.slice(0, 10), // Limit to top 10 visible elements
+      scrollDepth: scrollPercentage,
+      pageHeight: document.documentElement.scrollHeight,
+      viewportHeight: viewportHeight
+    };
+  }
+  
+  // Generate contextual questions based on what user is viewing
+  function generateContextualQuestions(sectionData) {
+    const questions = [];
+    const { sectionName, sectionContent, viewportContext } = sectionData;
+    
+    console.log('🤔 [WIDGET QUESTIONS] Generating questions for section:', sectionName);
+    console.log('📊 [WIDGET QUESTIONS] Viewport context:', viewportContext);
+    
+    // Pricing section questions
+    if (sectionName.includes('pricing') || sectionContent.hasPricing) {
+      questions.push(
+        "Which pricing plan fits your team size?",
+        "Would you like me to calculate the ROI for your use case?",
+        "Do you have questions about what's included in each plan?",
+        "Need help comparing our plans with competitors?"
+      );
+    }
+    
+    // Features section questions
+    else if (sectionName.includes('features') || sectionName.includes('capabilities')) {
+      questions.push(
+        "Which of these features is most important for your workflow?",
+        "Would you like to see a demo of any specific feature?",
+        "How does your current solution handle these requirements?",
+        "Do you need integration with any specific tools?"
+      );
+    }
+    
+    // Contact/Form section questions
+    else if (sectionContent.hasForm || sectionName.includes('contact')) {
+      questions.push(
+        "Would you like me to help you fill out this form?",
+        "Do you prefer to schedule a call instead?",
+        "What's the best time to reach you?",
+        "Any specific questions I can answer before you submit?"
+      );
+    }
+    
+    // About/Company section questions
+    else if (sectionName.includes('about') || sectionName.includes('company') || sectionName.includes('mission')) {
+      questions.push(
+        "What drew you to learn more about our company?",
+        "Are you evaluating us against other solutions?",
+        "What's most important in a vendor partnership for you?",
+        "Would you like to speak with someone from our team?"
+      );
+    }
+    
+    // Testimonials section questions
+    else if (sectionName.includes('testimonial') || sectionName.includes('review') || sectionName.includes('customer')) {
+      questions.push(
+        "Do any of these use cases sound similar to yours?",
+        "Would you like to speak with one of our existing customers?",
+        "What results are you hoping to achieve?",
+        "How do you currently measure success in this area?"
+      );
+    }
+    
+    // Product/Solution section questions
+    else if (sectionName.includes('product') || sectionName.includes('solution') || sectionName.includes('how-it-works')) {
+      questions.push(
+        "How does this compare to your current process?",
+        "What's your biggest challenge in this area?",
+        "Would you like to see this in action?",
+        "Do you have specific requirements I should know about?"
+      );
+    }
+    
+    // Default questions based on content type
+    else {
+      // Check visible elements for context clues
+      const visibleText = viewportContext.visibleElements.map(el => el.text).join(' ').toLowerCase();
+      
+      if (visibleText.includes('demo') || visibleText.includes('try')) {
+        questions.push("Ready to see how this works?", "Would you like to try it yourself?");
+      }
+      if (visibleText.includes('contact') || visibleText.includes('get started')) {
+        questions.push("Ready to get started?", "What's your next step?");
+      }
+      if (visibleText.includes('benefit') || visibleText.includes('advantage')) {
+        questions.push("Which of these benefits resonates most with you?");
+      }
+      if (visibleText.includes('integration') || visibleText.includes('api')) {
+        questions.push("Do you need help with integrations?");
+      }
+      
+      // Fallback general questions
+      if (questions.length === 0) {
+        questions.push(
+          "What questions do you have about what you're reading?",
+          "Is there anything specific you'd like to know more about?",
+          "How can I help you evaluate this solution?"
+        );
+      }
+    }
+    
+    // Send most relevant question as proactive message
+    if (questions.length > 0) {
+      const selectedQuestion = selectBestQuestion(questions, sectionData);
+      console.log('💡 [WIDGET QUESTIONS] Selected question:', selectedQuestion);
+      
+      // Don't send immediately - wait a bit for user to read
+      setTimeout(() => {
+        if (!userIsActive && currentViewportSection === sectionName) {
+          sendContextualQuestion(selectedQuestion, sectionData);
+        }
+      }, 5000); // Wait 5 seconds
+    }
+  }
+  
+  // Select the best question based on context
+  function selectBestQuestion(questions, sectionData) {
+    const { timeOnPage, scrollPercentage, sectionContent } = sectionData;
+    
+    // If user has been on page for a while, ask more specific questions
+    if (timeOnPage > 60000) { // More than 1 minute
+      // Return questions that help move towards conversion
+      const urgentQuestions = questions.filter(q => 
+        q.includes('ready') || q.includes('next step') || q.includes('get started')
+      );
+      if (urgentQuestions.length > 0) {
+        return urgentQuestions[0];
+      }
+    }
+    
+    // If user is in pricing section, prioritize ROI/comparison questions
+    if (sectionContent.hasPricing) {
+      const pricingQuestions = questions.filter(q => 
+        q.includes('ROI') || q.includes('plan') || q.includes('compare')
+      );
+      if (pricingQuestions.length > 0) {
+        return pricingQuestions[0];
+      }
+    }
+    
+    // If user has scrolled far, they're engaged - ask deeper questions
+    if (scrollPercentage > 50) {
+      const engagementQuestions = questions.filter(q => 
+        q.includes('demo') || q.includes('speak') || q.includes('call')
+      );
+      if (engagementQuestions.length > 0) {
+        return engagementQuestions[0];
+      }
+    }
+    
+    // Default to first question
+    return questions[0];
+  }
+  
+  // Send contextual question as proactive message
+  function sendContextualQuestion(question, sectionData) {
+    console.log('💬 [WIDGET QUESTIONS] Sending contextual question:', question);
+    
+    const contextualMessage = {
+      role: 'assistant',
+      content: question,
+      buttons: generateFollowUpButtons(question, sectionData),
+      emailPrompt: '',
+      isProactive: true,
+      isContextual: true,
+      sectionContext: sectionData.sectionName
+    };
+    
+    messages.push(contextualMessage);
+    
+    // Auto-open chat if configured
+    if (config.autoOpenProactive && !isOpen) {
+      console.log('🚪 [WIDGET QUESTIONS] Auto-opening chat for contextual question');
+      toggleWidget();
+      setTimeout(() => {
+        renderMessages();
+      }, 100);
+    } else if (isOpen) {
+      renderMessages();
+    }
+    
+    // Speak the question if voice is enabled
+    if (config.voiceEnabled && speechAllowed) {
+      setTimeout(() => {
+        speakText(question, true);
+      }, 500);
+    }
+    
+    // Update conversation tracking
+    proactiveMessageCount++;
+    localStorage.setItem('appointy_proactive_count', proactiveMessageCount.toString());
+  }
+  
+  // Generate relevant follow-up buttons for questions
+  function generateFollowUpButtons(question, sectionData) {
+    const buttons = [];
+    const { sectionName, sectionContent } = sectionData;
+    
+    if (question.includes('pricing') || question.includes('plan') || sectionContent.hasPricing) {
+      buttons.push("Show me pricing", "Calculate ROI", "Compare plans", "I need enterprise features");
+    } else if (question.includes('demo') || question.includes('see this')) {
+      buttons.push("Yes, show me a demo", "Schedule a call", "Send me a video", "Not right now");
+    } else if (question.includes('help') || question.includes('questions')) {
+      buttons.push("Yes, I have questions", "Tell me more", "Show me benefits", "Contact sales");
+    } else if (question.includes('ready') || question.includes('get started')) {
+      buttons.push("Yes, let's get started", "I need more info", "Schedule a call", "Send me details");
+    } else if (question.includes('contact') || question.includes('call')) {
+      buttons.push("Yes, contact me", "Email me instead", "I'll reach out later", "More questions first");
+    } else {
+      // Default buttons based on section
+      if (sectionName.includes('pricing')) {
+        buttons.push("Show pricing details", "Compare options", "Contact sales");
+      } else if (sectionName.includes('features')) {
+        buttons.push("Show me a demo", "Tell me more", "How does it work?");
+      } else {
+        buttons.push("Yes, help me", "Tell me more", "Not right now");
+      }
+    }
+    
+    return buttons.slice(0, 3); // Limit to 3 buttons max
   }
   
   // Extract meaningful content from section
@@ -950,6 +1214,8 @@ export async function GET(request: Request) {
   
   // Create widget HTML
   function createWidgetHTML() {
+    console.log('🎨 [WIDGET HTML] Creating widget HTML with mirror enabled:', mirrorEnabled);
+    
     const mirrorHTML = mirrorEnabled ? \`
       <iframe id="appointy-mirror" 
               class="appointy-mirror"
@@ -969,6 +1235,8 @@ export async function GET(request: Request) {
                 z-index: 1;
               "></iframe>
     \` : '';
+
+    console.log('🎨 [WIDGET HTML] Mirror HTML generated:', mirrorHTML ? 'YES' : 'NO');
 
     return \`
       <div style="display: flex; flex-direction: column; height: 100%; background: white; border-radius: 12px; overflow: hidden; position: relative;">
@@ -2041,6 +2309,43 @@ export async function GET(request: Request) {
           setTimeout(() => initializeMirror(), 100);
         }
         return 'Mirror force initialized';
+      },
+      
+      // Question generation functions
+      generateQuestionsForCurrentView: () => {
+        const viewportContext = getViewportContext();
+        const sectionData = {
+          sectionName: currentViewportSection || 'current-view',
+          sectionContent: extractSectionContent(document.body),
+          scrollPosition: window.scrollY,
+          scrollPercentage: Math.round((window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100),
+          timeOnPage: Date.now() - (window.appointyPageLoadTime || Date.now()),
+          viewportContext: viewportContext
+        };
+        
+        generateContextualQuestions(sectionData);
+        console.log('🤔 [WIDGET QUESTIONS] Generated questions for current view');
+        return 'Questions generated for current viewport';
+      },
+      
+      getViewportContent: () => {
+        return getViewportContext();
+      },
+      
+      askContextualQuestion: (customQuestion) => {
+        if (customQuestion) {
+          const sectionData = {
+            sectionName: currentViewportSection || 'custom',
+            sectionContent: extractSectionContent(document.body),
+            scrollPosition: window.scrollY,
+            scrollPercentage: Math.round((window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100),
+            timeOnPage: Date.now() - (window.appointyPageLoadTime || Date.now())
+          };
+          
+          sendContextualQuestion(customQuestion, sectionData);
+          return 'Custom question sent';
+        }
+        return 'No question provided';
       }
     };
     
