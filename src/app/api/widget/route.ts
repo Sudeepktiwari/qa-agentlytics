@@ -221,6 +221,12 @@ export async function GET(request: Request) {
   let scrollRaf = null;
   let currentViewportSection = null;
   let sectionObserver = null;
+  
+  console.log('🔍 [WIDGET MIRROR] Mirror configuration:', {
+    mirrorMode: config.mirrorMode,
+    windowWidth: window.innerWidth,
+    mirrorEnabled: mirrorEnabled
+  });
 
   // Messages array
   let messages = [];
@@ -612,15 +618,43 @@ export async function GET(request: Request) {
   
   // Initialize mirror iframe
   function initializeMirror() {
-    if (!mirrorEnabled || !isOpen) return;
+    if (!mirrorEnabled || !isOpen) {
+      console.log('🔍 [WIDGET MIRROR] Mirror not enabled or widget not open', { mirrorEnabled, isOpen });
+      return;
+    }
     
     console.log('🔍 [WIDGET MIRROR] Initializing page mirror');
     
     mirrorIframe = document.getElementById('appointy-mirror');
-    if (!mirrorIframe) return;
+    if (!mirrorIframe) {
+      console.error('❌ [WIDGET MIRROR] Mirror iframe element not found!');
+      return;
+    }
+    
+    console.log('✅ [WIDGET MIRROR] Mirror iframe element found');
     
     // Load current page in mirror
     mirrorIframe.src = window.location.href;
+    console.log('🔄 [WIDGET MIRROR] Loading mirror with URL:', window.location.href);
+    
+    // Add load event listener
+    mirrorIframe.addEventListener('load', () => {
+      console.log('✅ [WIDGET MIRROR] Mirror iframe loaded successfully');
+      
+      // Make mirror more visible for testing
+      mirrorIframe.style.opacity = '1';
+      mirrorIframe.style.border = '2px solid red'; // Temporary debug border
+      
+      setTimeout(() => {
+        // Remove debug border after 3 seconds
+        mirrorIframe.style.border = '0';
+        mirrorIframe.style.opacity = '0.8';
+      }, 3000);
+    });
+    
+    mirrorIframe.addEventListener('error', (e) => {
+      console.error('❌ [WIDGET MIRROR] Mirror iframe failed to load:', e);
+    });
     
     // Setup scroll synchronization
     setupScrollSync();
@@ -929,10 +963,10 @@ export async function GET(request: Request) {
                 width: 100%;
                 height: 100%;
                 pointer-events: none;
-                opacity: 0.4;
-                filter: blur(0.5px);
+                opacity: 0.8;
                 transform-origin: 0 0;
                 background: #f8f9fa;
+                z-index: 1;
               "></iframe>
     \` : '';
 
@@ -951,7 +985,7 @@ export async function GET(request: Request) {
             <button id="appointy-close-btn" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer; padding: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">×</button>
           </div>
         </div>
-        <div id="appointy-settings" style="display: none; background: rgba(248, 249, 250, 0.95); backdrop-filter: blur(10px); padding: 12px; border-bottom: 1px solid #e5e7eb; position: relative; z-index: 10;">
+        <div id="appointy-settings" style="display: none; background: rgba(248, 249, 250, 0.98); backdrop-filter: blur(10px); padding: 12px; border-bottom: 1px solid #e5e7eb; position: relative; z-index: 15;">
           <div style="margin-bottom: 8px; font-size: 14px; font-weight: 500; color: #374151;">Voice Settings</div>
           <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
             <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: #6b7280;">
@@ -980,10 +1014,10 @@ export async function GET(request: Request) {
             </div>
           \` : ''}
         </div>
-        <div id="appointy-messages" style="flex: 1; padding: 15px; overflow-y: auto; max-height: calc(100% - 140px); background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); font-size: \${currentSize.fontSize}; position: relative; z-index: 5;">
+        <div id="appointy-messages" style="flex: 1; padding: 15px; overflow-y: auto; max-height: calc(100% - 140px); background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(5px); font-size: \${currentSize.fontSize}; position: relative; z-index: 10;">
           <div style="color: #666; font-size: \${currentSize.fontSize};">Loading...</div>
         </div>
-        <div style="padding: 15px; border-top: 1px solid #e5e7eb; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); position: relative; z-index: 10;">
+        <div style="padding: 15px; border-top: 1px solid #e5e7eb; background: rgba(255, 255, 255, 0.98); backdrop-filter: blur(10px); position: relative; z-index: 15;">
           <div style="display: flex; gap: 8px;">
             <input 
               id="appointy-input" 
@@ -1954,12 +1988,17 @@ export async function GET(request: Request) {
       
       // Mirror APIs
       setMirrorEnabled: (enabled) => {
-        mirrorEnabled = !!enabled && window.innerWidth > 768;
+        mirrorEnabled = !!enabled;
         config.mirrorMode = mirrorEnabled;
+        console.log('🔍 [WIDGET MIRROR] Mirror enabled set to:', mirrorEnabled);
+        
         const checkbox = document.getElementById('appointy-mirror-enabled');
         if (checkbox) checkbox.checked = mirrorEnabled;
         
         if (mirrorEnabled && isOpen) {
+          console.log('🔍 [WIDGET MIRROR] Re-creating widget HTML with mirror enabled');
+          // Re-create widget HTML with mirror
+          widgetContainer.innerHTML = createWidgetHTML();
           setTimeout(() => initializeMirror(), 100);
         } else if (!mirrorEnabled && mirrorIframe) {
           mirrorIframe.style.display = 'none';
@@ -1975,6 +2014,33 @@ export async function GET(request: Request) {
         if (sectionName) {
           onSectionEnter(sectionName, document.body);
         }
+      },
+      
+      // Debug functions
+      debugMirror: () => {
+        console.log('🔍 [WIDGET MIRROR DEBUG] Mirror state:', {
+          mirrorEnabled,
+          mirrorIframe,
+          mirrorIframeDisplay: mirrorIframe?.style.display,
+          mirrorIframeSrc: mirrorIframe?.src,
+          isOpen,
+          windowWidth: window.innerWidth
+        });
+        return {
+          mirrorEnabled,
+          mirrorIframe: !!mirrorIframe,
+          isOpen,
+          windowWidth: window.innerWidth
+        };
+      },
+      forceMirrorInit: () => {
+        console.log('🔍 [WIDGET MIRROR] Force initializing mirror...');
+        mirrorEnabled = true;
+        if (isOpen) {
+          widgetContainer.innerHTML = createWidgetHTML();
+          setTimeout(() => initializeMirror(), 100);
+        }
+        return 'Mirror force initialized';
       }
     };
     
