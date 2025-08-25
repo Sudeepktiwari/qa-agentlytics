@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Production Widget Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        background: #f0f4f8;
+      }
+      .test-container {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        max-width: 800px;
+        margin: 0 auto;
+      }
+      .section {
+        padding: 40px 20px;
+        margin: 20px 0;
+        border-radius: 8px;
+        min-height: 60vh;
+      }
+      .hero {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        text-align: center;
+      }
+      .pricing {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+      }
+      .price-box {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 30px;
+        border-radius: 12px;
+        text-align: center;
+        margin: 20px 0;
+        backdrop-filter: blur(10px);
+      }
+      .debug-info {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: rgba(0, 0, 0, 0.9);
+        color: white;
+        padding: 15px;
+        border-radius: 8px;
+        font-family: monospace;
+        font-size: 12px;
+        max-width: 300px;
+        z-index: 999999;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="debug-info" id="debug-info">
+      <div>🧪 Widget Status: Loading...</div>
+      <div id="error-log"></div>
+    </div>
+
+    <div class="test-container">
+      <h1>🚀 Production Widget Test</h1>
+      <p>
+        This page tests the production version of the widget to identify any
+        syntax errors.
+      </p>
+    </div>
+
+    <div class="section hero" data-section="hero">
+      <h1>Welcome to Our Service</h1>
+      <p>Experience the power of contextual AI conversations.</p>
+      <button
+        style="
+          background: rgba(255, 255, 255, 0.2);
+          color: white;
+          border: 2px solid white;
+          padding: 15px 30px;
+          border-radius: 8px;
+          font-size: 16px;
+          cursor: pointer;
+        "
+      >
+        Get Started
+      </button>
+    </div>
+
+    <div class="section pricing" data-section="pricing">
+      <h2>💰 Choose Your Plan</h2>
+      <div class="price-box" data-price="29">
+        <h3>Professional</h3>
+        <div style="font-size: 2.5em; font-weight: bold">$29</div>
+        <div style="font-size: 1.2em; opacity: 0.8">/month</div>
+        <ul style="text-align: left; margin: 20px 0">
+          <li>Advanced features</li>
+          <li>Priority support</li>
+          <li>Unlimited usage</li>
+        </ul>
+        <button
+          style="
+            background: white;
+            color: #4facfe;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+          "
+        >
+          Start Free Trial
+        </button>
+      </div>
+    </div>
+
+    <script>
+      let debugInfo = document.getElementById("debug-info");
+      let errorLog = document.getElementById("error-log");
+
+      function updateDebug(message, isError = false) {
+        const timestamp = new Date().toLocaleTimeString();
+        const logEntry = `[${timestamp}] ${message}`;
+
+        if (isError) {
+          errorLog.innerHTML += `<div style="color: #ff6b6b; margin: 5px 0;">${logEntry}</div>`;
+        } else {
+          debugInfo.firstElementChild.textContent = `🧪 Widget Status: ${message}`;
+        }
+
+        console.log(logEntry);
+      }
+
+      // Capture JavaScript errors
+      window.addEventListener("error", (e) => {
+        updateDebug(`ERROR: ${e.message} at ${e.filename}:${e.lineno}`, true);
+      });
+
+      // Load production widget
+      (function () {
+        updateDebug("Starting widget load...");
+
+        // Remove any existing widgets
+        document
+          .querySelectorAll('[id*="chatbot"], [id*="widget"], [id*="appointy"]')
+          .forEach((el) => el.remove());
+
+        // Create and inject production script
+        const s = document.createElement("script");
+        s.src = "https://sample-chatbot-nine.vercel.app/api/widget";
+
+        s.onload = () => {
+          updateDebug("✅ Widget loaded successfully");
+
+          // Check for widget initialization
+          setTimeout(() => {
+            const widgets = document.querySelectorAll(
+              '[id*="appointy"], [class*="appointy"]'
+            );
+            if (widgets.length > 0) {
+              updateDebug("✅ Widget initialized and visible");
+
+              // Test contextual functions
+              setTimeout(() => {
+                if (window.appointyChatbot) {
+                  try {
+                    const result =
+                      window.appointyChatbot.generateQuestionsForCurrentView();
+                    updateDebug("✅ Contextual questions working");
+                  } catch (e) {
+                    updateDebug(
+                      `❌ Contextual questions error: ${e.message}`,
+                      true
+                    );
+                  }
+                }
+              }, 3000);
+            } else {
+              updateDebug("⚠️ Widget loaded but not visible");
+            }
+          }, 2000);
+        };
+
+        s.onerror = () => {
+          updateDebug("❌ Widget failed to load", true);
+        };
+
+        // Set widget attributes
+        [
+          "data-api-key|ak_e8a971aee600130a0dcc93ca0fbb8831e366c4566f6b80426991b4ed6c8f9848",
+          "data-theme|blue",
+          "data-size|large",
+          "data-voice-enabled|false",
+          "data-auto-open-proactive|true",
+          "data-mirror-mode|true",
+        ].forEach((attr) => {
+          const [name, value] = attr.split("|");
+          s.setAttribute(name, value);
+        });
+
+        document.head.appendChild(s);
+      })();
+    </script>
+  </body>
+</html>

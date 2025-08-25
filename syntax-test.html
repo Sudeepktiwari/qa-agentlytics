@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Widget Syntax Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        background: #f5f5f5;
+      }
+      .test-section {
+        background: white;
+        padding: 20px;
+        margin: 20px 0;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .console-output {
+        background: #1e1e1e;
+        color: #00ff00;
+        padding: 15px;
+        border-radius: 4px;
+        font-family: monospace;
+        white-space: pre-wrap;
+        margin: 10px 0;
+        max-height: 300px;
+        overflow-y: auto;
+      }
+      .status {
+        padding: 10px;
+        border-radius: 4px;
+        margin: 10px 0;
+      }
+      .success {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
+      .error {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+      }
+      .warning {
+        background: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeaa7;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🧪 Widget Syntax Test</h1>
+
+    <div class="test-section">
+      <h2>Widget Loading Status</h2>
+      <div id="loading-status" class="status warning">Loading widget...</div>
+      <div id="console-output" class="console-output">Waiting for logs...</div>
+    </div>
+
+    <div class="test-section" data-section="pricing">
+      <h2>💰 Test Pricing Section</h2>
+      <p>This section should trigger contextual questions about pricing.</p>
+      <div class="price-box" data-price="29">
+        <h3>Professional Plan</h3>
+        <div style="font-size: 2em; color: #007bff">$29/month</div>
+        <p>Perfect for growing teams</p>
+      </div>
+      <button
+        style="
+          background: #007bff;
+          color: white;
+          padding: 10px 20px;
+          border: none;
+          border-radius: 4px;
+        "
+      >
+        Start Free Trial
+      </button>
+    </div>
+
+    <script>
+      // Capture console logs
+      const originalLog = console.log;
+      const originalError = console.error;
+      const originalWarn = console.warn;
+
+      const logs = [];
+
+      function captureLog(type, ...args) {
+        const timestamp = new Date().toLocaleTimeString();
+        logs.push(`[${timestamp}] ${type.toUpperCase()}: ${args.join(" ")}`);
+        updateConsoleOutput();
+      }
+
+      console.log = (...args) => {
+        originalLog(...args);
+        captureLog("log", ...args);
+      };
+
+      console.error = (...args) => {
+        originalError(...args);
+        captureLog("error", ...args);
+      };
+
+      console.warn = (...args) => {
+        originalWarn(...args);
+        captureLog("warn", ...args);
+      };
+
+      function updateConsoleOutput() {
+        document.getElementById("console-output").textContent = logs
+          .slice(-20)
+          .join("\n");
+      }
+
+      function updateStatus(message, type = "warning") {
+        const statusEl = document.getElementById("loading-status");
+        statusEl.textContent = message;
+        statusEl.className = `status ${type}`;
+      }
+
+      // Global error handler
+      window.addEventListener("error", (e) => {
+        console.error(
+          "GLOBAL ERROR:",
+          e.message,
+          "at",
+          e.filename + ":" + e.lineno
+        );
+        updateStatus("❌ JavaScript Error Detected", "error");
+      });
+
+      // Load widget with timestamp to bypass cache
+      (function () {
+        const timestamp = Date.now();
+        console.log(
+          "🚀 Starting widget load test at",
+          new Date().toISOString()
+        );
+
+        // Remove any existing widgets
+        document
+          .querySelectorAll('[id*="chatbot"], [id*="widget"], [id*="appointy"]')
+          .forEach((el) => {
+            console.log("Removing existing element:", el.id || el.className);
+            el.remove();
+          });
+
+        // Create and inject script with cache busting
+        const s = document.createElement("script");
+        s.src = `http://localhost:3000/api/widget?t=${timestamp}`;
+
+        s.onload = () => {
+          console.log("✅ Widget script loaded successfully");
+          updateStatus("✅ Widget Loaded Successfully", "success");
+
+          // Check if widget initialized
+          setTimeout(() => {
+            const widgetElements = document.querySelectorAll(
+              '[id*="appointy"], [class*="appointy"]'
+            );
+            if (widgetElements.length > 0) {
+              console.log(
+                "✅ Widget DOM elements found:",
+                widgetElements.length
+              );
+              updateStatus("✅ Widget Initialized and Ready", "success");
+            } else {
+              console.warn("⚠️ Widget loaded but no DOM elements found");
+              updateStatus("⚠️ Widget Loaded but Not Visible", "warning");
+            }
+          }, 2000);
+        };
+
+        s.onerror = (e) => {
+          console.error("❌ Widget script failed to load:", e);
+          updateStatus("❌ Widget Failed to Load", "error");
+        };
+
+        // Set attributes
+        [
+          "data-api-key|ak_e8a971aee600130a0dcc93ca0fbb8831e366c4566f6b80426991b4ed6c8f9848",
+          "data-theme|blue",
+          "data-size|large",
+          "data-voice-enabled|false",
+          "data-auto-open-proactive|true",
+          "data-mirror-mode|true",
+        ].forEach((attr) => {
+          const [name, value] = attr.split("|");
+          s.setAttribute(name, value);
+        });
+
+        console.log("📄 Loading widget script from:", s.src);
+        document.head.appendChild(s);
+      })();
+
+      // Test contextual questions after a delay
+      setTimeout(() => {
+        console.log("🧪 Testing contextual question generation...");
+        if (window.appointyChatbot) {
+          try {
+            const result =
+              window.appointyChatbot.generateQuestionsForCurrentView();
+            console.log("✅ Contextual questions test:", result);
+          } catch (e) {
+            console.error("❌ Contextual questions test failed:", e.message);
+          }
+        } else {
+          console.warn("⚠️ appointyChatbot global not found");
+        }
+      }, 5000);
+    </script>
+  </body>
+</html>

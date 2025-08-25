@@ -1288,7 +1288,7 @@ export async function GET(request: Request) {
             </div>
           </div>
           <div style="display: flex; gap: 8px; align-items: center;">
-            \${mirrorEnabled ? \`<button id="appointy-mirror-toggle" style="background: none; border: none; color: white; font-size: 16px; cursor: pointer; padding: 4px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 4px;" title="Toggle Mirror View">👁️</button>\` : ''}
+            \${mirrorEnabled ? '<button id="appointy-mirror-toggle" style="background: none; border: none; color: white; font-size: 16px; cursor: pointer; padding: 4px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 4px;" title="Toggle Mirror View">👁️</button>' : ''}
             <button id="appointy-settings-btn" style="background: none; border: none; color: white; font-size: 18px; cursor: pointer; padding: 4px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 4px;" title="Voice Settings">⚙️</button>
             <button id="appointy-close-btn" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer; padding: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">×</button>
           </div>
