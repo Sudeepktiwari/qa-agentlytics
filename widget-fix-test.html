@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fixed Widget Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        .status {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            backdrop-filter: blur(10px);
+        }
+        .success { border-left: 4px solid #00ff00; }
+        .error { border-left: 4px solid #ff0000; }
+        .section {
+            background: rgba(255,255,255,0.1);
+            padding: 40px;
+            margin: 30px 0;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+        }
+        button {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.5);
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s;
+        }
+        button:hover {
+            background: rgba(255,255,255,0.3);
+            border-color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎉 Widget Syntax Fix Test</h1>
+        <div id="status" class="status">
+            <h3>Widget Status: Loading...</h3>
+            <p id="status-message">Testing the syntax fix...</p>
+        </div>
+        
+        <div class="section" data-section="hero">
+            <h2>🚀 Hero Section</h2>
+            <p>This section should trigger contextual questions automatically after 5 seconds of staying here.</p>
+            <button onclick="testWidget()">Test Contextual Questions</button>
+        </div>
+        
+        <div class="section" data-section="pricing">
+            <h2>💰 Pricing Section</h2>
+            <div style="font-size: 2em; margin: 20px 0;">$29/month</div>
+            <p>When you enter this section, the bot should ask about pricing plans.</p>
+            <button onclick="testPricing()">Test Pricing Questions</button>
+        </div>
+    </div>
+
+    <script>
+        function updateStatus(message, isSuccess = true) {
+            const status = document.getElementById('status');
+            const statusMessage = document.getElementById('status-message');
+            
+            status.className = `status ${isSuccess ? 'success' : 'error'}`;
+            statusMessage.textContent = message;
+            
+            console.log(`[${new Date().toLocaleTimeString()}] ${message}`);
+        }
+        
+        function testWidget() {
+            if (window.appointyChatbot) {
+                try {
+                    const result = window.appointyChatbot.generateQuestionsForCurrentView();
+                    updateStatus(`✅ Widget test successful: ${result}`, true);
+                } catch (e) {
+                    updateStatus(`❌ Widget test failed: ${e.message}`, false);
+                }
+            } else {
+                updateStatus('❌ Widget not loaded yet', false);
+            }
+        }
+        
+        function testPricing() {
+            if (window.appointyChatbot) {
+                try {
+                    const result = window.appointyChatbot.askContextualQuestion('How much does the professional plan cost?');
+                    updateStatus(`✅ Pricing test successful: ${result}`, true);
+                } catch (e) {
+                    updateStatus(`❌ Pricing test failed: ${e.message}`, false);
+                }
+            } else {
+                updateStatus('❌ Widget not loaded yet', false);
+            }
+        }
+        
+        // Global error handler
+        window.addEventListener('error', (e) => {
+            if (e.message.includes('Unexpected string') || e.message.includes('SyntaxError')) {
+                updateStatus(`❌ SYNTAX ERROR DETECTED: ${e.message}`, false);
+            } else {
+                console.warn('Other error:', e.message);
+            }
+        });
+        
+        // Load widget with cache busting
+        (function() {
+            const timestamp = Date.now();
+            
+            // Remove any existing widgets
+            document.querySelectorAll('[id*="chatbot"], [id*="widget"], [id*="appointy"]').forEach(el => el.remove());
+
+            const s = document.createElement('script');
+            s.src = `http://localhost:3000/api/widget?t=${timestamp}`;
+            
+            s.onload = () => {
+                updateStatus('✅ Widget loaded without syntax errors!', true);
+                
+                // Auto-test after 3 seconds
+                setTimeout(() => {
+                    testWidget();
+                }, 3000);
+            };
+            
+            s.onerror = () => {
+                updateStatus('❌ Widget failed to load', false);
+            };
+
+            // Set widget attributes
+            [
+                'data-api-key|ak_e8a971aee600130a0dcc93ca0fbb8831e366c4566f6b80426991b4ed6c8f9848',
+                'data-theme|blue',
+                'data-size|large',
+                'data-voice-enabled|false',
+                'data-auto-open-proactive|true',
+                'data-mirror-mode|true'
+            ].forEach(attr => {
+                const [name, value] = attr.split('|');
+                s.setAttribute(name, value);
+            });
+
+            document.head.appendChild(s);
+            updateStatus('Loading widget...', true);
+        })();
+    </script>
+</body>
+</html>

@@ -2404,10 +2404,6 @@ export async function GET(request: Request) {
           return 'Custom question sent: ' + customQuestion;
         }
         return 'No question provided';
-      },
-          return 'Custom question sent';
-        }
-        return 'No question provided';
       }
     };
     
