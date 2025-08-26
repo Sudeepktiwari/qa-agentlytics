@@ -874,77 +874,99 @@ export async function GET(request: Request) {
     return null;
   }
 
-  function generateContextualQuestionForScrollStop(sectionData) {
+  async function generateContextualQuestionForScrollStop(sectionData) {
     const { sectionName, viewportContext, scrollPercentage } = sectionData;
     let question = '';
     
     console.log('🤔 [WIDGET SCROLL] Generating question for:', sectionName, 'with', viewportContext.visibleElements.length, 'visible elements');
     
-    // Generate highly specific questions based on what's visible
-    if (sectionName.includes('pricing') || viewportContext.visibleElements.some(el => el.isPricing)) {
-      const questions = [
-        "I see you're looking at our pricing. Which plan interests you most?",
-        "Have questions about what's included in these plans?",
-        "Would you like me to help you choose the right plan for your needs?",
-        "Curious about our ROI or want to see a cost comparison?"
-      ];
-      question = questions[Math.floor(Math.random() * questions.length)];
-    } 
-    else if (sectionName.includes('feature') || sectionName.includes('benefit')) {
-      const questions = [
-        "Which of these features would be most valuable for your workflow?",
-        "Want to see how this feature works in practice?",
-        "How are you currently handling this in your organization?",
-        "Would a demo of these features be helpful?"
-      ];
-      question = questions[Math.floor(Math.random() * questions.length)];
+    // Try AI first
+    try {
+      const aiQuestion = await generateAiContextualQuestion(sectionName, viewportContext, scrollPercentage, sectionData);
+      if (aiQuestion) {
+        question = aiQuestion;
+        console.log('🤖 [WIDGET SCROLL] Using AI-generated question:', question);
+      }
+    } catch (error) {
+      console.warn('⚠️ [WIDGET SCROLL] AI generation failed, using fallback:', error);
     }
-    else if (sectionName.includes('testimonial') || sectionName.includes('review')) {
-      const questions = [
-        "Are you curious about achieving similar results for your business?",
-        "Would you like to speak with one of these customers?",
-        "What specific outcomes are you hoping to achieve?",
-        "How do these results compare to your current situation?"
-      ];
-      question = questions[Math.floor(Math.random() * questions.length)];
-    }
-    else if (sectionName.includes('contact') || sectionName.includes('form') || viewportContext.visibleElements.some(el => el.isForm)) {
-      const questions = [
-        "Ready to get started? I can help you with any questions.",
-        "Would you like assistance filling out this form?",
-        "Have any questions before taking the next step?",
-        "What's the best way to get you set up?"
-      ];
-      question = questions[Math.floor(Math.random() * questions.length)];
-    }
-    else if (sectionName.includes('hero') || scrollPercentage < 20) {
-      const questions = [
-        "What brought you here today? I can help you find what you need.",
-        "Are you looking for a specific solution?",
-        "Would you like me to show you our most popular features?",
-        "What challenges are you hoping to solve?"
-      ];
-      question = questions[Math.floor(Math.random() * questions.length)];
-    }
-    else {
-      // Generic contextual questions based on visible content
-      const visibleText = viewportContext.visibleElements
-        .map(el => el.text)
-        .join(' ')
-        .toLowerCase();
+    
+    // Fallback to improved rule-based questions (case-insensitive)
+    if (!question) {
+      console.log('🔄 [WIDGET SCROLL] Using fallback rule-based questions');
+      const sectionLower = sectionName.toLowerCase();
       
-      if (visibleText.includes('demo') || visibleText.includes('trial')) {
-        question = "Interested in seeing a demo or starting a free trial?";
-      } else if (visibleText.includes('integrate') || visibleText.includes('api')) {
-        question = "Have questions about integration or our API capabilities?";
-      } else if (visibleText.includes('support') || visibleText.includes('help')) {
-        question = "Looking for support information? I can help you right now.";
-      } else {
-        question = "What questions do you have about what you're reading?";
+      if (sectionLower.includes('pricing') || viewportContext.visibleElements.some(el => el.isPricing)) {
+        const questions = [
+          "I see you're looking at our pricing. Which plan interests you most?",
+          "Have questions about what's included in these plans?",
+          "Would you like me to help you choose the right plan for your needs?",
+          "Curious about our ROI or want to see a cost comparison?"
+        ];
+        question = questions[Math.floor(Math.random() * questions.length)];
+        console.log('🎯 [WIDGET SCROLL] Matched PRICING section');
+      } 
+      else if (sectionLower.includes('feature') || sectionLower.includes('benefit')) {
+        const questions = [
+          "Which of these features would be most valuable for your workflow?",
+          "Want to see how this feature works in practice?",
+          "How are you currently handling this in your organization?",
+          "Would a demo of these features be helpful?"
+        ];
+        question = questions[Math.floor(Math.random() * questions.length)];
+        console.log('🎯 [WIDGET SCROLL] Matched FEATURES section');
+      }
+      else if (sectionLower.includes('testimonial') || sectionLower.includes('review')) {
+        const questions = [
+          "Are you curious about achieving similar results for your business?",
+          "Would you like to speak with one of these customers?",
+          "What specific outcomes are you hoping to achieve?",
+          "How do these results compare to your current situation?"
+        ];
+        question = questions[Math.floor(Math.random() * questions.length)];
+        console.log('🎯 [WIDGET SCROLL] Matched TESTIMONIALS section');
+      }
+      else if (sectionLower.includes('contact') || sectionLower.includes('form') || viewportContext.visibleElements.some(el => el.isForm)) {
+        const questions = [
+          "Ready to get started? I can help you with any questions.",
+          "Would you like assistance filling out this form?",
+          "Have any questions before taking the next step?",
+          "What's the best way to get you set up?"
+        ];
+        question = questions[Math.floor(Math.random() * questions.length)];
+        console.log('🎯 [WIDGET SCROLL] Matched CONTACT section');
+      }
+      else if (sectionLower.includes('hero') || scrollPercentage < 20) {
+        const questions = [
+          "What brought you here today? I can help you find what you need.",
+          "Are you looking for a specific solution?",
+          "Would you like me to show you our most popular features?",
+          "What challenges are you hoping to solve?"
+        ];
+        question = questions[Math.floor(Math.random() * questions.length)];
+        console.log('🎯 [WIDGET SCROLL] Matched HERO section');
+      }
+      else {
+        // Generic contextual questions based on visible content
+        const visibleText = viewportContext.visibleElements
+          .map(el => el.text)
+          .join(' ')
+          .toLowerCase();
+        
+        if (visibleText.includes('demo') || visibleText.includes('trial')) {
+          question = "Interested in seeing a demo or starting a free trial?";
+        } else if (visibleText.includes('integrate') || visibleText.includes('api')) {
+          question = "Have questions about integration or our API capabilities?";
+        } else if (visibleText.includes('support') || visibleText.includes('help')) {
+          question = "Looking for support information? I can help you right now.";
+        } else {
+          question = "What questions do you have about what you're reading?";
+        }
+        console.log('⚠️ [WIDGET SCROLL] Using GENERIC fallback question');
       }
     }
     
-    console.log('💡 [WIDGET SCROLL] Generated question:', question);
+    console.log('💡 [WIDGET SCROLL] Final question:', question);
     
     // Send the question to the API
     if (question) {
@@ -1122,15 +1144,36 @@ export async function GET(request: Request) {
   }
   
   // Generate contextual questions based on what user is viewing
-  function generateContextualQuestions(sectionData) {
+  async function generateContextualQuestions(sectionData) {
     const questions = [];
     const { sectionName, sectionContent, viewportContext } = sectionData;
     
     console.log('🤔 [WIDGET QUESTIONS] Generating questions for section:', sectionName);
     console.log('📊 [WIDGET QUESTIONS] Viewport context:', viewportContext);
     
+    // Try AI first for more intelligent questions
+    let aiQuestion = null;
+    try {
+      aiQuestion = await generateAiContextualQuestion(sectionName, viewportContext, sectionData.scrollPercentage, sectionData);
+      if (aiQuestion) {
+        console.log('🤖 [WIDGET QUESTIONS] Using AI-generated question:', aiQuestion);
+        // Send AI question directly
+        setTimeout(() => {
+          if (!userIsActive && currentViewportSection === sectionName) {
+            sendContextualQuestion(aiQuestion, sectionData);
+          }
+        }, 5000);
+        return;
+      }
+    } catch (error) {
+      console.warn('⚠️ [WIDGET QUESTIONS] AI generation failed, using fallback:', error);
+    }
+    
+    // Fallback to rule-based questions (case-insensitive)
+    const sectionLower = sectionName.toLowerCase();
+    
     // Pricing section questions
-    if (sectionName.includes('pricing') || sectionContent.hasPricing) {
+    if (sectionLower.includes('pricing') || sectionContent.hasPricing) {
       questions.push(
         "Which pricing plan fits your team size?",
         "Would you like me to calculate the ROI for your use case?",
@@ -1140,7 +1183,7 @@ export async function GET(request: Request) {
     }
     
     // Features section questions
-    else if (sectionName.includes('features') || sectionName.includes('capabilities')) {
+    else if (sectionLower.includes('features') || sectionLower.includes('capabilities')) {
       questions.push(
         "Which of these features is most important for your workflow?",
         "Would you like to see a demo of any specific feature?",
@@ -1150,7 +1193,7 @@ export async function GET(request: Request) {
     }
     
     // Contact/Form section questions
-    else if (sectionContent.hasForm || sectionName.includes('contact')) {
+    else if (sectionContent.hasForm || sectionLower.includes('contact')) {
       questions.push(
         "Would you like me to help you fill out this form?",
         "Do you prefer to schedule a call instead?",
@@ -1160,7 +1203,7 @@ export async function GET(request: Request) {
     }
     
     // About/Company section questions
-    else if (sectionName.includes('about') || sectionName.includes('company') || sectionName.includes('mission')) {
+    else if (sectionLower.includes('about') || sectionLower.includes('company') || sectionLower.includes('mission')) {
       questions.push(
         "What drew you to learn more about our company?",
         "Are you evaluating us against other solutions?",
@@ -1170,7 +1213,7 @@ export async function GET(request: Request) {
     }
     
     // Testimonials section questions
-    else if (sectionName.includes('testimonial') || sectionName.includes('review') || sectionName.includes('customer')) {
+    else if (sectionLower.includes('testimonial') || sectionLower.includes('review') || sectionLower.includes('customer')) {
       questions.push(
         "Do any of these use cases sound similar to yours?",
         "Would you like to speak with one of our existing customers?",
@@ -1180,7 +1223,7 @@ export async function GET(request: Request) {
     }
     
     // Product/Solution section questions
-    else if (sectionName.includes('product') || sectionName.includes('solution') || sectionName.includes('how-it-works')) {
+    else if (sectionLower.includes('product') || sectionLower.includes('solution') || sectionLower.includes('how-it-works')) {
       questions.push(
         "How does this compare to your current process?",
         "What's your biggest challenge in this area?",
@@ -1220,7 +1263,7 @@ export async function GET(request: Request) {
     // Send most relevant question as proactive message
     if (questions.length > 0) {
       const selectedQuestion = selectBestQuestion(questions, sectionData);
-      console.log('💡 [WIDGET QUESTIONS] Selected question:', selectedQuestion);
+      console.log('💡 [WIDGET QUESTIONS] Selected fallback question:', selectedQuestion);
       
       // Don't send immediately - wait a bit for user to read
       setTimeout(() => {
