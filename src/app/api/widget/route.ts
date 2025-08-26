@@ -929,9 +929,10 @@ export async function GET(request: Request) {
         proactiveMessageCount: proactiveMessageCount
       });
       
-      if (data.mainText && data.mainText.trim()) {
+      if ((data.mainText && data.mainText.trim()) || (data.answer && data.answer.trim())) {
+        const messageText = data.mainText || data.answer;
         console.log('🎯 [WIDGET SCROLL] Received scroll-based response, displaying message');
-        sendProactiveMessage(data.mainText);
+        sendProactiveMessage(messageText);
       }
     } catch (error) {
       console.error('❌ [WIDGET SCROLL] Failed to send scroll-based question:', error);
@@ -1695,6 +1696,22 @@ export async function GET(request: Request) {
     console.log("🚀 [WIDGET API] Sending request to:", endpoint);
     console.log("📤 [WIDGET API] Request data:", data);
     
+    // Add explicit response format specification
+    const requestData = {
+      ...data,
+      responseFormat: {
+        required: true,
+        structure: {
+          mainText: "string - REQUIRED main response text",
+          buttons: "array - optional action buttons",
+          emailPrompt: "string - optional email collection prompt",
+          botMode: "string - bot behavior mode",
+          userEmail: "string - user email if collected"
+        },
+        note: "Always use 'mainText' field for the main response content. Do not use 'answer' field."
+      }
+    };
+    
     try {
       const response = await fetch(\`\${CHATBOT_API_BASE}/api/\${endpoint}\`, {
         method: 'POST',
@@ -1702,27 +1719,57 @@ export async function GET(request: Request) {
           'Content-Type': 'application/json',
           'X-API-Key': API_KEY
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify(requestData)
       });
       
       console.log("📥 [WIDGET API] Response status:", response.status);
       
       const responseData = await response.json();
       
+      // Normalize response format to ensure consistency
+      const normalizedResponse = normalizeApiResponse(responseData);
+      
       console.log("🤖 [WIDGET AI RESPONSE] Raw AI response received:");
       console.log("==========================================");
       console.log("Full response data:", responseData);
-      console.log("AI Answer:", responseData.answer || responseData.mainText || "No answer field");
-      console.log("Buttons:", responseData.buttons || "No buttons");
-      console.log("Email Prompt:", responseData.emailPrompt || "No email prompt");
-      console.log("Bot Mode:", responseData.botMode || "No bot mode");
+      console.log("AI Answer:", normalizedResponse.mainText || "No mainText field");
+      console.log("Buttons:", normalizedResponse.buttons || "No buttons");
+      console.log("Email Prompt:", normalizedResponse.emailPrompt || "No email prompt");
+      console.log("Bot Mode:", normalizedResponse.botMode || "No bot mode");
       console.log("==========================================");
       
-      return responseData;
+      return normalizedResponse;
     } catch (error) {
       console.error('❌ [WIDGET API] Error:', error);
       return { error: 'Connection failed' };
     }
+  }
+  
+  // Normalize API response to ensure consistent format
+  function normalizeApiResponse(responseData) {
+    console.log("🔄 [WIDGET API] Normalizing response format");
+    
+    // Ensure we always have mainText field
+    const mainText = responseData.mainText || responseData.answer || responseData.text || responseData.message || '';
+    
+    if (!responseData.mainText && (responseData.answer || responseData.text || responseData.message)) {
+      console.log("⚠️ [WIDGET API] Converting legacy field to mainText:", {
+        answer: responseData.answer ? 'found' : 'missing',
+        text: responseData.text ? 'found' : 'missing', 
+        message: responseData.message ? 'found' : 'missing'
+      });
+    }
+    
+    const normalized = {
+      mainText: mainText,
+      buttons: responseData.buttons || [],
+      emailPrompt: responseData.emailPrompt || '',
+      botMode: responseData.botMode || 'lead_generation',
+      userEmail: responseData.userEmail || null
+    };
+    
+    console.log("✅ [WIDGET API] Response normalized to consistent format");
+    return normalized;
   }
   
   // Send followup message
@@ -1751,10 +1798,10 @@ export async function GET(request: Request) {
         updateBotModeIndicator(data.botMode, data.userEmail);
       }
       
-      if (data.mainText || data.answer) {
+      if (data.mainText) {
         const botMessage = {
           role: 'assistant',
-          content: data.mainText || data.answer,
+          content: data.mainText,
           buttons: data.buttons || [],
           emailPrompt: data.emailPrompt || ''
         };

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test Consistent API Response Format</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 20px;
+        background: #f5f5f5;
+      }
+      .test-section {
+        background: white;
+        padding: 20px;
+        margin: 20px 0;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .response {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+        border-left: 4px solid #007bff;
+        margin: 10px 0;
+        white-space: pre-wrap;
+      }
+      .error {
+        border-left-color: #dc3545;
+        background: #fff5f5;
+      }
+      .success {
+        border-left-color: #28a745;
+        background: #f8fff8;
+      }
+      button {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        margin: 5px;
+      }
+      button:hover {
+        background: #0056b3;
+      }
+      .chat-widget {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 1000;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🧪 Test Consistent API Response Format</h1>
+    <p>
+      This page tests that our API always returns responses with the
+      <code>mainText</code> field consistently.
+    </p>
+
+    <div class="test-section">
+      <h2>1. Direct API Test</h2>
+      <button onclick="testDirectAPI()">Test Direct API Call</button>
+      <div id="directApiResult" class="response" style="display: none"></div>
+    </div>
+
+    <div class="test-section">
+      <h2>2. Widget Integration Test</h2>
+      <p>
+        The chatbot widget should appear in the bottom-right corner. Test that
+        all responses use <code>mainText</code>:
+      </p>
+      <ul>
+        <li>Ask a question</li>
+        <li>Wait for a proactive message</li>
+        <li>Check followup messages</li>
+      </ul>
+      <div id="widgetStatus" class="response">Widget loading...</div>
+    </div>
+
+    <div class="test-section">
+      <h2>3. Response Format Validation</h2>
+      <p>All responses should have:</p>
+      <ul>
+        <li><code>mainText</code> field (required)</li>
+        <li>No <code>answer</code> field (deprecated)</li>
+        <li>
+          Optional: <code>buttons</code>, <code>emailPrompt</code>,
+          <code>botMode</code>
+        </li>
+      </ul>
+    </div>
+
+    <script>
+      // Test direct API call
+      async function testDirectAPI() {
+        const resultDiv = document.getElementById("directApiResult");
+        resultDiv.style.display = "block";
+        resultDiv.textContent = "Testing API...";
+        resultDiv.className = "response";
+
+        try {
+          const response = await fetch("/api/chat", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              message: "Test message for consistent response format",
+              sessionId: "test-session-" + Date.now(),
+              pageUrl: window.location.href,
+            }),
+          });
+
+          const data = await response.json();
+
+          let result =
+            "Response received:\n" + JSON.stringify(data, null, 2) + "\n\n";
+
+          // Validate response format
+          if (data.mainText) {
+            result += "✅ SUCCESS: Response has mainText field\n";
+            result += `📝 Content: "${data.mainText.substring(0, 100)}..."\n`;
+            resultDiv.className = "response success";
+          } else {
+            result += "❌ ERROR: Response missing mainText field\n";
+            resultDiv.className = "response error";
+          }
+
+          if (data.answer) {
+            result +=
+              "⚠️ WARNING: Response still has deprecated answer field\n";
+          }
+
+          resultDiv.textContent = result;
+        } catch (error) {
+          resultDiv.textContent = "❌ ERROR: " + error.message;
+          resultDiv.className = "response error";
+        }
+      }
+
+      // Monitor widget responses
+      let originalConsoleLog = console.log;
+      let widgetResponses = [];
+
+      console.log = function (...args) {
+        originalConsoleLog.apply(console, args);
+
+        // Capture API responses from widget
+        const message = args.join(" ");
+        if (
+          message.includes("API response:") ||
+          message.includes("Received response:")
+        ) {
+          widgetResponses.push(message);
+          updateWidgetStatus();
+        }
+      };
+
+      function updateWidgetStatus() {
+        const statusDiv = document.getElementById("widgetStatus");
+        let status = "Widget loaded successfully!\n\n";
+        status += "Captured responses:\n";
+
+        widgetResponses.forEach((response, index) => {
+          status += `${index + 1}. ${response}\n`;
+        });
+
+        if (widgetResponses.length === 0) {
+          status +=
+            "No responses captured yet. Try interacting with the widget.";
+        }
+
+        statusDiv.textContent = status;
+      }
+
+      // Initialize widget status
+      setTimeout(() => {
+        updateWidgetStatus();
+      }, 2000);
+    </script>
+
+    <!-- Load the chatbot widget -->
+    <div class="chat-widget">
+      <script src="/api/widget" async></script>
+    </div>
+  </body>
+</html>
