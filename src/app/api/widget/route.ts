@@ -557,12 +557,12 @@ export async function GET(request: Request) {
         updateBotModeIndicator(data.botMode, data.userEmail);
       }
       
-      if (data.answer) {
-        console.log('✉️ [WIDGET CONTEXT] Received proactive message from API:', data.answer.substring(0, 100) + '...');
+      if (data.mainText) {
+        console.log('✉️ [WIDGET CONTEXT] Received proactive message from API:', data.mainText.substring(0, 100) + '...');
         // Send proactive message if auto-open is enabled
         if (config.autoOpenProactive) {
           console.log('🎯 [WIDGET CONTEXT] Auto-open enabled, sending proactive message');
-          sendProactiveMessage(data.answer);
+          sendProactiveMessage(data.mainText);
         } else {
           console.log('🔒 [WIDGET CONTEXT] Auto-open disabled, not sending proactive message');
         }
