@@ -889,12 +889,25 @@ export async function GET(request: Request) {
         businessStage: determineBusinessStage(visibleContent, scrollPercentage)
       };
 
+      // Fixed: Include required sessionId and proper request structure
       const data = await sendApiRequest('chat', {
+        sessionId: sessionId, // Include the session ID
+        pageUrl: currentPageUrl, // Include current page URL
+        question: 'Generate a contextual question based on the content analysis', // Provide a question
+        sectionContext: sectionData, // Include section context
+        contextual: true, // Mark as contextual
+        proactive: true, // Mark as proactive message generation
+        
+        // AI-specific parameters
         contextualQuestionGeneration: true,
         sectionName: sectionName,
         sectionAnalysis: contentForAi,
         requestType: 'generate_contextual_question',
-        instruction: 'Generate a specific, helpful question based on what the user is currently viewing. Consider the content type, business stage, and visible elements to create an engaging, relevant question that encourages meaningful conversation.'
+        instruction: 'Generate a specific, helpful question based on what the user is currently viewing. Consider the content type, business stage, and visible elements to create an engaging, relevant question that encourages meaningful conversation.',
+        
+        // Additional context for better AI response
+        hasBeenGreeted: hasBeenGreeted,
+        proactiveMessageCount: proactiveMessageCount
       });
 
       if (data && data.mainText && data.mainText.trim()) {
