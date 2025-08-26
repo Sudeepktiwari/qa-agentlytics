@@ -835,6 +835,45 @@ export async function GET(request: Request) {
   }
   
   // Generate contextual question specifically for scroll stop
+  // AI-powered contextual question generation
+  async function generateAiContextualQuestion(sectionName, visibleContent, scrollPercentage, sectionData) {
+    try {
+      console.log('🤖 [WIDGET AI] Generating contextual question with AI for:', sectionName);
+      
+      const contentForAi = {
+        sectionName: sectionName,
+        visibleText: visibleContent.visibleElements
+          .map(el => el.text)
+          .filter(text => text && text.length > 5)
+          .join(' ')
+          .substring(0, 1000),
+        hasPricing: visibleContent.visibleElements.some(el => el.isPricing),
+        hasForm: visibleContent.visibleElements.some(el => el.isForm),
+        elementTypes: visibleContent.visibleElements.map(el => ({
+          type: el.tagName,
+          isButton: el.isButton,
+          isPricing: el.isPricing
+        }))
+      };
+
+      const data = await sendApiRequest('chat', {
+        contextualQuestionGeneration: true,
+        sectionName: sectionName,
+        sectionAnalysis: contentForAi,
+        requestType: 'generate_contextual_question',
+        instruction: 'Generate a specific, helpful question based on what the user is currently viewing. Make it engaging and relevant to the visible content.'
+      });
+
+      if (data && data.mainText && data.mainText.trim()) {
+        console.log('✅ [WIDGET AI] AI generated question:', data.mainText);
+        return data.mainText.trim();
+      }
+    } catch (error) {
+      console.warn('⚠️ [WIDGET AI] AI question generation failed, using fallback:', error);
+    }
+    return null;
+  }
+
   function generateContextualQuestionForScrollStop(sectionData) {
     const { sectionName, viewportContext, scrollPercentage } = sectionData;
     let question = '';
