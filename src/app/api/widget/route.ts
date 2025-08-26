@@ -539,6 +539,10 @@ export async function GET(request: Request) {
     try {
       console.log('🔍 [WIDGET CONTEXT] Loading context for page:', currentPageUrl);
       
+      // Extract page summary
+      const pageSummary = extractPageSummary();
+      console.log('📄 [WIDGET CONTEXT] Page summary extracted:', pageSummary);
+      
       // Get page-specific proactive message
       const data = await sendApiRequest('chat', {
         sessionId,
@@ -546,7 +550,8 @@ export async function GET(request: Request) {
         proactive: true,
         hasBeenGreeted: hasBeenGreeted,
         proactiveMessageCount: proactiveMessageCount,
-        visitedPages: visitedPages
+        visitedPages: visitedPages,
+        pageSummary: pageSummary
         // Don't specify adminId - let the API extract it from the API key
       });
       
@@ -1293,6 +1298,56 @@ export async function GET(request: Request) {
     return buttons.slice(0, 3); // Limit to 3 buttons max
   }
   
+  // Extract page summary for proactive messages
+  function extractPageSummary() {
+    const summary = {
+      title: document.title || '',
+      url: window.location.href,
+      headings: [],
+      mainContent: '',
+      hasForm: false,
+      hasPricing: false,
+      hasVideo: false,
+      ctaButtons: []
+    };
+    
+    // Extract main headings
+    document.querySelectorAll('h1, h2, h3').forEach(h => {
+      if (h.textContent.trim() && summary.headings.length < 5) {
+        summary.headings.push(h.textContent.trim());
+      }
+    });
+    
+    // Extract main content (first few paragraphs)
+    const paragraphs = document.querySelectorAll('p');
+    let contentText = '';
+    for (let i = 0; i < Math.min(3, paragraphs.length); i++) {
+      const text = paragraphs[i].textContent.trim();
+      if (text && text.length > 20) {
+        contentText += text + ' ';
+        if (contentText.length > 500) break;
+      }
+    }
+    summary.mainContent = contentText.substring(0, 500);
+    
+    // Check for special elements
+    summary.hasForm = document.querySelector('form') !== null;
+    summary.hasPricing = document.querySelector('[class*="price"], [data-price], [class*="plan"]') !== null;
+    summary.hasVideo = document.querySelector('video, iframe[src*="youtube"], iframe[src*="vimeo"]') !== null;
+    
+    // Extract CTA buttons
+    document.querySelectorAll('a, button').forEach(element => {
+      const text = element.textContent.trim().toLowerCase();
+      if (text && (text.includes('contact') || text.includes('buy') || text.includes('sign up') || 
+                   text.includes('get started') || text.includes('learn more') || text.includes('try')) && 
+          summary.ctaButtons.length < 3) {
+        summary.ctaButtons.push(element.textContent.trim());
+      }
+    });
+    
+    return summary;
+  }
+  
   // Extract meaningful content from section
   function extractSectionContent(element) {
     const content = {
@@ -1675,12 +1730,17 @@ export async function GET(request: Request) {
     console.log('[Widget] Sending followup message', { followupCount, sessionId });
     const currentUrl = window.location.href;
     
+    // Extract current page summary for contextual followups
+    const pageSummary = extractPageSummary();
+    console.log('📄 [WIDGET FOLLOWUP] Page summary for followup:', pageSummary);
+    
     try {
       const data = await sendApiRequest('chat', {
         sessionId,
         pageUrl: currentUrl,
         followup: true,
-        followupCount
+        followupCount,
+        pageSummary: pageSummary
         // Don't specify adminId - let the API extract it from the API key
       });
       
