@@ -840,20 +840,53 @@ export async function GET(request: Request) {
     try {
       console.log('🤖 [WIDGET AI] Generating contextual question with AI for:', sectionName);
       
+      // Enhanced content context for AI with richer data
       const contentForAi = {
         sectionName: sectionName,
+        
+        // Rich text content
         visibleText: visibleContent.visibleElements
           .map(el => el.text)
           .filter(text => text && text.length > 5)
           .join(' ')
-          .substring(0, 1000),
-        hasPricing: visibleContent.visibleElements.some(el => el.isPricing),
-        hasForm: visibleContent.visibleElements.some(el => el.isForm),
-        elementTypes: visibleContent.visibleElements.map(el => ({
-          type: el.tagName,
-          isButton: el.isButton,
-          isPricing: el.isPricing
-        }))
+          .substring(0, 1500), // Increased limit for richer context
+        
+        // Enhanced content analysis
+        contentSummary: visibleContent.contentSummary,
+        
+        // Element-specific insights
+        headings: visibleContent.visibleElements
+          .filter(el => el.contentType === 'heading')
+          .map(el => el.text)
+          .slice(0, 5),
+          
+        ctaElements: visibleContent.visibleElements
+          .filter(el => el.isCTA)
+          .map(el => el.text)
+          .slice(0, 3),
+          
+        pricingInfo: visibleContent.visibleElements
+          .filter(el => el.isPricing)
+          .map(el => el.text)
+          .slice(0, 3),
+          
+        features: visibleContent.visibleElements
+          .filter(el => el.isFeature)
+          .map(el => el.text)
+          .slice(0, 5),
+          
+        testimonials: visibleContent.visibleElements
+          .filter(el => el.isTestimonial)
+          .map(el => el.text)
+          .slice(0, 2),
+        
+        // Content flags for AI understanding
+        contentTypes: visibleContent.contentSummary.contentTypes,
+        scrollPosition: scrollPercentage,
+        
+        // Semantic insights
+        primaryContentType: determinePrimaryContentType(visibleContent),
+        businessStage: determineBusinessStage(visibleContent, scrollPercentage)
       };
 
       const data = await sendApiRequest('chat', {
@@ -861,7 +894,7 @@ export async function GET(request: Request) {
         sectionName: sectionName,
         sectionAnalysis: contentForAi,
         requestType: 'generate_contextual_question',
-        instruction: 'Generate a specific, helpful question based on what the user is currently viewing. Make it engaging and relevant to the visible content.'
+        instruction: 'Generate a specific, helpful question based on what the user is currently viewing. Consider the content type, business stage, and visible elements to create an engaging, relevant question that encourages meaningful conversation.'
       });
 
       if (data && data.mainText && data.mainText.trim()) {
@@ -872,6 +905,44 @@ export async function GET(request: Request) {
       console.warn('⚠️ [WIDGET AI] AI question generation failed, using fallback:', error);
     }
     return null;
+  }
+  
+  // Determine primary content type from visible elements
+  function determinePrimaryContentType(visibleContent) {
+    const summary = visibleContent.contentSummary;
+    
+    if (summary.hasPricing) return 'pricing';
+    if (summary.hasCTA) return 'conversion';
+    if (summary.hasTestimonials) return 'social_proof';
+    if (summary.hasFeatures) return 'features';
+    if (summary.hasMedia) return 'media_rich';
+    
+    // Analyze content types
+    const types = summary.contentTypes;
+    if (types.includes('heading') && types.includes('paragraph')) return 'informational';
+    if (types.includes('form')) return 'lead_capture';
+    if (types.includes('list')) return 'structured_content';
+    
+    return 'general';
+  }
+  
+  // Determine business funnel stage
+  function determineBusinessStage(visibleContent, scrollPercentage) {
+    const summary = visibleContent.contentSummary;
+    
+    // Decision stage indicators
+    if (summary.hasPricing || summary.hasCTA) return 'decision';
+    
+    // Consideration stage indicators  
+    if (summary.hasTestimonials || summary.hasFeatures) return 'consideration';
+    
+    // Top of page usually awareness
+    if (scrollPercentage < 25) return 'awareness';
+    
+    // Deep scroll suggests evaluation
+    if (scrollPercentage > 75) return 'evaluation';
+    
+    return 'consideration';
   }
 
   async function generateContextualQuestionForScrollStop(sectionData) {
@@ -1107,40 +1178,222 @@ export async function GET(request: Request) {
     const viewportBottom = viewportTop + viewportHeight;
     const scrollPercentage = Math.round((window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100);
     
+    // Enhanced element selectors for better content detection
+    const selectors = [
+      // Core content elements
+      'h1, h2, h3, h4, h5, h6, p, form, button, a',
+      
+      // Business intent elements
+      '[class*="cta"], [class*="call-to-action"], [class*="signup"], [class*="trial"]',
+      '[class*="get-started"], [class*="contact"], [class*="demo"], [class*="free"]',
+      
+      // Content structure
+      'article, section, main, aside, [role="main"], [role="article"]',
+      'header, nav, footer, [role="banner"], [role="navigation"]',
+      
+      // Pricing & product elements
+      '[data-price], .price, .pricing, [class*="plan"], [class*="package"]',
+      '[class*="tier"], [class*="product"], [class*="service"], [class*="cost"]',
+      
+      // Social proof elements
+      '[class*="testimonial"], [class*="review"], [class*="customer"]',
+      '[class*="case-study"], [class*="quote"], [class*="feedback"]',
+      
+      // Features & benefits
+      '.feature, .benefit, [class*="feature"], [class*="benefit"]',
+      '[class*="advantage"], [class*="value"], [class*="capability"]',
+      
+      // Media & rich content
+      'img[alt], figure, figcaption, video, [class*="hero"]',
+      '[class*="banner"], [class*="media"], [class*="image"]',
+      
+      // Lists and structured content
+      'ul, ol, li, dl, dt, dd, [class*="list"]'
+    ].join(', ');
+    
     // Find all visible elements
     const visibleElements = [];
-    const elements = document.querySelectorAll('h1, h2, h3, h4, h5, h6, p, form, button, a, [data-price], .price, .pricing, .feature, .benefit');
+    const elements = document.querySelectorAll(selectors);
     
     elements.forEach(el => {
       const rect = el.getBoundingClientRect();
       const elementTop = viewportTop + rect.top;
       const elementBottom = elementTop + rect.height;
       
-      // Check if element is at least 30% visible in viewport
+      // Check if element is at least 20% visible in viewport (reduced threshold for better detection)
       const visibleHeight = Math.min(elementBottom, viewportBottom) - Math.max(elementTop, viewportTop);
       const visibilityPercentage = visibleHeight / rect.height;
       
-      if (visibilityPercentage > 0.3) {
-        visibleElements.push({
+      if (visibilityPercentage > 0.2 && rect.height > 10) { // Also filter out very small elements
+        const elementData = {
           tagName: el.tagName.toLowerCase(),
-          text: el.textContent.trim().substring(0, 200),
+          text: extractElementText(el),
           className: el.className,
           id: el.id,
-          isButton: el.tagName.toLowerCase() === 'button' || el.getAttribute('role') === 'button',
+          
+          // Enhanced element classification
+          isButton: isButtonElement(el),
           isForm: el.tagName.toLowerCase() === 'form',
-          isPricing: el.className.includes('price') || el.hasAttribute('data-price'),
+          isPricing: isPricingElement(el),
+          isCTA: isCTAElement(el),
+          isTestimonial: isTestimonialElement(el),
+          isFeature: isFeatureElement(el),
+          isMedia: isMediaElement(el),
+          isList: isListElement(el),
+          
+          // Additional context
           href: el.href || null,
-          visibilityPercentage: Math.round(visibilityPercentage * 100)
-        });
+          alt: el.alt || null,
+          role: el.getAttribute('role'),
+          visibilityPercentage: Math.round(visibilityPercentage * 100),
+          
+          // Content hierarchy
+          semanticLevel: getSemanticLevel(el),
+          contentType: classifyContentType(el)
+        };
+        
+        visibleElements.push(elementData);
       }
     });
     
+    // Sort by visibility and semantic importance
+    visibleElements.sort((a, b) => {
+      const aImportance = a.semanticLevel * 10 + a.visibilityPercentage;
+      const bImportance = b.semanticLevel * 10 + b.visibilityPercentage;
+      return bImportance - aImportance;
+    });
+    
     return {
-      visibleElements: visibleElements.slice(0, 10), // Limit to top 10 visible elements
+      visibleElements: visibleElements.slice(0, 15), // Increased limit for richer context
       scrollDepth: scrollPercentage,
       pageHeight: document.documentElement.scrollHeight,
-      viewportHeight: viewportHeight
+      viewportHeight: viewportHeight,
+      
+      // Enhanced context summary
+      contentSummary: {
+        totalElements: visibleElements.length,
+        contentTypes: [...new Set(visibleElements.map(el => el.contentType))],
+        hasPricing: visibleElements.some(el => el.isPricing),
+        hasCTA: visibleElements.some(el => el.isCTA),
+        hasTestimonials: visibleElements.some(el => el.isTestimonial),
+        hasFeatures: visibleElements.some(el => el.isFeature),
+        hasMedia: visibleElements.some(el => el.isMedia)
+      }
     };
+  }
+  
+  // Helper functions for enhanced element classification
+  function extractElementText(el) {
+    let text = el.textContent.trim();
+    
+    // For images, use alt text
+    if (el.tagName.toLowerCase() === 'img' && el.alt) {
+      text = '[Image: ' + el.alt + ']';
+    }
+    
+    // For videos, add context
+    if (el.tagName.toLowerCase() === 'video') {
+      text = '[Video: ' + (el.title || 'Video content') + ']';
+    }
+    
+    // Limit text length but keep it meaningful
+    return text.substring(0, 300);
+  }
+  
+  function isButtonElement(el) {
+    return el.tagName.toLowerCase() === 'button' || 
+           el.getAttribute('role') === 'button' ||
+           (el.tagName.toLowerCase() === 'a' && el.className.includes('btn'));
+  }
+  
+  function isPricingElement(el) {
+    const classNames = el.className.toLowerCase();
+    const text = el.textContent.toLowerCase();
+    return classNames.includes('price') || 
+           classNames.includes('plan') || 
+           classNames.includes('tier') ||
+           classNames.includes('package') ||
+           el.hasAttribute('data-price') ||
+           /\$[\d,]+/.test(text) || // Contains dollar amounts
+           text.includes('/month') ||
+           text.includes('/year');
+  }
+  
+  function isCTAElement(el) {
+    const classNames = el.className.toLowerCase();
+    const text = el.textContent.toLowerCase();
+    return classNames.includes('cta') ||
+           classNames.includes('call-to-action') ||
+           classNames.includes('signup') ||
+           classNames.includes('get-started') ||
+           text.includes('get started') ||
+           text.includes('sign up') ||
+           text.includes('contact') ||
+           text.includes('try free') ||
+           text.includes('demo');
+  }
+  
+  function isTestimonialElement(el) {
+    const classNames = el.className.toLowerCase();
+    return classNames.includes('testimonial') ||
+           classNames.includes('review') ||
+           classNames.includes('customer') ||
+           classNames.includes('quote') ||
+           classNames.includes('feedback');
+  }
+  
+  function isFeatureElement(el) {
+    const classNames = el.className.toLowerCase();
+    return classNames.includes('feature') ||
+           classNames.includes('benefit') ||
+           classNames.includes('advantage') ||
+           classNames.includes('capability') ||
+           classNames.includes('value');
+  }
+  
+  function isMediaElement(el) {
+    const tagName = el.tagName.toLowerCase();
+    const classNames = el.className.toLowerCase();
+    return tagName === 'img' ||
+           tagName === 'video' ||
+           tagName === 'figure' ||
+           classNames.includes('hero') ||
+           classNames.includes('banner') ||
+           classNames.includes('media');
+  }
+  
+  function isListElement(el) {
+    const tagName = el.tagName.toLowerCase();
+    return tagName === 'ul' || tagName === 'ol' || tagName === 'li';
+  }
+  
+  function getSemanticLevel(el) {
+    const tagName = el.tagName.toLowerCase();
+    const classNames = el.className.toLowerCase();
+    
+    // Higher numbers = higher importance
+    if (tagName === 'h1') return 10;
+    if (tagName === 'h2') return 8;
+    if (tagName === 'h3') return 6;
+    if (classNames.includes('cta') || classNames.includes('pricing')) return 9;
+    if (tagName === 'button' || el.getAttribute('role') === 'button') return 7;
+    if (tagName === 'form') return 8;
+    if (classNames.includes('testimonial')) return 5;
+    if (tagName === 'p') return 3;
+    return 1;
+  }
+  
+  function classifyContentType(el) {
+    if (isPricingElement(el)) return 'pricing';
+    if (isCTAElement(el)) return 'cta';
+    if (isTestimonialElement(el)) return 'testimonial';
+    if (isFeatureElement(el)) return 'feature';
+    if (isMediaElement(el)) return 'media';
+    if (el.tagName.toLowerCase().startsWith('h')) return 'heading';
+    if (el.tagName.toLowerCase() === 'p') return 'paragraph';
+    if (isListElement(el)) return 'list';
+    if (el.tagName.toLowerCase() === 'form') return 'form';
+    return 'content';
   }
   
   // Generate contextual questions based on what user is viewing
