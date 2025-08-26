@@ -924,9 +924,9 @@ export async function GET(request: Request) {
         proactiveMessageCount: proactiveMessageCount
       });
       
-      if (data.answer && data.answer.trim()) {
+      if (data.mainText && data.mainText.trim()) {
         console.log('🎯 [WIDGET SCROLL] Received scroll-based response, displaying message');
-        sendProactiveMessage(data.answer);
+        sendProactiveMessage(data.mainText);
       }
     } catch (error) {
       console.error('❌ [WIDGET SCROLL] Failed to send scroll-based question:', error);
@@ -1386,9 +1386,9 @@ export async function GET(request: Request) {
         proactiveMessageCount: proactiveMessageCount
       });
       
-      if (data.answer && data.answer.trim()) {
+      if (data.mainText && data.mainText.trim()) {
         console.log('🎯 [WIDGET MIRROR] Received contextual message for section:', sectionData.sectionName);
-        sendProactiveMessage(data.answer);
+        sendProactiveMessage(data.mainText);
       }
     } catch (error) {
       console.error('❌ [WIDGET MIRROR] Failed to send section context:', error);
@@ -2137,8 +2137,8 @@ export async function GET(request: Request) {
         // Don't specify adminId - let the API extract it from the API key
       });
       
-      if (data.answer) {
-        sendProactiveMessage(data.answer);
+      if (data.mainText) {
+        sendProactiveMessage(data.mainText);
       }
     }
     
@@ -2619,8 +2619,8 @@ export async function GET(request: Request) {
             hasBeenGreeted: hasBeenGreeted,
             proactiveMessageCount: proactiveMessageCount
           }).then(data => {
-            if (data.answer && data.answer.trim()) {
-              sendProactiveMessage(data.answer);
+            if (data.mainText && data.mainText.trim()) {
+              sendProactiveMessage(data.mainText);
             }
           }).catch(error => {
             console.error('❌ [WIDGET QUESTIONS] Failed to send custom question:', error);
