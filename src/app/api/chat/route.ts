@@ -670,16 +670,22 @@ export async function POST(req: NextRequest) {
     visitedPages = [],
     contextualQuestionGeneration = false,
     contextualPageContext = null,
+    autoResponse = false,
+    contextualQuestion = null,
   } = body;
 
   if (
-    (!question && !proactive && !followup && !contextualQuestionGeneration) ||
+    (!question &&
+      !proactive &&
+      !followup &&
+      !contextualQuestionGeneration &&
+      !autoResponse) ||
     !sessionId
   )
     return NextResponse.json(
       {
         error:
-          "No question, proactive, followup, or contextualQuestionGeneration flag, or no sessionId provided",
+          "No question, proactive, followup, contextualQuestionGeneration, or autoResponse flag, or no sessionId provided",
       },
       { status: 400, headers: corsHeaders }
     );
@@ -800,6 +806,102 @@ Based on the page context, create an intelligent contextual question that demons
       };
 
       return NextResponse.json(fallbackResponse, { headers: corsHeaders });
+    }
+  }
+
+  // Handle auto-response for contextual questions
+  if (autoResponse && contextualQuestion) {
+    try {
+      console.log(
+        "[DEBUG] Generating auto-response for contextual question:",
+        contextualQuestion
+      );
+
+      const autoResponsePrompt = `You are a helpful business assistant. A user was shown this contextual question but didn't respond: "${contextualQuestion}"
+
+Please provide a helpful, informative answer to this question that would be valuable to the user. After your answer, naturally transition to asking for their email address so you can send them more detailed information.
+
+CRITICAL REQUIREMENTS:
+1. You MUST respond with ONLY valid JSON - no additional text or formatting
+2. The JSON MUST have exactly these fields: mainText, emailPrompt
+3. mainText should be your helpful answer (2-3 sentences) followed by a natural transition to email collection
+4. emailPrompt should be a natural request for their email address
+
+Example of proper JSON response:
+{"mainText": "Based on your interest in our pricing, I'd recommend starting with our Professional plan as it offers the best balance of features and value. Most businesses see ROI within 3 months. I'd love to send you a detailed comparison guide and pricing breakdown.", "emailPrompt": "What's your email address so I can send you the complete pricing guide?"}
+
+Keep the response conversational and helpful, focusing on providing value before asking for contact information.`;
+
+      const autoResponseResult = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        max_tokens: 250,
+        temperature: 0.7,
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are an expert at creating helpful auto-responses that provide value before requesting contact information. You MUST respond with valid JSON only. No additional text, explanations, or markdown formatting. Just pure JSON with mainText and emailPrompt fields.",
+          },
+          { role: "user", content: autoResponsePrompt },
+        ],
+      });
+
+      const aiResponse =
+        autoResponseResult.choices[0]?.message?.content?.trim() || "";
+      console.log("[DEBUG] Raw AI response for auto-response:", aiResponse);
+
+      // Parse the AI response with robust error handling
+      let parsed;
+      try {
+        parsed = JSON.parse(aiResponse);
+
+        // Validate required fields
+        if (!parsed.mainText || !parsed.emailPrompt) {
+          throw new Error("Invalid auto-response structure");
+        }
+
+        console.log("[DEBUG] Successfully parsed auto-response:", parsed);
+      } catch (parseError) {
+        console.error(
+          "[DEBUG] Failed to parse auto-response, using fallback:",
+          parseError
+        );
+
+        // Fallback response if AI doesn't return valid JSON
+        parsed = {
+          mainText:
+            "Thanks for your interest! I'd be happy to provide you with more detailed information about our services that could help with your specific needs.",
+          emailPrompt:
+            "What's your email address so I can send you more personalized information?",
+        };
+      }
+
+      // Add additional fields for auto-response
+      const autoResponseData = {
+        ...parsed,
+        isAutoResponse: true,
+        botMode: "lead_generation",
+        userEmail: null,
+      };
+
+      console.log("[DEBUG] Returning auto-response:", autoResponseData);
+
+      return NextResponse.json(autoResponseData, { headers: corsHeaders });
+    } catch (error) {
+      console.error("[DEBUG] Error in auto-response generation:", error);
+
+      // Return fallback auto-response
+      const fallbackAutoResponse = {
+        mainText:
+          "Thanks for your interest! I'd love to share more information about how our services can help you achieve your goals.",
+        emailPrompt:
+          "Could you share your email address so I can send you more details?",
+        isAutoResponse: true,
+        botMode: "lead_generation",
+        userEmail: null,
+      };
+
+      return NextResponse.json(fallbackAutoResponse, { headers: corsHeaders });
     }
   }
 

@@ -209,6 +209,11 @@ export async function GET(request: Request) {
   let userIsActive = false;
   let widgetScrollTimeout = null;
   
+  // Auto-response system variables
+  let autoResponseTimer = null;
+  let contextualQuestionDisplayed = false;
+  let lastContextualQuestion = null;
+  
   // Enhanced page detection variables
   let currentPageUrl = window.location.href;
   let isPageContextLoaded = false;
@@ -437,13 +442,16 @@ export async function GET(request: Request) {
   }
   
   // Send proactive message with voice and auto-opening
-  function sendProactiveMessage(text) {
+  function sendProactiveMessage(text, buttons = [], emailPrompt = '') {
     if (!text) {
       console.log('[ChatWidget] No proactive message text provided');
       return;
     }
     
     console.log('🎯 [WIDGET PROACTIVE] Sending proactive message:', text.substring(0, 100) + '...');
+    if (buttons && buttons.length > 0) {
+      console.log('🎯 [WIDGET PROACTIVE] Including buttons:', buttons);
+    }
     
     // Update conversation state tracking
     if (!hasBeenGreeted) {
@@ -464,8 +472,8 @@ export async function GET(request: Request) {
     const proactiveMessage = {
       role: 'assistant',
       content: text,
-      buttons: [],
-      emailPrompt: '',
+      buttons: buttons || [],
+      emailPrompt: emailPrompt || '',
       isProactive: true
     };
     
@@ -1086,8 +1094,28 @@ export async function GET(request: Request) {
       
       if ((data.mainText && data.mainText.trim()) || (data.answer && data.answer.trim())) {
         const messageText = data.mainText || data.answer;
+        const buttons = data.buttons || [];
+        const emailPrompt = data.emailPrompt || '';
+        
         console.log('🎯 [WIDGET SCROLL] Received scroll-based response, displaying message');
-        sendProactiveMessage(messageText);
+        
+        // Create structured contextual question data
+        const contextualQuestionData = {
+          mainText: messageText,
+          buttons: buttons,
+          emailPrompt: emailPrompt,
+          isContextual: true,
+          sectionData: sectionData
+        };
+        
+        // Send the proactive message
+        sendProactiveMessage(messageText, buttons, emailPrompt);
+        
+        // Start auto-response timer for contextual questions
+        if (buttons && buttons.length > 0) {
+          console.log('🕐 [WIDGET AUTO] Starting 15-second auto-response timer for contextual question');
+          startAutoResponseTimer(contextualQuestionData);
+        }
       }
     } catch (error) {
       console.error('❌ [WIDGET SCROLL] Failed to send scroll-based question:', error);
@@ -2019,6 +2047,73 @@ export async function GET(request: Request) {
     console.log('[Widget] User is now active');
     userIsActive = true;
     lastUserAction = Date.now();
+    
+    // Clear auto-response timer when user becomes active
+    clearAutoResponseTimer();
+  }
+  
+  // Auto-response system functions
+  function clearAutoResponseTimer() {
+    if (autoResponseTimer) {
+      clearTimeout(autoResponseTimer);
+      autoResponseTimer = null;
+      console.log('[Widget] Auto-response timer cleared');
+    }
+  }
+  
+  function startAutoResponseTimer(contextualQuestion) {
+    console.log('[Widget] Starting auto-response timer for 15 seconds');
+    clearAutoResponseTimer();
+    
+    // Store the contextual question for auto-response
+    lastContextualQuestion = contextualQuestion;
+    contextualQuestionDisplayed = true;
+    
+    autoResponseTimer = setTimeout(async () => {
+      console.log('[Widget] Auto-response timer triggered - user did not respond');
+      await generateAutoResponse();
+    }, 15000); // 15 seconds
+  }
+  
+  async function generateAutoResponse() {
+    if (!lastContextualQuestion || userIsActive) {
+      console.log('[Widget] Skipping auto-response - no question or user is active');
+      return;
+    }
+    
+    console.log('[Widget] Generating auto-response for contextual question');
+    
+    try {
+      // Generate an answer to the contextual question and ask for email
+      const autoResponseData = await sendApiRequest('chat', {
+        sessionId: sessionId,
+        pageUrl: currentPageUrl,
+        question: "Auto-response for: " + lastContextualQuestion.mainText,
+        autoResponse: true,
+        contextualQuestion: lastContextualQuestion
+      });
+      
+      if (autoResponseData && autoResponseData.mainText) {
+        console.log('[Widget] Auto-response generated, adding to chat');
+        
+        // Add auto-response message to chat
+        addMessage('assistant', autoResponseData.mainText, autoResponseData.buttons || []);
+        
+        // Check if this should be an email collection request
+        if (autoResponseData.emailPrompt) {
+          console.log('[Widget] Auto-response includes email prompt');
+        }
+        
+        // Clear the contextual question state
+        contextualQuestionDisplayed = false;
+        lastContextualQuestion = null;
+        
+        // Update UI
+        updateWidget();
+      }
+    } catch (error) {
+      console.error('[Widget] Error generating auto-response:', error);
+    }
   }
   
   // Start followup timer
