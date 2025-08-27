@@ -2819,6 +2819,10 @@ export async function GET(request: Request) {
         // Set timeout to detect when scrolling stops
         widgetScrollTimeout = setTimeout(() => {
           console.log('[Widget] Widget scroll stopped, checking followup timer');
+          // Set user back to inactive since scrolling has stopped
+          userIsActive = false;
+          console.log('[Widget] User set to inactive after scroll stopped');
+          
           // Check if we should restart followup timer
           const lastMessage = messages[messages.length - 1];
           if (lastMessage && lastMessage.role === 'assistant' && followupCount < 3) {

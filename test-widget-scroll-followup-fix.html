@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Widget Scroll Followup Fix Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        background-color: #f5f5f5;
+        height: 200vh; /* Make page scrollable */
+      }
+      .content {
+        max-width: 800px;
+        margin: 0 auto;
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      .test-section {
+        margin: 20px 0;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        background: #fafafa;
+      }
+      .logs {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        padding: 10px;
+        border-radius: 5px;
+        font-family: monospace;
+        font-size: 12px;
+        max-height: 300px;
+        overflow-y: auto;
+        margin-top: 10px;
+      }
+      h1 {
+        color: #333;
+        text-align: center;
+      }
+      .status {
+        padding: 10px;
+        border-radius: 5px;
+        margin: 10px 0;
+        font-weight: bold;
+      }
+      .success {
+        background: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+      }
+      .error {
+        background: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+      }
+      .warning {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        color: #856404;
+      }
+      .test-steps {
+        background: #e7f3ff;
+        border: 1px solid #b3d9ff;
+        padding: 15px;
+        border-radius: 5px;
+        margin: 10px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="content">
+      <h1>🔧 Widget Scroll Followup Fix Test</h1>
+
+      <div class="test-section">
+        <h2>Test Status</h2>
+        <div id="test-status" class="status warning">⏳ Starting test...</div>
+
+        <div class="test-steps">
+          <h3>🧪 Test Steps:</h3>
+          <ol>
+            <li><strong>Open the widget</strong> (click the blue button)</li>
+            <li><strong>Send a message</strong> to start the conversation</li>
+            <li>
+              <strong>Scroll inside the widget chat</strong> (multiple times)
+            </li>
+            <li><strong>Wait 3-5 seconds</strong> after scrolling stops</li>
+            <li><strong>Wait 30-35 seconds</strong> for followup timer</li>
+          </ol>
+
+          <h3>✅ Expected Behavior:</h3>
+          <ul>
+            <li>After widget scroll stops → User should become inactive</li>
+            <li>Followup timer should trigger and conditions should be met</li>
+            <li>Followup message should be generated and sent</li>
+          </ul>
+
+          <h3>❌ Previous Bug:</h3>
+          <ul>
+            <li>User remained active after widget scrolling</li>
+            <li>
+              Followup conditions showed: <code>userNotActive: false</code>
+            </li>
+            <li>No followup messages were sent</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="test-section">
+        <h2>Debug Console</h2>
+        <div id="console-logs" class="logs">
+          Monitoring widget activity and followup behavior...<br />
+        </div>
+        <button
+          onclick="clearLogs()"
+          style="
+            margin-top: 10px;
+            padding: 8px 16px;
+            background: #007cba;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+          "
+        >
+          Clear Logs
+        </button>
+      </div>
+
+      <div class="test-section">
+        <h2>Key Indicators to Watch</h2>
+        <div style="font-family: monospace; font-size: 14px">
+          <div><strong>🟢 Good Signs:</strong></div>
+          <div style="color: green; margin-left: 20px">
+            • "User set to inactive after scroll stopped"<br />
+            • "userNotActive: true" in followup conditions<br />
+            • "Conditions met for followup message - sending now"<br />
+          </div>
+
+          <div style="margin-top: 10px"><strong>🔴 Problem Signs:</strong></div>
+          <div style="color: red; margin-left: 20px">
+            • "userNotActive: false" (user still active)<br />
+            • "Followup conditions not met"<br />
+            • No followup messages generated<br />
+          </div>
+        </div>
+      </div>
+
+      <!-- Add some content to make the page scrollable -->
+      <div style="margin-top: 50px">
+        <h2>Additional Content for Page Scrolling</h2>
+        <p>You can also test page scrolling to see the difference...</p>
+        <div
+          style="
+            height: 500px;
+            background: linear-gradient(45deg, #f0f0f0, #e0e0e0);
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+          "
+        >
+          <h3>Scroll Test Area 1</h3>
+        </div>
+        <div
+          style="
+            height: 500px;
+            background: linear-gradient(135deg, #e0e0e0, #d0d0d0);
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+          "
+        >
+          <h3>Scroll Test Area 2</h3>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Monitor console for widget activity
+      const originalLog = console.log;
+      const logContainer = document.getElementById("console-logs");
+      const statusContainer = document.getElementById("test-status");
+
+      let followupAttempted = false;
+      let userSetInactive = false;
+      let followupConditionsMet = false;
+
+      function updateStatus() {
+        if (followupConditionsMet) {
+          statusContainer.className = "status success";
+          statusContainer.innerHTML =
+            "✅ SUCCESS: Followup conditions met and message sent!";
+        } else if (userSetInactive && followupAttempted) {
+          statusContainer.className = "status warning";
+          statusContainer.innerHTML =
+            "⚠️ User set inactive but followup conditions still not met - check logs";
+        } else if (userSetInactive) {
+          statusContainer.className = "status warning";
+          statusContainer.innerHTML =
+            "⏳ User set inactive after scroll - waiting for followup timer...";
+        } else if (followupAttempted) {
+          statusContainer.className = "status error";
+          statusContainer.innerHTML =
+            "❌ ISSUE: Followup attempted but user still active (bug not fixed)";
+        } else {
+          statusContainer.className = "status warning";
+          statusContainer.innerHTML =
+            "⏳ Waiting for user to scroll in widget and test followup...";
+        }
+      }
+
+      function addLog(message) {
+        const timestamp = new Date().toLocaleTimeString();
+        const logEntry = `[${timestamp}] ${message}<br>`;
+        logContainer.innerHTML += logEntry;
+        logContainer.scrollTop = logContainer.scrollHeight;
+
+        // Check for key indicators
+        if (message.includes("User set to inactive after scroll stopped")) {
+          userSetInactive = true;
+          addLog(
+            '<span style="color: green; font-weight: bold;">🟢 GOOD: User set inactive after scroll stopped!</span>'
+          );
+          updateStatus();
+        }
+
+        if (message.includes("Followup timer triggered")) {
+          followupAttempted = true;
+          updateStatus();
+        }
+
+        if (message.includes("userNotActive: true")) {
+          addLog(
+            '<span style="color: green; font-weight: bold;">🟢 GOOD: User is now inactive for followup!</span>'
+          );
+        }
+
+        if (message.includes("userNotActive: false")) {
+          addLog(
+            '<span style="color: red; font-weight: bold;">🔴 ISSUE: User still active (bug present)</span>'
+          );
+        }
+
+        if (
+          message.includes("Conditions met for followup message - sending now")
+        ) {
+          followupConditionsMet = true;
+          addLog(
+            '<span style="color: green; font-weight: bold;">🎉 SUCCESS: Followup conditions met and message being sent!</span>'
+          );
+          updateStatus();
+        }
+
+        if (message.includes("Followup conditions not met")) {
+          addLog(
+            '<span style="color: orange; font-weight: bold;">⚠️ WARNING: Followup conditions not met</span>'
+          );
+        }
+      }
+
+      function clearLogs() {
+        logContainer.innerHTML = "Logs cleared...<br>";
+        followupAttempted = false;
+        userSetInactive = false;
+        followupConditionsMet = false;
+        updateStatus();
+      }
+
+      console.log = function (...args) {
+        const message = args.join(" ");
+        if (message.includes("[Widget]")) {
+          addLog(message);
+        }
+        originalLog.apply(console, args);
+      };
+
+      // Load the widget
+      addLog("Loading widget...");
+
+      setTimeout(() => {
+        // Clean up any existing widgets
+        document
+          .querySelectorAll('[id*="chatbot"], [id*="widget"], [id*="appointy"]')
+          .forEach((el) => el.remove());
+
+        const script = document.createElement("script");
+        script.src = "http://localhost:3002/api/widget";
+        script.setAttribute(
+          "data-api-key",
+          "ak_e9c3475fd9b9371577ab09f5a0a7fcd1c635ef055b7e66374ed424162d80c9ac"
+        );
+        script.setAttribute("data-theme", "blue");
+        script.setAttribute("data-size", "large");
+        script.setAttribute("data-voice-enabled", "false");
+        script.setAttribute("data-auto-open-proactive", "false"); // Don't auto-open
+
+        script.onload = () => {
+          addLog("Widget loaded successfully - you can now test!");
+          updateStatus();
+        };
+
+        script.onerror = () => {
+          addLog("Widget failed to load");
+        };
+
+        document.head.appendChild(script);
+      }, 500);
+    </script>
+  </body>
+</html>
