@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Two-Message Approach Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        background-color: #f5f5f5;
+      }
+
+      .test-container {
+        max-width: 800px;
+        margin: 0 auto;
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      h1 {
+        color: #333;
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      .status {
+        padding: 20px;
+        border-radius: 8px;
+        margin: 20px 0;
+        font-weight: bold;
+      }
+
+      .status.success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
+
+      .status.info {
+        background-color: #d1ecf1;
+        color: #0c5460;
+        border: 1px solid #bee5eb;
+      }
+
+      .status.warning {
+        background-color: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeaa7;
+      }
+
+      .chat-flow {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin: 20px 0;
+        border-left: 4px solid #007bff;
+      }
+
+      .message {
+        background: white;
+        padding: 15px;
+        margin: 10px 0;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+
+      .message.bot {
+        background: #e3f2fd;
+        border-left: 4px solid #2196f3;
+      }
+
+      .code-block {
+        background: #f4f4f4;
+        padding: 15px;
+        border-radius: 5px;
+        font-family: 'Courier New', monospace;
+        margin: 15px 0;
+        overflow-x: auto;
+      }
+
+      button {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        padding: 15px 30px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        margin: 10px 5px;
+      }
+
+      button:hover {
+        background-color: #0056b3;
+      }
+
+      .timeline {
+        position: relative;
+        padding-left: 30px;
+      }
+
+      .timeline::before {
+        content: '';
+        position: absolute;
+        left: 15px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #007bff;
+      }
+
+      .timeline-item {
+        position: relative;
+        margin-bottom: 20px;
+        padding: 15px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+
+      .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -22px;
+        top: 20px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #007bff;
+      }
+
+      .delay-indicator {
+        color: #666;
+        font-style: italic;
+        padding: 10px;
+        text-align: center;
+        border: 2px dashed #ddd;
+        border-radius: 5px;
+        margin: 10px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="test-container">
+      <h1>🎯 Two-Message Approach Test</h1>
+
+      <div class="status success">
+        <strong>✅ Implementation Complete!</strong><br />
+        The AI contextual questions now display as two separate messages:
+        <ul>
+          <li><strong>Message 1:</strong> The AI-generated question</li>
+          <li><strong>Message 2:</strong> The AI's response with buttons (after 2 seconds)</li>
+        </ul>
+      </div>
+
+      <h2>🔄 How It Works</h2>
+
+      <div class="timeline">
+        <div class="timeline-item">
+          <strong>1. User Stops Scrolling</strong>
+          <p>Widget detects when user stops scrolling on a section</p>
+        </div>
+
+        <div class="timeline-item">
+          <strong>2. Context Analysis</strong>
+          <p>System analyzes visible content and page section</p>
+        </div>
+
+        <div class="timeline-item">
+          <strong>3. AI Generation</strong>
+          <p>AI generates contextual question + response in one API call</p>
+        </div>
+
+        <div class="timeline-item">
+          <strong>4. Split Response</strong>
+          <p>Widget splits the response into question and answer parts</p>
+        </div>
+
+        <div class="timeline-item">
+          <strong>5. Two-Message Display</strong>
+          <p>Question appears first, then response after 2 seconds</p>
+        </div>
+      </div>
+
+      <h2>💬 Expected Chat Flow</h2>
+
+      <div class="chat-flow">
+        <div class="message bot">
+          <strong>🤖 Bot:</strong> "Are you looking for a scheduling solution that seamlessly integrates with Google Suite or Microsoft Suite to enhance your team's productivity?"
+        </div>
+
+        <div class="delay-indicator">
+          ⏱️ 2 second delay...
+        </div>
+
+        <div class="message bot">
+          <strong>🤖 Bot:</strong> "Great question! Here are our integration options:
+          <br>• Google Calendar sync
+          <br>• Microsoft Outlook integration  
+          <br>• Zapier connections
+          <br><br>[Learn More] [Get Demo] [Talk to Sales]"
+        </div>
+      </div>
+
+      <h2>🧪 Testing Instructions</h2>
+
+      <div class="status info">
+        <strong>Live Website Test:</strong>
+        <ol>
+          <li>Go to your website with the chatbot widget</li>
+          <li>Scroll to different sections (pricing, features, etc.)</li>
+          <li>Stop scrolling and wait 15 seconds</li>
+          <li>Watch for the two-message sequence in the chat</li>
+        </ol>
+      </div>
+
+      <div class="status warning">
+        <strong>🔍 Look for these console logs:</strong>
+        <div class="code-block">
+📤 [WIDGET AI] Displaying question as first message: [question]
+📤 [WIDGET AI] Displaying response as second message: [response]
+        </div>
+      </div>
+
+      <h2>⚙️ Technical Implementation</h2>
+
+      <div class="status info">
+        <strong>Key Changes Made:</strong>
+        <ul>
+          <li><strong>Split Logic:</strong> Extract question using regex pattern <code>/^([^?]*\?)/</code></li>
+          <li><strong>First Message:</strong> Display question with no buttons</li>
+          <li><strong>Delayed Second Message:</strong> Display response with buttons after 2 seconds</li>
+          <li><strong>Fallback:</strong> Single message if no question format detected</li>
+          <li><strong>Prevent Duplicates:</strong> Early return from AI function to avoid double-sending</li>
+        </ul>
+      </div>
+
+      <button onclick="testAPI()">Test API Directly</button>
+      <button onclick="showLogs()">Show Console Logs</button>
+
+      <div id="result" style="margin-top: 20px"></div>
+
+      <h2>🎉 Benefits</h2>
+
+      <div class="status success">
+        <ul>
+          <li><strong>Natural Conversation Flow:</strong> Question followed by helpful response</li>
+          <li><strong>Better User Engagement:</strong> Two moments to capture attention</li>
+          <li><strong>Clear Intent:</strong> User understands the bot is asking then helping</li>
+          <li><strong>Action-Oriented:</strong> Response includes relevant buttons for next steps</li>
+        </ul>
+      </div>
+
+      <div class="status info">
+        <strong>🚀 Ready for Production!</strong><br />
+        Your contextual questions will now appear as two engaging messages that create a natural conversation flow and drive user engagement.
+      </div>
+    </div>
+
+    <script>
+      function testAPI() {
+        const resultDiv = document.getElementById("result");
+        resultDiv.innerHTML = '<div class="status info">🔄 Testing API...</div>';
+
+        fetch("/api/chat", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            sessionId: "test-two-message-" + Date.now(),
+            contextualQuestionGeneration: true,
+            contextualPageContext: {
+              sectionName: "pricing",
+              contentAnalysis: "Pricing plans and features for scheduling software",
+              pageUrl: window.location.href,
+            },
+          }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.mainText) {
+              // Simulate the two-message splitting
+              const fullResponse = data.mainText;
+              const questionMatch = fullResponse.match(/^([^?]*\?)/);
+              
+              if (questionMatch) {
+                const question = questionMatch[1].trim();
+                const response = fullResponse.substring(question.length).trim();
+                
+                resultDiv.innerHTML = `
+                  <div class="status success">
+                    <strong>✅ API Test Successful!</strong><br>
+                    <strong>Question Part:</strong> "${question}"<br>
+                    <strong>Response Part:</strong> "${response}"<br>
+                    <small>These would appear as two separate messages in the chat with a 2-second delay.</small>
+                  </div>
+                `;
+              } else {
+                resultDiv.innerHTML = `
+                  <div class="status warning">
+                    <strong>⚠️ Single Message Mode</strong><br>
+                    Full Response: "${fullResponse}"<br>
+                    <small>No question format detected, would display as single message.</small>
+                  </div>
+                `;
+              }
+            }
+          })
+          .catch((error) => {
+            resultDiv.innerHTML = `
+              <div class="status error">
+                <strong>❌ Error:</strong> ${error.message}
+              </div>
+            `;
+          });
+      }
+
+      function showLogs() {
+        console.log("🎯 Two-Message Approach Test - Look for these logs when scrolling on your site:");
+        console.log("🤖 [WIDGET AI] Generating contextual question with AI for: [section]");
+        console.log("✅ [WIDGET AI] AI generated question: [full response]");
+        console.log("📤 [WIDGET AI] Displaying question as first message: [question]");
+        console.log("📤 [WIDGET AI] Displaying response as second message: [response]");
+        
+        alert("Check the browser console for expected log patterns!");
+      }
+
+      // Show current timestamp
+      document.addEventListener("DOMContentLoaded", () => {
+        console.log("🎯 Two-Message Approach Test loaded at:", new Date().toLocaleString());
+      });
+    </script>
+  </body>
+</html>
