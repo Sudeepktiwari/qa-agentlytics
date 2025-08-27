@@ -894,12 +894,21 @@ export async function GET(request: Request) {
         sessionId: sessionId, // Include the session ID
         pageUrl: currentPageUrl, // Include current page URL
         question: 'Generate a contextual question based on the content analysis', // Provide a question
-        sectionContext: sectionData, // Include section context
-        contextual: true, // Mark as contextual
-        proactive: true, // Mark as proactive message generation
         
-        // AI-specific parameters
+        // AI-specific parameters for contextual question generation
         contextualQuestionGeneration: true,
+        contextualPageContext: {
+          sectionName: sectionName,
+          sectionData: sectionData,
+          contentAnalysis: contentForAi,
+          pageUrl: currentPageUrl,
+          timestamp: new Date().toISOString()
+        },
+        
+        // Legacy parameters for compatibility
+        sectionContext: sectionData,
+        contextual: true,
+        proactive: true,
         sectionName: sectionName,
         sectionAnalysis: contentForAi,
         requestType: 'generate_contextual_question',

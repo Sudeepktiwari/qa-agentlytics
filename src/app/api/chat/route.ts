@@ -668,13 +668,18 @@ export async function POST(req: NextRequest) {
     hasBeenGreeted = false,
     proactiveMessageCount = 0,
     visitedPages = [],
+    contextualQuestionGeneration = false,
+    contextualPageContext = null,
   } = body;
 
-  if ((!question && !proactive && !followup) || !sessionId)
+  if (
+    (!question && !proactive && !followup && !contextualQuestionGeneration) ||
+    !sessionId
+  )
     return NextResponse.json(
       {
         error:
-          "No question, proactive, or followup flag, or no sessionId provided",
+          "No question, proactive, followup, or contextualQuestionGeneration flag, or no sessionId provided",
       },
       { status: 400, headers: corsHeaders }
     );
@@ -690,6 +695,111 @@ export async function POST(req: NextRequest) {
         { error: "Invalid API key" },
         { status: 401, headers: corsHeaders }
       );
+    }
+  }
+
+  // Handle contextual question generation request
+  if (contextualQuestionGeneration && contextualPageContext) {
+    try {
+      console.log("[DEBUG] Handling contextual question generation");
+
+      const contextualPrompt = `You are an intelligent business assistant analyzing a webpage to generate contextual questions. 
+
+Page Context:
+${JSON.stringify(contextualPageContext, null, 2)}
+
+CRITICAL REQUIREMENTS:
+1. You MUST respond with ONLY valid JSON - no additional text or formatting
+2. The JSON MUST have exactly these fields: mainText, buttons, emailPrompt
+3. mainText should be a friendly, contextual question based on the page content
+4. buttons should be an array of 2-3 relevant follow-up options
+5. emailPrompt should be empty string "" (not used for contextual questions)
+
+Examples of proper JSON response:
+{"mainText": "I see you're exploring our pricing options! What's most important to you - getting started quickly or finding the most cost-effective solution?", "buttons": ["Quick Start Options", "Cost Comparison", "Feature Details"], "emailPrompt": ""}
+
+Based on the page context, create an intelligent contextual question that demonstrates understanding of the page content and helps the user explore their needs.`;
+
+      const contextualResp = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        max_tokens: 300,
+        temperature: 0.7,
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are an expert at creating contextual business questions. You MUST respond with valid JSON only. No additional text, explanations, or markdown formatting. Just pure JSON with mainText, buttons, and emailPrompt fields.",
+          },
+          { role: "user", content: contextualPrompt },
+        ],
+      });
+
+      const aiResponse =
+        contextualResp.choices[0].message.content?.trim() || "";
+      console.log(
+        "[DEBUG] Raw AI response for contextual question:",
+        aiResponse
+      );
+
+      // Parse the AI response with robust error handling
+      let parsed;
+      try {
+        parsed = JSON.parse(aiResponse);
+
+        // Validate required fields
+        if (!parsed.mainText || !Array.isArray(parsed.buttons)) {
+          throw new Error("Invalid response structure");
+        }
+
+        // Ensure emailPrompt exists
+        if (!parsed.hasOwnProperty("emailPrompt")) {
+          parsed.emailPrompt = "";
+        }
+
+        console.log("[DEBUG] Successfully parsed contextual question:", parsed);
+      } catch (parseError) {
+        console.error(
+          "[DEBUG] Failed to parse AI response, using fallback:",
+          parseError
+        );
+
+        // Fallback response if AI doesn't return valid JSON
+        parsed = {
+          mainText:
+            "I notice you're exploring this page. What would you like to know more about?",
+          buttons: ["Learn More", "Get Started", "Contact Us"],
+          emailPrompt: "",
+        };
+      }
+
+      // Add bot mode
+      const botMode = "lead_generation"; // Contextual questions are for lead generation
+      const responseWithMode = {
+        ...parsed,
+        botMode,
+        userEmail: null,
+      };
+
+      console.log(
+        "[DEBUG] Returning contextual question response:",
+        responseWithMode
+      );
+
+      return NextResponse.json(responseWithMode, { headers: corsHeaders });
+    } catch (error) {
+      console.error("[DEBUG] Error in contextual question generation:", error);
+
+      // Return fallback response
+      const fallbackResponse = {
+        mainText:
+          "I'm here to help! What would you like to know about our services?",
+        buttons: ["Learn More", "Get Started", "Contact Us"],
+        emailPrompt: "",
+        botMode: "lead_generation",
+        userEmail: null,
+      };
+
+      return NextResponse.json(fallbackResponse, { headers: corsHeaders });
     }
   }
 
