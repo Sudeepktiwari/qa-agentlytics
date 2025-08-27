@@ -730,7 +730,7 @@ export async function GET(request: Request) {
   let isScrolling = false;
   let scrollTimeout;
   let lastScrollTime = 0;
-  let scrollStopDelay = 5000; // 5 seconds delay after scrolling stops
+  let scrollStopDelay = 15000; // 15 seconds delay after scrolling stops
   let lastScrollPosition = 0;
   
   // Setup smart scroll detection
@@ -1437,7 +1437,7 @@ export async function GET(request: Request) {
           if (!userIsActive && currentViewportSection === sectionName) {
             sendContextualQuestion(aiQuestion, sectionData);
           }
-        }, 5000);
+        }, 15000); // Wait 15 seconds
         return;
       }
     } catch (error) {
@@ -1545,7 +1545,7 @@ export async function GET(request: Request) {
         if (!userIsActive && currentViewportSection === sectionName) {
           sendContextualQuestion(selectedQuestion, sectionData);
         }
-      }, 5000); // Wait 5 seconds
+      }, 15000); // Wait 15 seconds
     }
   }
   
