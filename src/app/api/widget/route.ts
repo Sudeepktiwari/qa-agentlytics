@@ -207,6 +207,7 @@ export async function GET(request: Request) {
   let followupSent = false;
   let lastUserAction = Date.now();
   let userIsActive = false;
+  let widgetScrollTimeout = null;
   
   // Enhanced page detection variables
   let currentPageUrl = window.location.href;
@@ -2783,40 +2784,6 @@ export async function GET(request: Request) {
       }
     });
     
-    // Widget messages container scroll detection
-    let widgetScrollTimeout;
-    function setupWidgetScrollDetection() {
-      const messagesContainer = document.getElementById('appointy-messages');
-      if (!messagesContainer) return;
-      
-      messagesContainer.addEventListener('scroll', () => {
-        if (!userIsActive) {
-          console.log('[Widget] User scrolling in chat widget, setting active');
-          setUserActive();
-          clearFollowupTimer();
-          
-          // Clear existing scroll timeout
-          if (widgetScrollTimeout) {
-            clearTimeout(widgetScrollTimeout);
-          }
-          
-          // Set timeout to detect when scrolling stops
-          widgetScrollTimeout = setTimeout(() => {
-            console.log('[Widget] Widget scroll stopped, checking followup timer');
-            // Check if we should restart followup timer
-            const lastMessage = messages[messages.length - 1];
-            if (lastMessage && lastMessage.role === 'assistant' && followupCount < 3) {
-              console.log('[Widget] Restarting followup timer after widget scroll stopped');
-              startFollowupTimer();
-            }
-          }, 3000); // 3 seconds after scrolling stops in widget
-        }
-      });
-    }
-    
-    // Call scroll detection setup after widget is created
-    setTimeout(setupWidgetScrollDetection, 100);
-    
     // Page visibility change
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
@@ -2829,6 +2796,36 @@ export async function GET(request: Request) {
           console.log('[Widget] Restarting followup timer after page became visible');
           startFollowupTimer();
         }
+      }
+    });
+  }
+  
+  // Widget messages container scroll detection
+  function setupWidgetScrollDetection() {
+    const messagesContainer = document.getElementById('appointy-messages');
+    if (!messagesContainer) return;
+    
+    messagesContainer.addEventListener('scroll', () => {
+      if (!userIsActive) {
+        console.log('[Widget] User scrolling in chat widget, setting active');
+        setUserActive();
+        clearFollowupTimer();
+        
+        // Clear existing scroll timeout
+        if (widgetScrollTimeout) {
+          clearTimeout(widgetScrollTimeout);
+        }
+        
+        // Set timeout to detect when scrolling stops
+        widgetScrollTimeout = setTimeout(() => {
+          console.log('[Widget] Widget scroll stopped, checking followup timer');
+          // Check if we should restart followup timer
+          const lastMessage = messages[messages.length - 1];
+          if (lastMessage && lastMessage.role === 'assistant' && followupCount < 3) {
+            console.log('[Widget] Restarting followup timer after widget scroll stopped');
+            startFollowupTimer();
+          }
+        }, 3000); // 3 seconds after scrolling stops in widget
       }
     });
   }
