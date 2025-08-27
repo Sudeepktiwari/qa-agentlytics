@@ -930,7 +930,35 @@ export async function GET(request: Request) {
 
       if (data && data.mainText && data.mainText.trim()) {
         console.log('✅ [WIDGET AI] AI generated question:', data.mainText);
-        return data.mainText.trim();
+        
+        // 🎯 TWO-MESSAGE APPROACH: Split into question and response
+        const fullResponse = data.mainText.trim();
+        
+        // Try to extract the question part (everything up to first question mark)
+        const questionMatch = fullResponse.match(/^([^?]*\?)/);
+        
+        if (questionMatch) {
+          const question = questionMatch[1].trim();
+          const response = fullResponse.substring(question.length).trim();
+          
+          console.log('📤 [WIDGET AI] Displaying question as first message:', question);
+          sendProactiveMessage(question, [], '');
+          
+          // Wait 2 seconds, then display the response as second message
+          setTimeout(() => {
+            if (response && response.length > 0) {
+              console.log('📤 [WIDGET AI] Displaying response as second message:', response);
+              sendProactiveMessage(response, data.buttons || [], data.emailPrompt || '');
+            }
+          }, 2000);
+          
+          return question;
+        } else {
+          // Fallback: No clear question format, display as single message
+          console.log('📤 [WIDGET AI] No question format detected, displaying as single message');
+          sendProactiveMessage(fullResponse, data.buttons || [], data.emailPrompt || '');
+          return fullResponse;
+        }
       }
     } catch (error) {
       console.warn('⚠️ [WIDGET AI] AI question generation failed, using fallback:', error);
@@ -986,8 +1014,8 @@ export async function GET(request: Request) {
     try {
       const aiQuestion = await generateAiContextualQuestion(sectionName, viewportContext, scrollPercentage, sectionData);
       if (aiQuestion) {
-        question = aiQuestion;
-        console.log('🤖 [WIDGET SCROLL] Using AI-generated question:', question);
+        console.log('🤖 [WIDGET SCROLL] AI successfully generated and displayed question - returning');
+        return; // AI function already handles display, no need to continue
       }
     } catch (error) {
       console.warn('⚠️ [WIDGET SCROLL] AI generation failed, using fallback:', error);
@@ -1460,14 +1488,8 @@ export async function GET(request: Request) {
     try {
       aiQuestion = await generateAiContextualQuestion(sectionName, viewportContext, sectionData.scrollPercentage, sectionData);
       if (aiQuestion) {
-        console.log('🤖 [WIDGET QUESTIONS] Using AI-generated question:', aiQuestion);
-        // Send AI question directly
-        setTimeout(() => {
-          if (!userIsActive && currentViewportSection === sectionName) {
-            sendContextualQuestion(aiQuestion, sectionData);
-          }
-        }, 15000); // Wait 15 seconds
-        return;
+        console.log('🤖 [WIDGET QUESTIONS] AI successfully generated and displayed question - returning');
+        return; // AI function already handles display with proper timing, no need to continue
       }
     } catch (error) {
       console.warn('⚠️ [WIDGET QUESTIONS] AI generation failed, using fallback:', error);
