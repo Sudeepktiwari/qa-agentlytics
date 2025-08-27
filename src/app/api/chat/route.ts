@@ -2884,15 +2884,15 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
     parsed = JSON.parse(answer || "");
   } catch {
     console.log("[DEBUG] Direct JSON parse failed, attempting extraction");
-    
+
     // Multiple regex patterns to catch different JSON formatting variations
     const jsonPatterns = [
-      /\{[\s\S]*"buttons"[\s\S]*\}/,  // Original pattern
-      /\{[\s\S]*"mainText"[\s\S]*\}/,  // Alternative pattern for mainText
-      /```json\s*(\{[\s\S]*?\})\s*```/,  // JSON wrapped in code blocks
-      /\{[^{}]*"(?:mainText|buttons|emailPrompt)"[^{}]*(?:\{[^{}]*\}|[^{}])*\}/  // Nested object handling
+      /\{[\s\S]*"buttons"[\s\S]*\}/, // Original pattern
+      /\{[\s\S]*"mainText"[\s\S]*\}/, // Alternative pattern for mainText
+      /```json\s*(\{[\s\S]*?\})\s*```/, // JSON wrapped in code blocks
+      /\{[^{}]*"(?:mainText|buttons|emailPrompt)"[^{}]*(?:\{[^{}]*\}|[^{}])*\}/, // Nested object handling
     ];
-    
+
     let jsonMatch = null;
     for (const pattern of jsonPatterns) {
       jsonMatch = answer?.match(pattern);
@@ -2901,7 +2901,7 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
         break;
       }
     }
-    
+
     if (jsonMatch) {
       try {
         // Clean the matched JSON string
@@ -2909,18 +2909,18 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
         if (jsonMatch[1]) {
           jsonString = jsonMatch[1]; // Use captured group if available
         }
-        
+
         // Additional cleaning for common formatting issues
         jsonString = jsonString
-          .replace(/^```json\s*/, '') // Remove code block start
-          .replace(/\s*```$/, '')     // Remove code block end
+          .replace(/^```json\s*/, "") // Remove code block start
+          .replace(/\s*```$/, "") // Remove code block end
           .trim();
-        
+
         const extractedJson = JSON.parse(jsonString);
-        
+
         // Clean the mainText by removing the JSON part
         let cleanMainText = answer?.replace(jsonMatch[0], "").trim() || "";
-        
+
         // If cleanMainText is empty or very short, use the JSON mainText
         if (!cleanMainText || cleanMainText.length < 10) {
           cleanMainText = extractedJson.mainText || "";
@@ -2946,7 +2946,10 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
           parsed
         );
       } catch (extractError) {
-        console.log("[DEBUG] Failed to extract JSON, using fallback:", extractError);
+        console.log(
+          "[DEBUG] Failed to extract JSON, using fallback:",
+          extractError
+        );
         // Process markdown in the full answer as fallback
         let processedAnswer = answer || "";
         processedAnswer = processedAnswer

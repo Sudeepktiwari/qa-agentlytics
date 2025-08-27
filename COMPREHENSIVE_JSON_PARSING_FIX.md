@@ -7,16 +7,19 @@ This document outlines the comprehensive fixes implemented to address inconsiste
 ## 🚨 Issues Identified
 
 ### 1. **Critical: Embeddings API Errors**
+
 - **Problem**: Empty or invalid questions causing 400 errors
 - **Impact**: Complete request failures when question parameter is empty
 - **Root Cause**: No validation before calling OpenAI embeddings API
 
 ### 2. **Inconsistent System Prompts**
+
 - **Problem**: Followup system prompts missing strict JSON formatting rules
 - **Impact**: AI responses not following JSON format consistently
 - **Root Cause**: Only main system prompts had comprehensive formatting rules
 
 ### 3. **Limited JSON Extraction**
+
 - **Problem**: Single regex pattern couldn't handle all JSON formatting variations
 - **Impact**: Failed to extract JSON from various response formats
 - **Root Cause**: Insufficient pattern matching for edge cases
@@ -53,6 +56,7 @@ const embedResp = await openai.embeddings.create({
 ```
 
 **Benefits**:
+
 - ✅ Prevents API errors from empty questions
 - ✅ Provides graceful fallback response
 - ✅ Reduces server error rate
@@ -63,6 +67,7 @@ const embedResp = await openai.embeddings.create({
 **Lines**: Multiple followup system prompt sections
 
 **Added to ALL followup system prompts**:
+
 ```typescript
 - Only use the above JSON format.
 - Do not answer in any other way.
@@ -71,12 +76,14 @@ const embedResp = await openai.embeddings.create({
 ```
 
 **Applied to**:
+
 - Followup #1 system prompt (lines ~1920-1940)
 - Followup #2 system prompt (lines ~2090-2110)
 - Followup #3 system prompts (lines ~2175-2195, ~2250-2270)
 - Final followup system prompts (lines ~2285-2305, ~2305-2325)
 
 **Benefits**:
+
 - ✅ Consistent JSON formatting across all response types
 - ✅ Reduces malformed JSON responses
 - ✅ Ensures buttons stay in buttons array, not mainText
@@ -87,25 +94,28 @@ const embedResp = await openai.embeddings.create({
 **Lines**: ~2870-2950
 
 **Multiple Pattern Matching**:
-```typescript
+
+````typescript
 const jsonPatterns = [
-  /\{[\s\S]*"buttons"[\s\S]*\}/,  // Original pattern
-  /\{[\s\S]*"mainText"[\s\S]*\}/,  // Alternative pattern for mainText
-  /```json\s*(\{[\s\S]*?\})\s*```/,  // JSON wrapped in code blocks
-  /\{[^{}]*"(?:mainText|buttons|emailPrompt)"[^{}]*(?:\{[^{}]*\}|[^{}])*\}/  // Nested object handling
+  /\{[\s\S]*"buttons"[\s\S]*\}/, // Original pattern
+  /\{[\s\S]*"mainText"[\s\S]*\}/, // Alternative pattern for mainText
+  /```json\s*(\{[\s\S]*?\})\s*```/, // JSON wrapped in code blocks
+  /\{[^{}]*"(?:mainText|buttons|emailPrompt)"[^{}]*(?:\{[^{}]*\}|[^{}])*\}/, // Nested object handling
 ];
-```
+````
 
 **Enhanced Cleaning**:
-```typescript
+
+````typescript
 // Additional cleaning for common formatting issues
 jsonString = jsonString
-  .replace(/^```json\s*/, '') // Remove code block start
-  .replace(/\s*```$/, '')     // Remove code block end
+  .replace(/^```json\s*/, "") // Remove code block start
+  .replace(/\s*```$/, "") // Remove code block end
   .trim();
-```
+````
 
 **Improved Fallback Logic**:
+
 ```typescript
 // If cleanMainText is empty or very short, use the JSON mainText
 if (!cleanMainText || cleanMainText.length < 10) {
@@ -114,6 +124,7 @@ if (!cleanMainText || cleanMainText.length < 10) {
 ```
 
 **Benefits**:
+
 - ✅ Handles JSON wrapped in code blocks (```json)
 - ✅ Catches variations in JSON structure
 - ✅ Better handling of nested objects
@@ -122,6 +133,7 @@ if (!cleanMainText || cleanMainText.length < 10) {
 ### 4. **Enhanced Debugging & Logging**
 
 **Added throughout the extraction process**:
+
 ```typescript
 console.log("[DEBUG] Direct JSON parse failed, attempting extraction");
 console.log("[DEBUG] Found JSON match with pattern:", pattern.source);
@@ -129,6 +141,7 @@ console.log("[DEBUG] No JSON pattern found, processing as plain text");
 ```
 
 **Benefits**:
+
 - ✅ Better visibility into parsing issues
 - ✅ Easier debugging of edge cases
 - ✅ Performance monitoring
@@ -140,21 +153,24 @@ console.log("[DEBUG] No JSON pattern found, processing as plain text");
 Created `test-json-parsing-comprehensive.html` to validate all fixes:
 
 **Test Categories**:
+
 1. **Basic Functionality**: Normal chat, empty questions, long questions
 2. **Email Detection**: Email parsing and sales mode switching
 3. **Followup Messages**: All followup types and counts
 4. **Edge Cases**: Special characters, Unicode, emojis, HTML content
 
 **Validation Checks**:
+
 - ✅ Required fields present (mainText/answer)
 - ✅ No JSON objects in mainText
-- ✅ No raw markdown formatting (\\n\\n, **)
+- ✅ No raw markdown formatting (\\n\\n, \*\*)
 - ✅ Proper button array format
 - ✅ Correct bot mode setting
 
 ### Expected Improvements
 
 **Before Fixes**:
+
 - ❌ Intermittent JSON parsing failures
 - ❌ Raw JSON appearing in chat messages
 - ❌ Markdown formatting visible to users
@@ -162,6 +178,7 @@ Created `test-json-parsing-comprehensive.html` to validate all fixes:
 - ❌ Inconsistent followup message formats
 
 **After Fixes**:
+
 - ✅ Consistent JSON parsing across all response types
 - ✅ Clean, formatted chat messages
 - ✅ Proper HTML formatting (no raw markdown)
@@ -188,6 +205,7 @@ Created `test-json-parsing-comprehensive.html` to validate all fixes:
 ### Server Logs to Watch
 
 Look for these debug messages:
+
 ```
 [DEBUG] Direct JSON parse failed, attempting extraction
 [DEBUG] Found JSON match with pattern: ...
