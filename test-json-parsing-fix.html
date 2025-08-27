@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test JSON Parsing and Formatting Fix</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        line-height: 1.6;
+      }
+      .test-section {
+        background: #f5f5f5;
+        padding: 20px;
+        margin: 20px 0;
+        border-radius: 8px;
+      }
+      .test-result {
+        background: #e8f5e8;
+        padding: 15px;
+        margin: 10px 0;
+        border-radius: 8px;
+        border-left: 4px solid #4caf50;
+      }
+      .error-result {
+        background: #ffebee;
+        padding: 15px;
+        margin: 10px 0;
+        border-radius: 8px;
+        border-left: 4px solid #f44336;
+      }
+      .response-display {
+        background: #fff;
+        border: 1px solid #ddd;
+        padding: 15px;
+        margin: 10px 0;
+        border-radius: 8px;
+        font-family: monospace;
+        white-space: pre-wrap;
+      }
+      .message-preview {
+        background: #f0f8ff;
+        padding: 15px;
+        margin: 10px 0;
+        border-radius: 8px;
+        border-left: 4px solid #2196f3;
+      }
+      button {
+        background: #4caf50;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin: 5px;
+      }
+      button:hover {
+        background: #45a049;
+      }
+      .test-button {
+        background: #2196f3;
+        color: white;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        margin: 3px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>JSON Parsing and Formatting Fix Test</h1>
+    <p>
+      This page tests the fix for JSON parsing issues where buttons/emailPrompt
+      were appearing in chat messages instead of being properly parsed.
+    </p>
+
+    <div class="test-section">
+      <h3>🐛 Problem Fixed</h3>
+      <ul>
+        <li>
+          <strong>JSON in mainText:</strong> AI was putting JSON objects inside
+          the mainText field
+        </li>
+        <li>
+          <strong>Formatting Issues:</strong> `\n\n` and `**bold**` weren't
+          rendering correctly
+        </li>
+        <li>
+          <strong>Buttons Missing:</strong> Buttons array was empty while JSON
+          was in mainText
+        </li>
+      </ul>
+    </div>
+
+    <div class="test-section">
+      <h3>🔧 Solution Implemented</h3>
+      <ul>
+        <li>
+          <strong>Enhanced JSON Extraction:</strong> Detects and extracts JSON
+          from mainText
+        </li>
+        <li>
+          <strong>Markdown Processing:</strong> Converts `\n\n` to `<br /><br />`
+          and `**text**` to `<strong>text</strong>`
+        </li>
+        <li>
+          <strong>Stricter AI Prompts:</strong> More explicit rules about JSON
+          structure
+        </li>
+        <li>
+          <strong>Fallback Handling:</strong> Robust error handling for
+          malformed responses
+        </li>
+      </ul>
+    </div>
+
+    <button onclick="testNormalQuestion()">Test Normal Question</button>
+    <button onclick="testComplexFormatting()">Test Complex Formatting</button>
+    <button onclick="testScrollBasedQuestion()">
+      Test Scroll-Based Question
+    </button>
+    <button onclick="clearResults()">Clear Results</button>
+
+    <div id="results"></div>
+
+    <script>
+      function addResult(title, content, isError = false) {
+        const results = document.getElementById("results");
+        const div = document.createElement("div");
+        div.className = isError ? "error-result" : "test-result";
+        div.innerHTML = `<strong>${title}</strong><br>${content}`;
+        results.appendChild(div);
+      }
+
+      function displayResponse(title, response) {
+        const results = document.getElementById("results");
+        const div = document.createElement("div");
+        div.innerHTML = `
+                <h4>${title}</h4>
+                <div class="response-display">${JSON.stringify(
+                  response,
+                  null,
+                  2
+                )}</div>
+                <div class="message-preview">
+                    <strong>Message Preview:</strong><br>
+                    <div style="margin: 10px 0;">${
+                      response.mainText || "No mainText"
+                    }</div>
+                    ${
+                      response.buttons && response.buttons.length > 0
+                        ? `<div><strong>Buttons:</strong><br>${response.buttons
+                            .map(
+                              (btn) => `<span class="test-button">${btn}</span>`
+                            )
+                            .join("")}</div>`
+                        : "<div><strong>No buttons</strong></div>"
+                    }
+                    ${
+                      response.emailPrompt
+                        ? `<div style="margin-top: 10px;"><strong>Email Prompt:</strong> ${response.emailPrompt}</div>`
+                        : ""
+                    }
+                </div>
+            `;
+        results.appendChild(div);
+      }
+
+      async function testNormalQuestion() {
+        addResult(
+          "Testing Normal Question",
+          "Sending request for calendar connection help..."
+        );
+
+        try {
+          const response = await fetch("/api/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              sessionId: "test-normal-" + Date.now(),
+              pageUrl: "https://calendly.com/",
+              question: "How do I connect my Google Calendar?",
+            }),
+          });
+
+          const data = await response.json();
+          displayResponse("Normal Question Response", data);
+
+          // Validate response
+          if (
+            data.mainText &&
+            !data.mainText.includes("{") &&
+            !data.mainText.includes('"buttons"')
+          ) {
+            addResult(
+              "✅ SUCCESS",
+              "No JSON found in mainText - proper parsing working!"
+            );
+          } else {
+            addResult("❌ FAILURE", "JSON still appears in mainText", true);
+          }
+
+          if (data.buttons && data.buttons.length > 0) {
+            addResult(
+              "✅ SUCCESS",
+              `Found ${data.buttons.length} properly parsed buttons`
+            );
+          } else {
+            addResult("⚠️ WARNING", "No buttons found in response");
+          }
+        } catch (error) {
+          addResult("❌ ERROR", error.message, true);
+        }
+      }
+
+      async function testComplexFormatting() {
+        addResult(
+          "Testing Complex Formatting",
+          "Sending request that typically causes formatting issues..."
+        );
+
+        try {
+          const response = await fetch("/api/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              sessionId: "test-format-" + Date.now(),
+              pageUrl: "https://calendly.com/",
+              question: "Tell me about your features and pricing options",
+            }),
+          });
+
+          const data = await response.json();
+          displayResponse("Complex Formatting Response", data);
+
+          // Check for proper formatting
+          const hasLineBreaks = data.mainText && data.mainText.includes("<br>");
+          const hasBoldText =
+            data.mainText && data.mainText.includes("<strong>");
+          const hasNoRawNewlines =
+            data.mainText && !data.mainText.includes("\\n\\n");
+
+          if (hasLineBreaks) {
+            addResult(
+              "✅ SUCCESS",
+              "Line breaks properly converted to <br> tags"
+            );
+          } else {
+            addResult("⚠️ INFO", "No line breaks found in response");
+          }
+
+          if (hasNoRawNewlines) {
+            addResult(
+              "✅ SUCCESS",
+              "No raw \\n\\n sequences found - formatting processed"
+            );
+          } else {
+            addResult("❌ FAILURE", "Raw \\n\\n sequences still present", true);
+          }
+        } catch (error) {
+          addResult("❌ ERROR", error.message, true);
+        }
+      }
+
+      async function testScrollBasedQuestion() {
+        addResult(
+          "Testing Scroll-Based Question",
+          "Simulating scroll-based contextual question..."
+        );
+
+        try {
+          const response = await fetch("/api/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              sessionId: "test-scroll-" + Date.now(),
+              pageUrl: "https://calendly.com/",
+              question:
+                "What are the benefits of using your scheduling platform?",
+              contextual: true,
+              sectionContext: {
+                hasCtaButtons: true,
+                hasPricing: true,
+                hasFeatures: true,
+              },
+            }),
+          });
+
+          const data = await response.json();
+          displayResponse("Scroll-Based Question Response", data);
+
+          // Check for contextual understanding
+          if (
+            data.mainText &&
+            data.mainText.toLowerCase().includes("schedul")
+          ) {
+            addResult(
+              "✅ SUCCESS",
+              "Response shows contextual understanding of scheduling"
+            );
+          } else {
+            addResult(
+              "⚠️ WARNING",
+              "Response may not be contextually relevant"
+            );
+          }
+
+          // Check for proper structure
+          if (data.mainText && data.buttons && data.emailPrompt !== undefined) {
+            addResult(
+              "✅ SUCCESS",
+              "All required fields present in response structure"
+            );
+          } else {
+            addResult(
+              "❌ FAILURE",
+              "Missing required fields in response structure",
+              true
+            );
+          }
+        } catch (error) {
+          addResult("❌ ERROR", error.message, true);
+        }
+      }
+
+      function clearResults() {
+        document.getElementById("results").innerHTML = "";
+      }
+
+      // Auto-run basic test on page load
+      window.addEventListener("load", () => {
+        addResult(
+          "Page Loaded",
+          "JSON parsing and formatting fix test ready. Click buttons to test different scenarios."
+        );
+      });
+    </script>
+  </body>
+</html>

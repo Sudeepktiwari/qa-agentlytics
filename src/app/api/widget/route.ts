@@ -2783,6 +2783,40 @@ export async function GET(request: Request) {
       }
     });
     
+    // Widget messages container scroll detection
+    let widgetScrollTimeout;
+    function setupWidgetScrollDetection() {
+      const messagesContainer = document.getElementById('appointy-messages');
+      if (!messagesContainer) return;
+      
+      messagesContainer.addEventListener('scroll', () => {
+        if (!userIsActive) {
+          console.log('[Widget] User scrolling in chat widget, setting active');
+          setUserActive();
+          clearFollowupTimer();
+          
+          // Clear existing scroll timeout
+          if (widgetScrollTimeout) {
+            clearTimeout(widgetScrollTimeout);
+          }
+          
+          // Set timeout to detect when scrolling stops
+          widgetScrollTimeout = setTimeout(() => {
+            console.log('[Widget] Widget scroll stopped, checking followup timer');
+            // Check if we should restart followup timer
+            const lastMessage = messages[messages.length - 1];
+            if (lastMessage && lastMessage.role === 'assistant' && followupCount < 3) {
+              console.log('[Widget] Restarting followup timer after widget scroll stopped');
+              startFollowupTimer();
+            }
+          }, 3000); // 3 seconds after scrolling stops in widget
+        }
+      });
+    }
+    
+    // Call scroll detection setup after widget is created
+    setTimeout(setupWidgetScrollDetection, 100);
+    
     // Page visibility change
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
@@ -2808,6 +2842,9 @@ export async function GET(request: Request) {
     
     // Add widget HTML
     widgetContainer.innerHTML = createWidgetHTML();
+    
+    // Setup scroll detection for the messages container
+    setTimeout(setupWidgetScrollDetection, 100);
     
     // Add elements to column container in correct order
     widgetMainContainer.appendChild(widgetContainer); // Chat window first (top)
@@ -2998,6 +3035,7 @@ export async function GET(request: Request) {
           // Re-create widget HTML with mirror
           widgetContainer.innerHTML = createWidgetHTML();
           setTimeout(() => initializeMirror(), 100);
+          setTimeout(setupWidgetScrollDetection, 100);
         } else if (!mirrorEnabled && mirrorIframe) {
           mirrorIframe.style.display = 'none';
         }
@@ -3037,6 +3075,7 @@ export async function GET(request: Request) {
         if (isOpen) {
           widgetContainer.innerHTML = createWidgetHTML();
           setTimeout(() => initializeMirror(), 100);
+          setTimeout(setupWidgetScrollDetection, 100);
         }
         return 'Mirror force initialized';
       },

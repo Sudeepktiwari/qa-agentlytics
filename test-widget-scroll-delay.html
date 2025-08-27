@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test Widget Scroll Delay for Followup Messages</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        line-height: 1.6;
+      }
+      .test-section {
+        background: #f5f5f5;
+        padding: 20px;
+        margin: 20px 0;
+        border-radius: 8px;
+      }
+      .timer {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 15px;
+        border-radius: 8px;
+        font-family: monospace;
+        z-index: 9999;
+        max-width: 250px;
+      }
+      .test-instructions {
+        background: #e3f2fd;
+        padding: 20px;
+        border-left: 4px solid #2196f3;
+        margin: 20px 0;
+      }
+      .test-step {
+        background: #fff3e0;
+        padding: 15px;
+        margin: 10px 0;
+        border-radius: 8px;
+        border-left: 4px solid #ff9800;
+      }
+      button {
+        background: #4caf50;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin: 5px;
+      }
+      button:hover {
+        background: #45a049;
+      }
+      .status {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 15px;
+        border-radius: 8px;
+        font-size: 12px;
+        z-index: 9999;
+        max-width: 300px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="timer" id="timer">
+      Widget Status: Loading...<br />
+      Followup Timer: Not active<br />
+      Last Activity: N/A
+    </div>
+
+    <div class="status" id="status">
+      Ready to test widget scroll delay functionality
+    </div>
+
+    <h1>Widget Scroll Delay Test</h1>
+    <p>
+      This page tests the new functionality where scrolling inside the chat
+      widget delays followup messages, similar to typing delays.
+    </p>
+
+    <div class="test-instructions">
+      <h3>🧪 Test Instructions</h3>
+      <p>
+        This test verifies that scrolling inside the chat widget properly delays
+        followup messages:
+      </p>
+
+      <div class="test-step">
+        <strong>Step 1:</strong> Wait for the chat widget to load (should appear
+        in bottom right)
+      </div>
+
+      <div class="test-step">
+        <strong>Step 2:</strong> Click to open the chat widget and send a
+        message
+      </div>
+
+      <div class="test-step">
+        <strong>Step 3:</strong> Wait for a bot response to appear in the chat
+      </div>
+
+      <div class="test-step">
+        <strong>Step 4:</strong>
+        <u>Before the followup timer completes (30 seconds)</u>, scroll up and
+        down inside the chat message area
+      </div>
+
+      <div class="test-step">
+        <strong>Step 5:</strong> Observe that:
+        <ul>
+          <li>Scrolling sets user as "active" and clears the followup timer</li>
+          <li>3 seconds after scrolling stops, the followup timer restarts</li>
+          <li>
+            This delays the followup message, giving the user more time to read
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="test-section">
+      <h3>Expected Behavior</h3>
+      <ul>
+        <li>
+          <strong>Without Scrolling:</strong> Followup messages appear after 30
+          seconds of inactivity
+        </li>
+        <li>
+          <strong>With Typing:</strong> Typing delays followup messages
+          (existing behavior)
+        </li>
+        <li>
+          <strong>With Widget Scrolling:</strong> Scrolling in chat widget
+          delays followup messages (NEW)
+        </li>
+        <li>
+          <strong>Scroll Detection:</strong> Widget scroll activity is treated
+          as user engagement
+        </li>
+        <li>
+          <strong>Timer Reset:</strong> 3 seconds after scrolling stops,
+          followup timer restarts
+        </li>
+      </ul>
+    </div>
+
+    <div class="test-section">
+      <h3>Technical Details</h3>
+      <p><strong>Implementation:</strong></p>
+      <ul>
+        <li>
+          Added scroll event listener to
+          <code>#appointy-messages</code> container
+        </li>
+        <li>
+          Scrolling calls <code>setUserActive()</code> and
+          <code>clearFollowupTimer()</code>
+        </li>
+        <li>3-second timeout after scroll stops to restart followup timer</li>
+        <li>Similar logic to existing typing detection</li>
+      </ul>
+
+      <p><strong>Benefits:</strong></p>
+      <ul>
+        <li>Prevents interrupting users who are reading chat history</li>
+        <li>Improves user experience by being less intrusive</li>
+        <li>Maintains engagement tracking for analytics</li>
+        <li>Consistent with typing delay behavior</li>
+      </ul>
+    </div>
+
+    <button onclick="simulateUserInteraction()">Simulate User Activity</button>
+    <button onclick="openWidget()">Open Widget</button>
+    <button onclick="testScrollDetection()">Test Scroll Detection</button>
+
+    <script>
+      let widgetLoaded = false;
+      let followupTimer = null;
+      let lastActivity = Date.now();
+
+      function updateTimer() {
+        const timer = document.getElementById("timer");
+        const status = document.getElementById("status");
+        const now = Date.now();
+        const timeSinceActivity = Math.floor((now - lastActivity) / 1000);
+
+        let widgetStatus = widgetLoaded ? "Loaded" : "Loading...";
+        let timerStatus = followupTimer
+          ? `Active (${30 - timeSinceActivity}s left)`
+          : "Not active";
+
+        timer.innerHTML = `
+                Widget Status: ${widgetStatus}<br>
+                Followup Timer: ${timerStatus}<br>
+                Last Activity: ${timeSinceActivity}s ago
+            `;
+
+        // Check if widget exists
+        const widget = document.getElementById("appointy-widget-container");
+        const messagesContainer = document.getElementById("appointy-messages");
+
+        let statusText = "Ready to test widget scroll delay functionality";
+        if (widget) {
+          statusText = "Widget found! ";
+          if (messagesContainer) {
+            statusText += "Messages container available for scroll testing.";
+          } else {
+            statusText += "Open widget to access messages container.";
+          }
+        } else {
+          statusText = "Waiting for widget to load...";
+        }
+
+        status.textContent = statusText;
+      }
+
+      function simulateUserInteraction() {
+        lastActivity = Date.now();
+        console.log("🎯 Simulated user interaction");
+      }
+
+      function openWidget() {
+        // Try to find and click the widget toggle button
+        const toggleButton = document.querySelector('[id*="appointy"]');
+        if (toggleButton) {
+          toggleButton.click();
+          console.log("🎯 Clicked widget toggle button");
+        } else {
+          console.log("❌ Widget toggle button not found");
+        }
+      }
+
+      function testScrollDetection() {
+        const messagesContainer = document.getElementById("appointy-messages");
+        if (messagesContainer) {
+          console.log("🔄 Testing scroll detection...");
+
+          // Simulate scrolling
+          messagesContainer.scrollTop = 0;
+          setTimeout(() => {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+          }, 500);
+          setTimeout(() => {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight / 2;
+          }, 1000);
+
+          console.log(
+            "✅ Scroll simulation complete - check console for scroll detection logs"
+          );
+        } else {
+          console.log(
+            "❌ Messages container not found - open the widget first"
+          );
+          alert("Please open the chat widget first to test scroll detection");
+        }
+      }
+
+      // Monitor for widget loading
+      const observer = new MutationObserver(function (mutations) {
+        mutations.forEach(function (mutation) {
+          if (mutation.type === "childList") {
+            mutation.addedNodes.forEach(function (node) {
+              if (
+                node.nodeType === 1 &&
+                node.id &&
+                node.id.includes("appointy")
+              ) {
+                widgetLoaded = true;
+                console.log("✅ Widget loaded:", node.id);
+
+                // Check for messages container
+                setTimeout(() => {
+                  const messagesContainer =
+                    document.getElementById("appointy-messages");
+                  if (messagesContainer) {
+                    console.log(
+                      "✅ Messages container found - scroll detection should be active"
+                    );
+                  }
+                }, 1000);
+              }
+            });
+          }
+        });
+      });
+
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+      });
+
+      // Update timer every second
+      setInterval(updateTimer, 1000);
+
+      // Load widget
+      window.addEventListener("load", () => {
+        console.log("🧪 Starting widget scroll delay test");
+
+        // Inject widget
+        const script = document.createElement("script");
+        script.src = "/api/widget?admin_id=test123";
+        script.onload = () => {
+          console.log("✅ Widget script loaded");
+          widgetLoaded = true;
+        };
+        script.onerror = () => {
+          console.log("❌ Widget script failed to load");
+        };
+        document.head.appendChild(script);
+      });
+
+      // Monitor for specific widget console logs
+      const originalConsoleLog = console.log;
+      console.log = function (...args) {
+        const message = args.join(" ");
+
+        // Look for widget scroll detection logs
+        if (message.includes("[Widget] User scrolling in chat widget")) {
+          document.getElementById("status").textContent =
+            "🔄 DETECTED: User scrolling in widget!";
+          document.getElementById("status").style.background =
+            "rgba(76, 175, 80, 0.8)";
+
+          setTimeout(() => {
+            document.getElementById("status").style.background =
+              "rgba(0,0,0,0.8)";
+          }, 2000);
+        }
+
+        if (message.includes("[Widget] Widget scroll stopped")) {
+          document.getElementById("status").textContent =
+            "⏸️ DETECTED: Widget scroll stopped - timer restarting!";
+          document.getElementById("status").style.background =
+            "rgba(33, 150, 243, 0.8)";
+
+          setTimeout(() => {
+            document.getElementById("status").style.background =
+              "rgba(0,0,0,0.8)";
+          }, 2000);
+        }
+
+        originalConsoleLog.apply(console, args);
+      };
+    </script>
+  </body>
+</html>

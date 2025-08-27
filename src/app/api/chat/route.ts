@@ -1932,6 +1932,8 @@ Previous Conversation:
 ${previousQnA}
 - Only use the above JSON format.
 - Do not answer in any other way.
+- Respond with ONLY valid JSON - no additional text before or after
+- NEVER include JSON objects or button arrays within the mainText field
 - Your mainText must be maximum 30 words. Be creative, engaging, and specific to page context. Do NOT repeat previous questions: ${lastFewQuestions
             .map((q) => `"${getText(q)}"`)
             .join(", ")}. Do NOT include a summary or multiple questions.
@@ -2099,6 +2101,8 @@ Previous Conversation:
 ${previousQnA}
 - Only use the above JSON format.
 - Do not answer in any other way.
+- Respond with ONLY valid JSON - no additional text before or after
+- NEVER include JSON objects or button arrays within the mainText field
 - Your mainText must be a micro-conversion nudge, referencing the user's last action, detected intent, page context, or actual page content. Do NOT ask for a discovery call or email directly. Vary the nudge text for each follow-up.`;
           followupUserPrompt = `CRITICAL: You MUST create a response based on the ACTUAL page content provided above that is DIFFERENT from Followup #1. Do NOT use generic terms like "scheduling chaos" or "auto scheduling" or any similar concepts to previous followups.
 
@@ -2175,7 +2179,9 @@ SDR Guidelines:
 - Use consultative language ("Based on what you're viewing...")
 - Be confident about the solution fit
 - Focus on next concrete step in sales process
-- Only use the above JSON format.`;
+- Only use the above JSON format.
+- Respond with ONLY valid JSON - no additional text before or after
+- NEVER include JSON objects or button arrays within the mainText field`;
             followupUserPrompt = `Create an SDR-style value proposition with specific benefits. The user has email so focus on conversion. Reference ROI, time savings, or competitive advantage. Be assertive but consultative. Only output the JSON format as instructed.`;
           } else {
             // User hasn't provided email yet - value-focused followup with topic diversification
@@ -2255,6 +2261,8 @@ Previous Conversation:
 ${previousQnA}
 - Only use the above JSON format.
 - Do not answer in any other way.
+- Respond with ONLY valid JSON - no additional text before or after
+- NEVER include JSON objects or button arrays within the mainText field
 - Your mainText must be a friendly, direct request for the user's email, referencing the actual page context or detected intent. Do NOT ask another qualifying question or repeat previous questions.`;
             followupUserPrompt = `Ask the user for their email in a friendly, direct way, explaining why you need it to send them setup instructions, a demo, or connect them to support for this page. Reference the page context or detected intent if possible. Do NOT ask another qualifying question. Do NOT include any buttons. Only output the JSON format as instructed.`;
           }
@@ -2284,7 +2292,9 @@ Final Conversion Guidelines:
 - Use scarcity psychology appropriately
 - Be confident about solution fit based on their engagement
 - Focus on immediate next step that moves them to purchase/demo
-- Only use the above JSON format.`;
+- Only use the above JSON format.
+- Respond with ONLY valid JSON - no additional text before or after
+- NEVER include JSON objects or button arrays within the mainText field`;
             followupUserPrompt = `Make a final conversion push with urgency and exclusive value. User has email so this is pure sales conversion. Reference their page viewing and create time-sensitive opportunity. Only output the JSON format as instructed.`;
           } else {
             // User hasn't provided email yet - final summary offer
@@ -2308,6 +2318,8 @@ Previous Conversation:
 ${previousQnA}
 - Only use the above JSON format.
 - Do not answer in any other way.
+- Respond with ONLY valid JSON - no additional text before or after
+- NEVER include JSON objects or button arrays within the mainText field
 - Your mainText must summarize the user's journey and offer to email a summary. Be natural and avoid formulaic language.`;
             followupUserPrompt = `Offer to email the user a summary of their options, summarizing their last few actions or options in a friendly way. Only output the JSON format as instructed.`;
           }
@@ -2661,9 +2673,19 @@ What specific information are you looking for? I'm here to help guide you throug
     }
   }
 
-  // Embed the question
+  // Embed the question - Add validation to prevent API errors
+  if (!question || question.trim().length === 0) {
+    console.log("[DEBUG] Empty question, returning generic response");
+    return NextResponse.json(
+      {
+        answer: "I'm here to help! What would you like to know?",
+      },
+      { headers: corsHeaders }
+    );
+  }
+
   const embedResp = await openai.embeddings.create({
-    input: [question],
+    input: [question.trim()],
     model: "text-embedding-3-small",
   });
   const questionEmbedding = embedResp.data[0].embedding;
@@ -2803,7 +2825,41 @@ ${context}
 
 IMPORTANT: Don't provide other action buttons when user is requesting email. Focus on the email collection. KEEP RESPONSE BRIEF AND FOCUSED.`;
     } else {
-      systemPrompt = `You are a helpful sales assistant. The user has not provided an email yet.\n\nYou will receive page and general context. Always generate your response in the following JSON format:\n\n{\n  "mainText": "<A dynamic, page-aware summary or answer, using the context below. MANDATORY FORMATTING RULES: \n1. NEVER write long paragraphs - they are hard to read in chat\n2. Start with 1-2 short sentences (max 20 words each)\n3. Add double line break \\n\\n after intro\n4. Use bullet points with • symbol for ANY list of 2+ items\n5. Add TWO line breaks \\n\\n after each bullet point for better spacing\n6. Example format: 'Short intro!\\n\\n• First benefit\\n\\n• Second benefit\\n\\n• Third benefit'\n7. Use emojis sparingly for emphasis\n8. Never use long sentences in paragraphs - break them into bullets\n9. CRITICAL: NEVER include action buttons, button lists, or '### Action Buttons:' sections in mainText - buttons go ONLY in the buttons array\n10. CRITICAL: Do NOT assume or reference specific industries, business types, or professions (like 'legal services', 'tanning salon', etc.) unless the customer has explicitly mentioned their business type>",\n  "buttons": ["<Generate 2-4 contextually relevant action buttons based on the user's question and the content you provided. These should be specific to their query and help them take the next logical step. For example, if they ask about hosting, buttons could be 'Learn About Security', 'Compare Plans', 'Contact Hosting Team'. Make buttons actionable and relevant to the specific topic discussed.>"],\n  "emailPrompt": "<Create a contextual email prompt that relates to the specific topic discussed, offering to send more detailed information about that topic specifically.>"\n}\n\nContext:\nPage Context:\n${pageContext}\n\nGeneral Context:\n${context}\n\nIMPORTANT: Generate buttons and email prompt that are directly related to the user's specific question and your answer. Do not use generic buttons. Make them actionable and relevant to the conversation topic. ABSOLUTELY NO LONG PARAGRAPHS - USE BULLET POINTS WITH DOUBLE LINE BREAKS FOR SPACING. NEVER PUT BUTTONS IN MAINTEXT - ONLY IN THE BUTTONS ARRAY. DO NOT ASSUME BUSINESS TYPES OR INDUSTRIES UNLESS EXPLICITLY STATED BY THE CUSTOMER.`;
+      systemPrompt = `You are a helpful sales assistant. The user has not provided an email yet.
+
+You will receive page and general context. Always generate your response in the following JSON format:
+
+{
+  "mainText": "<A dynamic, page-aware summary or answer, using the context below. MANDATORY FORMATTING RULES: 
+1. NEVER write long paragraphs - they are hard to read in chat
+2. Start with 1-2 short sentences (max 20 words each)
+3. Add double line break \\n\\n after intro
+4. Use bullet points with • symbol for ANY list of 2+ items
+5. Add TWO line breaks \\n\\n after each bullet point for better spacing
+6. Example format: 'Short intro!\\n\\n• First benefit\\n\\n• Second benefit\\n\\n• Third benefit'
+7. Use emojis sparingly for emphasis
+8. Never use long sentences in paragraphs - break them into bullets
+9. CRITICAL: NEVER include action buttons, button lists, or JSON objects in mainText - buttons go ONLY in the buttons array
+10. CRITICAL: Do NOT assume or reference specific industries, business types, or professions unless explicitly mentioned
+11. CRITICAL: NEVER put JSON syntax, curly braces {}, or button arrays in the mainText field>",
+  "buttons": ["<Generate 2-4 contextually relevant action buttons based on the user's question and the content you provided. These should be specific to their query and help them take the next logical step.>"],
+  "emailPrompt": "<Create a contextual email prompt that relates to the specific topic discussed, offering to send more detailed information about that topic specifically.>"
+}
+
+STRICT RULES:
+- Respond with ONLY valid JSON - no additional text before or after
+- NEVER include JSON objects or button arrays within the mainText field  
+- Use \\n\\n for line breaks and ** for bold text in mainText
+- Keep mainText conversational and helpful, buttons actionable and specific
+
+Context:
+Page Context:
+${pageContext}
+
+General Context:
+${context}
+
+CRITICAL: Generate buttons and email prompt that are directly related to the user's specific question. Do not use generic buttons. NEVER PUT JSON OR BUTTONS IN MAINTEXT - ONLY IN THE BUTTONS ARRAY.`;
     }
   }
 
@@ -2827,8 +2883,103 @@ IMPORTANT: Don't provide other action buttons when user is requesting email. Foc
   try {
     parsed = JSON.parse(answer || "");
   } catch {
-    // fallback: treat as plain text
-    parsed = { mainText: answer, buttons: [], emailPrompt: "" };
+    console.log("[DEBUG] Direct JSON parse failed, attempting extraction");
+    
+    // Multiple regex patterns to catch different JSON formatting variations
+    const jsonPatterns = [
+      /\{[\s\S]*"buttons"[\s\S]*\}/,  // Original pattern
+      /\{[\s\S]*"mainText"[\s\S]*\}/,  // Alternative pattern for mainText
+      /```json\s*(\{[\s\S]*?\})\s*```/,  // JSON wrapped in code blocks
+      /\{[^{}]*"(?:mainText|buttons|emailPrompt)"[^{}]*(?:\{[^{}]*\}|[^{}])*\}/  // Nested object handling
+    ];
+    
+    let jsonMatch = null;
+    for (const pattern of jsonPatterns) {
+      jsonMatch = answer?.match(pattern);
+      if (jsonMatch) {
+        console.log("[DEBUG] Found JSON match with pattern:", pattern.source);
+        break;
+      }
+    }
+    
+    if (jsonMatch) {
+      try {
+        // Clean the matched JSON string
+        let jsonString = jsonMatch[0];
+        if (jsonMatch[1]) {
+          jsonString = jsonMatch[1]; // Use captured group if available
+        }
+        
+        // Additional cleaning for common formatting issues
+        jsonString = jsonString
+          .replace(/^```json\s*/, '') // Remove code block start
+          .replace(/\s*```$/, '')     // Remove code block end
+          .trim();
+        
+        const extractedJson = JSON.parse(jsonString);
+        
+        // Clean the mainText by removing the JSON part
+        let cleanMainText = answer?.replace(jsonMatch[0], "").trim() || "";
+        
+        // If cleanMainText is empty or very short, use the JSON mainText
+        if (!cleanMainText || cleanMainText.length < 10) {
+          cleanMainText = extractedJson.mainText || "";
+        }
+
+        // Process markdown formatting
+        cleanMainText = cleanMainText
+          .replace(/\\n\\n/g, "\n\n") // Convert \\n\\n to actual line breaks
+          .replace(/\\n/g, "\n") // Convert \\n to actual line breaks
+          .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>") // Convert **bold** to HTML
+          .replace(/\n\n/g, "<br><br>") // Convert line breaks to HTML
+          .replace(/\n/g, "<br>") // Convert single line breaks to HTML
+          .trim();
+
+        parsed = {
+          mainText: cleanMainText,
+          buttons: extractedJson.buttons || [],
+          emailPrompt: extractedJson.emailPrompt || "",
+        };
+
+        console.log(
+          "[DEBUG] Extracted and cleaned JSON from response:",
+          parsed
+        );
+      } catch (extractError) {
+        console.log("[DEBUG] Failed to extract JSON, using fallback:", extractError);
+        // Process markdown in the full answer as fallback
+        let processedAnswer = answer || "";
+        processedAnswer = processedAnswer
+          .replace(/\\n\\n/g, "\n\n")
+          .replace(/\\n/g, "\n")
+          .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+          .replace(/\n\n/g, "<br><br>")
+          .replace(/\n/g, "<br>");
+
+        parsed = { mainText: processedAnswer, buttons: [], emailPrompt: "" };
+      }
+    } else {
+      console.log("[DEBUG] No JSON pattern found, processing as plain text");
+      // Process markdown in the full answer
+      let processedAnswer = answer || "";
+      processedAnswer = processedAnswer
+        .replace(/\\n\\n/g, "\n\n")
+        .replace(/\\n/g, "\n")
+        .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+        .replace(/\n\n/g, "<br><br>")
+        .replace(/\n/g, "<br>");
+
+      parsed = { mainText: processedAnswer, buttons: [], emailPrompt: "" };
+    }
+  }
+
+  // Additional cleanup for parsed mainText
+  if (parsed && parsed.mainText) {
+    parsed.mainText = parsed.mainText
+      .replace(/\\n\\n/g, "<br><br>")
+      .replace(/\\n/g, "<br>")
+      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+      .trim();
   }
 
   // Save user and assistant message, including email and requirements if detected or already present
