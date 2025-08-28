@@ -31,3 +31,32 @@ export async function getAdminSettingsCollection() {
   const db = await getDb();
   return db.collection("admin_settings");
 }
+
+// Booking system collections
+export async function getBookingsCollection() {
+  const db = await getDb();
+  return db.collection("bookings");
+}
+
+export async function getAdminAvailabilityCollection() {
+  const db = await getDb();
+  return db.collection("admin_availability");
+}
+
+export async function getBlockedDatesCollection() {
+  const db = await getDb();
+  return db.collection("blocked_dates");
+}
+
+// Test connection function
+export async function testConnection(): Promise<boolean> {
+  try {
+    const client = await getMongoClient();
+    await client.db().admin().ping();
+    console.log('✅ MongoDB connection test successful');
+    return true;
+  } catch (error) {
+    console.error('❌ MongoDB connection test failed:', error);
+    return false;
+  }
+}
