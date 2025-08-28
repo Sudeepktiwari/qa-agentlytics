@@ -749,15 +749,15 @@ Based on the page context, create an intelligent contextual question that demons
 
       // Clean up AI response to handle HTML entities and formatting issues
       let cleanedResponse = aiResponse;
-      
+
       // Remove common AI formatting issues
-      cleanedResponse = cleanedResponse.replace(/```json\s*/g, ''); // Remove ```json
-      cleanedResponse = cleanedResponse.replace(/```\s*$/g, ''); // Remove closing ```
-      cleanedResponse = cleanedResponse.replace(/<br\s*\/?>/gi, '\\n'); // Convert <br> to \n
+      cleanedResponse = cleanedResponse.replace(/```json\s*/g, ""); // Remove ```json
+      cleanedResponse = cleanedResponse.replace(/```\s*$/g, ""); // Remove closing ```
+      cleanedResponse = cleanedResponse.replace(/<br\s*\/?>/gi, "\\n"); // Convert <br> to \n
       cleanedResponse = cleanedResponse.replace(/&quot;/g, '"'); // Convert &quot; to "
-      cleanedResponse = cleanedResponse.replace(/&amp;/g, '&'); // Convert &amp; to &
+      cleanedResponse = cleanedResponse.replace(/&amp;/g, "&"); // Convert &amp; to &
       cleanedResponse = cleanedResponse.trim();
-      
+
       console.log("[DEBUG] Cleaned AI response:", cleanedResponse);
 
       // Parse the AI response with robust error handling
@@ -781,24 +781,27 @@ Based on the page context, create an intelligent contextual question that demons
           "[DEBUG] Failed to parse AI response, using fallback:",
           parseError
         );
-        console.log("[DEBUG] Attempting to extract content from malformed response...");
+        console.log(
+          "[DEBUG] Attempting to extract content from malformed response..."
+        );
 
         // Try to extract content from malformed response
-        let extractedMainText = "I notice you're exploring this page. What would you like to know more about?";
+        let extractedMainText =
+          "I notice you're exploring this page. What would you like to know more about?";
         let extractedButtons = ["Learn More", "Get Started", "Contact Us"];
-        
+
         // Look for mainText in the response
         const mainTextMatch = cleanedResponse.match(/"mainText":\s*"([^"]+)"/);
         if (mainTextMatch) {
-          extractedMainText = mainTextMatch[1].replace(/\\n/g, '\n');
+          extractedMainText = mainTextMatch[1].replace(/\\n/g, "\n");
           console.log("[DEBUG] Extracted mainText:", extractedMainText);
         }
-        
+
         // Look for buttons array in the response
         const buttonsMatch = cleanedResponse.match(/"buttons":\s*\[([^\]]+)\]/);
         if (buttonsMatch) {
           try {
-            const buttonsPart = '[' + buttonsMatch[1] + ']';
+            const buttonsPart = "[" + buttonsMatch[1] + "]";
             extractedButtons = JSON.parse(buttonsPart);
             console.log("[DEBUG] Extracted buttons:", extractedButtons);
           } catch (buttonError) {
@@ -812,8 +815,11 @@ Based on the page context, create an intelligent contextual question that demons
           buttons: extractedButtons,
           emailPrompt: "",
         };
-        
-        console.log("[DEBUG] Using fallback response with extracted content:", parsed);
+
+        console.log(
+          "[DEBUG] Using fallback response with extracted content:",
+          parsed
+        );
       }
 
       // Add bot mode
