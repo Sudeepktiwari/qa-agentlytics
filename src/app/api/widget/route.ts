@@ -208,6 +208,7 @@ export async function GET(request: Request) {
   let lastUserAction = Date.now();
   let userIsActive = false;
   let widgetScrollTimeout = null;
+  let usedFollowupTopics = new Set(); // Track used followup topics
   
   // Auto-response system variables
   let autoResponseTimer = null;
@@ -2246,15 +2247,51 @@ export async function GET(request: Request) {
     console.log("✅ [WIDGET API] Response normalized to consistent format");
     return normalized;
   }
-  
+
+  // Get followup topic for varied conversations
+  function getFollowupTopic(followupCount) {
+    const followupTopics = [
+      'pricing_plans',
+      'integration_options', 
+      'advanced_features',
+      'use_cases',
+      'customization',
+      'support_resources'
+    ];
+    
+    // Get available topics (not used yet)
+    const availableTopics = followupTopics.filter(topic => !usedFollowupTopics.has(topic));
+    
+    // If we've used all topics, reset and start over
+    if (availableTopics.length === 0) {
+      usedFollowupTopics.clear();
+      return followupTopics[0];
+    }
+    
+    // Use followupCount to cycle through topics predictably
+    const topicIndex = followupCount % availableTopics.length;
+    const selectedTopic = availableTopics[topicIndex];
+    
+    // Mark this topic as used
+    usedFollowupTopics.add(selectedTopic);
+    
+    console.log('[WIDGET FOLLOWUP] Selected topic: ' + selectedTopic + ' (count: ' + followupCount + ', used: ' + Array.from(usedFollowupTopics).join(', ') + ')');
+    
+    return selectedTopic;
+  }
+
   // Send followup message
   async function sendFollowupMessage() {
     console.log('[Widget] Sending followup message', { followupCount, sessionId });
     const currentUrl = window.location.href;
     
+    // Get the followup topic for this message
+    const followupTopic = getFollowupTopic(followupCount);
+    
     // Extract current page summary for contextual followups
     const pageSummary = extractPageSummary();
     console.log('📄 [WIDGET FOLLOWUP] Page summary for followup:', pageSummary);
+    console.log('📋 [WIDGET FOLLOWUP] Using topic:', followupTopic);
     
     try {
       const data = await sendApiRequest('chat', {
@@ -2262,6 +2299,7 @@ export async function GET(request: Request) {
         pageUrl: currentUrl,
         followup: true,
         followupCount,
+        followupTopic: followupTopic,
         pageSummary: pageSummary
         // Don't specify adminId - let the API extract it from the API key
       });

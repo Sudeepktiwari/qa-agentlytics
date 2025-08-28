@@ -559,6 +559,101 @@ Conversation Flow Intelligence:
   }
 }
 
+// Generate topic-based followup message
+async function generateTopicBasedFollowup(
+  followupTopic: string,
+  pageContent: string,
+  pageUrl: string,
+  previousQnA: string,
+  followupCount: number
+) {
+  try {
+    const topicPrompts = {
+      pricing_plans: {
+        mainFocus: "pricing plans, costs, and budget considerations",
+        buttons: ["View Pricing", "Compare Plans", "Request Quote"]
+      },
+      integration_options: {
+        mainFocus: "integrations with existing tools and platforms",
+        buttons: ["See Integrations", "API Documentation", "Setup Help"]
+      },
+      advanced_features: {
+        mainFocus: "advanced features and capabilities",
+        buttons: ["Feature Details", "Demo Request", "Use Cases"]
+      },
+      use_cases: {
+        mainFocus: "real-world use cases and success stories",
+        buttons: ["Success Stories", "Case Studies", "Industry Examples"]
+      },
+      customization: {
+        mainFocus: "customization options and personalization",
+        buttons: ["Customization Options", "Setup Guide", "Templates"]
+      },
+      support_resources: {
+        mainFocus: "support, documentation, and getting started",
+        buttons: ["Help Center", "Documentation", "Contact Support"]
+      }
+    };
+
+    const topicInfo = (topicPrompts as any)[followupTopic] || topicPrompts.pricing_plans;
+    
+    const systemPrompt = `You are a sales assistant focused specifically on ${topicInfo.mainFocus}. 
+    Generate a helpful followup message that addresses this specific topic area.
+    
+    Context:
+    - Page URL: ${pageUrl}
+    - Followup Number: ${followupCount + 1}
+    - Focus Area: ${topicInfo.mainFocus}
+    
+    Previous Conversation:
+    ${previousQnA || "No previous conversation"}
+    
+    Page Content:
+    ${pageContent}
+    
+    Generate a response that:
+    1. Focuses specifically on ${topicInfo.mainFocus}
+    2. Is helpful and informative
+    3. Encourages engagement
+    4. Includes relevant action buttons
+    
+    Return JSON in this exact format:
+    {
+      "mainText": "<your focused message about ${topicInfo.mainFocus}>",
+      "buttons": ${JSON.stringify(topicInfo.buttons)},
+      "emailPrompt": "<ONLY include this if followupCount >= 2 AND user hasn't provided email yet. Otherwise empty string>"
+    }`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: systemPrompt,
+        },
+        {
+          role: "user",
+          content: "Generate the topic-specific followup message.",
+        },
+      ],
+      temperature: 0.7,
+      max_tokens: 500,
+    });
+
+    const responseText = completion.choices[0].message.content;
+    if (!responseText) {
+      throw new Error("No response text from OpenAI");
+    }
+    const parsed = JSON.parse(responseText);
+    
+    console.log(`[FOLLOWUP] Generated topic-based followup for ${followupTopic}:`, parsed);
+    return parsed;
+  } catch (error) {
+    console.error("[FOLLOWUP] Error generating topic-based followup:", error);
+    return null;
+  }
+}
+
 // Helper to split text into ~n-token chunks
 async function splitTextIntoTokenChunks(text: string, chunkSize: number) {
   const words = text.split(" ");
@@ -1886,6 +1981,9 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
         // Use followupCount from request body to determine follow-up stage
         const followupCount =
           typeof body.followupCount === "number" ? body.followupCount : 0;
+        const followupTopic = body.followupTopic || 'general';
+
+        console.log('[FOLLOWUP] Generating followup message for topic:', followupTopic);
 
         // Check if user already has email (sales mode)
         const lastEmailMsg = await chats.findOne(
@@ -1954,7 +2052,18 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
         }
 
         let personaFollowup = null;
-        if (detectedPersona && pageChunks.length > 0) {
+        
+        // Generate topic-based followup message
+        if (followupTopic !== 'general') {
+          console.log(`[FOLLOWUP] Generating topic-based followup for: ${followupTopic}`);
+          personaFollowup = await generateTopicBasedFollowup(
+            followupTopic,
+            pageContextForPrompt,
+            pageUrl,
+            previousQnA,
+            followupCount
+          );
+        } else if (detectedPersona && pageChunks.length > 0) {
           console.log(
             `[Persona] Generating persona-based followup for: ${detectedPersona.name}`
           );
