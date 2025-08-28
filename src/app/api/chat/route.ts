@@ -747,10 +747,23 @@ Based on the page context, create an intelligent contextual question that demons
         aiResponse
       );
 
+      // Clean up AI response to handle HTML entities and formatting issues
+      let cleanedResponse = aiResponse;
+      
+      // Remove common AI formatting issues
+      cleanedResponse = cleanedResponse.replace(/```json\s*/g, ''); // Remove ```json
+      cleanedResponse = cleanedResponse.replace(/```\s*$/g, ''); // Remove closing ```
+      cleanedResponse = cleanedResponse.replace(/<br\s*\/?>/gi, '\\n'); // Convert <br> to \n
+      cleanedResponse = cleanedResponse.replace(/&quot;/g, '"'); // Convert &quot; to "
+      cleanedResponse = cleanedResponse.replace(/&amp;/g, '&'); // Convert &amp; to &
+      cleanedResponse = cleanedResponse.trim();
+      
+      console.log("[DEBUG] Cleaned AI response:", cleanedResponse);
+
       // Parse the AI response with robust error handling
       let parsed;
       try {
-        parsed = JSON.parse(aiResponse);
+        parsed = JSON.parse(cleanedResponse);
 
         // Validate required fields
         if (!parsed.mainText || !Array.isArray(parsed.buttons)) {
@@ -768,14 +781,39 @@ Based on the page context, create an intelligent contextual question that demons
           "[DEBUG] Failed to parse AI response, using fallback:",
           parseError
         );
+        console.log("[DEBUG] Attempting to extract content from malformed response...");
 
-        // Fallback response if AI doesn't return valid JSON
+        // Try to extract content from malformed response
+        let extractedMainText = "I notice you're exploring this page. What would you like to know more about?";
+        let extractedButtons = ["Learn More", "Get Started", "Contact Us"];
+        
+        // Look for mainText in the response
+        const mainTextMatch = cleanedResponse.match(/"mainText":\s*"([^"]+)"/);
+        if (mainTextMatch) {
+          extractedMainText = mainTextMatch[1].replace(/\\n/g, '\n');
+          console.log("[DEBUG] Extracted mainText:", extractedMainText);
+        }
+        
+        // Look for buttons array in the response
+        const buttonsMatch = cleanedResponse.match(/"buttons":\s*\[([^\]]+)\]/);
+        if (buttonsMatch) {
+          try {
+            const buttonsPart = '[' + buttonsMatch[1] + ']';
+            extractedButtons = JSON.parse(buttonsPart);
+            console.log("[DEBUG] Extracted buttons:", extractedButtons);
+          } catch (buttonError) {
+            console.log("[DEBUG] Could not parse buttons, using defaults");
+          }
+        }
+
+        // Fallback response with extracted or default content
         parsed = {
-          mainText:
-            "I notice you're exploring this page. What would you like to know more about?",
-          buttons: ["Learn More", "Get Started", "Contact Us"],
+          mainText: extractedMainText,
+          buttons: extractedButtons,
           emailPrompt: "",
         };
+        
+        console.log("[DEBUG] Using fallback response with extracted content:", parsed);
       }
 
       // Add bot mode
