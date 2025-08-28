@@ -1126,25 +1126,30 @@ export async function GET(request: Request) {
         const buttons = data.buttons || [];
         const emailPrompt = data.emailPrompt || '';
         
-        console.log('🎯 [WIDGET SCROLL] Received scroll-based response, displaying message');
+        console.log('🎯 [WIDGET SCROLL] Received scroll-based response, adding 15-second delay before displaying');
         
-        // Create structured contextual question data
-        const contextualQuestionData = {
-          mainText: messageText,
-          buttons: buttons,
-          emailPrompt: emailPrompt,
-          isContextual: true,
-          sectionData: sectionData
-        };
-        
-        // Send the proactive message
-        sendProactiveMessage(messageText, buttons, emailPrompt);
-        
-        // Start auto-response timer for contextual questions
-        if (buttons && buttons.length > 0) {
-          console.log('🕐 [WIDGET AUTO] Starting 15-second auto-response timer for contextual question');
-          startAutoResponseTimer(contextualQuestionData);
-        }
+        // Add 15-second delay before displaying the response
+        setTimeout(() => {
+          console.log('🎯 [WIDGET SCROLL] 15-second delay complete, now displaying message');
+          
+          // Create structured contextual question data
+          const contextualQuestionData = {
+            mainText: messageText,
+            buttons: buttons,
+            emailPrompt: emailPrompt,
+            isContextual: true,
+            sectionData: sectionData
+          };
+          
+          // Send the proactive message
+          sendProactiveMessage(messageText, buttons, emailPrompt);
+          
+          // Start auto-response timer for contextual questions
+          if (buttons && buttons.length > 0) {
+            console.log('🕐 [WIDGET AUTO] Starting 15-second auto-response timer for contextual question');
+            startAutoResponseTimer(contextualQuestionData);
+          }
+        }, 15000); // 15-second delay before displaying the response
       }
     } catch (error) {
       console.error('❌ [WIDGET SCROLL] Failed to send scroll-based question:', error);
