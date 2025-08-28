@@ -571,33 +571,36 @@ async function generateTopicBasedFollowup(
     const topicPrompts = {
       pricing_plans: {
         mainFocus: "pricing plans, costs, and budget considerations",
-        buttons: ["View Pricing", "Compare Plans", "Request Quote"]
+        buttons: ["View Pricing", "Compare Plans", "Request Quote"],
       },
       integration_options: {
         mainFocus: "integrations with existing tools and platforms",
-        buttons: ["See Integrations", "API Documentation", "Setup Help"]
+        buttons: ["See Integrations", "API Documentation", "Setup Help"],
       },
       advanced_features: {
         mainFocus: "advanced features and capabilities",
-        buttons: ["Feature Details", "Demo Request", "Use Cases"]
+        buttons: ["Feature Details", "Demo Request", "Use Cases"],
       },
       use_cases: {
         mainFocus: "real-world use cases and success stories",
-        buttons: ["Success Stories", "Case Studies", "Industry Examples"]
+        buttons: ["Success Stories", "Case Studies", "Industry Examples"],
       },
       customization: {
         mainFocus: "customization options and personalization",
-        buttons: ["Customization Options", "Setup Guide", "Templates"]
+        buttons: ["Customization Options", "Setup Guide", "Templates"],
       },
       support_resources: {
         mainFocus: "support, documentation, and getting started",
-        buttons: ["Help Center", "Documentation", "Contact Support"]
-      }
+        buttons: ["Help Center", "Documentation", "Contact Support"],
+      },
     };
 
-    const topicInfo = (topicPrompts as any)[followupTopic] || topicPrompts.pricing_plans;
-    
-    const systemPrompt = `You are a sales assistant focused specifically on ${topicInfo.mainFocus}. 
+    const topicInfo =
+      (topicPrompts as any)[followupTopic] || topicPrompts.pricing_plans;
+
+    const systemPrompt = `You are a sales assistant focused specifically on ${
+      topicInfo.mainFocus
+    }. 
     Generate a helpful followup message that addresses this specific topic area.
     
     Context:
@@ -645,8 +648,11 @@ async function generateTopicBasedFollowup(
       throw new Error("No response text from OpenAI");
     }
     const parsed = JSON.parse(responseText);
-    
-    console.log(`[FOLLOWUP] Generated topic-based followup for ${followupTopic}:`, parsed);
+
+    console.log(
+      `[FOLLOWUP] Generated topic-based followup for ${followupTopic}:`,
+      parsed
+    );
     return parsed;
   } catch (error) {
     console.error("[FOLLOWUP] Error generating topic-based followup:", error);
@@ -1981,9 +1987,12 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
         // Use followupCount from request body to determine follow-up stage
         const followupCount =
           typeof body.followupCount === "number" ? body.followupCount : 0;
-        const followupTopic = body.followupTopic || 'general';
+        const followupTopic = body.followupTopic || "general";
 
-        console.log('[FOLLOWUP] Generating followup message for topic:', followupTopic);
+        console.log(
+          "[FOLLOWUP] Generating followup message for topic:",
+          followupTopic
+        );
 
         // Check if user already has email (sales mode)
         const lastEmailMsg = await chats.findOne(
@@ -2052,10 +2061,12 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
         }
 
         let personaFollowup = null;
-        
+
         // Generate topic-based followup message
-        if (followupTopic !== 'general') {
-          console.log(`[FOLLOWUP] Generating topic-based followup for: ${followupTopic}`);
+        if (followupTopic !== "general") {
+          console.log(
+            `[FOLLOWUP] Generating topic-based followup for: ${followupTopic}`
+          );
           personaFollowup = await generateTopicBasedFollowup(
             followupTopic,
             pageContextForPrompt,
