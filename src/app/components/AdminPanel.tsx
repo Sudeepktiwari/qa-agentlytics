@@ -15,6 +15,7 @@ import DocumentManagementSection from "./admin/DocumentManagementSection";
 import CrawledPagesSection from "./admin/CrawledPagesSection";
 import CustomerPersonaSection from "./admin/CustomerPersonaSection";
 import CustomerProfilesSection from "./admin/CustomerProfilesSection";
+import BookingManagementSection from "./admin/BookingManagementSection";
 import SummaryModal from "./admin/SummaryModal";
 
 const AdminPanel: React.FC = () => {
@@ -843,6 +844,8 @@ const AdminPanel: React.FC = () => {
           />
 
           <CustomerProfilesSection />
+
+          <BookingManagementSection adminId={auth?.adminId} />
 
           <TestingSection
             auth={auth}

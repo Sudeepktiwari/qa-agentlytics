@@ -212,6 +212,7 @@ export class FeatureFlags {
     BOOKING_DETECTION: process.env.ENABLE_BOOKING_DETECTION === "true",
     CALENDAR_WIDGET: process.env.ENABLE_CALENDAR_WIDGET === "true",
     FORM_SUBMISSION: process.env.ENABLE_FORM_SUBMISSION === "true",
+    ADMIN_INTERFACE: process.env.ENABLE_ADMIN_INTERFACE === "true",
   };
 
   static isEnabled(feature: keyof typeof FeatureFlags.flags): boolean {
@@ -220,5 +221,22 @@ export class FeatureFlags {
 
   static getAllFlags(): Record<string, boolean> {
     return { ...FeatureFlags.flags };
+  }
+
+  // Direct access to flags for convenience
+  static get ENABLE_BOOKING_DETECTION(): boolean {
+    return FeatureFlags.flags.BOOKING_DETECTION;
+  }
+
+  static get ENABLE_CALENDAR_WIDGET(): boolean {
+    return FeatureFlags.flags.CALENDAR_WIDGET;
+  }
+
+  static get ENABLE_FORM_SUBMISSION(): boolean {
+    return FeatureFlags.flags.FORM_SUBMISSION;
+  }
+
+  static get ENABLE_ADMIN_INTERFACE(): boolean {
+    return FeatureFlags.flags.ADMIN_INTERFACE;
   }
 }

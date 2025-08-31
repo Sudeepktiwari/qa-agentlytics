@@ -1,32 +1,36 @@
 export interface BookingRequest {
   _id?: string;
   sessionId: string;
+  customerRequest: string; // What the customer originally asked for (sanitized)
   email: string;
   name?: string;
   phone?: string;
   company?: string;
-  requestType: 'demo' | 'call' | 'support' | 'consultation';
+  requestType: "demo" | "call" | "support" | "consultation";
   preferredDate: Date;
   preferredTime: string; // HH:MM format
   timezone: string;
   message?: string;
-  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
-  adminId: string;
+  status: "pending" | "confirmed" | "completed" | "cancelled";
+  adminId?: string; // Optional for unassigned bookings
   pageUrl?: string;
-  
-  // Additional metadata
+
+  // Additional metadata for safety and tracking
   userAgent?: string;
   ipAddress?: string;
   referrer?: string;
-  
+  originalMessage: string; // The exact message that triggered booking detection
+  detectionConfidence: number; // 0-1 confidence score from AI detection
+
   // Timestamps
   createdAt: Date;
   updatedAt: Date;
-  
+  confirmedAt?: Date;
+
   // Admin management
   adminNotes?: string;
-  priority?: 'low' | 'medium' | 'high';
-  
+  priority: "low" | "medium" | "high" | "urgent";
+
   // Email tracking
   confirmationSent?: boolean;
   reminderSent?: boolean;
@@ -57,10 +61,10 @@ export interface BlockedDate {
 
 export interface BookingDetectionResult {
   hasBookingRequest: boolean;
-  requestType: 'demo' | 'call' | 'support' | 'consultation';
+  requestType: "demo" | "call" | "support" | "consultation";
   confidence: number;
   extractedInfo: {
     preferredTimeframe?: string;
-    urgency?: 'low' | 'medium' | 'high';
+    urgency?: "low" | "medium" | "high";
   };
 }
