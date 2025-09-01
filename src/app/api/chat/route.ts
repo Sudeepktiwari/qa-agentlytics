@@ -100,6 +100,213 @@ function countTokens(text: string) {
   return Math.ceil(text.length / 4);
 }
 
+// Robust AI response parser that handles multiple JSON objects and formats
+function parseAIResponse(content: string): {
+  mainText: string;
+  buttons?: string[];
+  emailPrompt?: string;
+  followupQuestion?: string;
+  showBookingCalendar?: boolean;
+  bookingType?: string;
+} {
+  if (!content || content.trim() === "") {
+    return {
+      mainText: "I'd be happy to help you with that!",
+      buttons: [],
+      emailPrompt: "",
+      followupQuestion: "",
+      showBookingCalendar: false,
+      bookingType: undefined,
+    };
+  }
+
+  try {
+    // Method 1: Try parsing as single JSON object first
+    const singleJsonMatch = content.match(/^\s*\{[\s\S]*\}\s*$/);
+    if (singleJsonMatch) {
+      const parsed = JSON.parse(content);
+      return {
+        mainText: parsed.mainText || parsed.answer || content,
+        buttons: parsed.buttons || [],
+        emailPrompt: parsed.emailPrompt || "",
+        followupQuestion: parsed.followupQuestion || "",
+        showBookingCalendar: parsed.showBookingCalendar || false,
+        bookingType: parsed.bookingType || undefined,
+      };
+    }
+
+    // Method 2: Extract multiple JSON objects from the response
+    const result: any = {};
+
+    // Extract mainText from first JSON object (handle escaped quotes and newlines)
+    const mainTextMatch = content.match(
+      /\{\s*"mainText":\s*"([^"]*(?:\\.[^"]*)*)"/
+    );
+    if (mainTextMatch) {
+      result.mainText = mainTextMatch[1]
+        .replace(/\\n/g, "\n")
+        .replace(/\\"/g, '"')
+        .replace(/\\\\/g, "\\")
+        .replace(/•/g, "•"); // Handle bullet points
+    }
+
+    // Extract buttons array - handle both array format and individual strings
+    const buttonsMatch = content.match(/\{\s*"buttons":\s*(\[[^\]]*\])\s*\}/);
+    if (buttonsMatch) {
+      try {
+        result.buttons = JSON.parse(buttonsMatch[1]);
+      } catch (e) {
+        // Fallback: extract button strings manually
+        const buttonStrings = buttonsMatch[1].match(/"([^"]+)"/g);
+        if (buttonStrings) {
+          result.buttons = buttonStrings.map((str) => str.slice(1, -1));
+        }
+      }
+    }
+
+    // Extract emailPrompt
+    const emailMatch = content.match(
+      /\{\s*"emailPrompt":\s*"([^"]*(?:\\.[^"]*)*)"/
+    );
+    if (emailMatch) {
+      result.emailPrompt = emailMatch[1]
+        .replace(/\\n/g, "\n")
+        .replace(/\\"/g, '"')
+        .replace(/\\\\/g, "\\");
+    }
+
+    // Extract followupQuestion
+    const followupMatch = content.match(
+      /\{\s*"followupQuestion":\s*"([^"]*(?:\\.[^"]*)*)"/
+    );
+    if (followupMatch) {
+      result.followupQuestion = followupMatch[1]
+        .replace(/\\n/g, "\n")
+        .replace(/\\"/g, '"')
+        .replace(/\\\\/g, "\\");
+    }
+
+    // If we found mainText, process markdown and return the parsed result
+    if (result.mainText) {
+      // Process markdown formatting
+      result.mainText = result.mainText
+        .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>") // **bold**
+        .replace(/\*(.*?)\*/g, "<em>$1</em>") // *italic*
+        .replace(/\n\n/g, "<br><br>") // Double line breaks
+        .replace(/\n/g, "<br>") // Single line breaks
+        .trim();
+
+      return {
+        mainText: result.mainText,
+        buttons: result.buttons || [],
+        emailPrompt: result.emailPrompt || "",
+        followupQuestion: result.followupQuestion || "",
+        showBookingCalendar: result.showBookingCalendar || false,
+        bookingType: result.bookingType || undefined,
+      };
+    }
+
+    // Method 3: Try combining multiple JSON objects into one
+    const jsonObjects = content.match(/\{[^{}]*\}/g);
+    if (jsonObjects && jsonObjects.length > 1) {
+      const combined: any = {};
+
+      jsonObjects.forEach((jsonStr) => {
+        try {
+          const parsed = JSON.parse(jsonStr);
+          Object.assign(combined, parsed);
+        } catch (e) {
+          // Skip invalid JSON objects
+          console.log("[DEBUG] Skipping invalid JSON object:", jsonStr);
+        }
+      });
+
+      if (combined.mainText || Object.keys(combined).length > 0) {
+        // Process markdown formatting
+        if (combined.mainText) {
+          combined.mainText = combined.mainText
+            .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+            .replace(/\*(.*?)\*/g, "<em>$1</em>")
+            .replace(/\n\n/g, "<br><br>")
+            .replace(/\n/g, "<br>")
+            .trim();
+        }
+
+        return {
+          mainText: combined.mainText || "I'd be happy to help you with that!",
+          buttons: combined.buttons || [],
+          emailPrompt: combined.emailPrompt || "",
+          followupQuestion: combined.followupQuestion || "",
+          showBookingCalendar: combined.showBookingCalendar || false,
+          bookingType: combined.bookingType || undefined,
+        };
+      }
+    }
+
+    // Method 4: Extract content from between JSON objects as fallback
+    let extractedText = content;
+
+    // Remove JSON objects and extract readable text
+    extractedText = extractedText
+      .replace(/\{[^}]*\}/g, "") // Remove JSON objects
+      .replace(/^\s*[\{\}]\s*/gm, "") // Remove standalone braces
+      .replace(/^\s*"[^"]*":\s*/gm, "") // Remove JSON keys
+      .replace(/,\s*$/gm, "") // Remove trailing commas
+      .replace(/\s+/g, " ") // Normalize whitespace
+      .trim();
+
+    if (extractedText && extractedText.length > 5) {
+      // Process markdown formatting
+      extractedText = extractedText
+        .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+        .replace(/\*(.*?)\*/g, "<em>$1</em>")
+        .replace(/\n\n/g, "<br><br>")
+        .replace(/\n/g, "<br>")
+        .trim();
+
+      return {
+        mainText: extractedText,
+        buttons: [],
+        emailPrompt: "",
+        followupQuestion: "",
+        showBookingCalendar: false,
+        bookingType: undefined,
+      };
+    }
+
+    // Ultimate fallback
+    return {
+      mainText: "I'd be happy to help you with that!",
+      buttons: [],
+      emailPrompt: "",
+      followupQuestion: "",
+      showBookingCalendar: false,
+      bookingType: undefined,
+    };
+  } catch (error) {
+    console.warn(
+      "⚠️ AI response parsing failed completely, using ultimate fallback:",
+      error
+    );
+
+    // Clean up the content as much as possible
+    const cleanText = content
+      .replace(/\{[^}]*\}/g, " ") // Remove JSON objects
+      .replace(/[{}"\[\]]/g, " ") // Remove JSON syntax
+      .replace(/\s+/g, " ") // Normalize whitespace
+      .trim();
+
+    return {
+      mainText: cleanText || "I'd be happy to help you with that!",
+      buttons: [],
+      emailPrompt: "",
+      followupQuestion: "",
+      showBookingCalendar: false,
+      bookingType: undefined,
+    };
+  }
+}
+
 // Helper to detect industry/vertical from page URL and content
 function detectVertical(pageUrl: string, pageContent: string = ""): string {
   const url = pageUrl.toLowerCase();
@@ -3145,103 +3352,10 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
   });
   const answer = chatResp.choices[0].message.content;
 
-  // Try to parse the answer as JSON
-  let parsed = null;
-  try {
-    parsed = JSON.parse(answer || "");
-  } catch {
-    console.log("[DEBUG] Direct JSON parse failed, attempting extraction");
-
-    // Multiple regex patterns to catch different JSON formatting variations
-    const jsonPatterns = [
-      /\{[\s\S]*"buttons"[\s\S]*\}/, // Original pattern
-      /\{[\s\S]*"mainText"[\s\S]*\}/, // Alternative pattern for mainText
-      /```json\s*(\{[\s\S]*?\})\s*```/, // JSON wrapped in code blocks
-      /\{[^{}]*"(?:mainText|buttons|emailPrompt)"[^{}]*(?:\{[^{}]*\}|[^{}])*\}/, // Nested object handling
-    ];
-
-    let jsonMatch = null;
-    for (const pattern of jsonPatterns) {
-      jsonMatch = answer?.match(pattern);
-      if (jsonMatch) {
-        console.log("[DEBUG] Found JSON match with pattern:", pattern.source);
-        break;
-      }
-    }
-
-    if (jsonMatch) {
-      try {
-        // Clean the matched JSON string
-        let jsonString = jsonMatch[0];
-        if (jsonMatch[1]) {
-          jsonString = jsonMatch[1]; // Use captured group if available
-        }
-
-        // Additional cleaning for common formatting issues
-        jsonString = jsonString
-          .replace(/^```json\s*/, "") // Remove code block start
-          .replace(/\s*```$/, "") // Remove code block end
-          .trim();
-
-        const extractedJson = JSON.parse(jsonString);
-
-        // Clean the mainText by removing the JSON part
-        let cleanMainText = answer?.replace(jsonMatch[0], "").trim() || "";
-
-        // If cleanMainText is empty or very short, use the JSON mainText
-        if (!cleanMainText || cleanMainText.length < 10) {
-          cleanMainText = extractedJson.mainText || "";
-        }
-
-        // Process markdown formatting
-        cleanMainText = cleanMainText
-          .replace(/\\n\\n/g, "\n\n") // Convert \\n\\n to actual line breaks
-          .replace(/\\n/g, "\n") // Convert \\n to actual line breaks
-          .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>") // Convert **bold** to HTML
-          .replace(/\n\n/g, "<br><br>") // Convert line breaks to HTML
-          .replace(/\n/g, "<br>") // Convert single line breaks to HTML
-          .trim();
-
-        parsed = {
-          mainText: cleanMainText,
-          buttons: extractedJson.buttons || [],
-          emailPrompt: extractedJson.emailPrompt || "",
-        };
-
-        console.log(
-          "[DEBUG] Extracted and cleaned JSON from response:",
-          parsed
-        );
-      } catch (extractError) {
-        console.log(
-          "[DEBUG] Failed to extract JSON, using fallback:",
-          extractError
-        );
-        // Process markdown in the full answer as fallback
-        let processedAnswer = answer || "";
-        processedAnswer = processedAnswer
-          .replace(/\\n\\n/g, "\n\n")
-          .replace(/\\n/g, "\n")
-          .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-          .replace(/\n\n/g, "<br><br>")
-          .replace(/\n/g, "<br>");
-
-        parsed = { mainText: processedAnswer, buttons: [], emailPrompt: "" };
-      }
-    } else {
-      console.log("[DEBUG] No JSON pattern found, processing as plain text");
-      // Process markdown in the full answer
-      let processedAnswer = answer || "";
-      processedAnswer = processedAnswer
-        .replace(/\\n\\n/g, "\n\n")
-        .replace(/\\n/g, "\n")
-        .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-        .replace(/\n\n/g, "<br><br>")
-        .replace(/\n/g, "<br>");
-
-      parsed = { mainText: processedAnswer, buttons: [], emailPrompt: "" };
-    }
-  }
+  // Use robust parsing to handle multiple JSON objects and formats
+  console.log("[DEBUG] Raw AI response:", answer);
+  const parsed = parseAIResponse(answer || "");
+  console.log("[DEBUG] Parsed AI response:", parsed);
 
   // Additional cleanup for parsed mainText
   if (parsed && parsed.mainText) {
@@ -3337,7 +3451,7 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
     userEmail: userEmail || null,
     hasResponse: !!responseWithMode.mainText,
     showBookingCalendar: !!responseWithMode.showBookingCalendar,
-    bookingType: responseWithMode.bookingType || null,
+    bookingType: responseWithMode.bookingType || undefined,
     timestamp: new Date().toISOString(),
   });
 
