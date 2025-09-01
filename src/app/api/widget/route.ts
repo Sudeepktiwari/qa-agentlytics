@@ -2441,8 +2441,18 @@ export async function GET(request: Request) {
       
       const responseData = await response.json();
       
+      // 🔍 DEBUG: Log the raw response data BEFORE normalization
+      console.log("🔍 [WIDGET API] RAW RESPONSE DATA (before normalization):", responseData);
+      console.log("🔍 [WIDGET API] showBookingCalendar field:", responseData.showBookingCalendar);
+      console.log("🔍 [WIDGET API] bookingType field:", responseData.bookingType);
+      
       // Normalize response format to ensure consistency
       const normalizedResponse = normalizeApiResponse(responseData);
+      
+      // 🔍 DEBUG: Log the normalized response
+      console.log("🔍 [WIDGET API] NORMALIZED RESPONSE DATA:", normalizedResponse);
+      console.log("🔍 [WIDGET API] AFTER normalization - showBookingCalendar:", normalizedResponse.showBookingCalendar);
+      console.log("🔍 [WIDGET API] AFTER normalization - bookingType:", normalizedResponse.bookingType);
       
       console.log("🤖 [WIDGET AI RESPONSE] Raw AI response received:");
       console.log("==========================================");
