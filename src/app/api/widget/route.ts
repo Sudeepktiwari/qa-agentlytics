@@ -442,13 +442,17 @@ export async function GET(request: Request) {
     });
   }
 
-  // Load and render booking calendar
+  // Load and render booking calendar with enhanced UI
   async function loadBookingCalendar(container, loadingDiv, bookingType) {
     try {
       console.log("📅 [WIDGET CALENDAR] Loading calendar for:", bookingType);
       
-      // Fetch available time slots
-      const response = await fetch(\`\${CHATBOT_API_BASE}/api/calendar/availability\`, {
+      // Show enhanced loading state
+      loadingDiv.innerHTML = '<div style="text-align: center; padding: 30px; color: #6b7280;"><div style="margin-bottom: 12px; font-size: 24px;">📅</div><div style="margin-bottom: 8px; font-weight: 500;">Loading available times...</div><div style="font-size: 13px; opacity: 0.7;">Finding the perfect slot for your ' + bookingType + '</div></div>';
+      
+      // Fetch available time slots with current month
+      const currentDate = new Date();
+      const response = await fetch(\`\${CHATBOT_API_BASE}/api/calendar/availability?month=\${currentDate.getMonth() + 1}&year=\${currentDate.getFullYear()}&bookingType=\${bookingType}\`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -461,80 +465,120 @@ export async function GET(request: Request) {
       }
       
       const data = await response.json();
-      const availableSlots = data.availableSlots || [];
+      const calendarData = data.data;
       
       // Hide loading and show calendar
       loadingDiv.style.display = 'none';
       container.style.display = 'block';
       
-      if (availableSlots.length === 0) {
-        container.innerHTML = '<div style="text-align: center; padding: 20px; color: #666;">No available slots found. Please contact us directly.</div>';
+      if (!calendarData || !calendarData.days || calendarData.days.length === 0) {
+        container.innerHTML = '<div style="text-align: center; padding: 20px; color: #666; background: #f8f9fa; border-radius: 8px;"><div style="margin-bottom: 8px; font-size: 18px;">📅</div><div style="font-weight: 500; margin-bottom: 4px;">No available slots found</div><div style="font-size: 13px;">Please contact us directly to schedule your ' + bookingType + '</div></div>';
         return;
       }
       
-      // Group slots by date
-      const slotsByDate = {};
-      availableSlots.forEach(slot => {
-        const date = new Date(slot.startTime).toDateString();
-        if (!slotsByDate[date]) {
-          slotsByDate[date] = [];
-        }
-        slotsByDate[date].push(slot);
+      // Create enhanced calendar interface
+      container.innerHTML = '';
+      
+      // Calendar header with navigation
+      const calendarHeader = document.createElement('div');
+      calendarHeader.style.cssText = 'margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #e5e7eb;';
+      
+      const monthYear = document.createElement('div');
+      monthYear.style.cssText = 'text-align: center; font-weight: 600; color: #1f2937; margin-bottom: 8px;';
+      monthYear.textContent = new Date(calendarData.year, calendarData.month - 1).toLocaleDateString('en-US', { 
+        month: 'long', 
+        year: 'numeric' 
       });
       
-      // Render calendar
-      container.innerHTML = '';
-      Object.entries(slotsByDate).forEach(([date, slots]) => {
+      const availableCount = document.createElement('div');
+      availableCount.style.cssText = 'text-align: center; font-size: 13px; color: #6b7280;';
+      availableCount.textContent = (calendarData.availableSlots || 0) + ' available slots';
+      
+      calendarHeader.appendChild(monthYear);
+      calendarHeader.appendChild(availableCount);
+      container.appendChild(calendarHeader);
+      
+      // Group available days with time slots
+      const availableDays = calendarData.days.filter(day => day.available && day.timeSlots && day.timeSlots.length > 0);
+      
+      if (availableDays.length === 0) {
+        container.innerHTML += '<div style="text-align: center; padding: 20px; color: #666; background: #fef3cd; border-radius: 8px; border: 1px solid #fde047;"><div style="margin-bottom: 8px; font-size: 18px;">⏰</div><div style="font-weight: 500; margin-bottom: 4px;">All slots are currently booked</div><div style="font-size: 13px;">New availability opens regularly. Please check back soon!</div></div>';
+        return;
+      }
+      
+      // Render available days and time slots
+      availableDays.slice(0, 7).forEach(day => { // Show next 7 available days
         // Date header
         const dateHeader = document.createElement('div');
-        dateHeader.style.cssText = 'font-weight: 600; margin: 16px 0 8px 0; color: #333; border-bottom: 1px solid #eee; padding-bottom: 4px;';
-        dateHeader.textContent = new Date(date).toLocaleDateString('en-US', { 
+        dateHeader.style.cssText = 'font-weight: 600; margin: 16px 0 8px 0; color: #374151; border-bottom: 1px solid #e5e7eb; padding-bottom: 4px; display: flex; justify-content: space-between; align-items: center;';
+        
+        const dateText = document.createElement('span');
+        dateText.textContent = new Date(day.date).toLocaleDateString('en-US', { 
           weekday: 'long', 
-          year: 'numeric', 
-          month: 'long', 
+          month: 'short', 
           day: 'numeric' 
         });
+        
+        const slotCount = document.createElement('span');
+        slotCount.style.cssText = 'font-size: 12px; color: #6b7280; font-weight: 400;';
+        slotCount.textContent = day.timeSlots.filter(slot => slot.available).length + ' slots';
+        
+        dateHeader.appendChild(dateText);
+        dateHeader.appendChild(slotCount);
         container.appendChild(dateHeader);
         
-        // Time slots
+        // Time slots grid
         const slotsContainer = document.createElement('div');
-        slotsContainer.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin-bottom: 16px;';
+        slotsContainer.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; margin-bottom: 16px;';
         
-        slots.forEach(slot => {
+        day.timeSlots.filter(slot => slot.available).slice(0, 8).forEach(slot => { // Max 8 slots per day
           const timeButton = document.createElement('button');
-          const timeStr = new Date(slot.startTime).toLocaleTimeString('en-US', { 
-            hour: 'numeric', 
-            minute: '2-digit',
-            hour12: true 
-          });
-          
-          timeButton.textContent = timeStr;
+          timeButton.textContent = slot.time;
           timeButton.style.cssText = \`
             background: #f8f9fa;
             border: 1px solid #dee2e6;
-            border-radius: 4px;
-            padding: 8px 12px;
+            border-radius: 6px;
+            padding: 10px 8px;
             cursor: pointer;
             transition: all 0.2s ease;
             font-size: 13px;
+            font-weight: 500;
             color: #495057;
             text-align: center;
+            position: relative;
+            overflow: hidden;
           \`;
           
+          // Add hover effects
           timeButton.addEventListener('mouseenter', () => {
             timeButton.style.background = \`\${currentTheme.primary}\`;
             timeButton.style.color = 'white';
             timeButton.style.borderColor = \`\${currentTheme.primary}\`;
+            timeButton.style.transform = 'translateY(-1px)';
+            timeButton.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
           });
           
           timeButton.addEventListener('mouseleave', () => {
             timeButton.style.background = '#f8f9fa';
             timeButton.style.color = '#495057';
             timeButton.style.borderColor = '#dee2e6';
+            timeButton.style.transform = 'translateY(0)';
+            timeButton.style.boxShadow = 'none';
           });
           
           timeButton.addEventListener('click', () => {
-            handleBookingSelection(slot, bookingType);
+            // Add click animation
+            timeButton.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+              timeButton.style.transform = 'translateY(-1px)';
+            }, 100);
+            
+            handleBookingSelection({ 
+              startTime: day.date + 'T' + slot.time + ':00',
+              endTime: day.date + 'T' + addMinutesToTime(slot.time, 30) + ':00',
+              date: day.date,
+              time: slot.time
+            }, bookingType);
           });
           
           slotsContainer.appendChild(timeButton);
@@ -543,10 +587,25 @@ export async function GET(request: Request) {
         container.appendChild(slotsContainer);
       });
       
+      // Add helpful footer
+      const footer = document.createElement('div');
+      footer.style.cssText = 'margin-top: 16px; padding-top: 16px; border-top: 1px solid #e5e7eb; text-align: center; font-size: 12px; color: #6b7280;';
+      footer.innerHTML = '<div style="margin-bottom: 4px;">All times shown in your local timezone</div><div>Need a different time? <span style="color: ' + currentTheme.primary + '; cursor: pointer;" onclick="sendMessage(\\'I need a different time for my ' + bookingType + '\\')">Contact us</span></div>';
+      container.appendChild(footer);
+      
     } catch (error) {
       console.error('❌ [WIDGET CALENDAR] Failed to load calendar:', error);
-      loadingDiv.innerHTML = '<div style="text-align: center; color: #dc3545;">Failed to load calendar. Please try again.</div>';
+      loadingDiv.innerHTML = '<div style="text-align: center; padding: 20px; color: #dc3545; background: #fef2f2; border-radius: 8px; border: 1px solid #fecaca;"><div style="margin-bottom: 8px; font-size: 18px;">⚠️</div><div style="font-weight: 500; margin-bottom: 4px;">Failed to load calendar</div><div style="font-size: 13px; margin-bottom: 12px;">We\\'re having trouble loading available times</div><button onclick="sendMessage(\\'I need help scheduling my ' + bookingType + '\\')" style="background: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 13px;">Contact Support</button></div>';
     }
+  }
+
+  // Helper function to add minutes to time string
+  function addMinutesToTime(timeString, minutes) {
+    const [hours, mins] = timeString.split(':').map(Number);
+    const totalMinutes = hours * 60 + mins + minutes;
+    const newHours = Math.floor(totalMinutes / 60) % 24;
+    const newMins = totalMinutes % 60;
+    return \`\${newHours.toString().padStart(2, '0')}:\${newMins.toString().padStart(2, '0')}\`;
   }
 
   // Handle booking time selection
