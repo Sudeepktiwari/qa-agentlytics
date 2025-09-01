@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { date, time, timezone, adminId, duration } = body;
+    const { date, time, timezone, adminId } = body;
 
     if (!date || !time) {
       return NextResponse.json(
@@ -187,13 +187,7 @@ export async function POST(request: NextRequest) {
 async function generateCalendarAvailability(
   params: CalendarRequest
 ): Promise<CalendarResponse> {
-  const {
-    month,
-    year,
-    timezone = "America/New_York",
-    adminId,
-    bookingType,
-  } = params;
+  const { month, year, timezone = "America/New_York", adminId } = params;
 
   // Get all existing bookings for the month
   const startDate = new Date(year, month - 1, 1);
@@ -282,113 +276,6 @@ async function checkSpecificTimeSlot(params: {
 }
 
 /**
- * Generate time slots between start and end times
- */
-function generateTimeSlots(
-  startTime: string,
-  endTime: string,
-  intervalMinutes: number
-): string[] {
-  const slots: string[] = [];
-
-  const [startHour, startMin] = startTime.split(":").map(Number);
-  const [endHour, endMin] = endTime.split(":").map(Number);
-
-  let currentMinutes = startHour * 60 + startMin;
-  const endMinutes = endHour * 60 + endMin;
-
-  while (currentMinutes < endMinutes) {
-    const hours = Math.floor(currentMinutes / 60);
-    const minutes = currentMinutes % 60;
-
-    slots.push(
-      `${hours.toString().padStart(2, "0")}:${minutes
-        .toString()
-        .padStart(2, "0")}`
-    );
-
-    currentMinutes += intervalMinutes;
-  }
-
-  return slots;
-}
-
-/**
- * Check availability for a specific time slot
- */
-async function checkTimeSlotAvailability(
-  date: Date,
-  time: string,
-  timezone: string,
-  adminId?: string,
-  durationMinutes: number = 30
-) {
-  try {
-    // Check if time slot is already booked
-    const isBooked = adminId
-      ? !(await bookingService.isTimeSlotAvailable(adminId, date, time))
-      : false; // If no adminId, assume available (general booking)
-
-    // Check if time is in business hours
-    const [hour] = time.split(":").map(Number);
-    const isBusinessHours = hour >= 9 && hour < 17;
-
-    // Check if it's a weekend
-    const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-
-    // Check if it's in the past
-    const now = new Date();
-    const slotDateTime = new Date(date.toDateString() + " " + time);
-    const isPast = slotDateTime <= now;
-
-    if (isPast) {
-      return {
-        available: false,
-        reason: "Time slot is in the past",
-        alternatives: [],
-      };
-    }
-
-    if (isWeekend) {
-      return {
-        available: false,
-        reason: "Weekends are not available",
-        alternatives: getSuggestedAlternatives(date, time, 3),
-      };
-    }
-
-    if (!isBusinessHours) {
-      return {
-        available: false,
-        reason: "Outside business hours (9 AM - 5 PM)",
-        alternatives: getSuggestedAlternatives(date, time, 3),
-      };
-    }
-
-    if (isBooked) {
-      return {
-        available: false,
-        reason: "Time slot is already booked",
-        alternatives: getSuggestedAlternatives(date, time, 3),
-      };
-    }
-
-    return {
-      available: true,
-      reason: null,
-      alternatives: [],
-    };
-  } catch (error) {
-    console.error("Error checking time slot availability:", error);
-    return {
-      available: false,
-      reason: "Error checking availability",
-      alternatives: [],
-    };
-  }
-}
-
-/**
  * Get suggested alternative time slots
  */
 function getSuggestedAlternatives(
@@ -398,7 +285,7 @@ function getSuggestedAlternatives(
 ): string[] {
   const alternatives: string[] = [];
   const [requestedHour, requestedMin] = requestedTime.split(":").map(Number);
-  let currentDate = new Date(requestedDate);
+  const currentDate = new Date(requestedDate);
 
   // Look for alternatives in the next 7 days
   for (

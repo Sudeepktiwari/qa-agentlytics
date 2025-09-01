@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { JavaScriptSafetyUtils } from "@/lib/javascriptSafety";
 
 interface TimeSlot {
   time: string;

@@ -315,7 +315,6 @@ export class CalendarService {
       // Sanitize inputs
       const sanitizedDate = JavaScriptSafetyUtils.sanitizeString(date);
       const sanitizedTime = JavaScriptSafetyUtils.sanitizeString(time);
-      const sanitizedTimezone = JavaScriptSafetyUtils.sanitizeString(timezone);
 
       // Validate date format (YYYY-MM-DD)
       const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
@@ -388,7 +387,7 @@ export class CalendarService {
       }
 
       return { valid: true };
-    } catch (error) {
+    } catch {
       return { valid: false, reason: "Error validating time slot" };
     }
   }
