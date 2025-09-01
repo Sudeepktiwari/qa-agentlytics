@@ -83,32 +83,40 @@ Conversation History: ${conversationContext}
 Page Context: ${pageContextSafe}
 Current Message: ${sanitizedMessage}
 
-Respond with ONLY valid JSON in this exact format:
-{
-  "hasBookingIntent": boolean,
-  "confidence": number (0-100),
-  "bookingType": "demo" | "call" | "consultation" | "support" | null,
-  "reasoning": "brief explanation of why you detected this intent",
-  "suggestedResponse": "helpful response acknowledging their intent and next steps"
-}
+CRITICAL: You MUST respond with ONLY valid JSON in this EXACT format. No additional text, explanations, or markdown formatting:
+
+{"hasBookingIntent":true,"confidence":95,"bookingType":"demo","reasoning":"User explicitly requested to book a demo","suggestedResponse":"I'd be happy to help you schedule a demo! Let me show you available time slots."}
 
 CONFIDENCE SCORING:
-- 90-100: Explicit booking requests ("schedule a demo", "book a call")
+- 90-100: Explicit booking requests ("schedule a demo", "book a call", "book a demo")
 - 70-89: Strong intent ("I'd like to talk", "can we meet")  
 - 50-69: Moderate intent ("interested in learning more", "want to discuss")
 - 30-49: Weak intent ("maybe", "considering")
 - 0-29: No clear booking intent
 
-Only return confidence > 50 for genuine booking interest.`;
+Only return confidence > 50 for genuine booking interest.
+
+EXAMPLES:
+Input: "book a demo"
+Output: {"hasBookingIntent":true,"confidence":95,"bookingType":"demo","reasoning":"Explicit demo booking request","suggestedResponse":"I'd be happy to help you schedule a demo! Let me show you available time slots."}
+
+Input: "what are your prices"
+Output: {"hasBookingIntent":false,"confidence":10,"bookingType":null,"reasoning":"General pricing inquiry, no booking intent","suggestedResponse":null}
+
+Remember: ONLY return the JSON object, nothing else.`;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: sanitizedMessage },
+        {
+          role: "user",
+          content: `Analyze this message for booking intent: "${sanitizedMessage}"`,
+        },
       ],
-      temperature: 0.3,
-      max_tokens: 300,
+      temperature: 0.1, // Lower temperature for more consistent responses
+      max_tokens: 200, // Reduced for more focused responses
+      response_format: { type: "json_object" }, // Force JSON response
     });
 
     const aiResponse = completion.choices[0].message.content;
@@ -116,15 +124,136 @@ Only return confidence > 50 for genuine booking interest.`;
       throw new Error("No response from AI");
     }
 
-    // Parse and validate AI response
+    // Robust JSON parsing with multiple fallback strategies
     let parsed: any;
     try {
-      parsed = JSON.parse(aiResponse);
+      console.log("[BookingDetection] Raw AI response:", aiResponse);
+
+      // Strategy 1: Direct JSON parsing
+      try {
+        parsed = JSON.parse(aiResponse);
+        console.log(
+          "[BookingDetection] ✅ Direct JSON parse successful:",
+          parsed
+        );
+      } catch (directParseError) {
+        console.log(
+          "[BookingDetection] Direct parse failed, trying cleanup strategies..."
+        );
+
+        // Strategy 2: Clean up common AI formatting issues
+        let cleanedResponse = aiResponse
+          .trim()
+          .replace(/```json\s*/gi, "") // Remove ```json
+          .replace(/```\s*$/g, "") // Remove closing ```
+          .replace(/\n\s*/g, "") // Remove newlines and spaces
+          .replace(/,\s*}/g, "}") // Remove trailing commas
+          .replace(/,\s*]/g, "]"); // Remove trailing commas in arrays
+
+        // Extract JSON object from mixed content
+        const jsonStart = cleanedResponse.indexOf("{");
+        const jsonEnd = cleanedResponse.lastIndexOf("}");
+        if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+          cleanedResponse = cleanedResponse.substring(jsonStart, jsonEnd + 1);
+        }
+
+        try {
+          parsed = JSON.parse(cleanedResponse);
+          console.log(
+            "[BookingDetection] ✅ Cleaned JSON parse successful:",
+            parsed
+          );
+        } catch (cleanedParseError) {
+          console.log(
+            "[BookingDetection] Cleaned parse failed, trying regex extraction..."
+          );
+
+          // Strategy 3: Regex extraction of JSON-like content
+          const jsonMatch = aiResponse.match(
+            /\{[^{}]*"hasBookingIntent"[^{}]*\}/
+          );
+          if (jsonMatch) {
+            try {
+              parsed = JSON.parse(jsonMatch[0]);
+              console.log(
+                "[BookingDetection] ✅ Regex extraction successful:",
+                parsed
+              );
+            } catch (regexParseError) {
+              throw new Error("All parsing strategies failed");
+            }
+          } else {
+            throw new Error("No JSON pattern found in response");
+          }
+        }
+      }
+
+      // Validate that we have the required fields
+      if (typeof parsed !== "object" || parsed === null) {
+        throw new Error("Parsed result is not an object");
+      }
+
+      // Ensure all required fields exist with defaults
+      parsed = {
+        hasBookingIntent: Boolean(parsed.hasBookingIntent || false),
+        confidence: Number(parsed.confidence) || 0,
+        bookingType: parsed.bookingType || null,
+        reasoning: parsed.reasoning || "No reasoning provided",
+        suggestedResponse: parsed.suggestedResponse || null,
+      };
+
+      console.log("[BookingDetection] ✅ Final validated response:", parsed);
     } catch (parseError) {
       console.error(
-        "[BookingDetection] Failed to parse AI response:",
+        "[BookingDetection] All JSON parsing strategies failed:",
         parseError
       );
+      console.log("[BookingDetection] Falling back to keyword detection");
+
+      // Fallback: Simple keyword detection for obvious booking requests
+      const message = sanitizedMessage.toLowerCase();
+      const bookingKeywords = [
+        "book a demo",
+        "book demo",
+        "schedule a demo",
+        "schedule demo",
+        "book a call",
+        "book call",
+        "schedule a call",
+        "schedule call",
+        "book a meeting",
+        "book meeting",
+        "schedule a meeting",
+        "schedule meeting",
+        "request a demo",
+        "request demo",
+        "want a demo",
+        "need a demo",
+        "arrange a call",
+        "set up a call",
+        "set up a meeting",
+      ];
+
+      for (const keyword of bookingKeywords) {
+        if (message.includes(keyword)) {
+          const bookingType = keyword.includes("demo")
+            ? "demo"
+            : keyword.includes("call")
+            ? "call"
+            : "consultation";
+          console.log(
+            `[BookingDetection] ✅ Keyword fallback detected: "${keyword}" -> ${bookingType}`
+          );
+          return {
+            hasBookingIntent: true,
+            confidence: 95,
+            bookingType: bookingType as BookingType,
+            suggestedResponse: `I'd be happy to help you schedule a ${bookingType}! Let me show you available time slots.`,
+            reasoning: `Keyword fallback detection: "${keyword}"`,
+          };
+        }
+      }
+
       return {
         hasBookingIntent: false,
         confidence: 0,
@@ -145,6 +274,40 @@ Only return confidence > 50 for genuine booking interest.`;
         ? JavaScriptSafetyUtils.sanitizeString(parsed.reasoning, 200)
         : undefined,
     };
+
+    // Secondary fallback: Check for obvious booking keywords if AI gave low confidence
+    if (!result.hasBookingIntent || result.confidence < 60) {
+      const message = sanitizedMessage.toLowerCase();
+      const obviousBookingPhrases = [
+        "book a demo",
+        "book demo",
+        "schedule a demo",
+        "schedule demo",
+        "book a call",
+        "book call",
+        "schedule a call",
+        "schedule call",
+        "request a demo",
+        "request demo",
+        "want a demo",
+        "need a demo",
+      ];
+
+      for (const phrase of obviousBookingPhrases) {
+        if (message.includes(phrase)) {
+          const bookingType = phrase.includes("demo") ? "demo" : "call";
+          console.log(
+            `[BookingDetection] AI underconfident (${result.confidence}%), overriding with keyword detection: "${phrase}" -> ${bookingType}`
+          );
+          result.hasBookingIntent = true;
+          result.confidence = 95;
+          result.bookingType = bookingType as BookingType;
+          result.suggestedResponse = `I'd be happy to help you schedule a ${bookingType}! Let me show you available time slots.`;
+          result.reasoning = `Keyword override: AI gave ${result.confidence}% but found obvious phrase "${phrase}"`;
+          break;
+        }
+      }
+    }
 
     console.log(
       `[BookingDetection] Analysis complete: intent=${result.hasBookingIntent}, confidence=${result.confidence}, type=${result.bookingType}`
