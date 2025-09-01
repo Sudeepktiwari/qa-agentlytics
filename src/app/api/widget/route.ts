@@ -2480,10 +2480,22 @@ export async function GET(request: Request) {
       buttons: responseData.buttons || [],
       emailPrompt: responseData.emailPrompt || '',
       botMode: responseData.botMode || 'lead_generation',
-      userEmail: responseData.userEmail || null
+      userEmail: responseData.userEmail || null,
+      // 🎯 BOOKING CALENDAR FIELDS - ESSENTIAL FOR CALENDAR FUNCTIONALITY
+      showBookingCalendar: responseData.showBookingCalendar || false,
+      bookingType: responseData.bookingType || null
     };
     
     console.log("✅ [WIDGET API] Response normalized to consistent format");
+    
+    // 🎯 Debug booking calendar fields
+    if (normalized.showBookingCalendar) {
+      console.log("📅 [WIDGET API] ✅ BOOKING CALENDAR DETECTED IN RESPONSE:", {
+        showBookingCalendar: normalized.showBookingCalendar,
+        bookingType: normalized.bookingType
+      });
+    }
+    
     return normalized;
   }
 
