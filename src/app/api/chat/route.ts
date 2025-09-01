@@ -1131,10 +1131,39 @@ Based on the page context, create an intelligent contextual question that demons
         );
       }
 
+      // Check for booking detection for contextual questions
+      let enhancedResponse = parsed;
+      try {
+        const bookingEnhancement = await enhanceChatWithBookingDetection(
+          question || "",
+          [], // conversation history - could be enhanced later
+          `Page URL: ${pageUrl || "unknown"}`
+        );
+
+        if (bookingEnhancement.chatResponse.showBookingCalendar) {
+          console.log(
+            "[Chat API] Booking detected in contextual question - enhancing response with calendar"
+          );
+          enhancedResponse = {
+            ...parsed,
+            showBookingCalendar: true,
+            bookingType: bookingEnhancement.chatResponse.bookingType || "demo",
+            // Override mainText with booking-specific response
+            mainText: bookingEnhancement.chatResponse.reply || parsed.mainText,
+          };
+        }
+      } catch (error) {
+        console.warn(
+          "[Chat API] Booking detection failed for contextual question:",
+          error
+        );
+        // Continue with original response if booking detection fails
+      }
+
       // Add bot mode
       const botMode = "lead_generation"; // Contextual questions are for lead generation
       const responseWithMode = {
-        ...parsed,
+        ...enhancedResponse,
         botMode,
         userEmail: null,
       };
@@ -1229,9 +1258,38 @@ Keep the response conversational and helpful, focusing on providing value before
         };
       }
 
+      // Check for booking detection in auto-response
+      let enhancedAutoResponse = parsed;
+      try {
+        const bookingEnhancement = await enhanceChatWithBookingDetection(
+          contextualQuestion || "",
+          [], // conversation history - could be enhanced later
+          `Page URL: ${pageUrl || "unknown"}`
+        );
+
+        if (bookingEnhancement.chatResponse.showBookingCalendar) {
+          console.log(
+            "[Chat API] Booking detected in auto-response - enhancing response with calendar"
+          );
+          enhancedAutoResponse = {
+            ...parsed,
+            showBookingCalendar: true,
+            bookingType: bookingEnhancement.chatResponse.bookingType || "demo",
+            // Override mainText with booking-specific response
+            mainText: bookingEnhancement.chatResponse.reply || parsed.mainText,
+          };
+        }
+      } catch (error) {
+        console.warn(
+          "[Chat API] Booking detection failed for auto-response:",
+          error
+        );
+        // Continue with original response if booking detection fails
+      }
+
       // Add additional fields for auto-response
       const autoResponseData = {
-        ...parsed,
+        ...enhancedAutoResponse,
         isAutoResponse: true,
         botMode: "lead_generation",
         userEmail: null,
@@ -2080,6 +2138,44 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
         if (lastEmailMsg && lastEmailMsg.email) userEmail = lastEmailMsg.email;
         const botMode = userEmail ? "sales" : "lead_generation";
 
+        // Check for booking detection in proactive message
+        let enhancedProactiveData: any = {
+          answer: proactiveMsg,
+          buttons: buttons,
+          botMode,
+          userEmail: userEmail || null,
+          showBookingCalendar: false,
+          bookingType: null,
+        };
+
+        try {
+          const bookingEnhancement = await enhanceChatWithBookingDetection(
+            proactiveMsg || "",
+            [], // conversation history - could be enhanced later
+            `Page URL: ${pageUrl || "unknown"}`
+          );
+
+          if (bookingEnhancement.chatResponse.showBookingCalendar) {
+            console.log(
+              "[Chat API] Booking detected in proactive message - enhancing response with calendar"
+            );
+            enhancedProactiveData = {
+              ...enhancedProactiveData,
+              showBookingCalendar: true,
+              bookingType:
+                bookingEnhancement.chatResponse.bookingType || "demo",
+              // Override answer with booking-specific response
+              answer: bookingEnhancement.chatResponse.reply || proactiveMsg,
+            };
+          }
+        } catch (error) {
+          console.warn(
+            "[Chat API] Booking detection failed for proactive message:",
+            error
+          );
+          // Continue with original response if booking detection fails
+        }
+
         console.log("[Chat API] Proactive response:", {
           botMode,
           userEmail: userEmail || null,
@@ -2087,15 +2183,9 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
           timestamp: new Date().toISOString(),
         });
 
-        return NextResponse.json(
-          {
-            answer: proactiveMsg,
-            buttons: buttons,
-            botMode,
-            userEmail: userEmail || null,
-          },
-          { headers: corsHeaders }
-        );
+        return NextResponse.json(enhancedProactiveData, {
+          headers: corsHeaders,
+        });
       } else if (followup) {
         // For follow-up, use the same JSON-output system prompt as main chat
         const previousChats = await chats
@@ -2310,12 +2400,48 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
           const botMode = userEmail ? "sales" : "lead_generation";
 
           // Respect lead progression - only ask for email on 3rd followup
+          // Check for booking detection in persona followup
+          let enhancedPersonaFollowup = personaFollowup;
+          try {
+            const bookingEnhancement = await enhanceChatWithBookingDetection(
+              question || "",
+              [], // conversation history - could be enhanced later
+              `Page URL: ${pageUrl || "unknown"}`
+            );
+
+            if (bookingEnhancement.chatResponse.showBookingCalendar) {
+              console.log(
+                "[Chat API] Booking detected in persona followup - enhancing response with calendar"
+              );
+              enhancedPersonaFollowup = {
+                ...personaFollowup,
+                showBookingCalendar: true,
+                bookingType:
+                  bookingEnhancement.chatResponse.bookingType || "demo",
+                // Override mainText with booking-specific response
+                mainText:
+                  bookingEnhancement.chatResponse.reply ||
+                  personaFollowup.mainText,
+              };
+            }
+          } catch (error) {
+            console.warn(
+              "[Chat API] Booking detection failed for persona followup:",
+              error
+            );
+            // Continue with original response if booking detection fails
+          }
+
           const shouldAskForEmail =
-            followupCount >= 2 && !userEmail && personaFollowup.emailPrompt;
+            followupCount >= 2 &&
+            !userEmail &&
+            enhancedPersonaFollowup.emailPrompt;
 
           const followupWithMode = {
-            ...personaFollowup,
-            emailPrompt: shouldAskForEmail ? personaFollowup.emailPrompt : "",
+            ...enhancedPersonaFollowup,
+            emailPrompt: shouldAskForEmail
+              ? enhancedPersonaFollowup.emailPrompt
+              : "",
             botMode,
             userEmail: userEmail || null,
           };
@@ -2962,10 +3088,41 @@ ${previousQnA}
           );
           if (lastEmailMsg && lastEmailMsg.email)
             userEmail = lastEmailMsg.email;
+          // Check for booking detection in generic followup
+          let enhancedFollowup = parsed;
+          try {
+            const bookingEnhancement = await enhanceChatWithBookingDetection(
+              question || "",
+              [], // conversation history - could be enhanced later
+              `Page URL: ${pageUrl || "unknown"}`
+            );
+
+            if (bookingEnhancement.chatResponse.showBookingCalendar) {
+              console.log(
+                "[Chat API] Booking detected in generic followup - enhancing response with calendar"
+              );
+              enhancedFollowup = {
+                ...parsed,
+                showBookingCalendar: true,
+                bookingType:
+                  bookingEnhancement.chatResponse.bookingType || "demo",
+                // Override mainText with booking-specific response
+                mainText:
+                  bookingEnhancement.chatResponse.reply || parsed.mainText,
+              };
+            }
+          } catch (error) {
+            console.warn(
+              "[Chat API] Booking detection failed for generic followup:",
+              error
+            );
+            // Continue with original response if booking detection fails
+          }
+
           const botMode = userEmail ? "sales" : "lead_generation";
 
           const followupWithMode = {
-            ...parsed,
+            ...enhancedFollowup,
             botMode,
             userEmail: userEmail || null,
           };
