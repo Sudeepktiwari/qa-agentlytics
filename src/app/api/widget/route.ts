@@ -2974,8 +2974,14 @@ export async function GET(request: Request) {
         }
 
         // Add booking calendar if present
+        console.log("🔍 [WIDGET DEBUG] Checking booking calendar flags:", {
+          showBookingCalendar: msg.showBookingCalendar,
+          bookingType: msg.bookingType,
+          shouldRender: !!(msg.showBookingCalendar && msg.bookingType)
+        });
+        
         if (msg.showBookingCalendar && msg.bookingType) {
-          console.log("📅 [WIDGET RENDER] Rendering booking calendar for:", msg.bookingType);
+          console.log("📅 [WIDGET RENDER] ✅ RENDERING BOOKING CALENDAR FOR:", msg.bookingType);
           const calendarDiv = document.createElement('div');
           calendarDiv.style.cssText = 'margin-top: 12px; background: white; border-radius: 8px; padding: 16px; color: #333;';
           
@@ -3311,7 +3317,11 @@ export async function GET(request: Request) {
       }
     }, 1000);
     
+    // Make sendMessage globally available for testing
+    window.testSendMessage = sendMessage;
+    
     console.log('✅ [WIDGET INIT] Widget initialized successfully');
+    console.log('🧪 [WIDGET TEST] Test with: window.testSendMessage("I would like to schedule a demo")');
     // Add cleanup function for page monitoring
     window.addEventListener('beforeunload', cleanupPageMonitoring);
   }

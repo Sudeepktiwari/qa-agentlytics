@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🎯 Direct Widget Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        background: #f5f5f5;
+      }
+      .test-panel {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        max-width: 600px;
+        margin: 0 auto;
+      }
+      .test-button {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        margin: 10px 5px;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      .test-button:hover {
+        background: #0056b3;
+      }
+      .test-result {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        padding: 15px;
+        margin-top: 20px;
+        border-radius: 5px;
+        font-family: monospace;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="test-panel">
+      <h1>🎯 Widget Calendar Test</h1>
+      <p>This page tests the booking calendar functionality directly.</p>
+
+      <h3>Test Commands:</h3>
+      <button class="test-button" onclick="testDemoRequest()">
+        🎯 Test Demo Request
+      </button>
+      <button class="test-button" onclick="testCallRequest()">
+        📞 Test Call Request
+      </button>
+      <button class="test-button" onclick="testNormalMessage()">
+        💬 Test Normal Message
+      </button>
+      <button class="test-button" onclick="checkWidget()">
+        🔍 Check Widget Status
+      </button>
+
+      <h3>Debug Console:</h3>
+      <div id="debug-log" class="test-result">Waiting for tests...</div>
+    </div>
+
+    <!-- Load the widget -->
+    <script
+      src="http://localhost:3000/api/widget"
+      data-api-key="ak_e9c3475fd9b9371577ab09f5a0a7fcd1c635ef055b7e66374ed424162d80c9ac"
+      data-theme="blue"
+      data-size="large"
+      data-auto-open-proactive="false"
+    ></script>
+
+    <script>
+      const debugLog = document.getElementById("debug-log");
+
+      function log(message) {
+        const timestamp = new Date().toLocaleTimeString();
+        debugLog.textContent += `[${timestamp}] ${message}\n`;
+        console.log(message);
+      }
+
+      function testDemoRequest() {
+        log("🎯 Testing demo request...");
+        if (window.testSendMessage) {
+          window.testSendMessage("I would like to schedule a demo");
+          log("✅ Demo request sent via testSendMessage");
+        } else {
+          log("❌ testSendMessage not available, trying manual input...");
+          // Try to manually trigger the input
+          const input = document.getElementById("appointy-input");
+          if (input) {
+            input.value = "I would like to schedule a demo";
+            input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter" }));
+            log("✅ Demo request sent via manual input trigger");
+          } else {
+            log("❌ Widget input not found");
+          }
+        }
+      }
+
+      function testCallRequest() {
+        log("📞 Testing call request...");
+        if (window.testSendMessage) {
+          window.testSendMessage("Can we book a call?");
+          log("✅ Call request sent");
+        } else {
+          log("❌ testSendMessage not available");
+        }
+      }
+
+      function testNormalMessage() {
+        log("💬 Testing normal message...");
+        if (window.testSendMessage) {
+          window.testSendMessage("What are your pricing options?");
+          log("✅ Normal message sent");
+        } else {
+          log("❌ testSendMessage not available");
+        }
+      }
+
+      function checkWidget() {
+        log("🔍 Checking widget status...");
+        log(
+          "Widget toggle button: " +
+            (document.querySelector("[data-appointy-widget]")
+              ? "✅ Found"
+              : "❌ Not found")
+        );
+        log(
+          "Widget container: " +
+            (document.getElementById("appointy-widget")
+              ? "✅ Found"
+              : "❌ Not found")
+        );
+        log(
+          "Widget input: " +
+            (document.getElementById("appointy-input")
+              ? "✅ Found"
+              : "❌ Not found")
+        );
+        log(
+          "testSendMessage function: " +
+            (window.testSendMessage ? "✅ Available" : "❌ Not available")
+        );
+
+        // Check if widget is open
+        const widget = document.getElementById("appointy-widget");
+        if (widget) {
+          log("Widget display: " + widget.style.display);
+          log(
+            "Widget visibility: " +
+              (widget.offsetParent !== null ? "✅ Visible" : "❌ Hidden")
+          );
+        }
+      }
+
+      // Wait for widget to load and check status
+      setTimeout(() => {
+        log("🔄 Widget should be loaded now...");
+        checkWidget();
+      }, 3000);
+
+      // Listen for console messages to catch widget logs
+      const originalLog = console.log;
+      console.log = function (...args) {
+        if (
+          args[0] &&
+          typeof args[0] === "string" &&
+          args[0].includes("[WIDGET")
+        ) {
+          log("📡 " + args.join(" "));
+        }
+        originalLog.apply(console, args);
+      };
+    </script>
+  </body>
+</html>
