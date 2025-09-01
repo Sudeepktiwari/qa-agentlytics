@@ -136,7 +136,7 @@ function parseAIResponse(content: string): {
     }
 
     // Method 1.5: Try to fix common AI JSON formatting errors
-    let fixedContent = content
+    const fixedContent = content
       .replace(/\}\s*\n\s*"/g, ',"') // Fix missing comma after } before "
       .replace(/\}\s*,?\s*\n\s*}/g, "}}") // Fix double closing braces
       .replace(/"\s*,?\s*\n\s*\]/g, '"]') // Fix array endings
