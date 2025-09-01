@@ -135,6 +135,31 @@ function parseAIResponse(content: string): {
       };
     }
 
+    // Method 1.5: Try to fix common AI JSON formatting errors
+    let fixedContent = content
+      .replace(/\}\s*\n\s*"/g, ',"') // Fix missing comma after } before "
+      .replace(/\}\s*,?\s*\n\s*}/g, "}}") // Fix double closing braces
+      .replace(/"\s*,?\s*\n\s*\]/g, '"]') // Fix array endings
+      .replace(/,\s*\]/g, "]") // Remove trailing commas in arrays
+      .replace(/,\s*\}/g, "}"); // Remove trailing commas in objects
+
+    try {
+      const fixedParsed = JSON.parse(fixedContent);
+      console.log("[DEBUG] Fixed JSON parsing successful");
+      return {
+        mainText: fixedParsed.mainText || fixedParsed.answer || content,
+        buttons: fixedParsed.buttons || [],
+        emailPrompt: fixedParsed.emailPrompt || "",
+        followupQuestion: fixedParsed.followupQuestion || "",
+        showBookingCalendar: fixedParsed.showBookingCalendar || false,
+        bookingType: fixedParsed.bookingType || undefined,
+      };
+    } catch (fixError) {
+      console.log(
+        "[DEBUG] Fixed JSON parsing also failed, continuing to method 2"
+      );
+    }
+
     // Method 2: Extract multiple JSON objects from the response
     const result: any = {};
 
@@ -982,6 +1007,19 @@ export async function POST(req: NextRequest) {
     autoResponse = false,
     contextualQuestion = null,
   } = body;
+
+  // Add request ID for debugging
+  const requestId = Math.random().toString(36).substring(7);
+  console.log(`[Chat API ${requestId}] Processing request:`, {
+    question: question ? `"${question}"` : undefined,
+    sessionId,
+    pageUrl,
+    proactive,
+    followup,
+    contextualQuestionGeneration,
+    autoResponse,
+    timestamp: new Date().toISOString(),
+  });
 
   if (
     (!question &&
@@ -3582,15 +3620,25 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
 
     if (bookingEnhancement.chatResponse.showBookingCalendar) {
       console.log(
-        "[Chat API] Booking detected - enhancing response with calendar"
+        `[Chat API ${requestId}] Booking detected - enhancing response with calendar`
       );
+      // Completely override with booking response, don't merge with potentially corrupted parsed response
       enhancedResponse = {
-        ...parsed,
+        mainText:
+          bookingEnhancement.chatResponse.reply ||
+          "I'd be happy to help you schedule some time to connect!",
+        buttons: ["Schedule Now", "Learn More", "Contact Sales"],
+        emailPrompt:
+          "Would you like me to send you the calendar link via email?",
+        followupQuestion: "",
         showBookingCalendar: true,
         bookingType: bookingEnhancement.chatResponse.bookingType || "demo",
-        // Override mainText with booking-specific response
-        mainText: bookingEnhancement.chatResponse.reply || parsed.mainText,
       };
+      console.log(`[Chat API ${requestId}] Enhanced response created:`, {
+        showBookingCalendar: enhancedResponse.showBookingCalendar,
+        bookingType: enhancedResponse.bookingType,
+        hasMainText: !!enhancedResponse.mainText,
+      });
     }
   } catch (error) {
     console.warn("[Chat API] Booking detection failed:", error);
@@ -3603,7 +3651,7 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
     userEmail: userEmail || null, // Include for debugging
   };
 
-  console.log("[Chat API] Main response:", {
+  console.log(`[Chat API ${requestId}] Main response:`, {
     botMode,
     userEmail: userEmail || null,
     hasResponse: !!responseWithMode.mainText,
