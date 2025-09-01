@@ -210,6 +210,7 @@ export interface SafeChatResponse {
 export class FeatureFlags {
   private static flags = {
     BOOKING_DETECTION: process.env.ENABLE_BOOKING_DETECTION === "true",
+    BOOKING_SYSTEM: process.env.ENABLE_BOOKING_SYSTEM === "true",
     CALENDAR_WIDGET: process.env.ENABLE_CALENDAR_WIDGET === "true",
     FORM_SUBMISSION: process.env.ENABLE_FORM_SUBMISSION === "true",
     ADMIN_INTERFACE: process.env.ENABLE_ADMIN_INTERFACE === "true",
@@ -226,6 +227,10 @@ export class FeatureFlags {
   // Direct access to flags for convenience
   static get ENABLE_BOOKING_DETECTION(): boolean {
     return FeatureFlags.flags.BOOKING_DETECTION;
+  }
+
+  static get ENABLE_BOOKING_SYSTEM(): boolean {
+    return FeatureFlags.flags.BOOKING_SYSTEM;
   }
 
   static get ENABLE_CALENDAR_WIDGET(): boolean {

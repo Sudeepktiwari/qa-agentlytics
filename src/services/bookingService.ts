@@ -29,6 +29,19 @@ export interface CreateBookingParams {
   referrer?: string;
   originalMessage: string;
   detectionConfidence: number;
+  
+  // New fields for enhanced booking
+  confirmationNumber?: string;
+  status?: BookingRequest["status"];
+  priority?: BookingRequest["priority"];
+  adminId?: string;
+  source?: string;
+  requirements?: string;
+  interests?: string[];
+  teamSize?: string;
+  timeline?: string;
+  role?: string;
+  duration?: number;
 }
 
 export interface BookingFilters {
@@ -190,10 +203,11 @@ export class BookingService {
         ...sanitizedData,
         createdAt: new Date(),
         updatedAt: new Date(),
-        status: "pending",
+        status: bookingData.status || "pending",
         confirmationSent: false,
         reminderSent: false,
         priority: bookingData.priority || "medium",
+        confirmationNumber: bookingData.confirmationNumber,
       };
 
       const result = await collection.insertOne(booking);
