@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Booking Demo Test</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        background-color: #f0f0f0;
+      }
+      .content {
+        max-width: 800px;
+        margin: 0 auto;
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        color: #333;
+      }
+      .test-info {
+        background: #e8f4f8;
+        padding: 15px;
+        border-left: 4px solid #10b981;
+        margin: 20px 0;
+      }
+      .test-messages {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 20px 0;
+      }
+      .test-message {
+        background: #e3f2fd;
+        padding: 10px;
+        margin: 10px 0;
+        border-radius: 4px;
+        cursor: pointer;
+        border: 1px solid #ddd;
+      }
+      .test-message:hover {
+        background: #bbdefb;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="content">
+      <h1>🗓️ Booking Demo Test Page</h1>
+
+      <div class="test-info">
+        <h3>Testing Booking Detection & Calendar:</h3>
+        <ul>
+          <li>
+            <strong>Feature Flags:</strong> BOOKING_DETECTION=true,
+            CALENDAR_WIDGET=true
+          </li>
+          <li>
+            <strong>Expected:</strong> Calendar should appear for demo requests
+          </li>
+          <li><strong>Status:</strong> <span id="status">Testing...</span></li>
+        </ul>
+      </div>
+
+      <h2>🎯 Test Messages</h2>
+      <p>Click any message below to test booking detection:</p>
+
+      <div class="test-messages">
+        <div
+          class="test-message"
+          onclick="sendTestMessage('I would like to schedule a demo')"
+        >
+          💼 "I would like to schedule a demo"
+        </div>
+        <div
+          class="test-message"
+          onclick="sendTestMessage('Can we book a call?')"
+        >
+          📞 "Can we book a call?"
+        </div>
+        <div
+          class="test-message"
+          onclick="sendTestMessage('I want to see a demo of your product')"
+        >
+          👀 "I want to see a demo of your product"
+        </div>
+        <div
+          class="test-message"
+          onclick="sendTestMessage('Schedule a meeting with your team')"
+        >
+          👥 "Schedule a meeting with your team"
+        </div>
+        <div
+          class="test-message"
+          onclick="sendTestMessage('What are your pricing options?')"
+        >
+          💰 "What are your pricing options?" (should NOT show calendar)
+        </div>
+      </div>
+
+      <h2>📊 Debug Console</h2>
+      <div
+        id="debug-output"
+        style="
+          background: #1e1e1e;
+          color: #fff;
+          padding: 15px;
+          border-radius: 8px;
+          font-family: monospace;
+          height: 200px;
+          overflow-y: auto;
+        "
+      ></div>
+
+      <div style="height: 300px; margin-top: 50px">
+        <p><em>Widget should appear in bottom-right corner...</em></p>
+      </div>
+    </div>
+
+    <!-- Local widget script for testing -->
+    <script
+      src="http://localhost:3000/api/widget"
+      data-api-key="ak_e9c3475fd9b9371577ab09f5a0a7fcd1c635ef055b7e66374ed424162d80c9ac"
+      data-theme="blue"
+      data-size="large"
+      data-voice-enabled="false"
+      data-auto-open-proactive="false"
+    ></script>
+
+    <script>
+      const debugOutput = document.getElementById("debug-output");
+      const status = document.getElementById("status");
+
+      function log(message, type = "info") {
+        const timestamp = new Date().toLocaleTimeString();
+        const color =
+          type === "error"
+            ? "#ff6b6b"
+            : type === "success"
+            ? "#51cf66"
+            : "#74c0fc";
+        debugOutput.innerHTML += `<div style="color: ${color};">[${timestamp}] ${message}</div>`;
+        debugOutput.scrollTop = debugOutput.scrollHeight;
+      }
+
+      function sendTestMessage(message) {
+        log(`🚀 Testing: "${message}"`, "info");
+
+        // Try to use the global sendMessage function if available
+        if (window.sendMessage) {
+          window.sendMessage(message);
+          log("✅ Message sent via widget", "success");
+        } else {
+          log("❌ Widget sendMessage function not available yet", "error");
+          // Fallback: try to find the widget input and simulate typing
+          setTimeout(() => {
+            const inputs = document.querySelectorAll(
+              'input[type="text"], textarea'
+            );
+            if (inputs.length > 0) {
+              const lastInput = inputs[inputs.length - 1];
+              lastInput.value = message;
+              lastInput.dispatchEvent(new Event("input", { bubbles: true }));
+              log("📝 Message entered in widget input", "info");
+
+              // Try to find and click send button
+              const buttons = document.querySelectorAll("button");
+              const sendButton = Array.from(buttons).find(
+                (btn) =>
+                  btn.textContent.toLowerCase().includes("send") ||
+                  btn.textContent === "➤" ||
+                  btn.innerHTML.includes("➤")
+              );
+              if (sendButton) {
+                sendButton.click();
+                log("📤 Send button clicked", "success");
+              }
+            } else {
+              log("❌ No input fields found in widget", "error");
+            }
+          }, 1000);
+        }
+      }
+
+      // Widget loading detection
+      log("🔄 Loading widget...", "info");
+
+      // Check widget loading status
+      let checkCount = 0;
+      const checkWidget = setInterval(() => {
+        checkCount++;
+
+        // Look for widget elements
+        const widgetElements = document.querySelectorAll(
+          '[id*="widget"], [class*="widget"], [id*="chatbot"], [class*="chatbot"]'
+        );
+
+        if (widgetElements.length > 0) {
+          log(
+            `✅ Widget loaded! Found ${widgetElements.length} widget elements`,
+            "success"
+          );
+          status.textContent = "Widget Ready";
+          status.style.color = "green";
+          clearInterval(checkWidget);
+
+          // Check for sendMessage function
+          if (window.sendMessage) {
+            log("✅ sendMessage function available", "success");
+          } else {
+            log("⚠️ sendMessage function not yet available", "info");
+          }
+        } else if (checkCount > 20) {
+          log("❌ Widget failed to load after 10 seconds", "error");
+          status.textContent = "Widget Failed";
+          status.style.color = "red";
+          clearInterval(checkWidget);
+        } else {
+          log(`⏳ Waiting for widget... (${checkCount}/20)`, "info");
+        }
+      }, 500);
+
+      // Listen for console messages that might indicate booking detection
+      const originalLog = console.log;
+      console.log = function (...args) {
+        if (
+          args.some(
+            (arg) =>
+              typeof arg === "string" &&
+              (arg.includes("booking") ||
+                arg.includes("calendar") ||
+                arg.includes("Booking") ||
+                arg.includes("Calendar"))
+          )
+        ) {
+          log(`📝 Console: ${args.join(" ")}`, "info");
+        }
+        originalLog.apply(console, args);
+      };
+
+      // Listen for errors
+      window.addEventListener("error", (e) => {
+        log(`❌ Error: ${e.message}`, "error");
+      });
+
+      log("📋 Page loaded, testing environment ready", "success");
+    </script>
+  </body>
+</html>
