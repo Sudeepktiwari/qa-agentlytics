@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Calendar Integration Test</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .container {
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      .test-section {
+        margin-bottom: 30px;
+        padding: 20px;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+      }
+      .test-section h3 {
+        margin: 0 0 15px 0;
+        color: #333;
+      }
+      .test-controls {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+      }
+      .test-controls input,
+      .test-controls button {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+      button {
+        background: #0066cc;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-weight: 500;
+      }
+      button:hover {
+        background: #0052a3;
+      }
+      .results {
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 4px;
+        padding: 15px;
+        margin-top: 15px;
+        white-space: pre-wrap;
+        font-family: "Monaco", "Menlo", monospace;
+        font-size: 12px;
+        max-height: 400px;
+        overflow-y: auto;
+      }
+      .status {
+        padding: 8px 12px;
+        border-radius: 4px;
+        margin-bottom: 10px;
+        font-weight: 500;
+      }
+      .status.success {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
+      .status.error {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+      }
+      .status.loading {
+        background: #d1ecf1;
+        color: #0c5460;
+        border: 1px solid #bee5eb;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>📅 Calendar API Integration Test</h1>
+      <p>Test the calendar availability API endpoints and functionality.</p>
+
+      <!-- Month Calendar Test -->
+      <div class="test-section">
+        <h3>1. Monthly Calendar Availability</h3>
+        <div class="test-controls">
+          <input
+            type="number"
+            id="month"
+            placeholder="Month (1-12)"
+            value="1"
+            min="1"
+            max="12"
+          />
+          <input
+            type="number"
+            id="year"
+            placeholder="Year"
+            value="2025"
+            min="2025"
+            max="2030"
+          />
+          <input
+            type="text"
+            id="timezone"
+            placeholder="Timezone"
+            value="America/New_York"
+          />
+          <input type="text" id="adminId" placeholder="Admin ID (optional)" />
+          <button onclick="testMonthlyCalendar()">Get Calendar</button>
+        </div>
+        <div id="calendar-status" class="status" style="display: none"></div>
+        <div id="calendar-results" class="results"></div>
+      </div>
+
+      <!-- Time Slot Check Test -->
+      <div class="test-section">
+        <h3>2. Specific Time Slot Check</h3>
+        <div class="test-controls">
+          <input type="date" id="check-date" value="2025-01-15" />
+          <input type="time" id="check-time" value="10:00" />
+          <input
+            type="text"
+            id="check-timezone"
+            placeholder="Timezone"
+            value="America/New_York"
+          />
+          <input
+            type="text"
+            id="check-adminId"
+            placeholder="Admin ID (optional)"
+          />
+          <button onclick="testTimeSlotCheck()">Check Availability</button>
+        </div>
+        <div id="slot-status" class="status" style="display: none"></div>
+        <div id="slot-results" class="results"></div>
+      </div>
+
+      <!-- Calendar Component Simulation -->
+      <div class="test-section">
+        <h3>3. Calendar Service Test</h3>
+        <div class="test-controls">
+          <button onclick="testCalendarService()">Test Calendar Service</button>
+          <button onclick="testTimeValidation()">Test Time Validation</button>
+          <button onclick="testAlternatives()">Test Alternatives</button>
+        </div>
+        <div id="service-status" class="status" style="display: none"></div>
+        <div id="service-results" class="results"></div>
+      </div>
+
+      <!-- Feature Flag Test -->
+      <div class="test-section">
+        <h3>4. Feature Flags & Configuration</h3>
+        <div class="test-controls">
+          <button onclick="testFeatureFlags()">Check Feature Flags</button>
+          <button onclick="testAPIHealth()">API Health Check</button>
+        </div>
+        <div id="flags-status" class="status" style="display: none"></div>
+        <div id="flags-results" class="results"></div>
+      </div>
+    </div>
+
+    <script>
+      const API_BASE = window.location.origin;
+
+      function setStatus(elementId, type, message) {
+        const element = document.getElementById(elementId);
+        element.className = `status ${type}`;
+        element.textContent = message;
+        element.style.display = "block";
+      }
+
+      function displayResults(elementId, data) {
+        const element = document.getElementById(elementId);
+        element.textContent = JSON.stringify(data, null, 2);
+      }
+
+      async function testMonthlyCalendar() {
+        const month = document.getElementById("month").value;
+        const year = document.getElementById("year").value;
+        const timezone = document.getElementById("timezone").value;
+        const adminId = document.getElementById("adminId").value;
+
+        setStatus("calendar-status", "loading", "Fetching calendar data...");
+
+        try {
+          const params = new URLSearchParams({
+            month,
+            year,
+            timezone,
+            ...(adminId && { adminId }),
+          });
+
+          const response = await fetch(
+            `${API_BASE}/api/calendar/availability?${params}`
+          );
+          const data = await response.json();
+
+          if (response.ok) {
+            setStatus(
+              "calendar-status",
+              "success",
+              `Calendar loaded successfully! ${data.availableSlots} available slots`
+            );
+            displayResults("calendar-results", data);
+          } else {
+            setStatus(
+              "calendar-status",
+              "error",
+              `Error: ${data.error || "Unknown error"}`
+            );
+            displayResults("calendar-results", data);
+          }
+        } catch (error) {
+          setStatus(
+            "calendar-status",
+            "error",
+            `Network error: ${error.message}`
+          );
+          displayResults("calendar-results", { error: error.message });
+        }
+      }
+
+      async function testTimeSlotCheck() {
+        const date = document.getElementById("check-date").value;
+        const time = document.getElementById("check-time").value;
+        const timezone = document.getElementById("check-timezone").value;
+        const adminId = document.getElementById("check-adminId").value;
+
+        setStatus(
+          "slot-status",
+          "loading",
+          "Checking time slot availability..."
+        );
+
+        try {
+          const response = await fetch(
+            `${API_BASE}/api/calendar/availability`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                date,
+                time,
+                timezone,
+                ...(adminId && { adminId }),
+              }),
+            }
+          );
+
+          const data = await response.json();
+
+          if (response.ok) {
+            const status = data.data.available ? "Available" : "Not Available";
+            setStatus(
+              "slot-status",
+              data.data.available ? "success" : "error",
+              `${status}: ${data.data.reason || "Ready to book"}`
+            );
+            displayResults("slot-results", data);
+          } else {
+            setStatus(
+              "slot-status",
+              "error",
+              `Error: ${data.error || "Unknown error"}`
+            );
+            displayResults("slot-results", data);
+          }
+        } catch (error) {
+          setStatus("slot-status", "error", `Network error: ${error.message}`);
+          displayResults("slot-results", { error: error.message });
+        }
+      }
+
+      async function testCalendarService() {
+        setStatus(
+          "service-status",
+          "loading",
+          "Testing calendar service integration..."
+        );
+
+        try {
+          // Test multiple scenarios
+          const tests = [
+            { name: "Business Hours Test", date: "2025-01-15", time: "10:00" },
+            { name: "Weekend Test", date: "2025-01-18", time: "10:00" },
+            { name: "After Hours Test", date: "2025-01-15", time: "19:00" },
+            { name: "Past Date Test", date: "2023-01-15", time: "10:00" },
+          ];
+
+          const results = {};
+          for (const test of tests) {
+            const response = await fetch(
+              `${API_BASE}/api/calendar/availability`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(test),
+              }
+            );
+            const data = await response.json();
+            results[test.name] = {
+              available: data.data?.available,
+              reason: data.data?.reason,
+              alternatives: data.data?.suggestedAlternatives?.length || 0,
+            };
+          }
+
+          setStatus(
+            "service-status",
+            "success",
+            "Calendar service tests completed"
+          );
+          displayResults("service-results", results);
+        } catch (error) {
+          setStatus(
+            "service-status",
+            "error",
+            `Service test failed: ${error.message}`
+          );
+          displayResults("service-results", { error: error.message });
+        }
+      }
+
+      async function testTimeValidation() {
+        setStatus("service-status", "loading", "Testing time validation...");
+
+        try {
+          const validationTests = [
+            { name: "Valid Time", date: "2025-01-15", time: "14:30" },
+            { name: "Invalid Date Format", date: "01/15/2025", time: "14:30" },
+            {
+              name: "Invalid Time Format",
+              date: "2025-01-15",
+              time: "2:30 PM",
+            },
+            { name: "Future Date Valid", date: "2025-12-31", time: "10:00" },
+          ];
+
+          const results = {};
+          for (const test of validationTests) {
+            try {
+              const response = await fetch(
+                `${API_BASE}/api/calendar/availability`,
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(test),
+                }
+              );
+              const data = await response.json();
+              results[test.name] = {
+                status: response.status,
+                success: data.success,
+                error: data.error,
+              };
+            } catch (error) {
+              results[test.name] = { error: error.message };
+            }
+          }
+
+          setStatus(
+            "service-status",
+            "success",
+            "Time validation tests completed"
+          );
+          displayResults("service-results", results);
+        } catch (error) {
+          setStatus(
+            "service-status",
+            "error",
+            `Validation test failed: ${error.message}`
+          );
+          displayResults("service-results", { error: error.message });
+        }
+      }
+
+      async function testAlternatives() {
+        setStatus(
+          "service-status",
+          "loading",
+          "Testing alternative suggestions..."
+        );
+
+        try {
+          // Test with a time that should be unavailable to see alternatives
+          const response = await fetch(
+            `${API_BASE}/api/calendar/availability`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                date: "2025-01-18", // Weekend, should be unavailable
+                time: "10:00",
+              }),
+            }
+          );
+
+          const data = await response.json();
+
+          setStatus(
+            "service-status",
+            "success",
+            `Alternatives test: ${
+              data.data?.suggestedAlternatives?.length || 0
+            } alternatives found`
+          );
+          displayResults("service-results", data);
+        } catch (error) {
+          setStatus(
+            "service-status",
+            "error",
+            `Alternatives test failed: ${error.message}`
+          );
+          displayResults("service-results", { error: error.message });
+        }
+      }
+
+      async function testFeatureFlags() {
+        setStatus("flags-status", "loading", "Checking feature flags...");
+
+        try {
+          // Test calendar endpoint to see if feature flag is enabled
+          const response = await fetch(
+            `${API_BASE}/api/calendar/availability?month=1&year=2025`
+          );
+          const data = await response.json();
+
+          if (response.status === 503) {
+            setStatus("flags-status", "error", "Calendar widget is disabled");
+          } else if (response.ok) {
+            setStatus("flags-status", "success", "Calendar widget is enabled");
+          } else {
+            setStatus(
+              "flags-status",
+              "error",
+              `Unexpected response: ${response.status}`
+            );
+          }
+
+          displayResults("flags-results", {
+            status: response.status,
+            featureEnabled: response.status !== 503,
+            response: data,
+          });
+        } catch (error) {
+          setStatus(
+            "flags-status",
+            "error",
+            `Feature flag test failed: ${error.message}`
+          );
+          displayResults("flags-results", { error: error.message });
+        }
+      }
+
+      async function testAPIHealth() {
+        setStatus("flags-status", "loading", "Checking API health...");
+
+        try {
+          const endpoints = [
+            {
+              name: "Calendar GET",
+              url: "/api/calendar/availability?month=1&year=2025",
+            },
+            { name: "Booking API", url: "/api/booking" },
+          ];
+
+          const results = {};
+          for (const endpoint of endpoints) {
+            try {
+              const response = await fetch(`${API_BASE}${endpoint.url}`);
+              results[endpoint.name] = {
+                status: response.status,
+                ok: response.ok,
+                statusText: response.statusText,
+              };
+            } catch (error) {
+              results[endpoint.name] = { error: error.message };
+            }
+          }
+
+          setStatus("flags-status", "success", "API health check completed");
+          displayResults("flags-results", results);
+        } catch (error) {
+          setStatus(
+            "flags-status",
+            "error",
+            `Health check failed: ${error.message}`
+          );
+          displayResults("flags-results", { error: error.message });
+        }
+      }
+
+      // Initialize with current date
+      document.addEventListener("DOMContentLoaded", () => {
+        const now = new Date();
+        const tomorrow = new Date(now);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        document.getElementById("month").value = now.getMonth() + 1;
+        document.getElementById("year").value = now.getFullYear();
+        document.getElementById("check-date").value = tomorrow
+          .toISOString()
+          .split("T")[0];
+      });
+    </script>
+  </body>
+</html>

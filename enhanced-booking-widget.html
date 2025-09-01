@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Enhanced Booking Widget with Calendar</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+
+      .booking-container {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        max-width: 900px;
+        width: 100%;
+        overflow: hidden;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        min-height: 600px;
+      }
+
+      .booking-info {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 40px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      .booking-info h1 {
+        font-size: 2.5rem;
+        margin-bottom: 20px;
+        font-weight: 700;
+      }
+
+      .booking-info p {
+        font-size: 1.1rem;
+        line-height: 1.6;
+        opacity: 0.9;
+        margin-bottom: 30px;
+      }
+
+      .features {
+        list-style: none;
+      }
+
+      .features li {
+        padding: 8px 0;
+        display: flex;
+        align-items: center;
+      }
+
+      .features li::before {
+        content: "✓";
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 12px;
+        font-weight: bold;
+      }
+
+      .booking-form {
+        padding: 40px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .step {
+        display: none;
+      }
+
+      .step.active {
+        display: block;
+      }
+
+      .step-header {
+        margin-bottom: 30px;
+      }
+
+      .step-title {
+        font-size: 1.8rem;
+        color: #2d3748;
+        margin-bottom: 10px;
+      }
+
+      .step-subtitle {
+        color: #718096;
+        font-size: 1rem;
+      }
+
+      .progress-bar {
+        width: 100%;
+        height: 4px;
+        background: #e2e8f0;
+        border-radius: 2px;
+        margin-bottom: 30px;
+        overflow: hidden;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #667eea, #764ba2);
+        border-radius: 2px;
+        transition: width 0.3s ease;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        color: #2d3748;
+        font-weight: 500;
+      }
+
+      .form-group input,
+      .form-group select,
+      .form-group textarea {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: border-color 0.2s;
+      }
+
+      .form-group input:focus,
+      .form-group select:focus,
+      .form-group textarea:focus {
+        outline: none;
+        border-color: #667eea;
+      }
+
+      .calendar-container {
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 20px;
+        background: #f7fafc;
+        margin-bottom: 20px;
+      }
+
+      .calendar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+
+      .calendar-nav {
+        background: none;
+        border: none;
+        color: #667eea;
+        font-size: 1.2rem;
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+      }
+
+      .calendar-nav:hover {
+        background: rgba(102, 126, 234, 0.1);
+      }
+
+      .calendar-month {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #2d3748;
+      }
+
+      .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 1px;
+        background: #e2e8f0;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      .calendar-day-header {
+        background: #4a5568;
+        color: white;
+        padding: 12px 8px;
+        text-align: center;
+        font-size: 0.9rem;
+        font-weight: 600;
+      }
+
+      .calendar-day {
+        background: white;
+        padding: 12px 8px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        min-height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+      }
+
+      .calendar-day:hover {
+        background: #edf2f7;
+      }
+
+      .calendar-day.available {
+        background: #f0fff4;
+        color: #22543d;
+      }
+
+      .calendar-day.available:hover {
+        background: #c6f6d5;
+      }
+
+      .calendar-day.selected {
+        background: #667eea;
+        color: white;
+      }
+
+      .calendar-day.disabled {
+        background: #f7fafc;
+        color: #a0aec0;
+        cursor: not-allowed;
+      }
+
+      .time-slots {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+        gap: 10px;
+        margin-top: 20px;
+      }
+
+      .time-slot {
+        padding: 10px 12px;
+        border: 2px solid #e2e8f0;
+        border-radius: 6px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: white;
+      }
+
+      .time-slot:hover {
+        border-color: #667eea;
+      }
+
+      .time-slot.selected {
+        background: #667eea;
+        color: white;
+        border-color: #667eea;
+      }
+
+      .time-slot.disabled {
+        background: #f7fafc;
+        color: #a0aec0;
+        cursor: not-allowed;
+        border-color: #e2e8f0;
+      }
+
+      .btn {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+      }
+
+      .btn-secondary {
+        background: #e2e8f0;
+        color: #4a5568;
+      }
+
+      .btn-secondary:hover {
+        background: #cbd5e0;
+      }
+
+      .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+
+      .step-navigation {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 40px;
+      }
+
+      .success-message {
+        text-align: center;
+        padding: 40px 20px;
+      }
+
+      .success-icon {
+        font-size: 4rem;
+        color: #48bb78;
+        margin-bottom: 20px;
+      }
+
+      .loading {
+        display: none;
+        text-align: center;
+        padding: 20px;
+      }
+
+      .loading.show {
+        display: block;
+      }
+
+      .spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid #e2e8f0;
+        border-top: 4px solid #667eea;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 15px;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .error-message {
+        background: #fed7d7;
+        color: #c53030;
+        padding: 12px 16px;
+        border-radius: 8px;
+        margin-top: 10px;
+        display: none;
+      }
+
+      .selected-info {
+        background: #e6fffa;
+        border: 1px solid #81e6d9;
+        border-radius: 8px;
+        padding: 16px;
+        margin: 20px 0;
+      }
+
+      .selected-info strong {
+        color: #234e52;
+      }
+
+      @media (max-width: 768px) {
+        .booking-container {
+          grid-template-columns: 1fr;
+          max-height: none;
+        }
+
+        .booking-info {
+          padding: 30px 20px;
+        }
+
+        .booking-form {
+          padding: 30px 20px;
+        }
+
+        .time-slots {
+          grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="booking-container">
+      <!-- Left Side - Information -->
+      <div class="booking-info">
+        <h1>📅 Schedule Your Demo</h1>
+        <p>
+          Book a personalized demo session with our team. We'll show you how our
+          platform can transform your business operations.
+        </p>
+
+        <ul class="features">
+          <li>30-minute personalized demo</li>
+          <li>Q&A with product experts</li>
+          <li>Custom solution recommendations</li>
+          <li>Implementation roadmap</li>
+        </ul>
+      </div>
+
+      <!-- Right Side - Booking Form -->
+      <div class="booking-form">
+        <!-- Progress Bar -->
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill" style="width: 33%"></div>
+        </div>
+
+        <!-- Step 1: Date & Time Selection -->
+        <div class="step active" id="step1">
+          <div class="step-header">
+            <h2 class="step-title">Select Date & Time</h2>
+            <p class="step-subtitle">
+              Choose your preferred date and time slot
+            </p>
+          </div>
+
+          <div class="calendar-container">
+            <div class="calendar-header">
+              <button class="calendar-nav" id="prevMonth">‹</button>
+              <div class="calendar-month" id="currentMonth">January 2025</div>
+              <button class="calendar-nav" id="nextMonth">›</button>
+            </div>
+
+            <div class="calendar-grid" id="calendarGrid">
+              <!-- Calendar will be populated by JavaScript -->
+            </div>
+
+            <div class="time-slots" id="timeSlots" style="display: none">
+              <!-- Time slots will be populated when date is selected -->
+            </div>
+          </div>
+
+          <div class="selected-info" id="selectedInfo" style="display: none">
+            <strong>Selected:</strong> <span id="selectedDateTime"></span>
+          </div>
+
+          <div class="loading" id="calendarLoading">
+            <div class="spinner"></div>
+            <p>Loading calendar...</p>
+          </div>
+
+          <div class="error-message" id="calendarError"></div>
+
+          <div class="step-navigation">
+            <div></div>
+            <button class="btn btn-primary" id="nextStep1" disabled>
+              Next: Your Information →
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 2: Personal Information -->
+        <div class="step" id="step2">
+          <div class="step-header">
+            <h2 class="step-title">Your Information</h2>
+            <p class="step-subtitle">
+              Tell us a bit about yourself and your company
+            </p>
+          </div>
+
+          <div class="form-group">
+            <label for="fullName">Full Name *</label>
+            <input type="text" id="fullName" required />
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email Address *</label>
+            <input type="email" id="email" required />
+          </div>
+
+          <div class="form-group">
+            <label for="company">Company Name</label>
+            <input type="text" id="company" />
+          </div>
+
+          <div class="form-group">
+            <label for="phone">Phone Number</label>
+            <input type="tel" id="phone" />
+          </div>
+
+          <div class="form-group">
+            <label for="role">Your Role</label>
+            <select id="role">
+              <option value="">Select your role</option>
+              <option value="founder">Founder/CEO</option>
+              <option value="manager">Manager</option>
+              <option value="developer">Developer</option>
+              <option value="marketing">Marketing</option>
+              <option value="sales">Sales</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+
+          <div class="error-message" id="formError"></div>
+
+          <div class="step-navigation">
+            <button class="btn btn-secondary" id="backStep2">← Back</button>
+            <button class="btn btn-primary" id="nextStep2">
+              Next: Requirements →
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 3: Requirements & Confirmation -->
+        <div class="step" id="step3">
+          <div class="step-header">
+            <h2 class="step-title">Demo Requirements</h2>
+            <p class="step-subtitle">
+              Help us prepare the perfect demo for you
+            </p>
+          </div>
+
+          <div class="form-group">
+            <label for="interests"
+              >What interests you most? (Select all that apply)</label
+            >
+            <div style="margin-top: 10px">
+              <label
+                style="
+                  display: flex;
+                  align-items: center;
+                  margin-bottom: 8px;
+                  font-weight: normal;
+                "
+              >
+                <input
+                  type="checkbox"
+                  value="automation"
+                  style="margin-right: 8px"
+                />
+                Process Automation
+              </label>
+              <label
+                style="
+                  display: flex;
+                  align-items: center;
+                  margin-bottom: 8px;
+                  font-weight: normal;
+                "
+              >
+                <input
+                  type="checkbox"
+                  value="analytics"
+                  style="margin-right: 8px"
+                />
+                Analytics & Reporting
+              </label>
+              <label
+                style="
+                  display: flex;
+                  align-items: center;
+                  margin-bottom: 8px;
+                  font-weight: normal;
+                "
+              >
+                <input
+                  type="checkbox"
+                  value="integration"
+                  style="margin-right: 8px"
+                />
+                System Integrations
+              </label>
+              <label
+                style="
+                  display: flex;
+                  align-items: center;
+                  margin-bottom: 8px;
+                  font-weight: normal;
+                "
+              >
+                <input
+                  type="checkbox"
+                  value="security"
+                  style="margin-right: 8px"
+                />
+                Security Features
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="teamSize">Team Size</label>
+            <select id="teamSize">
+              <option value="">Select team size</option>
+              <option value="1-10">1-10 people</option>
+              <option value="11-50">11-50 people</option>
+              <option value="51-200">51-200 people</option>
+              <option value="200+">200+ people</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="requirements">Specific Requirements or Questions</label>
+            <textarea
+              id="requirements"
+              rows="4"
+              placeholder="Tell us about your specific needs or any questions you'd like us to address during the demo..."
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="timeline">Implementation Timeline</label>
+            <select id="timeline">
+              <option value="">When are you looking to implement?</option>
+              <option value="immediate">Immediately (within 1 month)</option>
+              <option value="quarter">This quarter (1-3 months)</option>
+              <option value="half-year">Within 6 months</option>
+              <option value="planning">Still in planning phase</option>
+            </select>
+          </div>
+
+          <!-- Booking Summary -->
+          <div class="selected-info">
+            <strong>Booking Summary:</strong><br />
+            <span id="bookingSummary"></span>
+          </div>
+
+          <div class="loading" id="submitLoading">
+            <div class="spinner"></div>
+            <p>Submitting your booking...</p>
+          </div>
+
+          <div class="error-message" id="submitError"></div>
+
+          <div class="step-navigation">
+            <button class="btn btn-secondary" id="backStep3">← Back</button>
+            <button class="btn btn-primary" id="submitBooking">
+              🚀 Confirm Booking
+            </button>
+          </div>
+        </div>
+
+        <!-- Success Step -->
+        <div class="step" id="stepSuccess">
+          <div class="success-message">
+            <div class="success-icon">✅</div>
+            <h2 class="step-title">Booking Confirmed!</h2>
+            <p class="step-subtitle">
+              We've sent you a confirmation email with all the details.
+            </p>
+
+            <div class="selected-info">
+              <strong>Your Demo Details:</strong><br />
+              <span id="finalBookingSummary"></span>
+            </div>
+
+            <div style="margin-top: 30px">
+              <p style="margin-bottom: 15px">What happens next?</p>
+              <ul style="text-align: left; max-width: 300px; margin: 0 auto">
+                <li style="margin-bottom: 8px">
+                  📧 Check your email for calendar invite
+                </li>
+                <li style="margin-bottom: 8px">
+                  📅 Add the event to your calendar
+                </li>
+                <li style="margin-bottom: 8px">
+                  🔗 Join via the meeting link provided
+                </li>
+                <li style="margin-bottom: 8px">
+                  📞 We'll call if you prefer phone
+                </li>
+              </ul>
+            </div>
+
+            <button
+              class="btn btn-primary"
+              onclick="location.reload()"
+              style="margin-top: 30px"
+            >
+              Schedule Another Demo
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Calendar and Booking Logic
+      class BookingCalendar {
+        constructor() {
+          this.currentDate = new Date();
+          this.selectedDate = null;
+          this.selectedTime = null;
+          this.calendarData = null;
+          this.currentStep = 1;
+
+          this.init();
+        }
+
+        init() {
+          this.bindEvents();
+          this.loadCalendar();
+        }
+
+        bindEvents() {
+          // Calendar navigation
+          document.getElementById("prevMonth").addEventListener("click", () => {
+            this.currentDate.setMonth(this.currentDate.getMonth() - 1);
+            this.loadCalendar();
+          });
+
+          document.getElementById("nextMonth").addEventListener("click", () => {
+            this.currentDate.setMonth(this.currentDate.getMonth() + 1);
+            this.loadCalendar();
+          });
+
+          // Step navigation
+          document
+            .getElementById("nextStep1")
+            .addEventListener("click", () => this.goToStep(2));
+          document
+            .getElementById("backStep2")
+            .addEventListener("click", () => this.goToStep(1));
+          document
+            .getElementById("nextStep2")
+            .addEventListener("click", () => this.goToStep(3));
+          document
+            .getElementById("backStep3")
+            .addEventListener("click", () => this.goToStep(2));
+          document
+            .getElementById("submitBooking")
+            .addEventListener("click", () => this.submitBooking());
+
+          // Form validation
+          document
+            .getElementById("fullName")
+            .addEventListener("input", this.validateStep2.bind(this));
+          document
+            .getElementById("email")
+            .addEventListener("input", this.validateStep2.bind(this));
+        }
+
+        async loadCalendar() {
+          const loading = document.getElementById("calendarLoading");
+          const error = document.getElementById("calendarError");
+
+          loading.classList.add("show");
+          error.style.display = "none";
+
+          try {
+            const month = this.currentDate.getMonth() + 1;
+            const year = this.currentDate.getFullYear();
+
+            const response = await fetch(
+              `/api/calendar/availability?month=${month}&year=${year}&timezone=America/New_York`
+            );
+
+            if (!response.ok) {
+              throw new Error(`Calendar API error: ${response.status}`);
+            }
+
+            this.calendarData = await response.json();
+            this.renderCalendar();
+          } catch (err) {
+            console.error("Calendar loading error:", err);
+            error.textContent =
+              "Failed to load calendar. Please refresh the page.";
+            error.style.display = "block";
+          } finally {
+            loading.classList.remove("show");
+          }
+        }
+
+        renderCalendar() {
+          const grid = document.getElementById("calendarGrid");
+          const monthDisplay = document.getElementById("currentMonth");
+
+          // Update month display
+          const monthNames = [
+            "January",
+            "February",
+            "March",
+            "April",
+            "May",
+            "June",
+            "July",
+            "August",
+            "September",
+            "October",
+            "November",
+            "December",
+          ];
+          monthDisplay.textContent = `${
+            monthNames[this.currentDate.getMonth()]
+          } ${this.currentDate.getFullYear()}`;
+
+          // Clear grid
+          grid.innerHTML = "";
+
+          // Add day headers
+          const dayHeaders = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+          dayHeaders.forEach((day) => {
+            const header = document.createElement("div");
+            header.className = "calendar-day-header";
+            header.textContent = day;
+            grid.appendChild(header);
+          });
+
+          // Add calendar days
+          if (this.calendarData && this.calendarData.days) {
+            this.calendarData.days.forEach((dayData) => {
+              const dayElement = document.createElement("div");
+              dayElement.className = "calendar-day";
+
+              const dayNumber = new Date(dayData.date).getDate();
+              dayElement.textContent = dayNumber;
+
+              if (dayData.available) {
+                dayElement.classList.add("available");
+                dayElement.addEventListener("click", () =>
+                  this.selectDate(dayData)
+                );
+              } else {
+                dayElement.classList.add("disabled");
+                dayElement.title = dayData.blockReason || "Not available";
+              }
+
+              grid.appendChild(dayElement);
+            });
+          }
+        }
+
+        selectDate(dayData) {
+          // Remove previous selection
+          document.querySelectorAll(".calendar-day.selected").forEach((day) => {
+            day.classList.remove("selected");
+          });
+
+          // Add selection to clicked day
+          event.target.classList.add("selected");
+
+          this.selectedDate = dayData.date;
+          this.renderTimeSlots(dayData.timeSlots);
+        }
+
+        renderTimeSlots(timeSlots) {
+          const container = document.getElementById("timeSlots");
+          container.innerHTML = "";
+          container.style.display = "grid";
+
+          if (timeSlots && timeSlots.length > 0) {
+            timeSlots.forEach((slot) => {
+              const slotElement = document.createElement("div");
+              slotElement.className = "time-slot";
+              slotElement.textContent = slot.time;
+
+              if (slot.available) {
+                slotElement.addEventListener("click", () =>
+                  this.selectTime(slot.time, slotElement)
+                );
+              } else {
+                slotElement.classList.add("disabled");
+                slotElement.title = slot.reason || "Not available";
+              }
+
+              container.appendChild(slotElement);
+            });
+          } else {
+            container.innerHTML =
+              '<p style="grid-column: 1/-1; text-align: center; color: #718096;">No time slots available for this date</p>';
+          }
+        }
+
+        selectTime(time, element) {
+          // Remove previous selection
+          document.querySelectorAll(".time-slot.selected").forEach((slot) => {
+            slot.classList.remove("selected");
+          });
+
+          // Add selection
+          element.classList.add("selected");
+          this.selectedTime = time;
+
+          this.updateSelectedInfo();
+          document.getElementById("nextStep1").disabled = false;
+        }
+
+        updateSelectedInfo() {
+          const info = document.getElementById("selectedInfo");
+          const display = document.getElementById("selectedDateTime");
+
+          if (this.selectedDate && this.selectedTime) {
+            const date = new Date(this.selectedDate);
+            const dateStr = date.toLocaleDateString("en-US", {
+              weekday: "long",
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            });
+            display.textContent = `${dateStr} at ${this.selectedTime}`;
+            info.style.display = "block";
+          }
+        }
+
+        goToStep(stepNumber) {
+          // Hide all steps
+          document.querySelectorAll(".step").forEach((step) => {
+            step.classList.remove("active");
+          });
+
+          // Show target step
+          document.getElementById(`step${stepNumber}`).classList.add("active");
+
+          // Update progress
+          const progress = (stepNumber / 4) * 100;
+          document.getElementById("progressFill").style.width = `${progress}%`;
+
+          this.currentStep = stepNumber;
+
+          // Update booking summary in step 3
+          if (stepNumber === 3) {
+            this.updateBookingSummary();
+          }
+        }
+
+        validateStep2() {
+          const name = document.getElementById("fullName").value.trim();
+          const email = document.getElementById("email").value.trim();
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+          const isValid = name.length > 0 && emailRegex.test(email);
+          document.getElementById("nextStep2").disabled = !isValid;
+
+          return isValid;
+        }
+
+        updateBookingSummary() {
+          const summary = document.getElementById("bookingSummary");
+          const name = document.getElementById("fullName").value;
+          const email = document.getElementById("email").value;
+
+          const date = new Date(this.selectedDate);
+          const dateStr = date.toLocaleDateString("en-US", {
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          });
+
+          summary.innerHTML = `
+                    <strong>Date & Time:</strong> ${dateStr} at ${this.selectedTime}<br>
+                    <strong>Attendee:</strong> ${name} (${email})<br>
+                    <strong>Duration:</strong> 30 minutes<br>
+                    <strong>Type:</strong> Product Demo
+                `;
+        }
+
+        async submitBooking() {
+          if (!this.validateStep2()) {
+            document.getElementById("formError").textContent =
+              "Please fill in all required fields correctly.";
+            document.getElementById("formError").style.display = "block";
+            return;
+          }
+
+          const loading = document.getElementById("submitLoading");
+          const error = document.getElementById("submitError");
+          const submitBtn = document.getElementById("submitBooking");
+
+          loading.classList.add("show");
+          error.style.display = "none";
+          submitBtn.disabled = true;
+
+          try {
+            // Collect form data
+            const bookingData = {
+              // Date & Time
+              preferredDate: this.selectedDate,
+              preferredTime: this.selectedTime,
+              timezone: "America/New_York",
+
+              // Personal Info
+              name: document.getElementById("fullName").value.trim(),
+              email: document.getElementById("email").value.trim(),
+              company: document.getElementById("company").value.trim(),
+              phone: document.getElementById("phone").value.trim(),
+              role: document.getElementById("role").value,
+
+              // Requirements
+              teamSize: document.getElementById("teamSize").value,
+              timeline: document.getElementById("timeline").value,
+              requirements: document
+                .getElementById("requirements")
+                .value.trim(),
+
+              // Selected interests
+              interests: Array.from(
+                document.querySelectorAll('input[type="checkbox"]:checked')
+              ).map((cb) => cb.value),
+
+              // Booking details
+              bookingType: "demo",
+              status: "pending",
+              duration: 30,
+              source: "calendar_widget",
+              createdAt: new Date().toISOString(),
+            };
+
+            // Submit to booking API
+            const response = await fetch("/api/booking", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(bookingData),
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+              // Success - show confirmation
+              this.showSuccess(bookingData);
+            } else {
+              throw new Error(result.error || "Booking submission failed");
+            }
+          } catch (err) {
+            console.error("Booking submission error:", err);
+            error.textContent =
+              err.message || "Failed to submit booking. Please try again.";
+            error.style.display = "block";
+            submitBtn.disabled = false;
+          } finally {
+            loading.classList.remove("show");
+          }
+        }
+
+        showSuccess(bookingData) {
+          // Update final summary
+          const finalSummary = document.getElementById("finalBookingSummary");
+          const date = new Date(bookingData.preferredDate);
+          const dateStr = date.toLocaleDateString("en-US", {
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          });
+
+          finalSummary.innerHTML = `
+                    <strong>Date:</strong> ${dateStr}<br>
+                    <strong>Time:</strong> ${bookingData.preferredTime}<br>
+                    <strong>Attendee:</strong> ${bookingData.name}<br>
+                    <strong>Email:</strong> ${bookingData.email}<br>
+                    <strong>Booking ID:</strong> #${Date.now()
+                      .toString()
+                      .slice(-6)}
+                `;
+
+          // Show success step
+          this.goToStep("Success");
+          document.getElementById("progressFill").style.width = "100%";
+        }
+      }
+
+      // Initialize booking calendar when page loads
+      document.addEventListener("DOMContentLoaded", () => {
+        new BookingCalendar();
+      });
+    </script>
+  </body>
+</html>
