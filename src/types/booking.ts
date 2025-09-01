@@ -14,7 +14,7 @@ export interface BookingRequest {
   status: "pending" | "confirmed" | "completed" | "cancelled";
   adminId?: string; // Optional for unassigned bookings
   pageUrl?: string;
-  
+
   // Booking identification
   confirmationNumber?: string; // Unique booking confirmation number
 

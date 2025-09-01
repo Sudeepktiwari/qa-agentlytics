@@ -29,7 +29,7 @@ export interface CreateBookingParams {
   referrer?: string;
   originalMessage: string;
   detectionConfidence: number;
-  
+
   // New fields for enhanced booking
   confirmationNumber?: string;
   status?: BookingRequest["status"];
