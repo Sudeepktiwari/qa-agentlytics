@@ -3516,10 +3516,11 @@ You will receive page and general context. Always generate your response in the 
 }
 
 STRICT RULES:
-- Respond with ONLY valid JSON - no additional text before or after
+- You MUST respond with ONLY valid JSON in this exact format - no additional text before or after
 - NEVER include JSON objects or button arrays within the mainText field  
 - Use \\n\\n for line breaks and ** for bold text in mainText
 - Keep mainText conversational and helpful, buttons actionable and specific
+- Required JSON structure: {"mainText": "...", "buttons": [...], "emailPrompt": "..."}
 
 Context:
 Page Context:
@@ -3528,7 +3529,7 @@ ${pageContext}
 General Context:
 ${context}
 
-CRITICAL: Generate buttons and email prompt that are directly related to the user's specific question. Do not use generic buttons. NEVER PUT JSON OR BUTTONS IN MAINTEXT - ONLY IN THE BUTTONS ARRAY.`;
+CRITICAL: Generate buttons and email prompt that are directly related to the user's specific question. Do not use generic buttons. NEVER PUT JSON OR BUTTONS IN MAINTEXT - ONLY IN THE BUTTONS ARRAY. Respond with pure JSON only.`;
     }
   }
 
@@ -3544,6 +3545,9 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
         content: userPrompt,
       },
     ],
+    response_format: { type: "json_object" }, // Force JSON response format
+    temperature: 0.7,
+    max_tokens: 1000,
   });
   const answer = chatResp.choices[0].message.content;
 

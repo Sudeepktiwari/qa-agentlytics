@@ -25,8 +25,9 @@ export async function detectBookingIntent(
   pageContext?: string
 ): Promise<BookingIntentResult> {
   try {
-    // Check if booking detection is enabled
-    if (!FeatureFlags.isEnabled("BOOKING_DETECTION")) {
+    // Check if booking detection is enabled (default to enabled if not set)
+    const isEnabled = process.env.ENABLE_BOOKING_DETECTION !== "false";
+    if (!isEnabled) {
       console.log("[BookingDetection] Feature disabled via feature flag");
       return {
         hasBookingIntent: false,
