@@ -206,6 +206,7 @@ export async function GET(request: Request) {
   let followupCount = 0;
   let followupSent = false;
   let lastUserAction = Date.now();
+  let lastUserMessage = Date.now(); // Track when user last sent a message
   let userIsActive = false;
   let widgetScrollTimeout = null;
   let usedFollowupTopics = new Set(); // Track used followup topics
@@ -2611,6 +2612,7 @@ export async function GET(request: Request) {
     console.log("💬 [WIDGET MESSAGE] User sending message:", text);
     
     resetUserActivity();
+    lastUserMessage = Date.now(); // Track when user last sent a message
     
     // Ensure we have the latest page URL
     detectPageChange();
