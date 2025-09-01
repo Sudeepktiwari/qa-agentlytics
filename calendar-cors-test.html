@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendar API CORS Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            background: #f5f5f5;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 8px;
+        }
+        button {
+            background: #007cba;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #005a87;
+        }
+        .result {
+            background: white;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border-left: 4px solid #007cba;
+            white-space: pre-wrap;
+        }
+        .error {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+        .success {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Calendar API CORS Test</h1>
+    <p>This page tests the CORS headers on the calendar availability API.</p>
+
+    <div class="test-section">
+        <h3>Test 1: GET /api/calendar/availability</h3>
+        <button onclick="testGetAvailability()">Test GET Request</button>
+        <div id="get-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test 2: POST /api/calendar/availability</h3>
+        <button onclick="testPostAvailability()">Test POST Request</button>
+        <div id="post-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test 3: OPTIONS Preflight Request</h3>
+        <button onclick="testOptionsRequest()">Test OPTIONS Request</button>
+        <div id="options-result" class="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+
+        function logResult(elementId, message, isError = false) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = isError ? 'result error' : 'result success';
+        }
+
+        async function testGetAvailability() {
+            const resultId = 'get-result';
+            logResult(resultId, 'Testing GET request...');
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/calendar/availability?date=2024-12-20`);
+                const data = await response.json();
+                
+                // Check CORS headers
+                const corsHeader = response.headers.get('Access-Control-Allow-Origin');
+                
+                logResult(resultId, `✅ GET Request Success!
+Status: ${response.status}
+CORS Header: ${corsHeader || 'Not present'}
+Response: ${JSON.stringify(data, null, 2)}`);
+            } catch (error) {
+                logResult(resultId, `❌ GET Request Failed:
+Error: ${error.message}
+This might be due to CORS policy blocking`, true);
+            }
+        }
+
+        async function testPostAvailability() {
+            const resultId = 'post-result';
+            logResult(resultId, 'Testing POST request...');
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/calendar/availability`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        date: '2024-12-20',
+                        time: '14:00',
+                        timezone: 'America/New_York'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                // Check CORS headers
+                const corsHeader = response.headers.get('Access-Control-Allow-Origin');
+                
+                logResult(resultId, `✅ POST Request Success!
+Status: ${response.status}
+CORS Header: ${corsHeader || 'Not present'}
+Response: ${JSON.stringify(data, null, 2)}`);
+            } catch (error) {
+                logResult(resultId, `❌ POST Request Failed:
+Error: ${error.message}
+This might be due to CORS policy blocking`, true);
+            }
+        }
+
+        async function testOptionsRequest() {
+            const resultId = 'options-result';
+            logResult(resultId, 'Testing OPTIONS preflight request...');
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/calendar/availability`, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Origin': 'https://calendly.com',
+                        'Access-Control-Request-Method': 'POST',
+                        'Access-Control-Request-Headers': 'Content-Type'
+                    }
+                });
+                
+                const allowOrigin = response.headers.get('Access-Control-Allow-Origin');
+                const allowMethods = response.headers.get('Access-Control-Allow-Methods');
+                const allowHeaders = response.headers.get('Access-Control-Allow-Headers');
+                
+                logResult(resultId, `✅ OPTIONS Request Success!
+Status: ${response.status}
+Access-Control-Allow-Origin: ${allowOrigin || 'Not present'}
+Access-Control-Allow-Methods: ${allowMethods || 'Not present'}
+Access-Control-Allow-Headers: ${allowHeaders || 'Not present'}`);
+            } catch (error) {
+                logResult(resultId, `❌ OPTIONS Request Failed:
+Error: ${error.message}`, true);
+            }
+        }
+
+        // Auto-run tests on page load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                testOptionsRequest();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

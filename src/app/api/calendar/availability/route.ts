@@ -8,6 +8,23 @@ import { bookingService } from "@/services/bookingService";
 import { calendarService } from "@/services/calendarService";
 import { FeatureFlags } from "@/lib/javascriptSafety";
 
+// CORS headers for cross-origin requests
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, x-api-key, Authorization",
+  "Access-Control-Max-Age": "86400",
+  "Access-Control-Allow-Credentials": "true",
+};
+
+// Handle preflight requests
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: corsHeaders,
+  });
+}
+
 interface CalendarRequest {
   month: number; // 1-12
   year: number;
@@ -54,7 +71,7 @@ export async function GET(request: NextRequest) {
     if (!FeatureFlags.ENABLE_CALENDAR_WIDGET) {
       return NextResponse.json(
         { error: "Calendar widget is not enabled" },
-        { status: 503 }
+        { status: 503, headers: corsHeaders }
       );
     }
 
@@ -76,7 +93,7 @@ export async function GET(request: NextRequest) {
     if (month < 1 || month > 12 || year < 2025 || year > 2030) {
       return NextResponse.json(
         { error: "Invalid month or year parameter" },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -91,7 +108,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: calendarData,
-    });
+    }, { headers: corsHeaders });
   } catch (error) {
     console.error("❌ Calendar availability API error:", error);
     return NextResponse.json(
@@ -102,7 +119,7 @@ export async function GET(request: NextRequest) {
             ? error.message
             : "Failed to fetch calendar availability",
       },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }
@@ -116,7 +133,7 @@ export async function POST(request: NextRequest) {
     if (!FeatureFlags.ENABLE_CALENDAR_WIDGET) {
       return NextResponse.json(
         { error: "Calendar widget is not enabled" },
-        { status: 503 }
+        { status: 503, headers: corsHeaders }
       );
     }
 
@@ -126,7 +143,7 @@ export async function POST(request: NextRequest) {
     if (!date || !time) {
       return NextResponse.json(
         { error: "Date and time are required" },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -135,7 +152,7 @@ export async function POST(request: NextRequest) {
     if (!dateRegex.test(date)) {
       return NextResponse.json(
         { error: "Invalid date format. Use YYYY-MM-DD" },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -144,7 +161,7 @@ export async function POST(request: NextRequest) {
     if (!timeRegex.test(time)) {
       return NextResponse.json(
         { error: "Invalid time format. Use HH:MM" },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -165,7 +182,7 @@ export async function POST(request: NextRequest) {
         reason: availabilityResult.reason,
         suggestedAlternatives: availabilityResult.alternatives || [],
       },
-    });
+    }, { headers: corsHeaders });
   } catch (error) {
     console.error("❌ Time slot check API error:", error);
     return NextResponse.json(
@@ -176,7 +193,7 @@ export async function POST(request: NextRequest) {
             ? error.message
             : "Failed to check time slot availability",
       },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }
