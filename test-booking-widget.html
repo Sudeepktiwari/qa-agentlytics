@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Booking Widget Integration Test</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        line-height: 1.6;
+        margin: 0;
+        padding: 20px;
+        background: #f8f9fa;
+      }
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        background: white;
+        padding: 40px;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        color: #333;
+        text-align: center;
+        margin-bottom: 40px;
+      }
+      .section {
+        margin-bottom: 30px;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 8px;
+      }
+      .test-phrases {
+        display: grid;
+        gap: 10px;
+        margin-top: 15px;
+      }
+      .phrase {
+        background: white;
+        padding: 12px;
+        border-radius: 6px;
+        border-left: 4px solid #007bff;
+        font-style: italic;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      .phrase:hover {
+        background: #e3f2fd;
+        transform: translateX(5px);
+      }
+      .instructions {
+        background: #e8f5e8;
+        border-left: 4px solid #28a745;
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 4px;
+      }
+      .feature-list {
+        list-style: none;
+        padding: 0;
+      }
+      .feature-list li {
+        padding: 8px 0;
+        border-bottom: 1px solid #eee;
+      }
+      .feature-list li:before {
+        content: "✅ ";
+        color: #28a745;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🗓️ Booking Widget Integration Test</h1>
+
+      <div class="instructions">
+        <strong>Test Instructions:</strong>
+        <br />1. The chatbot widget should appear in the bottom right corner
+        <br />2. Try the test phrases below by clicking them or typing similar
+        messages <br />3. When booking intent is detected, you should see a
+        calendar appear in the chat <br />4. You can select a time slot to
+        complete the booking
+      </div>
+
+      <div class="section">
+        <h3>🎯 Demo & Sales Requests</h3>
+        <p>
+          These phrases should trigger booking detection and show a calendar:
+        </p>
+        <div class="test-phrases">
+          <div class="phrase" onclick="sendToChatbot(this.textContent)">
+            I'd like to schedule a demo
+          </div>
+          <div class="phrase" onclick="sendToChatbot(this.textContent)">
+            Can we book a call?
+          </div>
+          <div class="phrase" onclick="sendToChatbot(this.textContent)">
+            I want to talk to someone
+          </div>
+          <div class="phrase" onclick="sendToChatbot(this.textContent)">
+            Schedule a meeting with your team
+          </div>
+          <div class="phrase" onclick="sendToChatbot(this.textContent)">
+            Book a consultation
+          </div>
+          <div class="phrase" onclick="sendToChatbot(this.textContent)">
+            I need to speak with support
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>🤖 Regular Chat</h3>
+        <p>These phrases should work as normal chat without booking:</p>
+        <div class="test-phrases">
+          <div class="phrase" onclick="sendToChatbot(this.textContent)">
+            What are your pricing plans?
+          </div>
+          <div class="phrase" onclick="sendToChatbot(this.textContent)">
+            How does your product work?
+          </div>
+          <div class="phrase" onclick="sendToChatbot(this.textContent)">
+            Tell me about your features
+          </div>
+          <div class="phrase" onclick="sendToChatbot(this.textContent)">
+            Do you have integrations?
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>✨ New Features Implemented</h3>
+        <ul class="feature-list">
+          <li>AI-powered booking intent detection in chat responses</li>
+          <li>Inline calendar rendering within chat messages</li>
+          <li>Real-time availability checking</li>
+          <li>One-click time slot booking</li>
+          <li>Booking confirmation with confirmation numbers</li>
+          <li>Seamless integration with existing chatbot widget</li>
+          <li>No separate booking widget needed - everything in chat</li>
+        </ul>
+      </div>
+
+      <div class="section">
+        <h3>🔧 Technical Implementation</h3>
+        <p>The booking system integrates with your existing chatbot by:</p>
+        <ul>
+          <li>
+            <strong>Chat API Enhancement:</strong> Added booking detection to
+            /api/chat route
+          </li>
+          <li>
+            <strong>Widget Enhancement:</strong> Added calendar rendering in
+            chat messages
+          </li>
+          <li>
+            <strong>Booking API:</strong> Enhanced /api/booking with calendar
+            validation
+          </li>
+          <li>
+            <strong>Smart Detection:</strong> AI analyzes messages for booking
+            intent
+          </li>
+          <li>
+            <strong>Calendar Integration:</strong> Real availability checking
+            and conflict prevention
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Chatbot Widget Script -->
+    <script>
+      // Function to simulate clicking on the chatbot
+      function sendToChatbot(message) {
+        // First, ensure the chatbot is open
+        const toggleButton = document.querySelector("[data-appointy-widget]");
+        if (toggleButton) {
+          // If widget isn't open, open it first
+          const widget = document.getElementById("appointy-widget");
+          if (!widget || widget.style.display === "none") {
+            toggleButton.click();
+          }
+
+          // Wait a moment for widget to open, then send message
+          setTimeout(() => {
+            const input = document.getElementById("appointy-input");
+            if (input) {
+              input.value = message;
+              input.focus();
+
+              // Trigger send - look for send button or enter key event
+              const sendButton =
+                document.querySelector(
+                  '#appointy-widget button[type="submit"]'
+                ) || document.querySelector("#appointy-widget .send-button");
+              if (sendButton) {
+                sendButton.click();
+              } else {
+                // Fallback: trigger enter key
+                const enterEvent = new KeyboardEvent("keydown", {
+                  key: "Enter",
+                  code: "Enter",
+                  keyCode: 13,
+                  which: 13,
+                  bubbles: true,
+                });
+                input.dispatchEvent(enterEvent);
+              }
+            }
+          }, 500);
+        } else {
+          alert("Please wait for the chatbot widget to load, then try again.");
+        }
+      }
+
+      // Load the chatbot widget
+      (function () {
+        const script = document.createElement("script");
+        script.src = "http://localhost:3000/api/widget";
+        script.setAttribute("data-api-key", "test-api-key-123");
+        script.setAttribute("data-theme", "blue");
+        script.setAttribute("data-size", "large");
+        script.setAttribute("data-voice-enabled", "true");
+        script.setAttribute("data-voice-gender", "female");
+        script.setAttribute("data-auto-open", "false");
+        document.head.appendChild(script);
+      })();
+    </script>
+  </body>
+</html>

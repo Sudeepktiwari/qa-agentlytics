@@ -441,6 +441,181 @@ export async function GET(request: Request) {
       }, 1000);
     });
   }
+
+  // Load and render booking calendar
+  async function loadBookingCalendar(container, loadingDiv, bookingType) {
+    try {
+      console.log("📅 [WIDGET CALENDAR] Loading calendar for:", bookingType);
+      
+      // Fetch available time slots
+      const response = await fetch(\`\${CHATBOT_API_BASE}/api/calendar/availability\`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': API_KEY
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch availability');
+      }
+      
+      const data = await response.json();
+      const availableSlots = data.availableSlots || [];
+      
+      // Hide loading and show calendar
+      loadingDiv.style.display = 'none';
+      container.style.display = 'block';
+      
+      if (availableSlots.length === 0) {
+        container.innerHTML = '<div style="text-align: center; padding: 20px; color: #666;">No available slots found. Please contact us directly.</div>';
+        return;
+      }
+      
+      // Group slots by date
+      const slotsByDate = {};
+      availableSlots.forEach(slot => {
+        const date = new Date(slot.startTime).toDateString();
+        if (!slotsByDate[date]) {
+          slotsByDate[date] = [];
+        }
+        slotsByDate[date].push(slot);
+      });
+      
+      // Render calendar
+      container.innerHTML = '';
+      Object.entries(slotsByDate).forEach(([date, slots]) => {
+        // Date header
+        const dateHeader = document.createElement('div');
+        dateHeader.style.cssText = 'font-weight: 600; margin: 16px 0 8px 0; color: #333; border-bottom: 1px solid #eee; padding-bottom: 4px;';
+        dateHeader.textContent = new Date(date).toLocaleDateString('en-US', { 
+          weekday: 'long', 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        });
+        container.appendChild(dateHeader);
+        
+        // Time slots
+        const slotsContainer = document.createElement('div');
+        slotsContainer.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin-bottom: 16px;';
+        
+        slots.forEach(slot => {
+          const timeButton = document.createElement('button');
+          const timeStr = new Date(slot.startTime).toLocaleTimeString('en-US', { 
+            hour: 'numeric', 
+            minute: '2-digit',
+            hour12: true 
+          });
+          
+          timeButton.textContent = timeStr;
+          timeButton.style.cssText = \`
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 13px;
+            color: #495057;
+            text-align: center;
+          \`;
+          
+          timeButton.addEventListener('mouseenter', () => {
+            timeButton.style.background = \`\${currentTheme.primary}\`;
+            timeButton.style.color = 'white';
+            timeButton.style.borderColor = \`\${currentTheme.primary}\`;
+          });
+          
+          timeButton.addEventListener('mouseleave', () => {
+            timeButton.style.background = '#f8f9fa';
+            timeButton.style.color = '#495057';
+            timeButton.style.borderColor = '#dee2e6';
+          });
+          
+          timeButton.addEventListener('click', () => {
+            handleBookingSelection(slot, bookingType);
+          });
+          
+          slotsContainer.appendChild(timeButton);
+        });
+        
+        container.appendChild(slotsContainer);
+      });
+      
+    } catch (error) {
+      console.error('❌ [WIDGET CALENDAR] Failed to load calendar:', error);
+      loadingDiv.innerHTML = '<div style="text-align: center; color: #dc3545;">Failed to load calendar. Please try again.</div>';
+    }
+  }
+
+  // Handle booking time selection
+  async function handleBookingSelection(slot, bookingType) {
+    try {
+      console.log("📅 [WIDGET BOOKING] Selected slot:", slot);
+      
+      // Show loading state
+      const loadingDiv = document.createElement('div');
+      loadingDiv.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000; color: white;';
+      loadingDiv.innerHTML = '<div style="background: white; padding: 20px; border-radius: 8px; color: #333; text-align: center;"><div style="margin-bottom: 8px;">📅</div>Booking your slot...</div>';
+      document.body.appendChild(loadingDiv);
+      
+      // Submit booking
+      const response = await fetch(\`\${CHATBOT_API_BASE}/api/booking\`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-Key': API_KEY
+        },
+        body: JSON.stringify({
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+          bookingType: bookingType,
+          sessionId: sessionId,
+          pageUrl: currentPageUrl
+        })
+      });
+      
+      document.body.removeChild(loadingDiv);
+      
+      if (response.ok) {
+        const result = await response.json();
+        console.log("✅ [WIDGET BOOKING] Booking successful:", result);
+        
+        // Add success message to chat
+        const successMessage = {
+          role: 'assistant',
+          content: \`Perfect! Your \${bookingType} is booked for \${new Date(slot.startTime).toLocaleString()}. Confirmation: \${result.confirmationNumber || 'Pending'}\`,
+          timestamp: new Date().toISOString()
+        };
+        messages.push(successMessage);
+        renderMessages();
+        
+        // Speak confirmation if voice enabled
+        if (config.voiceEnabled && speechAllowed) {
+          setTimeout(() => {
+            speakText(successMessage.content, false);
+          }, 500);
+        }
+        
+      } else {
+        const error = await response.json();
+        throw new Error(error.message || 'Booking failed');
+      }
+      
+    } catch (error) {
+      console.error('❌ [WIDGET BOOKING] Booking failed:', error);
+      
+      // Add error message to chat
+      const errorMessage = {
+        role: 'assistant',
+        content: \`I'm sorry, there was an issue booking that time slot. Please try a different time or contact us directly.\`,
+        timestamp: new Date().toISOString()
+      };
+      messages.push(errorMessage);
+      renderMessages();
+    }
+  }
   
   // Send proactive message with voice and auto-opening
   function sendProactiveMessage(text, buttons = [], emailPrompt = '') {
@@ -2321,7 +2496,9 @@ export async function GET(request: Request) {
           role: 'assistant',
           content: data.mainText,
           buttons: data.buttons || [],
-          emailPrompt: data.emailPrompt || ''
+          emailPrompt: data.emailPrompt || '',
+          showBookingCalendar: data.showBookingCalendar || false,
+          bookingType: data.bookingType || null
         };
         messages.push(botMessage);
         renderMessages();
@@ -2401,12 +2578,16 @@ export async function GET(request: Request) {
       console.log("Main Text:", data.mainText || data.answer || 'I received your message.');
       console.log("Buttons:", data.buttons || []);
       console.log("Email Prompt:", data.emailPrompt || '');
+      console.log("Show Booking Calendar:", data.showBookingCalendar || false);
+      console.log("Booking Type:", data.bookingType || 'none');
       
       const botMessage = {
         role: 'assistant',
         content: data.mainText || data.answer || 'I received your message.',
         buttons: data.buttons || [],
-        emailPrompt: data.emailPrompt || ''
+        emailPrompt: data.emailPrompt || '',
+        showBookingCalendar: data.showBookingCalendar || false,
+        bookingType: data.bookingType || null
       };
       messages.push(botMessage);
       botResponse = botMessage.content;
@@ -2732,7 +2913,37 @@ export async function GET(request: Request) {
           emailDiv.appendChild(emailForm);
           bubbleDiv.appendChild(emailDiv);
         }
-        
+
+        // Add booking calendar if present
+        if (msg.showBookingCalendar && msg.bookingType) {
+          console.log("📅 [WIDGET RENDER] Rendering booking calendar for:", msg.bookingType);
+          const calendarDiv = document.createElement('div');
+          calendarDiv.style.cssText = 'margin-top: 12px; background: white; border-radius: 8px; padding: 16px; color: #333;';
+          
+          // Calendar header
+          const calendarHeader = document.createElement('div');
+          calendarHeader.style.cssText = 'text-align: center; margin-bottom: 16px; font-weight: 600; color: #333;';
+          calendarHeader.textContent = \`Schedule Your \${msg.bookingType.charAt(0).toUpperCase() + msg.bookingType.slice(1)}\`;
+          calendarDiv.appendChild(calendarHeader);
+          
+          // Loading state
+          const loadingDiv = document.createElement('div');
+          loadingDiv.style.cssText = 'text-align: center; padding: 20px; color: #666;';
+          loadingDiv.innerHTML = '<div style="margin-bottom: 8px;">📅</div>Loading available times...';
+          calendarDiv.appendChild(loadingDiv);
+          
+          // Add calendar container
+          const calendarContainer = document.createElement('div');
+          calendarContainer.id = \`booking-calendar-\${Date.now()}\`;
+          calendarContainer.style.cssText = 'display: none;';
+          calendarDiv.appendChild(calendarContainer);
+          
+          bubbleDiv.appendChild(calendarDiv);
+          
+          // Load calendar data
+          setTimeout(() => loadBookingCalendar(calendarContainer, loadingDiv, msg.bookingType), 500);
+        }
+
         messageDiv.appendChild(bubbleDiv);
       }
       

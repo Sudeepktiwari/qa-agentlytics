@@ -9,6 +9,7 @@ import { chunkText } from "@/lib/chunkText";
 import { addChunks } from "@/lib/chroma";
 import { verifyApiKey } from "@/lib/auth";
 import { createOrUpdateLead } from "@/lib/leads";
+import { enhanceChatWithBookingDetection } from "@/services/bookingDetection";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -3298,8 +3299,35 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
 
   // Add bot mode information to the response
   const botMode = userEmail ? "sales" : "lead_generation";
+
+  // Check for booking detection and enhance response if needed
+  let enhancedResponse = parsed;
+  try {
+    const bookingEnhancement = await enhanceChatWithBookingDetection(
+      question || "",
+      [], // conversation history - could be enhanced later
+      `Page URL: ${pageUrl || "unknown"}`
+    );
+
+    if (bookingEnhancement.chatResponse.showBookingCalendar) {
+      console.log(
+        "[Chat API] Booking detected - enhancing response with calendar"
+      );
+      enhancedResponse = {
+        ...parsed,
+        showBookingCalendar: true,
+        bookingType: bookingEnhancement.chatResponse.bookingType || "demo",
+        // Override mainText with booking-specific response
+        mainText: bookingEnhancement.chatResponse.reply || parsed.mainText,
+      };
+    }
+  } catch (error) {
+    console.warn("[Chat API] Booking detection failed:", error);
+    // Continue with original response if booking detection fails
+  }
+
   const responseWithMode = {
-    ...parsed,
+    ...enhancedResponse,
     botMode,
     userEmail: userEmail || null, // Include for debugging
   };
@@ -3307,7 +3335,9 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
   console.log("[Chat API] Main response:", {
     botMode,
     userEmail: userEmail || null,
-    hasResponse: !!parsed.mainText,
+    hasResponse: !!responseWithMode.mainText,
+    showBookingCalendar: !!responseWithMode.showBookingCalendar,
+    bookingType: responseWithMode.bookingType || null,
     timestamp: new Date().toISOString(),
   });
 
