@@ -545,6 +545,9 @@ export async function GET(request: Request) {
       showBookingCalendar(bubbleDiv, bookingType);
     });
     
+    // Add the button to the form
+    formDiv.appendChild(submitButton);
+    
     bubbleDiv.appendChild(formDiv);
     
     // Focus email input
