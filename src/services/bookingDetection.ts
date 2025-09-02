@@ -13,6 +13,7 @@ import {
   type SafeChatResponse,
   type BookingType,
 } from "@/lib/javascriptSafety";
+import { isFeatureEnabled } from "@/lib/adminSettings";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -22,13 +23,14 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 export async function detectBookingIntent(
   message: string,
   conversationHistory: string[] = [],
-  pageContext?: string
+  pageContext?: string,
+  adminId: string = "default"
 ): Promise<BookingIntentResult> {
   try {
-    // Check if booking detection is enabled (default to enabled if not set)
-    const isEnabled = process.env.ENABLE_BOOKING_DETECTION !== "false";
+    // Check if booking detection is enabled (core feature - always enabled in new system)
+    const isEnabled = await isFeatureEnabled(adminId, 'bookingDetection');
     if (!isEnabled) {
-      console.log("[BookingDetection] Feature disabled via feature flag");
+      console.log("[BookingDetection] Feature disabled via admin settings");
       return {
         hasBookingIntent: false,
         confidence: 0,

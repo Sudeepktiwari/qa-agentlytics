@@ -61,6 +61,7 @@ export async function POST(req: NextRequest) {
       pageContext,
       sessionId,
       mode = "detect", // 'detect', 'generate', or 'enhance'
+      adminId = "default"
     } = body;
 
     // Validate required fields
@@ -89,7 +90,8 @@ export async function POST(req: NextRequest) {
         const bookingIntent = await detectBookingIntent(
           message,
           conversationHistory,
-          pageContext
+          pageContext,
+          adminId
         );
 
         return NextResponse.json(
@@ -107,7 +109,8 @@ export async function POST(req: NextRequest) {
         const intent = await detectBookingIntent(
           message,
           conversationHistory,
-          pageContext
+          pageContext,
+          adminId
         );
 
         const response = await generateBookingResponse(

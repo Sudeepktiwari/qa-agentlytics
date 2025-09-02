@@ -8,6 +8,7 @@ import { bookingService } from "@/services/bookingService";
 import { calendarService } from "@/services/calendarService";
 import { FeatureFlags } from "@/lib/javascriptSafety";
 import { JavaScriptSafetyUtils } from "@/lib/javascriptSafety";
+import { isFeatureEnabled } from "@/lib/adminSettings";
 
 interface BookingSubmission {
   // Calendar selection
@@ -45,16 +46,42 @@ interface BookingValidationResult {
 }
 
 /**
+ * Handle preflight OPTIONS request for CORS
+ */
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+      'Access-Control-Max-Age': '86400',
+    },
+  });
+}
+
+/**
  * POST /api/booking
  * Submit a new booking with calendar validation
  */
 export async function POST(request: NextRequest) {
   try {
-    // Check if booking feature is enabled
-    if (!FeatureFlags.ENABLE_BOOKING_SYSTEM) {
+    // Extract admin ID from request (you may need to adjust this based on your auth system)
+    const adminId = request.headers.get('x-admin-id') || 'default';
+    
+    // Check if booking feature is enabled (core feature - always enabled in new system)
+    const isBookingEnabled = await isFeatureEnabled(adminId, 'bookingDetection');
+    if (!isBookingEnabled) {
       return NextResponse.json(
         { error: "Booking system is currently unavailable" },
-        { status: 503 }
+        { 
+          status: 503,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+          }
+        }
       );
     }
 
@@ -77,7 +104,14 @@ export async function POST(request: NextRequest) {
           error: "Booking validation failed",
           details: validation.errors,
         },
-        { status: 400 }
+        { 
+          status: 400,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+          }
+        }
       );
     }
 
@@ -93,7 +127,14 @@ export async function POST(request: NextRequest) {
           // Include validation warnings if any
           warnings: validation.warnings,
         },
-        { status: 409 } // Conflict
+        { 
+          status: 409,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+          }
+        } // Conflict
       );
     }
 
@@ -123,6 +164,12 @@ export async function POST(request: NextRequest) {
         nextSteps: generateNextSteps(createdBooking),
         warnings: validation.warnings,
       },
+    }, {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+      }
     });
   } catch (error) {
     console.error("❌ Booking submission error:", error);
@@ -141,7 +188,14 @@ export async function POST(request: NextRequest) {
               "The selected time slot was booked by another user. Please select a different time.",
             conflictType: "time_slot_taken",
           },
-          { status: 409 }
+          { 
+            status: 409,
+            headers: {
+              'Access-Control-Allow-Origin': '*',
+              'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+              'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+            }
+          }
         );
       }
     }
@@ -154,7 +208,14 @@ export async function POST(request: NextRequest) {
         message:
           "An error occurred while processing your booking. Please try again.",
       },
-      { status: 500 }
+      { 
+        status: 500,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+        }
+      }
     );
   }
 }
@@ -173,7 +234,14 @@ export async function GET(request: NextRequest) {
     if (!bookingId && !confirmationNumber) {
       return NextResponse.json(
         { error: "Booking ID or confirmation number is required" },
-        { status: 400 }
+        { 
+          status: 400,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+          }
+        }
       );
     }
 
@@ -193,12 +261,26 @@ export async function GET(request: NextRequest) {
     }
 
     if (!booking) {
-      return NextResponse.json({ error: "Booking not found" }, { status: 404 });
+      return NextResponse.json({ error: "Booking not found" }, { 
+        status: 404,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+        }
+      });
     }
 
     // Privacy check - only return booking if email matches (for non-admin requests)
     if (email && booking.email !== email) {
-      return NextResponse.json({ error: "Booking not found" }, { status: 404 });
+      return NextResponse.json({ error: "Booking not found" }, { 
+        status: 404,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+        }
+      });
     }
 
     return NextResponse.json({
@@ -221,6 +303,12 @@ export async function GET(request: NextRequest) {
         createdAt: booking.createdAt,
         updatedAt: booking.updatedAt,
       },
+    }, {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+      }
     });
   } catch (error) {
     console.error("❌ Booking retrieval error:", error);
@@ -230,7 +318,14 @@ export async function GET(request: NextRequest) {
         error:
           error instanceof Error ? error.message : "Failed to retrieve booking",
       },
-      { status: 500 }
+      { 
+        status: 500,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+        }
+      }
     );
   }
 }
