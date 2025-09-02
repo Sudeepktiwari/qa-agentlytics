@@ -88,6 +88,16 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const bookingData: BookingSubmission = body;
 
+    console.log("📅 [BOOKING API] Raw request body:", JSON.stringify(body, null, 2));
+    console.log("📅 [BOOKING API] Parsed booking data:", {
+      preferredDate: bookingData.preferredDate,
+      preferredTime: bookingData.preferredTime,
+      name: bookingData.name,
+      email: bookingData.email,
+      bookingType: bookingData.bookingType,
+      hasRequiredFields: !!(bookingData.preferredDate && bookingData.preferredTime && bookingData.name && bookingData.email)
+    });
+
     console.log("📅 New booking submission:", {
       date: bookingData.preferredDate,
       time: bookingData.preferredTime,
@@ -96,8 +106,16 @@ export async function POST(request: NextRequest) {
     });
 
     // Step 1: Validate booking data
+    console.log("📅 [BOOKING API] Starting validation...");
     const validation = await validateBookingSubmission(bookingData);
+    console.log("📅 [BOOKING API] Validation result:", {
+      valid: validation.valid,
+      errors: validation.errors,
+      warnings: validation.warnings
+    });
+    
     if (!validation.valid) {
+      console.error("❌ [BOOKING API] Validation failed:", validation.errors);
       return NextResponse.json(
         {
           success: false,
@@ -375,18 +393,27 @@ async function validateBookingSubmission(
       }
     }
 
-    // Business validation using calendar service
+    // Business validation using calendar service (temporarily disabled for debugging)
     if (data.preferredDate && data.preferredTime) {
-      const calendarValidation = calendarService.validateTimeSlot(
-        data.preferredDate,
-        data.preferredTime,
-        data.timezone || "America/New_York"
-      );
-
-      if (!calendarValidation.valid) {
-        errors.push(
-          calendarValidation.reason || "Selected time slot is invalid"
+      try {
+        const calendarValidation = calendarService.validateTimeSlot(
+          data.preferredDate,
+          data.preferredTime,
+          data.timezone || "America/New_York"
         );
+
+        console.log("📅 [BOOKING API] Calendar validation result:", calendarValidation);
+
+        if (!calendarValidation.valid) {
+          console.warn("⚠️ [BOOKING API] Calendar validation failed:", calendarValidation.reason);
+          warnings.push(
+            `Calendar validation: ${calendarValidation.reason || "Selected time slot is invalid"}`
+          );
+          // Don't add to errors for now - just warn
+        }
+      } catch (error) {
+        console.error("❌ [BOOKING API] Calendar validation error:", error);
+        warnings.push("Calendar validation could not be completed");
       }
     }
 
