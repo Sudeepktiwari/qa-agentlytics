@@ -620,7 +620,12 @@ export async function GET(request: Request) {
       loadingDiv.innerHTML = '<div style="background: white; padding: 20px; border-radius: 8px; color: #333; text-align: center;"><div style="margin-bottom: 8px;">📅</div>Booking your slot...</div>';
       document.body.appendChild(loadingDiv);
       
-      // Submit booking
+      // Extract date and time from slot
+      const startDate = new Date(slot.startTime);
+      const preferredDate = startDate.toISOString().split('T')[0]; // YYYY-MM-DD
+      const preferredTime = startDate.toTimeString().slice(0, 5); // HH:MM
+      
+      // Submit booking with correct API format
       const response = await fetch(\`\${CHATBOT_API_BASE}/api/booking\`, {
         method: 'POST',
         headers: {
@@ -628,11 +633,16 @@ export async function GET(request: Request) {
           'X-API-Key': API_KEY
         },
         body: JSON.stringify({
-          startTime: slot.startTime,
-          endTime: slot.endTime,
+          preferredDate: preferredDate,
+          preferredTime: preferredTime,
           bookingType: bookingType,
+          name: "Anonymous User", // Default name for widget bookings
+          email: "widget-booking@temp.com", // Temporary email, to be collected later
+          source: "widget",
           sessionId: sessionId,
-          pageUrl: currentPageUrl
+          pageUrl: currentPageUrl,
+          duration: 30, // Default 30 minute duration
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
         })
       });
       
@@ -645,7 +655,7 @@ export async function GET(request: Request) {
         // Add success message to chat
         const successMessage = {
           role: 'assistant',
-          content: \`Perfect! Your \${bookingType} is booked for \${new Date(slot.startTime).toLocaleString()}. Confirmation: \${result.confirmationNumber || 'Pending'}\`,
+          content: \`Perfect! Your \${bookingType} is booked for \${new Date(slot.startTime).toLocaleString()}. Confirmation: \${result.data?.confirmationNumber || 'Pending'}\`,
           timestamp: new Date().toISOString()
         };
         messages.push(successMessage);
@@ -660,16 +670,26 @@ export async function GET(request: Request) {
         
       } else {
         const error = await response.json();
-        throw new Error(error.message || 'Booking failed');
+        console.error('❌ [WIDGET BOOKING] Booking error response:', error);
+        throw new Error(error.error || error.message || 'Booking failed');
       }
       
     } catch (error) {
       console.error('❌ [WIDGET BOOKING] Booking failed:', error);
       
-      // Add error message to chat
+      // Add error message to chat with more specific details
+      let errorText = "I'm sorry, there was an issue booking that time slot.";
+      if (error.message.includes('validation')) {
+        errorText = "Please check your booking details and try again.";
+      } else if (error.message.includes('conflict') || error.message.includes('no longer available')) {
+        errorText = "That time slot is no longer available. Please select a different time.";
+      } else if (error.message.includes('email')) {
+        errorText = "Please provide a valid email address to complete your booking.";
+      }
+      
       const errorMessage = {
         role: 'assistant',
-        content: \`I'm sorry, there was an issue booking that time slot. Please try a different time or contact us directly.\`,
+        content: errorText + " You can also contact us directly for assistance.",
         timestamp: new Date().toISOString()
       };
       messages.push(errorMessage);
