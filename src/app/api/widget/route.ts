@@ -453,8 +453,12 @@ export async function GET(request: Request) {
 
   // Show email collection form before booking
   function showEmailCollectionForm(bubbleDiv, bookingType) {
+    console.log("📧 [EMAIL FORM] Creating email collection form for booking type:", bookingType);
+    
     const formDiv = document.createElement('div');
     formDiv.style.cssText = 'margin-top: 12px; background: white; border-radius: 8px; padding: 20px; color: #333; border: 1px solid #e5e7eb;';
+    
+    console.log("📧 [EMAIL FORM] Form div created with styles");
     
     // Form header
     const formHeader = document.createElement('div');
@@ -464,6 +468,8 @@ export async function GET(request: Request) {
       <div style="font-size: 14px; color: #6b7280; font-weight: normal;">Please provide your details to book an appointment</div>
     \`;
     formDiv.appendChild(formHeader);
+    
+    console.log("📧 [EMAIL FORM] Form header created and added");
     
     // Email input
     const emailDiv = document.createElement('div');
@@ -533,8 +539,13 @@ export async function GET(request: Request) {
       
       // Validate email
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      console.log("📧 [EMAIL FORM] Email regex test result:", emailRegex.test(email));
+      console.log("📧 [EMAIL FORM] Email length check:", email.length > 0);
+      
       if (!email || !emailRegex.test(email)) {
         console.log("❌ [EMAIL FORM] Invalid email:", email);
+        console.log("❌ [EMAIL FORM] Email is empty:", !email);
+        console.log("❌ [EMAIL FORM] Email regex failed:", !emailRegex.test(email));
         emailInput.style.borderColor = '#ef4444';
         emailInput.focus();
         return;
@@ -557,10 +568,18 @@ export async function GET(request: Request) {
     // Add the button to the form
     formDiv.appendChild(submitButton);
     
+    console.log("📧 [EMAIL FORM] Submit button created and added to form");
+    
     bubbleDiv.appendChild(formDiv);
     
+    console.log("📧 [EMAIL FORM] Form added to bubble div");
+    console.log("📧 [EMAIL FORM] Form div innerHTML:", formDiv.innerHTML.substring(0, 200) + "...");
+    
     // Focus email input
-    setTimeout(() => emailInput.focus(), 300);
+    setTimeout(() => {
+      console.log("📧 [EMAIL FORM] Focusing email input");
+      emailInput.focus();
+    }, 300);
   }
   
   // Show booking calendar after email collection
@@ -3199,11 +3218,14 @@ export async function GET(request: Request) {
         
         if (msg.showBookingCalendar && msg.bookingType) {
           console.log("📅 [WIDGET RENDER] ✅ RENDERING BOOKING CALENDAR FOR:", msg.bookingType);
+          console.log("📊 [WIDGET RENDER] Current userBookingData:", userBookingData);
           
           // Check if we have user email already
           if (!userBookingData.email) {
+            console.log("📧 [WIDGET RENDER] No email found, showing email collection form");
             showEmailCollectionForm(bubbleDiv, msg.bookingType);
           } else {
+            console.log("📧 [WIDGET RENDER] Email found, showing booking calendar directly");
             showBookingCalendar(bubbleDiv, msg.bookingType);
           }
         }
