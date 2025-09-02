@@ -218,6 +218,14 @@ export async function GET(request: Request) {
   
   // Enhanced page detection variables
   let currentPageUrl = window.location.href;
+  
+  // User booking data for multi-step booking process
+  let userBookingData = {
+    email: null,
+    name: null,
+    phone: null,
+    company: null
+  };
   let isPageContextLoaded = false;
   let pageChangeCheckInterval = null;
 
@@ -443,6 +451,138 @@ export async function GET(request: Request) {
     });
   }
 
+  // Show email collection form before booking
+  function showEmailCollectionForm(bubbleDiv, bookingType) {
+    const formDiv = document.createElement('div');
+    formDiv.style.cssText = 'margin-top: 12px; background: white; border-radius: 8px; padding: 20px; color: #333; border: 1px solid #e5e7eb;';
+    
+    // Form header
+    const formHeader = document.createElement('div');
+    formHeader.style.cssText = 'text-align: center; margin-bottom: 20px; font-weight: 600; color: #1f2937;';
+    formHeader.innerHTML = \`
+      <div style="font-size: 18px; margin-bottom: 8px;">📅 Schedule Your \${bookingType.charAt(0).toUpperCase() + bookingType.slice(1)}</div>
+      <div style="font-size: 14px; color: #6b7280; font-weight: normal;">Please provide your details to book an appointment</div>
+    \`;
+    formDiv.appendChild(formHeader);
+    
+    // Email input
+    const emailDiv = document.createElement('div');
+    emailDiv.style.cssText = 'margin-bottom: 16px;';
+    
+    const emailLabel = document.createElement('label');
+    emailLabel.style.cssText = 'display: block; margin-bottom: 6px; font-weight: 500; color: #374151; font-size: 13px;';
+    emailLabel.textContent = 'Email Address *';
+    emailDiv.appendChild(emailLabel);
+    
+    const emailInput = document.createElement('input');
+    emailInput.type = 'email';
+    emailInput.placeholder = 'your.email@company.com';
+    emailInput.style.cssText = 'width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; box-sizing: border-box; outline: none;';
+    emailInput.addEventListener('focus', () => {
+      emailInput.style.borderColor = '#0070f3';
+      emailInput.style.boxShadow = '0 0 0 3px rgba(0, 112, 243, 0.1)';
+    });
+    emailInput.addEventListener('blur', () => {
+      emailInput.style.borderColor = '#d1d5db';
+      emailInput.style.boxShadow = 'none';
+    });
+    emailDiv.appendChild(emailInput);
+    formDiv.appendChild(emailDiv);
+    
+    // Name input (optional)
+    const nameDiv = document.createElement('div');
+    nameDiv.style.cssText = 'margin-bottom: 16px;';
+    
+    const nameLabel = document.createElement('label');
+    nameLabel.style.cssText = 'display: block; margin-bottom: 6px; font-weight: 500; color: #374151; font-size: 13px;';
+    nameLabel.textContent = 'Full Name (Optional)';
+    nameDiv.appendChild(nameLabel);
+    
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.placeholder = 'John Doe';
+    nameInput.style.cssText = 'width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; box-sizing: border-box; outline: none;';
+    nameInput.addEventListener('focus', () => {
+      nameInput.style.borderColor = '#0070f3';
+      nameInput.style.boxShadow = '0 0 0 3px rgba(0, 112, 243, 0.1)';
+    });
+    nameInput.addEventListener('blur', () => {
+      nameInput.style.borderColor = '#d1d5db';
+      nameInput.style.boxShadow = 'none';
+    });
+    nameDiv.appendChild(nameInput);
+    formDiv.appendChild(nameDiv);
+    
+    // Submit button
+    const submitButton = document.createElement('button');
+    submitButton.style.cssText = 'width: 100%; background: #0070f3; color: white; border: none; padding: 12px 16px; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; transition: background-color 0.2s;';
+    submitButton.textContent = 'Continue to Calendar';
+    submitButton.addEventListener('mouseenter', () => {
+      submitButton.style.backgroundColor = '#0056b3';
+    });
+    submitButton.addEventListener('mouseleave', () => {
+      submitButton.style.backgroundColor = '#0070f3';
+    });
+    
+    submitButton.addEventListener('click', () => {
+      const email = emailInput.value.trim();
+      const name = nameInput.value.trim();
+      
+      // Validate email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!email || !emailRegex.test(email)) {
+        emailInput.style.borderColor = '#ef4444';
+        emailInput.focus();
+        return;
+      }
+      
+      // Store user data
+      userBookingData.email = email;
+      userBookingData.name = name || 'Anonymous User';
+      
+      // Show success message and calendar
+      formDiv.style.display = 'none';
+      showBookingCalendar(bubbleDiv, bookingType);
+    });
+    
+    bubbleDiv.appendChild(formDiv);
+    
+    // Focus email input
+    setTimeout(() => emailInput.focus(), 300);
+  }
+  
+  // Show booking calendar after email collection
+  function showBookingCalendar(bubbleDiv, bookingType) {
+    const calendarDiv = document.createElement('div');
+    calendarDiv.style.cssText = 'margin-top: 12px; background: white; border-radius: 8px; padding: 16px; color: #333;';
+    
+    // Calendar header with user info
+    const calendarHeader = document.createElement('div');
+    calendarHeader.style.cssText = 'text-align: center; margin-bottom: 16px; font-weight: 600; color: #333;';
+    calendarHeader.innerHTML = \`
+      <div style="font-size: 16px; margin-bottom: 4px;">📅 Schedule Your \${bookingType.charAt(0).toUpperCase() + bookingType.slice(1)}</div>
+      <div style="font-size: 13px; color: #6b7280; font-weight: normal;">Booking for: \${userBookingData.email}</div>
+    \`;
+    calendarDiv.appendChild(calendarHeader);
+    
+    // Loading state
+    const loadingDiv = document.createElement('div');
+    loadingDiv.style.cssText = 'text-align: center; padding: 20px; color: #666;';
+    loadingDiv.innerHTML = '<div style="margin-bottom: 8px;">📅</div>Loading available times...';
+    calendarDiv.appendChild(loadingDiv);
+    
+    // Add calendar container
+    const calendarContainer = document.createElement('div');
+    calendarContainer.id = \`booking-calendar-\${Date.now()}\`;
+    calendarContainer.style.cssText = 'display: none;';
+    calendarDiv.appendChild(calendarContainer);
+    
+    bubbleDiv.appendChild(calendarDiv);
+    
+    // Load calendar data
+    setTimeout(() => loadBookingCalendar(calendarContainer, loadingDiv, bookingType), 500);
+  }
+
   // Load and render booking calendar with enhanced UI
   async function loadBookingCalendar(container, loadingDiv, bookingType) {
     try {
@@ -614,6 +754,13 @@ export async function GET(request: Request) {
     try {
       console.log("📅 [WIDGET BOOKING] Selected slot:", slot);
       
+      // Validate that user email is collected
+      if (!userBookingData.email) {
+        console.error("❌ [WIDGET BOOKING] No email collected");
+        alert("Please provide your email address first to book an appointment.");
+        return;
+      }
+      
       // Show loading state
       const loadingDiv = document.createElement('div');
       loadingDiv.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000; color: white;';
@@ -625,7 +772,7 @@ export async function GET(request: Request) {
       const preferredDate = startDate.toISOString().split('T')[0]; // YYYY-MM-DD
       const preferredTime = startDate.toTimeString().slice(0, 5); // HH:MM
       
-      // Submit booking with correct API format
+      // Submit booking with collected user data
       const response = await fetch(\`\${CHATBOT_API_BASE}/api/booking\`, {
         method: 'POST',
         headers: {
@@ -636,8 +783,10 @@ export async function GET(request: Request) {
           preferredDate: preferredDate,
           preferredTime: preferredTime,
           bookingType: bookingType,
-          name: "Anonymous User", // Default name for widget bookings
-          email: "widget-booking@temp.com", // Temporary email, to be collected later
+          name: userBookingData.name || "Anonymous User",
+          email: userBookingData.email,
+          phone: userBookingData.phone || "",
+          company: userBookingData.company || "",
           source: "widget",
           sessionId: sessionId,
           pageUrl: currentPageUrl,
@@ -652,10 +801,10 @@ export async function GET(request: Request) {
         const result = await response.json();
         console.log("✅ [WIDGET BOOKING] Booking successful:", result);
         
-        // Add success message to chat
+        // Add success message to chat with user details
         const successMessage = {
           role: 'assistant',
-          content: \`Perfect! Your \${bookingType} is booked for \${new Date(slot.startTime).toLocaleString()}. Confirmation: \${result.data?.confirmationNumber || 'Pending'}\`,
+          content: \`Perfect! \${userBookingData.name}, your \${bookingType} is booked for \${new Date(slot.startTime).toLocaleString()}. A confirmation email will be sent to \${userBookingData.email}. Confirmation: \${result.data?.confirmationNumber || 'Pending'}\`,
           timestamp: new Date().toISOString()
         };
         messages.push(successMessage);
@@ -3026,31 +3175,13 @@ export async function GET(request: Request) {
         
         if (msg.showBookingCalendar && msg.bookingType) {
           console.log("📅 [WIDGET RENDER] ✅ RENDERING BOOKING CALENDAR FOR:", msg.bookingType);
-          const calendarDiv = document.createElement('div');
-          calendarDiv.style.cssText = 'margin-top: 12px; background: white; border-radius: 8px; padding: 16px; color: #333;';
           
-          // Calendar header
-          const calendarHeader = document.createElement('div');
-          calendarHeader.style.cssText = 'text-align: center; margin-bottom: 16px; font-weight: 600; color: #333;';
-          calendarHeader.textContent = \`Schedule Your \${msg.bookingType.charAt(0).toUpperCase() + msg.bookingType.slice(1)}\`;
-          calendarDiv.appendChild(calendarHeader);
-          
-          // Loading state
-          const loadingDiv = document.createElement('div');
-          loadingDiv.style.cssText = 'text-align: center; padding: 20px; color: #666;';
-          loadingDiv.innerHTML = '<div style="margin-bottom: 8px;">📅</div>Loading available times...';
-          calendarDiv.appendChild(loadingDiv);
-          
-          // Add calendar container
-          const calendarContainer = document.createElement('div');
-          calendarContainer.id = \`booking-calendar-\${Date.now()}\`;
-          calendarContainer.style.cssText = 'display: none;';
-          calendarDiv.appendChild(calendarContainer);
-          
-          bubbleDiv.appendChild(calendarDiv);
-          
-          // Load calendar data
-          setTimeout(() => loadBookingCalendar(calendarContainer, loadingDiv, msg.bookingType), 500);
+          // Check if we have user email already
+          if (!userBookingData.email) {
+            showEmailCollectionForm(bubbleDiv, msg.bookingType);
+          } else {
+            showBookingCalendar(bubbleDiv, msg.bookingType);
+          }
         }
 
         messageDiv.appendChild(bubbleDiv);
