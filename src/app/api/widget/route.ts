@@ -525,22 +525,31 @@ export async function GET(request: Request) {
     });
     
     submitButton.addEventListener('click', () => {
+      console.log("🔄 [EMAIL FORM] Continue button clicked");
       const email = emailInput.value.trim();
       const name = nameInput.value.trim();
+      
+      console.log("📧 [EMAIL FORM] Collected data:", { email, name });
       
       // Validate email
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!email || !emailRegex.test(email)) {
+        console.log("❌ [EMAIL FORM] Invalid email:", email);
         emailInput.style.borderColor = '#ef4444';
         emailInput.focus();
         return;
       }
       
+      console.log("✅ [EMAIL FORM] Email validated, storing data");
+      
       // Store user data
       userBookingData.email = email;
       userBookingData.name = name || 'Anonymous User';
       
+      console.log("📊 [EMAIL FORM] User data stored:", userBookingData);
+      
       // Show success message and calendar
+      console.log("🔄 [EMAIL FORM] Hiding form and showing calendar");
       formDiv.style.display = 'none';
       showBookingCalendar(bubbleDiv, bookingType);
     });
@@ -556,6 +565,9 @@ export async function GET(request: Request) {
   
   // Show booking calendar after email collection
   function showBookingCalendar(bubbleDiv, bookingType) {
+    console.log("📅 [BOOKING CALENDAR] Starting to show calendar for:", bookingType);
+    console.log("📊 [BOOKING CALENDAR] Current user data:", userBookingData);
+    
     const calendarDiv = document.createElement('div');
     calendarDiv.style.cssText = 'margin-top: 12px; background: white; border-radius: 8px; padding: 16px; color: #333;';
     
@@ -568,11 +580,15 @@ export async function GET(request: Request) {
     \`;
     calendarDiv.appendChild(calendarHeader);
     
+    console.log("📅 [BOOKING CALENDAR] Calendar header created");
+    
     // Loading state
     const loadingDiv = document.createElement('div');
     loadingDiv.style.cssText = 'text-align: center; padding: 20px; color: #666;';
     loadingDiv.innerHTML = '<div style="margin-bottom: 8px;">📅</div>Loading available times...';
     calendarDiv.appendChild(loadingDiv);
+    
+    console.log("📅 [BOOKING CALENDAR] Loading state created");
     
     // Add calendar container
     const calendarContainer = document.createElement('div');
@@ -580,9 +596,14 @@ export async function GET(request: Request) {
     calendarContainer.style.cssText = 'display: none;';
     calendarDiv.appendChild(calendarContainer);
     
+    console.log("📅 [BOOKING CALENDAR] Calendar container created");
+    
     bubbleDiv.appendChild(calendarDiv);
     
+    console.log("📅 [BOOKING CALENDAR] Calendar div added to bubble");
+    
     // Load calendar data
+    console.log("📅 [BOOKING CALENDAR] Starting to load calendar data in 500ms");
     setTimeout(() => loadBookingCalendar(calendarContainer, loadingDiv, bookingType), 500);
   }
 
