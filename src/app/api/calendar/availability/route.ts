@@ -1,12 +1,25 @@
 /**
  * Calendar API for booking availability management
- * Provides endpoints for calendar display, availability checking, and time slot management
+ * Provides endpoints for calendar display, availability checking, and timexport async function GET(request: NextRequest) {
+  try {
+    // Extract admin ID from request
+    const apiKey = request.headers.get("x-api-key");
+    const adminId = extractAdminId(apiKey || undefined, request);
+    
+    // Check if calendar widget is enabled for this admin
+    const calendarEnabled = await isFeatureEnabled(adminId, "calendarWidget");
+    if (!calendarEnabled) {
+      return NextResponse.json(
+        { error: "Calendar widget is not enabled for this admin" },
+        { status: 503, headers: corsHeaders }
+      );
+    }anagement
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { bookingService } from "@/services/bookingService";
 import { calendarService } from "@/services/calendarService";
-import { FeatureFlags } from "@/lib/javascriptSafety";
+import { extractAdminId, isFeatureEnabled } from "@/lib/adminSettings";
 
 // CORS headers for cross-origin requests
 const corsHeaders = {
@@ -67,10 +80,15 @@ interface CalendarResponse {
  */
 export async function GET(request: NextRequest) {
   try {
-    // Check if calendar widget is enabled
-    if (!FeatureFlags.ENABLE_CALENDAR_WIDGET) {
+    // Extract admin ID from request headers
+    const apiKey = request.headers.get("x-api-key");
+    const requestAdminId = extractAdminId(apiKey || undefined, request);
+    
+    // Check if calendar widget is enabled for this admin
+    const calendarEnabled = await isFeatureEnabled(requestAdminId, "calendarWidget");
+    if (!calendarEnabled) {
       return NextResponse.json(
-        { error: "Calendar widget is not enabled" },
+        { error: "Calendar widget is not enabled for this admin" },
         { status: 503, headers: corsHeaders }
       );
     }
@@ -130,9 +148,15 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    if (!FeatureFlags.ENABLE_CALENDAR_WIDGET) {
+    // Extract admin ID from request
+    const apiKey = request.headers.get("x-api-key");
+    const requestAdminId = extractAdminId(apiKey || undefined, request);
+    
+    // Check if calendar widget is enabled for this admin
+    const calendarEnabled = await isFeatureEnabled(requestAdminId, "calendarWidget");
+    if (!calendarEnabled) {
       return NextResponse.json(
-        { error: "Calendar widget is not enabled" },
+        { error: "Calendar widget is not enabled for this admin" },
         { status: 503, headers: corsHeaders }
       );
     }

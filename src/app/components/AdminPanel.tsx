@@ -16,6 +16,7 @@ import CrawledPagesSection from "./admin/CrawledPagesSection";
 import CustomerPersonaSection from "./admin/CustomerPersonaSection";
 import CustomerProfilesSection from "./admin/CustomerProfilesSection";
 import BookingManagementSection from "./admin/BookingManagementSection";
+import { AdminSettingsSection } from "./admin/AdminSettingsSection";
 import SummaryModal from "./admin/SummaryModal";
 
 const AdminPanel: React.FC = () => {
@@ -846,6 +847,34 @@ const AdminPanel: React.FC = () => {
           <CustomerProfilesSection />
 
           <BookingManagementSection adminId={auth?.adminId} />
+
+          {/* Admin Settings Section */}
+          <div
+            style={{
+              background: "rgba(255, 255, 255, 0.95)",
+              backdropFilter: "blur(10px)",
+              borderRadius: "20px",
+              padding: "24px",
+              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
+              border: "1px solid rgba(255, 255, 255, 0.2)",
+              marginBottom: "24px",
+            }}
+          >
+            <h3
+              style={{
+                margin: "0 0 16px 0",
+                fontSize: "20px",
+                fontWeight: "700",
+                color: "#2d3748",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+              }}
+            >
+              ⚙️ Admin Settings & Feature Flags
+            </h3>
+            <AdminSettingsSection />
+          </div>
 
           <TestingSection
             auth={auth}
