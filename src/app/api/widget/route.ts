@@ -975,7 +975,7 @@ export async function GET(request: Request) {
   let isScrolling = false;
   let scrollTimeout;
   let lastScrollTime = 0;
-  let scrollStopDelay = 15000; // 15 seconds delay after scrolling stops
+  let scrollStopDelay = 60000; // 60 seconds (1 minute) delay after scrolling stops
   let lastScrollPosition = 0;
   
   // Setup smart scroll detection
@@ -1361,11 +1361,11 @@ export async function GET(request: Request) {
         const buttons = data.buttons || [];
         const emailPrompt = data.emailPrompt || '';
         
-        console.log('🎯 [WIDGET SCROLL] Received scroll-based response, adding 15-second delay before displaying');
+        console.log('🎯 [WIDGET SCROLL] Received scroll-based response, adding 60-second delay before displaying');
         
-        // Add 15-second delay before displaying the response
+        // Add 60-second delay before displaying the response
         setTimeout(() => {
-          console.log('🎯 [WIDGET SCROLL] 15-second delay complete, now displaying message');
+          console.log('🎯 [WIDGET SCROLL] 60-second delay complete, now displaying message');
           
           // Create structured contextual question data
           const contextualQuestionData = {
@@ -1381,10 +1381,10 @@ export async function GET(request: Request) {
           
           // Start auto-response timer for contextual questions
           if (buttons && buttons.length > 0) {
-            console.log('🕐 [WIDGET AUTO] Starting 15-second auto-response timer for contextual question');
+            console.log('🕐 [WIDGET AUTO] Starting 60-second auto-response timer for contextual question');
             startAutoResponseTimer(contextualQuestionData);
           }
-        }, 15000); // 15-second delay before displaying the response
+        }, 60000); // 60-second delay before displaying the response
       }
     } catch (error) {
       console.error('❌ [WIDGET SCROLL] Failed to send scroll-based question:', error);
@@ -1837,7 +1837,7 @@ export async function GET(request: Request) {
         if (!userIsActive && currentViewportSection === sectionName) {
           sendContextualQuestion(selectedQuestion, sectionData);
         }
-      }, 15000); // Wait 15 seconds
+      }, 60000); // Wait 60 seconds (1 minute)
     }
   }
   
@@ -2325,7 +2325,7 @@ export async function GET(request: Request) {
   }
   
   function startAutoResponseTimer(contextualQuestion) {
-    console.log('[Widget] Starting auto-response timer for 15 seconds');
+    console.log('[Widget] Starting auto-response timer for 60 seconds');
     clearAutoResponseTimer();
     
     // Store the contextual question for auto-response
@@ -2335,7 +2335,7 @@ export async function GET(request: Request) {
     autoResponseTimer = setTimeout(async () => {
       console.log('[Widget] Auto-response timer triggered - user did not respond');
       await generateAutoResponse();
-    }, 15000); // 15 seconds
+    }, 60000); // 60 seconds (1 minute)
   }
   
   async function generateAutoResponse() {
@@ -2403,8 +2403,8 @@ export async function GET(request: Request) {
           underLimit: followupCount < 3
         });
       }
-    }, 30000); // 30 seconds
-    console.log('[Widget] Followup timer set for 30 seconds');
+    }, 120000); // 120 seconds (2 minutes)
+    console.log('[Widget] Followup timer set for 2 minutes');
   }
   
   // Send API request

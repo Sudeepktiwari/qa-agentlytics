@@ -281,13 +281,13 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
               setFollowupCount(0);
               setUserIsActive(false);
               setLastUserAction(Date.now());
-              console.log("[Chatbot] Setting follow-up timer for 30 seconds");
+              console.log("[Chatbot] Setting follow-up timer for 2 minutes");
               followupTimer.current = setTimeout(() => {
                 console.log(
                   "[Chatbot] Follow-up timer triggered, setting followupSent to true"
                 );
                 setFollowupSent(true);
-              }, 30000);
+              }, 120000); // 120 seconds (2 minutes)
             })
             .catch((error) => {
               console.error(
@@ -359,14 +359,14 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
             setFollowupCount(0); // Reset followup count for new URL
             setUserIsActive(false); // Reset user activity
             setLastUserAction(Date.now());
-            console.log("[Chatbot] Setting follow-up timer for 30 seconds");
+            console.log("[Chatbot] Setting follow-up timer for 2 minutes");
             followupTimer.current = setTimeout(() => {
               // Only send follow-up if user hasn't responded
               console.log(
                 "[Chatbot] Follow-up timer triggered, setting followupSent to true"
               );
               setFollowupSent(true);
-            }, 30000); // 30 seconds
+            }, 120000); // 120 seconds (2 minutes)
           });
       });
     // Cleanup timer on unmount

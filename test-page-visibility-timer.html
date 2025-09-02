@@ -177,7 +177,7 @@
         </div>
 
         <button class="test-button" onclick="startFollowupTimer()">
-          Start Followup Timer (30s)
+          Start Followup Timer (2min)
         </button>
         <button class="test-button" onclick="simulateUserReturn()">
           Simulate User Return
@@ -324,15 +324,15 @@
           clearTimeout(followupTimer);
         }
 
-        log("🚀 Starting 30-second followup timer...");
+        log("🚀 Starting 2-minute followup timer...");
         lastActivityTime = Date.now();
 
         followupTimer = setTimeout(() => {
-          log("⏰ NORMAL FOLLOWUP TRIGGERED after 30 seconds");
+          log("⏰ NORMAL FOLLOWUP TRIGGERED after 2 minutes");
           alert("⏰ Normal Followup: Need any help with what you're viewing?");
           followupTimer = null;
           updateStatus();
-        }, 30000);
+        }, 120000); // 120 seconds (2 minutes)
 
         updateStatus();
       }
