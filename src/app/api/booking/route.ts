@@ -54,7 +54,7 @@ export async function OPTIONS() {
     headers: {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, x-api-key, X-Admin-Id',
       'Access-Control-Max-Age': '86400',
     },
   });
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
           headers: {
             'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, x-api-key, X-Admin-Id',
           }
         }
       );
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
           headers: {
             'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, x-api-key, X-Admin-Id',
           }
         }
       );
@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
           headers: {
             'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, x-api-key, X-Admin-Id',
           }
         } // Conflict
       );
@@ -168,7 +168,7 @@ export async function POST(request: NextRequest) {
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, x-api-key, X-Admin-Id',
       }
     });
   } catch (error) {
@@ -193,7 +193,7 @@ export async function POST(request: NextRequest) {
             headers: {
               'Access-Control-Allow-Origin': '*',
               'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-              'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+              'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, x-api-key, X-Admin-Id',
             }
           }
         );
@@ -213,7 +213,7 @@ export async function POST(request: NextRequest) {
         headers: {
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, x-api-key, X-Admin-Id',
         }
       }
     );
@@ -239,7 +239,7 @@ export async function GET(request: NextRequest) {
           headers: {
             'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, x-api-key, X-Admin-Id',
           }
         }
       );
@@ -266,7 +266,7 @@ export async function GET(request: NextRequest) {
         headers: {
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, x-api-key, X-Admin-Id',
         }
       });
     }
@@ -278,7 +278,7 @@ export async function GET(request: NextRequest) {
         headers: {
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, x-api-key, X-Admin-Id',
         }
       });
     }
@@ -307,7 +307,7 @@ export async function GET(request: NextRequest) {
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, x-api-key, X-Admin-Id',
       }
     });
   } catch (error) {
@@ -323,7 +323,7 @@ export async function GET(request: NextRequest) {
         headers: {
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, x-api-key, X-Admin-Id',
         }
       }
     );
