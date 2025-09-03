@@ -537,12 +537,36 @@ export async function GET(request: Request) {
       
       console.log("📧 [EMAIL FORM] Collected data:", { email, name });
       
-      // Validate email
+      // Validate email with detailed debugging
+      // Using a simpler but robust email regex pattern
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      console.log("📧 [EMAIL FORM] Email string:", JSON.stringify(email));
+      console.log("📧 [EMAIL FORM] Email character codes:", email.split('').map(c => c.charCodeAt(0)));
+      console.log("📧 [EMAIL FORM] Email regex pattern:", emailRegex.toString());
       console.log("📧 [EMAIL FORM] Email regex test result:", emailRegex.test(email));
       console.log("📧 [EMAIL FORM] Email length check:", email.length > 0);
       
-      if (!email || !emailRegex.test(email)) {
+      // Test with a known working email for comparison
+      const testEmail = "test@example.com";
+      console.log("📧 [EMAIL FORM] Test email regex result:", emailRegex.test(testEmail));
+      
+      // Additional validation: check for basic email structure manually
+      const hasAtSymbol = email.includes('@');
+      const atIndex = email.indexOf('@');
+      const hasDot = email.includes('.');
+      const dotIndex = email.lastIndexOf('.');
+      
+      console.log("📧 [EMAIL FORM] Manual checks:");
+      console.log("  - Has @ symbol:", hasAtSymbol);
+      console.log("  - @ index:", atIndex);
+      console.log("  - Has dot:", hasDot);
+      console.log("  - Dot index:", dotIndex);
+      console.log("  - Valid structure:", hasAtSymbol && atIndex > 0 && hasDot && dotIndex > atIndex);
+      
+      // Use a more permissive validation for now
+      const isValidEmail = email && hasAtSymbol && atIndex > 0 && hasDot && dotIndex > atIndex && email.length > 5;
+      
+      if (!isValidEmail) {
         console.log("❌ [EMAIL FORM] Invalid email:", email);
         console.log("❌ [EMAIL FORM] Email is empty:", !email);
         console.log("❌ [EMAIL FORM] Email regex failed:", !emailRegex.test(email));
