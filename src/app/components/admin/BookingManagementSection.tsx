@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { BookingRequest } from "@/types/booking";
-import { getAuthHeaders, getCurrentAdminId } from "@/lib/auth";
+import React, { useState, useEffect } from 'react';
+import { BookingRequest } from '@/types/booking';
+import { formatDateTime } from '@/utils/dateUtils';
+import { getAuthHeaders, getCurrentAdminId } from "@/lib/auth-client";
 
 interface DashboardStats {
   total: number;
