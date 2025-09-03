@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { bookingService } from "@/services/bookingService";
+import { verifyAdminAccess } from "@/lib/auth";
 
 /**
  * Admin API for managing bookings
@@ -10,7 +11,16 @@ import { bookingService } from "@/services/bookingService";
 
 export async function GET(request: NextRequest) {
   try {
-    // Admin interface is always enabled (core feature)
+    // Verify admin authentication and get adminId
+    const authResult = verifyAdminAccess(request);
+    if (!authResult.isValid) {
+      return NextResponse.json(
+        { error: authResult.error || "Authentication required" },
+        { status: 401 }
+      );
+    }
+
+    const authenticatedAdminId = authResult.adminId!;
 
     const { searchParams } = new URL(request.url);
 
@@ -20,8 +30,11 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status") as any;
     const requestType = searchParams.get("requestType") as any;
     const priority = searchParams.get("priority") as any;
-    const adminId = searchParams.get("adminId") || undefined;
     const searchTerm = searchParams.get("search") || undefined;
+
+    // SECURITY: Force adminId to be the authenticated admin's ID
+    // This ensures admins can only see their own bookings
+    const adminId = authenticatedAdminId;
 
     // Date range filtering
     const startDate = searchParams.get("startDate");
@@ -78,7 +91,16 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    // Admin interface is always enabled (core feature)
+    // Verify admin authentication
+    const authResult = verifyAdminAccess(request);
+    if (!authResult.isValid) {
+      return NextResponse.json(
+        { error: authResult.error || "Authentication required" },
+        { status: 401 }
+      );
+    }
+
+    const authenticatedAdminId = authResult.adminId!;
 
     const body = await request.json();
     const { bookingId, updates } = body;
@@ -97,9 +119,33 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // SECURITY: Ensure admin can only update their own bookings
+    // First verify the booking belongs to this admin
+    const existingBooking = await bookingService.getBookingById(bookingId);
+    if (!existingBooking) {
+      return NextResponse.json(
+        { success: false, error: "Booking not found" },
+        { status: 404 }
+      );
+    }
+
+    // Check if booking belongs to authenticated admin
+    if (existingBooking.adminId && existingBooking.adminId !== authenticatedAdminId) {
+      return NextResponse.json(
+        { success: false, error: "Access denied: You can only modify your own bookings" },
+        { status: 403 }
+      );
+    }
+
+    // Add authenticated admin ID to updates
+    const secureUpdates = {
+      ...updates,
+      adminId: authenticatedAdminId // Ensure booking is assigned to authenticated admin
+    };
+
     const updatedBooking = await bookingService.updateBookingWithAdminNotes(
       bookingId,
-      updates
+      secureUpdates
     );
 
     if (!updatedBooking) {
@@ -129,7 +175,16 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    // Admin interface is always enabled (core feature)
+    // Verify admin authentication
+    const authResult = verifyAdminAccess(request);
+    if (!authResult.isValid) {
+      return NextResponse.json(
+        { error: authResult.error || "Authentication required" },
+        { status: 401 }
+      );
+    }
+
+    const authenticatedAdminId = authResult.adminId!;
 
     const { searchParams } = new URL(request.url);
     const bookingId = searchParams.get("id");
@@ -138,6 +193,23 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json(
         { success: false, error: "Booking ID is required" },
         { status: 400 }
+      );
+    }
+
+    // SECURITY: Verify booking belongs to authenticated admin before deletion
+    const existingBooking = await bookingService.getBookingById(bookingId);
+    if (!existingBooking) {
+      return NextResponse.json(
+        { success: false, error: "Booking not found" },
+        { status: 404 }
+      );
+    }
+
+    // Check if booking belongs to authenticated admin
+    if (existingBooking.adminId && existingBooking.adminId !== authenticatedAdminId) {
+      return NextResponse.json(
+        { success: false, error: "Access denied: You can only delete your own bookings" },
+        { status: 403 }
       );
     }
 

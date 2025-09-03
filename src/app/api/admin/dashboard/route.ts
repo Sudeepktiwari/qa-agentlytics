@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { bookingService } from "@/services/bookingService";
+import { verifyAdminAccess } from "@/lib/auth";
 
 /**
  * Admin Dashboard Statistics API
@@ -8,9 +9,19 @@ import { bookingService } from "@/services/bookingService";
 
 export async function GET(request: NextRequest) {
   try {
-    // Admin interface is always enabled (core feature)
+    // Verify admin authentication and get adminId
+    const authResult = verifyAdminAccess(request);
+    if (!authResult.isValid) {
+      return NextResponse.json(
+        { error: authResult.error || "Authentication required" },
+        { status: 401 }
+      );
+    }
 
-    const stats = await bookingService.getDashboardStats();
+    const authenticatedAdminId = authResult.adminId!;
+
+    // Get stats filtered by admin ID to ensure tenant isolation
+    const stats = await bookingService.getDashboardStats(authenticatedAdminId);
 
     return NextResponse.json({
       success: true,

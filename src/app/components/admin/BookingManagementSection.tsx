@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { BookingRequest } from "@/types/booking";
+import { getAuthHeaders, getCurrentAdminId } from "@/lib/auth";
 
 interface DashboardStats {
   total: number;
@@ -51,13 +52,20 @@ const BookingManagementSection: React.FC<BookingManagementSectionProps> = ({
 
   const fetchDashboardStats = async () => {
     try {
-      const response = await fetch("/api/admin/dashboard");
+      const response = await fetch("/api/admin/dashboard", {
+        headers: getAuthHeaders(),
+      });
       const data = await response.json();
 
-      if (data.success) {
+      if (response.ok && data.success) {
         setStats(data.data);
       } else {
         console.error("Dashboard stats error:", data.error);
+        
+        // If authentication failed, clear token
+        if (response.status === 401) {
+          localStorage.removeItem('adminToken');
+        }
       }
     } catch (err) {
       console.error("Dashboard stats error:", err);
@@ -67,20 +75,38 @@ const BookingManagementSection: React.FC<BookingManagementSectionProps> = ({
   const fetchBookings = async () => {
     try {
       setLoading(true);
+      
+      // Check if user is authenticated
+      const currentAdminId = getCurrentAdminId();
+      if (!currentAdminId) {
+        setError("Authentication required. Please log in again.");
+        return;
+      }
+
       const params = new URLSearchParams({
         page: currentPage.toString(),
         limit: "10", // Smaller limit for admin panel
         ...filters,
       });
 
-      const response = await fetch(`/api/admin/bookings?${params}`);
+      const response = await fetch(`/api/admin/bookings?${params}`, {
+        headers: getAuthHeaders(),
+      });
+      
       const data = await response.json();
 
-      if (data.success) {
+      if (response.ok && data.success) {
         setBookings(data.data.bookings);
         setTotalPages(data.pagination.totalPages);
+        setError(null); // Clear any previous errors
       } else {
         setError(data.error || "Failed to fetch bookings");
+        
+        // If authentication failed, clear token and redirect
+        if (response.status === 401) {
+          localStorage.removeItem('adminToken');
+          setError("Session expired. Please log in again.");
+        }
       }
     } catch (err) {
       setError("Failed to fetch bookings");
@@ -97,20 +123,26 @@ const BookingManagementSection: React.FC<BookingManagementSectionProps> = ({
     try {
       const response = await fetch("/api/admin/bookings", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify({
           bookingId,
-          updates: { status, adminNotes, adminId },
+          updates: { status, adminNotes },
         }),
       });
 
       const data = await response.json();
 
-      if (data.success) {
+      if (response.ok && data.success) {
         fetchBookings();
         fetchDashboardStats();
       } else {
         setError(data.error || "Failed to update booking");
+        
+        // If authentication failed, clear token
+        if (response.status === 401) {
+          localStorage.removeItem('adminToken');
+          setError("Session expired. Please log in again.");
+        }
       }
     } catch (err) {
       setError("Failed to update booking");

@@ -302,7 +302,7 @@ export class BookingService {
   /**
    * Get dashboard statistics for admin
    */
-  async getDashboardStats(): Promise<{
+  async getDashboardStats(adminId?: string): Promise<{
     total: number;
     pending: number;
     confirmed: number;
@@ -314,9 +314,13 @@ export class BookingService {
     try {
       const collection = await getBookingsCollection();
 
+      // Create base filter for admin isolation
+      const baseFilter = adminId ? { adminId } : {};
+
       const [stats, recentBookings] = await Promise.all([
         collection
           .aggregate([
+            { $match: baseFilter }, // Filter by adminId if provided
             {
               $group: {
                 _id: null,
@@ -342,7 +346,7 @@ export class BookingService {
             },
           ])
           .toArray(),
-        collection.find({}).sort({ createdAt: -1 }).limit(5).toArray(),
+        collection.find(baseFilter).sort({ createdAt: -1 }).limit(5).toArray(),
       ]);
 
       const dashboardStats = stats[0] || {
@@ -570,12 +574,18 @@ export class BookingService {
   }
 
   // Get a specific booking by ID
-  async getBookingById(bookingId: string): Promise<BookingRequest | null> {
+  async getBookingById(bookingId: string, adminId?: string): Promise<BookingRequest | null> {
     try {
       const collection = await getBookingsCollection();
-      const booking = await collection.findOne({
-        _id: new ObjectId(bookingId),
-      });
+      
+      const query: any = { _id: new ObjectId(bookingId) };
+      
+      // If adminId is provided, ensure the booking belongs to that admin
+      if (adminId) {
+        query.adminId = adminId;
+      }
+      
+      const booking = await collection.findOne(query);
 
       if (!booking) return null;
 
