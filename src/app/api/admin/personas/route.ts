@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/mongo";
-import jwt from "jsonwebtoken";
+import { verifyAdminAccessFromCookie } from "@/lib/auth";
 import OpenAI from "openai";
 
-const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // Customer persona interfaces
@@ -36,18 +35,11 @@ interface PersonaData {
   updatedAt: Date;
 }
 
-function getAdminIdFromRequest(req: NextRequest): string | undefined {
-  const token = req.cookies.get("auth_token")?.value;
-  if (!token) return undefined;
-  try {
-    const payload = jwt.verify(token, JWT_SECRET) as {
-      email: string;
-      adminId: string;
-    };
-    return payload.adminId;
-  } catch {
-    return undefined;
-  }
+// Helper function to get admin ID from authenticated request
+function getAdminIdFromAuthResult(request: NextRequest): string | undefined {
+  const authResult = verifyAdminAccessFromCookie(request);
+  if (!authResult.isValid) return undefined;
+  return authResult.adminId;
 }
 
 // Extract customer personas from website content
@@ -188,7 +180,7 @@ Create realistic personas based on the actual content. Even if content is limite
 
 // GET: Fetch personas for admin
 export async function GET(req: NextRequest) {
-  const adminId = getAdminIdFromRequest(req);
+  const adminId = getAdminIdFromAuthResult(req);
   if (!adminId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -214,7 +206,7 @@ export async function GET(req: NextRequest) {
 
 // POST: Create or update personas manually or trigger auto-extraction
 export async function POST(req: NextRequest) {
-  const adminId = getAdminIdFromRequest(req);
+  const adminId = getAdminIdFromAuthResult(req);
   if (!adminId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -377,7 +369,7 @@ export async function POST(req: NextRequest) {
 
 // DELETE: Delete personas
 export async function DELETE(req: NextRequest) {
-  const adminId = getAdminIdFromRequest(req);
+  const adminId = getAdminIdFromAuthResult(req);
   if (!adminId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
