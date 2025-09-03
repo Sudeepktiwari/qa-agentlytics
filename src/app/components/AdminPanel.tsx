@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import DocumentUploader from "./DocumentUploader";
 import Chatbot from "./Chatbot";
+import { storeAuthData, clearAuthData, isAuthenticated, getCurrentAdminId } from "@/lib/auth-client";
 
 // Import admin section components
 import AuthSection from "./admin/AuthSection";
@@ -145,6 +146,27 @@ const AdminPanel: React.FC = () => {
       setAuthLoading(true);
       setAuthError("");
       try {
+        // First check if we have valid authentication in localStorage
+        if (isAuthenticated()) {
+          const adminId = getCurrentAdminId();
+          if (adminId) {
+            // We have stored authentication, try to verify it's still valid
+            try {
+              const res = await fetch("/api/auth/verify");
+              if (res.ok) {
+                const data = await res.json();
+                setAuth({ email: data.email, adminId: data.adminId });
+                setAuthLoading(false);
+                return;
+              }
+            } catch {
+              // Verification failed, clear invalid auth
+              clearAuthData();
+            }
+          }
+        }
+        
+        // If no stored auth or verification failed, try cookie-based auth
         const res = await fetch("/api/auth/verify");
         if (res.ok) {
           const data = await res.json();
@@ -176,6 +198,12 @@ const AdminPanel: React.FC = () => {
       });
       if (res.ok) {
         const data = await res.json();
+        
+        // Store authentication data in localStorage
+        if (data.token && data.adminId) {
+          storeAuthData(data.adminId, data.token);
+        }
+        
         setAuth({ email: form.email, adminId: data.adminId });
       } else {
         const data = await res.json();
@@ -300,6 +328,7 @@ const AdminPanel: React.FC = () => {
   // Logout handler
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
+    clearAuthData(); // Clear localStorage
     setAuth(null);
   };
 

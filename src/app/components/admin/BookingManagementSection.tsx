@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { BookingRequest } from '@/types/booking';
 import { formatDateTime } from '@/utils/dateUtils';
-import { getAuthHeaders, getCurrentAdminId } from "@/lib/auth-client";
+import { getAuthHeaders, getCurrentAdminId, getCurrentAuthToken } from "@/lib/auth-client";
 
 interface DashboardStats {
   total: number;
@@ -79,7 +79,16 @@ const BookingManagementSection: React.FC<BookingManagementSectionProps> = ({
       
       // Check if user is authenticated
       const currentAdminId = getCurrentAdminId();
-      if (!currentAdminId) {
+      const currentToken = getCurrentAuthToken();
+      
+      console.log("🔍 [AUTH DEBUG] Authentication check:", {
+        hasAdminId: !!currentAdminId,
+        hasToken: !!currentToken,
+        adminId: currentAdminId,
+        tokenLength: currentToken?.length
+      });
+      
+      if (!currentAdminId || !currentToken) {
         setError("Authentication required. Please log in again.");
         return;
       }
