@@ -12,6 +12,7 @@ import {
   extractAdminId,
   AdminSettings,
 } from "@/lib/adminSettings";
+import { verifyAdminAccessFromCookie } from "@/lib/auth";
 
 // CORS headers for admin panel
 const corsHeaders = {
@@ -32,12 +33,24 @@ export async function OPTIONS() {
  */
 export async function GET(request: NextRequest) {
   try {
+    console.log("🏥 Admin settings GET request received");
+    
+    // Verify admin access using cookies
+    const adminVerification = await verifyAdminAccessFromCookie(request);
+    if (!adminVerification.isValid || !adminVerification.adminId) {
+      console.log("❌ Admin verification failed:", adminVerification.error);
+      return NextResponse.json(
+        { success: false, error: adminVerification.error || "Authentication failed" },
+        { status: 401, headers: corsHeaders }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const adminId = searchParams.get("adminId");
-    const apiKey = request.headers.get("x-api-key");
 
     // If specific adminId requested, return that admin's settings
     if (adminId) {
+      console.log(`📋 Getting settings for specific admin: ${adminId}`);
       const settings = await getAdminSettings(adminId);
       return NextResponse.json({
         success: true,
@@ -45,9 +58,9 @@ export async function GET(request: NextRequest) {
       }, { headers: corsHeaders });
     }
 
-    // If no specific admin requested, get current admin's settings
-    const currentAdminId = extractAdminId(apiKey || undefined, request);
-    const settings = await getAdminSettings(currentAdminId);
+    // Get current admin's settings
+    console.log(`📋 Getting settings for current admin: ${adminVerification.adminId}`);
+    const settings = await getAdminSettings(adminVerification.adminId);
 
     return NextResponse.json({
       success: true,
@@ -71,9 +84,20 @@ export async function GET(request: NextRequest) {
  */
 export async function PUT(request: NextRequest) {
   try {
+    console.log("🏥 Admin settings PUT request received");
+    
+    // Verify admin access using cookies
+    const adminVerification = await verifyAdminAccessFromCookie(request);
+    if (!adminVerification.isValid || !adminVerification.adminId) {
+      console.log("❌ Admin verification failed:", adminVerification.error);
+      return NextResponse.json(
+        { success: false, error: adminVerification.error || "Authentication failed" },
+        { status: 401, headers: corsHeaders }
+      );
+    }
+
     const body = await request.json();
     const { adminId, updates } = body;
-    const apiKey = request.headers.get("x-api-key");
 
     if (!adminId) {
       return NextResponse.json(
@@ -89,11 +113,10 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Determine who is making the update
-    const updatedBy = extractAdminId(apiKey || undefined, request);
+    console.log(`📝 Updating settings for admin: ${adminId}, by: ${adminVerification.adminId}`);
 
     // Update the settings
-    const updatedSettings = await updateAdminSettings(adminId, updates, updatedBy);
+    const updatedSettings = await updateAdminSettings(adminId, updates, adminVerification.adminId);
 
     return NextResponse.json({
       success: true,
@@ -167,9 +190,20 @@ export async function POST(request: NextRequest) {
  */
 export async function PATCH(request: NextRequest) {
   try {
+    console.log("🏥 Admin settings PATCH request received");
+    
+    // Verify admin access using cookies
+    const adminVerification = await verifyAdminAccessFromCookie(request);
+    if (!adminVerification.isValid || !adminVerification.adminId) {
+      console.log("❌ Admin verification failed:", adminVerification.error);
+      return NextResponse.json(
+        { success: false, error: adminVerification.error || "Authentication failed" },
+        { status: 401, headers: corsHeaders }
+      );
+    }
+
     const body = await request.json();
     const { adminId, feature, enabled } = body;
-    const apiKey = request.headers.get("x-api-key");
 
     if (!adminId) {
       return NextResponse.json(
@@ -192,6 +226,8 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
+    console.log(`🎛️ Updating feature ${feature} = ${enabled} for admin: ${adminId}, by: ${adminVerification.adminId}`);
+
     // Get current settings
     const currentSettings = await getAdminSettings(adminId);
     
@@ -203,8 +239,7 @@ export async function PATCH(request: NextRequest) {
       },
     };
 
-    const updatedBy = extractAdminId(apiKey || undefined, request);
-    const updatedSettings = await updateAdminSettings(adminId, updates, updatedBy);
+    const updatedSettings = await updateAdminSettings(adminId, updates, adminVerification.adminId);
 
     return NextResponse.json({
       success: true,

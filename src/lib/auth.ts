@@ -2,7 +2,7 @@ import { getDb } from "@/lib/mongo";
 import jwt from "jsonwebtoken";
 import { NextRequest } from "next/server";
 
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-here";
+const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
 
 export interface AuthPayload {
   email: string;
