@@ -145,7 +145,9 @@ const AdminPanel: React.FC = () => {
       setAuthLoading(true);
       setAuthError("");
       try {
-        const res = await fetch("/api/auth/verify");
+        const res = await fetch("/api/auth/verify", {
+          credentials: 'include', // Include cookies for authentication
+        });
         if (res.ok) {
           const data = await res.json();
           setAuth({ email: data.email, adminId: data.adminId });
@@ -168,6 +170,7 @@ const AdminPanel: React.FC = () => {
       const res = await fetch("/api/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: 'include', // Include cookies for authentication
         body: JSON.stringify({
           action: form.action,
           email: form.email,
@@ -299,14 +302,19 @@ const AdminPanel: React.FC = () => {
 
   // Logout handler
   const handleLogout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
+    await fetch("/api/auth/logout", { 
+      method: "POST",
+      credentials: 'include' // Include cookies for logout
+    });
     setAuth(null);
   };
 
   // API Key management functions
   const fetchApiKey = async () => {
     try {
-      const res = await fetch("/api/auth/api-key");
+      const res = await fetch("/api/auth/api-key", {
+        credentials: 'include' // Include cookies for authentication
+      });
       const data = await res.json();
       if (res.ok) {
         setApiKey(data.apiKey || "");
@@ -321,7 +329,10 @@ const AdminPanel: React.FC = () => {
     setApiKeyLoading(true);
     setApiKeyError("");
     try {
-      const res = await fetch("/api/auth/api-key", { method: "POST" });
+      const res = await fetch("/api/auth/api-key", { 
+        method: "POST",
+        credentials: 'include' // Include cookies for authentication
+      });
       const data = await res.json();
       if (res.ok) {
         setApiKey(data.apiKey);
@@ -356,7 +367,9 @@ const AdminPanel: React.FC = () => {
           ...(search && { search }),
         });
 
-        const res = await fetch(`/api/leads?${params}`);
+        const res = await fetch(`/api/leads?${params}`, {
+          credentials: 'include' // Include cookies for authentication
+        });
         const data = await res.json();
 
         if (res.ok) {
@@ -384,7 +397,9 @@ const AdminPanel: React.FC = () => {
     setDocumentsError("");
     try {
       // Fetch uploaded documents
-      const docsRes = await fetch("/api/admin-docs?admin=1");
+      const docsRes = await fetch("/api/admin-docs?admin=1", {
+        credentials: 'include' // Include cookies for authentication
+      });
       const docsData = await docsRes.json();
       const uploadedDocs = docsRes.ok ? docsData.documents || [] : [];
 
@@ -514,6 +529,7 @@ const AdminPanel: React.FC = () => {
       const res = await fetch("/api/admin-docs?admin=1", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
+        credentials: 'include', // Include cookies for authentication
         body: JSON.stringify({ filename }),
       });
 
@@ -694,6 +710,7 @@ const AdminPanel: React.FC = () => {
       const res = await fetch("/api/leads", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
+        credentials: 'include', // Include cookies for authentication
         body: JSON.stringify({ email }),
       });
 
@@ -717,7 +734,9 @@ const AdminPanel: React.FC = () => {
 
   const fetchSitemapUrls = async () => {
     try {
-      const res = await fetch("/api/sitemap?urls=1");
+      const res = await fetch("/api/sitemap?urls=1", {
+        credentials: 'include' // Include cookies for authentication
+      });
       const data = await res.json();
       if (data.urls) setSitemapUrls(data.urls);
     } catch (error) {
@@ -728,7 +747,9 @@ const AdminPanel: React.FC = () => {
   useEffect(() => {
     if (auth) {
       // Fetch last submitted sitemapUrl from admin settings
-      fetch("/api/sitemap?settings=1")
+      fetch("/api/sitemap?settings=1", {
+        credentials: 'include' // Include cookies for authentication
+      })
         .then((res) => res.json())
         .then((data) => {
           if (data.lastSitemapUrl) setSitemapUrl(data.lastSitemapUrl);
