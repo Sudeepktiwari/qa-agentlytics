@@ -684,7 +684,7 @@ export async function GET(request: Request) {
         return;
       }
       
-      // Create enhanced calendar interface
+      // Create enhanced calendar interface with two-step selection
       container.innerHTML = '';
       
       // Calendar header with navigation
@@ -698,11 +698,15 @@ export async function GET(request: Request) {
         year: 'numeric' 
       });
       
+      const stepIndicator = document.createElement('div');
+      stepIndicator.style.cssText = 'text-align: center; font-size: 13px; color: #6b7280; margin-bottom: 4px;';
+      stepIndicator.innerHTML = '<span style="background: #3b82f6; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-right: 8px;">Step 1</span>Select a date';
+      
       const availableCount = document.createElement('div');
       availableCount.style.cssText = 'text-align: center; font-size: 13px; color: #6b7280;';
-      availableCount.textContent = (calendarData.availableSlots || 0) + ' available slots';
       
       calendarHeader.appendChild(monthYear);
+      calendarHeader.appendChild(stepIndicator);
       calendarHeader.appendChild(availableCount);
       container.appendChild(calendarHeader);
       
@@ -714,86 +718,16 @@ export async function GET(request: Request) {
         return;
       }
       
-      // Render available days and time slots
-      availableDays.slice(0, 7).forEach(day => { // Show next 7 available days
-        // Date header
-        const dateHeader = document.createElement('div');
-        dateHeader.style.cssText = 'font-weight: 600; margin: 16px 0 8px 0; color: #374151; border-bottom: 1px solid #e5e7eb; padding-bottom: 4px; display: flex; justify-content: space-between; align-items: center;';
-        
-        const dateText = document.createElement('span');
-        dateText.textContent = new Date(day.date).toLocaleDateString('en-US', { 
-          weekday: 'long', 
-          month: 'short', 
-          day: 'numeric' 
-        });
-        
-        const slotCount = document.createElement('span');
-        slotCount.style.cssText = 'font-size: 12px; color: #6b7280; font-weight: 400;';
-        slotCount.textContent = day.timeSlots.filter(slot => slot.available).length + ' slots';
-        
-        dateHeader.appendChild(dateText);
-        dateHeader.appendChild(slotCount);
-        container.appendChild(dateHeader);
-        
-        // Time slots grid
-        const slotsContainer = document.createElement('div');
-        slotsContainer.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px; margin-bottom: 16px;';
-        
-        day.timeSlots.filter(slot => slot.available).slice(0, 8).forEach(slot => { // Max 8 slots per day
-          const timeButton = document.createElement('button');
-          timeButton.textContent = slot.time;
-          timeButton.style.cssText = \`
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 6px;
-            padding: 10px 8px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-size: 13px;
-            font-weight: 500;
-            color: #495057;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-          \`;
-          
-          // Add hover effects
-          timeButton.addEventListener('mouseenter', () => {
-            timeButton.style.background = \`\${currentTheme.primary}\`;
-            timeButton.style.color = 'white';
-            timeButton.style.borderColor = \`\${currentTheme.primary}\`;
-            timeButton.style.transform = 'translateY(-1px)';
-            timeButton.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-          });
-          
-          timeButton.addEventListener('mouseleave', () => {
-            timeButton.style.background = '#f8f9fa';
-            timeButton.style.color = '#495057';
-            timeButton.style.borderColor = '#dee2e6';
-            timeButton.style.transform = 'translateY(0)';
-            timeButton.style.boxShadow = 'none';
-          });
-          
-          timeButton.addEventListener('click', () => {
-            // Add click animation
-            timeButton.style.transform = 'scale(0.95)';
-            setTimeout(() => {
-              timeButton.style.transform = 'translateY(-1px)';
-            }, 100);
-            
-            handleBookingSelection({ 
-              startTime: day.date + 'T' + slot.time + ':00',
-              endTime: day.date + 'T' + addMinutesToTime(slot.time, 30) + ':00',
-              date: day.date,
-              time: slot.time
-            }, bookingType);
-          });
-          
-          slotsContainer.appendChild(timeButton);
-        });
-        
-        container.appendChild(slotsContainer);
-      });
+      // Update available count
+      availableCount.textContent = (calendarData.availableSlots || 0) + ' available slots across ' + availableDays.length + ' days';
+      
+      // Create main content area for date/time selection
+      const contentArea = document.createElement('div');
+      contentArea.id = 'calendar-content-area';
+      container.appendChild(contentArea);
+      
+      // Show date selection first
+      showDateSelection(contentArea, availableDays, bookingType, stepIndicator);
       
       // Add helpful footer
       const footer = document.createElement('div');
@@ -814,6 +748,249 @@ export async function GET(request: Request) {
     const newHours = Math.floor(totalMinutes / 60) % 24;
     const newMins = totalMinutes % 60;
     return \`\${newHours.toString().padStart(2, '0')}:\${newMins.toString().padStart(2, '0')}\`;
+  }
+
+  // Show date selection (Step 1 of calendar)
+  function showDateSelection(contentArea, availableDays, bookingType, stepIndicator) {
+    console.log("📅 [CALENDAR STEP 1] Showing date selection");
+    
+    contentArea.innerHTML = '';
+    
+    // Create date grid
+    const datesGrid = document.createElement('div');
+    datesGrid.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px;';
+    
+    // Show available dates (limit to 10 for better UX)
+    availableDays.slice(0, 10).forEach(day => {
+      const dateCard = document.createElement('div');
+      dateCard.style.cssText = \`
+        background: #f8f9fa;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        padding: 16px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+      \`;
+      
+      const dayName = document.createElement('div');
+      dayName.style.cssText = 'font-size: 12px; color: #6b7280; font-weight: 500; margin-bottom: 4px; text-transform: uppercase;';
+      dayName.textContent = new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' });
+      
+      const dateNumber = document.createElement('div');
+      dateNumber.style.cssText = 'font-size: 20px; font-weight: 700; color: #1f2937; margin-bottom: 4px;';
+      dateNumber.textContent = new Date(day.date).getDate();
+      
+      const monthName = document.createElement('div');
+      monthName.style.cssText = 'font-size: 12px; color: #6b7280; margin-bottom: 8px;';
+      monthName.textContent = new Date(day.date).toLocaleDateString('en-US', { month: 'short' });
+      
+      const slotsCount = document.createElement('div');
+      slotsCount.style.cssText = 'font-size: 11px; background: #e3f2fd; color: #1976d2; padding: 2px 8px; border-radius: 12px; display: inline-block;';
+      const availableSlots = day.timeSlots.filter(slot => slot.available).length;
+      slotsCount.textContent = availableSlots + ' slot' + (availableSlots !== 1 ? 's' : '');
+      
+      dateCard.appendChild(dayName);
+      dateCard.appendChild(dateNumber);
+      dateCard.appendChild(monthName);
+      dateCard.appendChild(slotsCount);
+      
+      // Add hover effects
+      dateCard.addEventListener('mouseenter', () => {
+        dateCard.style.background = \`\${currentTheme.primary}\`;
+        dateCard.style.borderColor = \`\${currentTheme.primary}\`;
+        dateCard.style.transform = 'translateY(-2px)';
+        dateCard.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+        
+        // Change text colors on hover
+        dayName.style.color = 'rgba(255,255,255,0.8)';
+        dateNumber.style.color = 'white';
+        monthName.style.color = 'rgba(255,255,255,0.8)';
+        slotsCount.style.background = 'rgba(255,255,255,0.2)';
+        slotsCount.style.color = 'white';
+      });
+      
+      dateCard.addEventListener('mouseleave', () => {
+        dateCard.style.background = '#f8f9fa';
+        dateCard.style.borderColor = '#e9ecef';
+        dateCard.style.transform = 'translateY(0)';
+        dateCard.style.boxShadow = 'none';
+        
+        // Reset text colors
+        dayName.style.color = '#6b7280';
+        dateNumber.style.color = '#1f2937';
+        monthName.style.color = '#6b7280';
+        slotsCount.style.background = '#e3f2fd';
+        slotsCount.style.color = '#1976d2';
+      });
+      
+      dateCard.addEventListener('click', () => {
+        console.log("📅 [CALENDAR STEP 1] Date selected:", day.date);
+        
+        // Add click animation
+        dateCard.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+          // Update step indicator
+          stepIndicator.innerHTML = '<span style="background: #10b981; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-right: 8px;">Step 2</span>Select a time';
+          
+          // Show time slots for selected date
+          showTimeSelection(contentArea, day, bookingType, stepIndicator);
+        }, 100);
+      });
+      
+      datesGrid.appendChild(dateCard);
+    });
+    
+    contentArea.appendChild(datesGrid);
+    
+    // Add helpful text
+    const helpText = document.createElement('div');
+    helpText.style.cssText = 'text-align: center; font-size: 13px; color: #6b7280; margin-top: 12px;';
+    helpText.textContent = 'Click on a date to see available time slots';
+    contentArea.appendChild(helpText);
+  }
+
+  // Show time selection for a specific date (Step 2 of calendar)
+  function showTimeSelection(contentArea, selectedDay, bookingType, stepIndicator) {
+    console.log("📅 [CALENDAR STEP 2] Showing time selection for:", selectedDay.date);
+    
+    contentArea.innerHTML = '';
+    
+    // Selected date header
+    const selectedDateHeader = document.createElement('div');
+    selectedDateHeader.style.cssText = 'background: #f0f9ff; border: 1px solid #0284c7; border-radius: 8px; padding: 12px; margin-bottom: 16px; text-align: center;';
+    
+    const selectedDateText = document.createElement('div');
+    selectedDateText.style.cssText = 'font-weight: 600; color: #0284c7; margin-bottom: 4px;';
+    selectedDateText.textContent = new Date(selectedDay.date).toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+    
+    const changeButton = document.createElement('button');
+    changeButton.style.cssText = 'background: none; border: none; color: #6b7280; font-size: 12px; cursor: pointer; text-decoration: underline;';
+    changeButton.textContent = 'Change date';
+    changeButton.addEventListener('click', () => {
+      stepIndicator.innerHTML = '<span style="background: #3b82f6; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-right: 8px;">Step 1</span>Select a date';
+      // Need to reload the full calendar - trigger a refresh
+      location.reload();
+    });
+    
+    selectedDateHeader.appendChild(selectedDateText);
+    selectedDateHeader.appendChild(changeButton);
+    contentArea.appendChild(selectedDateHeader);
+    
+    // Time slots grid
+    const timeSlotsGrid = document.createElement('div');
+    timeSlotsGrid.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 16px;';
+    
+    const availableSlots = selectedDay.timeSlots.filter(slot => slot.available);
+    
+    if (availableSlots.length === 0) {
+      const noSlotsMessage = document.createElement('div');
+      noSlotsMessage.style.cssText = 'text-align: center; padding: 20px; color: #666; background: #fef3cd; border-radius: 8px; border: 1px solid #fde047; grid-column: 1 / -1;';
+      noSlotsMessage.innerHTML = '<div style="margin-bottom: 8px; font-size: 18px;">⏰</div><div style="font-weight: 500; margin-bottom: 4px;">No available slots</div><div style="font-size: 13px;">Please select a different date</div>';
+      timeSlotsGrid.appendChild(noSlotsMessage);
+    } else {
+      // Group slots by time periods
+      const morningSlots = availableSlots.filter(slot => {
+        const hour = parseInt(slot.time.split(':')[0]);
+        return hour >= 6 && hour < 12;
+      });
+      
+      const afternoonSlots = availableSlots.filter(slot => {
+        const hour = parseInt(slot.time.split(':')[0]);
+        return hour >= 12 && hour < 17;
+      });
+      
+      const eveningSlots = availableSlots.filter(slot => {
+        const hour = parseInt(slot.time.split(':')[0]);
+        return hour >= 17 && hour < 22;
+      });
+      
+      // Add time period headers and slots
+      if (morningSlots.length > 0) {
+        addTimePeriod(timeSlotsGrid, 'Morning', morningSlots, selectedDay, bookingType);
+      }
+      
+      if (afternoonSlots.length > 0) {
+        addTimePeriod(timeSlotsGrid, 'Afternoon', afternoonSlots, selectedDay, bookingType);
+      }
+      
+      if (eveningSlots.length > 0) {
+        addTimePeriod(timeSlotsGrid, 'Evening', eveningSlots, selectedDay, bookingType);
+      }
+    }
+    
+    contentArea.appendChild(timeSlotsGrid);
+  }
+
+  // Helper function to add time period sections
+  function addTimePeriod(container, periodName, slots, selectedDay, bookingType) {
+    // Period header
+    const periodHeader = document.createElement('div');
+    periodHeader.style.cssText = 'grid-column: 1 / -1; font-weight: 600; color: #374151; margin: 16px 0 8px 0; padding-bottom: 4px; border-bottom: 1px solid #e5e7eb; font-size: 14px;';
+    periodHeader.textContent = periodName + ' (' + slots.length + ' available)';
+    container.appendChild(periodHeader);
+    
+    // Time slots
+    slots.forEach(slot => {
+      const timeButton = document.createElement('button');
+      timeButton.textContent = slot.time;
+      timeButton.style.cssText = \`
+        background: #f8f9fa;
+        border: 2px solid #dee2e6;
+        border-radius: 8px;
+        padding: 12px 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 14px;
+        font-weight: 600;
+        color: #495057;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+      \`;
+      
+      // Add hover effects
+      timeButton.addEventListener('mouseenter', () => {
+        timeButton.style.background = \`\${currentTheme.primary}\`;
+        timeButton.style.color = 'white';
+        timeButton.style.borderColor = \`\${currentTheme.primary}\`;
+        timeButton.style.transform = 'translateY(-2px)';
+        timeButton.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+      });
+      
+      timeButton.addEventListener('mouseleave', () => {
+        timeButton.style.background = '#f8f9fa';
+        timeButton.style.color = '#495057';
+        timeButton.style.borderColor = '#dee2e6';
+        timeButton.style.transform = 'translateY(0)';
+        timeButton.style.boxShadow = 'none';
+      });
+      
+      timeButton.addEventListener('click', () => {
+        console.log("📅 [CALENDAR STEP 2] Time selected:", slot.time, "for date:", selectedDay.date);
+        
+        // Add click animation
+        timeButton.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+          timeButton.style.transform = 'translateY(-2px)';
+        }, 100);
+        
+        handleBookingSelection({ 
+          startTime: selectedDay.date + 'T' + slot.time + ':00',
+          endTime: selectedDay.date + 'T' + addMinutesToTime(slot.time, 30) + ':00',
+          date: selectedDay.date,
+          time: slot.time
+        }, bookingType);
+      });
+      
+      container.appendChild(timeButton);
+    });
   }
 
   // Handle booking time selection
