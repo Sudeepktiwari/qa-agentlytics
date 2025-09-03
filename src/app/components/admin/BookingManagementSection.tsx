@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { BookingRequest } from '@/types/booking';
 import { formatDateTime } from '@/utils/dateUtils';
-import { getAuthHeaders, getCurrentAdminId, getCurrentAuthToken } from "@/lib/auth-client";
 
 interface DashboardStats {
   total: number;
@@ -54,7 +53,7 @@ const BookingManagementSection: React.FC<BookingManagementSectionProps> = ({
   const fetchDashboardStats = async () => {
     try {
       const response = await fetch("/api/admin/dashboard", {
-        headers: getAuthHeaders(),
+        credentials: 'include', // Include cookies
       });
       const data = await response.json();
 
@@ -63,9 +62,9 @@ const BookingManagementSection: React.FC<BookingManagementSectionProps> = ({
       } else {
         console.error("Dashboard stats error:", data.error);
         
-        // If authentication failed, clear token
+        // If authentication failed, show error
         if (response.status === 401) {
-          localStorage.removeItem('adminToken');
+          setError("Session expired. Please refresh the page and log in again.");
         }
       }
     } catch (err) {
@@ -76,22 +75,7 @@ const BookingManagementSection: React.FC<BookingManagementSectionProps> = ({
   const fetchBookings = async () => {
     try {
       setLoading(true);
-      
-      // Check if user is authenticated
-      const currentAdminId = getCurrentAdminId();
-      const currentToken = getCurrentAuthToken();
-      
-      console.log("🔍 [AUTH DEBUG] Authentication check:", {
-        hasAdminId: !!currentAdminId,
-        hasToken: !!currentToken,
-        adminId: currentAdminId,
-        tokenLength: currentToken?.length
-      });
-      
-      if (!currentAdminId || !currentToken) {
-        setError("Authentication required. Please log in again.");
-        return;
-      }
+      setError(null); // Clear any previous errors
 
       const params = new URLSearchParams({
         page: currentPage.toString(),
@@ -100,7 +84,7 @@ const BookingManagementSection: React.FC<BookingManagementSectionProps> = ({
       });
 
       const response = await fetch(`/api/admin/bookings?${params}`, {
-        headers: getAuthHeaders(),
+        credentials: 'include', // Include cookies
       });
       
       const data = await response.json();
@@ -112,10 +96,9 @@ const BookingManagementSection: React.FC<BookingManagementSectionProps> = ({
       } else {
         setError(data.error || "Failed to fetch bookings");
         
-        // If authentication failed, clear token and redirect
+        // If authentication failed, show appropriate error
         if (response.status === 401) {
-          localStorage.removeItem('adminToken');
-          setError("Session expired. Please log in again.");
+          setError("Session expired. Please refresh the page and log in again.");
         }
       }
     } catch (err) {
@@ -133,7 +116,10 @@ const BookingManagementSection: React.FC<BookingManagementSectionProps> = ({
     try {
       const response = await fetch("/api/admin/bookings", {
         method: "PUT",
-        headers: getAuthHeaders(),
+        credentials: 'include', // Include cookies
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
           bookingId,
           updates: { status, adminNotes },

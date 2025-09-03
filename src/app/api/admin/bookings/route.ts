@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { bookingService } from "@/services/bookingService";
-import { verifyAdminAccess } from "@/lib/auth";
+import { verifyAdminAccessFromCookie } from "@/lib/auth";
 
 /**
  * Admin API for managing bookings
@@ -12,7 +12,7 @@ import { verifyAdminAccess } from "@/lib/auth";
 export async function GET(request: NextRequest) {
   try {
     // Verify admin authentication and get adminId
-    const authResult = verifyAdminAccess(request);
+    const authResult = verifyAdminAccessFromCookie(request);
     if (!authResult.isValid) {
       return NextResponse.json(
         { error: authResult.error || "Authentication required" },
@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     // Verify admin authentication
-    const authResult = verifyAdminAccess(request);
+    const authResult = verifyAdminAccessFromCookie(request);
     if (!authResult.isValid) {
       return NextResponse.json(
         { error: authResult.error || "Authentication required" },
@@ -176,7 +176,7 @@ export async function PUT(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     // Verify admin authentication
-    const authResult = verifyAdminAccess(request);
+    const authResult = verifyAdminAccessFromCookie(request);
     if (!authResult.isValid) {
       return NextResponse.json(
         { error: authResult.error || "Authentication required" },

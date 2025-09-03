@@ -57,6 +57,26 @@ export function verifyAdminToken(request: NextRequest): AuthPayload | null {
 }
 
 /**
+ * Extract and verify JWT token from request cookies (for cookie-based auth)
+ */
+export function verifyAdminTokenFromCookie(request: NextRequest): AuthPayload | null {
+  try {
+    // Check for auth_token cookie
+    const token = request.cookies.get("auth_token")?.value;
+    if (!token) {
+      return null;
+    }
+
+    const payload = jwt.verify(token, JWT_SECRET) as AuthPayload;
+    
+    return payload;
+  } catch (error) {
+    console.error("❌ Invalid admin token from cookie:", error);
+    return null;
+  }
+}
+
+/**
  * Get admin ID from verified token
  */
 export function getAdminIdFromRequest(request: NextRequest): string | null {
@@ -73,6 +93,28 @@ export function verifyAdminAccess(request: NextRequest, requiredAdminId?: string
   error?: string 
 } {
   const payload = verifyAdminToken(request);
+  
+  if (!payload) {
+    return { isValid: false, error: "Authentication required" };
+  }
+
+  // If specific adminId is required, verify it matches
+  if (requiredAdminId && payload.adminId !== requiredAdminId) {
+    return { isValid: false, error: "Access denied: insufficient permissions" };
+  }
+
+  return { isValid: true, adminId: payload.adminId };
+}
+
+/**
+ * Check if admin has access to specific resource (cookie-based auth)
+ */
+export function verifyAdminAccessFromCookie(request: NextRequest, requiredAdminId?: string): { 
+  isValid: boolean; 
+  adminId?: string; 
+  error?: string 
+} {
+  const payload = verifyAdminTokenFromCookie(request);
   
   if (!payload) {
     return { isValid: false, error: "Authentication required" };

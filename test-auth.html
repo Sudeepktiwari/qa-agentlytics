@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Authentication Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .form-group {
+            margin: 15px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <h1>Admin Authentication Test</h1>
+    <p>This page tests the admin authentication system to verify that login/logout and localStorage token management work correctly.</p>
+
+    <div class="test-section">
+        <h2>Current Authentication Status</h2>
+        <div id="authStatus" class="status info">Checking authentication...</div>
+        <button onclick="checkAuthStatus()">Refresh Status</button>
+        <button onclick="clearLocalStorage()">Clear All Auth Data</button>
+    </div>
+
+    <div class="test-section">
+        <h2>Login Test</h2>
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" value="admin@example.com" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" value="password123" required>
+            </div>
+            <button type="submit">Login</button>
+        </form>
+        <div id="loginResult" class="status info" style="display: none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>API Test</h2>
+        <p>Test authenticated API calls to verify the authentication system works with the booking management.</p>
+        <button onclick="testDashboardAPI()">Test Dashboard API</button>
+        <button onclick="testBookingsAPI()">Test Bookings API</button>
+        <div id="apiResults" class="status info" style="display: none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Debug Information</h2>
+        <button onclick="showDebugInfo()">Show Debug Info</button>
+        <div id="debugInfo" style="display: none;">
+            <pre id="debugContent"></pre>
+        </div>
+    </div>
+
+    <script>
+        // Check current authentication status
+        function checkAuthStatus() {
+            const statusDiv = document.getElementById('authStatus');
+            
+            // Check localStorage
+            const adminId = localStorage.getItem('adminId');
+            const adminToken = localStorage.getItem('adminToken');
+            
+            let status = '';
+            let className = '';
+            
+            if (adminId && adminToken) {
+                status = `✅ Authenticated - Admin ID: ${adminId}, Token Length: ${adminToken.length}`;
+                className = 'success';
+                
+                // Try to decode token
+                try {
+                    const payload = JSON.parse(atob(adminToken.split('.')[1]));
+                    status += `<br>Token Payload: ${JSON.stringify(payload, null, 2)}`;
+                } catch (e) {
+                    status += `<br>⚠️ Failed to decode token: ${e.message}`;
+                }
+            } else {
+                status = '❌ Not authenticated - No admin ID or token found in localStorage';
+                className = 'error';
+            }
+            
+            statusDiv.innerHTML = status;
+            statusDiv.className = 'status ' + className;
+        }
+
+        // Clear all authentication data
+        function clearLocalStorage() {
+            localStorage.removeItem('adminId');
+            localStorage.removeItem('adminToken');
+            checkAuthStatus();
+        }
+
+        // Login form handler
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const resultDiv = document.getElementById('loginResult');
+            
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = 'Attempting login...';
+            resultDiv.className = 'status info';
+            
+            try {
+                const response = await fetch('/api/auth', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'login',
+                        email: email,
+                        password: password
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Store authentication data
+                    if (data.token && data.adminId) {
+                        localStorage.setItem('adminId', data.adminId);
+                        localStorage.setItem('adminToken', data.token);
+                        
+                        resultDiv.innerHTML = '✅ Login successful! Token stored in localStorage.';
+                        resultDiv.className = 'status success';
+                    } else {
+                        resultDiv.innerHTML = '⚠️ Login response missing token or adminId';
+                        resultDiv.className = 'status error';
+                    }
+                } else {
+                    resultDiv.innerHTML = '❌ Login failed: ' + (data.error || 'Unknown error');
+                    resultDiv.className = 'status error';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = '❌ Login error: ' + error.message;
+                resultDiv.className = 'status error';
+            }
+            
+            // Update auth status
+            setTimeout(checkAuthStatus, 100);
+        });
+
+        // Test dashboard API
+        async function testDashboardAPI() {
+            const resultDiv = document.getElementById('apiResults');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = 'Testing dashboard API...';
+            resultDiv.className = 'status info';
+            
+            const token = localStorage.getItem('adminToken');
+            if (!token) {
+                resultDiv.innerHTML = '❌ No token found. Please login first.';
+                resultDiv.className = 'status error';
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/admin/dashboard', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = '✅ Dashboard API success: ' + JSON.stringify(data, null, 2);
+                    resultDiv.className = 'status success';
+                } else {
+                    resultDiv.innerHTML = '❌ Dashboard API failed (' + response.status + '): ' + JSON.stringify(data, null, 2);
+                    resultDiv.className = 'status error';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = '❌ Dashboard API error: ' + error.message;
+                resultDiv.className = 'status error';
+            }
+        }
+
+        // Test bookings API
+        async function testBookingsAPI() {
+            const resultDiv = document.getElementById('apiResults');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = 'Testing bookings API...';
+            resultDiv.className = 'status info';
+            
+            const token = localStorage.getItem('adminToken');
+            if (!token) {
+                resultDiv.innerHTML = '❌ No token found. Please login first.';
+                resultDiv.className = 'status error';
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/admin/bookings?page=1&limit=5', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = '✅ Bookings API success: ' + JSON.stringify(data, null, 2);
+                    resultDiv.className = 'status success';
+                } else {
+                    resultDiv.innerHTML = '❌ Bookings API failed (' + response.status + '): ' + JSON.stringify(data, null, 2);
+                    resultDiv.className = 'status error';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = '❌ Bookings API error: ' + error.message;
+                resultDiv.className = 'status error';
+            }
+        }
+
+        // Show debug information
+        function showDebugInfo() {
+            const debugDiv = document.getElementById('debugInfo');
+            const debugContent = document.getElementById('debugContent');
+            
+            const debugData = {
+                localStorage: {
+                    adminId: localStorage.getItem('adminId'),
+                    adminToken: localStorage.getItem('adminToken'),
+                    allKeys: Object.keys(localStorage)
+                },
+                cookies: document.cookie,
+                currentURL: window.location.href,
+                userAgent: navigator.userAgent
+            };
+            
+            debugContent.textContent = JSON.stringify(debugData, null, 2);
+            debugDiv.style.display = debugDiv.style.display === 'none' ? 'block' : 'none';
+        }
+
+        // Initialize page
+        checkAuthStatus();
+    </script>
+</body>
+</html>
