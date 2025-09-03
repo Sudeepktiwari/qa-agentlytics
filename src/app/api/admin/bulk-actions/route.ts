@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { bookingService } from "@/services/bookingService";
-import { FeatureFlags } from "@/lib/javascriptSafety";
 
 /**
  * Admin Bulk Actions API
@@ -9,13 +8,7 @@ import { FeatureFlags } from "@/lib/javascriptSafety";
 
 export async function POST(request: NextRequest) {
   try {
-    // Check if admin features are enabled
-    if (!FeatureFlags.ENABLE_ADMIN_INTERFACE) {
-      return NextResponse.json(
-        { error: "Admin interface is not enabled" },
-        { status: 503 }
-      );
-    }
+    // Admin interface is always enabled (core feature)
 
     const body = await request.json();
     const { action, bookingIds, updates } = body;

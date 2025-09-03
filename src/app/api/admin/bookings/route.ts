@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { bookingService } from "@/services/bookingService";
-import { FeatureFlags } from "@/lib/javascriptSafety";
 
 /**
  * Admin API for managing bookings
@@ -11,13 +10,7 @@ import { FeatureFlags } from "@/lib/javascriptSafety";
 
 export async function GET(request: NextRequest) {
   try {
-    // Check if admin features are enabled
-    if (!FeatureFlags.ENABLE_ADMIN_INTERFACE) {
-      return NextResponse.json(
-        { error: "Admin interface is not enabled" },
-        { status: 503 }
-      );
-    }
+    // Admin interface is always enabled (core feature)
 
     const { searchParams } = new URL(request.url);
 
@@ -85,12 +78,7 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    if (!FeatureFlags.ENABLE_ADMIN_INTERFACE) {
-      return NextResponse.json(
-        { error: "Admin interface is not enabled" },
-        { status: 503 }
-      );
-    }
+    // Admin interface is always enabled (core feature)
 
     const body = await request.json();
     const { bookingId, updates } = body;
@@ -141,12 +129,7 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    if (!FeatureFlags.ENABLE_ADMIN_INTERFACE) {
-      return NextResponse.json(
-        { error: "Admin interface is not enabled" },
-        { status: 503 }
-      );
-    }
+    // Admin interface is always enabled (core feature)
 
     const { searchParams } = new URL(request.url);
     const bookingId = searchParams.get("id");
