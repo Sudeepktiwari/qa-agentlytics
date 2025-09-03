@@ -11,14 +11,21 @@ import { verifyAdminAccessFromCookie } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
   try {
-    // Verify admin authentication and get adminId
+    console.log("📋 Admin Bookings - GET request received");
+    
+    // Verify admin authentication
     const authResult = verifyAdminAccessFromCookie(request);
+    console.log("🔍 Admin Bookings - Auth result:", authResult);
+    
     if (!authResult.isValid) {
+      console.log("❌ Admin Bookings - Authentication failed:", authResult.error);
       return NextResponse.json(
-        { error: authResult.error || "Authentication required" },
+        { error: authResult.error },
         { status: 401 }
       );
     }
+
+    console.log("✅ Admin Bookings - Authentication successful for admin:", authResult.adminId);
 
     const authenticatedAdminId = authResult.adminId!;
 

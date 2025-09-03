@@ -9,14 +9,21 @@ import { verifyAdminAccessFromCookie } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
   try {
-    // Verify admin authentication and get adminId
+    console.log("📊 Admin Dashboard - GET request received");
+    
+    // Verify admin authentication
     const authResult = verifyAdminAccessFromCookie(request);
+    console.log("🔍 Admin Dashboard - Auth result:", authResult);
+    
     if (!authResult.isValid) {
+      console.log("❌ Admin Dashboard - Authentication failed:", authResult.error);
       return NextResponse.json(
-        { error: authResult.error || "Authentication required" },
+        { error: authResult.error },
         { status: 401 }
       );
     }
+
+    console.log("✅ Admin Dashboard - Authentication successful for admin:", authResult.adminId);
 
     const authenticatedAdminId = authResult.adminId!;
 
