@@ -4142,7 +4142,9 @@ export async function GET(request: Request) {
   return new Response(widgetScript, {
     headers: {
       "Content-Type": "application/javascript",
-      "Cache-Control": "public, max-age=3600", // Cache for 1 hour
+      "Cache-Control": "no-cache, no-store, must-revalidate", // Disable cache for debugging
+      "Pragma": "no-cache",
+      "Expires": "0",
       ...corsHeaders, // Add CORS headers
     },
   });
