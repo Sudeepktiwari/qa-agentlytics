@@ -9,6 +9,7 @@ import { calendarService } from "@/services/calendarService";
 import { FeatureFlags } from "@/lib/javascriptSafety";
 import { JavaScriptSafetyUtils } from "@/lib/javascriptSafety";
 import { isFeatureEnabled } from "@/lib/adminSettings";
+import { getUsersCollection } from "@/lib/mongo";
 
 interface BookingSubmission {
   // Calendar selection
@@ -46,6 +47,22 @@ interface BookingValidationResult {
 }
 
 /**
+ * Resolve admin ID from API key
+ */
+async function resolveAdminIdFromApiKey(apiKey: string): Promise<string | null> {
+  if (!apiKey) return null;
+  
+  try {
+    const users = await getUsersCollection();
+    const user = await users.findOne({ apiKey });
+    return user?.adminId || user?.email || null;
+  } catch (error) {
+    console.error("❌ Failed to resolve admin ID from API key:", error);
+    return null;
+  }
+}
+
+/**
  * Handle preflight OPTIONS request for CORS
  */
 export async function OPTIONS() {
@@ -66,8 +83,21 @@ export async function OPTIONS() {
  */
 export async function POST(request: NextRequest) {
   try {
-    // Extract admin ID from request (you may need to adjust this based on your auth system)
-    const adminId = request.headers.get('x-admin-id') || 'default';
+    // First, try to get admin ID from API key
+    const apiKey = request.headers.get('x-api-key');
+    let adminId = request.headers.get('x-admin-id') || null;
+    
+    // If no admin ID provided, try to resolve from API key
+    if (!adminId && apiKey) {
+      adminId = await resolveAdminIdFromApiKey(apiKey);
+      console.log("📅 [BOOKING] Resolved admin ID from API key:", adminId);
+    }
+    
+    // Fallback to 'default' if still no admin ID
+    if (!adminId) {
+      adminId = 'default';
+      console.log("📅 [BOOKING] Using default admin ID");
+    }
     
     // Check if booking feature is enabled (core feature - always enabled in new system)
     const isBookingEnabled = await isFeatureEnabled(adminId, 'bookingDetection');
@@ -87,12 +117,16 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const bookingData: BookingSubmission = body;
+    
+    // Add the resolved admin ID to the booking data
+    bookingData.adminId = adminId;
 
     console.log("📅 New booking submission:", {
       date: bookingData.preferredDate,
       time: bookingData.preferredTime,
       email: bookingData.email,
       type: bookingData.bookingType || "demo",
+      adminId: adminId,
     });
 
     // Step 1: Validate booking data
