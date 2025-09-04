@@ -756,9 +756,13 @@ export async function GET(request: Request) {
     
     contentArea.innerHTML = '';
     
-    // Create date grid
+    // Create horizontal scrollable date container
+    const datesContainer = document.createElement('div');
+    datesContainer.style.cssText = 'overflow-x: auto; margin-bottom: 16px; padding-bottom: 8px;';
+    
+    // Create date grid - horizontal layout
     const datesGrid = document.createElement('div');
-    datesGrid.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px;';
+    datesGrid.style.cssText = 'display: flex; gap: 12px; min-width: fit-content; padding: 4px;';
     
     // Show available dates (limit to 10 for better UX)
     availableDays.slice(0, 10).forEach(day => {
@@ -767,12 +771,14 @@ export async function GET(request: Request) {
         background: #f8f9fa;
         border: 2px solid #e9ecef;
         border-radius: 8px;
-        padding: 16px;
+        padding: 12px 16px;
         cursor: pointer;
         transition: all 0.2s ease;
         text-align: center;
         position: relative;
         overflow: hidden;
+        min-width: 120px;
+        flex-shrink: 0;
       \`;
       
       const dayName = document.createElement('div');
@@ -843,12 +849,13 @@ export async function GET(request: Request) {
       datesGrid.appendChild(dateCard);
     });
     
-    contentArea.appendChild(datesGrid);
+    datesContainer.appendChild(datesGrid);
+    contentArea.appendChild(datesContainer);
     
     // Add helpful text
     const helpText = document.createElement('div');
     helpText.style.cssText = 'text-align: center; font-size: 13px; color: #6b7280; margin-top: 12px;';
-    helpText.textContent = 'Click on a date to see available time slots';
+    helpText.textContent = 'Scroll horizontally to see more dates • Click on a date to see available time slots';
     contentArea.appendChild(helpText);
   }
 
@@ -883,9 +890,26 @@ export async function GET(request: Request) {
     selectedDateHeader.appendChild(changeButton);
     contentArea.appendChild(selectedDateHeader);
     
-    // Time slots grid
+    // Time slots grid with improved layout and responsive design
     const timeSlotsGrid = document.createElement('div');
-    timeSlotsGrid.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 16px;';
+    timeSlotsGrid.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 12px; margin-bottom: 16px;';
+    
+    // Add responsive styles via CSS
+    const style = document.createElement('style');
+    style.textContent = \`
+      @media (min-width: 768px) {
+        .time-slots-grid {
+          grid-template-columns: repeat(4, 1fr) !important;
+        }
+      }
+      @media (max-width: 480px) {
+        .time-slots-grid {
+          grid-template-columns: repeat(3, 1fr) !important;
+        }
+      }
+    \`;
+    document.head.appendChild(style);
+    timeSlotsGrid.className = 'time-slots-grid';
     
     const availableSlots = selectedDay.timeSlots.filter(slot => slot.available);
     
@@ -932,7 +956,7 @@ export async function GET(request: Request) {
   function addTimePeriod(container, periodName, slots, selectedDay, bookingType) {
     // Period header
     const periodHeader = document.createElement('div');
-    periodHeader.style.cssText = 'grid-column: 1 / -1; font-weight: 600; color: #374151; margin: 16px 0 8px 0; padding-bottom: 4px; border-bottom: 1px solid #e5e7eb; font-size: 14px;';
+    periodHeader.style.cssText = 'grid-column: 1 / -1; font-weight: 600; color: #374151; margin: 16px 0 12px 0; padding: 8px 12px; background: #f9fafb; border-radius: 6px; font-size: 14px; border-left: 4px solid ' + currentTheme.primary + ';';
     periodHeader.textContent = periodName + ' (' + slots.length + ' available)';
     container.appendChild(periodHeader);
     
@@ -944,7 +968,7 @@ export async function GET(request: Request) {
         background: #f8f9fa;
         border: 2px solid #dee2e6;
         border-radius: 8px;
-        padding: 12px 8px;
+        padding: 14px 8px;
         cursor: pointer;
         transition: all 0.2s ease;
         font-size: 14px;
@@ -953,6 +977,10 @@ export async function GET(request: Request) {
         text-align: center;
         position: relative;
         overflow: hidden;
+        min-height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       \`;
       
       // Add hover effects

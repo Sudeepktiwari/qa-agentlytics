@@ -246,19 +246,35 @@
 
       .time-slots {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-        gap: 10px;
+        grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+        gap: 12px;
         margin-top: 20px;
       }
 
+      @media (min-width: 768px) {
+        .time-slots {
+          grid-template-columns: repeat(4, 1fr);
+        }
+      }
+
+      @media (max-width: 480px) {
+        .time-slots {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+
       .time-slot {
-        padding: 10px 12px;
+        padding: 12px 8px;
         border: 2px solid #e2e8f0;
         border-radius: 6px;
         text-align: center;
         cursor: pointer;
         transition: all 0.2s;
         background: white;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
 
       .time-slot:hover {

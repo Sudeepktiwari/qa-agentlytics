@@ -500,18 +500,35 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({
 
         .time-slots-grid {
           display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 8px;
+          grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+          gap: 10px;
+        }
+
+        @media (min-width: 768px) {
+          .time-slots-grid {
+            grid-template-columns: repeat(4, 1fr);
+          }
+        }
+
+        @media (max-width: 480px) {
+          .time-slots-grid {
+            grid-template-columns: repeat(3, 1fr);
+          }
         }
 
         .time-slot {
           background: #f9fafb;
           border: 1px solid #d1d5db;
-          border-radius: 4px;
-          padding: 8px 12px;
+          border-radius: 6px;
+          padding: 12px 8px;
           cursor: pointer;
           font-size: 0.875rem;
           text-align: center;
+          transition: all 0.2s ease;
+          min-height: 44px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
 
         .time-slot:hover {

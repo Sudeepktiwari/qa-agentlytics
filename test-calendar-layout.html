@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Calendar Layout</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            margin-bottom: 20px;
+            color: #2d3748;
+        }
+
+        /* Horizontal Date Layout */
+        .dates-container {
+            overflow-x: auto;
+            margin-bottom: 24px;
+            padding-bottom: 8px;
+        }
+
+        .dates-grid {
+            display: flex;
+            gap: 12px;
+            min-width: fit-content;
+            padding: 4px;
+        }
+
+        .date-card {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+            min-width: 120px;
+            flex-shrink: 0;
+        }
+
+        .date-card:hover {
+            background: #667eea;
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            color: white;
+        }
+
+        .day-name {
+            font-size: 12px;
+            color: #6b7280;
+            font-weight: 500;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        .date-number {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 4px;
+        }
+
+        .month-name {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 8px;
+        }
+
+        .slots-count {
+            font-size: 11px;
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 2px 8px;
+            border-radius: 12px;
+            display: inline-block;
+        }
+
+        /* Time Slots Grid */
+        .time-slots-container {
+            margin-top: 24px;
+        }
+
+        .period-header {
+            font-weight: 600;
+            color: #374151;
+            margin: 16px 0 12px 0;
+            padding: 8px 12px;
+            background: #f9fafb;
+            border-radius: 6px;
+            font-size: 14px;
+            border-left: 4px solid #667eea;
+        }
+
+        .time-slots-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        @media (min-width: 768px) {
+            .time-slots-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .time-slots-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        .time-slot {
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 14px 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 14px;
+            font-weight: 600;
+            color: #495057;
+            text-align: center;
+            min-height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .time-slot:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .help-text {
+            text-align: center;
+            font-size: 13px;
+            color: #6b7280;
+            margin-top: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>📅 Calendar Layout Test</h2>
+        
+        <h3>1. Horizontal Date Selection</h3>
+        <p>Dates are now displayed in a horizontal scrollable line:</p>
+        
+        <div class="dates-container">
+            <div class="dates-grid">
+                <div class="date-card">
+                    <div class="day-name">MON</div>
+                    <div class="date-number">15</div>
+                    <div class="month-name">Jan</div>
+                    <div class="slots-count">4 slots</div>
+                </div>
+                <div class="date-card">
+                    <div class="day-name">TUE</div>
+                    <div class="date-number">16</div>
+                    <div class="month-name">Jan</div>
+                    <div class="slots-count">6 slots</div>
+                </div>
+                <div class="date-card">
+                    <div class="day-name">WED</div>
+                    <div class="date-number">17</div>
+                    <div class="month-name">Jan</div>
+                    <div class="slots-count">3 slots</div>
+                </div>
+                <div class="date-card">
+                    <div class="day-name">THU</div>
+                    <div class="date-number">18</div>
+                    <div class="month-name">Jan</div>
+                    <div class="slots-count">5 slots</div>
+                </div>
+                <div class="date-card">
+                    <div class="day-name">FRI</div>
+                    <div class="date-number">19</div>
+                    <div class="month-name">Jan</div>
+                    <div class="slots-count">2 slots</div>
+                </div>
+                <div class="date-card">
+                    <div class="day-name">MON</div>
+                    <div class="date-number">22</div>
+                    <div class="month-name">Jan</div>
+                    <div class="slots-count">4 slots</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="help-text">
+            Scroll horizontally to see more dates • Click on a date to see available time slots
+        </div>
+
+        <div class="time-slots-container">
+            <h3>2. Improved Time Slots Grid</h3>
+            <p>Time slots are now organized in a proper grid with period headers:</p>
+            
+            <div class="period-header">Morning (4 available)</div>
+            <div class="time-slots-grid">
+                <div class="time-slot">09:00</div>
+                <div class="time-slot">09:30</div>
+                <div class="time-slot">10:00</div>
+                <div class="time-slot">11:30</div>
+            </div>
+
+            <div class="period-header">Afternoon (6 available)</div>
+            <div class="time-slots-grid">
+                <div class="time-slot">13:00</div>
+                <div class="time-slot">13:30</div>
+                <div class="time-slot">14:00</div>
+                <div class="time-slot">14:30</div>
+                <div class="time-slot">15:00</div>
+                <div class="time-slot">15:30</div>
+            </div>
+
+            <div class="period-header">Evening (2 available)</div>
+            <div class="time-slots-grid">
+                <div class="time-slot">17:00</div>
+                <div class="time-slot">17:30</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
