@@ -3317,9 +3317,17 @@ export async function GET(request: Request) {
         
         console.log("🔘 [WIDGET RENDER] Message buttons:", msg.buttons);
         console.log("📧 [WIDGET RENDER] Message emailPrompt:", msg.emailPrompt);
+        console.log("📅 [WIDGET RENDER] Message showBookingCalendar:", msg.showBookingCalendar);
         
-        // Add buttons if present
-        if (msg.buttons && msg.buttons.length > 0) {
+        // Hide buttons and email requests if calendar is being shown
+        const hideInteractiveElements = msg.showBookingCalendar && msg.bookingType;
+        
+        if (hideInteractiveElements) {
+          console.log("🚫 [WIDGET RENDER] Hiding interactive elements (buttons & email) - calendar is shown");
+        }
+        
+        // Add buttons if present (skip if calendar is shown)
+        if (msg.buttons && msg.buttons.length > 0 && !hideInteractiveElements) {
           console.log("✅ [WIDGET RENDER] Rendering", msg.buttons.length, "buttons");
           const buttonsDiv = document.createElement('div');
           buttonsDiv.style.cssText = 'margin-top: 8px;';
@@ -3415,10 +3423,13 @@ export async function GET(request: Request) {
           });
           
           bubbleDiv.appendChild(buttonsDiv);
+        } else if (msg.buttons && msg.buttons.length > 0 && hideInteractiveElements) {
+          console.log("🚫 [WIDGET RENDER] Skipping", msg.buttons.length, "buttons - calendar is shown");
         }
         
-        // Add email prompt if present
-        if (msg.emailPrompt && msg.emailPrompt.trim()) {
+        // Add email prompt if present (skip if calendar is shown)
+        if (msg.emailPrompt && msg.emailPrompt.trim() && !hideInteractiveElements) {
+          console.log("✅ [WIDGET RENDER] Rendering email prompt");
           const emailDiv = document.createElement('div');
           emailDiv.style.cssText = 'margin-top: 8px;';
           
@@ -3479,6 +3490,8 @@ export async function GET(request: Request) {
           emailForm.appendChild(emailSubmit);
           emailDiv.appendChild(emailForm);
           bubbleDiv.appendChild(emailDiv);
+        } else if (msg.emailPrompt && msg.emailPrompt.trim() && hideInteractiveElements) {
+          console.log("🚫 [WIDGET RENDER] Skipping email prompt - calendar is shown");
         }
 
         // Add booking calendar if present
