@@ -530,7 +530,7 @@ export async function GET(request: Request) {
       submitButton.style.backgroundColor = '#0070f3';
     });
     
-    submitButton.addEventListener('click', () => {
+    submitButton.addEventListener('click', async () => {
       console.log("🔄 [EMAIL FORM] Continue button clicked");
       const email = emailInput.value.trim();
       const name = nameInput.value.trim();
