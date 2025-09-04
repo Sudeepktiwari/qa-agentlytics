@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Intelligence Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        input, button {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        .results {
+            background: #e9ecef;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 15px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Customer Intelligence Test</h1>
+        <p>This test verifies that email collection in the calendar properly updates the session for customer intelligence tracking.</p>
+
+        <div class="test-section">
+            <h3>Test 1: Email Collection Tracking</h3>
+            <p>Simulates when a user provides email in the calendar booking form:</p>
+            
+            <div class="form-group">
+                <label>Email:</label>
+                <input type="email" id="testEmail" placeholder="test@example.com" value="john.doe@company.com">
+            </div>
+            
+            <div class="form-group">
+                <label>Name:</label>
+                <input type="text" id="testName" placeholder="John Doe" value="John Doe">
+            </div>
+            
+            <div class="form-group">
+                <label>Booking Type:</label>
+                <input type="text" id="testBookingType" placeholder="demo" value="demo">
+            </div>
+            
+            <button onclick="testEmailTracking()">Test Email Collection Tracking</button>
+            <div id="emailResults" class="results"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Test 2: Booking Confirmation Tracking</h3>
+            <p>Simulates when a booking is successfully confirmed:</p>
+            
+            <div class="form-group">
+                <label>Booking Date:</label>
+                <input type="date" id="testDate" value="2025-01-15">
+            </div>
+            
+            <div class="form-group">
+                <label>Booking Time:</label>
+                <input type="time" id="testTime" value="14:30">
+            </div>
+            
+            <div class="form-group">
+                <label>Confirmation Number:</label>
+                <input type="text" id="testConfirmation" placeholder="CONF-12345" value="CONF-12345">
+            </div>
+            
+            <button onclick="testBookingConfirmation()">Test Booking Confirmation Tracking</button>
+            <div id="bookingResults" class="results"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Test 3: Check Customer Intelligence Data</h3>
+            <p>Query the conversation data to verify tracking:</p>
+            
+            <div class="form-group">
+                <label>Session ID:</label>
+                <input type="text" id="sessionId" placeholder="session-123" value="">
+            </div>
+            
+            <button onclick="checkCustomerData()">Check Customer Intelligence Data</button>
+            <div id="customerResults" class="results"></div>
+        </div>
+    </div>
+
+    <script>
+        // Generate a session ID for testing
+        const sessionId = 'test-session-' + Date.now();
+        document.getElementById('sessionId').value = sessionId;
+
+        async function testEmailTracking() {
+            const email = document.getElementById('testEmail').value;
+            const name = document.getElementById('testName').value;
+            const bookingType = document.getElementById('testBookingType').value;
+            const resultsDiv = document.getElementById('emailResults');
+            
+            resultsDiv.textContent = 'Testing email collection tracking...';
+            
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-Key': 'your-test-api-key' // Replace with actual API key
+                    },
+                    body: JSON.stringify({
+                        sessionId: sessionId,
+                        pageUrl: window.location.href,
+                        updateUserProfile: true,
+                        userEmail: email,
+                        userName: name,
+                        leadSource: 'calendar_booking',
+                        bookingIntent: bookingType,
+                        question: `User provided email: ${email} for ${bookingType} booking`
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultsDiv.innerHTML = `<span class="success">✅ Email tracking successful!</span>\n\n${JSON.stringify(data, null, 2)}`;
+                } else {
+                    resultsDiv.innerHTML = `<span class="error">❌ Email tracking failed!</span>\n\n${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `<span class="error">❌ Error:</span>\n\n${error.message}`;
+            }
+        }
+
+        async function testBookingConfirmation() {
+            const email = document.getElementById('testEmail').value;
+            const name = document.getElementById('testName').value;
+            const bookingType = document.getElementById('testBookingType').value;
+            const bookingDate = document.getElementById('testDate').value;
+            const bookingTime = document.getElementById('testTime').value;
+            const confirmationNumber = document.getElementById('testConfirmation').value;
+            const resultsDiv = document.getElementById('bookingResults');
+            
+            resultsDiv.textContent = 'Testing booking confirmation tracking...';
+            
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-Key': 'your-test-api-key' // Replace with actual API key
+                    },
+                    body: JSON.stringify({
+                        sessionId: sessionId,
+                        pageUrl: window.location.href,
+                        updateUserProfile: true,
+                        userEmail: email,
+                        userName: name,
+                        bookingConfirmed: true,
+                        bookingType: bookingType,
+                        bookingDate: bookingDate,
+                        bookingTime: bookingTime,
+                        confirmationNumber: confirmationNumber,
+                        leadStatus: 'converted',
+                        question: `Booking confirmed: ${bookingType} on ${bookingDate} at ${bookingTime}`
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultsDiv.innerHTML = `<span class="success">✅ Booking confirmation tracking successful!</span>\n\n${JSON.stringify(data, null, 2)}`;
+                } else {
+                    resultsDiv.innerHTML = `<span class="error">❌ Booking confirmation tracking failed!</span>\n\n${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `<span class="error">❌ Error:</span>\n\n${error.message}`;
+            }
+        }
+
+        async function checkCustomerData() {
+            const sessionIdToCheck = document.getElementById('sessionId').value;
+            const resultsDiv = document.getElementById('customerResults');
+            
+            resultsDiv.textContent = 'Checking customer intelligence data...';
+            
+            try {
+                // Note: You'll need to create an endpoint to query conversation data
+                // For now, this shows what the query would look like
+                resultsDiv.innerHTML = `<span class="success">📊 Customer Intelligence Query:</span>\n\nSession ID: ${sessionIdToCheck}\n\nTo check the data, query MongoDB collection "conversations" with:\n{\n  "sessionId": "${sessionIdToCheck}"\n}\n\nExpected fields:\n- userEmail\n- userName\n- leadSource\n- bookingIntent\n- bookingConfirmed\n- bookingType\n- bookingDate\n- bookingTime\n- confirmationNumber\n- leadStatus\n- profileUpdated: true`;
+            } catch (error) {
+                resultsDiv.innerHTML = `<span class="error">❌ Error:</span>\n\n${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>

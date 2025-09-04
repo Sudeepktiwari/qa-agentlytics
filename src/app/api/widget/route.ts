@@ -581,6 +581,27 @@ export async function GET(request: Request) {
       userBookingData.email = email;
       userBookingData.name = name || 'Anonymous User';
       
+      // 🔥 UPDATE SESSION WITH EMAIL FOR CUSTOMER INTELLIGENCE
+      try {
+        console.log("📊 [EMAIL FORM] Updating session with email for customer intelligence");
+        
+        await sendApiRequest('chat', {
+          sessionId: sessionId,
+          pageUrl: currentPageUrl,
+          updateUserProfile: true,
+          userEmail: email,
+          userName: name || 'Anonymous User',
+          leadSource: 'calendar_booking',
+          bookingIntent: bookingType,
+          question: \`User provided email: \${email} for \${bookingType} booking\`
+        });
+        
+        console.log("✅ [EMAIL FORM] Session updated with user email for customer intelligence");
+      } catch (error) {
+        console.warn("⚠️ [EMAIL FORM] Failed to update session with email:", error);
+        // Don't block the booking flow if this fails
+      }
+      
       console.log("📊 [EMAIL FORM] User data stored:", userBookingData);
       
       // Show success message and calendar
@@ -1072,6 +1093,28 @@ export async function GET(request: Request) {
       if (response.ok) {
         const result = await response.json();
         console.log("✅ [WIDGET BOOKING] Booking successful:", result);
+        
+        // 🔥 UPDATE SESSION WITH BOOKING CONFIRMATION FOR CUSTOMER INTELLIGENCE
+        try {
+          await sendApiRequest('chat', {
+            sessionId: sessionId,
+            pageUrl: currentPageUrl,
+            updateUserProfile: true,
+            userEmail: userBookingData.email,
+            userName: userBookingData.name,
+            bookingConfirmed: true,
+            bookingType: bookingType,
+            bookingDate: preferredDate,
+            bookingTime: preferredTime,
+            confirmationNumber: result.data?.confirmationNumber,
+            leadStatus: 'converted',
+            question: \`Booking confirmed: \${bookingType} on \${preferredDate} at \${preferredTime}\`
+          });
+          
+          console.log("✅ [WIDGET BOOKING] Customer intelligence updated with booking confirmation");
+        } catch (error) {
+          console.warn("⚠️ [WIDGET BOOKING] Failed to update customer intelligence:", error);
+        }
         
         // Add success message to chat with user details
         const successMessage = {

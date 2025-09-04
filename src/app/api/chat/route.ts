@@ -1006,6 +1006,18 @@ export async function POST(req: NextRequest) {
     contextualPageContext = null,
     autoResponse = false,
     contextualQuestion = null,
+    // Customer Intelligence / User Profile Update parameters
+    updateUserProfile = false,
+    userEmail: profileUserEmail = null,
+    userName: profileUserName = null,
+    leadSource = null,
+    bookingIntent = null,
+    bookingConfirmed = false,
+    bookingType = null,
+    bookingDate = null,
+    bookingTime = null,
+    confirmationNumber = null,
+    leadStatus = null,
   } = body;
 
   // Add request ID for debugging
@@ -1047,6 +1059,94 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: "Invalid API key" },
         { status: 401, headers: corsHeaders }
+      );
+    }
+  }
+
+  // 🔥 HANDLE USER PROFILE UPDATE FOR CUSTOMER INTELLIGENCE
+  if (updateUserProfile && profileUserEmail) {
+    try {
+      console.log(`[Chat API ${requestId}] 📊 Updating user profile for customer intelligence`);
+      console.log(`[Chat API ${requestId}] 📊 Profile data:`, {
+        sessionId,
+        userEmail: profileUserEmail,
+        userName: profileUserName,
+        leadSource,
+        bookingIntent,
+        bookingConfirmed,
+        bookingType,
+        bookingDate,
+        bookingTime,
+        confirmationNumber,
+        leadStatus,
+      });
+
+      const db = await getDb();
+      const conversationsCollection = db.collection("conversations");
+
+      // Update or create conversation record with user profile data
+      const profileUpdateData = {
+        sessionId,
+        userEmail: profileUserEmail,
+        userName: profileUserName || "Anonymous User",
+        pageUrl,
+        lastActivity: new Date(),
+        profileUpdated: true,
+        ...(leadSource && { leadSource }),
+        ...(bookingIntent && { bookingIntent }),
+        ...(bookingConfirmed && { bookingConfirmed }),
+        ...(bookingType && { bookingType }),
+        ...(bookingDate && { bookingDate }),
+        ...(bookingTime && { bookingTime }),
+        ...(confirmationNumber && { confirmationNumber }),
+        ...(leadStatus && { leadStatus }),
+      };
+
+      await conversationsCollection.updateOne(
+        { sessionId },
+        { 
+          $set: profileUpdateData,
+          $setOnInsert: { createdAt: new Date() }
+        },
+        { upsert: true }
+      );
+
+      // Also create/update lead record
+      if (profileUserEmail) {
+        const adminId = apiAuth?.adminId || "default-admin";
+        const leadRequirements = bookingIntent ? `${bookingType} booking for ${bookingDate} at ${bookingTime}` : question || "Calendar booking";
+        
+        await createOrUpdateLead(
+          adminId,
+          profileUserEmail,
+          sessionId,
+          leadRequirements,
+          pageUrl,
+          question || `User provided email for ${bookingType} booking`,
+          {
+            detectedIntent: bookingIntent || "booking",
+            userResponses: [`Email: ${profileUserEmail}`, `Name: ${profileUserName}`],
+            visitedPages: [pageUrl],
+          }
+        );
+      }
+
+      console.log(`[Chat API ${requestId}] ✅ User profile updated successfully`);
+
+      // Return early for profile update requests
+      return NextResponse.json(
+        {
+          success: true,
+          message: "User profile updated successfully",
+          profileData: profileUpdateData,
+        },
+        { headers: corsHeaders }
+      );
+    } catch (error) {
+      console.error(`[Chat API ${requestId}] ❌ Error updating user profile:`, error);
+      return NextResponse.json(
+        { error: "Failed to update user profile" },
+        { status: 500, headers: corsHeaders }
       );
     }
   }
