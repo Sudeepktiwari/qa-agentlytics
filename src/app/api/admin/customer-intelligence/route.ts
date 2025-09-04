@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
     const conversationsCollection = db.collection("conversations");
     const leadsCollection = db.collection("leads");
 
-    let query: any = {};
+    const query: Record<string, any> = {};
     
     // Build query based on parameters
     if (sessionId) {
