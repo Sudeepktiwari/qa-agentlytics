@@ -968,16 +968,16 @@ export async function GET(request: Request) {
         background: #f8f9fa;
         border: 2px solid #dee2e6;
         border-radius: 8px;
-        padding: 14px 8px;
+        padding: 4px;
         cursor: pointer;
         transition: all 0.2s ease;
-        font-size: 14px;
+        font-size: 12px;
         font-weight: 600;
         color: #495057;
         text-align: center;
         position: relative;
         overflow: hidden;
-        min-height: 48px;
+        
         display: flex;
         align-items: center;
         justify-content: center;
