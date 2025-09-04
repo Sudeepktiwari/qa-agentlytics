@@ -55,7 +55,16 @@ async function resolveAdminIdFromApiKey(apiKey: string): Promise<string | null> 
   try {
     const users = await getUsersCollection();
     const user = await users.findOne({ apiKey });
-    return user?.adminId || user?.email || null;
+    
+    if (!user) {
+      console.log("❌ [BOOKING] No user found for API key");
+      return null;
+    }
+    
+    // Return the MongoDB ObjectId as string, not the email
+    const adminId = user._id.toString();
+    console.log("✅ [BOOKING] Resolved admin ID from API key:", { email: user.email, adminId });
+    return adminId;
   } catch (error) {
     console.error("❌ Failed to resolve admin ID from API key:", error);
     return null;
