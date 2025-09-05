@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Enhanced Message Logging Test</title>
+</head>
+<body>
+    <h1>Enhanced Message Type Logging Test</h1>
+    <p>This page tests the enhanced logging system for different message types.</p>
+    
+    <div style="height: 1500px; padding: 20px;">
+        <h2>Section 1: Calendly Makes Scheduling Simple</h2>
+        <p>Easy scheduling ahead. Calendly is the modern scheduling platform that makes "finding time" a breeze.</p>
+        
+        <h3>Key Features:</h3>
+        <ul>
+            <li>Automated scheduling</li>
+            <li>Calendar integrations</li>
+            <li>Custom event types</li>
+            <li>Team scheduling</li>
+        </ul>
+        
+        <div style="height: 800px; background: #f0f0f0; padding: 20px; margin: 20px 0;">
+            <h2>Section 2: More Content</h2>
+            <p>This section triggers contextual questions to test the enhanced logging.</p>
+            
+            <h3>Pricing Plans:</h3>
+            <ul>
+                <li>Free Plan - $0/month</li>
+                <li>Standard Plan - $10/month</li>
+                <li>Teams Plan - $16/month</li>
+            </ul>
+        </div>
+        
+        <div style="height: 600px; background: #e0e0e0; padding: 20px; margin: 20px 0;">
+            <h2>Section 3: Additional Features</h2>
+            <p>More content to scroll through and trigger different types of messages.</p>
+        </div>
+    </div>
+
+    <div style="margin: 20px; padding: 20px; background: #f9f9f9; border-left: 4px solid #007bff;">
+        <h3>🔍 How to Test Enhanced Logging:</h3>
+        <ol>
+            <li><strong>Open browser console</strong> (F12)</li>
+            <li><strong>Look for message type indicators:</strong>
+                <ul>
+                    <li>🎯 <strong>PROACTIVE</strong> - Initial greeting messages</li>
+                    <li>❓ <strong>CONTEXTUAL_QUESTION</strong> - AI-generated questions based on content</li>
+                    <li>💡 <strong>CONTEXTUAL_RESPONSE</strong> - Responses to contextual questions</li>
+                    <li>⏰ <strong>FOLLOWUP</strong> - Timed follow-up messages</li>
+                    <li>🏢 <strong>SECTION</strong> - Section-based contextual messages</li>
+                </ul>
+            </li>
+            <li><strong>Scroll slowly</strong> to trigger contextual questions</li>
+            <li><strong>Wait 2+ minutes</strong> without interaction to see follow-up messages</li>
+            <li><strong>Check console logs</strong> for clear message type identification</li>
+        </ol>
+        
+        <h4>🎯 Expected Log Pattern:</h4>
+        <pre style="background: #f4f4f4; padding: 10px; border-radius: 4px;">
+🔀 [WIDGET FLOW] ===== STARTING CONTEXTUAL QUESTION GENERATION =====
+❓ [WIDGET CONTEXTUAL_QUESTION] Sending contextual question message: ...
+💡 [WIDGET CONTEXTUAL_RESPONSE] Sending contextual response message: ...
+🔀 [WIDGET FLOW] ===== CONTEXTUAL QUESTION/RESPONSE FLOW COMPLETE =====
+
+⏰ [WIDGET FOLLOWUP] Sending followup message: ...
+🔀 [WIDGET FLOW] ===== FOLLOWUP MESSAGE FLOW COMPLETE =====
+        </pre>
+    </div>
+
+    <script>
+        // Remove existing widget if any
+        document.querySelectorAll('[id*="chatbot"], [id*="widget"]').forEach(el => el.remove());
+
+        // Create and inject script
+        const s = document.createElement('script');
+        s.src = 'https://sample-chatbot-nine.vercel.app/api/widget';
+        s.onload = () => console.log('🟢 Widget loaded successfully - Enhanced logging active');
+        s.onerror = () => console.error('🔴 Widget failed to load');
+
+        // Set attributes before adding to DOM
+        ['data-api-key|ak_e9c3475fd9b9371577ab09f5a0a7fcd1c635ef055b7e66374ed424162d80c9ac',
+         'data-theme|blue',
+         'data-size|large', 
+         'data-voice-enabled|false',
+         'data-voice-gender|female',
+         'data-auto-open-proactive|true'].forEach(attr => {
+            const [name, value] = attr.split('|');
+            s.setAttribute(name, value);
+        });
+
+        document.head.appendChild(s);
+
+        // Log scroll events for testing
+        let scrollTimeout;
+        window.addEventListener('scroll', () => {
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(() => {
+                console.log('📜 [TEST] User stopped scrolling at position:', window.scrollY);
+            }, 500);
+        });
+    </script>
+</body>
+</html>

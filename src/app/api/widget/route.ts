@@ -1163,15 +1163,27 @@ export async function GET(request: Request) {
   }
   
   // Send proactive message with voice and auto-opening
-  function sendProactiveMessage(text, buttons = [], emailPrompt = '') {
+  function sendProactiveMessage(text, buttons = [], emailPrompt = '', messageType = 'PROACTIVE') {
     if (!text) {
       console.log('[ChatWidget] No proactive message text provided');
       return;
     }
     
-    console.log('🎯 [WIDGET PROACTIVE] Sending proactive message:', text.substring(0, 100) + '...');
+    // Clear message type logging with distinct colors/emojis
+    const typeEmojis = {
+      'PROACTIVE': '🎯',
+      'CONTEXTUAL_QUESTION': '❓',
+      'CONTEXTUAL_RESPONSE': '💡',
+      'FOLLOWUP': '⏰'
+    };
+    
+    const emoji = typeEmojis[messageType] || '🎯';
+    console.log(emoji + ' [WIDGET ' + messageType + '] Sending ' + messageType.toLowerCase() + ' message:', text.substring(0, 100) + '...');
     if (buttons && buttons.length > 0) {
-      console.log('🎯 [WIDGET PROACTIVE] Including buttons:', buttons);
+      console.log(emoji + ' [WIDGET ' + messageType + '] Including buttons:', buttons);
+    }
+    if (emailPrompt) {
+      console.log(emoji + ' [WIDGET ' + messageType + '] Including email prompt:', emailPrompt.substring(0, 50) + '...');
     }
     
     // Update conversation state tracking
@@ -1297,12 +1309,13 @@ export async function GET(request: Request) {
         // Send proactive message if auto-open is enabled
         if (config.autoOpenProactive) {
           console.log('🎯 [WIDGET CONTEXT] Auto-open enabled, sending proactive message');
-          sendProactiveMessage(data.mainText);
+          sendProactiveMessage(data.mainText, data.buttons || [], data.emailPrompt || '', 'PROACTIVE');
         } else {
           console.log('🔒 [WIDGET CONTEXT] Auto-open disabled, not sending proactive message');
         }
         isPageContextLoaded = true;
         console.log('✅ [WIDGET CONTEXT] Page context loaded successfully');
+        console.log('🔀 [WIDGET FLOW] ===== INITIAL PROACTIVE MESSAGE FLOW COMPLETE =====');
       } else {
         console.log('❌ [WIDGET CONTEXT] No proactive message received from API');
         console.log('🔍 [WIDGET CONTEXT] Full API response:', data);
@@ -1567,6 +1580,7 @@ export async function GET(request: Request) {
   // Generate contextual question specifically for scroll stop
   // AI-powered contextual question generation
   async function generateAiContextualQuestion(sectionName, visibleContent, scrollPercentage, sectionData) {
+    console.log('🔀 [WIDGET FLOW] ===== STARTING AI CONTEXTUAL QUESTION GENERATION =====');
     try {
       console.log('🤖 [WIDGET AI] Generating contextual question with AI for:', sectionName);
       
@@ -1686,7 +1700,7 @@ export async function GET(request: Request) {
           // Wait 2 minutes before displaying the AI-generated question and response
           setTimeout(async () => {
             // First, send the contextual question
-            sendProactiveMessage(question, [], '');
+            sendProactiveMessage(question, [], '', 'CONTEXTUAL_QUESTION');
             
             // Wait 3 seconds, then generate and send the proper response to this question
             setTimeout(async () => {
@@ -1708,22 +1722,23 @@ export async function GET(request: Request) {
                 
                 if (responseData && responseData.mainText && responseData.mainText.trim()) {
                   console.log('📤 [WIDGET AI] Displaying proper AI-generated response to contextual question:', responseData.mainText);
-                  sendProactiveMessage(responseData.mainText, responseData.buttons || [], responseData.emailPrompt || '');
+                  sendProactiveMessage(responseData.mainText, responseData.buttons || [], responseData.emailPrompt || '', 'CONTEXTUAL_RESPONSE');
                 } else if (response && response.length > 0) {
                   // Fallback to original response if API call fails
                   console.log('📤 [WIDGET AI] Using fallback response:', response);
-                  sendProactiveMessage(response, data.buttons || [], data.emailPrompt || '');
+                  sendProactiveMessage(response, data.buttons || [], data.emailPrompt || '', 'CONTEXTUAL_RESPONSE');
                 }
               } catch (error) {
                 console.error('❌ [WIDGET AI] Error generating contextual response:', error);
                 if (response && response.length > 0) {
                   console.log('📤 [WIDGET AI] Using fallback response due to error:', response);
-                  sendProactiveMessage(response, data.buttons || [], data.emailPrompt || '');
+                  sendProactiveMessage(response, data.buttons || [], data.emailPrompt || '', 'CONTEXTUAL_RESPONSE');
                 }
               }
               
               console.log('🚩 [WIDGET AI] Resetting contextualMessageDelayActive flag after contextual message completion');
               contextualMessageDelayActive = false; // Reset flag after both messages are sent
+              console.log('🔀 [WIDGET FLOW] ===== CONTEXTUAL QUESTION/RESPONSE FLOW COMPLETE =====');
             }, 3000);
           }, 120000); // 2-minute delay before displaying AI contextual question
           
@@ -2279,6 +2294,8 @@ export async function GET(request: Request) {
       return;
     }
     
+    console.log('🔀 [WIDGET FLOW] ===== STARTING CONTEXTUAL QUESTION GENERATION =====');
+    
     // Try AI first for more intelligent questions
     let aiQuestion = null;
     try {
@@ -2447,7 +2464,7 @@ export async function GET(request: Request) {
   
   // Send contextual question as proactive message
   function sendContextualQuestion(question, sectionData) {
-    console.log('💬 [WIDGET QUESTIONS] Sending contextual question:', question);
+    console.log('❓ [WIDGET CONTEXTUAL_QUESTION] Sending fallback contextual question:', question);
     
     const contextualMessage = {
       role: 'assistant',
@@ -2460,10 +2477,11 @@ export async function GET(request: Request) {
     };
     
     messages.push(contextualMessage);
+    console.log('❓ [WIDGET CONTEXTUAL_QUESTION] Fallback contextual question added to messages array. Total messages:', messages.length);
     
     // Auto-open chat if configured
     if (config.autoOpenProactive && !isOpen) {
-      console.log('🚪 [WIDGET QUESTIONS] Auto-opening chat for contextual question');
+      console.log('❓ [WIDGET CONTEXTUAL_QUESTION] Auto-opening chat for contextual question');
       toggleWidget();
       setTimeout(() => {
         renderMessages();
@@ -2679,8 +2697,8 @@ export async function GET(request: Request) {
         // Add 2-minute delay before displaying section-based contextual message
         setTimeout(() => {
           contextualMessageDelayActive = false; // Reset flag when delay completes
-          console.log('🎯 [WIDGET MIRROR] 2-minute delay complete, displaying section-based message');
-          sendProactiveMessage(data.mainText);
+          console.log('� [WIDGET SECTION] 2-minute delay complete, displaying section-based contextual message');
+          sendProactiveMessage(data.mainText, data.buttons || [], data.emailPrompt || '', 'CONTEXTUAL_RESPONSE');
         }, 120000); // 2-minute delay before displaying section contextual message
       }
     } catch (error) {
@@ -3132,7 +3150,8 @@ export async function GET(request: Request) {
 
   // Send followup message
   async function sendFollowupMessage() {
-    console.log('[Widget] Sending followup message', { followupCount, sessionId });
+    console.log('🔀 [WIDGET FLOW] ===== STARTING FOLLOWUP MESSAGE GENERATION =====');
+    console.log('⏰ [WIDGET FOLLOWUP] Sending followup message', { followupCount, sessionId });
     const currentUrl = window.location.href;
     
     // Get the followup topic for this message
@@ -3140,8 +3159,8 @@ export async function GET(request: Request) {
     
     // Extract current page summary for contextual followups
     const pageSummary = extractPageSummary();
-    console.log('📄 [WIDGET FOLLOWUP] Page summary for followup:', pageSummary);
-    console.log('📋 [WIDGET FOLLOWUP] Using topic:', followupTopic);
+    console.log('⏰ [WIDGET FOLLOWUP] Page summary for followup:', pageSummary);
+    console.log('⏰ [WIDGET FOLLOWUP] Using topic:', followupTopic);
     
     try {
       const data = await sendApiRequest('chat', {
@@ -3173,21 +3192,23 @@ export async function GET(request: Request) {
         messages.push(botMessage);
         renderMessages();
         followupCount++;
-        console.log('[Widget] Followup message added, new count:', followupCount);
+        console.log('⏰ [WIDGET FOLLOWUP] Followup message added to messages array, new count:', followupCount);
         
         // Auto-open chat if it's closed and user hasn't opened it yet
         if (!isOpen && config.autoOpenProactive) {
-          console.log('[Widget] Auto-opening chat for followup message');
+          console.log('⏰ [WIDGET FOLLOWUP] Auto-opening chat for followup message');
           toggleWidget();
         }
         
         // Continue followup chain
         startFollowupTimer();
+        console.log('🔀 [WIDGET FLOW] ===== FOLLOWUP MESSAGE FLOW COMPLETE =====');
       } else {
-        console.log('[Widget] No followup message content received from API');
+        console.log('⏰ [WIDGET FOLLOWUP] No followup message content received from API');
       }
     } catch (error) {
-      console.error('[Widget] Error sending followup message:', error);
+      console.error('⏰ [WIDGET FOLLOWUP] Error sending followup message:', error);
+      console.log('🔀 [WIDGET FLOW] ===== FOLLOWUP MESSAGE FLOW FAILED =====');
     }
     
     followupSent = false;
