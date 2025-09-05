@@ -1666,6 +1666,7 @@ export async function GET(request: Request) {
         
         // Set delay flag to prevent other contextual messages
         contextualMessageDelayActive = true;
+        console.log('🚩 [WIDGET AI] Setting contextualMessageDelayActive flag to prevent interference');
         
         // 🎯 TWO-MESSAGE APPROACH: Split into question and response
         const fullResponse = data.mainText.trim();
@@ -1683,17 +1684,47 @@ export async function GET(request: Request) {
           contextualMessageDelayActive = true;
           
           // Wait 2 minutes before displaying the AI-generated question and response
-          setTimeout(() => {
+          setTimeout(async () => {
+            // First, send the contextual question
             sendProactiveMessage(question, [], '');
             
-            // Wait additional 2 seconds, then display the response as second message
-            setTimeout(() => {
-              if (response && response.length > 0) {
-                console.log('📤 [WIDGET AI] Displaying response as second message:', response);
-                sendProactiveMessage(response, data.buttons || [], data.emailPrompt || '');
+            // Wait 3 seconds, then generate and send the proper response to this question
+            setTimeout(async () => {
+              try {
+                console.log('🤖 [WIDGET AI] Generating response to contextual question:', question);
+                
+                // Generate a proper response to the contextual question
+                const responseData = await sendApiRequest('chat', {
+                  sessionId: sessionId,
+                  pageUrl: currentPageUrl,
+                  question: question, // Use the contextual question as the user's question
+                  message: question,
+                  contextualResponse: true,
+                  sectionContext: sectionData,
+                  contextual: true,
+                  hasBeenGreeted: hasBeenGreeted,
+                  proactiveMessageCount: proactiveMessageCount
+                });
+                
+                if (responseData && responseData.mainText && responseData.mainText.trim()) {
+                  console.log('📤 [WIDGET AI] Displaying proper AI-generated response to contextual question:', responseData.mainText);
+                  sendProactiveMessage(responseData.mainText, responseData.buttons || [], responseData.emailPrompt || '');
+                } else if (response && response.length > 0) {
+                  // Fallback to original response if API call fails
+                  console.log('📤 [WIDGET AI] Using fallback response:', response);
+                  sendProactiveMessage(response, data.buttons || [], data.emailPrompt || '');
+                }
+              } catch (error) {
+                console.error('❌ [WIDGET AI] Error generating contextual response:', error);
+                if (response && response.length > 0) {
+                  console.log('📤 [WIDGET AI] Using fallback response due to error:', response);
+                  sendProactiveMessage(response, data.buttons || [], data.emailPrompt || '');
+                }
               }
+              
+              console.log('🚩 [WIDGET AI] Resetting contextualMessageDelayActive flag after contextual message completion');
               contextualMessageDelayActive = false; // Reset flag after both messages are sent
-            }, 2000);
+            }, 3000);
           }, 120000); // 2-minute delay before displaying AI contextual question
           
           return question;
@@ -2572,6 +2603,12 @@ export async function GET(request: Request) {
   // Send section context to API
   async function sendSectionContextToAPI(sectionData) {
     if (!isOpen || followupSent) return; // Don't spam if chat is closed or already sent followup
+    
+    // Check if AI contextual question system is already handling this section
+    if (contextualMessageDelayActive) {
+      console.log('⏸️ [WIDGET MIRROR] AI contextual system is active, skipping section context API to prevent interference');
+      return;
+    }
     
     console.log('📤 [WIDGET MIRROR] Sending section context to API:', sectionData);
     

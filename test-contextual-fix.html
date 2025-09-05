@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Contextual Question Fix</title>
+</head>
+<body>
+    <h1>Test Contextual Message Flow</h1>
+    <p>This page tests the fixed contextual message system.</p>
+    
+    <div style="height: 1500px; padding: 20px;">
+        <h2>Calendly Makes Scheduling Simple</h2>
+        <p>Easy scheduling ahead. Calendly is the modern scheduling platform that makes "finding time" a breeze. When connecting is easy, your teams and customers win together.</p>
+        
+        <h3>Key Features:</h3>
+        <ul>
+            <li>Automated scheduling</li>
+            <li>Calendar integrations</li>
+            <li>Custom event types</li>
+            <li>Team scheduling</li>
+        </ul>
+        
+        <h3>Pricing Plans:</h3>
+        <ul>
+            <li>Free Plan - $0/month</li>
+            <li>Standard Plan - $10/month</li>
+            <li>Teams Plan - $16/month</li>
+            <li>Enterprise - Custom pricing</li>
+        </ul>
+        
+        <p>Scroll down to test the contextual messaging system...</p>
+        
+        <div style="height: 800px; background: #f0f0f0; padding: 20px; margin: 20px 0;">
+            <h2>More Content Section</h2>
+            <p>This section has additional content to trigger contextual questions.</p>
+        </div>
+    </div>
+
+    <script>
+        // Remove existing widget if any
+        document.querySelectorAll('[id*="chatbot"], [id*="widget"]').forEach(el => el.remove());
+
+        // Create and inject script
+        const s = document.createElement('script');
+        s.src = 'https://sample-chatbot-nine.vercel.app/api/widget';
+        s.onload = () => console.log('Widget loaded');
+        s.onerror = () => console.error('Widget failed to load');
+
+        // Set attributes before adding to DOM
+        ['data-api-key|ak_e9c3475fd9b9371577ab09f5a0a7fcd1c635ef055b7e66374ed424162d80c9ac',
+         'data-theme|blue',
+         'data-size|large', 
+         'data-voice-enabled|false',
+         'data-voice-gender|female',
+         'data-auto-open-proactive|true'].forEach(attr => {
+            const [name, value] = attr.split('|');
+            s.setAttribute(name, value);
+        });
+
+        document.head.appendChild(s);
+    </script>
+</body>
+</html>
