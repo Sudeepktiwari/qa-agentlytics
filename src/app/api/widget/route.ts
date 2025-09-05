@@ -1570,6 +1570,12 @@ export async function GET(request: Request) {
     try {
       console.log('🤖 [WIDGET AI] Generating contextual question with AI for:', sectionName);
       
+      // Check if another contextual message delay is already active
+      if (contextualMessageDelayActive) {
+        console.log('⏸️ [WIDGET AI] Another contextual message delay is active, skipping AI question');
+        return null;
+      }
+      
       // Enhanced content context for AI with richer data
       const contentForAi = {
         sectionName: sectionName,
@@ -1673,9 +1679,11 @@ export async function GET(request: Request) {
           
           console.log('📤 [WIDGET AI] Displaying question as first message with 2-minute delay:', question);
           
+          // Set delay flag to prevent other contextual messages
+          contextualMessageDelayActive = true;
+          
           // Wait 2 minutes before displaying the AI-generated question and response
           setTimeout(() => {
-            contextualMessageDelayActive = false; // Reset flag when delay completes
             sendProactiveMessage(question, [], '');
             
             // Wait additional 2 seconds, then display the response as second message
@@ -1684,6 +1692,7 @@ export async function GET(request: Request) {
                 console.log('📤 [WIDGET AI] Displaying response as second message:', response);
                 sendProactiveMessage(response, data.buttons || [], data.emailPrompt || '');
               }
+              contextualMessageDelayActive = false; // Reset flag after both messages are sent
             }, 2000);
           }, 120000); // 2-minute delay before displaying AI contextual question
           
@@ -1692,9 +1701,12 @@ export async function GET(request: Request) {
           // Fallback: No clear question format, display as single message with 2-minute delay
           console.log('📤 [WIDGET AI] No question format detected, displaying as single message with 2-minute delay');
           
+          // Set delay flag to prevent other contextual messages
+          contextualMessageDelayActive = true;
+          
           setTimeout(() => {
-            contextualMessageDelayActive = false; // Reset flag when delay completes
             sendProactiveMessage(fullResponse, data.buttons || [], data.emailPrompt || '');
+            contextualMessageDelayActive = false; // Reset flag after message is sent
           }, 120000); // 2-minute delay before displaying AI contextual message
           
           return fullResponse;
@@ -1702,6 +1714,8 @@ export async function GET(request: Request) {
       }
     } catch (error) {
       console.warn('⚠️ [WIDGET AI] AI question generation failed, using fallback:', error);
+      // Reset flag if AI generation fails
+      contextualMessageDelayActive = false;
     }
     return null;
   }
@@ -2227,6 +2241,12 @@ export async function GET(request: Request) {
     
     console.log('🤔 [WIDGET QUESTIONS] Generating questions for section:', sectionName);
     console.log('📊 [WIDGET QUESTIONS] Viewport context:', viewportContext);
+    
+    // Check if another contextual message delay is already active
+    if (contextualMessageDelayActive) {
+      console.log('⏸️ [WIDGET QUESTIONS] Another contextual message delay is active, skipping AI question generation');
+      return;
+    }
     
     // Try AI first for more intelligent questions
     let aiQuestion = null;
