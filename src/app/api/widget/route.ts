@@ -1845,11 +1845,11 @@ export async function GET(request: Request) {
         const buttons = data.buttons || [];
         const emailPrompt = data.emailPrompt || '';
         
-        console.log('🎯 [WIDGET SCROLL] Received scroll-based response, adding 60-second delay before displaying');
+        console.log('🎯 [WIDGET SCROLL] Received scroll-based response, adding 2-minute delay before displaying');
         
-        // Add 60-second delay before displaying the response
+        // Add 2-minute delay before displaying the response
         setTimeout(() => {
-          console.log('🎯 [WIDGET SCROLL] 60-second delay complete, now displaying message');
+          console.log('🎯 [WIDGET SCROLL] 2-minute delay complete, now displaying message');
           
           // Create structured contextual question data
           const contextualQuestionData = {
@@ -1868,7 +1868,7 @@ export async function GET(request: Request) {
             console.log('🕐 [WIDGET AUTO] Starting 60-second auto-response timer for contextual question');
             startAutoResponseTimer(contextualQuestionData);
           }
-        }, 60000); // 60-second delay before displaying the response
+        }, 120000); // 2-minute delay before displaying the response
       }
     } catch (error) {
       console.error('❌ [WIDGET SCROLL] Failed to send scroll-based question:', error);
