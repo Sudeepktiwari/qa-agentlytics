@@ -215,6 +215,7 @@ export async function GET(request: Request) {
   let autoResponseTimer = null;
   let contextualQuestionDisplayed = false;
   let lastContextualQuestion = null;
+  let contextualMessageDelayActive = false; // Prevent multiple contextual messages during delay period
   
   // Enhanced page detection variables
   let currentPageUrl = window.location.href;
@@ -1651,6 +1652,15 @@ export async function GET(request: Request) {
       if (data && data.mainText && data.mainText.trim()) {
         console.log('✅ [WIDGET AI] AI generated question:', data.mainText);
         
+        // Check if another contextual message is already in delay period
+        if (contextualMessageDelayActive) {
+          console.log('⏸️ [WIDGET AI] Another contextual message delay is active, skipping AI question');
+          return null;
+        }
+        
+        // Set delay flag to prevent other contextual messages
+        contextualMessageDelayActive = true;
+        
         // 🎯 TWO-MESSAGE APPROACH: Split into question and response
         const fullResponse = data.mainText.trim();
         
@@ -1661,22 +1671,32 @@ export async function GET(request: Request) {
           const question = questionMatch[1].trim();
           const response = fullResponse.substring(question.length).trim();
           
-          console.log('📤 [WIDGET AI] Displaying question as first message:', question);
-          sendProactiveMessage(question, [], '');
+          console.log('📤 [WIDGET AI] Displaying question as first message with 2-minute delay:', question);
           
-          // Wait 2 seconds, then display the response as second message
+          // Wait 2 minutes before displaying the AI-generated question and response
           setTimeout(() => {
-            if (response && response.length > 0) {
-              console.log('📤 [WIDGET AI] Displaying response as second message:', response);
-              sendProactiveMessage(response, data.buttons || [], data.emailPrompt || '');
-            }
-          }, 2000);
+            contextualMessageDelayActive = false; // Reset flag when delay completes
+            sendProactiveMessage(question, [], '');
+            
+            // Wait additional 2 seconds, then display the response as second message
+            setTimeout(() => {
+              if (response && response.length > 0) {
+                console.log('📤 [WIDGET AI] Displaying response as second message:', response);
+                sendProactiveMessage(response, data.buttons || [], data.emailPrompt || '');
+              }
+            }, 2000);
+          }, 120000); // 2-minute delay before displaying AI contextual question
           
           return question;
         } else {
-          // Fallback: No clear question format, display as single message
-          console.log('📤 [WIDGET AI] No question format detected, displaying as single message');
-          sendProactiveMessage(fullResponse, data.buttons || [], data.emailPrompt || '');
+          // Fallback: No clear question format, display as single message with 2-minute delay
+          console.log('📤 [WIDGET AI] No question format detected, displaying as single message with 2-minute delay');
+          
+          setTimeout(() => {
+            contextualMessageDelayActive = false; // Reset flag when delay completes
+            sendProactiveMessage(fullResponse, data.buttons || [], data.emailPrompt || '');
+          }, 120000); // 2-minute delay before displaying AI contextual message
+          
           return fullResponse;
         }
       }
@@ -2316,12 +2336,22 @@ export async function GET(request: Request) {
       const selectedQuestion = selectBestQuestion(questions, sectionData);
       console.log('💡 [WIDGET QUESTIONS] Selected fallback question:', selectedQuestion);
       
-      // Don't send immediately - wait a bit for user to read
+      // Check if another contextual message is already in delay period
+      if (contextualMessageDelayActive) {
+        console.log('⏸️ [WIDGET QUESTIONS] Another contextual message delay is active, skipping fallback question');
+        return;
+      }
+      
+      // Set delay flag to prevent other contextual messages
+      contextualMessageDelayActive = true;
+      
+      // Don't send immediately - wait 2 minutes for user to read
       setTimeout(() => {
+        contextualMessageDelayActive = false; // Reset flag when delay completes
         if (!userIsActive && currentViewportSection === sectionName) {
           sendContextualQuestion(selectedQuestion, sectionData);
         }
-      }, 60000); // Wait 60 seconds (1 minute)
+      }, 120000); // Wait 2 minutes before sending fallback contextual question
     }
   }
   
@@ -2577,7 +2607,24 @@ export async function GET(request: Request) {
       
       if (data.mainText && data.mainText.trim()) {
         console.log('🎯 [WIDGET MIRROR] Received contextual message for section:', sectionData.sectionName);
-        sendProactiveMessage(data.mainText);
+        
+        // Check if another contextual message is already in delay period
+        if (contextualMessageDelayActive) {
+          console.log('⏸️ [WIDGET MIRROR] Another contextual message delay is active, skipping section message');
+          return;
+        }
+        
+        console.log('🎯 [WIDGET MIRROR] Adding 2-minute delay before displaying section-based message');
+        
+        // Set delay flag to prevent other contextual messages
+        contextualMessageDelayActive = true;
+        
+        // Add 2-minute delay before displaying section-based contextual message
+        setTimeout(() => {
+          contextualMessageDelayActive = false; // Reset flag when delay completes
+          console.log('🎯 [WIDGET MIRROR] 2-minute delay complete, displaying section-based message');
+          sendProactiveMessage(data.mainText);
+        }, 120000); // 2-minute delay before displaying section contextual message
       }
     } catch (error) {
       console.error('❌ [WIDGET MIRROR] Failed to send section context:', error);
