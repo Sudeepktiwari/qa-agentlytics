@@ -1719,7 +1719,7 @@ export async function GET(request: Request) {
                   console.log('📤 [WIDGET AI] Using fallback response with buttons:', question);
                   sendProactiveMessage(question, data.buttons || [], data.emailPrompt || '', 'CONTEXTUAL_RESPONSE');
                 }
-            } catch (error) {
+              } catch (error) {
               console.error('❌ [WIDGET AI] Error generating contextual response:', error);
               // Fallback: Use the original question with buttons if response generation fails
               console.log('📤 [WIDGET AI] Using fallback response due to error:', question);
