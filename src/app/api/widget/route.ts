@@ -1681,54 +1681,49 @@ export async function GET(request: Request) {
           if (data && data.mainText && data.mainText.trim()) {
             console.log('✅ [WIDGET AI] AI generated question:', data.mainText);
             
-            // 🎯 TWO-MESSAGE APPROACH: Split into question and response
+            // 🎯 TWO-MESSAGE APPROACH: Use the full response as the question for contextual response generation
             const fullResponse = data.mainText.trim();
             
-            // Try to extract the question part (everything up to first question mark)
-            const questionMatch = fullResponse.match(/^([^?]*\?)/);
+            // Use the full response as the contextual question
+            const question = fullResponse;
             
-            if (questionMatch) {
-              const question = questionMatch[1].trim();
-              const response = fullResponse.substring(question.length).trim();
-              
-              console.log('📤 [WIDGET AI] Displaying question:', question);
-              
-              // First, send the contextual question
-              sendProactiveMessage(question, [], '', 'CONTEXTUAL_QUESTION');
-              
-              // Wait 3 seconds, then generate and send the proper response to this question
-              setTimeout(async () => {
-                try {
-                  console.log('🤖 [WIDGET AI] Generating response to contextual question:', question);
-                  
-                  // Generate a proper response to the contextual question
-                  const responseData = await sendApiRequest('chat', {
-                    sessionId: sessionId,
-                    pageUrl: currentPageUrl,
-                    question: question, // Use the contextual question as the user's question
-                    message: question,
-                    contextualResponse: true,
-                    contextualQuestion: question, // Add this for the API handler
-                    sectionContext: sectionData,
-                    contextual: true,
-                    hasBeenGreeted: hasBeenGreeted,
-                    proactiveMessageCount: proactiveMessageCount
-                  });
+            console.log('📤 [WIDGET AI] Displaying question:', question);
+            
+            // First, send the contextual question
+            sendProactiveMessage(question, [], '', 'CONTEXTUAL_QUESTION');
+            
+            // Wait 3 seconds, then generate and send the proper response to this question
+            setTimeout(async () => {
+              try {
+                console.log('🤖 [WIDGET AI] Generating response to contextual question:', question);
                 
-                if (responseData && responseData.mainText && responseData.mainText.trim()) {
-                  console.log('📤 [WIDGET AI] Displaying proper AI-generated response to contextual question:', responseData.mainText);
-                  sendProactiveMessage(responseData.mainText, responseData.buttons || [], responseData.emailPrompt || '', 'CONTEXTUAL_RESPONSE');
-                } else if (response && response.length > 0) {
-                  // Fallback to original response if API call fails
-                  console.log('📤 [WIDGET AI] Using fallback response:', response);
-                  sendProactiveMessage(response, data.buttons || [], data.emailPrompt || '', 'CONTEXTUAL_RESPONSE');
-                }
+                // Generate a proper response to the contextual question
+                const responseData = await sendApiRequest('chat', {
+                  sessionId: sessionId,
+                  pageUrl: currentPageUrl,
+                  question: question, // Use the contextual question as the user's question
+                  message: question,
+                  contextualResponse: true,
+                  contextualQuestion: question, // Add this for the API handler
+                  sectionContext: sectionData,
+                  contextual: true,
+                  hasBeenGreeted: hasBeenGreeted,
+                  proactiveMessageCount: proactiveMessageCount
+                });
+              
+              if (responseData && responseData.mainText && responseData.mainText.trim()) {
+                console.log('📤 [WIDGET AI] Displaying proper AI-generated response to contextual question:', responseData.mainText);
+                sendProactiveMessage(responseData.mainText, responseData.buttons || [], responseData.emailPrompt || '', 'CONTEXTUAL_RESPONSE');
+              } else {
+                // Fallback: Use the question with buttons if response generation fails
+                console.log('📤 [WIDGET AI] Using fallback response with buttons:', question);
+                sendProactiveMessage(question, data.buttons || [], data.emailPrompt || '', 'CONTEXTUAL_RESPONSE');
+              }
               } catch (error) {
                 console.error('❌ [WIDGET AI] Error generating contextual response:', error);
-                if (response && response.length > 0) {
-                  console.log('📤 [WIDGET AI] Using fallback response due to error:', response);
-                  sendProactiveMessage(response, data.buttons || [], data.emailPrompt || '', 'CONTEXTUAL_RESPONSE');
-                }
+                // Fallback: Use the original question with buttons if response generation fails
+                console.log('📤 [WIDGET AI] Using fallback response due to error:', question);
+                sendProactiveMessage(question, data.buttons || [], data.emailPrompt || '', 'CONTEXTUAL_RESPONSE');
               }
               
               console.log('🚩 [WIDGET AI] Resetting contextualMessageDelayActive flag after contextual message completion');
@@ -1738,11 +1733,8 @@ export async function GET(request: Request) {
             
             return question;
           } else {
-            // Fallback: No clear question format, display as single message
-            console.log('📤 [WIDGET AI] No question format detected, displaying as single message');
-            sendProactiveMessage(fullResponse, data.buttons || [], data.emailPrompt || '');
-            contextualMessageDelayActive = false; // Reset flag after message is sent
-            return fullResponse;
+            console.log('❌ [WIDGET AI] No valid response from API');
+            contextualMessageDelayActive = false;
           }
         } else {
           console.log('❌ [WIDGET AI] No valid response from API');
