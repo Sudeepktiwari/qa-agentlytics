@@ -1720,11 +1720,11 @@ export async function GET(request: Request) {
                   sendProactiveMessage(question, data.buttons || [], data.emailPrompt || '', 'CONTEXTUAL_RESPONSE');
                 }
               } catch (error) {
-              console.error('❌ [WIDGET AI] Error generating contextual response:', error);
-              // Fallback: Use the original question with buttons if response generation fails
-              console.log('📤 [WIDGET AI] Using fallback response due to error:', question);
-              sendProactiveMessage(question, data.buttons || [], data.emailPrompt || '', 'CONTEXTUAL_RESPONSE');
-            }
+                console.error('❌ [WIDGET AI] Error generating contextual response:', error);
+                // Fallback: Use the original question with buttons if response generation fails
+                console.log('📤 [WIDGET AI] Using fallback response due to error:', question);
+                sendProactiveMessage(question, data.buttons || [], data.emailPrompt || '', 'CONTEXTUAL_RESPONSE');
+              }
             
             console.log('🚩 [WIDGET AI] Resetting contextualMessageDelayActive flag after contextual message completion');
               contextualMessageDelayActive = false; // Reset flag after both messages are sent
