@@ -1580,15 +1580,19 @@ export async function GET(request: Request) {
   // Generate contextual question specifically for scroll stop
   // AI-powered contextual question generation
   async function generateAiContextualQuestion(sectionName, visibleContent, scrollPercentage, sectionData) {
-    console.log('🔀 [WIDGET FLOW] ===== STARTING AI CONTEXTUAL QUESTION GENERATION =====');
+    console.log('🔀 [WIDGET FLOW] ===== SCHEDULING AI CONTEXTUAL QUESTION GENERATION =====');
     try {
-      console.log('🤖 [WIDGET AI] Generating contextual question with AI for:', sectionName);
+      console.log('🤖 [WIDGET AI] Scheduling contextual question generation for:', sectionName);
       
       // Check if another contextual message delay is already active
       if (contextualMessageDelayActive) {
         console.log('⏸️ [WIDGET AI] Another contextual message delay is active, skipping AI question');
         return null;
       }
+      
+      // Set delay flag to prevent other contextual messages
+      contextualMessageDelayActive = true;
+      console.log('🚩 [WIDGET AI] Setting contextualMessageDelayActive flag to prevent interference');
       
       // Enhanced content context for AI with richer data
       const contentForAi = {
@@ -1639,86 +1643,76 @@ export async function GET(request: Request) {
         businessStage: determineBusinessStage(visibleContent, scrollPercentage)
       };
 
-      // Fixed: Include required sessionId and proper request structure
-      const data = await sendApiRequest('chat', {
-        sessionId: sessionId, // Include the session ID
-        pageUrl: currentPageUrl, // Include current page URL
-        question: 'Generate a contextual question based on the content analysis', // Provide a question
+      // Wait 10 seconds before making the API request for contextual question
+      setTimeout(async () => {
+        console.log('🎯 [WIDGET AI] 10-second delay complete, NOW making API request for contextual question');
         
-        // AI-specific parameters for contextual question generation
-        contextualQuestionGeneration: true,
-        contextualPageContext: {
-          sectionName: sectionName,
-          sectionData: sectionData,
-          contentAnalysis: contentForAi,
-          pageUrl: currentPageUrl,
-          timestamp: new Date().toISOString()
-        },
-        
-        // Legacy parameters for compatibility
-        sectionContext: sectionData,
-        contextual: true,
-        proactive: true,
-        sectionName: sectionName,
-        sectionAnalysis: contentForAi,
-        requestType: 'generate_contextual_question',
-        instruction: 'Generate a specific, helpful question based on what the user is currently viewing. Consider the content type, business stage, and visible elements to create an engaging, relevant question that encourages meaningful conversation.',
-        
-        // Additional context for better AI response
-        hasBeenGreeted: hasBeenGreeted,
-        proactiveMessageCount: proactiveMessageCount
-      });
-
-      if (data && data.mainText && data.mainText.trim()) {
-        console.log('✅ [WIDGET AI] AI generated question:', data.mainText);
-        
-        // Check if another contextual message is already in delay period
-        if (contextualMessageDelayActive) {
-          console.log('⏸️ [WIDGET AI] Another contextual message delay is active, skipping AI question');
-          return null;
-        }
-        
-        // Set delay flag to prevent other contextual messages
-        contextualMessageDelayActive = true;
-        console.log('🚩 [WIDGET AI] Setting contextualMessageDelayActive flag to prevent interference');
-        
-        // 🎯 TWO-MESSAGE APPROACH: Split into question and response
-        const fullResponse = data.mainText.trim();
-        
-        // Try to extract the question part (everything up to first question mark)
-        const questionMatch = fullResponse.match(/^([^?]*\?)/);
-        
-        if (questionMatch) {
-          const question = questionMatch[1].trim();
-          const response = fullResponse.substring(question.length).trim();
-          
-          console.log('📤 [WIDGET AI] Displaying question as first message with 2-minute delay:', question);
-          
-          // Set delay flag to prevent other contextual messages
-          contextualMessageDelayActive = true;
-          
-          // Wait 2 minutes before displaying the AI-generated question and response
-          setTimeout(async () => {
-            // First, send the contextual question
-            sendProactiveMessage(question, [], '', 'CONTEXTUAL_QUESTION');
+        try {
+          // NOW make the API request (after the delay, not before)
+          const data = await sendApiRequest('chat', {
+            sessionId: sessionId, // Include the session ID
+            pageUrl: currentPageUrl, // Include current page URL
+            question: 'Generate a contextual question based on the content analysis', // Provide a question
             
-            // Wait 3 seconds, then generate and send the proper response to this question
-            setTimeout(async () => {
-              try {
-                console.log('🤖 [WIDGET AI] Generating response to contextual question:', question);
-                
-                // Generate a proper response to the contextual question
-                const responseData = await sendApiRequest('chat', {
-                  sessionId: sessionId,
-                  pageUrl: currentPageUrl,
-                  question: question, // Use the contextual question as the user's question
-                  message: question,
-                  contextualResponse: true,
-                  sectionContext: sectionData,
-                  contextual: true,
-                  hasBeenGreeted: hasBeenGreeted,
-                  proactiveMessageCount: proactiveMessageCount
-                });
+            // AI-specific parameters for contextual question generation
+            contextualQuestionGeneration: true,
+            contextualPageContext: {
+              sectionName: sectionName,
+              sectionData: sectionData,
+              contentAnalysis: contentForAi,
+              pageUrl: currentPageUrl,
+              timestamp: new Date().toISOString()
+            },
+            
+            // Legacy parameters for compatibility
+            sectionContext: sectionData,
+            contextual: true,
+            proactive: true,
+            sectionName: sectionName,
+            sectionAnalysis: contentForAi,
+            requestType: 'generate_contextual_question',
+            instruction: 'Generate a specific, helpful question based on what the user is currently viewing. Consider the content type, business stage, and visible elements to create an engaging, relevant question that encourages meaningful conversation.',
+            
+            // Additional context for better AI response
+            hasBeenGreeted: hasBeenGreeted,
+            proactiveMessageCount: proactiveMessageCount
+          });
+
+          if (data && data.mainText && data.mainText.trim()) {
+            console.log('✅ [WIDGET AI] AI generated question:', data.mainText);
+            
+            // 🎯 TWO-MESSAGE APPROACH: Split into question and response
+            const fullResponse = data.mainText.trim();
+            
+            // Try to extract the question part (everything up to first question mark)
+            const questionMatch = fullResponse.match(/^([^?]*\?)/);
+            
+            if (questionMatch) {
+              const question = questionMatch[1].trim();
+              const response = fullResponse.substring(question.length).trim();
+              
+              console.log('📤 [WIDGET AI] Displaying question:', question);
+              
+              // First, send the contextual question
+              sendProactiveMessage(question, [], '', 'CONTEXTUAL_QUESTION');
+              
+              // Wait 3 seconds, then generate and send the proper response to this question
+              setTimeout(async () => {
+                try {
+                  console.log('🤖 [WIDGET AI] Generating response to contextual question:', question);
+                  
+                  // Generate a proper response to the contextual question
+                  const responseData = await sendApiRequest('chat', {
+                    sessionId: sessionId,
+                    pageUrl: currentPageUrl,
+                    question: question, // Use the contextual question as the user's question
+                    message: question,
+                    contextualResponse: true,
+                    sectionContext: sectionData,
+                    contextual: true,
+                    hasBeenGreeted: hasBeenGreeted,
+                    proactiveMessageCount: proactiveMessageCount
+                  });
                 
                 if (responseData && responseData.mainText && responseData.mainText.trim()) {
                   console.log('📤 [WIDGET AI] Displaying proper AI-generated response to contextual question:', responseData.mainText);
@@ -1739,31 +1733,32 @@ export async function GET(request: Request) {
               console.log('🚩 [WIDGET AI] Resetting contextualMessageDelayActive flag after contextual message completion');
               contextualMessageDelayActive = false; // Reset flag after both messages are sent
               console.log('🔀 [WIDGET FLOW] ===== CONTEXTUAL QUESTION/RESPONSE FLOW COMPLETE =====');
-            }, 3000);
-          }, 120000); // 2-minute delay before displaying AI contextual question
-          
-          return question;
-        } else {
-          // Fallback: No clear question format, display as single message with 2-minute delay
-          console.log('📤 [WIDGET AI] No question format detected, displaying as single message with 2-minute delay');
-          
-          // Set delay flag to prevent other contextual messages
-          contextualMessageDelayActive = true;
-          
-          setTimeout(() => {
+            }, 3000); // 3-second delay before generating response
+            
+            return question;
+          } else {
+            // Fallback: No clear question format, display as single message
+            console.log('📤 [WIDGET AI] No question format detected, displaying as single message');
             sendProactiveMessage(fullResponse, data.buttons || [], data.emailPrompt || '');
             contextualMessageDelayActive = false; // Reset flag after message is sent
-          }, 120000); // 2-minute delay before displaying AI contextual message
-          
-          return fullResponse;
+            return fullResponse;
+          }
+        } else {
+          console.log('❌ [WIDGET AI] No valid response from API');
+          contextualMessageDelayActive = false;
         }
+      } catch (error) {
+        console.error('❌ [WIDGET AI] Error making API request:', error);
+        contextualMessageDelayActive = false;
       }
-    } catch (error) {
-      console.warn('⚠️ [WIDGET AI] AI question generation failed, using fallback:', error);
-      // Reset flag if AI generation fails
-      contextualMessageDelayActive = false;
-    }
-    return null;
+    }, 10000); // 10-second delay before making API request
+    
+    return true; // Return true to indicate processing will happen after delay
+  } catch (error) {
+    console.warn('⚠️ [WIDGET AI] Error in AI question generation setup:', error);
+    contextualMessageDelayActive = false;
+  }
+  return null;
   }
   
   // Determine primary content type from visible elements
