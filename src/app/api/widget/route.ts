@@ -1711,22 +1711,22 @@ export async function GET(request: Request) {
                   proactiveMessageCount: proactiveMessageCount
                 });
               
-              if (responseData && responseData.mainText && responseData.mainText.trim()) {
-                console.log('📤 [WIDGET AI] Displaying proper AI-generated response to contextual question:', responseData.mainText);
-                sendProactiveMessage(responseData.mainText, responseData.buttons || [], responseData.emailPrompt || '', 'CONTEXTUAL_RESPONSE');
-              } else {
-                // Fallback: Use the question with buttons if response generation fails
-                console.log('📤 [WIDGET AI] Using fallback response with buttons:', question);
-                sendProactiveMessage(question, data.buttons || [], data.emailPrompt || '', 'CONTEXTUAL_RESPONSE');
-              }
+                if (responseData && responseData.mainText && responseData.mainText.trim()) {
+                  console.log('📤 [WIDGET AI] Displaying proper AI-generated response to contextual question:', responseData.mainText);
+                  sendProactiveMessage(responseData.mainText, responseData.buttons || [], responseData.emailPrompt || '', 'CONTEXTUAL_RESPONSE');
+                } else {
+                  // Fallback: Use the question with buttons if response generation fails
+                  console.log('📤 [WIDGET AI] Using fallback response with buttons:', question);
+                  sendProactiveMessage(question, data.buttons || [], data.emailPrompt || '', 'CONTEXTUAL_RESPONSE');
+                }
             } catch (error) {
               console.error('❌ [WIDGET AI] Error generating contextual response:', error);
-                // Fallback: Use the original question with buttons if response generation fails
-                console.log('📤 [WIDGET AI] Using fallback response due to error:', question);
-                sendProactiveMessage(question, data.buttons || [], data.emailPrompt || '', 'CONTEXTUAL_RESPONSE');
-              }
-              
-              console.log('🚩 [WIDGET AI] Resetting contextualMessageDelayActive flag after contextual message completion');
+              // Fallback: Use the original question with buttons if response generation fails
+              console.log('📤 [WIDGET AI] Using fallback response due to error:', question);
+              sendProactiveMessage(question, data.buttons || [], data.emailPrompt || '', 'CONTEXTUAL_RESPONSE');
+            }
+            
+            console.log('🚩 [WIDGET AI] Resetting contextualMessageDelayActive flag after contextual message completion');
               contextualMessageDelayActive = false; // Reset flag after both messages are sent
               console.log('🔀 [WIDGET FLOW] ===== CONTEXTUAL QUESTION/RESPONSE FLOW COMPLETE =====');
             }, 3000); // 3-second delay before generating response
