@@ -1736,11 +1736,7 @@ export async function GET(request: Request) {
             console.log('❌ [WIDGET AI] No valid response from API');
             contextualMessageDelayActive = false;
           }
-        } else {
-          console.log('❌ [WIDGET AI] No valid response from API');
-          contextualMessageDelayActive = false;
-        }
-      } catch (error) {
+        } catch (error) {
         console.error('❌ [WIDGET AI] Error making API request:', error);
         contextualMessageDelayActive = false;
       }
