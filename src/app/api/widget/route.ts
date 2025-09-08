@@ -1708,6 +1708,7 @@ export async function GET(request: Request) {
                     question: question, // Use the contextual question as the user's question
                     message: question,
                     contextualResponse: true,
+                    contextualQuestion: question, // Add this for the API handler
                     sectionContext: sectionData,
                     contextual: true,
                     hasBeenGreeted: hasBeenGreeted,
