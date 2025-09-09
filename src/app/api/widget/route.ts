@@ -28,6 +28,11 @@ export async function GET(request: Request) {
   // Chatbot Widget Implementation - dynamically use the same domain as the widget
   const CHATBOT_API_BASE = '${baseUrl}';
   
+  // Track page load time for user context analysis
+  if (!window.pageLoadTime) {
+    window.pageLoadTime = Date.now();
+  }
+  
   // Get script element and read data attributes (this is the correct way)
   const scriptElement = document.currentScript || document.querySelector('script[src*="/api/widget"]');
   
@@ -2488,31 +2493,188 @@ export async function GET(request: Request) {
   
   // Generate relevant follow-up buttons for questions
   function generateFollowUpButtons(question, sectionData) {
-    const buttons = [];
-    const { sectionName, sectionContent } = sectionData;
+    console.log('🔘 [WIDGET BUTTONS] Generating enhanced filtered buttons for question:', question.substring(0, 50) + '...');
     
-    if (question.includes('pricing') || question.includes('plan') || sectionContent.hasPricing) {
-      buttons.push("Show me pricing", "Calculate ROI", "Compare plans", "I need enterprise features");
-    } else if (question.includes('demo') || question.includes('see this')) {
-      buttons.push("Yes, show me a demo", "Schedule a call", "Send me a video", "Not right now");
-    } else if (question.includes('help') || question.includes('questions')) {
-      buttons.push("Yes, I have questions", "Tell me more", "Show me benefits", "Contact sales");
-    } else if (question.includes('ready') || question.includes('get started')) {
-      buttons.push("Yes, let's get started", "I need more info", "Schedule a call", "Send me details");
-    } else if (question.includes('contact') || question.includes('call')) {
-      buttons.push("Yes, contact me", "Email me instead", "I'll reach out later", "More questions first");
-    } else {
-      // Default buttons based on section
+    const { sectionName, sectionContent } = sectionData;
+    const allButtons = [];
+    const userContext = getUserContext();
+    
+    // Generate all possible buttons with priority scores
+    
+    // === PRICING-RELATED BUTTONS ===
+    if (question.includes('pricing') || question.includes('plan') || question.includes('cost') || sectionContent.hasPricing) {
+      allButtons.push(
+        { text: "Show me pricing", priority: 10, context: "pricing", category: "action" },
+        { text: "Calculate ROI", priority: 9, context: "pricing", category: "analysis" },
+        { text: "Compare plans", priority: 8, context: "pricing", category: "comparison" },
+        { text: "Enterprise options", priority: 7, context: "pricing", category: "enterprise" },
+        { text: "Free trial available?", priority: 6, context: "pricing", category: "trial" }
+      );
+    }
+    
+    // === DEMO-RELATED BUTTONS ===
+    if (question.includes('demo') || question.includes('see this') || question.includes('show me')) {
+      allButtons.push(
+        { text: "Yes, show me a demo", priority: 10, context: "demo", category: "action" },
+        { text: "Schedule a call", priority: 9, context: "demo", category: "meeting" },
+        { text: "Send me a video", priority: 8, context: "demo", category: "async" },
+        { text: "Live demo now", priority: 7, context: "demo", category: "immediate" }
+      );
+    }
+    
+    // === HELP/SUPPORT BUTTONS ===
+    if (question.includes('help') || question.includes('questions') || question.includes('support')) {
+      allButtons.push(
+        { text: "Yes, I have questions", priority: 9, context: "help", category: "support" },
+        { text: "Tell me more", priority: 8, context: "help", category: "info" },
+        { text: "Show me benefits", priority: 7, context: "help", category: "benefits" },
+        { text: "Contact support", priority: 6, context: "help", category: "contact" }
+      );
+    }
+    
+    // === CONVERSION/READY BUTTONS ===
+    if (question.includes('ready') || question.includes('get started') || question.includes('begin')) {
+      allButtons.push(
+        { text: "Yes, let's get started", priority: 10, context: "conversion", category: "action" },
+        { text: "I need more info", priority: 7, context: "conversion", category: "info" },
+        { text: "Schedule onboarding", priority: 9, context: "conversion", category: "meeting" },
+        { text: "Sign up now", priority: 8, context: "conversion", category: "immediate" }
+      );
+    }
+    
+    // === CONTACT/SALES BUTTONS ===
+    if (question.includes('contact') || question.includes('call') || question.includes('sales')) {
+      allButtons.push(
+        { text: "Yes, contact me", priority: 10, context: "contact", category: "action" },
+        { text: "Email me instead", priority: 8, context: "contact", category: "async" },
+        { text: "Schedule a call", priority: 9, context: "contact", category: "meeting" },
+        { text: "Chat with sales", priority: 7, context: "contact", category: "chat" }
+      );
+    }
+    
+    // === USER BEHAVIOR-BASED BUTTONS ===
+    if (userContext.timeOnPage > 60000) { // More than 1 minute
+      allButtons.push(
+        { text: "I'm ready to buy", priority: 9, context: "behavior", category: "conversion" },
+        { text: "Contact sales team", priority: 8, context: "behavior", category: "sales" }
+      );
+    }
+    
+    if (userContext.timeOnPage > 180000) { // More than 3 minutes
+      allButtons.push(
+        { text: "Need help deciding?", priority: 8, context: "behavior", category: "assistance" },
+        { text: "Talk to an expert", priority: 7, context: "behavior", category: "expert" }
+      );
+    }
+    
+    if (userContext.scrollDepth > 80) { // Scrolled more than 80%
+      allButtons.push(
+        { text: "Seen enough?", priority: 7, context: "behavior", category: "engagement" },
+        { text: "Ready for next step", priority: 6, context: "behavior", category: "progression" }
+      );
+    }
+    
+    // === SECTION-BASED FALLBACK BUTTONS ===
+    if (allButtons.length === 0) {
       if (sectionName.includes('pricing')) {
-        buttons.push("Show pricing details", "Compare options", "Contact sales");
+        allButtons.push(
+          { text: "Show pricing details", priority: 8, context: "section", category: "pricing" },
+          { text: "Compare options", priority: 7, context: "section", category: "comparison" },
+          { text: "Contact sales", priority: 6, context: "section", category: "sales" }
+        );
       } else if (sectionName.includes('features')) {
-        buttons.push("Show me a demo", "Tell me more", "How does it work?");
+        allButtons.push(
+          { text: "Show me a demo", priority: 8, context: "section", category: "demo" },
+          { text: "Tell me more", priority: 7, context: "section", category: "info" },
+          { text: "How does it work?", priority: 6, context: "section", category: "explanation" }
+        );
       } else {
-        buttons.push("Yes, help me", "Tell me more", "Not right now");
+        allButtons.push(
+          { text: "Yes, help me", priority: 7, context: "section", category: "help" },
+          { text: "Tell me more", priority: 6, context: "section", category: "info" },
+          { text: "Not right now", priority: 4, context: "section", category: "decline" }
+        );
       }
     }
     
-    return buttons.slice(0, 3); // Limit to 3 buttons max
+    // === INTELLIGENT FILTERING AND RANKING ===
+    
+    // Apply context-based priority boosts
+    allButtons.forEach(button => {
+      // Boost priority for high-intent contexts
+      if (userContext.timeOnPage > 120000 && button.context === 'conversion') {
+        button.priority += 2;
+      }
+      
+      // Boost priority for section-relevant buttons
+      if (sectionName.includes('pricing') && button.context === 'pricing') {
+        button.priority += 1;
+      }
+      
+      // Boost priority for immediate action buttons if user seems engaged
+      if (userContext.scrollDepth > 50 && button.category === 'action') {
+        button.priority += 1;
+      }
+    });
+    
+    // Remove duplicate buttons (same text)
+    const uniqueButtons = allButtons.filter((button, index, self) => 
+      index === self.findIndex(b => b.text === button.text)
+    );
+    
+    // Sort by priority (highest first) and take top candidates
+    const topButtons = uniqueButtons
+      .sort((a, b) => b.priority - a.priority)
+      .slice(0, 5); // Take top 5 candidates
+    
+    // Ensure diversity in button categories
+    const finalButtons = [];
+    const usedCategories = new Set();
+    
+    for (const button of topButtons) {
+      if (finalButtons.length >= 3) break;
+      
+      // Add button if we haven't used this category yet, or if we need to fill slots
+      if (!usedCategories.has(button.category) || finalButtons.length < 2) {
+        finalButtons.push(button.text);
+        usedCategories.add(button.category);
+      }
+    }
+    
+    // Fill remaining slots if needed
+    while (finalButtons.length < 3 && topButtons.length > finalButtons.length) {
+      const remainingButton = topButtons.find(b => !finalButtons.includes(b.text));
+      if (remainingButton) {
+        finalButtons.push(remainingButton.text);
+      } else {
+        break;
+      }
+    }
+    
+    console.log('🔘 [WIDGET BUTTONS] Generated buttons:', finalButtons);
+    console.log('🔘 [WIDGET BUTTONS] All candidates considered:', allButtons.length);
+    console.log('🔘 [WIDGET BUTTONS] User context:', userContext);
+    
+    return finalButtons;
+  }
+  
+  // Get user context for button filtering
+  function getUserContext() {
+    const now = Date.now();
+    const timeOnPage = now - (window.pageLoadTime || now);
+    
+    // Calculate scroll depth
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const documentHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    const scrollDepth = documentHeight > 0 ? Math.round((scrollTop / documentHeight) * 100) : 0;
+    
+    return {
+      timeOnPage: timeOnPage,
+      scrollDepth: scrollDepth,
+      hasInteracted: messages.length > 1,
+      isReturnVisitor: localStorage.getItem('chatbot_visited') === 'true',
+      deviceType: /Mobile|Android|iPhone|iPad/.test(navigator.userAgent) ? 'mobile' : 'desktop'
+    };
   }
   
   // Extract page summary for proactive messages
@@ -3937,6 +4099,14 @@ export async function GET(request: Request) {
     
     console.log('✅ [WIDGET INIT] Widget initialized successfully');
     console.log('🧪 [WIDGET TEST] Test with: window.testSendMessage("I would like to schedule a demo")');
+    
+    // Track visitor for return visitor detection
+    try {
+      localStorage.setItem('chatbot_visited', 'true');
+    } catch (e) {
+      // Ignore localStorage errors (some browsers/modes block it)
+    }
+    
     // Add cleanup function for page monitoring
     window.addEventListener('beforeunload', cleanupPageMonitoring);
   }
