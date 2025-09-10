@@ -807,6 +807,69 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
     }
   }
 
+  // Copy conversation to clipboard
+  const copyConversation = async () => {
+    try {
+      let conversationText = 'Chat Conversation\n';
+      conversationText += '===================\n\n';
+      
+      messages.forEach((msg, index) => {
+        const role = msg.role === 'user' ? 'You' : 'Assistant';
+        const timestamp = new Date().toLocaleString();
+        
+        conversationText += `[${role}] (${timestamp})\n`;
+        conversationText += `${msg.content}\n`;
+        
+        // Add buttons if present
+        if (msg.buttons && msg.buttons.length > 0) {
+          conversationText += 'Options: ' + msg.buttons.join(', ') + '\n';
+        }
+        
+        conversationText += '\n';
+      });
+      
+      // Copy to clipboard
+      await navigator.clipboard.writeText(conversationText);
+      
+      // Show success feedback (you could add a toast notification here)
+      console.log('[Chatbot] Conversation copied to clipboard');
+      
+    } catch (error) {
+      console.error('[Chatbot] Failed to copy conversation:', error);
+      
+      // Fallback for older browsers
+      try {
+        let conversationText = 'Chat Conversation\n';
+        conversationText += '===================\n\n';
+        
+        messages.forEach((msg, index) => {
+          const role = msg.role === 'user' ? 'You' : 'Assistant';
+          const timestamp = new Date().toLocaleString();
+          
+          conversationText += `[${role}] (${timestamp})\n`;
+          conversationText += `${msg.content}\n`;
+          
+          // Add buttons if present
+          if (msg.buttons && msg.buttons.length > 0) {
+            conversationText += 'Options: ' + msg.buttons.join(', ') + '\n';
+          }
+          
+          conversationText += '\n';
+        });
+        
+        const textArea = document.createElement('textarea');
+        textArea.value = conversationText;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        console.log('[Chatbot] Conversation copied to clipboard (fallback)');
+      } catch (fallbackError) {
+        console.error('[Chatbot] Copy fallback also failed:', fallbackError);
+      }
+    }
+  };
+
   // Handle clicking an action option button
   const handleActionClick = (action: string, msg: Message) => {
     console.log("[Chatbot] Action option clicked", action);
@@ -1180,45 +1243,65 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
         }}
       >
         <h3 style={{ color: "#000000", margin: 0 }}>Chatbot</h3>
-        <div
-          style={{
-            padding: "4px 8px",
-            borderRadius: 12,
-            fontSize: "12px",
-            fontWeight: "bold",
-            backgroundColor: currentBotMode === "sales" ? "#e3f2fd" : "#f3e5f5",
-            color: currentBotMode === "sales" ? "#1976d2" : "#7b1fa2",
-            border: `1px solid ${
-              currentBotMode === "sales" ? "#bbdefb" : "#e1bee7"
-            }`,
-          }}
-          onMouseEnter={() => {
-            console.log("[Chatbot] Indicator hover - Current state:", {
-              currentBotMode,
-              currentUserEmail,
-              indicatorText:
-                currentBotMode === "sales" ? "SALES MODE" : "LEAD MODE",
-            });
-          }}
-        >
-          {(() => {
-            const indicatorText =
-              currentBotMode === "sales" ? "SALES MODE" : "LEAD MODE";
-            console.log("[Chatbot] Rendering indicator:", {
-              currentBotMode,
-              currentUserEmail,
-              indicatorText,
-              backgroundColor:
-                currentBotMode === "sales" ? "#e3f2fd" : "#f3e5f5",
-              timestamp: new Date().toISOString(),
-            });
-            return indicatorText;
-          })()}
-          {currentUserEmail && (
-            <span style={{ marginLeft: 4, opacity: 0.7 }}>
-              • {currentUserEmail}
-            </span>
-          )}
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <button
+            onClick={copyConversation}
+            style={{
+              background: "none",
+              border: "1px solid #d1d5db",
+              borderRadius: 4,
+              padding: "4px 6px",
+              cursor: "pointer",
+              fontSize: "12px",
+              color: "#6b7280",
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+            }}
+            title="Copy conversation"
+          >
+            📋 Copy
+          </button>
+          <div
+            style={{
+              padding: "4px 8px",
+              borderRadius: 12,
+              fontSize: "12px",
+              fontWeight: "bold",
+              backgroundColor: currentBotMode === "sales" ? "#e3f2fd" : "#f3e5f5",
+              color: currentBotMode === "sales" ? "#1976d2" : "#7b1fa2",
+              border: `1px solid ${
+                currentBotMode === "sales" ? "#bbdefb" : "#e1bee7"
+              }`,
+            }}
+            onMouseEnter={() => {
+              console.log("[Chatbot] Indicator hover - Current state:", {
+                currentBotMode,
+                currentUserEmail,
+                indicatorText:
+                  currentBotMode === "sales" ? "SALES MODE" : "LEAD MODE",
+              });
+            }}
+          >
+            {(() => {
+              const indicatorText =
+                currentBotMode === "sales" ? "SALES MODE" : "LEAD MODE";
+              console.log("[Chatbot] Rendering indicator:", {
+                currentBotMode,
+                currentUserEmail,
+                indicatorText,
+                backgroundColor:
+                  currentBotMode === "sales" ? "#e3f2fd" : "#f3e5f5",
+                timestamp: new Date().toISOString(),
+              });
+              return indicatorText;
+            })()}
+            {currentUserEmail && (
+              <span style={{ marginLeft: 4, opacity: 0.7 }}>
+                • {currentUserEmail}
+              </span>
+            )}
+          </div>
         </div>
       </div>
       <div

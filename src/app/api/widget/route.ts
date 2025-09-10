@@ -2972,6 +2972,7 @@ export async function GET(request: Request) {
           </div>
           <div style="display: flex; gap: 8px; align-items: center;">
             \${mirrorEnabled ? '<button id="appointy-mirror-toggle" style="background: none; border: none; color: white; font-size: 16px; cursor: pointer; padding: 4px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 4px;" title="Toggle Mirror View">👁️</button>' : ''}
+            <button id="appointy-copy-btn" style="background: none; border: none; color: white; font-size: 16px; cursor: pointer; padding: 4px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 4px;" title="Copy Conversation">📋</button>
             <button id="appointy-settings-btn" style="background: none; border: none; color: white; font-size: 18px; cursor: pointer; padding: 4px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 4px;" title="Voice Settings">⚙️</button>
             <button id="appointy-close-btn" style="background: none; border: none; color: white; font-size: 20px; cursor: pointer; padding: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">×</button>
           </div>
@@ -3918,6 +3919,66 @@ export async function GET(request: Request) {
     }
   }
   
+  // Copy conversation to clipboard
+  function copyConversation() {
+    try {
+      let conversationText = 'Chat Conversation\\n';
+      conversationText += '===================\\n\\n';
+      
+      messages.forEach((msg, index) => {
+        const role = msg.role === 'user' ? 'You' : 'Assistant';
+        const timestamp = msg.timestamp ? new Date(msg.timestamp).toLocaleString() : '';
+        
+        conversationText += \`[\${role}] \${timestamp ? '(' + timestamp + ')' : ''}\\n\`;
+        conversationText += \`\${msg.content}\\n\`;
+        
+        // Add buttons if present
+        if (msg.buttons && msg.buttons.length > 0) {
+          conversationText += 'Options: ' + msg.buttons.join(', ') + '\\n';
+        }
+        
+        conversationText += '\\n';
+      });
+      
+      // Copy to clipboard
+      navigator.clipboard.writeText(conversationText).then(() => {
+        // Show success feedback
+        showCopyFeedback(true);
+      }).catch(() => {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = conversationText;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        showCopyFeedback(true);
+      });
+    } catch (error) {
+      console.error('Failed to copy conversation:', error);
+      showCopyFeedback(false);
+    }
+  }
+  
+  // Show copy feedback
+  function showCopyFeedback(success) {
+    const copyBtn = document.getElementById('appointy-copy-btn');
+    if (copyBtn) {
+      const originalTitle = copyBtn.title;
+      const originalText = copyBtn.innerHTML;
+      
+      copyBtn.title = success ? 'Copied!' : 'Copy failed';
+      copyBtn.innerHTML = success ? '✅' : '❌';
+      copyBtn.style.color = success ? '#10b981' : '#ef4444';
+      
+      setTimeout(() => {
+        copyBtn.title = originalTitle;
+        copyBtn.innerHTML = originalText;
+        copyBtn.style.color = 'white';
+      }, 2000);
+    }
+  }
+  
   // Setup event listeners
   function setupEventListeners() {
     // Initialize speech on any user interaction
@@ -3954,6 +4015,13 @@ export async function GET(request: Request) {
     document.addEventListener('click', (e) => {
       if (e.target.id === 'appointy-mirror-toggle') {
         toggleMirror();
+      }
+    });
+    
+    // Copy conversation button
+    document.addEventListener('click', (e) => {
+      if (e.target.id === 'appointy-copy-btn') {
+        copyConversation();
       }
     });
     

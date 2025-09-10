@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Copy Feature - Sample Chatbot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #2d3748;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .feature-info {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #4299e1;
+        }
+        .feature-list {
+            background: #edf2f7;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+        .feature-list ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .feature-list li {
+            margin: 8px 0;
+            color: #2d3748;
+        }
+        .demo-section {
+            background: #e6fffa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 1px solid #4fd1c7;
+        }
+        .demo-section h3 {
+            color: #234e52;
+            margin-top: 0;
+        }
+        .highlight {
+            background: #fed7d7;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #f56565;
+            margin: 15px 0;
+        }
+        .code-block {
+            background: #1a202c;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #c3e6cb;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📋 Copy Conversation Feature Test</h1>
+        
+        <div class="feature-info">
+            <h2>🎉 New Feature Added!</h2>
+            <p><strong>Copy Conversation Button</strong> has been successfully implemented in both the widget and admin panel chatbot components.</p>
+        </div>
+
+        <div class="feature-list">
+            <h3>✨ What's New:</h3>
+            <ul>
+                <li><strong>Widget Copy Button:</strong> Added 📋 button in the widget header next to settings and close buttons</li>
+                <li><strong>Admin Panel Copy Button:</strong> Added "📋 Copy" button in the Chatbot component header</li>
+                <li><strong>Smart Formatting:</strong> Copies conversation with timestamps, user roles, and button options</li>
+                <li><strong>Cross-browser Support:</strong> Works with modern clipboard API and fallback for older browsers</li>
+                <li><strong>Visual Feedback:</strong> Success/error indicators show copy status</li>
+            </ul>
+        </div>
+
+        <div class="demo-section">
+            <h3>🔧 Implementation Details:</h3>
+            <div class="feature-list">
+                <h4>Widget Implementation (route.ts):</h4>
+                <ul>
+                    <li>Added copy button to widget header with clipboard icon</li>
+                    <li>Implemented copyConversation() function with full message history</li>
+                    <li>Added visual feedback with checkmark/error states</li>
+                    <li>Formats output with timestamps and role indicators</li>
+                </ul>
+                
+                <h4>Admin Panel Implementation (Chatbot.tsx):</h4>
+                <ul>
+                    <li>Added copy button to chatbot header next to mode indicator</li>
+                    <li>Async clipboard functionality with fallback support</li>
+                    <li>Properly formatted conversation export</li>
+                    <li>Error handling and console logging</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="highlight">
+            <h3>🚀 How to Test:</h3>
+            <ol>
+                <li><strong>Widget Test:</strong> Open the chatbot widget on any page and look for the 📋 button in the header</li>
+                <li><strong>Admin Panel Test:</strong> Go to the admin panel and use the embedded chatbot - click "📋 Copy" button</li>
+                <li><strong>Have a conversation:</strong> Send a few messages back and forth</li>
+                <li><strong>Click Copy:</strong> Click the copy button and paste in a text editor to see formatted output</li>
+            </ol>
+        </div>
+
+        <div class="code-block">
+Example copied conversation format:
+
+Chat Conversation
+===================
+
+[You] (12/10/2024, 2:30:45 PM)
+Hello, I have a question about your pricing
+
+[Assistant] (12/10/2024, 2:30:46 PM)
+I'd be happy to help with pricing information! What specific aspect would you like to know about?
+Options: View Plans, Get Quote, Contact Sales
+
+[You] (12/10/2024, 2:30:50 PM)
+View Plans
+
+[Assistant] (12/10/2024, 2:30:51 PM)
+Here are our current plans...
+        </div>
+
+        <div class="success">
+            <h3>✅ Implementation Complete!</h3>
+            <p>The copy conversation feature has been successfully added to both the widget and admin panel. Users can now easily copy and share their entire conversation history with proper formatting.</p>
+        </div>
+
+        <div class="demo-section">
+            <h3>🧪 Test the Feature:</h3>
+            <p>The chatbot widget below includes the new copy functionality. Try having a conversation and then click the copy button!</p>
+        </div>
+    </div>
+
+    <!-- Chatbot Widget Script -->
+    <script src="http://localhost:3001/api/widget" data-api-key="test-key"></script>
+</body>
+</html>
