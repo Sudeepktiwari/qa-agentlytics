@@ -1745,7 +1745,7 @@ export async function GET(request: Request) {
         console.error('❌ [WIDGET AI] Error making API request:', error);
         contextualMessageDelayActive = false;
       }
-    }, 10000); // 10-second delay before making API request
+    }, 60000); // one minute delay before making API request
     
     return true; // Return true to indicate processing will happen after delay
   } catch (error) {
