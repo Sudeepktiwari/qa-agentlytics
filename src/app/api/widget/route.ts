@@ -3300,24 +3300,56 @@ export async function GET(request: Request) {
     console.log('⏰ [WIDGET FOLLOWUP] Sending followup message', { followupCount, sessionId });
     const currentUrl = window.location.href;
     
-    // Get the followup topic for this message
-    const followupTopic = getFollowupTopic(followupCount);
+    // Check if user has asked any questions in this conversation
+    const userMessages = messages.filter(msg => msg.role === 'user');
+    const hasUserMessages = userMessages.length > 0;
     
-    // Extract current page summary for contextual followups
-    const pageSummary = extractPageSummary();
-    console.log('⏰ [WIDGET FOLLOWUP] Page summary for followup:', pageSummary);
-    console.log('⏰ [WIDGET FOLLOWUP] Using topic:', followupTopic);
+    console.log('📝 [WIDGET FOLLOWUP] User message analysis:', {
+      totalMessages: messages.length,
+      userMessages: userMessages.length,
+      hasUserMessages: hasUserMessages,
+      lastUserMessage: hasUserMessages ? userMessages[userMessages.length - 1].content : null
+    });
     
-    try {
-      const data = await sendApiRequest('chat', {
+    let followupData;
+    
+    if (hasUserMessages && followupCount === 0) {
+      // First followup and user has asked questions - base it on their last question
+      const lastUserMessage = userMessages[userMessages.length - 1].content;
+      console.log('🎯 [WIDGET FOLLOWUP] First followup based on user question:', lastUserMessage);
+      
+      followupData = {
         sessionId,
         pageUrl: currentUrl,
         followup: true,
         followupCount,
+        followupType: 'question_based',
+        lastUserQuestion: lastUserMessage,
+        userConversationHistory: userMessages.map(msg => msg.content),
+        pageSummary: extractPageSummary()
+      };
+    } else {
+      // No user messages or subsequent followups - use topic-based approach
+      const followupTopic = getFollowupTopic(followupCount);
+      console.log('📋 [WIDGET FOLLOWUP] Using topic-based followup:', followupTopic);
+      
+      followupData = {
+        sessionId,
+        pageUrl: currentUrl,
+        followup: true,
+        followupCount,
+        followupType: 'topic_based',
         followupTopic: followupTopic,
-        pageSummary: pageSummary
-        // Don't specify adminId - let the API extract it from the API key
-      });
+        pageSummary: extractPageSummary()
+      };
+    }
+    
+    // Extract current page summary for contextual followups
+    console.log('⏰ [WIDGET FOLLOWUP] Page summary for followup:', followupData.pageSummary);
+    console.log('⏰ [WIDGET FOLLOWUP] Followup data:', followupData);
+    
+    try {
+      const data = await sendApiRequest('chat', followupData);
       
       console.log('[Widget] Followup API response:', data);
       
