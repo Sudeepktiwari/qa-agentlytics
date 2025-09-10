@@ -752,7 +752,7 @@ Current Context:
 
 Generate your response in JSON format:
 {
-  "mainText": "<Under 50 words. Inform about a specific important item on the page and invite a quick response. End with: 'Please tap an option below.' No personal names>",
+  "mainText": "<Under 30 words. Inform about a specific important item on the page and invite a quick response. End with: 'Please tap an option below.' No personal names>",
   "buttons": ["<Generate exactly 3 short options (2-4 words) that are actionable and specific to the page>"] ,
   "emailPrompt": "<ONLY include this if followupCount >= 2 AND user hasn't provided email yet. Otherwise empty string>"
 }
@@ -2100,7 +2100,7 @@ BEHAVIORAL ANALYSIS:
 
 Generate response in JSON format:
 {
-  "mainText": "<Context-aware follow-up (under 50 words) that acknowledges their exploration and asks about specific needs/concerns>",
+  "mainText": "<Context-aware follow-up (under 30 words) that acknowledges their exploration and asks about specific needs/concerns>",
   "buttons": ["<3 short options (2-4 words) relevant to their current evaluation stage. End mainText by asking the user to tap one>"]
 }
 
@@ -2201,7 +2201,7 @@ CORE PRINCIPLES:
 
 RESPONSE FORMAT:
 - Always return valid JSON with "mainText" and "buttons" fields
-- Keep mainText under 30 words for greetings, 50 words for follow-ups
+- Keep mainText under 30 words for greetings, 30 words for follow-ups
 - Generate 3-4 buttons that are 2-3 words each
 - Base everything on the actual page content provided
 - Be genuinely helpful based on what the user can actually do
