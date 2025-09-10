@@ -2593,8 +2593,95 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
         );
 
         if (followupCount === 0) {
-          // First follow-up: context-aware nudge with buttons, tip is optional
-          followupSystemPrompt = `
+          // First follow-up: Check if there's a user message to base it on
+          
+          // Get the last user message from conversation history
+          const lastUserMessage = previousChats
+            .filter((msg) => (msg as unknown as ChatMessage).role === "user")
+            .slice(-1)[0]; // Get the most recent user message
+          
+          const lastUserContent = lastUserMessage 
+            ? (typeof lastUserMessage.content === 'string' 
+                ? lastUserMessage.content 
+                : lastUserMessage.content.mainText || '')
+            : '';
+
+          if (lastUserContent && lastUserContent.trim() !== '') {
+            // User has sent a message - base followup ONLY on their last message
+            console.log(`[Followup] First followup based on last user message: "${lastUserContent}"`);
+
+            followupSystemPrompt = `
+You are a helpful sales assistant. The user has not provided an email yet.
+
+FOLLOWUP #1 GOAL: Generate a followup based ONLY on the user's last message, not the page content. Create a response that directly relates to what they just said.
+
+LAST USER MESSAGE: "${lastUserContent}"
+
+CONTENT RULES:
+- Focus ONLY on the user's last message content - ignore page context completely
+- Ask a follow-up question or provide information directly related to what they just asked
+- Keep "mainText" under 30 words; be specific to their message
+- Generate EXACTLY 3 concise, actionable buttons (2-4 words) related to their last message
+- Do NOT reference page content, features visible on page, or general website information
+- Base your response entirely on understanding and expanding on their specific question/comment
+
+**EXAMPLES OF MESSAGE-BASED FOLLOWUPS:**
+
+If user said: "How much does this cost?"
+✅ GOOD: "What's your budget range?" with buttons like "Under $100", "$100-500", "Over $500"
+
+If user said: "I need help with scheduling"
+✅ GOOD: "What type of scheduling?" with buttons like "Appointments", "Team Meetings", "Events"
+
+If user said: "Can this integrate with Salesforce?"
+✅ GOOD: "Which Salesforce features?" with buttons like "Contacts", "Leads", "Opportunities"
+
+If user said: "I'm looking for a solution"
+✅ GOOD: "What's your main challenge?" with buttons like "Time Management", "Team Coordination", "Customer Service"
+
+**LAST MESSAGE ANALYSIS:**
+1. **What did they specifically ask about?** (pricing, features, integrations, etc.)
+2. **What follow-up question would help clarify their need?**
+3. **What are 3 logical next questions related to their specific inquiry?**
+4. **How can you help them get more specific about what they need?**
+
+CREATIVE OPENING PATTERNS - Use variety, avoid repetition:
+- Clarification: "What type of...", "Which specific...", "What's your main..."
+- Expansion: "Tell me more about...", "Help me understand...", "What's most important..."
+- Options: "Are you looking for...", "Do you need...", "Would you prefer..."
+- Context: "For your situation...", "In your case...", "Based on that..."
+
+VARIETY GUIDELINES:
+- Directly address what they just said
+- Ask for clarification or more details about their specific inquiry
+- Don't make assumptions about their business or industry
+- Focus on understanding their immediate need better
+
+Context:
+Last User Message: ${lastUserContent}
+Previous Conversation (for context only, don't base response on this):
+${previousQnA}
+
+Generate response in JSON format:
+{
+  "mainText": "<Direct follow-up question or response to their last message (under 30 words)>",
+  "buttons": ["<3 options directly related to their last message, 2-4 words each>"],
+  "emailPrompt": ""
+}
+
+CRITICAL: Base your response ONLY on their last message "${lastUserContent}", not on page content or general context.`;
+
+            followupUserPrompt = `Create a followup response based ONLY on the user's last message: "${lastUserContent}"
+
+Do NOT use page content. Focus entirely on understanding and expanding on what they just said. Ask a clarifying question or provide options directly related to their specific inquiry.
+
+Generate exactly 3 buttons (2-4 words each) that help them be more specific about what they asked. JSON format only.`;
+
+          } else {
+            // No user message yet - use existing page-context driven logic
+            console.log(`[Followup] No user message found, using page-context driven first followup`);
+
+            followupSystemPrompt = `
 You are a helpful sales assistant. The user has not provided an email yet.
 
 FOLLOWUP #1 GOAL: Inform about one important item (feature, solution, offer, or outcome) clearly visible on this page and invite a quick response.
@@ -2677,13 +2764,15 @@ ${previousQnA}
             .join(", ")}. Do NOT include a summary or multiple questions.
 - Generate exactly 3 buttons, each 3-4 words maximum. Base them on actual page content and user needs.
 - Vary the nudge text for each follow-up.`;
-          followupUserPrompt = `CRITICAL: You MUST create a response based on the ACTUAL page content provided above. Do NOT use generic terms like "scheduling chaos" or "auto scheduling". 
+
+            followupUserPrompt = `CRITICAL: You MUST create a response based on the ACTUAL page content provided above. Do NOT use generic terms like "scheduling chaos" or "auto scheduling". 
 
 Create ONE nudge (max 30 words) that is specific to the page content and industry. Extract real features, benefits, or services from the page content provided. Do NOT repeat questions: ${lastFewQuestions
             .map((q) => `"${getText(q)}"`)
             .join(", ")}. 
 
 Generate exactly 3 buttons (3-4 words each) using ACTUAL terms from the page content. JSON format only.`;
+          }
         } else if (followupCount === 1) {
           // Second follow-up: micro-conversion nudge with enforced button differentiation
 

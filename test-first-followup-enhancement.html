@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test First Followup Based on Last Message</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #2d3748;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .feature-info {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #4299e1;
+        }
+        .feature-list {
+            background: #edf2f7;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+        .feature-list ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .feature-list li {
+            margin: 8px 0;
+            color: #2d3748;
+        }
+        .demo-section {
+            background: #e6fffa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border: 1px solid #4fd1c7;
+        }
+        .demo-section h3 {
+            color: #234e52;
+            margin-top: 0;
+        }
+        .highlight {
+            background: #fed7d7;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #f56565;
+            margin: 15px 0;
+        }
+        .code-block {
+            background: #1a202c;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #c3e6cb;
+            margin: 15px 0;
+        }
+        .scenario {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #ffeaa7;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 First Followup Based on Last Message - Test Page</h1>
+        
+        <div class="feature-info">
+            <h2>🚀 New Enhancement Implemented!</h2>
+            <p><strong>Smart First Followup Logic</strong> - The first followup message is now intelligently generated based on the user's last message when available, while maintaining page-context fallback when there's no user interaction.</p>
+        </div>
+
+        <div class="feature-list">
+            <h3>✨ How It Works Now:</h3>
+            <ul>
+                <li><strong>Scenario 1:</strong> User has sent a message → First followup responds directly to their last message</li>
+                <li><strong>Scenario 2:</strong> No user message yet → First followup uses page context (existing behavior)</li>
+                <li><strong>Unchanged:</strong> Second and third followups continue using existing logic</li>
+                <li><strong>Smart Detection:</strong> System automatically detects conversation state and chooses appropriate strategy</li>
+            </ul>
+        </div>
+
+        <div class="demo-section">
+            <h3>🔧 Implementation Logic:</h3>
+            <div class="code-block">
+// Check for last user message
+const lastUserMessage = previousChats
+  .filter(msg => msg.role === "user")
+  .slice(-1)[0];
+
+if (lastUserContent && lastUserContent.trim() !== '') {
+  // Path 1: Message-based followup
+  console.log('Using message-based first followup');
+  // Focus ONLY on their last message content
+} else {
+  // Path 2: Page-context followup (existing behavior)
+  console.log('Using page-context driven first followup');
+  // Use page content analysis
+}
+            </div>
+        </div>
+
+        <div class="scenario">
+            <h3>📝 Test Scenarios:</h3>
+            <h4>Scenario 1: User asks about pricing</h4>
+            <p><strong>User message:</strong> "How much does this cost?"</p>
+            <p><strong>Expected first followup:</strong> "What's your budget range?" with buttons like ["Under $100", "$100-500", "Over $500"]</p>
+            
+            <h4>Scenario 2: User asks about integration</h4>
+            <p><strong>User message:</strong> "Can this integrate with Salesforce?"</p>
+            <p><strong>Expected first followup:</strong> "Which Salesforce features?" with buttons like ["Contacts", "Leads", "Opportunities"]</p>
+            
+            <h4>Scenario 3: No user message yet</h4>
+            <p><strong>User action:</strong> Just browsing, no messages sent</p>
+            <p><strong>Expected first followup:</strong> Page-context aware message based on actual page content (existing behavior)</p>
+        </div>
+
+        <div class="highlight">
+            <h3>🧪 Testing Instructions:</h3>
+            <ol>
+                <li><strong>Test Message-Based Followup:</strong>
+                    <ul>
+                        <li>Open the chatbot below</li>
+                        <li>Send a specific question like "How much does this cost?" or "I need scheduling help"</li>
+                        <li>Wait for the first followup (after 1 minute of inactivity)</li>
+                        <li>Verify it responds directly to your specific question, not page content</li>
+                    </ul>
+                </li>
+                <li><strong>Test Page-Context Fallback:</strong>
+                    <ul>
+                        <li>Refresh the page to clear chat history</li>
+                        <li>Don't send any messages, just browse</li>
+                        <li>Wait for the first followup</li>
+                        <li>Verify it's based on page content (existing behavior)</li>
+                    </ul>
+                </li>
+                <li><strong>Verify Second/Third Followups:</strong>
+                    <ul>
+                        <li>Continue the conversation</li>
+                        <li>Verify second and third followups work as before</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+
+        <div class="feature-list">
+            <h3>🎯 Benefits of This Enhancement:</h3>
+            <ul>
+                <li><strong>More Relevant:</strong> First followup directly addresses what the user actually asked</li>
+                <li><strong>Better Engagement:</strong> Users feel heard and understood</li>
+                <li><strong>Intelligent Fallback:</strong> Still works perfectly for silent browsers</li>
+                <li><strong>Improved Conversation Flow:</strong> Natural progression from user inquiry to clarification</li>
+                <li><strong>Higher Conversion:</strong> More targeted responses lead to better qualification</li>
+            </ul>
+        </div>
+
+        <div class="success">
+            <h3>✅ Implementation Complete!</h3>
+            <p>The first followup generation now intelligently adapts based on conversation state:</p>
+            <ul>
+                <li>✅ <strong>With user message:</strong> Responds directly to their last question/comment</li>
+                <li>✅ <strong>Without user message:</strong> Uses existing page-context logic</li>
+                <li>✅ <strong>Second/third followups:</strong> Unchanged, continue existing behavior</li>
+                <li>✅ <strong>Seamless integration:</strong> No breaking changes to existing functionality</li>
+            </ul>
+        </div>
+
+        <div class="demo-section">
+            <h3>🧪 Live Test Environment:</h3>
+            <p>Use the chatbot below to test both scenarios. Try sending different types of messages and observe how the first followup adapts to your specific inquiry!</p>
+        </div>
+    </div>
+
+    <!-- Chatbot Widget Script -->
+    <script src="http://localhost:3001/api/widget" data-api-key="test-key"></script>
+</body>
+</html>
