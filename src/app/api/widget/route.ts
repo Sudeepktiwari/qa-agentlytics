@@ -1734,7 +1734,7 @@ export async function GET(request: Request) {
             console.log('🚩 [WIDGET AI] Resetting contextualMessageDelayActive flag after contextual message completion');
               contextualMessageDelayActive = false; // Reset flag after both messages are sent
               console.log('🔀 [WIDGET FLOW] ===== CONTEXTUAL QUESTION/RESPONSE FLOW COMPLETE =====');
-            }, 3000); // 3-second delay before generating response
+            }, 60000); // one minute delay before generating response
             
             return question;
           } else {
