@@ -13,6 +13,131 @@ import { enhanceChatWithBookingDetection } from "@/services/bookingDetection";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+// 🎯 PHASE 1: Booking Status Management
+// Helper function to check session booking status
+async function getSessionBookingStatus(sessionId: string, adminId?: string) {
+  try {
+    const db = await getDb();
+    const bookings = db.collection("bookings");
+    
+    // Query active bookings for this session
+    const activeBookings = await bookings.find({
+      sessionId,
+      status: { $in: ["confirmed", "pending"] },
+      ...(adminId && { adminId })
+    }).sort({ createdAt: -1 }).toArray();
+    
+    if (activeBookings.length === 0) {
+      return {
+        hasActiveBooking: false,
+        currentBooking: null,
+        canBookAgain: true,
+        allBookings: []
+      };
+    }
+    
+    const currentBooking = activeBookings[0]; // Most recent
+    const currentDate = new Date();
+    const bookingDate = new Date(currentBooking.preferredDate);
+    
+    // Check if booking is in the past (can book again)
+    const canBookAgain = bookingDate < currentDate || 
+                        currentBooking.status === "cancelled";
+    
+    return {
+      hasActiveBooking: !canBookAgain,
+      currentBooking,
+      canBookAgain,
+      allBookings: activeBookings,
+      bookingDetails: {
+        type: currentBooking.requestType,
+        date: currentBooking.preferredDate,
+        time: currentBooking.preferredTime,
+        confirmation: currentBooking.confirmationNumber,
+        status: currentBooking.status
+      }
+    };
+  } catch (error) {
+    console.error("[Booking Status] Error checking booking status:", error);
+    return {
+      hasActiveBooking: false,
+      currentBooking: null,
+      canBookAgain: true,
+      allBookings: []
+    };
+  }
+}
+
+// Smart button filter function to remove booking-related buttons when user has active booking
+function filterButtonsBasedOnBooking(buttons: string[], bookingStatus: any) {
+  if (!bookingStatus.hasActiveBooking) {
+    return buttons; // No filtering needed
+  }
+  
+  // Booking-related keywords to filter out
+  const bookingKeywords = [
+    'book', 'schedule', 'demo', 'call', 'meeting', 
+    'appointment', 'consultation', 'talk to sales'
+  ];
+  
+  // Filter out booking-related buttons
+  const filteredButtons = buttons.filter(button => {
+    const lowerButton = button.toLowerCase();
+    return !bookingKeywords.some(keyword => 
+      lowerButton.includes(keyword)
+    );
+  });
+  
+  // Add booking management buttons if we have few remaining buttons
+  if (filteredButtons.length < 2) {
+    const managementButtons = [
+      "View Booking Details",
+      "Reschedule", 
+      "Add to Calendar"
+    ];
+    
+    // Return original filtered buttons + management options
+    return [...filteredButtons, ...managementButtons.slice(0, 3 - filteredButtons.length)];
+  }
+  
+  return filteredButtons;
+}
+
+// Generate booking-aware response when user has active booking
+function generateBookingAwareResponse(
+  originalResponse: any, 
+  bookingStatus: any,
+  userQuestion: string
+) {
+  if (!bookingStatus.hasActiveBooking) {
+    return originalResponse; // No modification needed
+  }
+  
+  const booking = bookingStatus.currentBooking;
+  const bookingDate = new Date(booking.preferredDate).toLocaleDateString();
+  const bookingTime = booking.preferredTime;
+  
+  // Check if user is asking for another booking
+  const isBookingRequest = /book|schedule|demo|call|meeting|appointment|consultation|talk to sales/i.test(userQuestion);
+  
+  if (isBookingRequest) {
+    return {
+      mainText: `Great news! You already have a ${booking.requestType} scheduled for ${bookingDate} at ${bookingTime} (Confirmation: ${booking.confirmationNumber}). Looking forward to connecting with you!`,
+      buttons: ["View Details", "Reschedule", "Add to Calendar"],
+      emailPrompt: "",
+      showBookingCalendar: false,
+      existingBooking: true,
+      bookingDetails: bookingStatus.bookingDetails
+    };
+  }
+  
+  // For non-booking questions, just filter buttons
+  return {
+    ...originalResponse,
+    buttons: filterButtonsBasedOnBooking(originalResponse.buttons || [], bookingStatus)
+  };
+}
+
 // CORS headers for cross-origin requests
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -1486,6 +1611,15 @@ Keep the response conversational and helpful, focusing on providing value before
     }
   }
 
+  // 🔥 PHASE 1: CHECK BOOKING STATUS
+  const bookingStatus = await getSessionBookingStatus(sessionId, adminId || undefined);
+  console.log(`[Chat API ${requestId}] Booking status for session ${sessionId}:`, {
+    hasActiveBooking: bookingStatus.hasActiveBooking,
+    bookingType: bookingStatus.currentBooking?.requestType,
+    bookingDate: bookingStatus.currentBooking?.preferredDate,
+    canBookAgain: bookingStatus.canBookAgain
+  });
+
   // If email detected, update all previous messages in this session with email and adminId
   if (detectedEmail) {
     const updateData: {
@@ -1781,6 +1915,50 @@ Extract key requirements (2-3 bullet points max, be concise):`;
         error
       );
       // Continue with normal chat flow - profiling failures shouldn't break the conversation
+    }
+  }
+
+  // 🔥 PHASE 1: HANDLE BOOKING-AWARE RESPONSES
+  if (question && !detectedEmail) {
+    // Check if user is asking for booking but already has one
+    const bookingAwareResponse = generateBookingAwareResponse(
+      { mainText: "", buttons: [] }, // Will be filled by AI if needed
+      bookingStatus,
+      question
+    );
+    
+    if (bookingAwareResponse.existingBooking) {
+      console.log(`[Chat API ${requestId}] 🔒 User has active booking, returning booking-aware response`);
+      
+      // Store user message
+      await chats.insertOne({
+        sessionId,
+        role: "user", 
+        content: question,
+        createdAt: now,
+        adminId,
+        apiKey,
+        pageUrl,
+        hasActiveBooking: bookingStatus.hasActiveBooking,
+        bookingId: bookingStatus.currentBooking?._id
+      });
+      
+      // Store booking-aware response
+      await chats.insertOne({
+        sessionId,
+        role: "assistant",
+        content: bookingAwareResponse.mainText,
+        buttons: bookingAwareResponse.buttons,
+        createdAt: new Date(now.getTime() + 1),
+        adminId,
+        apiKey,
+        pageUrl,
+        hasActiveBooking: bookingStatus.hasActiveBooking,
+        bookingId: bookingStatus.currentBooking?._id,
+        existingBooking: true
+      });
+      
+      return NextResponse.json(bookingAwareResponse, { headers: corsHeaders });
     }
   }
 
@@ -3844,16 +4022,25 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
     userEmail: userEmail || null, // Include for debugging
   };
 
+  // 🔥 PHASE 1: APPLY BOOKING-AWARE BUTTON FILTERING
+  const finalResponse = generateBookingAwareResponse(
+    responseWithMode, 
+    bookingStatus,
+    question || ""
+  );
+
   console.log(`[Chat API ${requestId}] Main response:`, {
     botMode,
     userEmail: userEmail || null,
-    hasResponse: !!responseWithMode.mainText,
-    showBookingCalendar: !!responseWithMode.showBookingCalendar,
-    bookingType: responseWithMode.bookingType || undefined,
+    hasResponse: !!finalResponse.mainText,
+    showBookingCalendar: !!finalResponse.showBookingCalendar,
+    bookingType: finalResponse.bookingType || undefined,
+    hasActiveBooking: bookingStatus.hasActiveBooking,
+    buttonsFiltered: bookingStatus.hasActiveBooking && (responseWithMode.buttons?.length !== finalResponse.buttons?.length),
     timestamp: new Date().toISOString(),
   });
 
-  return NextResponse.json(responseWithMode, { headers: corsHeaders });
+  return NextResponse.json(finalResponse, { headers: corsHeaders });
 }
 
 export async function GET(req: NextRequest) {
