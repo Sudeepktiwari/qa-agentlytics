@@ -138,6 +138,131 @@ function generateBookingAwareResponse(
   };
 }
 
+// 🎯 PHASE 2: Enhanced Booking Integration Functions
+
+// Store booking reference in chat messages
+async function updateChatWithBookingReference(
+  sessionId: string,
+  bookingId: string,
+  hasActiveBooking: boolean,
+  adminId?: string
+) {
+  try {
+    const db = await getDb();
+    const chats = db.collection("chats");
+    
+    // Update all messages in this session with booking reference
+    await chats.updateMany(
+      { sessionId },
+      { 
+        $set: {
+          bookingId: bookingId,
+          hasActiveBooking: hasActiveBooking,
+          bookingLastChecked: new Date()
+        }
+      }
+    );
+    
+    console.log(`[Booking] Updated chat messages for session ${sessionId} with booking ${bookingId}`);
+  } catch (error) {
+    console.error("[Booking] Error updating chat with booking reference:", error);
+  }
+}
+
+// Generate booking management response for specific actions
+function generateBookingManagementResponse(action: string, booking: any) {
+  const bookingDate = new Date(booking.preferredDate).toLocaleDateString();
+  const bookingTime = booking.preferredTime;
+  
+  switch (action.toLowerCase()) {
+    case 'view details':
+    case 'view booking details':
+      return {
+        mainText: `📅 <strong>Your ${booking.requestType} Details:</strong><br><br>📅 <strong>Date:</strong> ${bookingDate}<br>⏰ <strong>Time:</strong> ${bookingTime}<br>🎫 <strong>Confirmation:</strong> ${booking.confirmationNumber}<br>📧 <strong>Contact:</strong> ${booking.email}<br><br>We'll send you a reminder 24 hours before your appointment!`,
+        buttons: ["Reschedule", "Add to Calendar", "Contact Support"],
+        emailPrompt: "",
+        showBookingCalendar: false,
+        bookingAction: "view_details"
+      };
+      
+    case 'reschedule':
+      return {
+        mainText: `I'll help you reschedule your ${booking.requestType} from ${bookingDate} at ${bookingTime}. Please select a new time that works better for you.`,
+        buttons: ["Pick New Time", "Cancel Booking", "Keep Current"],
+        emailPrompt: "",
+        showBookingCalendar: true,
+        bookingType: booking.requestType,
+        bookingAction: "reschedule",
+        currentBooking: booking
+      };
+      
+    case 'add to calendar':
+      return {
+        mainText: `📅 Ready to add your ${booking.requestType} to your calendar!<br><br><strong>Event Details:</strong><br>📅 ${bookingDate} at ${bookingTime}<br>🎫 Confirmation: ${booking.confirmationNumber}<br><br>Click below to add to your preferred calendar.`,
+        buttons: ["Google Calendar", "Outlook", "Apple Calendar"],
+        emailPrompt: "",
+        showBookingCalendar: false,
+        bookingAction: "add_to_calendar",
+        calendarData: {
+          title: `${booking.requestType} - ${booking.confirmationNumber}`,
+          date: booking.preferredDate,
+          time: booking.preferredTime,
+          description: `${booking.requestType} appointment. Confirmation: ${booking.confirmationNumber}`
+        }
+      };
+      
+    default:
+      return {
+        mainText: `I can help you manage your ${booking.requestType} scheduled for ${bookingDate} at ${bookingTime}. What would you like to do?`,
+        buttons: ["View Details", "Reschedule", "Add to Calendar"],
+        emailPrompt: "",
+        showBookingCalendar: false,
+        bookingAction: "manage"
+      };
+  }
+}
+
+// Advanced booking conflict detection
+async function detectBookingConflicts(
+  sessionId: string,
+  newBookingRequest: any,
+  adminId?: string
+) {
+  try {
+    const db = await getDb();
+    const bookings = db.collection("bookings");
+    
+    // Check for overlapping bookings
+    const conflicts = await bookings.find({
+      sessionId,
+      status: { $in: ["confirmed", "pending"] },
+      preferredDate: newBookingRequest.preferredDate,
+      ...(adminId && { adminId })
+    }).toArray();
+    
+    if (conflicts.length > 0) {
+      return {
+        hasConflict: true,
+        conflictingBookings: conflicts,
+        suggestion: "You already have a booking on this date. Would you like to reschedule the existing one or choose a different time?"
+      };
+    }
+    
+    return {
+      hasConflict: false,
+      conflictingBookings: [],
+      suggestion: null
+    };
+  } catch (error) {
+    console.error("[Booking] Error detecting conflicts:", error);
+    return {
+      hasConflict: false,
+      conflictingBookings: [],
+      suggestion: null
+    };
+  }
+}
+
 // CORS headers for cross-origin requests
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -1959,6 +2084,61 @@ Extract key requirements (2-3 bullet points max, be concise):`;
       });
       
       return NextResponse.json(bookingAwareResponse, { headers: corsHeaders });
+    }
+    
+    // 🔥 PHASE 2: Handle booking management actions
+    const bookingActions = ['view details', 'view booking details', 'reschedule', 'add to calendar', 'cancel booking'];
+    const isBookingAction = bookingActions.some(action => 
+      question.toLowerCase().includes(action.toLowerCase())
+    );
+    
+    if (isBookingAction && bookingStatus.hasActiveBooking) {
+      console.log(`[Chat API ${requestId}] 🎛️ Handling booking management action: ${question}`);
+      
+      // Determine which action was requested
+      let requestedAction = 'manage'; // default
+      for (const action of bookingActions) {
+        if (question.toLowerCase().includes(action.toLowerCase())) {
+          requestedAction = action;
+          break;
+        }
+      }
+      
+      const managementResponse = generateBookingManagementResponse(
+        requestedAction, 
+        bookingStatus.currentBooking
+      );
+      
+      // Store user message
+      await chats.insertOne({
+        sessionId,
+        role: "user", 
+        content: question,
+        createdAt: now,
+        adminId,
+        apiKey,
+        pageUrl,
+        hasActiveBooking: bookingStatus.hasActiveBooking,
+        bookingId: bookingStatus.currentBooking?._id,
+        bookingAction: requestedAction
+      });
+      
+      // Store management response
+      await chats.insertOne({
+        sessionId,
+        role: "assistant",
+        content: managementResponse.mainText,
+        buttons: managementResponse.buttons,
+        createdAt: new Date(now.getTime() + 1),
+        adminId,
+        apiKey,
+        pageUrl,
+        hasActiveBooking: bookingStatus.hasActiveBooking,
+        bookingId: bookingStatus.currentBooking?._id,
+        bookingAction: requestedAction
+      });
+      
+      return NextResponse.json(managementResponse, { headers: corsHeaders });
     }
   }
 
@@ -3965,6 +4145,12 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
       ...(emailToStore ? { email: emailToStore } : {}),
       ...(requirementsToStore ? { requirements: requirementsToStore } : {}),
       ...(adminId ? { adminId } : {}),
+      // 🔥 PHASE 2: Add booking information to all messages
+      ...(bookingStatus.hasActiveBooking && bookingStatus.currentBooking ? { 
+        hasActiveBooking: true,
+        bookingId: bookingStatus.currentBooking._id,
+        bookingType: bookingStatus.currentBooking.requestType
+      } : {}),
     },
     {
       sessionId,
@@ -3974,6 +4160,12 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
       ...(emailToStore ? { email: emailToStore } : {}),
       ...(requirementsToStore ? { requirements: requirementsToStore } : {}),
       ...(adminId ? { adminId } : {}),
+      // 🔥 PHASE 2: Add booking information to all messages
+      ...(bookingStatus.hasActiveBooking && bookingStatus.currentBooking ? { 
+        hasActiveBooking: true,
+        bookingId: bookingStatus.currentBooking._id,
+        bookingType: bookingStatus.currentBooking.requestType
+      } : {}),
     },
   ]);
 
@@ -4022,12 +4214,26 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
     userEmail: userEmail || null, // Include for debugging
   };
 
-  // 🔥 PHASE 1: APPLY BOOKING-AWARE BUTTON FILTERING
-  const finalResponse = generateBookingAwareResponse(
-    responseWithMode, 
-    bookingStatus,
-    question || ""
-  );
+  // 🔥 PHASE 2: ENHANCED BOOKING-AWARE RESPONSE PROCESSING
+  // First check for booking management actions
+  const bookingManagementResponse = await generateBookingManagementResponse(question || "", bookingStatus);
+  
+  let finalResponse;
+  if (bookingManagementResponse) {
+    // Use booking management response (view details, reschedule, etc.)
+    finalResponse = bookingManagementResponse;
+    console.log(`[Chat API ${requestId}] Booking management action detected:`, {
+      action: bookingManagementResponse.bookingAction,
+      hasActiveBooking: bookingStatus.hasActiveBooking
+    });
+  } else {
+    // Use standard booking-aware filtering
+    finalResponse = generateBookingAwareResponse(
+      responseWithMode, 
+      bookingStatus,
+      question || ""
+    );
+  }
 
   console.log(`[Chat API ${requestId}] Main response:`, {
     botMode,
@@ -4037,6 +4243,7 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
     bookingType: finalResponse.bookingType || undefined,
     hasActiveBooking: bookingStatus.hasActiveBooking,
     buttonsFiltered: bookingStatus.hasActiveBooking && (responseWithMode.buttons?.length !== finalResponse.buttons?.length),
+    bookingAction: finalResponse.bookingAction || undefined,
     timestamp: new Date().toISOString(),
   });
 
