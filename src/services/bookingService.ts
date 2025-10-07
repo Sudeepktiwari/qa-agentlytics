@@ -574,17 +574,20 @@ export class BookingService {
   }
 
   // Get a specific booking by ID
-  async getBookingById(bookingId: string, adminId?: string): Promise<BookingRequest | null> {
+  async getBookingById(
+    bookingId: string,
+    adminId?: string
+  ): Promise<BookingRequest | null> {
     try {
       const collection = await getBookingsCollection();
-      
+
       const query: any = { _id: new ObjectId(bookingId) };
-      
+
       // If adminId is provided, ensure the booking belongs to that admin
       if (adminId) {
         query.adminId = adminId;
       }
-      
+
       const booking = await collection.findOne(query);
 
       if (!booking) return null;
@@ -596,6 +599,80 @@ export class BookingService {
     } catch (error) {
       console.error("❌ Error fetching booking:", error);
       throw new Error("Failed to fetch booking");
+    }
+  }
+
+  // Reschedule a booking to a new date/time if available
+  async rescheduleBooking(
+    bookingId: string,
+    adminId: string | undefined,
+    newDate: Date,
+    newTime: string
+  ): Promise<BookingRequest | null> {
+    try {
+      const collection = await getBookingsCollection();
+
+      // Verify booking exists and (if provided) belongs to adminId
+      const current = await this.getBookingById(bookingId, adminId);
+      if (!current) return null;
+
+      // Prevent rescheduling cancelled/completed
+      if (["cancelled", "completed"].includes(current.status)) {
+        throw new Error("Cannot reschedule a cancelled or completed booking");
+      }
+
+      // Check if new slot is available
+      const isAvailable = await this.isTimeSlotAvailable(
+        current.adminId || (adminId as string),
+        newDate,
+        newTime
+      );
+      if (!isAvailable) {
+        throw new Error("Selected time slot is not available");
+      }
+
+      const result = await collection.findOneAndUpdate(
+        { _id: new ObjectId(bookingId) },
+        {
+          $set: {
+            preferredDate: newDate,
+            preferredTime: newTime,
+            updatedAt: new Date(),
+            status: "confirmed",
+          },
+        },
+        { returnDocument: "after" }
+      );
+
+      if (!result) return null;
+
+      return {
+        ...result,
+        _id: result._id.toString(),
+      } as BookingRequest;
+    } catch (error) {
+      console.error("❌ Error rescheduling booking:", error);
+      throw error instanceof Error
+        ? error
+        : new Error("Failed to reschedule booking");
+    }
+  }
+
+  // Cancel a booking (soft cancel by setting status)
+  async cancelBooking(bookingId: string, adminId?: string): Promise<boolean> {
+    try {
+      const collection = await getBookingsCollection();
+      const filter: any = { _id: new ObjectId(bookingId) };
+      if (adminId) filter.adminId = adminId;
+
+      const result = await collection.updateOne(filter, {
+        $set: { status: "cancelled", updatedAt: new Date() },
+      });
+
+      return result.modifiedCount > 0;
+    } catch (error) {
+      console.error("❌ Error cancelling booking:", error);
+      throw new Error("Failed to cancel booking");
     }
   }
 

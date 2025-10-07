@@ -232,6 +232,9 @@ export async function GET(request: Request) {
     phone: null,
     company: null
   };
+  let isRescheduleMode = false;
+  let currentBookingData = null;
+  let bookingInProgress = false;
   let isPageContextLoaded = false;
   let pageChangeCheckInterval = null;
 
@@ -1052,54 +1055,79 @@ export async function GET(request: Request) {
   async function handleBookingSelection(slot, bookingType) {
     try {
       console.log("📅 [WIDGET BOOKING] Selected slot:", slot);
-      
+      if (bookingInProgress) {
+        console.log('⏳ [WIDGET BOOKING] Submission in progress, ignoring duplicate click');
+        return;
+      }
+      bookingInProgress = true;
+
       // Validate that user email is collected
       if (!userBookingData.email) {
         console.error("❌ [WIDGET BOOKING] No email collected");
         alert("Please provide your email address first to book an appointment.");
         return;
       }
-      
+
       // Show loading state
       const loadingDiv = document.createElement('div');
       loadingDiv.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000; color: white;';
       loadingDiv.innerHTML = '<div style="background: white; padding: 20px; border-radius: 8px; color: #333; text-align: center;"><div style="margin-bottom: 8px;">📅</div>Booking your slot...</div>';
       document.body.appendChild(loadingDiv);
-      
+
       // Extract date and time from slot
       const startDate = new Date(slot.startTime);
       const preferredDate = startDate.toISOString().split('T')[0]; // YYYY-MM-DD
       const preferredTime = startDate.toTimeString().slice(0, 5); // HH:MM
-      
-      // Submit booking with collected user data
-      const response = await fetch(\`\${CHATBOT_API_BASE}/api/booking\`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': API_KEY
-        },
-        body: JSON.stringify({
-          preferredDate: preferredDate,
-          preferredTime: preferredTime,
-          bookingType: bookingType,
-          name: userBookingData.name || "Anonymous User",
-          email: userBookingData.email,
-          phone: userBookingData.phone || "",
-          company: userBookingData.company || "",
-          source: "widget",
-          sessionId: sessionId,
-          pageUrl: currentPageUrl,
-          duration: 30, // Default 30 minute duration
+
+      // Submit booking (create or reschedule)
+      let response;
+      if (isRescheduleMode && currentBookingData) {
+        console.log('🔁 [WIDGET BOOKING] Rescheduling existing booking...', currentBookingData);
+        const payload = {
+          bookingId: currentBookingData?._id || currentBookingData?.id || undefined,
+          confirmation: currentBookingData?.confirmationNumber || undefined,
+          preferredDate,
+          preferredTime,
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
-        })
-      });
-      
+        };
+        response = await fetch(`${CHATBOT_API_BASE}/api/booking`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': API_KEY
+          },
+          body: JSON.stringify(payload)
+        });
+      } else {
+        response = await fetch(`${CHATBOT_API_BASE}/api/booking`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': API_KEY
+          },
+          body: JSON.stringify({
+            preferredDate: preferredDate,
+            preferredTime: preferredTime,
+            bookingType: bookingType,
+            name: userBookingData.name || "Anonymous User",
+            email: userBookingData.email,
+            phone: userBookingData.phone || "",
+            company: userBookingData.company || "",
+            source: "widget",
+            sessionId: sessionId,
+            pageUrl: currentPageUrl,
+            duration: 30, // Default 30 minute duration
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+          })
+        });
+      }
+
       document.body.removeChild(loadingDiv);
-      
+
       if (response.ok) {
         const result = await response.json();
-        console.log("✅ [WIDGET BOOKING] Booking successful:", result);
-        
+        console.log("✅ [WIDGET BOOKING] Booking action successful:", result);
+
         // 🔥 UPDATE SESSION WITH BOOKING CONFIRMATION FOR CUSTOMER INTELLIGENCE
         try {
           await sendApiRequest('chat', {
@@ -1114,39 +1142,50 @@ export async function GET(request: Request) {
             bookingTime: preferredTime,
             confirmationNumber: result.data?.confirmationNumber,
             leadStatus: 'converted',
-            question: \`Booking confirmed: \${bookingType} on \${preferredDate} at \${preferredTime}\`
+            question: isRescheduleMode
+              ? `Booking rescheduled: ${bookingType} to ${preferredDate} at ${preferredTime}`
+              : `Booking confirmed: ${bookingType} on ${preferredDate} at ${preferredTime}`
           });
-          
+
           console.log("✅ [WIDGET BOOKING] Customer intelligence updated with booking confirmation");
         } catch (error) {
           console.warn("⚠️ [WIDGET BOOKING] Failed to update customer intelligence:", error);
         }
-        
+
         // Add success message to chat with user details
+        const successText = isRescheduleMode
+          ? `All set! ${userBookingData.name}, your ${bookingType} has been rescheduled to ${preferredDate} at ${preferredTime}.`
+          : `Perfect! ${userBookingData.name}, your ${bookingType} is booked for ${new Date(slot.startTime).toLocaleString()}. A confirmation email will be sent to ${userBookingData.email}. Confirmation: ${result.data?.confirmationNumber || 'Pending'}`;
         const successMessage = {
           role: 'assistant',
-          content: \`Perfect! \${userBookingData.name}, your \${bookingType} is booked for \${new Date(slot.startTime).toLocaleString()}. A confirmation email will be sent to \${userBookingData.email}. Confirmation: \${result.data?.confirmationNumber || 'Pending'}\`,
+          content: successText,
           timestamp: new Date().toISOString()
         };
         messages.push(successMessage);
         renderMessages();
-        
+
+        // Exit reschedule mode on success
+        if (isRescheduleMode) {
+          isRescheduleMode = false;
+          currentBookingData = null;
+        }
+
         // Speak confirmation if voice enabled
         if (config.voiceEnabled && speechAllowed) {
           setTimeout(() => {
             speakText(successMessage.content, false);
           }, 500);
         }
-        
+
       } else {
         const error = await response.json();
         console.error('❌ [WIDGET BOOKING] Booking error response:', error);
         throw new Error(error.error || error.message || 'Booking failed');
       }
-      
+
     } catch (error) {
       console.error('❌ [WIDGET BOOKING] Booking failed:', error);
-      
+
       // Add error message to chat with more specific details
       let errorText = "I'm sorry, there was an issue booking that time slot.";
       if (error.message.includes('validation')) {
@@ -1156,7 +1195,7 @@ export async function GET(request: Request) {
       } else if (error.message.includes('email')) {
         errorText = "Please provide a valid email address to complete your booking.";
       }
-      
+
       const errorMessage = {
         role: 'assistant',
         content: errorText + " You can also contact us directly for assistance.",
@@ -1164,7 +1203,59 @@ export async function GET(request: Request) {
       };
       messages.push(errorMessage);
       renderMessages();
+    } finally {
+      bookingInProgress = false;
     }
+  }
+
+  // Expose simple booking management helpers for testing and integration
+  window.appointyBooking = {
+    enterRescheduleMode: function(booking) {
+      console.log('🔁 [WIDGET] Entering reschedule mode with booking:', booking);
+      isRescheduleMode = true;
+      currentBookingData = booking || null;
+      if (!isOpen) toggleWidget();
+      // Force calendar view to help user pick a new time
+      renderCalendarForBooking(booking?.requestType || 'demo');
+      return true;
+    },
+    cancelBooking: async function(booking) {
+      try {
+        const id = booking?._id || booking?.id;
+        if (!id) throw new Error('Missing booking id');
+        const res = await fetch(`${CHATBOT_API_BASE}/api/booking?id=${encodeURIComponent(id)}`, {
+          method: 'DELETE',
+          headers: { 'X-API-Key': API_KEY }
+        });
+        if (!res.ok) {
+          const e = await res.json().catch(() => ({}));
+          throw new Error(e.error || 'Failed to cancel booking');
+        }
+        messages.push({ role: 'assistant', content: 'Your appointment has been cancelled. Let me know if you would like to book a new time.', timestamp: new Date().toISOString() });
+        renderMessages();
+        return true;
+      } catch (err) {
+        console.error('❌ [WIDGET] Cancel booking failed:', err);
+        messages.push({ role: 'assistant', content: 'Sorry, I could not cancel that booking. Please try again.', timestamp: new Date().toISOString() });
+        renderMessages();
+        return false;
+      }
+    }
+  };
+
+  // Helper to render calendar directly for rescheduling
+  function renderCalendarForBooking(bookingType) {
+    // Reuse existing flow that opens widget and shows calendar after user data
+    if (!isOpen) toggleWidget();
+    setTimeout(() => {
+      try {
+        if (typeof showBookingCalendar === 'function') {
+          showBookingCalendar(bookingType || 'demo');
+        }
+      } catch (e) {
+        console.warn('⚠️ [WIDGET] Unable to auto-render calendar for reschedule:', e);
+      }
+    }, 200);
   }
   
   // Send proactive message with voice and auto-opening
