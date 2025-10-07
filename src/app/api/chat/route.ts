@@ -170,6 +170,9 @@ function generateBookingAwareResponse(
   // For non-booking questions, just filter buttons
   return {
     ...originalResponse,
+    // When a valid active booking exists, suppress calendar unless explicitly rescheduling
+    showBookingCalendar: false,
+    bookingType: undefined,
     buttons: filterButtonsBasedOnBooking(
       originalResponse.buttons || [],
       bookingStatus
