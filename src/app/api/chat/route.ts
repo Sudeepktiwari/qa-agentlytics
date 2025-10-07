@@ -158,8 +158,8 @@ function generateBookingAwareResponse(
 
   if (isBookingRequest) {
     return {
-      mainText: `Great news! You already have a ${booking.requestType} scheduled for ${bookingDate} at ${bookingTime} (Confirmation: ${booking.confirmationNumber}). Looking forward to connecting with you!`,
-      buttons: ["View Details", "Reschedule", "Add to Calendar"],
+      mainText: `Your appointment is already booked for ${bookingDate} at ${bookingTime}.`,
+      buttons: ["View Details", "Reschedule", "Cancel Booking"],
       emailPrompt: "",
       showBookingCalendar: false,
       existingBooking: true,
@@ -4311,6 +4311,12 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
     botMode,
     userEmail: userEmail || null, // Include for debugging
   };
+
+  // If the user already has a valid active booking, suppress calendar prompts
+  if (bookingStatus.hasActiveBooking && bookingStatus.currentBooking) {
+    (responseWithMode as any).showBookingCalendar = false;
+    delete (responseWithMode as any).bookingType;
+  }
 
   // 🔥 PHASE 2: ENHANCED BOOKING-AWARE RESPONSE PROCESSING
   // First check for booking management actions
