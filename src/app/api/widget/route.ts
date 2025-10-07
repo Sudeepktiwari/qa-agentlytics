@@ -1223,7 +1223,7 @@ export async function GET(request: Request) {
       try {
         const id = booking?._id || booking?.id;
         if (!id) throw new Error('Missing booking id');
-        const res = await fetch(`${CHATBOT_API_BASE}/api/booking?id=${encodeURIComponent(id)}`, {
+        const res = await fetch(CHATBOT_API_BASE + '/api/booking?id=' + encodeURIComponent(id), {
           method: 'DELETE',
           headers: { 'X-API-Key': API_KEY }
         });
@@ -4626,8 +4626,8 @@ export async function GET(request: Request) {
     headers: {
       "Content-Type": "application/javascript",
       "Cache-Control": "no-cache, no-store, must-revalidate", // Disable cache for debugging
-      "Pragma": "no-cache",
-      "Expires": "0",
+      Pragma: "no-cache",
+      Expires: "0",
       ...corsHeaders, // Add CORS headers
     },
   });
