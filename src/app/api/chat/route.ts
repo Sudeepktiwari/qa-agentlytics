@@ -19,31 +19,57 @@ async function getSessionBookingStatus(sessionId: string, adminId?: string) {
   try {
     const db = await getDb();
     const bookings = db.collection("bookings");
-    
+
     // Query active bookings for this session
-    const activeBookings = await bookings.find({
-      sessionId,
-      status: { $in: ["confirmed", "pending"] },
-      ...(adminId && { adminId })
-    }).sort({ createdAt: -1 }).toArray();
-    
+    const activeBookings = await bookings
+      .find({
+        sessionId,
+        status: { $in: ["confirmed", "pending"] },
+        ...(adminId && { adminId }),
+      })
+      .sort({ createdAt: -1 })
+      .toArray();
+
     if (activeBookings.length === 0) {
       return {
         hasActiveBooking: false,
         currentBooking: null,
         canBookAgain: true,
-        allBookings: []
+        allBookings: [],
       };
     }
-    
+
     const currentBooking = activeBookings[0]; // Most recent
+
+    // Validate booking shape; if invalid, treat as no active booking
+    const hasValidShape = Boolean(
+      currentBooking &&
+        currentBooking.preferredDate &&
+        !isNaN(new Date(currentBooking.preferredDate).getTime()) &&
+        typeof currentBooking.preferredTime === "string" &&
+        currentBooking.preferredTime.length >= 4 &&
+        typeof currentBooking.requestType === "string" &&
+        currentBooking.requestType.length > 0 &&
+        typeof currentBooking.email === "string" &&
+        currentBooking.email.length > 3 &&
+        typeof currentBooking.confirmationNumber === "string" &&
+        currentBooking.confirmationNumber.length > 0
+    );
+    if (!hasValidShape) {
+      return {
+        hasActiveBooking: false,
+        currentBooking: null,
+        canBookAgain: true,
+        allBookings: activeBookings,
+      };
+    }
     const currentDate = new Date();
     const bookingDate = new Date(currentBooking.preferredDate);
-    
+
     // Check if booking is in the past (can book again)
-    const canBookAgain = bookingDate < currentDate || 
-                        currentBooking.status === "cancelled";
-    
+    const canBookAgain =
+      bookingDate < currentDate || currentBooking.status === "cancelled";
+
     return {
       hasActiveBooking: !canBookAgain,
       currentBooking,
@@ -54,8 +80,8 @@ async function getSessionBookingStatus(sessionId: string, adminId?: string) {
         date: currentBooking.preferredDate,
         time: currentBooking.preferredTime,
         confirmation: currentBooking.confirmationNumber,
-        status: currentBooking.status
-      }
+        status: currentBooking.status,
+      },
     };
   } catch (error) {
     console.error("[Booking Status] Error checking booking status:", error);
@@ -63,7 +89,7 @@ async function getSessionBookingStatus(sessionId: string, adminId?: string) {
       hasActiveBooking: false,
       currentBooking: null,
       canBookAgain: true,
-      allBookings: []
+      allBookings: [],
     };
   }
 }
@@ -73,53 +99,63 @@ function filterButtonsBasedOnBooking(buttons: string[], bookingStatus: any) {
   if (!bookingStatus.hasActiveBooking) {
     return buttons; // No filtering needed
   }
-  
+
   // Booking-related keywords to filter out
   const bookingKeywords = [
-    'book', 'schedule', 'demo', 'call', 'meeting', 
-    'appointment', 'consultation', 'talk to sales'
+    "book",
+    "schedule",
+    "demo",
+    "call",
+    "meeting",
+    "appointment",
+    "consultation",
+    "talk to sales",
   ];
-  
+
   // Filter out booking-related buttons
-  const filteredButtons = buttons.filter(button => {
+  const filteredButtons = buttons.filter((button) => {
     const lowerButton = button.toLowerCase();
-    return !bookingKeywords.some(keyword => 
-      lowerButton.includes(keyword)
-    );
+    return !bookingKeywords.some((keyword) => lowerButton.includes(keyword));
   });
-  
+
   // Add booking management buttons if we have few remaining buttons
   if (filteredButtons.length < 2) {
     const managementButtons = [
       "View Booking Details",
-      "Reschedule", 
-      "Add to Calendar"
+      "Reschedule",
+      "Add to Calendar",
     ];
-    
+
     // Return original filtered buttons + management options
-    return [...filteredButtons, ...managementButtons.slice(0, 3 - filteredButtons.length)];
+    return [
+      ...filteredButtons,
+      ...managementButtons.slice(0, 3 - filteredButtons.length),
+    ];
   }
-  
+
   return filteredButtons;
 }
 
 // Generate booking-aware response when user has active booking
 function generateBookingAwareResponse(
-  originalResponse: any, 
+  originalResponse: any,
   bookingStatus: any,
   userQuestion: string
 ) {
-  if (!bookingStatus.hasActiveBooking) {
+  if (!bookingStatus.hasActiveBooking || !bookingStatus.currentBooking) {
     return originalResponse; // No modification needed
   }
-  
+
   const booking = bookingStatus.currentBooking;
   const bookingDate = new Date(booking.preferredDate).toLocaleDateString();
   const bookingTime = booking.preferredTime;
-  
+
   // Check if user is asking for another booking
-  const isBookingRequest = /book|schedule|demo|call|meeting|appointment|consultation|talk to sales/i.test(userQuestion);
-  
+  const isBookingRequest =
+    /book|schedule|demo|call|meeting|appointment|consultation|talk to sales/i.test(
+      userQuestion
+    );
+
   if (isBookingRequest) {
     return {
       mainText: `Great news! You already have a ${booking.requestType} scheduled for ${bookingDate} at ${bookingTime} (Confirmation: ${booking.confirmationNumber}). Looking forward to connecting with you!`,
@@ -127,14 +163,17 @@ function generateBookingAwareResponse(
       emailPrompt: "",
       showBookingCalendar: false,
       existingBooking: true,
-      bookingDetails: bookingStatus.bookingDetails
+      bookingDetails: bookingStatus.bookingDetails,
     };
   }
-  
+
   // For non-booking questions, just filter buttons
   return {
     ...originalResponse,
-    buttons: filterButtonsBasedOnBooking(originalResponse.buttons || [], bookingStatus)
+    buttons: filterButtonsBasedOnBooking(
+      originalResponse.buttons || [],
+      bookingStatus
+    ),
   };
 }
 
@@ -150,42 +189,59 @@ async function updateChatWithBookingReference(
   try {
     const db = await getDb();
     const chats = db.collection("chats");
-    
+
     // Update all messages in this session with booking reference
     await chats.updateMany(
       { sessionId },
-      { 
+      {
         $set: {
           bookingId: bookingId,
           hasActiveBooking: hasActiveBooking,
-          bookingLastChecked: new Date()
-        }
+          bookingLastChecked: new Date(),
+        },
       }
     );
-    
-    console.log(`[Booking] Updated chat messages for session ${sessionId} with booking ${bookingId}`);
+
+    console.log(
+      `[Booking] Updated chat messages for session ${sessionId} with booking ${bookingId}`
+    );
   } catch (error) {
-    console.error("[Booking] Error updating chat with booking reference:", error);
+    console.error(
+      "[Booking] Error updating chat with booking reference:",
+      error
+    );
   }
 }
 
 // Generate booking management response for specific actions
 function generateBookingManagementResponse(action: string, booking: any) {
+  if (!booking) return null;
+
+  // Validate booking before generating response
+  const valid = Boolean(
+    booking.preferredDate &&
+      !isNaN(new Date(booking.preferredDate).getTime()) &&
+      typeof booking.preferredTime === "string" &&
+      booking.preferredTime.length >= 4 &&
+      typeof booking.requestType === "string" &&
+      booking.requestType.length > 0
+  );
+  if (!valid) return null;
   const bookingDate = new Date(booking.preferredDate).toLocaleDateString();
   const bookingTime = booking.preferredTime;
-  
+
   switch (action.toLowerCase()) {
-    case 'view details':
-    case 'view booking details':
+    case "view details":
+    case "view booking details":
       return {
         mainText: `📅 <strong>Your ${booking.requestType} Details:</strong><br><br>📅 <strong>Date:</strong> ${bookingDate}<br>⏰ <strong>Time:</strong> ${bookingTime}<br>🎫 <strong>Confirmation:</strong> ${booking.confirmationNumber}<br>📧 <strong>Contact:</strong> ${booking.email}<br><br>We'll send you a reminder 24 hours before your appointment!`,
         buttons: ["Reschedule", "Add to Calendar", "Contact Support"],
         emailPrompt: "",
         showBookingCalendar: false,
-        bookingAction: "view_details"
+        bookingAction: "view_details",
       };
-      
-    case 'reschedule':
+
+    case "reschedule":
       return {
         mainText: `I'll help you reschedule your ${booking.requestType} from ${bookingDate} at ${bookingTime}. Please select a new time that works better for you.`,
         buttons: ["Pick New Time", "Cancel Booking", "Keep Current"],
@@ -193,10 +249,10 @@ function generateBookingManagementResponse(action: string, booking: any) {
         showBookingCalendar: true,
         bookingType: booking.requestType,
         bookingAction: "reschedule",
-        currentBooking: booking
+        currentBooking: booking,
       };
-      
-    case 'add to calendar':
+
+    case "add to calendar":
       return {
         mainText: `📅 Ready to add your ${booking.requestType} to your calendar!<br><br><strong>Event Details:</strong><br>📅 ${bookingDate} at ${bookingTime}<br>🎫 Confirmation: ${booking.confirmationNumber}<br><br>Click below to add to your preferred calendar.`,
         buttons: ["Google Calendar", "Outlook", "Apple Calendar"],
@@ -207,17 +263,17 @@ function generateBookingManagementResponse(action: string, booking: any) {
           title: `${booking.requestType} - ${booking.confirmationNumber}`,
           date: booking.preferredDate,
           time: booking.preferredTime,
-          description: `${booking.requestType} appointment. Confirmation: ${booking.confirmationNumber}`
-        }
+          description: `${booking.requestType} appointment. Confirmation: ${booking.confirmationNumber}`,
+        },
       };
-      
+
     default:
       return {
         mainText: `I can help you manage your ${booking.requestType} scheduled for ${bookingDate} at ${bookingTime}. What would you like to do?`,
         buttons: ["View Details", "Reschedule", "Add to Calendar"],
         emailPrompt: "",
         showBookingCalendar: false,
-        bookingAction: "manage"
+        bookingAction: "manage",
       };
   }
 }
@@ -231,34 +287,37 @@ async function detectBookingConflicts(
   try {
     const db = await getDb();
     const bookings = db.collection("bookings");
-    
+
     // Check for overlapping bookings
-    const conflicts = await bookings.find({
-      sessionId,
-      status: { $in: ["confirmed", "pending"] },
-      preferredDate: newBookingRequest.preferredDate,
-      ...(adminId && { adminId })
-    }).toArray();
-    
+    const conflicts = await bookings
+      .find({
+        sessionId,
+        status: { $in: ["confirmed", "pending"] },
+        preferredDate: newBookingRequest.preferredDate,
+        ...(adminId && { adminId }),
+      })
+      .toArray();
+
     if (conflicts.length > 0) {
       return {
         hasConflict: true,
         conflictingBookings: conflicts,
-        suggestion: "You already have a booking on this date. Would you like to reschedule the existing one or choose a different time?"
+        suggestion:
+          "You already have a booking on this date. Would you like to reschedule the existing one or choose a different time?",
       };
     }
-    
+
     return {
       hasConflict: false,
       conflictingBookings: [],
-      suggestion: null
+      suggestion: null,
     };
   } catch (error) {
     console.error("[Booking] Error detecting conflicts:", error);
     return {
       hasConflict: false,
       conflictingBookings: [],
-      suggestion: null
+      suggestion: null,
     };
   }
 }
@@ -1316,7 +1375,9 @@ export async function POST(req: NextRequest) {
   // 🔥 HANDLE USER PROFILE UPDATE FOR CUSTOMER INTELLIGENCE
   if (updateUserProfile && profileUserEmail) {
     try {
-      console.log(`[Chat API ${requestId}] 📊 Updating user profile for customer intelligence`);
+      console.log(
+        `[Chat API ${requestId}] 📊 Updating user profile for customer intelligence`
+      );
       console.log(`[Chat API ${requestId}] 📊 Profile data:`, {
         sessionId,
         userEmail: profileUserEmail,
@@ -1354,9 +1415,9 @@ export async function POST(req: NextRequest) {
 
       await conversationsCollection.updateOne(
         { sessionId },
-        { 
+        {
           $set: profileUpdateData,
-          $setOnInsert: { createdAt: new Date() }
+          $setOnInsert: { createdAt: new Date() },
         },
         { upsert: true }
       );
@@ -1364,8 +1425,10 @@ export async function POST(req: NextRequest) {
       // Also create/update lead record
       if (profileUserEmail) {
         const adminId = apiAuth?.adminId || "default-admin";
-        const leadRequirements = bookingIntent ? `${bookingType} booking for ${bookingDate} at ${bookingTime}` : question || "Calendar booking";
-        
+        const leadRequirements = bookingIntent
+          ? `${bookingType} booking for ${bookingDate} at ${bookingTime}`
+          : question || "Calendar booking";
+
         await createOrUpdateLead(
           adminId,
           profileUserEmail,
@@ -1375,13 +1438,18 @@ export async function POST(req: NextRequest) {
           question || `User provided email for ${bookingType} booking`,
           {
             detectedIntent: bookingIntent || "booking",
-            userResponses: [`Email: ${profileUserEmail}`, `Name: ${profileUserName}`],
+            userResponses: [
+              `Email: ${profileUserEmail}`,
+              `Name: ${profileUserName}`,
+            ],
             visitedPages: [pageUrl],
           }
         );
       }
 
-      console.log(`[Chat API ${requestId}] ✅ User profile updated successfully`);
+      console.log(
+        `[Chat API ${requestId}] ✅ User profile updated successfully`
+      );
 
       // Return early for profile update requests
       return NextResponse.json(
@@ -1393,7 +1461,10 @@ export async function POST(req: NextRequest) {
         { headers: corsHeaders }
       );
     } catch (error) {
-      console.error(`[Chat API ${requestId}] ❌ Error updating user profile:`, error);
+      console.error(
+        `[Chat API ${requestId}] ❌ Error updating user profile:`,
+        error
+      );
       return NextResponse.json(
         { error: "Failed to update user profile" },
         { status: 500, headers: corsHeaders }
@@ -1737,13 +1808,19 @@ Keep the response conversational and helpful, focusing on providing value before
   }
 
   // 🔥 PHASE 1: CHECK BOOKING STATUS
-  const bookingStatus = await getSessionBookingStatus(sessionId, adminId || undefined);
-  console.log(`[Chat API ${requestId}] Booking status for session ${sessionId}:`, {
-    hasActiveBooking: bookingStatus.hasActiveBooking,
-    bookingType: bookingStatus.currentBooking?.requestType,
-    bookingDate: bookingStatus.currentBooking?.preferredDate,
-    canBookAgain: bookingStatus.canBookAgain
-  });
+  const bookingStatus = await getSessionBookingStatus(
+    sessionId,
+    adminId || undefined
+  );
+  console.log(
+    `[Chat API ${requestId}] Booking status for session ${sessionId}:`,
+    {
+      hasActiveBooking: bookingStatus.hasActiveBooking,
+      bookingType: bookingStatus.currentBooking?.requestType,
+      bookingDate: bookingStatus.currentBooking?.preferredDate,
+      canBookAgain: bookingStatus.canBookAgain,
+    }
+  );
 
   // If email detected, update all previous messages in this session with email and adminId
   if (detectedEmail) {
@@ -2051,23 +2128,25 @@ Extract key requirements (2-3 bullet points max, be concise):`;
       bookingStatus,
       question
     );
-    
+
     if (bookingAwareResponse.existingBooking) {
-      console.log(`[Chat API ${requestId}] 🔒 User has active booking, returning booking-aware response`);
-      
+      console.log(
+        `[Chat API ${requestId}] 🔒 User has active booking, returning booking-aware response`
+      );
+
       // Store user message
       await chats.insertOne({
         sessionId,
-        role: "user", 
+        role: "user",
         content: question,
         createdAt: now,
         adminId,
         apiKey,
         pageUrl,
         hasActiveBooking: bookingStatus.hasActiveBooking,
-        bookingId: bookingStatus.currentBooking?._id
+        bookingId: bookingStatus.currentBooking?._id,
       });
-      
+
       // Store booking-aware response
       await chats.insertOne({
         sessionId,
@@ -2080,39 +2159,47 @@ Extract key requirements (2-3 bullet points max, be concise):`;
         pageUrl,
         hasActiveBooking: bookingStatus.hasActiveBooking,
         bookingId: bookingStatus.currentBooking?._id,
-        existingBooking: true
+        existingBooking: true,
       });
-      
+
       return NextResponse.json(bookingAwareResponse, { headers: corsHeaders });
     }
-    
+
     // 🔥 PHASE 2: Handle booking management actions
-    const bookingActions = ['view details', 'view booking details', 'reschedule', 'add to calendar', 'cancel booking'];
-    const isBookingAction = bookingActions.some(action => 
+    const bookingActions = [
+      "view details",
+      "view booking details",
+      "reschedule",
+      "add to calendar",
+      "cancel booking",
+    ];
+    const isBookingAction = bookingActions.some((action) =>
       question.toLowerCase().includes(action.toLowerCase())
     );
-    
+
     if (isBookingAction && bookingStatus.hasActiveBooking) {
-      console.log(`[Chat API ${requestId}] 🎛️ Handling booking management action: ${question}`);
-      
+      console.log(
+        `[Chat API ${requestId}] 🎛️ Handling booking management action: ${question}`
+      );
+
       // Determine which action was requested
-      let requestedAction = 'manage'; // default
+      let requestedAction = "manage"; // default
       for (const action of bookingActions) {
         if (question.toLowerCase().includes(action.toLowerCase())) {
           requestedAction = action;
           break;
         }
       }
-      
+
       const managementResponse = generateBookingManagementResponse(
-        requestedAction, 
+        requestedAction,
         bookingStatus.currentBooking
       );
-      
+
       // Store user message
       await chats.insertOne({
         sessionId,
-        role: "user", 
+        role: "user",
         content: question,
         createdAt: now,
         adminId,
@@ -2120,25 +2207,26 @@ Extract key requirements (2-3 bullet points max, be concise):`;
         pageUrl,
         hasActiveBooking: bookingStatus.hasActiveBooking,
         bookingId: bookingStatus.currentBooking?._id,
-        bookingAction: requestedAction
+        bookingAction: requestedAction,
       });
-      
-      // Store management response
-      await chats.insertOne({
-        sessionId,
-        role: "assistant",
-        content: managementResponse.mainText,
-        buttons: managementResponse.buttons,
-        createdAt: new Date(now.getTime() + 1),
-        adminId,
-        apiKey,
-        pageUrl,
-        hasActiveBooking: bookingStatus.hasActiveBooking,
-        bookingId: bookingStatus.currentBooking?._id,
-        bookingAction: requestedAction
-      });
-      
-      return NextResponse.json(managementResponse, { headers: corsHeaders });
+
+      // Store management response (if generated)
+      if (managementResponse) {
+        await chats.insertOne({
+          sessionId,
+          role: "assistant",
+          content: managementResponse.mainText,
+          buttons: managementResponse.buttons,
+          createdAt: new Date(now.getTime() + 1),
+          adminId,
+          apiKey,
+          pageUrl,
+          hasActiveBooking: bookingStatus.hasActiveBooking,
+          bookingId: bookingStatus.currentBooking?._id,
+          bookingAction: requestedAction,
+        });
+        return NextResponse.json(managementResponse, { headers: corsHeaders });
+      }
     }
   }
 
@@ -2952,21 +3040,23 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
 
         if (followupCount === 0) {
           // First follow-up: Check if there's a user message to base it on
-          
+
           // Get the last user message from conversation history
           const lastUserMessage = previousChats
             .filter((msg) => (msg as unknown as ChatMessage).role === "user")
             .slice(-1)[0]; // Get the most recent user message
-          
-          const lastUserContent = lastUserMessage 
-            ? (typeof lastUserMessage.content === 'string' 
-                ? lastUserMessage.content 
-                : lastUserMessage.content.mainText || '')
-            : '';
 
-          if (lastUserContent && lastUserContent.trim() !== '') {
+          const lastUserContent = lastUserMessage
+            ? typeof lastUserMessage.content === "string"
+              ? lastUserMessage.content
+              : lastUserMessage.content.mainText || ""
+            : "";
+
+          if (lastUserContent && lastUserContent.trim() !== "") {
             // User has sent a message - base followup ONLY on their last message
-            console.log(`[Followup] First followup based on last user message: "${lastUserContent}"`);
+            console.log(
+              `[Followup] First followup based on last user message: "${lastUserContent}"`
+            );
 
             followupSystemPrompt = `
 You are a helpful sales assistant. The user has not provided an email yet.
@@ -3034,10 +3124,11 @@ CRITICAL: Base your response ONLY on their last message "${lastUserContent}", no
 Do NOT use page content. Focus entirely on understanding and expanding on what they just said. Ask a clarifying question or provide options directly related to their specific inquiry.
 
 Generate exactly 3 buttons (2-4 words each) that help them be more specific about what they asked. JSON format only.`;
-
           } else {
             // No user message yet - use existing page-context driven logic
-            console.log(`[Followup] No user message found, using page-context driven first followup`);
+            console.log(
+              `[Followup] No user message found, using page-context driven first followup`
+            );
 
             followupSystemPrompt = `
 You are a helpful sales assistant. The user has not provided an email yet.
@@ -3118,16 +3209,16 @@ ${previousQnA}
 - Respond with ONLY valid JSON - no additional text before or after
 - NEVER include JSON objects or button arrays within the mainText field
 - Your mainText must be maximum 30 words. Be creative, engaging, and specific to page context. Do NOT repeat previous questions: ${lastFewQuestions
-            .map((q) => `"${getText(q)}"`)
-            .join(", ")}. Do NOT include a summary or multiple questions.
+              .map((q) => `"${getText(q)}"`)
+              .join(", ")}. Do NOT include a summary or multiple questions.
 - Generate exactly 3 buttons, each 3-4 words maximum. Base them on actual page content and user needs.
 - Vary the nudge text for each follow-up.`;
 
             followupUserPrompt = `CRITICAL: You MUST create a response based on the ACTUAL page content provided above. Do NOT use generic terms like "scheduling chaos" or "auto scheduling". 
 
 Create ONE nudge (max 30 words) that is specific to the page content and industry. Extract real features, benefits, or services from the page content provided. Do NOT repeat questions: ${lastFewQuestions
-            .map((q) => `"${getText(q)}"`)
-            .join(", ")}. 
+              .map((q) => `"${getText(q)}"`)
+              .join(", ")}. 
 
 Generate exactly 3 buttons (3-4 words each) using ACTUAL terms from the page content. JSON format only.`;
           }
@@ -4146,11 +4237,13 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
       ...(requirementsToStore ? { requirements: requirementsToStore } : {}),
       ...(adminId ? { adminId } : {}),
       // 🔥 PHASE 2: Add booking information to all messages
-      ...(bookingStatus.hasActiveBooking && bookingStatus.currentBooking ? { 
-        hasActiveBooking: true,
-        bookingId: bookingStatus.currentBooking._id,
-        bookingType: bookingStatus.currentBooking.requestType
-      } : {}),
+      ...(bookingStatus.hasActiveBooking && bookingStatus.currentBooking
+        ? {
+            hasActiveBooking: true,
+            bookingId: bookingStatus.currentBooking._id,
+            bookingType: bookingStatus.currentBooking.requestType,
+          }
+        : {}),
     },
     {
       sessionId,
@@ -4161,11 +4254,13 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
       ...(requirementsToStore ? { requirements: requirementsToStore } : {}),
       ...(adminId ? { adminId } : {}),
       // 🔥 PHASE 2: Add booking information to all messages
-      ...(bookingStatus.hasActiveBooking && bookingStatus.currentBooking ? { 
-        hasActiveBooking: true,
-        bookingId: bookingStatus.currentBooking._id,
-        bookingType: bookingStatus.currentBooking.requestType
-      } : {}),
+      ...(bookingStatus.hasActiveBooking && bookingStatus.currentBooking
+        ? {
+            hasActiveBooking: true,
+            bookingId: bookingStatus.currentBooking._id,
+            bookingType: bookingStatus.currentBooking.requestType,
+          }
+        : {}),
     },
   ]);
 
@@ -4216,20 +4311,26 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
 
   // 🔥 PHASE 2: ENHANCED BOOKING-AWARE RESPONSE PROCESSING
   // First check for booking management actions
-  const bookingManagementResponse = await generateBookingManagementResponse(question || "", bookingStatus);
-  
+  const bookingManagementResponse =
+    bookingStatus.hasActiveBooking && bookingStatus.currentBooking
+      ? generateBookingManagementResponse(
+          question || "",
+          bookingStatus.currentBooking
+        )
+      : null;
+
   let finalResponse;
   if (bookingManagementResponse) {
     // Use booking management response (view details, reschedule, etc.)
     finalResponse = bookingManagementResponse;
     console.log(`[Chat API ${requestId}] Booking management action detected:`, {
       action: bookingManagementResponse.bookingAction,
-      hasActiveBooking: bookingStatus.hasActiveBooking
+      hasActiveBooking: bookingStatus.hasActiveBooking,
     });
   } else {
     // Use standard booking-aware filtering
     finalResponse = generateBookingAwareResponse(
-      responseWithMode, 
+      responseWithMode,
       bookingStatus,
       question || ""
     );
@@ -4242,7 +4343,9 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
     showBookingCalendar: !!finalResponse.showBookingCalendar,
     bookingType: finalResponse.bookingType || undefined,
     hasActiveBooking: bookingStatus.hasActiveBooking,
-    buttonsFiltered: bookingStatus.hasActiveBooking && (responseWithMode.buttons?.length !== finalResponse.buttons?.length),
+    buttonsFiltered:
+      bookingStatus.hasActiveBooking &&
+      responseWithMode.buttons?.length !== finalResponse.buttons?.length,
     bookingAction: finalResponse.bookingAction || undefined,
     timestamp: new Date().toISOString(),
   });
