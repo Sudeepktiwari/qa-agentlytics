@@ -1090,7 +1090,7 @@ export async function GET(request: Request) {
           preferredTime,
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
         };
-        response = await fetch(`${CHATBOT_API_BASE}/api/booking`, {
+        response = await fetch(CHATBOT_API_BASE + '/api/booking', {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -1099,7 +1099,7 @@ export async function GET(request: Request) {
           body: JSON.stringify(payload)
         });
       } else {
-        response = await fetch(`${CHATBOT_API_BASE}/api/booking`, {
+        response = await fetch(CHATBOT_API_BASE + '/api/booking', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -1143,8 +1143,8 @@ export async function GET(request: Request) {
             confirmationNumber: result.data?.confirmationNumber,
             leadStatus: 'converted',
             question: isRescheduleMode
-              ? `Booking rescheduled: ${bookingType} to ${preferredDate} at ${preferredTime}`
-              : `Booking confirmed: ${bookingType} on ${preferredDate} at ${preferredTime}`
+              ? 'Booking rescheduled: ' + bookingType + ' to ' + preferredDate + ' at ' + preferredTime
+              : 'Booking confirmed: ' + bookingType + ' on ' + preferredDate + ' at ' + preferredTime
           });
 
           console.log("✅ [WIDGET BOOKING] Customer intelligence updated with booking confirmation");
@@ -1154,8 +1154,8 @@ export async function GET(request: Request) {
 
         // Add success message to chat with user details
         const successText = isRescheduleMode
-          ? `All set! ${userBookingData.name}, your ${bookingType} has been rescheduled to ${preferredDate} at ${preferredTime}.`
-          : `Perfect! ${userBookingData.name}, your ${bookingType} is booked for ${new Date(slot.startTime).toLocaleString()}. A confirmation email will be sent to ${userBookingData.email}. Confirmation: ${result.data?.confirmationNumber || 'Pending'}`;
+          ? 'All set! ' + userBookingData.name + ', your ' + bookingType + ' has been rescheduled to ' + preferredDate + ' at ' + preferredTime + '.'
+          : 'Perfect! ' + userBookingData.name + ', your ' + bookingType + ' is booked for ' + new Date(slot.startTime).toLocaleString() + '. A confirmation email will be sent to ' + userBookingData.email + '. Confirmation: ' + (result.data?.confirmationNumber || 'Pending');
         const successMessage = {
           role: 'assistant',
           content: successText,
