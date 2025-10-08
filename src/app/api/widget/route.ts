@@ -1152,6 +1152,15 @@ export async function GET(request: Request) {
           console.warn("⚠️ [WIDGET BOOKING] Failed to update customer intelligence:", error);
         }
 
+        // Hide all calendar elements after successful booking
+        const calendarElements = document.querySelectorAll('[id^="booking-calendar-"]');
+        calendarElements.forEach(calendar => {
+          const parentDiv = calendar.closest('div[style*="background: white; border-radius: 8px;"]');
+          if (parentDiv) {
+            parentDiv.style.display = 'none';
+          }
+        });
+        
         // Add success message to chat with user details
         const successText = isRescheduleMode
           ? 'All set! ' + userBookingData.name + ', your ' + bookingType + ' has been rescheduled to ' + preferredDate + ' at ' + preferredTime + '.'

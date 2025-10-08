@@ -1087,6 +1087,12 @@
                       .slice(-6)}
                 `;
 
+          // Hide calendar container to prevent further interaction
+          const calendarContainer = document.querySelector('.calendar-container');
+          if (calendarContainer) {
+            calendarContainer.style.display = 'none';
+          }
+          
           // Show success step
           this.goToStep("Success");
           document.getElementById("progressFill").style.width = "100%";
