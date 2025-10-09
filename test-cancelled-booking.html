@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Cancelled Booking</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    h1 {
+      color: #2563eb;
+      border-bottom: 2px solid #e5e7eb;
+      padding-bottom: 10px;
+    }
+    .test-section {
+      background-color: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    h2 {
+      color: #4b5563;
+      margin-top: 0;
+    }
+    button {
+      background-color: #2563eb;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+    button:hover {
+      background-color: #1d4ed8;
+    }
+    .result {
+      margin-top: 15px;
+      padding: 15px;
+      border-radius: 4px;
+      background-color: #f3f4f6;
+      min-height: 50px;
+    }
+    .success {
+      background-color: #d1fae5;
+    }
+    .error {
+      background-color: #fee2e2;
+    }
+    pre {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      background-color: #f1f5f9;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    .status-pending {
+      background-color: #fef3c7;
+      color: #92400e;
+    }
+    .status-confirmed {
+      background-color: #d1fae5;
+      color: #065f46;
+    }
+    .status-cancelled {
+      background-color: #fee2e2;
+      color: #b91c1c;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Test Cancelled Booking</h1>
+    <p>This page tests the functionality for handling bookings with different statuses.</p>
+    
+    <div class="test-section">
+      <h2>1. Test Booking with Cancelled Status</h2>
+      <p>This test simulates a user trying to book an appointment when they have a previous cancelled booking.</p>
+      <button id="testCancelledBooking">Test Cancelled Booking</button>
+      <div id="cancelledBookingResult" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+      <h2>2. Test Booking with Pending Status</h2>
+      <p>This test simulates a user trying to book an appointment when they have a pending booking.</p>
+      <button id="testPendingBooking">Test Pending Booking</button>
+      <div id="pendingBookingResult" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+      <h2>3. Test Booking with Confirmed Status</h2>
+      <p>This test simulates a user trying to book an appointment when they have a confirmed booking.</p>
+      <button id="testConfirmedBooking">Test Confirmed Booking</button>
+      <div id="confirmedBookingResult" class="result"></div>
+    </div>
+  </div>
+
+  <script>
+    // Sample booking data for testing
+    const sampleBookingData = {
+      name: "John Doe",
+      email: "john@example.com",
+      phone: "555-123-4567",
+      preferredDate: "2023-12-15",
+      preferredTime: "10:30",
+      message: "I'd like to discuss your services."
+    };
+
+    // Function to display results
+    function displayResult(elementId, content, isSuccess = false, isError = false) {
+      const element = document.getElementById(elementId);
+      element.innerHTML = content;
+      element.className = "result";
+      if (isSuccess) element.classList.add("success");
+      if (isError) element.classList.add("error");
+    }
+
+    // Function to simulate API response
+    function simulateApiResponse(status) {
+      // Create a copy of the booking data to avoid modifying the original
+      const bookingData = { ...sampleBookingData };
+      
+      // For cancelled status, simulate a successful booking
+      if (status === "cancelled") {
+        return {
+          success: true,
+          data: {
+            bookingId: "new-booking-123",
+            status: "pending",
+            confirmationNumber: "NEW-CONF-12345",
+            scheduledFor: {
+              date: bookingData.preferredDate,
+              time: bookingData.preferredTime,
+              timezone: "America/New_York"
+            }
+          }
+        };
+      } 
+      // For pending or confirmed status, simulate a duplicate booking response
+      else {
+        return {
+          success: true,
+          duplicate: true,
+          data: {
+            bookingId: "existing-booking-123",
+            status: status,
+            confirmationNumber: "EXISTING-CONF-12345",
+            scheduledFor: {
+              date: bookingData.preferredDate,
+              time: bookingData.preferredTime,
+              timezone: "America/New_York"
+            }
+          }
+        };
+      }
+    }
+
+    // Test Cancelled Booking
+    document.getElementById("testCancelledBooking").addEventListener("click", function() {
+      displayResult("cancelledBookingResult", "<p>Simulating booking with cancelled status...</p>");
+      
+      // Simulate API call with cancelled status
+      setTimeout(() => {
+        const response = simulateApiResponse("cancelled");
+        
+        let resultHtml = `
+          <h3>Booking Response</h3>
+          <p><strong>Success:</strong> ${response.success}</p>
+          <p><strong>Duplicate:</strong> ${response.duplicate ? "Yes" : "No"}</p>
+        `;
+        
+        if (response.duplicate) {
+          resultHtml += `
+            <p><strong>Message:</strong> You already have a booking!</p>
+            <p><strong>Status:</strong> <span class="status-badge status-${response.data.status}">${response.data.status}</span></p>
+            <p><strong>Confirmation:</strong> ${response.data.confirmationNumber}</p>
+            <p><strong>Date:</strong> ${response.data.scheduledFor.date}</p>
+            <p><strong>Time:</strong> ${response.data.scheduledFor.time}</p>
+          `;
+        } else {
+          resultHtml += `
+            <p><strong>Message:</strong> Booking successful!</p>
+            <p><strong>Status:</strong> <span class="status-badge status-${response.data.status}">${response.data.status}</span></p>
+            <p><strong>Confirmation:</strong> ${response.data.confirmationNumber}</p>
+            <p><strong>Date:</strong> ${response.data.scheduledFor.date}</p>
+            <p><strong>Time:</strong> ${response.data.scheduledFor.time}</p>
+          `;
+        }
+        
+        displayResult("cancelledBookingResult", resultHtml, true);
+      }, 1000);
+    });
+
+    // Test Pending Booking
+    document.getElementById("testPendingBooking").addEventListener("click", function() {
+      displayResult("pendingBookingResult", "<p>Simulating booking with pending status...</p>");
+      
+      // Simulate API call with pending status
+      setTimeout(() => {
+        const response = simulateApiResponse("pending");
+        
+        let resultHtml = `
+          <h3>Booking Response</h3>
+          <p><strong>Success:</strong> ${response.success}</p>
+          <p><strong>Duplicate:</strong> ${response.duplicate ? "Yes" : "No"}</p>
+        `;
+        
+        if (response.duplicate) {
+          resultHtml += `
+            <p><strong>Message:</strong> You already have a booking!</p>
+            <p><strong>Status:</strong> <span class="status-badge status-${response.data.status}">${response.data.status}</span></p>
+            <p><strong>Confirmation:</strong> ${response.data.confirmationNumber}</p>
+            <p><strong>Date:</strong> ${response.data.scheduledFor.date}</p>
+            <p><strong>Time:</strong> ${response.data.scheduledFor.time}</p>
+          `;
+        } else {
+          resultHtml += `
+            <p><strong>Message:</strong> Booking successful!</p>
+            <p><strong>Status:</strong> <span class="status-badge status-${response.data.status}">${response.data.status}</span></p>
+            <p><strong>Confirmation:</strong> ${response.data.confirmationNumber}</p>
+            <p><strong>Date:</strong> ${response.data.scheduledFor.date}</p>
+            <p><strong>Time:</strong> ${response.data.scheduledFor.time}</p>
+          `;
+        }
+        
+        displayResult("pendingBookingResult", resultHtml, true);
+      }, 1000);
+    });
+
+    // Test Confirmed Booking
+    document.getElementById("testConfirmedBooking").addEventListener("click", function() {
+      displayResult("confirmedBookingResult", "<p>Simulating booking with confirmed status...</p>");
+      
+      // Simulate API call with confirmed status
+      setTimeout(() => {
+        const response = simulateApiResponse("confirmed");
+        
+        let resultHtml = `
+          <h3>Booking Response</h3>
+          <p><strong>Success:</strong> ${response.success}</p>
+          <p><strong>Duplicate:</strong> ${response.duplicate ? "Yes" : "No"}</p>
+        `;
+        
+        if (response.duplicate) {
+          resultHtml += `
+            <p><strong>Message:</strong> You already have a booking!</p>
+            <p><strong>Status:</strong> <span class="status-badge status-${response.data.status}">${response.data.status}</span></p>
+            <p><strong>Confirmation:</strong> ${response.data.confirmationNumber}</p>
+            <p><strong>Date:</strong> ${response.data.scheduledFor.date}</p>
+            <p><strong>Time:</strong> ${response.data.scheduledFor.time}</p>
+          `;
+        } else {
+          resultHtml += `
+            <p><strong>Message:</strong> Booking successful!</p>
+            <p><strong>Status:</strong> <span class="status-badge status-${response.data.status}">${response.data.status}</span></p>
+            <p><strong>Confirmation:</strong> ${response.data.confirmationNumber}</p>
+            <p><strong>Date:</strong> ${response.data.scheduledFor.date}</p>
+            <p><strong>Time:</strong> ${response.data.scheduledFor.time}</p>
+          `;
+        }
+        
+        displayResult("confirmedBookingResult", resultHtml, true);
+      }, 1000);
+    });
+  </script>
+</body>
+</html>

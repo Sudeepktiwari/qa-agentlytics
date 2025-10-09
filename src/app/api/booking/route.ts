@@ -216,6 +216,8 @@ export async function POST(request: NextRequest) {
           sameDay &&
           b.preferredTime === bookingData.preferredTime &&
           b.email?.toLowerCase() === bookingData.email?.toLowerCase() &&
+          // Only consider pending or confirmed bookings as duplicates
+          // Allow booking if previous status was 'cancelled'
           ["pending", "confirmed"].includes(b.status)
         );
       });

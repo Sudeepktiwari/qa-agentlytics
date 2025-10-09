@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Already Booked Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background-color: #f9f9f9;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #2c5282;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 10px;
+    }
+    h2 {
+      color: #4a5568;
+      margin-top: 20px;
+    }
+    .test-section {
+      margin-bottom: 30px;
+      padding: 15px;
+      background-color: #fff;
+      border-radius: 6px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    button {
+      background-color: #4299e1;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+    button:hover {
+      background-color: #3182ce;
+    }
+    pre {
+      background-color: #f0f0f0;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+      font-size: 14px;
+    }
+    .result {
+      margin-top: 15px;
+      padding: 10px;
+      border-left: 4px solid #4299e1;
+      background-color: #ebf8ff;
+    }
+    .error {
+      border-left-color: #f56565;
+      background-color: #fff5f5;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Already Booked Test</h1>
+    <p>This page tests the functionality for handling already booked appointments.</p>
+    
+    <div class="test-section">
+      <h2>1. Simulate Already Booked Response</h2>
+      <p>Click the button below to simulate the response when a user tries to book an already booked slot.</p>
+      <button id="simulateAlreadyBooked">Simulate Already Booked</button>
+      <div id="alreadyBookedResult" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+      <h2>2. Test Cancel Booking</h2>
+      <p>Test the cancel booking functionality.</p>
+      <button id="testCancelBooking">Test Cancel Booking</button>
+      <div id="cancelResult" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+      <h2>3. Test Reschedule Booking</h2>
+      <p>Test the reschedule booking functionality.</p>
+      <button id="testRescheduleBooking">Test Reschedule Booking</button>
+      <div id="rescheduleResult" class="result"></div>
+    </div>
+  </div>
+
+  <script>
+    // Sample booking data for testing
+    const sampleBookingData = {
+      bookingId: "sample123",
+      status: "confirmed",
+      confirmationNumber: "CONF12345",
+      scheduledFor: {
+        date: "2023-12-15",
+        time: "10:30",
+        timezone: "America/New_York"
+      }
+    };
+
+    // Function to display results
+    function displayResult(elementId, content, isError = false) {
+      const element = document.getElementById(elementId);
+      element.innerHTML = content;
+      element.className = isError ? "result error" : "result";
+    }
+
+    // Simulate Already Booked
+    document.getElementById("simulateAlreadyBooked").addEventListener("click", function() {
+      try {
+        // Create a mock BookingCalendar object with the showAlreadyBookedMessage method
+        const mockCalendar = {
+          showAlreadyBookedMessage: function(data) {
+            displayResult("alreadyBookedResult", `
+              <h3>Already Booked Message Displayed</h3>
+              <p>Date: ${new Date(data.scheduledFor.date).toLocaleDateString()}</p>
+              <p>Time: ${data.scheduledFor.time}</p>
+              <p>Status: ${data.status}</p>
+              <p>Confirmation #: ${data.confirmationNumber}</p>
+              <p>Buttons: View Details, Reschedule, Cancel Booking</p>
+            `);
+          },
+          goToStep: function() {},
+          formatDate: function(date) { return new Date(date).toLocaleDateString(); }
+        };
+        
+        // Call the method with sample data
+        mockCalendar.showAlreadyBookedMessage(sampleBookingData);
+      } catch (error) {
+        displayResult("alreadyBookedResult", `<p>Error: ${error.message}</p>`, true);
+      }
+    });
+
+    // Test Cancel Booking
+    document.getElementById("testCancelBooking").addEventListener("click", async function() {
+      try {
+        displayResult("cancelResult", "<p>Sending cancel request...</p>");
+        
+        // Mock API call
+        setTimeout(() => {
+          displayResult("cancelResult", `
+            <h3>Cancel Booking Response</h3>
+            <p>Status: Success</p>
+            <p>Message: Booking cancelled</p>
+            <p>Booking ID: ${sampleBookingData.bookingId}</p>
+          `);
+        }, 1000);
+      } catch (error) {
+        displayResult("cancelResult", `<p>Error: ${error.message}</p>`, true);
+      }
+    });
+
+    // Test Reschedule Booking
+    document.getElementById("testRescheduleBooking").addEventListener("click", async function() {
+      try {
+        displayResult("rescheduleResult", "<p>Sending reschedule init request...</p>");
+        
+        // Mock API call
+        setTimeout(() => {
+          displayResult("rescheduleResult", `
+            <h3>Reschedule Booking Response</h3>
+            <p>Status: Success</p>
+            <p>Message: Reschedule process initiated</p>
+            <p>Booking ID: ${sampleBookingData.bookingId}</p>
+            <p>Current Date: ${sampleBookingData.scheduledFor.date}</p>
+            <p>Current Time: ${sampleBookingData.scheduledFor.time}</p>
+          `);
+        }, 1000);
+      } catch (error) {
+        displayResult("rescheduleResult", `<p>Error: ${error.message}</p>`, true);
+      }
+    });
+  </script>
+</body>
+</html>

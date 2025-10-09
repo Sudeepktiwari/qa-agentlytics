@@ -1050,8 +1050,13 @@
             const result = await response.json();
 
             if (response.ok && result.success) {
-              // Success - show confirmation
-              this.showSuccess(bookingData);
+              if (result.duplicate) {
+                // Show already booked message with action buttons
+                this.showAlreadyBookedMessage(result.data);
+              } else {
+                // Success - show confirmation
+                this.showSuccess(bookingData);
+              }
             } else {
               throw new Error(result.error || "Booking submission failed");
             }
@@ -1096,6 +1101,96 @@
           // Show success step
           this.goToStep("Success");
           document.getElementById("progressFill").style.width = "100%";
+        }
+
+        showAlreadyBookedMessage(bookingData) {
+          // Create already booked message container
+          const error = document.getElementById("submitError");
+          error.innerHTML = `
+            <div class="already-booked-message">
+              <h3>You already have a booking!</h3>
+              <p>You have an existing appointment scheduled for <strong>${new Date(bookingData.scheduledFor.date).toLocaleDateString("en-US", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}</strong> at <strong>${bookingData.scheduledFor.time}</strong>.</p>
+              <p>Confirmation #: <strong>${bookingData.confirmationNumber || "N/A"}</strong></p>
+              <p>Status: <strong>${bookingData.status.charAt(0).toUpperCase() + bookingData.status.slice(1)}</strong></p>
+              
+              <div class="booking-actions" style="margin-top: 20px; display: flex; gap: 10px;">
+                <button id="viewExistingBooking" class="btn btn-secondary">View Details</button>
+                <button id="rescheduleBooking" class="btn btn-primary">Reschedule</button>
+                <button id="cancelBooking" class="btn btn-secondary" style="background: #f56565; color: white;">Cancel Booking</button>
+              </div>
+            </div>
+          `;
+          error.style.display = "block";
+          
+          // Hide calendar container
+          const calendarContainer = document.querySelector(".calendar-container");
+          if (calendarContainer) {
+            calendarContainer.style.display = "none";
+          }
+          
+          // Add event listeners for the action buttons
+          document.getElementById("viewExistingBooking").addEventListener("click", () => {
+            // Open booking details in a new tab or modal
+            alert(`Booking Details:\n\nDate: ${new Date(bookingData.scheduledFor.date).toLocaleDateString()}\nTime: ${bookingData.scheduledFor.time}\nStatus: ${bookingData.status}\nConfirmation #: ${bookingData.confirmationNumber || "N/A"}`);
+          });
+          
+          document.getElementById("rescheduleBooking").addEventListener("click", async () => {
+            try {
+              // Call the reschedule API endpoint
+              const response = await fetch(`/api/booking/${bookingData.bookingId}/reschedule/init`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json"
+                }
+              });
+              
+              if (response.ok) {
+                // Reset calendar selection and go back to step 1
+                this.selectedDate = null;
+                this.selectedTime = null;
+                document.getElementById("selectedInfo").style.display = "none";
+                document.getElementById("nextStep1").disabled = true;
+                this.goToStep(1);
+                error.style.display = "none";
+                
+                // Show reschedule message
+                const formError = document.getElementById("formError");
+                formError.textContent = "Please select a new date and time for your appointment.";
+                formError.style.display = "block";
+              } else {
+                throw new Error("Failed to initiate reschedule");
+              }
+            } catch (err) {
+              alert("Error initiating reschedule: " + err.message);
+            }
+          });
+          
+          document.getElementById("cancelBooking").addEventListener("click", async () => {
+            if (confirm("Are you sure you want to cancel your booking?")) {
+              try {
+                const response = await fetch(`/api/booking/${bookingData.bookingId}/cancel`, {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json"
+                  }
+                });
+                
+                if (response.ok) {
+                  alert("Your booking has been cancelled successfully.");
+                  location.reload();
+                } else {
+                  throw new Error("Failed to cancel booking");
+                }
+              } catch (err) {
+                alert("Error cancelling booking: " + err.message);
+              }
+            }
+          });
         }
       }
 
