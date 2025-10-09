@@ -1160,6 +1160,15 @@ export async function GET(request: Request) {
             parentDiv.style.display = 'none';
           }
         });
+
+        // Hide all calendar elements after successful booking
+        const calendarElements = document.querySelectorAll('[id^="booking-calendar-"]');
+        calendarElements.forEach(calendar => {
+          const parentDiv = calendar.closest('div[style*="background: white; border-radius: 8px;"]');
+          if (parentDiv) {
+            parentDiv.style.display = 'none';
+          }
+        });
         
         // Add success message to chat with user details
         const successText = isRescheduleMode
