@@ -5,9 +5,10 @@ import { bookingService } from "@/services/bookingService";
  * POST /api/booking/[id]/cancel
  * Cancel a booking by ID
  */
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const bookingId = params.id;
+    const { id } = await params;
+    const bookingId = id;
 
     if (!bookingId) {
       return NextResponse.json(
