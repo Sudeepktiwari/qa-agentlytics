@@ -157,13 +157,29 @@ function generateBookingAwareResponse(
     );
 
   if (isBookingRequest) {
+    // Show comprehensive booking details instead of calendar
     return {
-      mainText: `Your appointment is already booked for ${bookingDate} at ${bookingTime}.`,
-      buttons: ["View Details", "Reschedule", "Cancel Booking"],
+      mainText: `📅 <strong>You already have an appointment scheduled!</strong><br><br>` +
+                `📅 <strong>Date:</strong> ${bookingDate}<br>` +
+                `⏰ <strong>Time:</strong> ${bookingTime}<br>` +
+                `📋 <strong>Type:</strong> ${booking.requestType || 'Appointment'}<br>` +
+                `🎫 <strong>Confirmation:</strong> ${booking.confirmationNumber || 'N/A'}<br>` +
+                `📧 <strong>Contact:</strong> ${booking.email || 'N/A'}<br>` +
+                `📊 <strong>Status:</strong> ${booking.status || 'Confirmed'}<br><br>` +
+                `Would you like to manage this appointment or need something else?`,
+      buttons: ["View Full Details", "Reschedule", "Cancel Booking", "Add to Calendar"],
       emailPrompt: "",
       showBookingCalendar: false,
       existingBooking: true,
-      bookingDetails: bookingStatus.bookingDetails,
+      bookingDetails: {
+        date: bookingDate,
+        time: bookingTime,
+        type: booking.requestType || 'Appointment',
+        confirmationNumber: booking.confirmationNumber || 'N/A',
+        email: booking.email || 'N/A',
+        status: booking.status || 'Confirmed',
+        fullBooking: booking
+      },
     };
   }
 
