@@ -17,6 +17,10 @@ interface BookingSubmission {
   preferredTime: string; // HH:MM
   timezone?: string;
 
+  // Session linking
+  sessionId?: string;
+  pageUrl?: string;
+
   // Personal information
   name: string;
   email: string;
@@ -770,9 +774,9 @@ async function verifyBookingAvailability(data: BookingSubmission): Promise<{
 async function processBookingData(data: BookingSubmission) {
   return {
     // Required fields for BookingRequest
-    sessionId: `booking_${Date.now()}_${Math.random()
-      .toString(36)
-      .substring(7)}`,
+    sessionId: data.sessionId
+      ? JavaScriptSafetyUtils.sanitizeString(data.sessionId)
+      : `booking_${Date.now()}_${Math.random().toString(36).substring(7)}`,
     customerRequest:
       data.requirements || `${data.bookingType || "demo"} booking request`,
     originalMessage:
@@ -808,6 +812,9 @@ async function processBookingData(data: BookingSubmission) {
 
     // Metadata
     source: data.source || "calendar_widget",
+    pageUrl: data.pageUrl
+      ? JavaScriptSafetyUtils.sanitizeString(data.pageUrl)
+      : undefined,
     status: "pending" as const,
     priority: "medium" as const,
     adminId: data.adminId,

@@ -19,6 +19,56 @@ async function getSessionBookingStatus(sessionId: string, adminId?: string) {
   try {
     const db = await getDb();
     const bookings = db.collection("bookings");
+    const chats = db.collection("chats");
+    const conversations = db.collection("conversations");
+
+    // Helper: determine if a booking is in the future (same timezone) and active
+    function isFuturePendingOrConfirmed(booking: any): boolean {
+      if (!booking || !["pending", "confirmed"].includes(booking.status)) {
+        return false;
+      }
+
+      const tz = booking.timezone || "America/New_York";
+      const bookingDate = new Date(booking.preferredDate);
+      const now = new Date();
+
+      const getDateKey = (d: Date) => {
+        const parts = new Intl.DateTimeFormat("en-US", {
+          timeZone: tz,
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+        }).formatToParts(d);
+        const year = parseInt(parts.find((p) => p.type === "year")?.value || "0", 10);
+        const month = parseInt(parts.find((p) => p.type === "month")?.value || "0", 10);
+        const day = parseInt(parts.find((p) => p.type === "day")?.value || "0", 10);
+        return year * 10000 + month * 100 + day;
+      };
+
+      const bookingDateKey = getDateKey(bookingDate);
+      const nowDateKey = getDateKey(now);
+
+      if (bookingDateKey > nowDateKey) return true;
+      if (bookingDateKey < nowDateKey) return false;
+
+      const getTimeHM = (d: Date) => {
+        const parts = new Intl.DateTimeFormat("en-US", {
+          timeZone: tz,
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        }).formatToParts(d);
+        const hour = parseInt(parts.find((p) => p.type === "hour")?.value || "0", 10);
+        const minute = parseInt(parts.find((p) => p.type === "minute")?.value || "0", 10);
+        return hour * 60 + minute;
+      };
+
+      const nowHM = getTimeHM(now);
+      const [hStr, mStr] = String(booking.preferredTime || "00:00").split(":");
+      const bookingHM = (parseInt(hStr || "0", 10) * 60) + parseInt(mStr || "0", 10);
+
+      return bookingHM >= nowHM;
+    }
 
     // Query active bookings for this session
     const activeBookings = await bookings
@@ -31,6 +81,83 @@ async function getSessionBookingStatus(sessionId: string, adminId?: string) {
       .toArray();
 
     if (activeBookings.length === 0) {
+      // Fallback: Try to find bookings by email linked to this session
+      try {
+        let fallbackEmail: string | null = null;
+        const lastEmailMsg = await chats.findOne(
+          { sessionId, email: { $exists: true } },
+          { sort: { createdAt: -1 } }
+        );
+        if (lastEmailMsg?.email) fallbackEmail = lastEmailMsg.email;
+
+        if (!fallbackEmail) {
+          const convo = await conversations.findOne({ sessionId });
+          if (convo && typeof convo.userEmail === "string") {
+            fallbackEmail = convo.userEmail;
+          }
+        }
+
+        if (fallbackEmail) {
+          // Try lookup with admin filter first
+          let emailBookings = await bookings
+            .find({
+              email: fallbackEmail.toLowerCase(),
+              status: { $in: ["confirmed", "pending"] },
+              ...(adminId && { adminId }),
+            })
+            .sort({ createdAt: -1 })
+            .toArray();
+
+          // If none found and adminId was provided, try without admin filter
+          if (emailBookings.length === 0 && adminId) {
+            emailBookings = await bookings
+              .find({
+                email: fallbackEmail.toLowerCase(),
+                status: { $in: ["confirmed", "pending"] },
+              })
+              .sort({ createdAt: -1 })
+              .toArray();
+          }
+
+          if (emailBookings.length > 0) {
+            const currentBooking = emailBookings[0];
+            const hasValidShape = Boolean(
+              currentBooking &&
+                currentBooking.preferredDate &&
+                !isNaN(new Date(currentBooking.preferredDate).getTime()) &&
+                typeof currentBooking.preferredTime === "string" &&
+                currentBooking.preferredTime.length >= 4 &&
+                typeof currentBooking.requestType === "string" &&
+                currentBooking.requestType.length > 0 &&
+                typeof currentBooking.email === "string" &&
+                currentBooking.email.length > 3 &&
+                typeof currentBooking.confirmationNumber === "string" &&
+                currentBooking.confirmationNumber.length > 0
+            );
+
+            if (hasValidShape) {
+              const canBookAgain = !isFuturePendingOrConfirmed(currentBooking);
+
+              return {
+                hasActiveBooking: !canBookAgain,
+                currentBooking,
+                canBookAgain,
+                allBookings: emailBookings,
+                bookingDetails: {
+                  type: currentBooking.requestType,
+                  date: currentBooking.preferredDate,
+                  time: currentBooking.preferredTime,
+                  confirmation: currentBooking.confirmationNumber,
+                  status: currentBooking.status,
+                },
+              };
+            }
+          }
+        }
+      } catch (fallbackErr) {
+        console.log("[Booking Status] Email fallback lookup failed:", fallbackErr);
+      }
+
       return {
         hasActiveBooking: false,
         currentBooking: null,
@@ -63,12 +190,8 @@ async function getSessionBookingStatus(sessionId: string, adminId?: string) {
         allBookings: activeBookings,
       };
     }
-    const currentDate = new Date();
-    const bookingDate = new Date(currentBooking.preferredDate);
-
-    // Check if booking is in the past (can book again)
-    const canBookAgain =
-      bookingDate < currentDate || currentBooking.status === "cancelled";
+    // Only skip calendar if booking is future and active
+    const canBookAgain = !isFuturePendingOrConfirmed(currentBooking);
 
     return {
       hasActiveBooking: !canBookAgain,
