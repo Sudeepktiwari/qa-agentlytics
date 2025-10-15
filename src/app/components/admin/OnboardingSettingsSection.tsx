@@ -155,7 +155,7 @@ const OnboardingSettingsSection: React.FC = () => {
               }}
             />
             <div style={{ color: "#718096", fontSize: 12, marginTop: 6 }}>
-              Base URL for your user registration API (onboarding submissions)
+              Paste the base domain here. You can also paste the full registration URL here and leave the endpoint empty.
             </div>
           </div>
 
@@ -166,7 +166,7 @@ const OnboardingSettingsSection: React.FC = () => {
             </label>
             <input
               type="text"
-              placeholder="/users/register"
+              placeholder="/users/register or https://www.advancelytics.com/api/users/register"
               value={settings.registerEndpoint || ""}
               onChange={(e) => setSettings({ ...settings, registerEndpoint: e.target.value })}
               style={{
@@ -178,7 +178,7 @@ const OnboardingSettingsSection: React.FC = () => {
               }}
             />
             <div style={{ color: "#718096", fontSize: 12, marginTop: 6 }}>
-              Relative path appended to Base URL for onboarding submissions
+              Enter a relative path, or paste the full registration URL to override the Base URL.
             </div>
           </div>
 

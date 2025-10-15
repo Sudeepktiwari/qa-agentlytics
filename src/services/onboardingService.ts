@@ -19,18 +19,34 @@ function buildAuthHeader(settings: OnboardingSettings): Record<string, string> {
 }
 
 function resolveUrl(settings: OnboardingSettings): string | null {
-  if (!settings.apiBaseUrl || !settings.registerEndpoint) return null;
-  try {
-    const base = settings.apiBaseUrl.endsWith("/")
-      ? settings.apiBaseUrl
-      : settings.apiBaseUrl + "/";
-    const endpoint = settings.registerEndpoint.startsWith("/")
-      ? settings.registerEndpoint.slice(1)
-      : settings.registerEndpoint;
-    return base + endpoint;
-  } catch {
-    return null;
+  const base = settings.apiBaseUrl || "";
+  const endpoint = settings.registerEndpoint || "";
+
+  const isAbsolute = (u: string) => /^https?:\/\//i.test(u);
+
+  // If the endpoint is a full URL, use it directly
+  if (endpoint && isAbsolute(endpoint)) {
+    return endpoint;
   }
+
+  // If base is a full URL and endpoint provided (relative), combine
+  if (base && isAbsolute(base) && endpoint) {
+    try {
+      const baseStr = base.endsWith("/") ? base : base + "/";
+      const epStr = endpoint.startsWith("/") ? endpoint.slice(1) : endpoint;
+      return baseStr + epStr;
+    } catch {
+      return null;
+    }
+  }
+
+  // If base is a full URL and endpoint missing, treat base as full registration URL
+  if (base && isAbsolute(base) && !endpoint) {
+    return base;
+  }
+
+  // Missing or invalid URL configuration
+  return null;
 }
 
 export const onboardingService = {
@@ -44,8 +60,8 @@ export const onboardingService = {
 
     const url = resolveUrl(onboarding);
     if (!url) {
-      // Safe fallback: store as lead locally when external registration isn't configured
-      console.log("[Onboarding] No registration URL configured. Saving submission as a lead.");
+      // Enforce API-only registration: store lead for visibility but return error
+      console.log("[Onboarding] No registration URL configured. Storing lead and returning error.");
       try {
         const email = typeof data.email === "string" ? data.email.trim() : "";
         const sessionId = typeof data.sessionId === "string" ? data.sessionId : `onboarding-${Date.now()}`;
@@ -62,12 +78,10 @@ export const onboardingService = {
           );
         }
       } catch (e) {
-        // If lead storage fails, still return a user-friendly result
-        return { success: false, error: "Onboarding URL not configured", status: 400 };
+        console.log("[Onboarding] Failed to store lead when URL missing:", e);
       }
 
-      // Treat as success so the flow completes gracefully
-      return { success: true, status: 200, responseBody: { storedAsLead: true } };
+      return { success: false, error: "Onboarding URL not configured", status: 400 };
     }
 
     const headers: Record<string, string> = {
