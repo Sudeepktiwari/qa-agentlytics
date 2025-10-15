@@ -45,6 +45,7 @@ export const onboardingService = {
     const url = resolveUrl(onboarding);
     if (!url) {
       // Safe fallback: store as lead locally when external registration isn't configured
+      console.log("[Onboarding] No registration URL configured. Saving submission as a lead.");
       try {
         const email = typeof data.email === "string" ? data.email.trim() : "";
         const sessionId = typeof data.sessionId === "string" ? data.sessionId : `onboarding-${Date.now()}`;
@@ -82,6 +83,15 @@ export const onboardingService = {
     const method = onboarding.method || "POST";
 
     try {
+      console.log(
+        "[Onboarding] Calling external registration API:",
+        {
+          url,
+          method,
+          headerKeyUsed: onboarding.authHeaderKey || "Authorization",
+          apiKeyPresent: !!onboarding.apiKey,
+        }
+      );
       const res = await fetch(url, {
         method,
         headers,
@@ -97,6 +107,7 @@ export const onboardingService = {
       }
 
       if (!res.ok) {
+        console.log("[Onboarding] External registration failed with status:", res.status);
         return {
           success: false,
           error: typeof parsed === "string" ? parsed : parsed?.error || "Registration failed",
@@ -109,6 +120,7 @@ export const onboardingService = {
       const userId =
         parsed?.userId || parsed?.id || parsed?.data?.id || parsed?.data?.userId || undefined;
 
+      console.log("[Onboarding] External registration succeeded with status:", res.status);
       return {
         success: true,
         userId,

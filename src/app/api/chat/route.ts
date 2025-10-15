@@ -2193,20 +2193,29 @@ Keep the response conversational and helpful, focusing on providing value before
       const payload = { ...(sessionDoc.collectedData || {}), sessionId, pageUrl };
       const result = adminId ? await onboardingService.register(payload, adminId) : { success: false, error: "Missing adminId" };
 
-      const newStatus = result.success ? "completed" : "error";
+      const storedAsLead = !!(result as any)?.responseBody?.storedAsLead;
+      const newStatus = result.success && !storedAsLead ? "completed" : (result.success && storedAsLead ? "completed" : "error");
       await sessionsCollection.updateOne(
         { sessionId },
         { $set: { status: newStatus, updatedAt: now, registeredUserId: result.userId || null, lastError: result.error || null } }
       );
 
       const resp = result.success
-        ? {
-            mainText: "✅ You’re all set! Your account has been created.",
-            buttons: ["Log In", "Talk to Sales"],
-            emailPrompt: "",
-            showBookingCalendar: false,
-            onboardingAction: "completed",
-          }
+        ? (storedAsLead
+            ? {
+                mainText: "✅ Thanks! We saved your details. External registration isn’t configured yet, so our team will follow up to complete your account.",
+                buttons: ["Talk to Sales", "Contact Support"],
+                emailPrompt: "",
+                showBookingCalendar: false,
+                onboardingAction: "completed",
+              }
+            : {
+                mainText: "✅ You’re all set! Your account has been created.",
+                buttons: ["Log In", "Talk to Sales"],
+                emailPrompt: "",
+                showBookingCalendar: false,
+                onboardingAction: "completed",
+              })
         : {
             mainText: `⚠️ We couldn’t complete registration: ${result.error || "Unknown error"}.`,
             buttons: ["Try Again", "Contact Support"],
@@ -2248,20 +2257,29 @@ Keep the response conversational and helpful, focusing on providing value before
       const payload = { ...updated, sessionId, pageUrl };
       const result = adminId ? await onboardingService.register(payload, adminId) : { success: false, error: "Missing adminId" };
 
-      const newStatus = result.success ? "completed" : "error";
+      const storedAsLead2 = !!(result as any)?.responseBody?.storedAsLead;
+      const newStatus = result.success && !storedAsLead2 ? "completed" : (result.success && storedAsLead2 ? "completed" : "error");
       await sessionsCollection.updateOne(
         { sessionId },
         { $set: { status: newStatus, updatedAt: now, registeredUserId: result.userId || null, lastError: result.error || null } }
       );
 
       const resp = result.success
-        ? {
-            mainText: "✅ You’re all set! Your account has been created.",
-            buttons: ["Log In", "Talk to Sales"],
-            emailPrompt: "",
-            showBookingCalendar: false,
-            onboardingAction: "completed",
-          }
+        ? (storedAsLead2
+            ? {
+                mainText: "✅ Thanks! We saved your details. External registration isn’t configured yet, so our team will follow up to complete your account.",
+                buttons: ["Talk to Sales", "Contact Support"],
+                emailPrompt: "",
+                showBookingCalendar: false,
+                onboardingAction: "completed",
+              }
+            : {
+                mainText: "✅ You’re all set! Your account has been created.",
+                buttons: ["Log In", "Talk to Sales"],
+                emailPrompt: "",
+                showBookingCalendar: false,
+                onboardingAction: "completed",
+              })
         : {
             mainText: `⚠️ We couldn’t complete registration: ${result.error || "Unknown error"}.`,
             buttons: ["Try Again", "Contact Support"],
