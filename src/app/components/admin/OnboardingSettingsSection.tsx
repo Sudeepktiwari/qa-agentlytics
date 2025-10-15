@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import DocumentUploader from "../DocumentUploader";
 
 interface OnboardingSettings {
   enabled: boolean;
@@ -227,6 +228,11 @@ const OnboardingSettingsSection: React.FC = () => {
           <div style={{ marginTop: 16, color: "#718096", fontSize: 13 }}>
             Tip: Upload your onboarding API documentation below. It will be embedded and
             stored as searchable vectors to help the bot answer onboarding questions.
+          </div>
+
+          {/* Onboarding-specific document upload */}
+          <div style={{ marginTop: 16 }}>
+            <DocumentUploader onUploadDone={() => { /* noop */ }} />
           </div>
         </div>
       )}

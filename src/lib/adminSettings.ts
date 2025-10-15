@@ -209,6 +209,7 @@ export async function getAdminSettings(adminId: string): Promise<AdminSettings> 
       features: settings.features,
       preferences: settings.preferences,
       limits: settings.limits,
+      onboarding: settings.onboarding, // include onboarding settings
       createdAt: settings.createdAt,
       updatedAt: settings.updatedAt,
       updatedBy: settings.updatedBy,
@@ -305,6 +306,7 @@ export async function updateAdminSettings(
       features: result.features,
       preferences: result.preferences,
       limits: result.limits,
+      onboarding: result.onboarding, // include onboarding settings
       createdAt: result.createdAt,
       updatedAt: result.updatedAt,
       updatedBy: result.updatedBy,

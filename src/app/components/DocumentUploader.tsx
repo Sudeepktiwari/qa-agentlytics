@@ -33,6 +33,8 @@ const DocumentUploader: React.FC<DocumentUploaderProps> = ({
       await new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open("POST", "/api/upload");
+        // Include cookies for admin authentication and scoping
+        xhr.withCredentials = true;
         xhr.upload.onprogress = (event) => {
           if (event.lengthComputable) {
             setProgress(Math.round((event.loaded / event.total) * 100));
