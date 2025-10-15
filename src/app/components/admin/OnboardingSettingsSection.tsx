@@ -44,11 +44,13 @@ const OnboardingSettingsSection: React.FC = () => {
     setError(null);
     setSuccess(null);
     try {
+      // Clear registerEndpoint since the UI no longer uses it
+      const settingsToSave = { ...settings, registerEndpoint: "" };
       const res = await fetch("/api/admin/onboarding", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ onboarding: settings }),
+        body: JSON.stringify({ onboarding: settingsToSave }),
       });
       const data = await res.json();
       if (res.ok && data.success) {
@@ -136,14 +138,14 @@ const OnboardingSettingsSection: React.FC = () => {
             <span style={{ color: "#2d3748", fontWeight: 600 }}>Enable onboarding</span>
           </label>
 
-          {/* API Base URL */}
+          {/* Registration URL */}
           <div>
             <label style={{ display: "block", color: "#4a5568", fontSize: 13, marginBottom: 6 }}>
-              Registration API Base URL
+              Registration URL
             </label>
             <input
               type="text"
-              placeholder="https://api.your-service.com"
+              placeholder="https://api.your-service.com/onboarding/register"
               value={settings.apiBaseUrl || ""}
               onChange={(e) => setSettings({ ...settings, apiBaseUrl: e.target.value })}
               style={{
@@ -155,30 +157,7 @@ const OnboardingSettingsSection: React.FC = () => {
               }}
             />
             <div style={{ color: "#718096", fontSize: 12, marginTop: 6 }}>
-              Paste the base domain here. You can also paste the full registration URL here and leave the endpoint empty.
-            </div>
-          </div>
-
-          {/* Registration Endpoint Path */}
-          <div>
-            <label style={{ display: "block", color: "#4a5568", fontSize: 13, marginBottom: 6 }}>
-              Registration Endpoint Path
-            </label>
-            <input
-              type="text"
-              placeholder="/users/register or https://www.advancelytics.com/api/users/register"
-              value={settings.registerEndpoint || ""}
-              onChange={(e) => setSettings({ ...settings, registerEndpoint: e.target.value })}
-              style={{
-                width: "100%",
-                padding: 12,
-                border: "1px solid #d1d5db",
-                borderRadius: 8,
-                fontSize: 14,
-              }}
-            />
-            <div style={{ color: "#718096", fontSize: 12, marginTop: 6 }}>
-              Enter a relative path, or paste the full registration URL to override the Base URL.
+              Paste the full registration URL here. The endpoint path field has been removed.
             </div>
           </div>
 
