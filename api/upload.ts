@@ -101,7 +101,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     (d: { embedding: number[] }) => d.embedding
   );
 
-  // Store in ChromaDB
+  // Store in Pinecone (vector database)
   const metadata = chunks.map((_, i) => ({ filename, adminId, chunkIndex: i }));
   await addChunks(chunks, embeddings, metadata);
 

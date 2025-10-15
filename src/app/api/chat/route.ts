@@ -457,6 +457,29 @@ function promptForField(field: any): string {
   }
 }
 
+// Retrieve relevant documentation context from Pinecone for the current onboarding field
+async function buildOnboardingDocContext(field: any, adminId?: string): Promise<string> {
+  try {
+    const label = field.label || field.key || "information";
+    const query = `registration ${label} requirement`;
+    const embedResp = await openai.embeddings.create({
+      input: [query],
+      model: "text-embedding-3-small",
+    });
+    const embedding = embedResp.data[0].embedding as number[];
+    const chunks = await querySimilarChunks(embedding, 3, adminId || undefined);
+    const snippets = chunks
+      .filter((c) => typeof c === "string" && c.length > 0)
+      .map((c) => c.slice(0, 400));
+    if (!snippets.length) return "";
+    const combined = snippets.slice(0, 2).join("\n—\n");
+    return `Helpful info:\n${combined}`;
+  } catch (e) {
+    // If embedding or retrieval fails, silently skip context
+    return "";
+  }
+}
+
 function validateAnswer(field: any, answer: string): { valid: boolean; message?: string } {
   const val = answer?.trim();
   if (!val) return { valid: false, message: `Please provide your ${field.label || field.key}.` };
@@ -2096,8 +2119,9 @@ Keep the response conversational and helpful, focusing on providing value before
         : `I’ll help create your account. I’ll ask a few quick details.`;
 
       const prompt = promptForField(fields[0]);
+      const docContext = await buildOnboardingDocContext(fields[0], adminId || undefined);
       const resp = {
-        mainText: `${intro}\n\n${prompt}`,
+        mainText: `${intro}${docContext ? `\n\n${docContext}` : ""}\n\n${prompt}`,
         buttons: ["Cancel Onboarding"],
         emailPrompt: "",
         showBookingCalendar: false,
@@ -2143,8 +2167,9 @@ Keep the response conversational and helpful, focusing on providing value before
     const ans = (question || "").trim();
     const check = validateAnswer(currentField, ans);
     if (!check.valid) {
+      const docContext = await buildOnboardingDocContext(currentField, adminId || undefined);
       const resp = {
-        mainText: check.message || `Please provide your ${currentField.label || currentField.key}.`,
+        mainText: `${docContext ? `${docContext}\n\n` : ""}${check.message || `Please provide your ${currentField.label || currentField.key}.`}`,
         buttons: ["Cancel Onboarding"],
         emailPrompt: "",
         showBookingCalendar: false,
@@ -2195,8 +2220,9 @@ Keep the response conversational and helpful, focusing on providing value before
     }
 
     const prompt = promptForField(nextField);
+    const docContext = await buildOnboardingDocContext(nextField, adminId || undefined);
     const resp = {
-      mainText: prompt,
+      mainText: `${docContext ? `${docContext}\n\n` : ""}${prompt}`,
       buttons: ["Cancel Onboarding"],
       emailPrompt: "",
       showBookingCalendar: false,
