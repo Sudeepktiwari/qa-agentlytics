@@ -2097,6 +2097,10 @@ Keep the response conversational and helpful, focusing on providing value before
           { key: "lastName", label: "Last Name", required: false, type: "text" },
         ];
 
+    // Ask only relevant (required) questions by default
+    const sessionFields = fields.filter((f: any) => f.required) as any[];
+    const fieldsToAsk = sessionFields.length > 0 ? sessionFields : fields;
+
     // Cancel flow
     if (isOnboardingAction) {
       await sessionsCollection.updateOne(
@@ -2124,8 +2128,8 @@ Keep the response conversational and helpful, focusing on providing value before
         status: "in_progress",
         stageIndex: 0,
         collectedData: {},
-        requiredKeys: fields.filter((f: any) => f.required).map((f: any) => f.key),
-        fields,
+        requiredKeys: fieldsToAsk.map((f: any) => f.key),
+        fields: fieldsToAsk,
         createdAt: now,
         updatedAt: now,
       };
@@ -2136,8 +2140,8 @@ Keep the response conversational and helpful, focusing on providing value before
         ? `I’ll help create your account. I may ask a few details. You can also check the docs here: ${onboardingConfig.docsUrl}`
         : `I’ll help create your account. I’ll ask a few quick details.`;
 
-      const prompt = promptForField(fields[0]);
-      const docContext = await buildOnboardingDocContext(fields[0], adminId || undefined);
+      const prompt = promptForField(fieldsToAsk[0]);
+      const docContext = await buildOnboardingDocContext(fieldsToAsk[0], adminId || undefined);
       const resp = {
         mainText: `${intro}${docContext ? `\n\n${docContext}` : ""}\n\n${prompt}`,
         buttons: ["Cancel Onboarding"],
