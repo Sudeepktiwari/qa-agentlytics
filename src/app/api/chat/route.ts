@@ -7,7 +7,7 @@ import fetch from "node-fetch";
 import * as cheerio from "cheerio";
 import { chunkText } from "@/lib/chunkText";
 import { addChunks } from "@/lib/chroma";
-import { verifyApiKey } from "@/lib/auth";
+import { verifyApiKey, verifyAdminAccessFromCookie } from "@/lib/auth";
 import { createOrUpdateLead } from "@/lib/leads";
 import { enhanceChatWithBookingDetection } from "@/services/bookingDetection";
 import { bookingService } from "@/services/bookingService";
@@ -480,12 +480,15 @@ async function buildOnboardingDocContext(field: any, adminId?: string): Promise<
   }
 }
 
-function validateAnswer(field: any, answer: string): { valid: boolean; message?: string } {
+function validateAnswer(field: any, answer: string): { valid: boolean; message?: string; normalized?: string } {
   const val = answer?.trim();
   if (!val) return { valid: false, message: `Please provide your ${field.label || field.key}.` };
   if (field.type === "email") {
-    const emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
-    if (!emailRegex.test(val)) return { valid: false, message: "That doesn’t look like a valid email." };
+    // Extract email from freeform text (e.g., "my email is foo@bar.com")
+    const emailInText = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
+    const match = val.match(emailInText);
+    if (!match) return { valid: false, message: "That doesn’t look like a valid email." };
+    return { valid: true, normalized: match[0] };
   }
   if (field.validations?.minLength && val.length < field.validations.minLength) {
     return { valid: false, message: `Please provide at least ${field.validations.minLength} characters.` };
@@ -2006,11 +2009,12 @@ Keep the response conversational and helpful, focusing on providing value before
     }
   }
 
-  // Email detection regex
-  const emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+  // Email detection from freeform text in conversation
+  const emailInText = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
   let detectedEmail: string | null = null;
-  if (question && emailRegex.test(question.trim())) {
-    detectedEmail = question.trim();
+  if (question) {
+    const match = question.match(emailInText);
+    if (match) detectedEmail = match[0];
   }
 
   // Save to MongoDB
@@ -2028,13 +2032,27 @@ Keep the response conversational and helpful, focusing on providing value before
     adminId = adminIdFromBody;
     console.log(`[DEBUG] Using adminId from request body: ${adminId}`);
   } else {
-    const lastMsg = await chats.findOne({
-      sessionId,
-      adminId: { $exists: true },
-    });
-    if (lastMsg && lastMsg.adminId) {
-      adminId = lastMsg.adminId;
-      console.log(`[DEBUG] Using adminId from previous chat: ${adminId}`);
+    // Try cookie-based admin resolution
+    try {
+      const cookieAccess = verifyAdminAccessFromCookie(req);
+      if (cookieAccess?.isValid && cookieAccess.adminId) {
+        adminId = cookieAccess.adminId;
+        console.log(`[DEBUG] Using adminId from cookie: ${adminId}`);
+      }
+    } catch (err) {
+      console.log(`[DEBUG] Cookie-based adminId resolution failed:`, err);
+    }
+
+    // Fallback to previous chat history
+    if (!adminId) {
+      const lastMsg = await chats.findOne({
+        sessionId,
+        adminId: { $exists: true },
+      });
+      if (lastMsg && lastMsg.adminId) {
+        adminId = lastMsg.adminId;
+        console.log(`[DEBUG] Using adminId from previous chat: ${adminId}`);
+      }
     }
   }
 
@@ -2180,7 +2198,7 @@ Keep the response conversational and helpful, focusing on providing value before
 
     const updated = {
       ...sessionDoc.collectedData,
-      [currentField.key]: ans,
+      [currentField.key]: currentField.type === "email" && check.normalized ? check.normalized : ans,
     };
     const nextIndex = idx + 1;
     await sessionsCollection.updateOne(
