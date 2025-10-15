@@ -51,21 +51,24 @@ export async function addChunks(
   }
 }
 
+// Query similar chunks, ALWAYS scoped to an admin (multi-tenant safety)
 export async function querySimilarChunks(
   questionEmbedding: number[],
   topK = 5,
   adminId?: string
 ) {
+  // Enforce admin-level isolation: default to "default-admin" if none provided
+  const effectiveAdminId = adminId && adminId.trim().length > 0 ? adminId : "default-admin";
+
   const result = await index.query({
     vector: questionEmbedding,
     topK,
     includeMetadata: true,
-    filter: adminId ? { adminId } : undefined, // restrict search to current admin
+    filter: { adminId: effectiveAdminId }, // always restrict search to the resolved admin
   });
-  // Filter by adminId if provided
+
   type PineconeMatch = { metadata?: { adminId?: string; chunk?: string } };
   const matches: PineconeMatch[] = result.matches || [];
-  // No need to filter by adminId here, as Pinecone already does it
   // Return the chunk text
   return matches.map((m: PineconeMatch) => m.metadata?.chunk || "");
 }
