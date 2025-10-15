@@ -457,25 +457,36 @@ function promptForField(field: any): string {
   }
 }
 
-// Retrieve relevant documentation context from Pinecone for the current onboarding field
-async function buildOnboardingDocContext(field: any, adminId?: string): Promise<string> {
+// Retrieve relevant documentation context strictly from the configured docsUrl
+async function buildOnboardingDocContext(field: any, adminId?: string, docsUrl?: string): Promise<string> {
   try {
-    const label = field.label || field.key || "information";
-    const query = `registration ${label} requirement`;
-    const embedResp = await openai.embeddings.create({
-      input: [query],
-      model: "text-embedding-3-small",
+    // Only show context when a specific onboarding docs URL is configured
+    if (!docsUrl || !adminId) return "";
+
+    const chunks = await getChunksByPageUrl(adminId, docsUrl);
+    if (!chunks || chunks.length === 0) return "";
+
+    const label = (field.label || field.key || "information").toLowerCase();
+    const keywords = [label, "registration", "sign up", "privacy", "consent", "waitlist", "email"];
+
+    const matches = chunks.filter((c) => {
+      const text = (c || "").toLowerCase();
+      return keywords.some((k) => text.includes(k));
     });
-    const embedding = embedResp.data[0].embedding as number[];
-    const chunks = await querySimilarChunks(embedding, 3, adminId || undefined);
-    const snippets = chunks
-      .filter((c) => typeof c === "string" && c.length > 0)
-      .map((c) => c.slice(0, 400));
+
+    if (!matches.length) return "";
+
+    const snippets = matches
+      .map((c) => (typeof c === "string" ? c.trim() : ""))
+      .filter((s) => s.length > 0)
+      .slice(0, 2)
+      .map((s) => s.slice(0, 400));
+
     if (!snippets.length) return "";
-    const combined = snippets.slice(0, 2).join("\n—\n");
+    const combined = snippets.join("\n—\n");
     return `Helpful info:\n${combined}`;
   } catch (e) {
-    // If embedding or retrieval fails, silently skip context
+    // If retrieval fails, silently skip context
     return "";
   }
 }
@@ -2141,7 +2152,11 @@ Keep the response conversational and helpful, focusing on providing value before
         : `I’ll help create your account. I’ll ask a few quick details.`;
 
       const prompt = promptForField(fieldsToAsk[0]);
-      const docContext = await buildOnboardingDocContext(fieldsToAsk[0], adminId || undefined);
+      const docContext = await buildOnboardingDocContext(
+        fieldsToAsk[0],
+        adminId || undefined,
+        onboardingConfig?.docsUrl
+      );
       const resp = {
         mainText: `${intro}${docContext ? `\n\n${docContext}` : ""}\n\n${prompt}`,
         buttons: ["Cancel Onboarding"],
@@ -2189,7 +2204,11 @@ Keep the response conversational and helpful, focusing on providing value before
     const ans = (question || "").trim();
     const check = validateAnswer(currentField, ans);
     if (!check.valid) {
-      const docContext = await buildOnboardingDocContext(currentField, adminId || undefined);
+      const docContext = await buildOnboardingDocContext(
+        currentField,
+        adminId || undefined,
+        onboardingConfig?.docsUrl
+      );
       const resp = {
         mainText: `${docContext ? `${docContext}\n\n` : ""}${check.message || `Please provide your ${currentField.label || currentField.key}.`}`,
         buttons: ["Cancel Onboarding"],
@@ -2242,7 +2261,11 @@ Keep the response conversational and helpful, focusing on providing value before
     }
 
     const prompt = promptForField(nextField);
-    const docContext = await buildOnboardingDocContext(nextField, adminId || undefined);
+    const docContext = await buildOnboardingDocContext(
+      nextField,
+      adminId || undefined,
+      onboardingConfig?.docsUrl
+    );
     const resp = {
       mainText: `${docContext ? `${docContext}\n\n` : ""}${prompt}`,
       buttons: ["Cancel Onboarding"],
