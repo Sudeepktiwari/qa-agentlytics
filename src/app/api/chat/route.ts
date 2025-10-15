@@ -467,11 +467,36 @@ async function buildOnboardingDocContext(field: any, adminId?: string, docsUrl?:
     if (!chunks || chunks.length === 0) return "";
 
     const label = (field.label || field.key || "information").toLowerCase();
-    const keywords = [label, "registration", "sign up", "privacy", "consent", "waitlist", "email"];
+    const labelTerms = [label, "email"]; // prioritize field-specific terms
+    const requiredTerms = [
+      "registration",
+      "register",
+      "sign up",
+      "signup",
+      "privacy",
+      "consent",
+      "waitlist",
+    ];
+    const stoplist = [
+      "features",
+      "how it works",
+      "solutions",
+      "pricing",
+      "faq",
+      "blogs",
+      "slides",
+    ];
 
     const matches = chunks.filter((c) => {
       const text = (c || "").toLowerCase();
-      return keywords.some((k) => text.includes(k));
+      // Exclude common navigation/marketing headings
+      if (stoplist.some((s) => text.includes(s))) return false;
+      // Require at least one label term and one registration-related term
+      const hasLabel = labelTerms.some((t) => text.includes(t));
+      const hasReg = requiredTerms.some((t) => text.includes(t));
+      // Keep reasonably sized snippets to avoid overwhelming blocks
+      const isReasonable = text.length <= 600;
+      return hasLabel && hasReg && isReasonable;
     });
 
     if (!matches.length) return "";
@@ -479,8 +504,8 @@ async function buildOnboardingDocContext(field: any, adminId?: string, docsUrl?:
     const snippets = matches
       .map((c) => (typeof c === "string" ? c.trim() : ""))
       .filter((s) => s.length > 0)
-      .slice(0, 2)
-      .map((s) => s.slice(0, 400));
+      .slice(0, 3)
+      .map((s) => s.slice(0, 600));
 
     if (!snippets.length) return "";
     const combined = snippets.join("\n—\n");
@@ -2147,18 +2172,11 @@ Keep the response conversational and helpful, focusing on providing value before
       await sessionsCollection.updateOne({ sessionId }, { $set: doc }, { upsert: true });
       sessionDoc = doc as any;
 
-      const intro = onboardingConfig?.docsUrl
-        ? `I’ll help create your account. I may ask a few details. You can also check the docs here: ${onboardingConfig.docsUrl}`
-        : `I’ll help create your account. I’ll ask a few quick details.`;
+      const intro = `I’ll help create your account. I’ll ask a few quick details.`;
 
       const prompt = promptForField(fieldsToAsk[0]);
-      const docContext = await buildOnboardingDocContext(
-        fieldsToAsk[0],
-        adminId || undefined,
-        onboardingConfig?.docsUrl
-      );
       const resp = {
-        mainText: `${intro}${docContext ? `\n\n${docContext}` : ""}\n\n${prompt}`,
+        mainText: `${intro}\n\n${prompt}`,
         buttons: ["Cancel Onboarding"],
         emailPrompt: "",
         showBookingCalendar: false,
@@ -2204,13 +2222,8 @@ Keep the response conversational and helpful, focusing on providing value before
     const ans = (question || "").trim();
     const check = validateAnswer(currentField, ans);
     if (!check.valid) {
-      const docContext = await buildOnboardingDocContext(
-        currentField,
-        adminId || undefined,
-        onboardingConfig?.docsUrl
-      );
       const resp = {
-        mainText: `${docContext ? `${docContext}\n\n` : ""}${check.message || `Please provide your ${currentField.label || currentField.key}.`}`,
+        mainText: `${check.message || `Please provide your ${currentField.label || currentField.key}.`}`,
         buttons: ["Cancel Onboarding"],
         emailPrompt: "",
         showBookingCalendar: false,
@@ -2261,13 +2274,8 @@ Keep the response conversational and helpful, focusing on providing value before
     }
 
     const prompt = promptForField(nextField);
-    const docContext = await buildOnboardingDocContext(
-      nextField,
-      adminId || undefined,
-      onboardingConfig?.docsUrl
-    );
     const resp = {
-      mainText: `${docContext ? `${docContext}\n\n` : ""}${prompt}`,
+      mainText: `${prompt}`,
       buttons: ["Cancel Onboarding"],
       emailPrompt: "",
       showBookingCalendar: false,
