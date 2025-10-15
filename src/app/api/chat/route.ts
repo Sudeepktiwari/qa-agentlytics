@@ -11,6 +11,8 @@ import { verifyApiKey } from "@/lib/auth";
 import { createOrUpdateLead } from "@/lib/leads";
 import { enhanceChatWithBookingDetection } from "@/services/bookingDetection";
 import { bookingService } from "@/services/bookingService";
+import { onboardingService } from "@/services/onboardingService";
+import { getAdminSettings, OnboardingSettings } from "@/lib/adminSettings";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -430,6 +432,58 @@ function generateBookingManagementResponse(action: string, booking: any) {
         bookingAction: "manage",
       };
   }
+}
+
+// 🔰 Onboarding helpers
+function detectOnboardingIntent(text?: string): boolean {
+  if (!text) return false;
+  const re = /\b(sign up|register|create account|get started|onboard)\b/i;
+  return re.test(text);
+}
+
+function promptForField(field: any): string {
+  const base = field.label || field.key;
+  switch (field.type) {
+    case "email":
+      return `What is your ${base.toLowerCase()}?`;
+    case "phone":
+      return `Please share your ${base.toLowerCase()} (digits only).`;
+    case "select":
+      return `Choose your ${base.toLowerCase()}${field.options ? `: ${field.options.join(", ")}` : ""}.`;
+    case "checkbox":
+      return `Do you consent to ${base.toLowerCase()}? Reply yes or no.`;
+    default:
+      return `What is your ${base.toLowerCase()}?`;
+  }
+}
+
+function validateAnswer(field: any, answer: string): { valid: boolean; message?: string } {
+  const val = answer?.trim();
+  if (!val) return { valid: false, message: `Please provide your ${field.label || field.key}.` };
+  if (field.type === "email") {
+    const emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+    if (!emailRegex.test(val)) return { valid: false, message: "That doesn’t look like a valid email." };
+  }
+  if (field.validations?.minLength && val.length < field.validations.minLength) {
+    return { valid: false, message: `Please provide at least ${field.validations.minLength} characters.` };
+  }
+  if (field.validations?.maxLength && val.length > field.validations.maxLength) {
+    return { valid: false, message: `Please keep it under ${field.validations.maxLength} characters.` };
+  }
+  if (field.validations?.regex) {
+    try {
+      const re = new RegExp(field.validations.regex);
+      if (!re.test(val)) return { valid: false, message: `The format for ${field.label || field.key} is invalid.` };
+    } catch {}
+  }
+  if (field.type === "checkbox") {
+    const yn = val.toLowerCase();
+    if (!["yes", "no"].includes(yn)) return { valid: false, message: "Please reply yes or no." };
+  }
+  if (field.type === "select" && field.options && !field.options.includes(val)) {
+    return { valid: false, message: `Please select one of: ${field.options.join(", ")}.` };
+  }
+  return { valid: true };
 }
 
 // Advanced booking conflict detection
@@ -1975,6 +2029,181 @@ Keep the response conversational and helpful, focusing on providing value before
       canBookAgain: bookingStatus.canBookAgain,
     }
   );
+
+  // 🔰 Onboarding flow entry
+  let onboardingConfig: OnboardingSettings | undefined = undefined;
+  if (adminId) {
+    try {
+      const settings = await getAdminSettings(adminId);
+      onboardingConfig = settings.onboarding;
+    } catch (e) {
+      console.log("[Onboarding] Failed to load admin onboarding settings:", e);
+    }
+  }
+
+  const onboardingEnabled = !!onboardingConfig?.enabled;
+  const sessionsCollection = db.collection("onboardingSessions");
+  const existingOnboarding = await sessionsCollection.findOne({ sessionId });
+  const isOnboardingAction = question && /\bcancel onboarding\b/i.test(question || "");
+  const isOnboardingIntent = onboardingEnabled && (detectOnboardingIntent(question) || existingOnboarding?.status === "in_progress" || isOnboardingAction);
+
+  if (isOnboardingIntent) {
+    const fields = (onboardingConfig?.fields && onboardingConfig.fields.length > 0)
+      ? onboardingConfig.fields
+      : [
+          { key: "email", label: "Email", required: true, type: "email" },
+          { key: "firstName", label: "First Name", required: true, type: "text" },
+          { key: "lastName", label: "Last Name", required: false, type: "text" },
+        ];
+
+    // Cancel flow
+    if (isOnboardingAction) {
+      await sessionsCollection.updateOne(
+        { sessionId },
+        { $set: { status: "cancelled", updatedAt: now } },
+        { upsert: true }
+      );
+
+      const resp = {
+        mainText: "Okay, I’ve cancelled onboarding. Would you like sales or support?",
+        buttons: ["Talk to Sales", "Contact Support"],
+        emailPrompt: "",
+        showBookingCalendar: false,
+        onboardingAction: "cancelled",
+      };
+      return NextResponse.json(resp, { headers: corsHeaders });
+    }
+
+    // Start if no session or completed/cancelled
+    let sessionDoc = existingOnboarding;
+    if (!sessionDoc || ["completed", "cancelled"].includes(sessionDoc.status)) {
+      const doc = {
+        sessionId,
+        adminId: adminId || "",
+        status: "in_progress",
+        stageIndex: 0,
+        collectedData: {},
+        requiredKeys: fields.filter((f: any) => f.required).map((f: any) => f.key),
+        fields,
+        createdAt: now,
+        updatedAt: now,
+      };
+      await sessionsCollection.updateOne({ sessionId }, { $set: doc }, { upsert: true });
+      sessionDoc = doc as any;
+
+      const intro = onboardingConfig?.docsUrl
+        ? `I’ll help create your account. I may ask a few details. You can also check the docs here: ${onboardingConfig.docsUrl}`
+        : `I’ll help create your account. I’ll ask a few quick details.`;
+
+      const prompt = promptForField(fields[0]);
+      const resp = {
+        mainText: `${intro}\n\n${prompt}`,
+        buttons: ["Cancel Onboarding"],
+        emailPrompt: "",
+        showBookingCalendar: false,
+        onboardingAction: "start",
+      };
+      return NextResponse.json(resp, { headers: corsHeaders });
+    }
+
+    // Continue: accept answer for current field
+    const idx = sessionDoc.stageIndex || 0;
+    const currentField = sessionDoc.fields[idx];
+    if (!currentField) {
+      // No more fields; submit
+      const payload = sessionDoc.collectedData || {};
+      const result = adminId ? await onboardingService.register(payload, adminId) : { success: false, error: "Missing adminId" };
+
+      const newStatus = result.success ? "completed" : "error";
+      await sessionsCollection.updateOne(
+        { sessionId },
+        { $set: { status: newStatus, updatedAt: now, registeredUserId: result.userId || null, lastError: result.error || null } }
+      );
+
+      const resp = result.success
+        ? {
+            mainText: "✅ You’re all set! Your account has been created.",
+            buttons: ["Log In", "Talk to Sales"],
+            emailPrompt: "",
+            showBookingCalendar: false,
+            onboardingAction: "completed",
+          }
+        : {
+            mainText: `⚠️ We couldn’t complete registration: ${result.error || "Unknown error"}.`,
+            buttons: ["Try Again", "Contact Support"],
+            emailPrompt: "",
+            showBookingCalendar: false,
+            onboardingAction: "error",
+          };
+
+      return NextResponse.json(resp, { headers: corsHeaders });
+    }
+
+    // Validate and store answer
+    const ans = (question || "").trim();
+    const check = validateAnswer(currentField, ans);
+    if (!check.valid) {
+      const resp = {
+        mainText: check.message || `Please provide your ${currentField.label || currentField.key}.`,
+        buttons: ["Cancel Onboarding"],
+        emailPrompt: "",
+        showBookingCalendar: false,
+        onboardingAction: "ask_again",
+      };
+      return NextResponse.json(resp, { headers: corsHeaders });
+    }
+
+    const updated = {
+      ...sessionDoc.collectedData,
+      [currentField.key]: ans,
+    };
+    const nextIndex = idx + 1;
+    await sessionsCollection.updateOne(
+      { sessionId },
+      { $set: { collectedData: updated, stageIndex: nextIndex, updatedAt: now } }
+    );
+
+    const nextField = sessionDoc.fields[nextIndex];
+    if (!nextField) {
+      // All done: submit
+      const payload = updated;
+      const result = adminId ? await onboardingService.register(payload, adminId) : { success: false, error: "Missing adminId" };
+
+      const newStatus = result.success ? "completed" : "error";
+      await sessionsCollection.updateOne(
+        { sessionId },
+        { $set: { status: newStatus, updatedAt: now, registeredUserId: result.userId || null, lastError: result.error || null } }
+      );
+
+      const resp = result.success
+        ? {
+            mainText: "✅ You’re all set! Your account has been created.",
+            buttons: ["Log In", "Talk to Sales"],
+            emailPrompt: "",
+            showBookingCalendar: false,
+            onboardingAction: "completed",
+          }
+        : {
+            mainText: `⚠️ We couldn’t complete registration: ${result.error || "Unknown error"}.`,
+            buttons: ["Try Again", "Contact Support"],
+            emailPrompt: "",
+            showBookingCalendar: false,
+            onboardingAction: "error",
+          };
+
+      return NextResponse.json(resp, { headers: corsHeaders });
+    }
+
+    const prompt = promptForField(nextField);
+    const resp = {
+      mainText: prompt,
+      buttons: ["Cancel Onboarding"],
+      emailPrompt: "",
+      showBookingCalendar: false,
+      onboardingAction: "ask_next",
+    };
+    return NextResponse.json(resp, { headers: corsHeaders });
+  }
 
   // If email detected, update all previous messages in this session with email and adminId
   if (detectedEmail) {

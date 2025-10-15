@@ -5,6 +5,34 @@
 
 import { MongoClient, Db, Collection } from "mongodb";
 
+// Onboarding settings interface
+export interface OnboardingField {
+  key: string;
+  label: string;
+  required: boolean;
+  type: "text" | "email" | "phone" | "select" | "checkbox";
+  validations?: {
+    regex?: string;
+    minLength?: number;
+    maxLength?: number;
+  };
+  placeholder?: string;
+  options?: string[];
+}
+
+export interface OnboardingSettings {
+  enabled: boolean;
+  apiBaseUrl?: string;
+  registerEndpoint?: string; // relative path
+  method?: "POST" | "PUT" | "PATCH";
+  apiKey?: string;
+  authHeaderKey?: string; // e.g., Authorization or X-API-Key
+  docsUrl?: string;
+  fields?: OnboardingField[];
+  rateLimit?: { perMinute: number };
+  idempotencyKeyField?: string;
+}
+
 // Admin settings interface
 export interface AdminSettings {
   _id?: string;
@@ -35,6 +63,7 @@ export interface AdminSettings {
     maxConcurrentChats: number;
     storageGB: number;
   };
+  onboarding?: OnboardingSettings; // Optional onboarding configuration
   createdAt: Date;
   updatedAt: Date;
   updatedBy: string;
@@ -69,6 +98,23 @@ export const DEFAULT_ADMIN_SETTINGS: Omit<AdminSettings, "_id" | "adminId" | "em
     monthlyInteractions: 10000,
     maxConcurrentChats: 100,
     storageGB: 5,
+  },
+  onboarding: {
+    enabled: false,
+    apiBaseUrl: undefined,
+    registerEndpoint: undefined,
+    method: "POST",
+    apiKey: undefined,
+    authHeaderKey: "Authorization",
+    docsUrl: undefined,
+    fields: [
+      { key: "email", label: "Email", required: true, type: "email" },
+      { key: "firstName", label: "First Name", required: true, type: "text" },
+      { key: "lastName", label: "Last Name", required: true, type: "text" },
+      { key: "company", label: "Company", required: false, type: "text" },
+    ],
+    rateLimit: { perMinute: 30 },
+    idempotencyKeyField: "email",
   },
   version: 1,
 };
