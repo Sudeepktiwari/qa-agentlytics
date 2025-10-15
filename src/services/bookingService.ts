@@ -754,6 +754,52 @@ export class BookingService {
     }
   }
 
+  /**
+   * Check for existing bookings by email address
+   * Returns active bookings (pending or confirmed status)
+   */
+  async getExistingBookingsByEmail(email: string): Promise<{
+    hasActiveBooking: boolean;
+    activeBookings: BookingRequest[];
+    latestBooking?: BookingRequest;
+  }> {
+    try {
+      const collection = await getBookingsCollection();
+      
+      // Sanitize email input
+      const sanitizedEmail = JavaScriptSafetyUtils.sanitizeString(
+        email.toLowerCase().trim()
+      );
+
+      // Find bookings with pending or confirmed status
+      const activeBookings = await collection
+        .find({
+          email: sanitizedEmail,
+          status: { $in: ["pending", "confirmed"] }
+        })
+        .sort({ createdAt: -1 })
+        .toArray();
+
+      const bookingsWithId: BookingRequest[] = activeBookings.map(booking => ({
+        ...booking,
+        _id: booking._id.toString()
+      })) as BookingRequest[];
+
+      return {
+        hasActiveBooking: bookingsWithId.length > 0,
+        activeBookings: bookingsWithId,
+        latestBooking: bookingsWithId[0] || undefined
+      };
+    } catch (error) {
+      console.error("❌ Error checking existing bookings by email:", error);
+      return {
+        hasActiveBooking: false,
+        activeBookings: [],
+        latestBooking: undefined
+      };
+    }
+  }
+
   // Utility function to convert time string to minutes
   private timeToMinutes(time: string): number {
     const [hours, minutes] = time.split(":").map(Number);
