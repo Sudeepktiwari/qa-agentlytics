@@ -17,6 +17,7 @@ import CustomerPersonaSection from "./admin/CustomerPersonaSection";
 import CustomerProfilesSection from "./admin/CustomerProfilesSection";
 import BookingManagementSection from "./admin/BookingManagementSection";
 import { AdminSettingsSection } from "./admin/AdminSettingsSection";
+import OnboardingSettingsSection from "./admin/OnboardingSettingsSection";
 import SummaryModal from "./admin/SummaryModal";
 
 const AdminPanel: React.FC = () => {
@@ -868,6 +869,9 @@ const AdminPanel: React.FC = () => {
           <CustomerProfilesSection />
 
           <BookingManagementSection adminId={auth?.adminId} />
+
+          {/* Onboarding Settings */}
+          <OnboardingSettingsSection />
 
           {/* Admin Settings Section */}
           <div
