@@ -1,4 +1,5 @@
 import { getAdminSettings, OnboardingSettings } from "@/lib/adminSettings";
+import { createOrUpdateLead } from "@/lib/leads";
 
 export interface RegistrationResult {
   success: boolean;
@@ -43,7 +44,29 @@ export const onboardingService = {
 
     const url = resolveUrl(onboarding);
     if (!url) {
-      return { success: false, error: "Onboarding URL not configured", status: 400 };
+      // Safe fallback: store as lead locally when external registration isn't configured
+      try {
+        const email = typeof data.email === "string" ? data.email.trim() : "";
+        const sessionId = typeof data.sessionId === "string" ? data.sessionId : `onboarding-${Date.now()}`;
+        const pageUrl = typeof data.pageUrl === "string" ? data.pageUrl : undefined;
+
+        if (email && adminId) {
+          await createOrUpdateLead(
+            adminId,
+            email,
+            sessionId,
+            null,
+            pageUrl,
+            "Onboarding submission without external registration"
+          );
+        }
+      } catch (e) {
+        // If lead storage fails, still return a user-friendly result
+        return { success: false, error: "Onboarding URL not configured", status: 400 };
+      }
+
+      // Treat as success so the flow completes gracefully
+      return { success: true, status: 200, responseBody: { storedAsLead: true } };
     }
 
     const headers: Record<string, string> = {

@@ -6,6 +6,7 @@ import DocumentUploader from "../DocumentUploader";
 interface OnboardingSettings {
   enabled: boolean;
   apiBaseUrl?: string;
+  registerEndpoint?: string;
   apiKey?: string;
   docsUrl?: string;
 }
@@ -155,6 +156,29 @@ const OnboardingSettingsSection: React.FC = () => {
             />
             <div style={{ color: "#718096", fontSize: 12, marginTop: 6 }}>
               Base URL for your user registration API (onboarding submissions)
+            </div>
+          </div>
+
+          {/* Registration Endpoint Path */}
+          <div>
+            <label style={{ display: "block", color: "#4a5568", fontSize: 13, marginBottom: 6 }}>
+              Registration Endpoint Path
+            </label>
+            <input
+              type="text"
+              placeholder="/users/register"
+              value={settings.registerEndpoint || ""}
+              onChange={(e) => setSettings({ ...settings, registerEndpoint: e.target.value })}
+              style={{
+                width: "100%",
+                padding: 12,
+                border: "1px solid #d1d5db",
+                borderRadius: 8,
+                fontSize: 14,
+              }}
+            />
+            <div style={{ color: "#718096", fontSize: 12, marginTop: 6 }}>
+              Relative path appended to Base URL for onboarding submissions
             </div>
           </div>
 

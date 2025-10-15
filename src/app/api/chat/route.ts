@@ -2190,7 +2190,7 @@ Keep the response conversational and helpful, focusing on providing value before
     const currentField = sessionDoc.fields[idx];
     if (!currentField) {
       // No more fields; submit
-      const payload = sessionDoc.collectedData || {};
+      const payload = { ...(sessionDoc.collectedData || {}), sessionId, pageUrl };
       const result = adminId ? await onboardingService.register(payload, adminId) : { success: false, error: "Missing adminId" };
 
       const newStatus = result.success ? "completed" : "error";
@@ -2245,7 +2245,7 @@ Keep the response conversational and helpful, focusing on providing value before
     const nextField = sessionDoc.fields[nextIndex];
     if (!nextField) {
       // All done: submit
-      const payload = updated;
+      const payload = { ...updated, sessionId, pageUrl };
       const result = adminId ? await onboardingService.register(payload, adminId) : { success: false, error: "Missing adminId" };
 
       const newStatus = result.success ? "completed" : "error";
