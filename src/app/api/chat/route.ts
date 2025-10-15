@@ -10,6 +10,7 @@ import { addChunks } from "@/lib/chroma";
 import { verifyApiKey } from "@/lib/auth";
 import { createOrUpdateLead } from "@/lib/leads";
 import { enhanceChatWithBookingDetection } from "@/services/bookingDetection";
+import { bookingService } from "@/services/bookingService";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -244,9 +245,9 @@ function filterButtonsBasedOnBooking(buttons: string[], bookingStatus: any) {
   // Add booking management buttons if we have few remaining buttons
   if (filteredButtons.length < 2) {
     const managementButtons = [
-      "View Booking Details",
+      "View Full Details",
       "Reschedule",
-      "Add to Calendar",
+      "Cancel Booking",
     ];
 
     // Return original filtered buttons + management options
@@ -275,7 +276,7 @@ function generateBookingAwareResponse(
 
   // Check if user is asking for another booking
   const isBookingRequest =
-    /book|schedule|demo|call|meeting|appointment|consultation|talk to sales/i.test(
+    /\b(book|schedule|demo|call|meeting|appointment|consultation|talk to sales)\b/i.test(
       userQuestion
     );
 
@@ -375,9 +376,10 @@ function generateBookingManagementResponse(action: string, booking: any) {
   switch (action.toLowerCase()) {
     case "view details":
     case "view booking details":
+    case "view full details":
       return {
         mainText: `📅 <strong>Your ${booking.requestType} Details:</strong><br><br>📅 <strong>Date:</strong> ${bookingDate}<br>⏰ <strong>Time:</strong> ${bookingTime}<br>🎫 <strong>Confirmation:</strong> ${booking.confirmationNumber}<br>📧 <strong>Contact:</strong> ${booking.email}<br><br>We'll send you a reminder 24 hours before your appointment!`,
-        buttons: ["Reschedule", "Add to Calendar", "Contact Support"],
+        buttons: ["Reschedule", "Cancel Booking", "Add to Calendar"],
         emailPrompt: "",
         showBookingCalendar: false,
         bookingAction: "view_details",
@@ -409,10 +411,20 @@ function generateBookingManagementResponse(action: string, booking: any) {
         },
       };
 
+    case "cancel booking":
+      return {
+        mainText:
+          "I can cancel your booking. Are you sure you want to proceed?",
+        buttons: ["Confirm Cancel", "Keep Booking", "View Full Details"],
+        emailPrompt: "",
+        showBookingCalendar: false,
+        bookingAction: "cancel_booking",
+      };
+
     default:
       return {
         mainText: `I can help you manage your ${booking.requestType} scheduled for ${bookingDate} at ${bookingTime}. What would you like to do?`,
-        buttons: ["View Details", "Reschedule", "Add to Calendar"],
+        buttons: ["View Full Details", "Reschedule", "Cancel Booking"],
         emailPrompt: "",
         showBookingCalendar: false,
         bookingAction: "manage",
@@ -2311,6 +2323,7 @@ Extract key requirements (2-3 bullet points max, be concise):`;
     const bookingActions = [
       "view details",
       "view booking details",
+      "view full details",
       "reschedule",
       "add to calendar",
       "cancel booking",
@@ -2330,6 +2343,117 @@ Extract key requirements (2-3 bullet points max, be concise):`;
         if (question.toLowerCase().includes(action.toLowerCase())) {
           requestedAction = action;
           break;
+        }
+      }
+
+      // Special handling: perform real cancellation
+      if (requestedAction === "cancel booking" && bookingStatus.currentBooking?._id) {
+        try {
+          const cancelled = await bookingService.cancelBooking(
+            bookingStatus.currentBooking._id.toString(),
+            adminId || undefined
+          );
+
+          // Store user message
+          await chats.insertOne({
+            sessionId,
+            role: "user",
+            content: question,
+            createdAt: now,
+            adminId,
+            apiKey,
+            pageUrl,
+            hasActiveBooking: bookingStatus.hasActiveBooking,
+            bookingId: bookingStatus.currentBooking?._id,
+            bookingAction: requestedAction,
+          });
+
+          if (cancelled) {
+            await updateChatWithBookingReference(
+              sessionId,
+              bookingStatus.currentBooking._id.toString(),
+              false,
+              adminId || undefined
+            );
+
+            const response = {
+              mainText:
+                "✅ Your appointment has been cancelled. Would you like to book a new time or need assistance?",
+              buttons: ["Schedule Now", "Contact Support"],
+              emailPrompt: "",
+              showBookingCalendar: false,
+              bookingAction: "cancel_booking",
+              cancelled: true,
+            };
+
+            await chats.insertOne({
+              sessionId,
+              role: "assistant",
+              content: response.mainText,
+              buttons: response.buttons,
+              createdAt: new Date(now.getTime() + 1),
+              adminId,
+              apiKey,
+              pageUrl,
+              hasActiveBooking: false,
+              bookingId: bookingStatus.currentBooking?._id,
+              bookingAction: "cancel_booking",
+            });
+
+            return NextResponse.json(response, { headers: corsHeaders });
+          } else {
+            const response = {
+              mainText:
+                "❌ Sorry, I couldn’t cancel that booking. It may already be cancelled or not found. Please try again.",
+              buttons: ["View Full Details", "Reschedule", "Contact Support"],
+              emailPrompt: "",
+              showBookingCalendar: false,
+              bookingAction: "cancel_booking_failed",
+              cancelled: false,
+            };
+
+            await chats.insertOne({
+              sessionId,
+              role: "assistant",
+              content: response.mainText,
+              buttons: response.buttons,
+              createdAt: new Date(now.getTime() + 1),
+              adminId,
+              apiKey,
+              pageUrl,
+              hasActiveBooking: bookingStatus.hasActiveBooking,
+              bookingId: bookingStatus.currentBooking?._id,
+              bookingAction: "cancel_booking_failed",
+            });
+
+            return NextResponse.json(response, { headers: corsHeaders });
+          }
+        } catch (err) {
+          const response = {
+            mainText:
+              "❌ Sorry, something went wrong while cancelling. Please try again or contact support.",
+            buttons: ["View Full Details", "Reschedule", "Contact Support"],
+            emailPrompt: "",
+            showBookingCalendar: false,
+            bookingAction: "cancel_booking_error",
+            cancelled: false,
+          };
+
+          await chats.insertOne({
+            sessionId,
+            role: "assistant",
+            content: response.mainText,
+            buttons: response.buttons,
+            createdAt: new Date(now.getTime() + 1),
+            adminId,
+            apiKey,
+            pageUrl,
+            hasActiveBooking: bookingStatus.hasActiveBooking,
+            bookingId: bookingStatus.currentBooking?._id,
+            bookingAction: "cancel_booking_error",
+          });
+
+          return NextResponse.json(response, { headers: corsHeaders });
         }
       }
 
