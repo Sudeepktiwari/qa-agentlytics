@@ -2395,9 +2395,14 @@ Keep the response conversational and helpful, focusing on providing value before
       : [];
 
     // Derive extra fields from admin docs and merge
-    const docDerived = await inferFieldsFromDocs(adminId || undefined, onboardingConfig?.docsUrl);
-    const baseFields = curlDerived.length > 0 ? curlDerived : configuredFields;
-    const fields = mergeFields(baseFields, docDerived);
+    let fields: any[] = [];
+    if (curlDerived.length > 0) {
+      // When cURL is provided, rely solely on its body keys
+      fields = curlDerived;
+    } else {
+      const docDerived = await inferFieldsFromDocs(adminId || undefined, onboardingConfig?.docsUrl);
+      fields = mergeFields(configuredFields, docDerived);
+    }
 
     // Ask only relevant (required) questions by default
     const sessionFields = fields.filter((f: any) => f.required) as any[];

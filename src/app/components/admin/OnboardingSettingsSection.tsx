@@ -1,14 +1,10 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import DocumentUploader from "../DocumentUploader";
 
 interface OnboardingSettings {
   enabled: boolean;
-  apiBaseUrl?: string;
-  registerEndpoint?: string;
-  apiKey?: string;
-  docsUrl?: string;
+  curlCommand?: string;
 }
 
 const OnboardingSettingsSection: React.FC = () => {
@@ -44,8 +40,8 @@ const OnboardingSettingsSection: React.FC = () => {
     setError(null);
     setSuccess(null);
     try {
-      // Clear registerEndpoint since the UI no longer uses it
-      const settingsToSave = { ...settings, registerEndpoint: "" };
+      // Only send the cURL command; enablement handled server-side
+      const settingsToSave = { curlCommand: settings.curlCommand };
       const res = await fetch("/api/admin/onboarding", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -128,82 +124,29 @@ const OnboardingSettingsSection: React.FC = () => {
             </div>
           )}
 
-          {/* Enable toggle */}
-          <label style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <input
-              type="checkbox"
-              checked={!!settings.enabled}
-              onChange={(e) => setSettings({ ...settings, enabled: e.target.checked })}
-            />
-            <span style={{ color: "#2d3748", fontWeight: 600 }}>Enable onboarding</span>
-          </label>
-
-          {/* Registration URL */}
+          {/* Canonical registration cURL command */}
           <div>
             <label style={{ display: "block", color: "#4a5568", fontSize: 13, marginBottom: 6 }}>
-              Registration URL
+              Canonical registration cURL
             </label>
-            <input
-              type="text"
-              placeholder="https://api.your-service.com/onboarding/register"
-              value={settings.apiBaseUrl || ""}
-              onChange={(e) => setSettings({ ...settings, apiBaseUrl: e.target.value })}
+            <textarea
+              placeholder={"curl -X POST https://api.your-service.com/register \\\n+  -H 'Content-Type: application/json' \\\n+  -H 'Authorization: Bearer <token>' \\\n+  -d '{\"email\":\"user@example.com\",\"firstName\":\"Jane\",\"lastName\":\"Doe\"}'"}
+              value={settings.curlCommand || ""}
+              onChange={(e) => setSettings({ ...settings, curlCommand: e.target.value })}
+              rows={6}
               style={{
                 width: "100%",
                 padding: 12,
                 border: "1px solid #d1d5db",
                 borderRadius: 8,
                 fontSize: 14,
+                fontFamily: "monospace",
+                whiteSpace: "pre-wrap",
               }}
             />
             <div style={{ color: "#718096", fontSize: 12, marginTop: 6 }}>
-              Paste the full registration URL here. The endpoint path field has been removed.
-            </div>
-          </div>
-
-          {/* API Key */}
-          <div>
-            <label style={{ display: "block", color: "#4a5568", fontSize: 13, marginBottom: 6 }}>
-              Registration API Key
-            </label>
-            <input
-              type="text"
-              placeholder="Paste API key"
-              value={settings.apiKey || ""}
-              onChange={(e) => setSettings({ ...settings, apiKey: e.target.value })}
-              style={{
-                width: "100%",
-                padding: 12,
-                border: "1px solid #d1d5db",
-                borderRadius: 8,
-                fontSize: 14,
-              }}
-            />
-            <div style={{ color: "#718096", fontSize: 12, marginTop: 6 }}>
-              Used for Authorization header when calling your registration API
-            </div>
-          </div>
-
-          {/* Docs URL */}
-          <div>
-            <label style={{ display: "block", color: "#4a5568", fontSize: 13, marginBottom: 6 }}>
-              Public Docs URL (optional)
-            </label>
-            <input
-              type="text"
-              placeholder="https://docs.your-service.com/onboarding"
-              value={settings.docsUrl || ""}
-              onChange={(e) => setSettings({ ...settings, docsUrl: e.target.value })}
-              style={{
-                width: "100%",
-                padding: 12,
-                border: "1px solid #d1d5db",
-                borderRadius: 8,
-                fontSize: 14,
-              }}
-            />
-            <div style={{ color: "#718096", fontSize: 12, marginTop: 6 }}>
-              Shown to users at onboarding start for additional reference
+              Paste the exact cURL used to register a user. We will auto-derive
+              method, URL, headers, content type, and required fields from it.
             </div>
           </div>
 
@@ -228,15 +171,7 @@ const OnboardingSettingsSection: React.FC = () => {
             </button>
           </div>
 
-          <div style={{ marginTop: 16, color: "#718096", fontSize: 13 }}>
-            Tip: Upload your onboarding API documentation below. It will be embedded and
-            stored as searchable vectors to help the bot answer onboarding questions.
-          </div>
-
-          {/* Onboarding-specific document upload */}
-          <div style={{ marginTop: 16 }}>
-            <DocumentUploader onUploadDone={() => { /* noop */ }} />
-          </div>
+          {/* Removed document upload: onboarding now only needs the cURL command */}
         </div>
       )}
     </div>

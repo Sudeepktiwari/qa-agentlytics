@@ -60,18 +60,16 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const onboardingUpdates: Partial<OnboardingSettings> = body.onboarding || body;
 
-    if (typeof onboardingUpdates.enabled !== "boolean") {
-      return NextResponse.json(
-        { success: false, error: "'enabled' must be provided as boolean" },
-        { status: 400, headers: corsHeaders }
-      );
-    }
+    // Allow minimal updates: if curlCommand is provided, auto-enable onboarding
+    const hasCurl = typeof onboardingUpdates.curlCommand === "string" && onboardingUpdates.curlCommand.trim().length > 0;
+    const shouldEnable = hasCurl || typeof onboardingUpdates.enabled === "boolean" ? onboardingUpdates.enabled ?? true : undefined;
 
     // Merge with existing settings to preserve defaults
     const current = await getAdminSettings(adminId);
     const merged: OnboardingSettings = {
       ...(current.onboarding || { enabled: false }),
       ...onboardingUpdates,
+      ...(shouldEnable === undefined ? {} : { enabled: shouldEnable }),
     } as OnboardingSettings;
 
     const updated = await updateAdminSettings(adminId, { onboarding: merged }, adminId);
