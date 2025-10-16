@@ -2449,6 +2449,33 @@ Keep the response conversational and helpful, focusing on providing value before
         if (/\b(try again|retry|resubmit|confirm|submit)\b/.test(lower)) {
           const payload = { ...(sessionDoc.collectedData || {}) };
           const result = adminId ? await onboardingService.register(payload, adminId) : { success: false, error: "Missing adminId" };
+          // Log registration outcome with sensitive field redaction
+          try {
+            const redactKeys = ["password", "pass", "secret", "token", "apikey", "api_key", "key"];
+            const safePayload = Object.fromEntries(
+              Object.entries(payload).map(([k, v]) => {
+                const kl = k.toLowerCase();
+                const isSensitive = redactKeys.some((rk) => kl.includes(rk));
+                return [k, isSensitive ? "***" : v];
+              })
+            );
+            if (!result.success) {
+              console.error(`[Chat API ${requestId}] ❌ Onboarding registration failed`, {
+                adminId,
+                sessionId,
+                status: result.status,
+                error: result.error,
+                payload: safePayload,
+              });
+            } else {
+              console.log(`[Chat API ${requestId}] ✅ Onboarding registration succeeded`, {
+                adminId,
+                sessionId,
+                userId: result.userId,
+                status: result.status,
+              });
+            }
+          } catch {}
 
           const newStatus = result.success ? "completed" : "error";
           await sessionsCollection.updateOne(
@@ -2540,6 +2567,34 @@ Keep the response conversational and helpful, focusing on providing value before
         if (/\b(confirm|submit|looks good|yes|try again|retry|resubmit)\b/.test(lower)) {
           const payload = { ...(sessionDoc.collectedData || {}) };
           const result = adminId ? await onboardingService.register(payload, adminId) : { success: false, error: "Missing adminId" };
+          // Log registration outcome with sensitive field redaction
+          try {
+            const redactKeys = ["password", "pass", "secret", "token", "apikey", "api_key", "key"];
+            const safePayload = Object.fromEntries(
+              Object.entries(payload).map(([k, v]) => {
+                const kl = k.toLowerCase();
+                const isSensitive = redactKeys.some((rk) => kl.includes(rk));
+                return [k, isSensitive ? "***" : v];
+                
+              })
+            );
+            if (!result.success) {
+              console.error(`[Chat API ${requestId}] ❌ Onboarding registration failed`, {
+                adminId,
+                sessionId,
+                status: result.status,
+                error: result.error,
+                payload: safePayload,
+              });
+            } else {
+              console.log(`[Chat API ${requestId}] ✅ Onboarding registration succeeded`, {
+                adminId,
+                sessionId,
+                userId: result.userId,
+                status: result.status,
+              });
+            }
+          } catch {}
 
           const newStatus = result.success ? "completed" : "error";
           await sessionsCollection.updateOne(

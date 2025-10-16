@@ -191,6 +191,17 @@ export const onboardingService = {
 
     const method = "POST";
 
+    // Prepare a safe-to-log version of the payload with sensitive fields redacted
+    const rawPayloadForLog = applyFieldMappings(data, fieldMappings);
+    const redactKeys = ["password", "pass", "secret", "token", "apikey", "api_key", "key"];
+    const safePayloadForLog = Object.fromEntries(
+      Object.entries(rawPayloadForLog).map(([k, v]) => {
+        const kl = k.toLowerCase();
+        const isSensitive = redactKeys.some((rk) => kl.includes(rk));
+        return [k, isSensitive ? "***" : v];
+      })
+    );
+
     try {
       console.log(
         "[Onboarding] Calling external registration API:",
@@ -224,7 +235,13 @@ export const onboardingService = {
       }
 
       if (!res.ok) {
-        console.log("[Onboarding] External registration failed with status:", res.status);
+        console.error("[Onboarding] ❌ External registration failed", {
+          status: res.status,
+          adminId,
+          url,
+          responseBody: parsed,
+          payload: safePayloadForLog,
+        });
         return {
           success: false,
           error: typeof parsed === "string" ? parsed : parsed?.error || "Registration failed",
@@ -237,7 +254,11 @@ export const onboardingService = {
       const userId =
         parsed?.userId || parsed?.id || parsed?.data?.id || parsed?.data?.userId || undefined;
 
-      console.log("[Onboarding] External registration succeeded with status:", res.status);
+      console.log("[Onboarding] ✅ External registration succeeded", {
+        status: res.status,
+        adminId,
+        userId,
+      });
       return {
         success: true,
         userId,
@@ -245,6 +266,14 @@ export const onboardingService = {
         responseBody: parsed,
       };
     } catch (error: any) {
+      console.error("[Onboarding] ❌ External registration error", {
+        adminId,
+        url,
+        method,
+        message: error?.message || String(error),
+        stack: error?.stack,
+        payload: safePayloadForLog,
+      });
       return { success: false, error: error?.message || String(error), status: 500 };
     }
   },
