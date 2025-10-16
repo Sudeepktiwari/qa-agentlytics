@@ -174,6 +174,18 @@ export const onboardingService = {
         "Content-Type": contentType,
       };
 
+      if (!url) {
+        console.error("[Onboarding] ❌ cURL parsing failed: no URL found", {
+          adminId,
+          curlSnippet: (onboarding.curlCommand || "").slice(0, 200),
+        });
+        return {
+          success: false,
+          error: "Registration URL not found in cURL command",
+          status: 400,
+        };
+      }
+
       // Optional idempotency
       if (onboarding.idempotencyKeyField && data[onboarding.idempotencyKeyField]) {
         headers["Idempotency-Key"] = String(data[onboarding.idempotencyKeyField]);

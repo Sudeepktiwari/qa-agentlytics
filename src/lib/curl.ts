@@ -27,6 +27,47 @@ export function parseCurlRegistrationSpec(curlCommand: string): ParsedCurl {
   const urlUnquoted = curlCommand.match(/curl\s+(https?:\/\/\S+)/i);
   url = urlQuoted?.[1] || urlUnquoted?.[1] || null;
 
+  // Fallback: robust tokenization to find first non-flag URL argument
+  if (!url) {
+    const tokens: string[] = [];
+    let current = "";
+    let inSingle = false;
+    let inDouble = false;
+    for (let i = 0; i < curlCommand.length; i++) {
+      const ch = curlCommand[i];
+      if (ch === "'" && !inDouble) {
+        inSingle = !inSingle;
+        continue;
+      }
+      if (ch === '"' && !inSingle) {
+        inDouble = !inDouble;
+        continue;
+      }
+      const isSpace = /\s/.test(ch);
+      if (!inSingle && !inDouble && isSpace) {
+        if (current.length > 0) {
+          tokens.push(current);
+          current = "";
+        }
+      } else {
+        current += ch;
+      }
+    }
+    if (current.length > 0) tokens.push(current);
+
+    // Find first token after 'curl' that is not a flag and looks like a URL
+    const curlIdx = tokens.findIndex((t) => t.toLowerCase() === "curl");
+    const searchStart = curlIdx >= 0 ? curlIdx + 1 : 0;
+    for (let i = searchStart; i < tokens.length; i++) {
+      const t = tokens[i];
+      if (t.startsWith("-")) continue;
+      if (/^https?:\/\//i.test(t)) {
+        url = t;
+        break;
+      }
+    }
+  }
+
   // Collect headers
   const headers: Record<string, string> = {};
   const headerRegex = /-H\s+['"]([^'"\n]+)['"]/gi;
