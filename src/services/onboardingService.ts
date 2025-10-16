@@ -1,4 +1,5 @@
 import { getAdminSettings, OnboardingSettings } from "@/lib/adminSettings";
+import { parseCurlRegistrationSpec, buildBodyFromCurl, redactHeadersForLog } from "@/lib/curl";
 import { createOrUpdateLead } from "@/lib/leads";
 import { getChunksByPageUrl, querySimilarChunks } from "@/lib/chroma";
 import OpenAI from "openai";
@@ -152,7 +153,140 @@ export const onboardingService = {
       return { success: false, error: "Onboarding is disabled", status: 400 };
     }
 
-    const url = resolveUrl(onboarding);
+    // Sensitive keys we should redact in logs
+    const redactKeys = ["password", "pass", "secret", "token", "apikey", "api_key", "key"];
+
+    // Prefer cURL configuration if provided by admin
+    const hasCurl = !!onboarding.curlCommand;
+    let url: string | null = null;
+    let method = "POST";
+    let headers: Record<string, string> = {};
+    let contentType = "application/json";
+    let payload: Record<string, any> = { ...data };
+
+    if (hasCurl) {
+      const parsed = parseCurlRegistrationSpec(onboarding.curlCommand as string);
+      url = parsed.url;
+      method = parsed.method || "POST";
+      contentType = parsed.contentType || "application/json";
+      headers = {
+        ...parsed.headers,
+        "Content-Type": contentType,
+      };
+
+      // Optional idempotency
+      if (onboarding.idempotencyKeyField && data[onboarding.idempotencyKeyField]) {
+        headers["Idempotency-Key"] = String(data[onboarding.idempotencyKeyField]);
+      }
+
+      // Common fallback: combine first/last into name if relevant
+      if (!("name" in payload)) {
+        const fn = payload.firstName || (payload as any).first_name || (payload as any).given_name;
+        const ln = payload.lastName || (payload as any).last_name || (payload as any).surname;
+        if (typeof fn === "string" && fn.trim() && typeof ln === "string" && ln.trim()) {
+          payload.name = `${fn.trim()} ${ln.trim()}`;
+        }
+      }
+
+      // Build body exactly from cURL data keys, substituting collected values
+      const { body, keysUsed } = buildBodyFromCurl(parsed, payload);
+
+      // Safe-to-log payload view (keys only) plus redaction
+      const safePayloadForLog = Object.fromEntries(
+        Object.entries(payload).map(([k, v]) => {
+          const kl = k.toLowerCase();
+          const isSensitive = redactKeys.some((rk) => kl.includes(rk));
+          return [k, isSensitive ? "***" : v];
+        })
+      );
+
+      try {
+        console.log("[Onboarding] Calling external registration API via cURL:", {
+          url,
+          method,
+          contentType,
+          headerKeys: Object.keys(headers),
+          headers: redactHeadersForLog(headers),
+          payloadKeys: keysUsed,
+        });
+
+        const res = await fetch(url as string, {
+          method,
+          headers,
+          body,
+        });
+
+        const bodyText = await res.text();
+        let parsedResp: any = null;
+        try {
+          parsedResp = JSON.parse(bodyText);
+        } catch {
+          parsedResp = bodyText;
+        }
+
+        if (!res.ok) {
+          const errorMessage = (() => {
+            if (typeof parsedResp === "string") return parsedResp;
+            if (!parsedResp || typeof parsedResp !== "object") return "Registration failed";
+            const topLevel = (parsedResp as any).error || (parsedResp as any).message;
+            const nestedData = (parsedResp as any)?.data?.error || (parsedResp as any)?.data?.message;
+            const arrayErrors = Array.isArray((parsedResp as any)?.errors)
+              ? (parsedResp as any).errors.map((e: any) => e?.message || e).filter(Boolean).join("; ")
+              : undefined;
+            return topLevel || nestedData || arrayErrors || "Registration failed";
+          })();
+
+          console.error("[Onboarding] ❌ External registration failed", {
+            status: res.status,
+            adminId,
+            url,
+            responseBody: parsedResp,
+            payload: safePayloadForLog,
+            errorMessage,
+          });
+          return {
+            success: false,
+            error: errorMessage,
+            status: res.status,
+            responseBody: parsedResp,
+          };
+        }
+
+        const userId =
+          parsedResp?.userId || parsedResp?.id || parsedResp?.data?.id || parsedResp?.data?.userId || undefined;
+
+        console.log("[Onboarding] ✅ External registration succeeded", {
+          status: res.status,
+          adminId,
+          userId,
+        });
+        return {
+          success: true,
+          userId,
+          status: res.status,
+          responseBody: parsedResp,
+        };
+      } catch (error: any) {
+        console.error("[Onboarding] ❌ External registration error", {
+          adminId,
+          url,
+          method,
+          message: error?.message || String(error),
+          stack: error?.stack,
+          payload: Object.fromEntries(
+            Object.entries(payload).map(([k, v]) => {
+              const kl = k.toLowerCase();
+              const isSensitive = redactKeys.some((rk) => kl.includes(rk));
+              return [k, isSensitive ? "***" : v];
+            })
+          ),
+        });
+        return { success: false, error: error?.message || String(error), status: 500 };
+      }
+    }
+
+    // Fallback: existing docs-based inference path
+    url = resolveUrl(onboarding);
     if (!url) {
       // Enforce API-only registration: store lead for visibility but return error
       console.log("[Onboarding] No registration URL configured. Storing lead and returning error.");
@@ -178,8 +312,9 @@ export const onboardingService = {
       return { success: false, error: "Onboarding URL not configured", status: 400 };
     }
 
-    const { contentType, fieldMappings } = await inferRequestFormatFromDocs(adminId, onboarding.docsUrl);
-    const headers: Record<string, string> = {
+    const { contentType: inferredContentType, fieldMappings } = await inferRequestFormatFromDocs(adminId, onboarding.docsUrl);
+    contentType = inferredContentType;
+    headers = {
       "Content-Type": contentType,
       ...buildAuthHeader(onboarding),
     };
@@ -188,14 +323,8 @@ export const onboardingService = {
     if (onboarding.idempotencyKeyField && data[onboarding.idempotencyKeyField]) {
       headers["Idempotency-Key"] = String(data[onboarding.idempotencyKeyField]);
     }
-
-    const method = "POST";
-
-    // Sensitive keys we should redact in logs
-    const redactKeys = ["password", "pass", "secret", "token", "apikey", "api_key", "key"];
-
     // Build payload according to doc-inferred mappings
-    const payload = applyFieldMappings(data, fieldMappings);
+    payload = applyFieldMappings(data, fieldMappings);
 
     // Common fallback: if firstName and lastName exist but name is missing, combine into name
     if (!("name" in payload)) {

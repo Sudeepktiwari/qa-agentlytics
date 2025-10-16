@@ -13,6 +13,7 @@ import { enhanceChatWithBookingDetection } from "@/services/bookingDetection";
 import { bookingService } from "@/services/bookingService";
 import { onboardingService } from "@/services/onboardingService";
 import { getAdminSettings, OnboardingSettings } from "@/lib/adminSettings";
+import { deriveOnboardingFieldsFromCurl } from "@/lib/curl";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -2383,9 +2384,20 @@ Keep the response conversational and helpful, focusing on providing value before
           { key: "lastName", label: "Last Name", required: false, type: "text" },
         ];
 
+    // If admin provided a canonical cURL, derive fields dynamically from it
+    const curlDerived = onboardingConfig?.curlCommand
+      ? deriveOnboardingFieldsFromCurl(onboardingConfig.curlCommand).map((f) => ({
+          key: f.key,
+          label: f.label,
+          required: f.required,
+          type: f.type,
+        }))
+      : [];
+
     // Derive extra fields from admin docs and merge
     const docDerived = await inferFieldsFromDocs(adminId || undefined, onboardingConfig?.docsUrl);
-    const fields = mergeFields(configuredFields, docDerived);
+    const baseFields = curlDerived.length > 0 ? curlDerived : configuredFields;
+    const fields = mergeFields(baseFields, docDerived);
 
     // Ask only relevant (required) questions by default
     const sessionFields = fields.filter((f: any) => f.required) as any[];

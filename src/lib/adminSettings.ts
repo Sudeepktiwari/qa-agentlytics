@@ -28,6 +28,8 @@ export interface OnboardingSettings {
   apiKey?: string;
   authHeaderKey?: string; // e.g., Authorization or X-API-Key
   docsUrl?: string;
+  // New: canonical cURL registration command for auto-configuration
+  curlCommand?: string;
   fields?: OnboardingField[];
   rateLimit?: { perMinute: number };
   idempotencyKeyField?: string;
@@ -107,6 +109,7 @@ export const DEFAULT_ADMIN_SETTINGS: Omit<AdminSettings, "_id" | "adminId" | "em
     apiKey: undefined,
     authHeaderKey: "Authorization",
     docsUrl: undefined,
+    curlCommand: undefined,
     fields: [
       { key: "email", label: "Email", required: true, type: "email" },
       { key: "firstName", label: "First Name", required: true, type: "text" },
@@ -210,7 +213,14 @@ export async function getAdminSettings(adminId: string): Promise<AdminSettings> 
       features: settings.features,
       preferences: settings.preferences,
       limits: settings.limits,
-      onboarding: settings.onboarding, // include onboarding settings
+      onboarding: (() => {
+        const ob = settings.onboarding || DEFAULT_ADMIN_SETTINGS.onboarding;
+        // Auto-enable onboarding if curlCommand is provided
+        if (ob?.curlCommand && !ob.enabled) {
+          return { ...ob, enabled: true };
+        }
+        return ob;
+      })(),
       createdAt: settings.createdAt,
       updatedAt: settings.updatedAt,
       updatedBy: settings.updatedBy,
