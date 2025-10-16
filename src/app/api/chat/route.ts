@@ -1819,6 +1819,47 @@ export async function POST(req: NextRequest) {
   // Handle contextual question generation request
   if (contextualQuestionGeneration && contextualPageContext) {
     try {
+      // Exclusivity gating: if onboarding is active, do not run contextual lead/sales bots
+      try {
+        const db = await getDb();
+        const sessionsCollection = db.collection("onboardingSessions");
+        const existingOnboarding = await sessionsCollection.findOne({ sessionId });
+        if (["in_progress", "ready_to_submit"].includes(existingOnboarding?.status || "")) {
+          const idx = existingOnboarding?.stageIndex ?? 0;
+          const field = existingOnboarding?.fields?.[idx];
+          if (existingOnboarding?.status === "ready_to_submit") {
+            const summary = Object.entries(existingOnboarding?.collectedData || {})
+              .map(([k, v]) => `- ${k}: ${v}`)
+              .join("\n");
+            const resp = {
+              mainText: `We’re finishing your onboarding. Please review:\n${summary}\n\nReply "Confirm" to submit, or "Edit" to change any detail.`,
+              buttons: ["Confirm and Submit", "Edit Details", "Cancel Onboarding"],
+              emailPrompt: "",
+              showBookingCalendar: false,
+              onboardingAction: "confirm",
+            };
+            return NextResponse.json(resp, { headers: corsHeaders });
+          } else if (field) {
+            const prompt = promptForField(field);
+            const docContext = await buildOnboardingDocContext(
+              field,
+              existingOnboarding?.adminId || undefined,
+              (await getAdminSettings(existingOnboarding?.adminId || "")).onboarding?.docsUrl
+            );
+            const resp = {
+              mainText: `${docContext ? `${docContext}\n\n` : ""}${prompt}`,
+              buttons: ["Cancel Onboarding"],
+              emailPrompt: "",
+              showBookingCalendar: false,
+              onboardingAction: "ask_next",
+            };
+            return NextResponse.json(resp, { headers: corsHeaders });
+          }
+        }
+      } catch (e) {
+        // If gating check fails, continue with contextual generation
+      }
+
       console.log("[DEBUG] Handling contextual question generation");
 
       const contextualPrompt = `You are an intelligent business assistant analyzing a webpage to generate contextual questions. 
@@ -1963,11 +2004,39 @@ Based on the page context, create an intelligent contextual question that demons
         // Continue with original response if booking detection fails
       }
 
-      // Add bot mode
-      const botMode = "lead_generation"; // Contextual questions are for lead generation
+      // Determine current bot mode based on session email
+      let sessionEmail: string | null = null;
+      try {
+        const db = await getDb();
+        const chats = db.collection("chats");
+        const lastEmailMsg = await chats.findOne(
+          { sessionId, email: { $exists: true } },
+          { sort: { createdAt: -1 } }
+        );
+        if (lastEmailMsg && lastEmailMsg.email) sessionEmail = lastEmailMsg.email;
+      } catch (e) {
+        // If email detection fails, assume lead mode
+        sessionEmail = null;
+      }
+
+      // Sales/Lead exclusivity: if sales is active, do not run lead-gen contextual bot
+      if (sessionEmail) {
+        return NextResponse.json(
+          {
+            mainText:
+              "We’re now in sales mode and will focus on next steps. Would you like to schedule a demo, review pricing, or talk to sales?",
+            buttons: ["Schedule Demo", "View Pricing", "Talk to Sales"],
+            emailPrompt: "",
+            botMode: "sales",
+            userEmail: sessionEmail,
+          },
+          { headers: corsHeaders }
+        );
+      }
+
       const responseWithMode = {
         ...enhancedResponse,
-        botMode,
+        botMode: "lead_generation",
         userEmail: null,
       };
 
@@ -1997,6 +2066,47 @@ Based on the page context, create an intelligent contextual question that demons
   // Handle auto-response for contextual questions
   if (autoResponse && contextualQuestion) {
     try {
+      // Exclusivity gating: if onboarding is active, do not run auto-response lead/sales bots
+      try {
+        const db = await getDb();
+        const sessionsCollection = db.collection("onboardingSessions");
+        const existingOnboarding = await sessionsCollection.findOne({ sessionId });
+        if (["in_progress", "ready_to_submit"].includes(existingOnboarding?.status || "")) {
+          const idx = existingOnboarding?.stageIndex ?? 0;
+          const field = existingOnboarding?.fields?.[idx];
+          if (existingOnboarding?.status === "ready_to_submit") {
+            const summary = Object.entries(existingOnboarding?.collectedData || {})
+              .map(([k, v]) => `- ${k}: ${v}`)
+              .join("\n");
+            const resp = {
+              mainText: `We’re finishing your onboarding. Please review:\n${summary}\n\nReply "Confirm" to submit, or "Edit" to change any detail.`,
+              buttons: ["Confirm and Submit", "Edit Details", "Cancel Onboarding"],
+              emailPrompt: "",
+              showBookingCalendar: false,
+              onboardingAction: "confirm",
+            };
+            return NextResponse.json(resp, { headers: corsHeaders });
+          } else if (field) {
+            const prompt = promptForField(field);
+            const docContext = await buildOnboardingDocContext(
+              field,
+              existingOnboarding?.adminId || undefined,
+              (await getAdminSettings(existingOnboarding?.adminId || "")).onboarding?.docsUrl
+            );
+            const resp = {
+              mainText: `${docContext ? `${docContext}\n\n` : ""}${prompt}`,
+              buttons: ["Cancel Onboarding"],
+              emailPrompt: "",
+              showBookingCalendar: false,
+              onboardingAction: "ask_next",
+            };
+            return NextResponse.json(resp, { headers: corsHeaders });
+          }
+        }
+      } catch (e) {
+        // If gating check fails, continue with auto-response generation
+      }
+
       console.log(
         "[DEBUG] Generating auto-response for contextual question:",
         contextualQuestion
@@ -2088,6 +2198,34 @@ Keep the response conversational and helpful, focusing on providing value before
           error
         );
         // Continue with original response if booking detection fails
+      }
+
+      // Determine current bot mode based on session email
+      let sessionEmailAR: string | null = null;
+      try {
+        const db = await getDb();
+        const chats = db.collection("chats");
+        const lastEmailMsg = await chats.findOne(
+          { sessionId, email: { $exists: true } },
+          { sort: { createdAt: -1 } }
+        );
+        if (lastEmailMsg && lastEmailMsg.email) sessionEmailAR = lastEmailMsg.email;
+      } catch (e) {
+        sessionEmailAR = null;
+      }
+
+      // Sales/Lead exclusivity: if sales is active, do not run lead-gen auto-response
+      if (sessionEmailAR) {
+        const salesAutoResponse = {
+          mainText:
+            "Thanks! Since we have your email, we can move forward. Would you like to schedule a demo, get a detailed pricing breakdown, or connect with sales?",
+          emailPrompt: "",
+          isAutoResponse: true,
+          botMode: "sales",
+          userEmail: sessionEmailAR,
+        };
+        console.log("[DEBUG] Returning sales-mode auto-response:", salesAutoResponse);
+        return NextResponse.json(salesAutoResponse, { headers: corsHeaders });
       }
 
       // Add additional fields for auto-response
@@ -3058,6 +3196,49 @@ Extract key requirements (2-3 bullet points max, be concise):`;
         const fullPageText = pageChunks.join(" ");
         const tokenCount = countTokens(fullPageText);
         console.log(`[Proactive] Page content token count: ${tokenCount}`);
+        // Exclusivity gating: if onboarding is active, suppress proactive lead/sales prompts
+        try {
+          const db = await getDb();
+          const sessionsCollection = db.collection("onboardingSessions");
+          const existingOnboarding = await sessionsCollection.findOne({ sessionId });
+          if (["in_progress", "ready_to_submit"].includes(existingOnboarding?.status || "")) {
+            const idx = existingOnboarding?.stageIndex ?? 0;
+            const field = existingOnboarding?.fields?.[idx];
+            if (existingOnboarding?.status === "ready_to_submit") {
+              const summary = Object.entries(existingOnboarding?.collectedData || {})
+                .map(([k, v]) => `- ${k}: ${v}`)
+                .join("\n");
+              return NextResponse.json(
+                {
+                  mainText: `We’re finishing your onboarding. Please review:\n${summary}\n\nReply "Confirm" to submit, or "Edit" to change any detail.`,
+                  buttons: ["Confirm and Submit", "Edit Details", "Cancel Onboarding"],
+                  emailPrompt: "",
+                  onboardingAction: "confirm",
+                },
+                { headers: corsHeaders }
+              );
+            } else if (field) {
+              const prompt = promptForField(field);
+              const docContext = await buildOnboardingDocContext(
+                field,
+                existingOnboarding?.adminId || undefined,
+                (await getAdminSettings(existingOnboarding?.adminId || "")).onboarding?.docsUrl
+              );
+              return NextResponse.json(
+                {
+                  mainText: `${docContext ? `${docContext}\n\n` : ""}${prompt}`,
+                  buttons: ["Cancel Onboarding"],
+                  emailPrompt: "",
+                  onboardingAction: "ask_next",
+                },
+                { headers: corsHeaders }
+              );
+            }
+          }
+        } catch (e) {
+          // Continue proactive flow if gating check fails
+        }
+
         if (tokenCount > 20000) {
           // Split into 5k-token chunks and summarize each
           const chunkSize = 5000;
@@ -4599,6 +4780,49 @@ What specific information are you looking for? I'm here to help guide you throug
         `[Followup] Simple fallback followup for session ${sessionId}`
       );
 
+      // Exclusivity gating: suppress followups if onboarding is active
+      try {
+        const db = await getDb();
+        const sessionsCollection = db.collection("onboardingSessions");
+        const existingOnboarding = await sessionsCollection.findOne({ sessionId });
+        if (["in_progress", "ready_to_submit"].includes(existingOnboarding?.status || "")) {
+          const idx = existingOnboarding?.stageIndex ?? 0;
+          const field = existingOnboarding?.fields?.[idx];
+          if (existingOnboarding?.status === "ready_to_submit") {
+            const summary = Object.entries(existingOnboarding?.collectedData || {})
+              .map(([k, v]) => `- ${k}: ${v}`)
+              .join("\n");
+            return NextResponse.json(
+              {
+                mainText: `We’re finishing your onboarding. Please review:\n${summary}\n\nReply "Confirm" to submit, or "Edit" to change any detail.`,
+                buttons: ["Confirm and Submit", "Edit Details", "Cancel Onboarding"],
+                emailPrompt: "",
+                onboardingAction: "confirm",
+              },
+              { headers: corsHeaders }
+            );
+          } else if (field) {
+            const prompt = promptForField(field);
+            const docContext = await buildOnboardingDocContext(
+              field,
+              existingOnboarding?.adminId || undefined,
+              (await getAdminSettings(existingOnboarding?.adminId || "")).onboarding?.docsUrl
+            );
+            return NextResponse.json(
+              {
+                mainText: `${docContext ? `${docContext}\n\n` : ""}${prompt}`,
+                buttons: ["Cancel Onboarding"],
+                emailPrompt: "",
+                onboardingAction: "ask_next",
+              },
+              { headers: corsHeaders }
+            );
+          }
+        }
+      } catch (e) {
+        // Continue fallback followup if gating check fails
+      }
+
       // Add bot mode to fallback followup
       let userEmail: string | null = null;
       const lastEmailMsg = await chats.findOne(
@@ -4629,6 +4853,48 @@ What specific information are you looking for? I'm here to help guide you throug
     );
 
     try {
+      // Exclusivity gating: suppress followups if onboarding is active
+      try {
+        const db = await getDb();
+        const sessionsCollection = db.collection("onboardingSessions");
+        const existingOnboarding = await sessionsCollection.findOne({ sessionId });
+        if (["in_progress", "ready_to_submit"].includes(existingOnboarding?.status || "")) {
+          const idx = existingOnboarding?.stageIndex ?? 0;
+          const field = existingOnboarding?.fields?.[idx];
+          if (existingOnboarding?.status === "ready_to_submit") {
+            const summary = Object.entries(existingOnboarding?.collectedData || {})
+              .map(([k, v]) => `- ${k}: ${v}`)
+              .join("\n");
+            return NextResponse.json(
+              {
+                mainText: `We’re finishing your onboarding. Please review:\n${summary}\n\nReply "Confirm" to submit, or "Edit" to change any detail.`,
+                buttons: ["Confirm and Submit", "Edit Details", "Cancel Onboarding"],
+                emailPrompt: "",
+                onboardingAction: "confirm",
+              },
+              { headers: corsHeaders }
+            );
+          } else if (field) {
+            const prompt = promptForField(field);
+            const docContext = await buildOnboardingDocContext(
+              field,
+              existingOnboarding?.adminId || undefined,
+              (await getAdminSettings(existingOnboarding?.adminId || "")).onboarding?.docsUrl
+            );
+            return NextResponse.json(
+              {
+                mainText: `${docContext ? `${docContext}\n\n` : ""}${prompt}`,
+                buttons: ["Cancel Onboarding"],
+                emailPrompt: "",
+                onboardingAction: "ask_next",
+              },
+              { headers: corsHeaders }
+            );
+          }
+        }
+      } catch (e) {
+        // Continue generic followup if gating check fails
+      }
       const followupCount =
         typeof body.followupCount === "number" ? body.followupCount : 0;
 
