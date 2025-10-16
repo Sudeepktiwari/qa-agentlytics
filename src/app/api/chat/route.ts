@@ -516,6 +516,19 @@ function promptForField(field: any): string {
   }
 }
 
+// Build a user-facing summary of collected onboarding data with sensitive fields redacted
+function buildSafeSummary(data: Record<string, any>): string {
+  const redactKeys = ["password", "pass", "secret", "token", "apiKey", "api_key"];
+  return Object.entries(data || {})
+    .map(([k, v]) => {
+      const kl = k.toLowerCase();
+      const isSensitive = redactKeys.some((rk) => kl.includes(rk));
+      const display = isSensitive ? "***" : v;
+      return `- ${k}: ${display}`;
+    })
+    .join("\n");
+}
+
 // Retrieve relevant documentation context. Prefer configured docsUrl; fall back to uploaded docs.
 async function buildOnboardingDocContext(field: any, adminId?: string, docsUrl?: string): Promise<string> {
   try {
@@ -1830,9 +1843,7 @@ export async function POST(req: NextRequest) {
           const idx = existingOnboarding?.stageIndex ?? 0;
           const field = existingOnboarding?.fields?.[idx];
           if (existingOnboarding?.status === "ready_to_submit") {
-            const summary = Object.entries(existingOnboarding?.collectedData || {})
-              .map(([k, v]) => `- ${k}: ${v}`)
-              .join("\n");
+            const summary = buildSafeSummary(existingOnboarding?.collectedData || {});
             const resp = {
               mainText: `We’re finishing your onboarding. Please review:\n${summary}\n\nReply "Confirm" to submit, or "Edit" to change any detail.`,
               buttons: ["Confirm and Submit", "Edit Details", "Cancel Onboarding"],
@@ -1843,9 +1854,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json(resp, { headers: corsHeaders });
           } else if (existingOnboarding?.status === "error") {
             const lastError = existingOnboarding?.lastError || "Registration failed";
-            const summary = Object.entries(existingOnboarding?.collectedData || {})
-              .map(([k, v]) => `- ${k}: ${v}`)
-              .join("\n");
+            const summary = buildSafeSummary(existingOnboarding?.collectedData || {});
             const resp = {
               mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\nReply "Try Again" to resubmit, or "Edit" to change any detail.\n\nCurrent details:\n${summary}`,
               buttons: ["Try Again", "Edit Details", "Cancel Onboarding"],
@@ -2090,9 +2099,7 @@ Based on the page context, create an intelligent contextual question that demons
           const idx = existingOnboarding?.stageIndex ?? 0;
           const field = existingOnboarding?.fields?.[idx];
           if (existingOnboarding?.status === "ready_to_submit") {
-            const summary = Object.entries(existingOnboarding?.collectedData || {})
-              .map(([k, v]) => `- ${k}: ${v}`)
-              .join("\n");
+        const summary = buildSafeSummary(existingOnboarding?.collectedData || {});
             const resp = {
               mainText: `We’re finishing your onboarding. Please review:\n${summary}\n\nReply "Confirm" to submit, or "Edit" to change any detail.`,
               buttons: ["Confirm and Submit", "Edit Details", "Cancel Onboarding"],
@@ -2103,9 +2110,7 @@ Based on the page context, create an intelligent contextual question that demons
             return NextResponse.json(resp, { headers: corsHeaders });
           } else if (existingOnboarding?.status === "error") {
             const lastError = existingOnboarding?.lastError || "Registration failed";
-            const summary = Object.entries(existingOnboarding?.collectedData || {})
-              .map(([k, v]) => `- ${k}: ${v}`)
-              .join("\n");
+            const summary = buildSafeSummary(existingOnboarding?.collectedData || {});
             const resp = {
               mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\nReply "Try Again" to resubmit, or "Edit" to change any detail.\n\nCurrent details:\n${summary}`,
               buttons: ["Try Again", "Edit Details", "Cancel Onboarding"],
@@ -2534,9 +2539,7 @@ Keep the response conversational and helpful, focusing on providing value before
           return NextResponse.json(resp, { headers: corsHeaders });
         } else {
           const lastError = sessionDoc.lastError || "Registration failed";
-          const summary = Object.entries(sessionDoc.collectedData || {})
-            .map(([k, v]) => `- ${k}: ${v}`)
-            .join("\n");
+          const summary = buildSafeSummary(sessionDoc.collectedData || {});
           const resp = {
             mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\nReply "Try Again" to resubmit, or "Edit" to change any detail.\n\nCurrent details:\n${summary}`,
             buttons: ["Try Again", "Edit Details", "Cancel Onboarding"],
@@ -2547,9 +2550,7 @@ Keep the response conversational and helpful, focusing on providing value before
           return NextResponse.json(resp, { headers: corsHeaders });
         }
       } else if (sessionDoc.status !== "ready_to_submit") {
-        const summary = Object.entries(sessionDoc.collectedData || {})
-          .map(([k, v]) => `- ${k}: ${v}`)
-          .join("\n");
+        const summary = buildSafeSummary(sessionDoc.collectedData || {});
         await sessionsCollection.updateOne(
           { sessionId },
           { $set: { status: "ready_to_submit", updatedAt: now } }
@@ -2652,9 +2653,7 @@ Keep the response conversational and helpful, focusing on providing value before
           };
           return NextResponse.json(resp, { headers: corsHeaders });
         } else {
-          const summary = Object.entries(sessionDoc.collectedData || {})
-            .map(([k, v]) => `- ${k}: ${v}`)
-            .join("\n");
+        const summary = buildSafeSummary(sessionDoc.collectedData || {});
           const resp = {
             mainText: `Please reply "Confirm" to submit, or "Edit" to change.\n\nCurrent details:\n${summary}`,
             buttons: ["Confirm and Submit", "Edit Details", "Cancel Onboarding"],
@@ -2703,9 +2702,7 @@ Keep the response conversational and helpful, focusing on providing value before
         { sessionId },
         { $set: { status: "ready_to_submit", updatedAt: now } }
       );
-      const summary = Object.entries(updated || {})
-        .map(([k, v]) => `- ${k}: ${v}`)
-        .join("\n");
+      const summary = buildSafeSummary(updated || {});
       const resp = {
         mainText: `Great, I’ve got everything. Please review:\n${summary}\n\nReply "Confirm" to submit, or say "Edit" to change any detail.`,
         buttons: ["Confirm and Submit", "Edit Details", "Cancel Onboarding"],
@@ -3378,9 +3375,7 @@ Extract key requirements (2-3 bullet points max, be concise):`;
             const idx = existingOnboarding?.stageIndex ?? 0;
             const field = existingOnboarding?.fields?.[idx];
             if (existingOnboarding?.status === "ready_to_submit") {
-              const summary = Object.entries(existingOnboarding?.collectedData || {})
-                .map(([k, v]) => `- ${k}: ${v}`)
-                .join("\n");
+            const summary = buildSafeSummary(existingOnboarding?.collectedData || {});
               return NextResponse.json(
                 {
                   mainText: `We’re finishing your onboarding. Please review:\n${summary}\n\nReply "Confirm" to submit, or "Edit" to change any detail.`,
@@ -3392,9 +3387,7 @@ Extract key requirements (2-3 bullet points max, be concise):`;
               );
             } else if (existingOnboarding?.status === "error") {
               const lastError = existingOnboarding?.lastError || "Registration failed";
-              const summary = Object.entries(existingOnboarding?.collectedData || {})
-                .map(([k, v]) => `- ${k}: ${v}`)
-                .join("\n");
+            const summary = buildSafeSummary(existingOnboarding?.collectedData || {});
               return NextResponse.json(
                 {
                   mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\nReply "Try Again" to resubmit, or "Edit" to change any detail.\n\nCurrent details:\n${summary}`,
@@ -4976,9 +4969,7 @@ What specific information are you looking for? I'm here to help guide you throug
           const idx = existingOnboarding?.stageIndex ?? 0;
           const field = existingOnboarding?.fields?.[idx];
           if (existingOnboarding?.status === "ready_to_submit") {
-            const summary = Object.entries(existingOnboarding?.collectedData || {})
-              .map(([k, v]) => `- ${k}: ${v}`)
-              .join("\n");
+        const summary = buildSafeSummary(existingOnboarding?.collectedData || {});
             return NextResponse.json(
               {
                 mainText: `We’re finishing your onboarding. Please review:\n${summary}\n\nReply "Confirm" to submit, or "Edit" to change any detail.`,
@@ -4990,9 +4981,7 @@ What specific information are you looking for? I'm here to help guide you throug
             );
           } else if (existingOnboarding?.status === "error") {
             const lastError = existingOnboarding?.lastError || "Registration failed";
-            const summary = Object.entries(existingOnboarding?.collectedData || {})
-              .map(([k, v]) => `- ${k}: ${v}`)
-              .join("\n");
+            const summary = buildSafeSummary(existingOnboarding?.collectedData || {});
             return NextResponse.json(
               {
                 mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\nReply "Try Again" to resubmit, or "Edit" to change any detail.\n\nCurrent details:\n${summary}`,
@@ -5063,9 +5052,7 @@ What specific information are you looking for? I'm here to help guide you throug
           const idx = existingOnboarding?.stageIndex ?? 0;
           const field = existingOnboarding?.fields?.[idx];
           if (existingOnboarding?.status === "ready_to_submit") {
-            const summary = Object.entries(existingOnboarding?.collectedData || {})
-              .map(([k, v]) => `- ${k}: ${v}`)
-              .join("\n");
+            const summary = buildSafeSummary(existingOnboarding?.collectedData || {});
             return NextResponse.json(
               {
                 mainText: `We’re finishing your onboarding. Please review:\n${summary}\n\nReply "Confirm" to submit, or "Edit" to change any detail.`,
@@ -5077,9 +5064,7 @@ What specific information are you looking for? I'm here to help guide you throug
             );
           } else if (existingOnboarding?.status === "error") {
             const lastError = existingOnboarding?.lastError || "Registration failed";
-            const summary = Object.entries(existingOnboarding?.collectedData || {})
-              .map(([k, v]) => `- ${k}: ${v}`)
-              .join("\n");
+            const summary = buildSafeSummary(existingOnboarding?.collectedData || {});
             return NextResponse.json(
               {
                 mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\nReply "Try Again" to resubmit, or "Edit" to change any detail.\n\nCurrent details:\n${summary}`,
