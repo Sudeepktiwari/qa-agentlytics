@@ -235,16 +235,28 @@ export const onboardingService = {
       }
 
       if (!res.ok) {
+        const errorMessage = (() => {
+          if (typeof parsed === "string") return parsed;
+          if (!parsed || typeof parsed !== "object") return "Registration failed";
+          const topLevel = (parsed as any).error || (parsed as any).message;
+          const nestedData = (parsed as any)?.data?.error || (parsed as any)?.data?.message;
+          const arrayErrors = Array.isArray((parsed as any)?.errors)
+            ? (parsed as any).errors.map((e: any) => e?.message || e).filter(Boolean).join("; ")
+            : undefined;
+          return topLevel || nestedData || arrayErrors || "Registration failed";
+        })();
+
         console.error("[Onboarding] ❌ External registration failed", {
           status: res.status,
           adminId,
           url,
           responseBody: parsed,
           payload: safePayloadForLog,
+          errorMessage,
         });
         return {
           success: false,
-          error: typeof parsed === "string" ? parsed : parsed?.error || "Registration failed",
+          error: errorMessage,
           status: res.status,
           responseBody: parsed,
         };
