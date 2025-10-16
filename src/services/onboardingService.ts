@@ -1,5 +1,7 @@
 import { getAdminSettings, OnboardingSettings } from "@/lib/adminSettings";
 import { createOrUpdateLead } from "@/lib/leads";
+import { getChunksByPageUrl, querySimilarChunks } from "@/lib/chroma";
+import OpenAI from "openai";
 
 export interface RegistrationResult {
   success: boolean;
@@ -49,6 +51,98 @@ function resolveUrl(settings: OnboardingSettings): string | null {
   return null;
 }
 
+function extractDocKeys(chunks: string[]): string[] {
+  const keys = new Set<string>();
+  for (const chunk of chunks) {
+    const text = (chunk || "").slice(0, 2000);
+    const jsonKeyMatches = [...text.matchAll(/\b["']([a-zA-Z_][a-zA-Z0-9_\-]*)["']\s*:/g)];
+    for (const m of jsonKeyMatches) {
+      const k = m[1];
+      if (k && k.length <= 50) keys.add(k);
+    }
+    const paramMatches = [...text.matchAll(/\b([a-zA-Z_][a-zA-Z0-9_\-]*)\s*=/g)];
+    for (const m of paramMatches) {
+      const k = m[1];
+      if (k && k.length <= 50) keys.add(k);
+    }
+  }
+  return Array.from(keys).slice(0, 50);
+}
+
+function inferContentType(chunks: string[]): "application/json" | "application/x-www-form-urlencoded" {
+  const hint = chunks.join("\n").toLowerCase();
+  if (hint.includes("application/x-www-form-urlencoded") || hint.includes("form-urlencoded")) {
+    return "application/x-www-form-urlencoded";
+  }
+  return "application/json";
+}
+
+function buildFieldMappings(docKeys: string[]): Record<string, string> {
+  const keysLower = new Set(docKeys.map((k) => k.toLowerCase()));
+  const pick = (candidates: string[], fallback: string) => {
+    for (const c of candidates) {
+      if (keysLower.has(c.toLowerCase())) return c;
+    }
+    return fallback;
+  };
+  const mappings: Record<string, string> = {};
+  const emailKey = pick(["email", "user_email", "email_address", "mail"], "email");
+  const firstNameKey = pick(["first_name", "firstName", "given_name", "fname"], "firstName");
+  const lastNameKey = pick(["last_name", "lastName", "surname", "lname"], "lastName");
+  const phoneKey = pick(["phone", "phone_number", "mobile", "contact_number"], "phone");
+  const companyKey = pick(["company", "organization", "org", "business"], "company");
+  const consentKey = pick(["consent", "gdpr_consent", "agree_terms", "accept"], "consent");
+
+  mappings["email"] = emailKey;
+  mappings["firstName"] = firstNameKey;
+  mappings["lastName"] = lastNameKey;
+  mappings["phone"] = phoneKey;
+  mappings["company"] = companyKey;
+  mappings["consent"] = consentKey;
+
+  return mappings;
+}
+
+async function inferRequestFormatFromDocs(adminId: string, docsUrl?: string) {
+  let chunks: string[] = [];
+  try {
+    if (docsUrl) {
+      const pageChunks = await getChunksByPageUrl(adminId, docsUrl);
+      if (Array.isArray(pageChunks) && pageChunks.length > 0) {
+        chunks = pageChunks as string[];
+      }
+    }
+  } catch {}
+
+  if (!chunks || chunks.length === 0) {
+    try {
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      const embedResp = await openai.embeddings.create({
+        input: ["registration required fields and content-type"],
+        model: "text-embedding-3-small",
+      });
+      const embedding = embedResp.data[0].embedding as number[];
+      const similar = await querySimilarChunks(embedding, 5, adminId);
+      chunks = similar as string[];
+    } catch {}
+  }
+
+  const docKeys = extractDocKeys(chunks);
+  const contentType = inferContentType(chunks);
+  const fieldMappings = buildFieldMappings(docKeys);
+
+  return { contentType, fieldMappings };
+}
+
+function applyFieldMappings(data: Record<string, any>, mappings: Record<string, string>) {
+  const out: Record<string, any> = {};
+  for (const [key, value] of Object.entries(data)) {
+    const targetKey = mappings[key] || key;
+    out[targetKey] = value;
+  }
+  return out;
+}
+
 export const onboardingService = {
   async register(data: Record<string, any>, adminId: string): Promise<RegistrationResult> {
     const settings = await getAdminSettings(adminId);
@@ -84,8 +178,9 @@ export const onboardingService = {
       return { success: false, error: "Onboarding URL not configured", status: 400 };
     }
 
+    const { contentType, fieldMappings } = await inferRequestFormatFromDocs(adminId, onboarding.docsUrl);
     const headers: Record<string, string> = {
-      "Content-Type": "application/json",
+      "Content-Type": contentType,
       ...buildAuthHeader(onboarding),
     };
 
@@ -94,7 +189,7 @@ export const onboardingService = {
       headers["Idempotency-Key"] = String(data[onboarding.idempotencyKeyField]);
     }
 
-    const method = onboarding.method || "POST";
+    const method = "POST";
 
     try {
       console.log(
@@ -106,10 +201,18 @@ export const onboardingService = {
           apiKeyPresent: !!onboarding.apiKey,
         }
       );
+      const payload = applyFieldMappings(data, fieldMappings);
+      const body = contentType === "application/x-www-form-urlencoded"
+        ? new URLSearchParams(Object.entries(payload).reduce((acc, [k, v]) => {
+            acc[k] = typeof v === "string" ? v : JSON.stringify(v);
+            return acc;
+          }, {} as Record<string, string>)).toString()
+        : JSON.stringify(payload);
+
       const res = await fetch(url, {
         method,
         headers,
-        body: JSON.stringify(data),
+        body,
       });
 
       const bodyText = await res.text();

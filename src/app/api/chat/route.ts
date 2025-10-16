@@ -441,6 +441,63 @@ function detectOnboardingIntent(text?: string): boolean {
   return re.test(text);
 }
 
+// Infer likely required fields from admin documentation (docsUrl first, then uploaded docs)
+async function inferFieldsFromDocs(adminId?: string, docsUrl?: string): Promise<any[]> {
+  try {
+    let chunks: string[] = [];
+    if (adminId && docsUrl) {
+      const pageChunks = await getChunksByPageUrl(adminId, docsUrl);
+      if (Array.isArray(pageChunks) && pageChunks.length > 0) {
+        chunks = pageChunks as string[];
+      }
+    }
+    if ((!chunks || chunks.length === 0) && adminId) {
+      const OpenAI = (await import("openai")).default;
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      const embedResp = await openai.embeddings.create({
+        input: ["registration required fields"],
+        model: "text-embedding-3-small",
+      });
+      const embedding = embedResp.data[0].embedding as number[];
+      const similar = await querySimilarChunks(embedding, 5, adminId);
+      chunks = similar as string[];
+    }
+
+    if (!chunks || chunks.length === 0) return [];
+
+    const text = chunks.join("\n").toLowerCase();
+    const hasEmail = /\b(email|user_email|email_address|mail)\b/.test(text);
+    const hasFirst = /\b(first[_\s]?name|given[_\s]?name|fname)\b/.test(text);
+    const hasLast = /\b(last[_\s]?name|surname|lname)\b/.test(text);
+    const hasPhone = /\b(phone|phone[_\s]?number|mobile|contact[_\s]?number)\b/.test(text);
+    const hasCompany = /\b(company|organization|org|business)\b/.test(text);
+    const hasConsent = /\b(consent|gdpr|agree[_\s]?terms|accept)\b/.test(text);
+
+    const out: any[] = [];
+    const pushUnique = (arr: any[], field: any) => {
+      if (!arr.find((f) => f.key === field.key)) arr.push(field);
+    };
+
+    if (hasEmail) pushUnique(out, { key: "email", label: "Email", required: true, type: "email" });
+    if (hasFirst) pushUnique(out, { key: "firstName", label: "First Name", required: true, type: "text" });
+    if (hasLast) pushUnique(out, { key: "lastName", label: "Last Name", required: false, type: "text" });
+    if (hasPhone) pushUnique(out, { key: "phone", label: "Phone", required: false, type: "phone" });
+    if (hasCompany) pushUnique(out, { key: "company", label: "Company", required: false, type: "text" });
+    if (hasConsent) pushUnique(out, { key: "consent", label: "Consent", required: false, type: "checkbox" });
+
+    return out;
+  } catch {
+    return [];
+  }
+}
+
+function mergeFields(base: any[], extras: any[]): any[] {
+  const byKey = new Map<string, any>();
+  for (const f of base) byKey.set(f.key, f);
+  for (const f of extras) if (!byKey.has(f.key)) byKey.set(f.key, f);
+  return Array.from(byKey.values());
+}
+
 function promptForField(field: any): string {
   const base = field.label || field.key;
   switch (field.type) {
@@ -457,15 +514,9 @@ function promptForField(field: any): string {
   }
 }
 
-// Retrieve relevant documentation context strictly from the configured docsUrl
+// Retrieve relevant documentation context. Prefer configured docsUrl; fall back to uploaded docs.
 async function buildOnboardingDocContext(field: any, adminId?: string, docsUrl?: string): Promise<string> {
   try {
-    // Only show context when a specific onboarding docs URL is configured
-    if (!docsUrl || !adminId) return "";
-
-    const chunks = await getChunksByPageUrl(adminId, docsUrl);
-    if (!chunks || chunks.length === 0) return "";
-
     const label = (field.label || field.key || "information").toLowerCase();
     const labelTerms = [label, "email"]; // prioritize field-specific terms
     const requiredTerms = [
@@ -487,14 +538,37 @@ async function buildOnboardingDocContext(field: any, adminId?: string, docsUrl?:
       "slides",
     ];
 
+    let chunks: string[] = [];
+
+    // Primary: use the configured docsUrl tied to this admin
+    if (adminId && docsUrl) {
+      const pageChunks = await getChunksByPageUrl(adminId, docsUrl);
+      if (Array.isArray(pageChunks) && pageChunks.length > 0) {
+        chunks = pageChunks as string[];
+      }
+    }
+
+    // Fallback: use uploaded docs via semantic retrieval
+    if ((!chunks || chunks.length === 0) && adminId) {
+      const OpenAI = (await import("openai")).default;
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      const query = `registration ${label} requirement`;
+      const embedResp = await openai.embeddings.create({
+        input: [query],
+        model: "text-embedding-3-small",
+      });
+      const embedding = embedResp.data[0].embedding as number[];
+      const similar = await querySimilarChunks(embedding, 5, adminId);
+      chunks = similar as string[];
+    }
+
+    if (!chunks || chunks.length === 0) return "";
+
     const matches = chunks.filter((c) => {
       const text = (c || "").toLowerCase();
-      // Exclude common navigation/marketing headings
       if (stoplist.some((s) => text.includes(s))) return false;
-      // Require at least one label term and one registration-related term
       const hasLabel = labelTerms.some((t) => text.includes(t));
       const hasReg = requiredTerms.some((t) => text.includes(t));
-      // Keep reasonably sized snippets to avoid overwhelming blocks
       const isReasonable = text.length <= 600;
       return hasLabel && hasReg && isReasonable;
     });
@@ -2122,16 +2196,24 @@ Keep the response conversational and helpful, focusing on providing value before
   const sessionsCollection = db.collection("onboardingSessions");
   const existingOnboarding = await sessionsCollection.findOne({ sessionId });
   const isOnboardingAction = question && /\bcancel onboarding\b/i.test(question || "");
-  const isOnboardingIntent = onboardingEnabled && (detectOnboardingIntent(question) || existingOnboarding?.status === "in_progress" || isOnboardingAction);
+  const isOnboardingIntent =
+    onboardingEnabled &&
+    (detectOnboardingIntent(question) ||
+      ["in_progress", "ready_to_submit"].includes(existingOnboarding?.status || "") ||
+      isOnboardingAction);
 
   if (isOnboardingIntent) {
-    const fields = (onboardingConfig?.fields && onboardingConfig.fields.length > 0)
+    const configuredFields = (onboardingConfig?.fields && onboardingConfig.fields.length > 0)
       ? onboardingConfig.fields
       : [
           { key: "email", label: "Email", required: true, type: "email" },
           { key: "firstName", label: "First Name", required: true, type: "text" },
           { key: "lastName", label: "Last Name", required: false, type: "text" },
         ];
+
+    // Derive extra fields from admin docs and merge
+    const docDerived = await inferFieldsFromDocs(adminId || undefined, onboardingConfig?.docsUrl);
+    const fields = mergeFields(configuredFields, docDerived);
 
     // Ask only relevant (required) questions by default
     const sessionFields = fields.filter((f: any) => f.required) as any[];
@@ -2175,8 +2257,13 @@ Keep the response conversational and helpful, focusing on providing value before
       const intro = `I’ll help create your account. I’ll ask a few quick details.`;
 
       const prompt = promptForField(fieldsToAsk[0]);
+      const docContext = await buildOnboardingDocContext(
+        fieldsToAsk[0],
+        adminId || undefined,
+        onboardingConfig?.docsUrl
+      );
       const resp = {
-        mainText: `${intro}\n\n${prompt}`,
+        mainText: `${docContext ? `${docContext}\n\n` : ""}${intro}\n\n${prompt}`,
         buttons: ["Cancel Onboarding"],
         emailPrompt: "",
         showBookingCalendar: false,
@@ -2189,41 +2276,97 @@ Keep the response conversational and helpful, focusing on providing value before
     const idx = sessionDoc.stageIndex || 0;
     const currentField = sessionDoc.fields[idx];
     if (!currentField) {
-      // No more fields; submit
-      const payload = { ...(sessionDoc.collectedData || {}), sessionId, pageUrl };
-      const result = adminId ? await onboardingService.register(payload, adminId) : { success: false, error: "Missing adminId" };
+      // No more fields; require client confirmation before submitting
+      if (sessionDoc.status !== "ready_to_submit") {
+        const summary = Object.entries(sessionDoc.collectedData || {})
+          .map(([k, v]) => `- ${k}: ${v}`)
+          .join("\n");
+        await sessionsCollection.updateOne(
+          { sessionId },
+          { $set: { status: "ready_to_submit", updatedAt: now } }
+        );
+        const resp = {
+          mainText: `Please review your details:\n${summary}\n\nReply "Confirm" to submit, or say "Edit" to change any detail.`,
+          buttons: ["Confirm and Submit", "Edit Details", "Cancel Onboarding"],
+          emailPrompt: "",
+          showBookingCalendar: false,
+          onboardingAction: "confirm",
+        };
+        return NextResponse.json(resp, { headers: corsHeaders });
+      } else {
+        const lower = (question || "").toLowerCase();
+        if (/\b(confirm|submit|looks good|yes)\b/.test(lower)) {
+          const payload = { ...(sessionDoc.collectedData || {}) };
+          const result = adminId ? await onboardingService.register(payload, adminId) : { success: false, error: "Missing adminId" };
 
-      const newStatus = result.success ? "completed" : "error";
-      await sessionsCollection.updateOne(
-        { sessionId },
-        { $set: { status: newStatus, updatedAt: now, registeredUserId: result.userId || null, lastError: result.error || null } }
-      );
+          const newStatus = result.success ? "completed" : "error";
+          await sessionsCollection.updateOne(
+            { sessionId },
+            { $set: { status: newStatus, updatedAt: now, registeredUserId: result.userId || null, lastError: result.error || null } }
+          );
 
-      const resp = result.success
-        ? {
-            mainText: "✅ You’re all set! Your account has been created.",
-            buttons: ["Log In", "Talk to Sales"],
+          const resp = result.success
+            ? {
+                mainText: "✅ You’re all set! Your account has been created.",
+                buttons: ["Log In", "Talk to Sales"],
+                emailPrompt: "",
+                showBookingCalendar: false,
+                onboardingAction: "completed",
+              }
+            : {
+                mainText: `⚠️ We couldn’t complete registration: ${result.error || "Unknown error"}.`,
+                buttons: ["Try Again", "Contact Support"],
+                emailPrompt: "",
+                showBookingCalendar: false,
+                onboardingAction: "error",
+              };
+          return NextResponse.json(resp, { headers: corsHeaders });
+        } else if (/\b(edit|change|update)\b/.test(lower)) {
+          await sessionsCollection.updateOne(
+            { sessionId },
+            { $set: { status: "in_progress", stageIndex: 0, updatedAt: now } }
+          );
+          const prompt = promptForField(sessionDoc.fields[0]);
+          const docContext = await buildOnboardingDocContext(
+            sessionDoc.fields[0],
+            adminId || undefined,
+            onboardingConfig?.docsUrl
+          );
+          const resp = {
+            mainText: `${docContext ? `${docContext}\n\n` : ""}${prompt}`,
+            buttons: ["Cancel Onboarding"],
             emailPrompt: "",
             showBookingCalendar: false,
-            onboardingAction: "completed",
-          }
-        : {
-            mainText: `⚠️ We couldn’t complete registration: ${result.error || "Unknown error"}.`,
-            buttons: ["Try Again", "Contact Support"],
-            emailPrompt: "",
-            showBookingCalendar: false,
-            onboardingAction: "error",
+            onboardingAction: "ask_next",
           };
-
-      return NextResponse.json(resp, { headers: corsHeaders });
+          return NextResponse.json(resp, { headers: corsHeaders });
+        } else {
+          const summary = Object.entries(sessionDoc.collectedData || {})
+            .map(([k, v]) => `- ${k}: ${v}`)
+            .join("\n");
+          const resp = {
+            mainText: `Please reply "Confirm" to submit, or "Edit" to change.\n\nCurrent details:\n${summary}`,
+            buttons: ["Confirm and Submit", "Edit Details", "Cancel Onboarding"],
+            emailPrompt: "",
+            showBookingCalendar: false,
+            onboardingAction: "confirm",
+          };
+          return NextResponse.json(resp, { headers: corsHeaders });
+        }
+      }
     }
 
     // Validate and store answer
     const ans = (question || "").trim();
     const check = validateAnswer(currentField, ans);
     if (!check.valid) {
+      const docContext = await buildOnboardingDocContext(
+        currentField,
+        adminId || undefined,
+        onboardingConfig?.docsUrl
+      );
       const resp = {
-        mainText: `${check.message || `Please provide your ${currentField.label || currentField.key}.`}`,
+        mainText: `${docContext ? `${docContext}\n\n` : ""}${check.message || `Please provide your ${currentField.label || currentField.key}.`}`,
         buttons: ["Cancel Onboarding"],
         emailPrompt: "",
         showBookingCalendar: false,
@@ -2244,38 +2387,32 @@ Keep the response conversational and helpful, focusing on providing value before
 
     const nextField = sessionDoc.fields[nextIndex];
     if (!nextField) {
-      // All done: submit
-      const payload = { ...updated, sessionId, pageUrl };
-      const result = adminId ? await onboardingService.register(payload, adminId) : { success: false, error: "Missing adminId" };
-
-      const newStatus = result.success ? "completed" : "error";
+      // Move to confirmation step after last field
       await sessionsCollection.updateOne(
         { sessionId },
-        { $set: { status: newStatus, updatedAt: now, registeredUserId: result.userId || null, lastError: result.error || null } }
+        { $set: { status: "ready_to_submit", updatedAt: now } }
       );
-
-      const resp = result.success
-        ? {
-            mainText: "✅ You’re all set! Your account has been created.",
-            buttons: ["Log In", "Talk to Sales"],
-            emailPrompt: "",
-            showBookingCalendar: false,
-            onboardingAction: "completed",
-          }
-        : {
-            mainText: `⚠️ We couldn’t complete registration: ${result.error || "Unknown error"}.`,
-            buttons: ["Try Again", "Contact Support"],
-            emailPrompt: "",
-            showBookingCalendar: false,
-            onboardingAction: "error",
-          };
-
+      const summary = Object.entries(updated || {})
+        .map(([k, v]) => `- ${k}: ${v}`)
+        .join("\n");
+      const resp = {
+        mainText: `Great, I’ve got everything. Please review:\n${summary}\n\nReply "Confirm" to submit, or say "Edit" to change any detail.`,
+        buttons: ["Confirm and Submit", "Edit Details", "Cancel Onboarding"],
+        emailPrompt: "",
+        showBookingCalendar: false,
+        onboardingAction: "confirm",
+      };
       return NextResponse.json(resp, { headers: corsHeaders });
     }
 
     const prompt = promptForField(nextField);
+    const docContext = await buildOnboardingDocContext(
+      nextField,
+      adminId || undefined,
+      onboardingConfig?.docsUrl
+    );
     const resp = {
-      mainText: `${prompt}`,
+      mainText: `${docContext ? `${docContext}\n\n` : ""}${prompt}`,
       buttons: ["Cancel Onboarding"],
       emailPrompt: "",
       showBookingCalendar: false,
