@@ -195,7 +195,7 @@ export const onboardingService = {
     const redactKeys = ["password", "pass", "secret", "token", "apikey", "api_key", "key"];
 
     // Build payload according to doc-inferred mappings
-    let payload = applyFieldMappings(data, fieldMappings);
+    const payload = applyFieldMappings(data, fieldMappings);
 
     // Common fallback: if firstName and lastName exist but name is missing, combine into name
     if (!("name" in payload)) {
