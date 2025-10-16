@@ -2488,6 +2488,46 @@ Keep the response conversational and helpful, focusing on providing value before
             { $set: { status: newStatus, updatedAt: now, registeredUserId: result.userId || null, lastError: result.error || null } }
           );
 
+          // If registration failed, try to surface specific error details from the external API response
+          let detailsText = "";
+          if (!result.success && result.responseBody) {
+            const rb: any = result.responseBody;
+            const collectErrors = (errs: any[]): string[] => {
+              return errs
+                .map((e) => {
+                  try {
+                    if (!e) return null;
+                    if (typeof e === "string") return e;
+                    if (typeof e === "object") {
+                      const field = e.field || e.path || e.name || null;
+                      const msg = e.message || e.detail || e.error || e.reason || null;
+                      if (field && msg) return `${field}: ${msg}`;
+                      return msg || JSON.stringify(e).slice(0, 200);
+                    }
+                    return String(e);
+                  } catch {
+                    return null;
+                  }
+                })
+                .filter(Boolean) as string[];
+            };
+
+            try {
+              let errorItems: string[] = [];
+              if (Array.isArray(rb?.errors)) {
+                errorItems = collectErrors(rb.errors);
+              } else if (Array.isArray(rb?.data?.errors)) {
+                errorItems = collectErrors(rb.data.errors);
+              } else if (rb?.data && typeof rb.data === "object" && Array.isArray(rb.data)) {
+                errorItems = collectErrors(rb.data);
+              }
+
+              if (errorItems.length > 0) {
+                detailsText = `\n\nDetails:\n- ${errorItems.join("\n- ")}`;
+              }
+            } catch {}
+          }
+
           const resp = result.success
             ? {
                 mainText: "✅ You’re all set! Your account has been created.",
@@ -2497,7 +2537,7 @@ Keep the response conversational and helpful, focusing on providing value before
                 onboardingAction: "completed",
               }
             : {
-                mainText: `⚠️ We couldn’t complete registration: ${result.error || "Unknown error"}.`,
+                mainText: `⚠️ We couldn’t complete registration: ${result.error || "Unknown error"}.${detailsText}`,
                 buttons: ["Try Again", "Edit Details", "Cancel Onboarding"],
                 emailPrompt: "",
                 showBookingCalendar: false,
@@ -2603,6 +2643,46 @@ Keep the response conversational and helpful, focusing on providing value before
             { $set: { status: newStatus, updatedAt: now, registeredUserId: result.userId || null, lastError: result.error || null } }
           );
 
+          // If registration failed, try to surface specific error details from the external API response
+          let detailsText2 = "";
+          if (!result.success && result.responseBody) {
+            const rb2: any = result.responseBody;
+            const collectErrors2 = (errs: any[]): string[] => {
+              return errs
+                .map((e) => {
+                  try {
+                    if (!e) return null;
+                    if (typeof e === "string") return e;
+                    if (typeof e === "object") {
+                      const field = e.field || e.path || e.name || null;
+                      const msg = e.message || e.detail || e.error || e.reason || null;
+                      if (field && msg) return `${field}: ${msg}`;
+                      return msg || JSON.stringify(e).slice(0, 200);
+                    }
+                    return String(e);
+                  } catch {
+                    return null;
+                  }
+                })
+                .filter(Boolean) as string[];
+            };
+
+            try {
+              let errorItems2: string[] = [];
+              if (Array.isArray(rb2?.errors)) {
+                errorItems2 = collectErrors2(rb2.errors);
+              } else if (Array.isArray(rb2?.data?.errors)) {
+                errorItems2 = collectErrors2(rb2.data.errors);
+              } else if (rb2?.data && typeof rb2.data === "object" && Array.isArray(rb2.data)) {
+                errorItems2 = collectErrors2(rb2.data);
+              }
+
+              if (errorItems2.length > 0) {
+                detailsText2 = `\n\nDetails:\n- ${errorItems2.join("\n- ")}`;
+              }
+            } catch {}
+          }
+
           const resp = result.success
             ? {
                 mainText: "✅ You’re all set! Your account has been created.",
@@ -2612,7 +2692,7 @@ Keep the response conversational and helpful, focusing on providing value before
                 onboardingAction: "completed",
               }
             : {
-                mainText: `⚠️ We couldn’t complete registration: ${result.error || "Unknown error"}.`,
+                mainText: `⚠️ We couldn’t complete registration: ${result.error || "Unknown error"}.${detailsText2}`,
                 buttons: ["Try Again", "Edit Details", "Cancel Onboarding"],
                 emailPrompt: "",
                 showBookingCalendar: false,

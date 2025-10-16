@@ -191,11 +191,24 @@ export const onboardingService = {
 
     const method = "POST";
 
-    // Prepare a safe-to-log version of the payload with sensitive fields redacted
-    const rawPayloadForLog = applyFieldMappings(data, fieldMappings);
+    // Sensitive keys we should redact in logs
     const redactKeys = ["password", "pass", "secret", "token", "apikey", "api_key", "key"];
+
+    // Build payload according to doc-inferred mappings
+    let payload = applyFieldMappings(data, fieldMappings);
+
+    // Common fallback: if firstName and lastName exist but name is missing, combine into name
+    if (!("name" in payload)) {
+      const fn = payload.firstName || payload.first_name || payload.given_name;
+      const ln = payload.lastName || payload.last_name || payload.surname;
+      if (typeof fn === "string" && fn.trim() && typeof ln === "string" && ln.trim()) {
+        payload.name = `${fn.trim()} ${ln.trim()}`;
+      }
+    }
+
+    // Build safe-to-log payload after final payload shape is determined
     const safePayloadForLog = Object.fromEntries(
-      Object.entries(rawPayloadForLog).map(([k, v]) => {
+      Object.entries(payload).map(([k, v]) => {
         const kl = k.toLowerCase();
         const isSensitive = redactKeys.some((rk) => kl.includes(rk));
         return [k, isSensitive ? "***" : v];
@@ -203,6 +216,8 @@ export const onboardingService = {
     );
 
     try {
+
+      // Log call metadata with payload keys for verification
       console.log(
         "[Onboarding] Calling external registration API:",
         {
@@ -210,9 +225,10 @@ export const onboardingService = {
           method,
           headerKeyUsed: onboarding.authHeaderKey || "Authorization",
           apiKeyPresent: !!onboarding.apiKey,
+          contentType,
+          payloadKeys: Object.keys(payload),
         }
       );
-      const payload = applyFieldMappings(data, fieldMappings);
       const body = contentType === "application/x-www-form-urlencoded"
         ? new URLSearchParams(Object.entries(payload).reduce((acc, [k, v]) => {
             acc[k] = typeof v === "string" ? v : JSON.stringify(v);
