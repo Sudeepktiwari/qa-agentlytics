@@ -110,6 +110,7 @@ export const DEFAULT_ADMIN_SETTINGS: Omit<AdminSettings, "_id" | "adminId" | "em
     fields: [
       { key: "email", label: "Email", required: true, type: "email" },
       { key: "firstName", label: "First Name", required: true, type: "text" },
+      { key: "password", label: "Password", required: true, type: "text", validations: { minLength: 8 } },
       { key: "lastName", label: "Last Name", required: true, type: "text" },
       { key: "company", label: "Company", required: false, type: "text" },
     ],

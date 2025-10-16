@@ -470,6 +470,7 @@ async function inferFieldsFromDocs(adminId?: string, docsUrl?: string): Promise<
     const hasFirst = /\b(first[_\s]?name|given[_\s]?name|fname)\b/.test(text);
     const hasLast = /\b(last[_\s]?name|surname|lname)\b/.test(text);
     const hasPhone = /\b(phone|phone[_\s]?number|mobile|contact[_\s]?number)\b/.test(text);
+    const hasPassword = /\b(password|passphrase|pwd)\b/.test(text);
     const hasCompany = /\b(company|organization|org|business)\b/.test(text);
     const hasConsent = /\b(consent|gdpr|agree[_\s]?terms|accept)\b/.test(text);
 
@@ -482,6 +483,7 @@ async function inferFieldsFromDocs(adminId?: string, docsUrl?: string): Promise<
     if (hasFirst) pushUnique(out, { key: "firstName", label: "First Name", required: true, type: "text" });
     if (hasLast) pushUnique(out, { key: "lastName", label: "Last Name", required: false, type: "text" });
     if (hasPhone) pushUnique(out, { key: "phone", label: "Phone", required: false, type: "phone" });
+    if (hasPassword) pushUnique(out, { key: "password", label: "Password", required: true, type: "text", validations: { minLength: 8 } });
     if (hasCompany) pushUnique(out, { key: "company", label: "Company", required: false, type: "text" });
     if (hasConsent) pushUnique(out, { key: "consent", label: "Consent", required: false, type: "checkbox" });
 
@@ -1824,7 +1826,7 @@ export async function POST(req: NextRequest) {
         const db = await getDb();
         const sessionsCollection = db.collection("onboardingSessions");
         const existingOnboarding = await sessionsCollection.findOne({ sessionId });
-        if (["in_progress", "ready_to_submit"].includes(existingOnboarding?.status || "")) {
+        if (["in_progress", "ready_to_submit", "error"].includes(existingOnboarding?.status || "")) {
           const idx = existingOnboarding?.stageIndex ?? 0;
           const field = existingOnboarding?.fields?.[idx];
           if (existingOnboarding?.status === "ready_to_submit") {
@@ -1837,6 +1839,19 @@ export async function POST(req: NextRequest) {
               emailPrompt: "",
               showBookingCalendar: false,
               onboardingAction: "confirm",
+            };
+            return NextResponse.json(resp, { headers: corsHeaders });
+          } else if (existingOnboarding?.status === "error") {
+            const lastError = existingOnboarding?.lastError || "Registration failed";
+            const summary = Object.entries(existingOnboarding?.collectedData || {})
+              .map(([k, v]) => `- ${k}: ${v}`)
+              .join("\n");
+            const resp = {
+              mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\nReply "Try Again" to resubmit, or "Edit" to change any detail.\n\nCurrent details:\n${summary}`,
+              buttons: ["Try Again", "Edit Details", "Cancel Onboarding"],
+              emailPrompt: "",
+              showBookingCalendar: false,
+              onboardingAction: "error",
             };
             return NextResponse.json(resp, { headers: corsHeaders });
           } else if (field) {
@@ -2071,7 +2086,7 @@ Based on the page context, create an intelligent contextual question that demons
         const db = await getDb();
         const sessionsCollection = db.collection("onboardingSessions");
         const existingOnboarding = await sessionsCollection.findOne({ sessionId });
-        if (["in_progress", "ready_to_submit"].includes(existingOnboarding?.status || "")) {
+        if (["in_progress", "ready_to_submit", "error"].includes(existingOnboarding?.status || "")) {
           const idx = existingOnboarding?.stageIndex ?? 0;
           const field = existingOnboarding?.fields?.[idx];
           if (existingOnboarding?.status === "ready_to_submit") {
@@ -2084,6 +2099,19 @@ Based on the page context, create an intelligent contextual question that demons
               emailPrompt: "",
               showBookingCalendar: false,
               onboardingAction: "confirm",
+            };
+            return NextResponse.json(resp, { headers: corsHeaders });
+          } else if (existingOnboarding?.status === "error") {
+            const lastError = existingOnboarding?.lastError || "Registration failed";
+            const summary = Object.entries(existingOnboarding?.collectedData || {})
+              .map(([k, v]) => `- ${k}: ${v}`)
+              .join("\n");
+            const resp = {
+              mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\nReply "Try Again" to resubmit, or "Edit" to change any detail.\n\nCurrent details:\n${summary}`,
+              buttons: ["Try Again", "Edit Details", "Cancel Onboarding"],
+              emailPrompt: "",
+              showBookingCalendar: false,
+              onboardingAction: "error",
             };
             return NextResponse.json(resp, { headers: corsHeaders });
           } else if (field) {
@@ -2337,7 +2365,7 @@ Keep the response conversational and helpful, focusing on providing value before
   const isOnboardingIntent =
     onboardingEnabled &&
     (detectOnboardingIntent(question) ||
-      ["in_progress", "ready_to_submit"].includes(existingOnboarding?.status || "") ||
+      ["in_progress", "ready_to_submit", "error"].includes(existingOnboarding?.status || "") ||
       isOnboardingAction);
 
   if (isOnboardingIntent) {
@@ -2346,6 +2374,7 @@ Keep the response conversational and helpful, focusing on providing value before
       : [
           { key: "email", label: "Email", required: true, type: "email" },
           { key: "firstName", label: "First Name", required: true, type: "text" },
+          { key: "password", label: "Password", required: true, type: "text", validations: { minLength: 8 } },
           { key: "lastName", label: "Last Name", required: false, type: "text" },
         ];
 
@@ -2414,26 +2443,10 @@ Keep the response conversational and helpful, focusing on providing value before
     const idx = sessionDoc.stageIndex || 0;
     const currentField = sessionDoc.fields[idx];
     if (!currentField) {
-      // No more fields; require client confirmation before submitting
-      if (sessionDoc.status !== "ready_to_submit") {
-        const summary = Object.entries(sessionDoc.collectedData || {})
-          .map(([k, v]) => `- ${k}: ${v}`)
-          .join("\n");
-        await sessionsCollection.updateOne(
-          { sessionId },
-          { $set: { status: "ready_to_submit", updatedAt: now } }
-        );
-        const resp = {
-          mainText: `Please review your details:\n${summary}\n\nReply "Confirm" to submit, or say "Edit" to change any detail.`,
-          buttons: ["Confirm and Submit", "Edit Details", "Cancel Onboarding"],
-          emailPrompt: "",
-          showBookingCalendar: false,
-          onboardingAction: "confirm",
-        };
-        return NextResponse.json(resp, { headers: corsHeaders });
-      } else {
+      // No more fields; handle confirmation or error retry flows
+      if (sessionDoc.status === "error") {
         const lower = (question || "").toLowerCase();
-        if (/\b(confirm|submit|looks good|yes)\b/.test(lower)) {
+        if (/\b(try again|retry|resubmit|confirm|submit)\b/.test(lower)) {
           const payload = { ...(sessionDoc.collectedData || {}) };
           const result = adminId ? await onboardingService.register(payload, adminId) : { success: false, error: "Missing adminId" };
 
@@ -2453,7 +2466,7 @@ Keep the response conversational and helpful, focusing on providing value before
               }
             : {
                 mainText: `⚠️ We couldn’t complete registration: ${result.error || "Unknown error"}.`,
-                buttons: ["Try Again", "Contact Support"],
+                buttons: ["Try Again", "Edit Details", "Cancel Onboarding"],
                 emailPrompt: "",
                 showBookingCalendar: false,
                 onboardingAction: "error",
@@ -2476,6 +2489,111 @@ Keep the response conversational and helpful, focusing on providing value before
             emailPrompt: "",
             showBookingCalendar: false,
             onboardingAction: "ask_next",
+          };
+          return NextResponse.json(resp, { headers: corsHeaders });
+        } else if (/\bcancel onboarding\b/.test(lower)) {
+          await sessionsCollection.updateOne(
+            { sessionId },
+            { $set: { status: "cancelled", updatedAt: now } },
+            { upsert: true }
+          );
+          const resp = {
+            mainText: "Okay, I’ve cancelled onboarding. Would you like sales or support?",
+            buttons: ["Talk to Sales", "Contact Support"],
+            emailPrompt: "",
+            showBookingCalendar: false,
+            onboardingAction: "cancelled",
+          };
+          return NextResponse.json(resp, { headers: corsHeaders });
+        } else {
+          const lastError = sessionDoc.lastError || "Registration failed";
+          const summary = Object.entries(sessionDoc.collectedData || {})
+            .map(([k, v]) => `- ${k}: ${v}`)
+            .join("\n");
+          const resp = {
+            mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\nReply "Try Again" to resubmit, or "Edit" to change any detail.\n\nCurrent details:\n${summary}`,
+            buttons: ["Try Again", "Edit Details", "Cancel Onboarding"],
+            emailPrompt: "",
+            showBookingCalendar: false,
+            onboardingAction: "error",
+          };
+          return NextResponse.json(resp, { headers: corsHeaders });
+        }
+      } else if (sessionDoc.status !== "ready_to_submit") {
+        const summary = Object.entries(sessionDoc.collectedData || {})
+          .map(([k, v]) => `- ${k}: ${v}`)
+          .join("\n");
+        await sessionsCollection.updateOne(
+          { sessionId },
+          { $set: { status: "ready_to_submit", updatedAt: now } }
+        );
+        const resp = {
+          mainText: `Please review your details:\n${summary}\n\nReply "Confirm" to submit, or say "Edit" to change any detail.`,
+          buttons: ["Confirm and Submit", "Edit Details", "Cancel Onboarding"],
+          emailPrompt: "",
+          showBookingCalendar: false,
+          onboardingAction: "confirm",
+        };
+        return NextResponse.json(resp, { headers: corsHeaders });
+      } else {
+        const lower = (question || "").toLowerCase();
+        if (/\b(confirm|submit|looks good|yes|try again|retry|resubmit)\b/.test(lower)) {
+          const payload = { ...(sessionDoc.collectedData || {}) };
+          const result = adminId ? await onboardingService.register(payload, adminId) : { success: false, error: "Missing adminId" };
+
+          const newStatus = result.success ? "completed" : "error";
+          await sessionsCollection.updateOne(
+            { sessionId },
+            { $set: { status: newStatus, updatedAt: now, registeredUserId: result.userId || null, lastError: result.error || null } }
+          );
+
+          const resp = result.success
+            ? {
+                mainText: "✅ You’re all set! Your account has been created.",
+                buttons: ["Log In", "Talk to Sales"],
+                emailPrompt: "",
+                showBookingCalendar: false,
+                onboardingAction: "completed",
+              }
+            : {
+                mainText: `⚠️ We couldn’t complete registration: ${result.error || "Unknown error"}.`,
+                buttons: ["Try Again", "Edit Details", "Cancel Onboarding"],
+                emailPrompt: "",
+                showBookingCalendar: false,
+                onboardingAction: "error",
+              };
+          return NextResponse.json(resp, { headers: corsHeaders });
+        } else if (/\b(edit|change|update)\b/.test(lower)) {
+          await sessionsCollection.updateOne(
+            { sessionId },
+            { $set: { status: "in_progress", stageIndex: 0, updatedAt: now } }
+          );
+          const prompt = promptForField(sessionDoc.fields[0]);
+          const docContext = await buildOnboardingDocContext(
+            sessionDoc.fields[0],
+            adminId || undefined,
+            onboardingConfig?.docsUrl
+          );
+          const resp = {
+            mainText: `${docContext ? `${docContext}\n\n` : ""}${prompt}`,
+            buttons: ["Cancel Onboarding"],
+            emailPrompt: "",
+            showBookingCalendar: false,
+            onboardingAction: "ask_next",
+          };
+          return NextResponse.json(resp, { headers: corsHeaders });
+        } else if (/\bcancel onboarding\b/.test(lower)) {
+          await sessionsCollection.updateOne(
+            { sessionId },
+            { $set: { status: "cancelled", updatedAt: now } },
+            { upsert: true }
+          );
+          const resp = {
+            mainText: "Okay, I’ve cancelled onboarding. Would you like sales or support?",
+            buttons: ["Talk to Sales", "Contact Support"],
+            emailPrompt: "",
+            showBookingCalendar: false,
+            onboardingAction: "cancelled",
           };
           return NextResponse.json(resp, { headers: corsHeaders });
         } else {
@@ -3201,7 +3319,7 @@ Extract key requirements (2-3 bullet points max, be concise):`;
           const db = await getDb();
           const sessionsCollection = db.collection("onboardingSessions");
           const existingOnboarding = await sessionsCollection.findOne({ sessionId });
-          if (["in_progress", "ready_to_submit"].includes(existingOnboarding?.status || "")) {
+          if (["in_progress", "ready_to_submit", "error"].includes(existingOnboarding?.status || "")) {
             const idx = existingOnboarding?.stageIndex ?? 0;
             const field = existingOnboarding?.fields?.[idx];
             if (existingOnboarding?.status === "ready_to_submit") {
@@ -3214,6 +3332,20 @@ Extract key requirements (2-3 bullet points max, be concise):`;
                   buttons: ["Confirm and Submit", "Edit Details", "Cancel Onboarding"],
                   emailPrompt: "",
                   onboardingAction: "confirm",
+                },
+                { headers: corsHeaders }
+              );
+            } else if (existingOnboarding?.status === "error") {
+              const lastError = existingOnboarding?.lastError || "Registration failed";
+              const summary = Object.entries(existingOnboarding?.collectedData || {})
+                .map(([k, v]) => `- ${k}: ${v}`)
+                .join("\n");
+              return NextResponse.json(
+                {
+                  mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\nReply "Try Again" to resubmit, or "Edit" to change any detail.\n\nCurrent details:\n${summary}`,
+                  buttons: ["Try Again", "Edit Details", "Cancel Onboarding"],
+                  emailPrompt: "",
+                  onboardingAction: "error",
                 },
                 { headers: corsHeaders }
               );
@@ -4785,7 +4917,7 @@ What specific information are you looking for? I'm here to help guide you throug
         const db = await getDb();
         const sessionsCollection = db.collection("onboardingSessions");
         const existingOnboarding = await sessionsCollection.findOne({ sessionId });
-        if (["in_progress", "ready_to_submit"].includes(existingOnboarding?.status || "")) {
+        if (["in_progress", "ready_to_submit", "error"].includes(existingOnboarding?.status || "")) {
           const idx = existingOnboarding?.stageIndex ?? 0;
           const field = existingOnboarding?.fields?.[idx];
           if (existingOnboarding?.status === "ready_to_submit") {
@@ -4798,6 +4930,20 @@ What specific information are you looking for? I'm here to help guide you throug
                 buttons: ["Confirm and Submit", "Edit Details", "Cancel Onboarding"],
                 emailPrompt: "",
                 onboardingAction: "confirm",
+              },
+              { headers: corsHeaders }
+            );
+          } else if (existingOnboarding?.status === "error") {
+            const lastError = existingOnboarding?.lastError || "Registration failed";
+            const summary = Object.entries(existingOnboarding?.collectedData || {})
+              .map(([k, v]) => `- ${k}: ${v}`)
+              .join("\n");
+            return NextResponse.json(
+              {
+                mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\nReply "Try Again" to resubmit, or "Edit" to change any detail.\n\nCurrent details:\n${summary}`,
+                buttons: ["Try Again", "Edit Details", "Cancel Onboarding"],
+                emailPrompt: "",
+                onboardingAction: "error",
               },
               { headers: corsHeaders }
             );
@@ -4858,7 +5004,7 @@ What specific information are you looking for? I'm here to help guide you throug
         const db = await getDb();
         const sessionsCollection = db.collection("onboardingSessions");
         const existingOnboarding = await sessionsCollection.findOne({ sessionId });
-        if (["in_progress", "ready_to_submit"].includes(existingOnboarding?.status || "")) {
+        if (["in_progress", "ready_to_submit", "error"].includes(existingOnboarding?.status || "")) {
           const idx = existingOnboarding?.stageIndex ?? 0;
           const field = existingOnboarding?.fields?.[idx];
           if (existingOnboarding?.status === "ready_to_submit") {
@@ -4871,6 +5017,20 @@ What specific information are you looking for? I'm here to help guide you throug
                 buttons: ["Confirm and Submit", "Edit Details", "Cancel Onboarding"],
                 emailPrompt: "",
                 onboardingAction: "confirm",
+              },
+              { headers: corsHeaders }
+            );
+          } else if (existingOnboarding?.status === "error") {
+            const lastError = existingOnboarding?.lastError || "Registration failed";
+            const summary = Object.entries(existingOnboarding?.collectedData || {})
+              .map(([k, v]) => `- ${k}: ${v}`)
+              .join("\n");
+            return NextResponse.json(
+              {
+                mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\nReply "Try Again" to resubmit, or "Edit" to change any detail.\n\nCurrent details:\n${summary}`,
+                buttons: ["Try Again", "Edit Details", "Cancel Onboarding"],
+                emailPrompt: "",
+                onboardingAction: "error",
               },
               { headers: corsHeaders }
             );
