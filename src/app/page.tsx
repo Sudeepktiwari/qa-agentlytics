@@ -1338,9 +1338,16 @@ export default function Page() {
                     )}
                     {i === 4 && (
                       <div className="mt-4 grid grid-cols-3 gap-2">
-                        <div className="h-6 rounded-md border border-slate-200" />
-                        <div className="h-6 rounded-md border border-slate-200" />
-                        <div className="h-6 rounded-md border border-slate-200" />
+                        <div className="h-6 rounded-md border border-slate-200">
+                          Book
+                        </div>
+
+                        <div className="h-6 rounded-md border border-slate-200">
+                          Reschedule
+                        </div>
+                        <div className="h-6 rounded-md border border-slate-200">
+                          Cancel
+                        </div>
                       </div>
                     )}
                     {i === 5 && (
