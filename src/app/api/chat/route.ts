@@ -1866,10 +1866,12 @@ export async function POST(req: NextRequest) {
             return NextResponse.json(resp, { headers: corsHeaders });
           } else if (field) {
             const prompt = promptForField(field);
+            const adminOnboarding = (await getAdminSettings(existingOnboarding?.adminId || "")).onboarding;
+            const docsUrl = existingOnboarding?.phase === "initial_setup" ? adminOnboarding?.initialSetupDocsUrl : adminOnboarding?.docsUrl;
             const docContext = await buildOnboardingDocContext(
               field,
               existingOnboarding?.adminId || undefined,
-              (await getAdminSettings(existingOnboarding?.adminId || "")).onboarding?.docsUrl
+              docsUrl
             );
             const resp = {
               mainText: `${docContext ? `${docContext}\n\n` : ""}${prompt}`,
@@ -2470,7 +2472,11 @@ Keep the response conversational and helpful, focusing on providing value before
         const lower = (question || "").toLowerCase();
         if (/\b(try again|retry|resubmit|confirm|submit)\b/.test(lower)) {
           const payload = { ...(sessionDoc.collectedData || {}) };
-          const result = adminId ? await onboardingService.register(payload, adminId) : { success: false, error: "Missing adminId" };
+          const result = adminId
+            ? (sessionDoc?.phase === "initial_setup"
+                ? await onboardingService.initialSetup(payload, adminId)
+                : await onboardingService.register(payload, adminId))
+            : { success: false, error: "Missing adminId" };
           // Log registration outcome with sensitive field redaction
           try {
             const redactKeys = ["password", "pass", "secret", "token", "apikey", "api_key", "key"];
@@ -2543,6 +2549,31 @@ Keep the response conversational and helpful, focusing on providing value before
                 detailsText = `\n\nDetails:\n- ${errorItems.join("\n- ")}`;
               }
             } catch {}
+          }
+
+          if (result.success && onboardingConfig?.initialSetupCurlCommand) {
+            // Kick off initial setup phase using admin-provided cURL
+            const setupFields = deriveOnboardingFieldsFromCurl(onboardingConfig.initialSetupCurlCommand);
+            await sessionsCollection.updateOne(
+              { sessionId },
+              { $set: { status: "in_progress", stageIndex: 0, fields: setupFields, phase: "initial_setup", updatedAt: now } }
+            );
+            const firstField = setupFields[0];
+            const docContext = await buildOnboardingDocContext(
+              firstField,
+              adminId || undefined,
+              onboardingConfig?.initialSetupDocsUrl
+            );
+            const intro = "✅ Registration complete. Now, let’s finish initial setup.";
+            const prompt = promptForField(firstField);
+            const resp = {
+              mainText: `${docContext ? `${docContext}\n\n` : ""}${intro}\n\n${prompt}`,
+              buttons: ["Cancel Onboarding"],
+              emailPrompt: "",
+              showBookingCalendar: false,
+              onboardingAction: "ask_next",
+            };
+            return NextResponse.json(resp, { headers: corsHeaders });
           }
 
           const resp = result.success
@@ -2624,7 +2655,11 @@ Keep the response conversational and helpful, focusing on providing value before
         const lower = (question || "").toLowerCase();
         if (/\b(confirm|submit|looks good|yes|try again|retry|resubmit)\b/.test(lower)) {
           const payload = { ...(sessionDoc.collectedData || {}) };
-          const result = adminId ? await onboardingService.register(payload, adminId) : { success: false, error: "Missing adminId" };
+          const result = adminId
+            ? (sessionDoc?.phase === "initial_setup"
+                ? await onboardingService.initialSetup(payload, adminId)
+                : await onboardingService.register(payload, adminId))
+            : { success: false, error: "Missing adminId" };
           // Log registration outcome with sensitive field redaction
           try {
             const redactKeys = ["password", "pass", "secret", "token", "apikey", "api_key", "key"];
@@ -2698,6 +2733,30 @@ Keep the response conversational and helpful, focusing on providing value before
                 detailsText2 = `\n\nDetails:\n- ${errorItems2.join("\n- ")}`;
               }
             } catch {}
+          }
+
+          if (result.success && onboardingConfig?.initialSetupCurlCommand) {
+            const setupFields = deriveOnboardingFieldsFromCurl(onboardingConfig.initialSetupCurlCommand);
+            await sessionsCollection.updateOne(
+              { sessionId },
+              { $set: { status: "in_progress", stageIndex: 0, fields: setupFields, phase: "initial_setup", updatedAt: now } }
+            );
+            const firstField = setupFields[0];
+            const docContext = await buildOnboardingDocContext(
+              firstField,
+              adminId || undefined,
+              onboardingConfig?.initialSetupDocsUrl
+            );
+            const intro = "✅ Registration complete. Now, let’s finish initial setup.";
+            const prompt = promptForField(firstField);
+            const resp = {
+              mainText: `${docContext ? `${docContext}\n\n` : ""}${intro}\n\n${prompt}`,
+              buttons: ["Cancel Onboarding"],
+              emailPrompt: "",
+              showBookingCalendar: false,
+              onboardingAction: "ask_next",
+            };
+            return NextResponse.json(resp, { headers: corsHeaders });
           }
 
           const resp = result.success

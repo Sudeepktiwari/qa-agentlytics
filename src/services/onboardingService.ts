@@ -145,6 +145,251 @@ function applyFieldMappings(data: Record<string, any>, mappings: Record<string, 
 }
 
 export const onboardingService = {
+  async initialSetup(data: Record<string, any>, adminId: string): Promise<RegistrationResult> {
+    const settings = await getAdminSettings(adminId);
+    const onboarding = settings.onboarding || { enabled: false };
+
+    if (!onboarding.enabled) {
+      return { success: false, error: "Onboarding is disabled", status: 400 };
+    }
+
+    const redactKeys = ["password", "pass", "secret", "token", "apikey", "api_key", "key"];
+
+    const hasCurl = !!onboarding.initialSetupCurlCommand;
+    let url: string | null = null;
+    let method = onboarding.method || "POST";
+    let headers: Record<string, string> = {};
+    let contentType: "application/json" | "application/x-www-form-urlencoded" = "application/json";
+    let payload: Record<string, any> = { ...data };
+
+    if (hasCurl) {
+      const parsed = parseCurlRegistrationSpec(onboarding.initialSetupCurlCommand as string);
+      url = parsed.url;
+      method = (parsed.method as any) || method;
+      contentType = (parsed.contentType as any) || contentType;
+      headers = {
+        ...parsed.headers,
+        "Content-Type": contentType,
+      };
+
+      if (!url) {
+        console.error("[Onboarding] ❌ cURL parsing failed for initial setup: no URL found", {
+          adminId,
+          curlSnippet: (onboarding.initialSetupCurlCommand || "").slice(0, 200),
+        });
+        return {
+          success: false,
+          error: "Initial setup URL not found in cURL command",
+          status: 400,
+        };
+      }
+
+      if (onboarding.idempotencyKeyField && data[onboarding.idempotencyKeyField]) {
+        headers["Idempotency-Key"] = String(data[onboarding.idempotencyKeyField]);
+      }
+
+      const { body, keysUsed } = buildBodyFromCurl(parsed, payload);
+
+      const safePayloadForLog = Object.fromEntries(
+        Object.entries(payload).map(([k, v]) => {
+          const kl = k.toLowerCase();
+          const isSensitive = redactKeys.some((rk) => kl.includes(rk));
+          return [k, isSensitive ? "***" : v];
+        })
+      );
+
+      try {
+        console.log("[Onboarding] Calling external initial setup API via cURL:", {
+          url,
+          method,
+          contentType,
+          headerKeys: Object.keys(headers),
+          headers: redactHeadersForLog(headers),
+          payloadKeys: keysUsed,
+        });
+
+        const res = await fetch(url as string, {
+          method,
+          headers,
+          body,
+        });
+
+        const bodyText = await res.text();
+        let parsedResp: any = null;
+        try {
+          parsedResp = JSON.parse(bodyText);
+        } catch {
+          parsedResp = bodyText;
+        }
+
+        if (!res.ok) {
+          const errorMessage = (() => {
+            if (typeof parsedResp === "string") return parsedResp;
+            if (!parsedResp || typeof parsedResp !== "object") return "Initial setup failed";
+            const topLevel = (parsedResp as any).error || (parsedResp as any).message;
+            const nestedData = (parsedResp as any)?.data?.error || (parsedResp as any)?.data?.message;
+            const arrayErrors = Array.isArray((parsedResp as any)?.errors)
+              ? (parsedResp as any).errors.map((e: any) => e?.message || e).filter(Boolean).join("; ")
+              : undefined;
+            return topLevel || nestedData || arrayErrors || "Initial setup failed";
+          })();
+
+          console.error("[Onboarding] ❌ External initial setup failed", {
+            status: res.status,
+            adminId,
+            url,
+            responseBody: parsedResp,
+            payload: safePayloadForLog,
+            errorMessage,
+          });
+          return {
+            success: false,
+            error: errorMessage,
+            status: res.status,
+            responseBody: parsedResp,
+          };
+        }
+
+        console.log("[Onboarding] ✅ External initial setup succeeded", {
+          status: res.status,
+          adminId,
+        });
+        return {
+          success: true,
+          status: res.status,
+          responseBody: parsedResp,
+        };
+      } catch (error: any) {
+        console.error("[Onboarding] ❌ External initial setup error", {
+          adminId,
+          url,
+          method,
+          message: error?.message || String(error),
+          stack: error?.stack,
+          payload: Object.fromEntries(
+            Object.entries(payload).map(([k, v]) => {
+              const kl = k.toLowerCase();
+              const isSensitive = redactKeys.some((rk) => kl.includes(rk));
+              return [k, isSensitive ? "***" : v];
+            })
+          ),
+        });
+        return { success: false, error: error?.message || String(error), status: 500 };
+      }
+    }
+
+    const baseUrl = resolveUrl(onboarding);
+    url = baseUrl;
+    if (!url) {
+      return { success: false, error: "Initial setup URL not configured", status: 400 };
+    }
+
+    const { contentType: inferredContentType, fieldMappings } = await inferRequestFormatFromDocs(adminId, onboarding.initialSetupDocsUrl);
+    contentType = inferredContentType;
+    headers = {
+      "Content-Type": contentType,
+      ...buildAuthHeader(onboarding),
+    };
+
+    if (onboarding.idempotencyKeyField && data[onboarding.idempotencyKeyField]) {
+      headers["Idempotency-Key"] = String(data[onboarding.idempotencyKeyField]);
+    }
+
+    payload = applyFieldMappings(data, fieldMappings);
+
+    const safePayloadForLog = Object.fromEntries(
+      Object.entries(payload).map(([k, v]) => {
+        const kl = k.toLowerCase();
+        const isSensitive = redactKeys.some((rk) => kl.includes(rk));
+        return [k, isSensitive ? "***" : v];
+      })
+    );
+
+    try {
+      console.log("[Onboarding] Calling external initial setup API:", {
+        url,
+        method,
+        headerKeyUsed: onboarding.authHeaderKey || "Authorization",
+        apiKeyPresent: !!onboarding.apiKey,
+        contentType,
+        payloadKeys: Object.keys(payload),
+      });
+      const body = contentType === "application/x-www-form-urlencoded"
+        ? new URLSearchParams(Object.entries(payload).reduce((acc, [k, v]) => {
+            acc[k] = typeof v === "string" ? v : JSON.stringify(v);
+            return acc;
+          }, {} as Record<string, string>)).toString()
+        : JSON.stringify(payload);
+
+      const res = await fetch(url as string, {
+        method,
+        headers,
+        body,
+      });
+
+      const bodyText = await res.text();
+      let parsedResp: any = null;
+      try {
+        parsedResp = JSON.parse(bodyText);
+      } catch {
+        parsedResp = bodyText;
+      }
+
+      if (!res.ok) {
+        const errorMessage = (() => {
+          if (typeof parsedResp === "string") return parsedResp;
+          if (!parsedResp || typeof parsedResp !== "object") return "Initial setup failed";
+          const topLevel = (parsedResp as any).error || (parsedResp as any).message;
+          const nestedData = (parsedResp as any)?.data?.error || (parsedResp as any)?.data?.message;
+          const arrayErrors = Array.isArray((parsedResp as any)?.errors)
+            ? (parsedResp as any).errors.map((e: any) => e?.message || e).filter(Boolean).join("; ")
+            : undefined;
+          return topLevel || nestedData || arrayErrors || "Initial setup failed";
+        })();
+
+        console.error("[Onboarding] ❌ External initial setup failed", {
+          status: res.status,
+          adminId,
+          url,
+          responseBody: parsedResp,
+          payload: safePayloadForLog,
+          errorMessage,
+        });
+        return {
+          success: false,
+          error: errorMessage,
+          status: res.status,
+          responseBody: parsedResp,
+        };
+      }
+
+      console.log("[Onboarding] ✅ External initial setup succeeded", {
+        status: res.status,
+        adminId,
+      });
+      return {
+        success: true,
+        status: res.status,
+        responseBody: parsedResp,
+      };
+    } catch (error: any) {
+      console.error("[Onboarding] ❌ External initial setup error", {
+        adminId,
+        url,
+        method,
+        message: error?.message || String(error),
+        stack: error?.stack,
+        payload: Object.fromEntries(
+          Object.entries(payload).map(([k, v]) => {
+            const kl = k.toLowerCase();
+            const isSensitive = redactKeys.some((rk) => kl.includes(rk));
+            return [k, isSensitive ? "***" : v];
+          })
+        ),
+      });
+      return { success: false, error: error?.message || String(error), status: 500 };
+    }
+  },
   async register(data: Record<string, any>, adminId: string): Promise<RegistrationResult> {
     const settings = await getAdminSettings(adminId);
     const onboarding = settings.onboarding || { enabled: false };
@@ -159,23 +404,23 @@ export const onboardingService = {
     // Prefer cURL configuration if provided by admin
     const hasCurl = !!onboarding.curlCommand;
     let url: string | null = null;
-    let method = "POST";
+    let method = onboarding.method || "POST";
     let headers: Record<string, string> = {};
-    let contentType = "application/json";
+    let contentType: "application/json" | "application/x-www-form-urlencoded" = "application/json";
     let payload: Record<string, any> = { ...data };
 
     if (hasCurl) {
       const parsed = parseCurlRegistrationSpec(onboarding.curlCommand as string);
       url = parsed.url;
-      method = parsed.method || "POST";
-      contentType = parsed.contentType || "application/json";
+      method = (parsed.method as any) || method;
+      contentType = (parsed.contentType as any) || contentType;
       headers = {
         ...parsed.headers,
         "Content-Type": contentType,
       };
 
       if (!url) {
-        console.error("[Onboarding] ❌ cURL parsing failed: no URL found", {
+        console.error("[Onboarding] ❌ cURL parsing failed for registration: no URL found", {
           adminId,
           curlSnippet: (onboarding.curlCommand || "").slice(0, 200),
         });
@@ -186,24 +431,12 @@ export const onboardingService = {
         };
       }
 
-      // Optional idempotency
       if (onboarding.idempotencyKeyField && data[onboarding.idempotencyKeyField]) {
         headers["Idempotency-Key"] = String(data[onboarding.idempotencyKeyField]);
       }
 
-      // Common fallback: combine first/last into name if relevant
-      if (!("name" in payload)) {
-        const fn = payload.firstName || (payload as any).first_name || (payload as any).given_name;
-        const ln = payload.lastName || (payload as any).last_name || (payload as any).surname;
-        if (typeof fn === "string" && fn.trim() && typeof ln === "string" && ln.trim()) {
-          payload.name = `${fn.trim()} ${ln.trim()}`;
-        }
-      }
-
-      // Build body exactly from cURL data keys, substituting collected values
       const { body, keysUsed } = buildBodyFromCurl(parsed, payload);
 
-      // Safe-to-log payload view (keys only) plus redaction
       const safePayloadForLog = Object.fromEntries(
         Object.entries(payload).map(([k, v]) => {
           const kl = k.toLowerCase();
@@ -264,17 +497,12 @@ export const onboardingService = {
           };
         }
 
-        const userId =
-          parsedResp?.userId || parsedResp?.id || parsedResp?.data?.id || parsedResp?.data?.userId || undefined;
-
         console.log("[Onboarding] ✅ External registration succeeded", {
           status: res.status,
           adminId,
-          userId,
         });
         return {
           success: true,
-          userId,
           status: res.status,
           responseBody: parsedResp,
         };
@@ -297,31 +525,10 @@ export const onboardingService = {
       }
     }
 
-    // Fallback: existing docs-based inference path
-    url = resolveUrl(onboarding);
+    const baseUrl = resolveUrl(onboarding);
+    url = baseUrl;
     if (!url) {
-      // Enforce API-only registration: store lead for visibility but return error
-      console.log("[Onboarding] No registration URL configured. Storing lead and returning error.");
-      try {
-        const email = typeof data.email === "string" ? data.email.trim() : "";
-        const sessionId = typeof data.sessionId === "string" ? data.sessionId : `onboarding-${Date.now()}`;
-        const pageUrl = typeof data.pageUrl === "string" ? data.pageUrl : undefined;
-
-        if (email && adminId) {
-          await createOrUpdateLead(
-            adminId,
-            email,
-            sessionId,
-            null,
-            pageUrl,
-            "Onboarding submission without external registration"
-          );
-        }
-      } catch (e) {
-        console.log("[Onboarding] Failed to store lead when URL missing:", e);
-      }
-
-      return { success: false, error: "Onboarding URL not configured", status: 400 };
+      return { success: false, error: "Registration URL not configured", status: 400 };
     }
 
     const { contentType: inferredContentType, fieldMappings } = await inferRequestFormatFromDocs(adminId, onboarding.docsUrl);
@@ -331,23 +538,12 @@ export const onboardingService = {
       ...buildAuthHeader(onboarding),
     };
 
-    // Optional idempotency
     if (onboarding.idempotencyKeyField && data[onboarding.idempotencyKeyField]) {
       headers["Idempotency-Key"] = String(data[onboarding.idempotencyKeyField]);
     }
-    // Build payload according to doc-inferred mappings
+
     payload = applyFieldMappings(data, fieldMappings);
 
-    // Common fallback: if firstName and lastName exist but name is missing, combine into name
-    if (!("name" in payload)) {
-      const fn = payload.firstName || payload.first_name || payload.given_name;
-      const ln = payload.lastName || payload.last_name || payload.surname;
-      if (typeof fn === "string" && fn.trim() && typeof ln === "string" && ln.trim()) {
-        payload.name = `${fn.trim()} ${ln.trim()}`;
-      }
-    }
-
-    // Build safe-to-log payload after final payload shape is determined
     const safePayloadForLog = Object.fromEntries(
       Object.entries(payload).map(([k, v]) => {
         const kl = k.toLowerCase();
@@ -357,19 +553,14 @@ export const onboardingService = {
     );
 
     try {
-
-      // Log call metadata with payload keys for verification
-      console.log(
-        "[Onboarding] Calling external registration API:",
-        {
-          url,
-          method,
-          headerKeyUsed: onboarding.authHeaderKey || "Authorization",
-          apiKeyPresent: !!onboarding.apiKey,
-          contentType,
-          payloadKeys: Object.keys(payload),
-        }
-      );
+      console.log("[Onboarding] Calling external registration API:", {
+        url,
+        method,
+        headerKeyUsed: onboarding.authHeaderKey || "Authorization",
+        apiKeyPresent: !!onboarding.apiKey,
+        contentType,
+        payloadKeys: Object.keys(payload),
+      });
       const body = contentType === "application/x-www-form-urlencoded"
         ? new URLSearchParams(Object.entries(payload).reduce((acc, [k, v]) => {
             acc[k] = typeof v === "string" ? v : JSON.stringify(v);
@@ -377,28 +568,28 @@ export const onboardingService = {
           }, {} as Record<string, string>)).toString()
         : JSON.stringify(payload);
 
-      const res = await fetch(url, {
+      const res = await fetch(url as string, {
         method,
         headers,
         body,
       });
 
       const bodyText = await res.text();
-      let parsed: any = null;
+      let parsedResp: any = null;
       try {
-        parsed = JSON.parse(bodyText);
+        parsedResp = JSON.parse(bodyText);
       } catch {
-        parsed = bodyText;
+        parsedResp = bodyText;
       }
 
       if (!res.ok) {
         const errorMessage = (() => {
-          if (typeof parsed === "string") return parsed;
-          if (!parsed || typeof parsed !== "object") return "Registration failed";
-          const topLevel = (parsed as any).error || (parsed as any).message;
-          const nestedData = (parsed as any)?.data?.error || (parsed as any)?.data?.message;
-          const arrayErrors = Array.isArray((parsed as any)?.errors)
-            ? (parsed as any).errors.map((e: any) => e?.message || e).filter(Boolean).join("; ")
+          if (typeof parsedResp === "string") return parsedResp;
+          if (!parsedResp || typeof parsedResp !== "object") return "Registration failed";
+          const topLevel = (parsedResp as any).error || (parsedResp as any).message;
+          const nestedData = (parsedResp as any)?.data?.error || (parsedResp as any)?.data?.message;
+          const arrayErrors = Array.isArray((parsedResp as any)?.errors)
+            ? (parsedResp as any).errors.map((e: any) => e?.message || e).filter(Boolean).join("; ")
             : undefined;
           return topLevel || nestedData || arrayErrors || "Registration failed";
         })();
@@ -407,7 +598,7 @@ export const onboardingService = {
           status: res.status,
           adminId,
           url,
-          responseBody: parsed,
+          responseBody: parsedResp,
           payload: safePayloadForLog,
           errorMessage,
         });
@@ -415,24 +606,18 @@ export const onboardingService = {
           success: false,
           error: errorMessage,
           status: res.status,
-          responseBody: parsed,
+          responseBody: parsedResp,
         };
       }
-
-      // Extract user id if present
-      const userId =
-        parsed?.userId || parsed?.id || parsed?.data?.id || parsed?.data?.userId || undefined;
 
       console.log("[Onboarding] ✅ External registration succeeded", {
         status: res.status,
         adminId,
-        userId,
       });
       return {
         success: true,
-        userId,
         status: res.status,
-        responseBody: parsed,
+        responseBody: parsedResp,
       };
     } catch (error: any) {
       console.error("[Onboarding] ❌ External registration error", {
@@ -441,7 +626,13 @@ export const onboardingService = {
         method,
         message: error?.message || String(error),
         stack: error?.stack,
-        payload: safePayloadForLog,
+        payload: Object.fromEntries(
+          Object.entries(payload).map(([k, v]) => {
+            const kl = k.toLowerCase();
+            const isSensitive = redactKeys.some((rk) => kl.includes(rk));
+            return [k, isSensitive ? "***" : v];
+          })
+        ),
       });
       return { success: false, error: error?.message || String(error), status: 500 };
     }
