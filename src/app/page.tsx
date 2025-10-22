@@ -799,7 +799,7 @@ export default function Page() {
               </div>
             </div>
 
-            <div className="relative bg-gradient-to-br from-[color:var(--brand-blue)]/90 to-[color:var(--brand-sky)]/90 text-white rounded-2xl shadow-[0_12px_34px_rgba(2,6,23,.08)] p-6 overflow-hidden group hover:shadow-lg transition-shadow">
+            <div className="relative bg-gradient-to-br from-[color:var(--brand-blue)]/90 to-[color:var(--brand-sky)]/90 text-white rounded-2xl shadow-[0_12px_34px_rgba(2,6,23,.08)] p-6 group hover:shadow-lg transition-shadow">
               <div className="absolute inset-0 opacity-10 [background-image:url('https://www.toptal.com/designers/subtlepatterns/uploads/dot-grid.png')]" />
               <h3 className="relative font-semibold text-lg mb-1">
                 Proactive AI
@@ -822,7 +822,7 @@ export default function Page() {
                   aria-hidden="true"
                 />
               </div>
-              <div className="absolute -bottom-3 -right-3 bg-white text-slate-800 rounded-xl px-3 py-1.5 shadow-[0_6px_16px_rgba(2,6,23,.06)] text-xs anim-floaty">
+              <div className="absolute -bottom-3 -right-3 bg-white text-slate-800 rounded-xl px-3 py-1.5 shadow-[0_6px_16px_rgba(2,6,23,.06)] text-xs anim-floaty pointer-events-none z-10">
                 ⚡ Engaging in real time
               </div>
             </div>
