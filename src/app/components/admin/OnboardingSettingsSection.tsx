@@ -1,11 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-
-interface OnboardingSettings {
-  enabled: boolean;
-  curlCommand?: string;
-}
+import { OnboardingSettings } from "@/lib/adminSettings";
 
 const OnboardingSettingsSection: React.FC = () => {
   const [settings, setSettings] = useState<OnboardingSettings>({ enabled: false });
@@ -33,7 +29,9 @@ const OnboardingSettingsSection: React.FC = () => {
         const res = await fetch("/api/admin/onboarding", { credentials: "include" });
         const data = await res.json();
         if (res.ok && data.success) {
-          setSettings({ ...(data.onboarding || { enabled: false }) });
+          const ob = data.onboarding || { enabled: false };
+          setSettings({ ...ob });
+          if (ob.docsUrl) setDocUrl(ob.docsUrl);
         } else {
           setError(data.error || "Failed to load onboarding settings");
         }
@@ -51,8 +49,18 @@ const OnboardingSettingsSection: React.FC = () => {
     setError(null);
     setSuccess(null);
     try {
-      // Only send the cURL command; enablement handled server-side
-      const settingsToSave = { curlCommand: settings.curlCommand };
+      // Save initial setup fields alongside canonical cURL
+      const settingsToSave = {
+        curlCommand: settings.curlCommand,
+        docsUrl: settings.docsUrl,
+        apiBaseUrl: settings.apiBaseUrl,
+        registerEndpoint: settings.registerEndpoint,
+        method: settings.method,
+        apiKey: settings.apiKey,
+        authHeaderKey: settings.authHeaderKey,
+        idempotencyKeyField: settings.idempotencyKeyField,
+        rateLimit: settings.rateLimit,
+      };
       const res = await fetch("/api/admin/onboarding", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -200,7 +208,99 @@ const OnboardingSettingsSection: React.FC = () => {
             </div>
           )}
 
-          {/* Canonical registration cURL command */}
+          {/* Initial Setup */}
+          <div style={{ marginBottom: 16, padding: 12, border: "1px solid #e2e8f0", borderRadius: 12, background: "#f9fafb" }}>
+            <label style={{ display: "block", color: "#4a5568", fontSize: 13, marginBottom: 6 }}>API Docs URL</label>
+            <input
+              type="url"
+              placeholder="https://yourdocs.page or https://docs.google.com/..."
+              value={settings.docsUrl || ""}
+              onChange={(e) => setSettings({ ...settings, docsUrl: e.target.value })}
+              style={{ width: "100%", padding: 10, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 14 }}
+            />
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 10 }}>
+              <div>
+                <label style={{ display: "block", color: "#4a5568", fontSize: 13, marginBottom: 6 }}>API Base URL</label>
+                <input
+                  type="text"
+                  placeholder="https://api.your-service.com"
+                  value={settings.apiBaseUrl || ""}
+                  onChange={(e) => setSettings({ ...settings, apiBaseUrl: e.target.value })}
+                  style={{ width: "100%", padding: 10, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 14 }}
+                />
+              </div>
+              <div>
+                <label style={{ display: "block", color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Register Endpoint</label>
+                <input
+                  type="text"
+                  placeholder="/users/register"
+                  value={settings.registerEndpoint || ""}
+                  onChange={(e) => setSettings({ ...settings, registerEndpoint: e.target.value })}
+                  style={{ width: "100%", padding: 10, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 14 }}
+                />
+              </div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 10 }}>
+              <div>
+                <label style={{ display: "block", color: "#4a5568", fontSize: 13, marginBottom: 6 }}>HTTP Method</label>
+                <select
+                  value={settings.method || "POST"}
+                  onChange={(e) => setSettings({ ...settings, method: e.target.value as "POST" | "PUT" | "PATCH" })}
+                  style={{ width: "100%", padding: 10, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 14, background: "white" }}
+                >
+                  <option value="POST">POST</option>
+                  <option value="PUT">PUT</option>
+                  <option value="PATCH">PATCH</option>
+                </select>
+              </div>
+              <div>
+                <label style={{ display: "block", color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Auth Header Key</label>
+                <input
+                  type="text"
+                  placeholder="Authorization"
+                  value={settings.authHeaderKey || "Authorization"}
+                  onChange={(e) => setSettings({ ...settings, authHeaderKey: e.target.value })}
+                  style={{ width: "100%", padding: 10, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 14 }}
+                />
+              </div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 10 }}>
+              <div>
+                <label style={{ display: "block", color: "#4a5568", fontSize: 13, marginBottom: 6 }}>API Key / Token</label>
+                <input
+                  type="text"
+                  placeholder="sk-..."
+                  value={settings.apiKey || ""}
+                  onChange={(e) => setSettings({ ...settings, apiKey: e.target.value })}
+                  style={{ width: "100%", padding: 10, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 14 }}
+                />
+              </div>
+              <div>
+                <label style={{ display: "block", color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Idempotency Field</label>
+                <input
+                  type="text"
+                  placeholder="email"
+                  value={settings.idempotencyKeyField || "email"}
+                  onChange={(e) => setSettings({ ...settings, idempotencyKeyField: e.target.value })}
+                  style={{ width: "100%", padding: 10, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 14 }}
+                />
+              </div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 12, marginTop: 10 }}>
+              <div>
+                <label style={{ display: "block", color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Rate Limit per Minute</label>
+                <input
+                  type="number"
+                  min={1}
+                  placeholder="30"
+                  value={(settings.rateLimit?.perMinute ?? 30).toString()}
+                  onChange={(e) => setSettings({ ...settings, rateLimit: { perMinute: parseInt(e.target.value || "30", 10) } })}
+                  style={{ width: "100%", padding: 10, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 14 }}
+                />
+              </div>
+            </div>
+          </div>
+
           {/* Document indexing and cURL generation */}
           <div style={{ marginBottom: 16 }}>
             <label style={{ display: "block", color: "#4a5568", fontSize: 13, marginBottom: 6 }}>
