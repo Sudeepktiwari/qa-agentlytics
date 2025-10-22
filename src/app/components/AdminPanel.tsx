@@ -870,8 +870,36 @@ const AdminPanel: React.FC = () => {
 
           <BookingManagementSection adminId={auth?.adminId} />
 
-          {/* Onboarding Settings */}
-          <OnboardingSettingsSection />
+          {/* API Setup & Docs */}
+          <div
+            style={{
+              background: "rgba(255, 255, 255, 0.95)",
+              backdropFilter: "blur(10px)",
+              borderRadius: "20px",
+              padding: "24px",
+              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
+              border: "1px solid rgba(255, 255, 255, 0.2)",
+              marginBottom: "24px",
+            }}
+          >
+            <h3
+              style={{
+                margin: "0 0 8px 0",
+                fontSize: "20px",
+                fontWeight: "700",
+                color: "#2d3748",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+              }}
+            >
+              📘 API Setup & Docs
+            </h3>
+            <p style={{ color: "#718096", fontSize: "14px", margin: "0 0 16px 0" }}>
+              Index your API docs and generate a canonical registration cURL. Use the quick setup buttons in the chat below to guide the initial configuration.
+            </p>
+            <OnboardingSettingsSection />
+          </div>
 
           {/* Admin Settings Section */}
           <div
