@@ -13,19 +13,41 @@ export interface ParsedCurl {
   dataForm?: Record<string, string> | null;
 }
 
+// Normalize smart quotes to straight quotes to improve parsing robustness
+function normalizeQuotes(input: string): string {
+  return input
+    .replace(/[‘’]/g, "'")
+    .replace(/[“”]/g, '"');
+}
+
 /**
  * Parse a cURL registration command.
- * Supports common flags: -X, -H, -d/--data/--data-raw.
+ * Supports common flags: -X, -H, -d/--data/--data-raw and --url forms.
  */
 export function parseCurlRegistrationSpec(curlCommand: string): ParsedCurl {
-  const methodMatch = curlCommand.match(/-X\s+(GET|POST|PUT|PATCH|DELETE)/i);
+  const cmd = normalizeQuotes(curlCommand);
+
+  const methodMatch = cmd.match(/-X\s+(GET|POST|PUT|PATCH|DELETE)/i);
   const method = (methodMatch?.[1] || "POST").toUpperCase();
 
-  // Try to capture the URL (quoted or unquoted) after 'curl'
+  // Try to capture the URL from multiple forms
   let url: string | null = null;
-  const urlQuoted = curlCommand.match(/curl\s+['"](https?:\/\/[^'"\s]+)['"]/i);
-  const urlUnquoted = curlCommand.match(/curl\s+(https?:\/\/\S+)/i);
-  url = urlQuoted?.[1] || urlUnquoted?.[1] || null;
+  // --url with space and quotes/backticks
+  const urlFlagQuoted = cmd.match(/--url\s+['"`](https?:\/\/[^'"`\s]+)['"`]/i);
+  // --url with equals and optional quotes/backticks
+  const urlFlagEqualsQuoted = cmd.match(/--url=([\'"`]?)(https?:\/\/[^'"`]+)\1/i);
+  // --url with space, unquoted
+  const urlFlagUnquoted = cmd.match(/--url\s+(https?:\/\/\S+)/i);
+  // Positional URL after curl, quoted or unquoted (also supporting backticks)
+  const urlQuoted = cmd.match(/curl\s+['"`](https?:\/\/[^'"`\s]+)['"`]/i);
+  const urlUnquoted = cmd.match(/curl\s+(https?:\/\/\S+)/i);
+  url =
+    urlFlagQuoted?.[1] ||
+    urlFlagEqualsQuoted?.[2] ||
+    urlFlagUnquoted?.[1] ||
+    urlQuoted?.[1] ||
+    urlUnquoted?.[1] ||
+    null;
 
   // Fallback: robust tokenization to find first non-flag URL argument
   if (!url) {
@@ -33,18 +55,23 @@ export function parseCurlRegistrationSpec(curlCommand: string): ParsedCurl {
     let current = "";
     let inSingle = false;
     let inDouble = false;
-    for (let i = 0; i < curlCommand.length; i++) {
-      const ch = curlCommand[i];
-      if (ch === "'" && !inDouble) {
+    let inBacktick = false;
+    for (let i = 0; i < cmd.length; i++) {
+      const ch = cmd[i];
+      if (ch === "'" && !inDouble && !inBacktick) {
         inSingle = !inSingle;
         continue;
       }
-      if (ch === '"' && !inSingle) {
+      if (ch === '"' && !inSingle && !inBacktick) {
         inDouble = !inDouble;
         continue;
       }
+      if (ch === "`" && !inSingle && !inDouble) {
+        inBacktick = !inBacktick;
+        continue;
+      }
       const isSpace = /\s/.test(ch);
-      if (!inSingle && !inDouble && isSpace) {
+      if (!inSingle && !inDouble && !inBacktick && isSpace) {
         if (current.length > 0) {
           tokens.push(current);
           current = "";
@@ -68,11 +95,11 @@ export function parseCurlRegistrationSpec(curlCommand: string): ParsedCurl {
     }
   }
 
-  // Collect headers
+  // Collect headers (support quotes and backticks). Also try a simple no-quote form.
   const headers: Record<string, string> = {};
-  const headerRegex = /-H\s+['"]([^'"\n]+)['"]/gi;
+  const headerRegexQuoted = /-H\s+['"`]([^'"`\n]+)['"`]/gi;
   let hMatch: RegExpExecArray | null;
-  while ((hMatch = headerRegex.exec(curlCommand)) !== null) {
+  while ((hMatch = headerRegexQuoted.exec(cmd)) !== null) {
     const raw = hMatch[1];
     const idx = raw.indexOf(":");
     if (idx > -1) {
@@ -81,18 +108,32 @@ export function parseCurlRegistrationSpec(curlCommand: string): ParsedCurl {
       headers[key] = value;
     }
   }
+  // No-quote header form e.g. -H Content-Type: application/json
+  const headerRegexPlain = /-H\s+([^\s]+:\s*[^\n]+)/gi;
+  let hPlain: RegExpExecArray | null;
+  while ((hPlain = headerRegexPlain.exec(cmd)) !== null) {
+    const raw = hPlain[1];
+    const idx = raw.indexOf(":");
+    if (idx > -1) {
+      const key = raw.slice(0, idx).trim();
+      const value = raw.slice(idx + 1).trim();
+      headers[key] = value;
+    }
+  }
 
-  // Data flags: -d, --data, --data-raw
+  // Data flags: -d, --data, --data-raw (support quotes/backticks)
   const dataRegexes = [
-    /-d\s+['"]([\s\S]*?)['"]/i,
-    /--data\s+['"]([\s\S]*?)['"]/i,
-    /--data-raw\s+['"]([\s\S]*?)['"]/i,
+    /-d\s+['"`]([\s\S]*?)['"`]/i,
+    /--data\s+['"`]([\s\S]*?)['"`]/i,
+    /--data-raw\s+['"`]([\s\S]*?)['"`]/i,
+    /--data=(['"`]?)([\s\S]*?)\1/i,
+    /--data-raw=(['"`]?)([\s\S]*?)\1/i,
   ];
   let dataRaw: string | undefined;
   for (const rx of dataRegexes) {
-    const m = curlCommand.match(rx);
-    if (m && m[1]) {
-      dataRaw = m[1];
+    const m = cmd.match(rx);
+    if (m && (m[1] || m[2])) {
+      dataRaw = (m[2] ?? m[1]) as string;
       break;
     }
   }
