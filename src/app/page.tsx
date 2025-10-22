@@ -883,9 +883,9 @@ export default function Page() {
               </div>
               <div className="lg:col-span-7 reveal">
                 <div className="relative rounded-2xl border border-slate-200 bg-white shadow-[0_12px_34px_rgba(2,6,23,.08)] overflow-hidden p-6">
-                  <div className="pointer-events-none absolute -top-24 -left-24 w-96 h-96 bg-blue-50 rounded-full blur-3xl opacity-70" />
-                  <div className="pointer-events-none absolute -bottom-24 -right-24 w-[28rem] h-[28rem] bg-sky-50 rounded-full blur-3xl opacity-70" />
-                  <svg viewBox="0 0 800 420" className="w-full h-[360px]">
+                  <div className="pointer-events-none -z-10 absolute -top-24 -left-24 w-96 h-96 bg-blue-50 rounded-full md:blur-3xl blur-none opacity-70" />
+                  <div className="pointer-events-none -z-10 absolute -bottom-24 -right-24 w-[28rem] h-[28rem] bg-sky-50 rounded-full md:blur-3xl blur-none opacity-70" />
+                  <svg viewBox="0 0 800 420" className="hidden md:block w-full h-[360px]">
                     <defs>
                       <linearGradient id="g" x1="0" x2="1">
                         <stop offset="0%" stopColor="#0069FF" />
@@ -902,72 +902,135 @@ export default function Page() {
                       className="anim-dash"
                     />
                   </svg>
-                  <div className="absolute left-[4%] bottom-[10%]">
-                    <div className="relative">
-                      <span
-                        className="absolute inset-0 rounded-full bg-blue-200/40 size-6 anim-pingSoft"
-                        aria-hidden="true"
-                      />
-                      <div className="relative size-6 rounded-full bg-[color:var(--brand-blue)] shadow-[0_6px_16px_rgba(2,6,23,.06)]" />
+                  <div className="hidden md:block">
+                    <div className="absolute left-[4%] bottom-[10%]">
+                      <div className="relative">
+                        <span
+                          className="absolute inset-0 rounded-full bg-blue-200/40 size-6 anim-pingSoft"
+                          aria-hidden="true"
+                        />
+                        <div className="relative size-6 rounded-full bg-[color:var(--brand-blue)] shadow-[0_6px_16px_rgba(2,6,23,.06)]" />
+                      </div>
+                      <div className="mt-2 p-3 rounded-xl border border-slate-200 bg-white shadow-[0_6px_16px_rgba(2,6,23,.06)] hover:shadow-[0_12px_34px_rgba(2,6,23,.08)] transition">
+                        <div className="text-xs text-slate-500">Lead</div>
+                        <div className="font-semibold">Proactive Engagement</div>
+                        <p className="text-sm text-slate-600">
+                          Greets at the right moment.
+                        </p>
+                      </div>
                     </div>
-                    <div className="mt-2 p-3 rounded-xl border border-slate-200 bg-white shadow-[0_6px_16px_rgba(2,6,23,.06)] hover:shadow-[0_12px_34px_rgba(2,6,23,.08)] transition">
-                      <div className="text-xs text-slate-500">Lead</div>
-                      <div className="font-semibold">Proactive Engagement</div>
-                      <p className="text-sm text-slate-600">
-                        Greets at the right moment.
-                      </p>
+                    <div className="absolute left-[25%] top-[28%]">
+                      <div className="relative">
+                        <span
+                          className="absolute inset-0 rounded-full bg-blue-200/40 size-6 anim-pingSoft"
+                          aria-hidden="true"
+                        />
+                        <div className="relative size-6 rounded-full bg-[color:var(--brand-blue)] shadow-[0_6px_16px_rgba(2,6,23,.06)]" />
+                      </div>
+                      <div className="mt-2 p-3 rounded-xl border border-slate-200 bg-white shadow-[0_6px_16px_rgba(2,6,23,.06)] hover:shadow-[0_12px_34px_rgba(2,6,23,.08)] transition">
+                        <div className="text-xs text-slate-500">Sales</div>
+                        <div className="font-semibold">Qualify & Schedule</div>
+                        <p className="text-sm text-slate-600">
+                          Books a call inside chat.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="absolute left-[52%] top-[56%]">
+                      <div className="relative">
+                        <span
+                          className="absolute inset-0 rounded-full bg-blue-200/40 size-6 anim-pingSoft"
+                          aria-hidden="true"
+                        />
+                        <div className="relative size-6 rounded-full bg-[color:var(--brand-blue)] shadow-[0_6px_16px_rgba(2,6,23,.06)]" />
+                      </div>
+                      <div className="mt-2 p-3 rounded-xl border border-slate-200 bg-white shadow-[0_6px_16px_rgba(2,6,23,.06)] hover:shadow-[0_12px_34px_rgba(2,6,23,.08)] transition">
+                        <div className="text-xs text-slate-500">Onboarding</div>
+                        <div className="font-semibold">Collect & Explain</div>
+                        <p className="text-sm text-slate-600">
+                          Captures details, answers questions.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="absolute left-[72%] top-[22%]">
+                      <div className="relative">
+                        <span
+                          className="absolute inset-0 rounded-full bg-blue-200/40 size-6 anim-pingSoft"
+                          aria-hidden="true"
+                        />
+                        <div className="relative size-6 rounded-full bg-[color:var(--brand-blue)] shadow-[0_6px_16px_rgba(2,6,23,.06)]" />
+                      </div>
+                      <div className="mt-2 p-3 rounded-xl border border-slate-200 bg-white shadow-[0_6px_16px_rgba(2,6,23,.06)] hover:shadow-[0_12px_34px_rgba(2,6,23,.08)] transition">
+                        <div className="text-xs text-slate-500">Support</div>
+                        <div className="font-semibold">Resolve & Learn</div>
+                        <p className="text-sm text-slate-600">
+                          Helps with full context.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="absolute bottom-4 left-6 text-xs text-slate-500">
+                      Context flows forward automatically · No handoffs lost
                     </div>
                   </div>
-                  <div className="absolute left-[25%] top-[28%]">
-                    <div className="relative">
-                      <span
-                        className="absolute inset-0 rounded-full bg-blue-200/40 size-6 anim-pingSoft"
-                        aria-hidden="true"
-                      />
-                      <div className="relative size-6 rounded-full bg-[color:var(--brand-blue)] shadow-[0_6px_16px_rgba(2,6,23,.06)]" />
+
+                  {/* Mobile stacked layout */}
+                  <div className="md:hidden antialiased relative z-10 grid grid-cols-1 gap-4 mt-2">
+                    <div className="flex items-start gap-3">
+                      <div className="relative">
+                        <span
+                          className="absolute inset-0 rounded-full bg-blue-200/40 size-6 anim-pingSoft"
+                          aria-hidden="true"
+                        />
+                        <div className="relative size-6 rounded-full bg-[color:var(--brand-blue)] shadow-[0_6px_16px_rgba(2,6,23,.06)]" />
+                      </div>
+                      <div className="flex-1 p-3 rounded-xl border border-slate-200 bg-white shadow-[0_6px_16px_rgba(2,6,23,.06)]">
+                        <div className="text-xs text-slate-500">Lead</div>
+                        <div className="font-semibold">Proactive Engagement</div>
+                        <p className="text-sm text-slate-600">Greets at the right moment.</p>
+                      </div>
                     </div>
-                    <div className="mt-2 p-3 rounded-xl border border-slate-200 bg-white shadow-[0_6px_16px_rgba(2,6,23,.06)] hover:shadow-[0_12px_34px_rgba(2,6,23,.08)] transition">
-                      <div className="text-xs text-slate-500">Sales</div>
-                      <div className="font-semibold">Qualify & Schedule</div>
-                      <p className="text-sm text-slate-600">
-                        Books a call inside chat.
-                      </p>
+                    <div className="flex items-start gap-3">
+                      <div className="relative">
+                        <span
+                          className="absolute inset-0 rounded-full bg-blue-200/40 size-6 anim-pingSoft"
+                          aria-hidden="true"
+                        />
+                        <div className="relative size-6 rounded-full bg-[color:var(--brand-blue)] shadow-[0_6px_16px_rgba(2,6,23,.06)]" />
+                      </div>
+                      <div className="flex-1 p-3 rounded-xl border border-slate-200 bg-white shadow-[0_6px_16px_rgba(2,6,23,.06)]">
+                        <div className="text-xs text-slate-500">Sales</div>
+                        <div className="font-semibold">Qualify & Schedule</div>
+                        <p className="text-sm text-slate-600">Books a call inside chat.</p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="absolute left-[52%] top-[56%]">
-                    <div className="relative">
-                      <span
-                        className="absolute inset-0 rounded-full bg-blue-200/40 size-6 anim-pingSoft"
-                        aria-hidden="true"
-                      />
-                      <div className="relative size-6 rounded-full bg-[color:var(--brand-blue)] shadow-[0_6px_16px_rgba(2,6,23,.06)]" />
+                    <div className="flex items-start gap-3">
+                      <div className="relative">
+                        <span
+                          className="absolute inset-0 rounded-full bg-blue-200/40 size-6 anim-pingSoft"
+                          aria-hidden="true"
+                        />
+                        <div className="relative size-6 rounded-full bg-[color:var(--brand-blue)] shadow-[0_6px_16px_rgba(2,6,23,.06)]" />
+                      </div>
+                      <div className="flex-1 p-3 rounded-xl border border-slate-200 bg-white shadow-[0_6px_16px_rgba(2,6,23,.06)]">
+                        <div className="text-xs text-slate-500">Onboarding</div>
+                        <div className="font-semibold">Collect & Explain</div>
+                        <p className="text-sm text-slate-600">Captures details, answers questions.</p>
+                      </div>
                     </div>
-                    <div className="mt-2 p-3 rounded-xl border border-slate-200 bg-white shadow-[0_6px_16px_rgba(2,6,23,.06)] hover:shadow-[0_12px_34px_rgba(2,6,23,.08)] transition">
-                      <div className="text-xs text-slate-500">Onboarding</div>
-                      <div className="font-semibold">Collect & Explain</div>
-                      <p className="text-sm text-slate-600">
-                        Captures details, answers questions.
-                      </p>
+                    <div className="flex items-start gap-3">
+                      <div className="relative">
+                        <span
+                          className="absolute inset-0 rounded-full bg-blue-200/40 size-6 anim-pingSoft"
+                          aria-hidden="true"
+                        />
+                        <div className="relative size-6 rounded-full bg-[color:var(--brand-blue)] shadow-[0_6px_16px_rgba(2,6,23,.06)]" />
+                      </div>
+                      <div className="flex-1 p-3 rounded-xl border border-slate-200 bg-white shadow-[0_6px_16px_rgba(2,6,23,.06)]">
+                        <div className="text-xs text-slate-500">Support</div>
+                        <div className="font-semibold">Resolve & Learn</div>
+                        <p className="text-sm text-slate-600">Helps with full context.</p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="absolute left-[72%] top-[22%]">
-                    <div className="relative">
-                      <span
-                        className="absolute inset-0 rounded-full bg-blue-200/40 size-6 anim-pingSoft"
-                        aria-hidden="true"
-                      />
-                      <div className="relative size-6 rounded-full bg-[color:var(--brand-blue)] shadow-[0_6px_16px_rgba(2,6,23,.06)]" />
-                    </div>
-                    <div className="mt-2 p-3 rounded-xl border border-slate-200 bg-white shadow-[0_6px_16px_rgba(2,6,23,.06)] hover:shadow-[0_12px_34px_rgba(2,6,23,.08)] transition">
-                      <div className="text-xs text-slate-500">Support</div>
-                      <div className="font-semibold">Resolve & Learn</div>
-                      <p className="text-sm text-slate-600">
-                        Helps with full context.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="absolute bottom-4 left-6 text-xs text-slate-500">
-                    Context flows forward automatically · No handoffs lost
+                    <div className="text-xs text-slate-500">Context flows forward automatically · No handoffs lost</div>
                   </div>
                 </div>
               </div>
