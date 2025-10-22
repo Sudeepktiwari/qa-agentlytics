@@ -902,7 +902,7 @@ export default function Page() {
                       className="anim-dash"
                     />
                   </svg>
-                  <div className="absolute left-[3%] bottom-[18%]">
+                  <div className="absolute left-[4%] bottom-[10%]">
                     <div className="relative">
                       <span
                         className="absolute inset-0 rounded-full bg-blue-200/40 size-6 anim-pingSoft"
@@ -918,7 +918,7 @@ export default function Page() {
                       </p>
                     </div>
                   </div>
-                  <div className="absolute left-[35%] top-[18%]">
+                  <div className="absolute left-[25%] top-[28%]">
                     <div className="relative">
                       <span
                         className="absolute inset-0 rounded-full bg-blue-200/40 size-6 anim-pingSoft"
@@ -934,7 +934,7 @@ export default function Page() {
                       </p>
                     </div>
                   </div>
-                  <div className="absolute left-[62%] top-[48%]">
+                  <div className="absolute left-[52%] top-[56%]">
                     <div className="relative">
                       <span
                         className="absolute inset-0 rounded-full bg-blue-200/40 size-6 anim-pingSoft"
@@ -950,7 +950,7 @@ export default function Page() {
                       </p>
                     </div>
                   </div>
-                  <div className="absolute left-[82%] top-[22%]">
+                  <div className="absolute left-[72%] top-[22%]">
                     <div className="relative">
                       <span
                         className="absolute inset-0 rounded-full bg-blue-200/40 size-6 anim-pingSoft"
