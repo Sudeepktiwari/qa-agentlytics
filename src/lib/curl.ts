@@ -103,20 +103,24 @@ export function parseCurlRegistrationSpec(curlCommand: string): ParsedCurl {
     const raw = hMatch[1];
     const idx = raw.indexOf(":");
     if (idx > -1) {
-      const key = raw.slice(0, idx).trim();
-      const value = raw.slice(idx + 1).trim();
+      const keyRaw = raw.slice(0, idx).trim();
+      const valueRaw = raw.slice(idx + 1).trim();
+      const key = keyRaw.replace(/^[\'"`]/, "").replace(/[\'"`]$/, "");
+      const value = valueRaw.replace(/^[\'"`]/, "").replace(/[\'"`]$/, "");
       headers[key] = value;
     }
   }
   // No-quote header form e.g. -H Content-Type: application/json
-  const headerRegexPlain = /-H\s+([^\s]+:\s*[^\n]+)/gi;
+  const headerRegexPlain = /-H\s+(?!['"`])([A-Za-z0-9-]+:\s*[^\n]+)/gi;
   let hPlain: RegExpExecArray | null;
   while ((hPlain = headerRegexPlain.exec(cmd)) !== null) {
     const raw = hPlain[1];
     const idx = raw.indexOf(":");
     if (idx > -1) {
-      const key = raw.slice(0, idx).trim();
-      const value = raw.slice(idx + 1).trim();
+      const keyRaw = raw.slice(0, idx).trim();
+      const valueRaw = raw.slice(idx + 1).trim();
+      const key = keyRaw.replace(/^[\'"`]/, "").replace(/[\'"`]$/, "");
+      const value = valueRaw.replace(/^[\'"`]/, "").replace(/[\'"`]$/, "");
       headers[key] = value;
     }
   }
