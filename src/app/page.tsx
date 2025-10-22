@@ -1338,14 +1338,14 @@ export default function Page() {
                     )}
                     {i === 4 && (
                       <div className="mt-4 grid grid-cols-3 gap-2">
-                        <div className="h-6 rounded-md border border-slate-200 grid place-items-center text-center">
-                          Book
+                        <div className="h-6 rounded-md border border-slate-200 grid place-items-center text-center text-sm font-light">
+                          10:00
                         </div>
-                        <div className="h-6 rounded-md border border-slate-200 grid place-items-center text-center">
-                          Reschedule
+                        <div className="h-6 rounded-md border border-slate-200 grid place-items-center text-center text-sm font-light">
+                          12:30
                         </div>
-                        <div className="h-6 rounded-md border border-slate-200 grid place-items-center text-center">
-                          Cancel
+                        <div className="h-6 rounded-md border border-slate-200 grid place-items-center text-center text-sm font-light">
+                          15:00
                         </div>
                       </div>
                     )}
