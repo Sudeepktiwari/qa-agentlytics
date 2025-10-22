@@ -39,9 +39,10 @@ interface BotResponse {
 interface ChatbotProps {
   pageUrl?: string;
   adminId?: string;
+  prefillQuestions?: string[];
 }
 
-const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
+const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId, prefillQuestions = [] }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -1243,7 +1244,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
         }}
       >
         <h3 style={{ color: "#000000", margin: 0 }}>Chatbot</h3>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           <button
             onClick={copyConversation}
             style={{
@@ -1302,6 +1303,32 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId }) => {
               </span>
             )}
           </div>
+          {prefillQuestions && prefillQuestions.length > 0 && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {prefillQuestions.slice(0, 5).map((q, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => {
+                    trackNudge(`Quick Setup: ${q}`, { pageUrl, adminId });
+                    sendMessage(q);
+                  }}
+                  style={{
+                    backgroundColor: "#edf2f7",
+                    color: "#1a202c",
+                    border: "1px solid #cbd5e0",
+                    padding: "6px 10px",
+                    borderRadius: 999,
+                    fontSize: 11,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                  title={q}
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
       <div

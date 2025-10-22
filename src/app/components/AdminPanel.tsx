@@ -936,6 +936,13 @@ const AdminPanel: React.FC = () => {
             <Chatbot
               pageUrl={selectedPageUrl || undefined}
               adminId={auth?.adminId}
+              prefillQuestions={[
+                "Provide API documentation URL for indexing",
+                "Generate cURL for registration endpoint",
+                "Set API base URL and key",
+                "Test registration cURL",
+                "Save canonical registration cURL"
+              ]}
             />
           </div>
 
