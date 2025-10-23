@@ -1395,6 +1395,12 @@ export default function Page() {
                               ? "/multipersona"
                               : i === 3
                               ? "/bant-based-qualification"
+                              : i === 4
+                              ? "/built-in-scheduling"
+                              : i === 5
+                              ? "/9-metric-scoring"
+                              : i === 6
+                              ? "/crm-analytics-sync"
                               : "#"
                           }
                         >
