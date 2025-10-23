@@ -1371,7 +1371,7 @@ export default function Page() {
                         </p>
                         <a
                           className="inline-flex items-center gap-1 text-sm text-[color:var(--brand-blue)] opacity-0 group-hover:opacity-100 transition mt-2"
-                          href="#"
+                          href={i === 1 ? "/behavioral-trigger" : i === 2 ? "/multipersona" : "#"}
                         >
                           Learn more ▸
                         </a>
