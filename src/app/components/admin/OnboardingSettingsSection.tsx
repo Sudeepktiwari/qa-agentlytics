@@ -221,7 +221,7 @@ const OnboardingSettingsSection: React.FC = () => {
             </div>
           )}
 
-          {/* Registration Document indexing and cURL generation */}
+          {/* Registration API Document indexing and cURL generation */}
           <div style={{ marginBottom: 16 }}>
             <label
               style={{
@@ -231,7 +231,7 @@ const OnboardingSettingsSection: React.FC = () => {
                 marginBottom: 6,
               }}
             >
-              Registration API Doc URL (Google Docs or any public page)
+              Registration API Document URL (Google Docs or any public page)
             </label>
             <input
               type="url"
