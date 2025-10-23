@@ -421,13 +421,15 @@ function PersonaTimeline() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.4, delay: i * 0.06 }}
-            className="rounded-xl border border-slate-200 bg-white p-3 text-center"
+            className="rounded-xl border border-slate-200 bg-white p-2 text-center"
           >
             <div className="mx-auto mb-1 flex size-8 items-center justify-center rounded-full bg-slate-50">
               {s.icon}
             </div>
             <div className="text-[8px] md:text-xs font-semibold">{s.label}</div>
-            <div className="text-[6px] text-slate-500">{s.caption}</div>
+            <div className="text-[6px] md:text-[10px] text-slate-500">
+              {s.caption}
+            </div>
           </motion.div>
         ))}
       </div>
