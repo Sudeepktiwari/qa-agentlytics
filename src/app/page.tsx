@@ -1398,7 +1398,7 @@ export default function Page() {
                               : i === 4
                               ? "/built-in-scheduling"
                               : i === 5
-                              ? "/9-metric-scoring"
+                              ? "https://www.advancelytics.com"
                               : i === 6
                               ? "/crm-analytics-sync"
                               : "#"
