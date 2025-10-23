@@ -426,8 +426,8 @@ function PersonaTimeline() {
             <div className="mx-auto mb-1 flex size-8 items-center justify-center rounded-full bg-slate-50">
               {s.icon}
             </div>
-            <div className="text-xs font-semibold">{s.label}</div>
-            <div className="text-[10px] text-slate-500">{s.caption}</div>
+            <div className="text-[8px] md:text-xs font-semibold">{s.label}</div>
+            <div className="text-[6px] text-slate-500">{s.caption}</div>
           </motion.div>
         ))}
       </div>
