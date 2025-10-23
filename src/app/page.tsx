@@ -1400,7 +1400,7 @@ export default function Page() {
                               : i === 5
                               ? "https://www.advancelytics.com"
                               : i === 6
-                              ? "/crm-analytics-sync"
+                              ? "/crm-and-analytics-sync"
                               : "#"
                           }
                         >
