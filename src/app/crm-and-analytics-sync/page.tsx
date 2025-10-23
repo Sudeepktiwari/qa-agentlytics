@@ -122,7 +122,7 @@ export default function CRMSyncPage() {
             <span className="font-semibold tracking-tight">Agentlytics</span>
             <span className="text-slate-400">/</span>
             <span className="font-medium text-slate-600">
-              Built‑in Scheduling
+              CRM & Analytics Sync
             </span>
           </div>
           <div className="hidden sm:flex items-center gap-3">
