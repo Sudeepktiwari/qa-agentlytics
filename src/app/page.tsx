@@ -885,7 +885,10 @@ export default function Page() {
                 <div className="relative rounded-2xl border border-slate-200 bg-white shadow-[0_12px_34px_rgba(2,6,23,.08)] overflow-hidden p-6">
                   <div className="pointer-events-none -z-10 absolute -top-24 -left-24 w-96 h-96 bg-blue-50 rounded-full md:blur-3xl blur-none opacity-70" />
                   <div className="pointer-events-none -z-10 absolute -bottom-24 -right-24 w-[28rem] h-[28rem] bg-sky-50 rounded-full md:blur-3xl blur-none opacity-70" />
-                  <svg viewBox="0 0 800 420" className="hidden md:block w-full h-[360px]">
+                  <svg
+                    viewBox="0 0 800 420"
+                    className="hidden md:block w-full h-[360px]"
+                  >
                     <defs>
                       <linearGradient id="g" x1="0" x2="1">
                         <stop offset="0%" stopColor="#0069FF" />
@@ -913,7 +916,9 @@ export default function Page() {
                       </div>
                       <div className="mt-2 p-3 rounded-xl border border-slate-200 bg-white shadow-[0_6px_16px_rgba(2,6,23,.06)] hover:shadow-[0_12px_34px_rgba(2,6,23,.08)] transition">
                         <div className="text-xs text-slate-500">Lead</div>
-                        <div className="font-semibold">Proactive Engagement</div>
+                        <div className="font-semibold">
+                          Proactive Engagement
+                        </div>
                         <p className="text-sm text-slate-600">
                           Greets at the right moment.
                         </p>
@@ -984,8 +989,12 @@ export default function Page() {
                       </div>
                       <div className="flex-1 p-3 rounded-xl border border-slate-200 bg-white shadow-[0_6px_16px_rgba(2,6,23,.06)]">
                         <div className="text-xs text-slate-500">Lead</div>
-                        <div className="font-semibold">Proactive Engagement</div>
-                        <p className="text-sm text-slate-600">Greets at the right moment.</p>
+                        <div className="font-semibold">
+                          Proactive Engagement
+                        </div>
+                        <p className="text-sm text-slate-600">
+                          Greets at the right moment.
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
@@ -999,7 +1008,9 @@ export default function Page() {
                       <div className="flex-1 p-3 rounded-xl border border-slate-200 bg-white shadow-[0_6px_16px_rgba(2,6,23,.06)]">
                         <div className="text-xs text-slate-500">Sales</div>
                         <div className="font-semibold">Qualify & Schedule</div>
-                        <p className="text-sm text-slate-600">Books a call inside chat.</p>
+                        <p className="text-sm text-slate-600">
+                          Books a call inside chat.
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
@@ -1013,7 +1024,9 @@ export default function Page() {
                       <div className="flex-1 p-3 rounded-xl border border-slate-200 bg-white shadow-[0_6px_16px_rgba(2,6,23,.06)]">
                         <div className="text-xs text-slate-500">Onboarding</div>
                         <div className="font-semibold">Collect & Explain</div>
-                        <p className="text-sm text-slate-600">Captures details, answers questions.</p>
+                        <p className="text-sm text-slate-600">
+                          Captures details, answers questions.
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
@@ -1027,10 +1040,14 @@ export default function Page() {
                       <div className="flex-1 p-3 rounded-xl border border-slate-200 bg-white shadow-[0_6px_16px_rgba(2,6,23,.06)]">
                         <div className="text-xs text-slate-500">Support</div>
                         <div className="font-semibold">Resolve & Learn</div>
-                        <p className="text-sm text-slate-600">Helps with full context.</p>
+                        <p className="text-sm text-slate-600">
+                          Helps with full context.
+                        </p>
                       </div>
                     </div>
-                    <div className="text-xs text-slate-500">Context flows forward automatically · No handoffs lost</div>
+                    <div className="text-xs text-slate-500">
+                      Context flows forward automatically · No handoffs lost
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1371,7 +1388,15 @@ export default function Page() {
                         </p>
                         <a
                           className="inline-flex items-center gap-1 text-sm text-[color:var(--brand-blue)] opacity-0 group-hover:opacity-100 transition mt-2"
-                          href={i === 1 ? "/behavioral-trigger" : i === 2 ? "/multipersona" : "#"}
+                          href={
+                            i === 1
+                              ? "/behavioral-trigger"
+                              : i === 2
+                              ? "/multipersona"
+                              : i === 3
+                              ? "/bant-based-qualification"
+                              : "#"
+                          }
                         >
                           Learn more ▸
                         </a>
