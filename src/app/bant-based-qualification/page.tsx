@@ -130,7 +130,7 @@ export default function BANTQualificationPage() {
               viewport={{ once: true }}
               className="relative"
             >
-              <div className="relative mx-auto w-full max-w-xl rounded-3xl border border-slate-200 bg-white p-6 shadow-xl">
+              <div className="relative mx-auto w-full max-w-2xl rounded-3xl border border-slate-200 bg-white p-6 shadow-xl">
                 <BANTCanvas />
               </div>
             </motion.div>
@@ -327,9 +327,9 @@ function BANTCanvas() {
   return (
     <div className="relative">
       {/* mock chat + right side score panel */}
-      <div className=" md:grid md:grid-cols-5 md:gap-4">
+      <div className=" md:grid md:grid-cols-2 md:gap-4">
         {/* chat panel */}
-        <div className="col-span-3 rounded-2xl border border-slate-200 bg-gradient-to-b from-slate-50 to-white p-4">
+        <div className="md:col-span-1 rounded-2xl border border-slate-200 bg-gradient-to-b from-slate-50 to-white p-4">
           <div className="flex items-center gap-2">
             <div className="size-2.5 rounded-full bg-red-400" />
             <div className="size-2.5 rounded-full bg-yellow-400" />
@@ -388,7 +388,7 @@ function BANTCanvas() {
         </div>
 
         {/* score panel */}
-        <div className="col-span-2 rounded-2xl border border-slate-200 bg-white p-4">
+        <div className="mt-2 md:mt-0 md:col-span-1 rounded-2xl border border-slate-200 bg-white p-4">
           <div className="flex items-center justify-between">
             <h4 className="text-sm font-semibold">BANT Summary</h4>
             <span className="text-[10px] rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-slate-600">
