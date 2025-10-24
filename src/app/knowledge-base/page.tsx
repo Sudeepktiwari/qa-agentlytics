@@ -50,8 +50,7 @@ function devAssertTheme() {
       "surfaceAlt",
       "borderSubtle",
     ] as const;
-    required.forEach((k) => {
-      // @ts-ignore
+    required.forEach((k: keyof typeof brand) => {
       if (!brand[k]) console.warn(`[KB Theme] Missing token: ${k}`);
     });
   }

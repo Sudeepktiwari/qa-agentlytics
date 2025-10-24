@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { bookingService } from "@/services/bookingService";
 import { verifyAdminAccessFromCookie } from "@/lib/auth";
+import type { BookingFilters } from "@/services/bookingService";
 
 /**
  * Admin API for managing bookings
@@ -31,12 +32,29 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
 
-    // Extract query parameters
+    // Extract and validate query parameters against allowed literals
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "20");
-    const status = searchParams.get("status") || undefined;
-    const requestType = searchParams.get("requestType") || undefined;
-    const priority = searchParams.get("priority") || undefined;
+
+    const allowedStatus = ["pending", "confirmed", "completed", "cancelled"] as const;
+    const allowedRequestTypes = ["demo", "call", "support", "consultation"] as const;
+    const allowedPriority = ["low", "medium", "high", "urgent"] as const;
+
+    const rawStatus = searchParams.get("status");
+    const status = rawStatus && (allowedStatus as readonly string[]).includes(rawStatus)
+      ? (rawStatus as (typeof allowedStatus)[number])
+      : undefined;
+
+    const rawRequestType = searchParams.get("requestType");
+    const requestType = rawRequestType && (allowedRequestTypes as readonly string[]).includes(rawRequestType)
+      ? (rawRequestType as (typeof allowedRequestTypes)[number])
+      : undefined;
+
+    const rawPriority = searchParams.get("priority");
+    const priority = rawPriority && (allowedPriority as readonly string[]).includes(rawPriority)
+      ? (rawPriority as (typeof allowedPriority)[number])
+      : undefined;
+
     const searchTerm = searchParams.get("search") || undefined;
 
     // SECURITY: Force adminId to be the authenticated admin's ID
@@ -46,15 +64,16 @@ export async function GET(request: NextRequest) {
     // Date range filtering
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
-    let dateRange = undefined;
+    let dateRange = undefined as BookingFilters["dateRange"];
     if (startDate && endDate) {
-      dateRange = {
-        start: new Date(startDate),
-        end: new Date(endDate),
-      };
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
+        dateRange = { start, end };
+      }
     }
 
-    const filters = {
+    const filters: BookingFilters = {
       status,
       requestType,
       priority,

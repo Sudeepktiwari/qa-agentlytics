@@ -771,7 +771,9 @@ async function verifyBookingAvailability(data: BookingSubmission): Promise<{
 /**
  * Process and sanitize booking data
  */
-async function processBookingData(data: BookingSubmission) {
+async function processBookingData(
+  data: BookingSubmission
+): Promise<Omit<BookingRequest, "_id" | "updatedAt" | "createdAt">> {
   return {
     // Required fields for BookingRequest
     sessionId: data.sessionId
@@ -799,19 +801,11 @@ async function processBookingData(data: BookingSubmission) {
     phone: data.phone
       ? JavaScriptSafetyUtils.sanitizeString(data.phone)
       : undefined,
-    role: data.role,
 
     // Booking details
     requestType: data.bookingType || "demo",
-    requirements: data.requirements
-      ? JavaScriptSafetyUtils.sanitizeString(data.requirements)
-      : undefined,
-    interests: data.interests || [],
-    teamSize: data.teamSize,
-    timeline: data.timeline,
 
     // Metadata
-    source: data.source || "calendar_widget",
     pageUrl: data.pageUrl
       ? JavaScriptSafetyUtils.sanitizeString(data.pageUrl)
       : undefined,
@@ -827,8 +821,21 @@ async function processBookingData(data: BookingSubmission) {
 /**
  * Create booking with conflict checking
  */
-async function createBookingWithConflictCheck(bookingData: Partial<BookingRequest>) {
+async function createBookingWithConflictCheck(
+  bookingData: Omit<BookingRequest, "_id" | "updatedAt" | "createdAt">
+) {
   try {
+    // Ensure required fields exist
+    if (!bookingData.preferredDate) {
+      throw new Error("Missing required field: preferredDate");
+    }
+    if (!bookingData.preferredTime) {
+      throw new Error("Missing required field: preferredTime");
+    }
+    if (!bookingData.timezone) {
+      throw new Error("Missing required field: timezone");
+    }
+
     // Final availability check before creating
     const finalCheck = await verifyBookingAvailability({
       preferredDate: bookingData.preferredDate.toISOString().split("T")[0],
