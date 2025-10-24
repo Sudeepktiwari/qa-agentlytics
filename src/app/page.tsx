@@ -899,9 +899,10 @@ export default function Page() {
           </div>
           <div
             id="mobileMenu"
-            className="md:hidden hidden border-t border-slate-200 bg-white"
+            className="md:hidden hidden absolute top-full right-0 w-full bg-transparent"
           >
-            <nav className="max-w-7xl mx-auto px-6 py-4 grid gap-4 text-slate-800">
+            <div className="w-1/2 ml-auto bg-white border-t border-slate-200 shadow-sm">
+            <nav className="px-6 py-4 grid gap-4 text-slate-800">
               {/* Mobile Products dropdown */}
               <details className="group border border-slate-200 rounded-lg">
                 <summary className="flex items-center justify-between px-3 py-2 cursor-pointer">
@@ -1023,6 +1024,7 @@ export default function Page() {
                 </a>
               </div>
             </nav>
+            </div>
           </div>
         </header>
 

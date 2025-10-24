@@ -32,6 +32,7 @@ export default function CustomerSupportAIPage() {
     { txt: "Escalate to L2" },
   ];
   const [tick, setTick] = useState(0);
+  const [mobileOpen, setMobileOpen] = useState(false);
   useEffect(() => {
     const id = setInterval(() => setTick((t) => t + 1), 2500);
     return () => clearInterval(id);
@@ -75,7 +76,7 @@ export default function CustomerSupportAIPage() {
 
       {/* NAVBAR */}
       <header className="sticky top-0 z-40 border-b border-[--border-subtle] bg-white/80 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
+        <div className="relative mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-xl bg-[--brand-primary]" />
             <span className="text-lg font-semibold tracking-tight">
@@ -119,6 +120,46 @@ export default function CustomerSupportAIPage() {
             >
               Start free
             </a>
+            <button
+              id="menuBtn"
+              onClick={() => setMobileOpen(!mobileOpen)}
+              className="md:hidden inline-flex items-center justify-center size-10 rounded-lg border border-slate-300"
+              aria-label="Open menu"
+            >
+              ☰
+            </button>
+          </div>
+        </div>
+        <div
+          id="mobileMenu"
+          className={`md:hidden ${mobileOpen ? '' : 'hidden'} absolute top-full right-0 w-full bg-transparent`}
+        >
+          <div className="w-1/2 ml-auto bg-white border-t border-[--border-subtle] shadow-sm">
+            <nav className="px-6 py-4 grid gap-2 text-slate-800">
+              <details className="group border border-[--border-subtle] rounded-lg">
+                <summary className="flex items-center justify-between px-3 py-2 cursor-pointer">
+                  <span>Solutions</span>
+                  <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M6 8l4 4 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+                </summary>
+                <div className="px-2 pb-2 space-y-1">
+                  <a href="/customer-support-ai" className="block px-2 py-2 rounded hover:bg-slate-50">Customer Support AI</a>
+                  <a href="/sales-conversion-ai" className="block px-2 py-2 rounded hover:bg-slate-50">Sales Conversion AI</a>
+                  <a href="/onboarding-automation" className="block px-2 py-2 rounded hover:bg-slate-50">Onboarding Automation</a>
+                  <a href="/knowledge-automation" className="block px-2 py-2 rounded hover:bg-slate-50">Knowledge Automation</a>
+                  <a href="/cx-analytics-dashboard" className="block px-2 py-2 rounded hover:bg-slate-50">CX Analytics Dashboard</a>
+                </div>
+              </details>
+              <a href="#why">Why</a>
+              <a href="#how">How it works</a>
+              <a href="#brain">Inside the Brain</a>
+              <a href="#features">Features</a>
+              <a href="#outcomes">Outcomes</a>
+              <a href="#cta">Pricing</a>
+              <div className="pt-2 border-t border-[--border-subtle] flex gap-3">
+                <a href="#demo" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-[--border-subtle]">Watch demo</a>
+                <a href="#cta" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[--brand-primary] text-white">Start free</a>
+              </div>
+            </nav>
           </div>
         </div>
       </header>
@@ -413,176 +454,6 @@ export default function CustomerSupportAIPage() {
                     fill="none"
                   />
                 </svg>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* HOW IT WORKS */}
-      <section
-        id="how"
-        className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6"
-      >
-        <div className="flex flex-wrap items-start justify-between gap-6">
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight">
-              Resolve smarter in 4 steps
-            </h2>
-            <p className="mt-3 max-w-2xl text-slate-600">
-              Detect, respond, learn, and optimize — automatically.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="rounded-full bg-[--brand-primary]/10 px-3 py-1 text-xs font-semibold text-[--brand-primary]">
-              Signal‑ready
-            </span>
-            <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-              Privacy‑aware
-            </span>
-          </div>
-        </div>
-
-        <div className="mt-10 grid items-start gap-8 md:grid-cols-2">
-          {/* Left: Animated Stepper (Framer Motion stagger) */}
-          <div className="space-y-4">
-            {[
-              {
-                n: "1",
-                t: "Detect & Classify",
-                d: "Identifies customer mood, intent, and topic across channels.",
-              },
-              {
-                n: "2",
-                t: "Auto‑respond or Route",
-                d: "Uses KB, macros, and prior tickets to answer or assign instantly.",
-              },
-              {
-                n: "3",
-                t: "Learn & Suggest",
-                d: "Finds gaps, proposes new macros/articles, and improves prompts.",
-              },
-              {
-                n: "4",
-                t: "Monitor & Optimize",
-                d: "Dashboards reveal deflection, sentiment shifts, and backlogs.",
-              },
-            ].map((s, i) => (
-              <motion.div
-                key={s.n}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{
-                  delay: i * 0.12,
-                  duration: 0.45,
-                  ease: "easeOut",
-                }}
-                className="group relative rounded-2xl border border-[--border-subtle] bg-white p-5 shadow-sm transition hover:shadow-md"
-              >
-                {i < 3 && (
-                  <div className="absolute left-6 top-[64px] hidden h-8 w-px bg-gradient-to-b from-[--border-subtle] to-transparent md:block" />
-                )}
-                <div className="flex items-start gap-4">
-                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[--brand-primary]/10 text-sm font-bold text-[--brand-primary]">
-                    {s.n}
-                  </div>
-                  <div>
-                    <h3 className="text-base font-semibold text-slate-900">
-                      {s.t}
-                    </h3>
-                    <p className="mt-1 text-sm text-slate-600">{s.d}</p>
-                  </div>
-                </div>
-                <div className="mt-4 h-1 w-0 rounded bg-[--brand-primary] transition-all duration-500 group-hover:w-24" />
-              </motion.div>
-            ))}
-          </div>
-
-          {/* Right: Animated Illustration (looping) */}
-          <div className="relative">
-            <div
-              className="absolute -inset-1 rounded-3xl bg-gradient-to-br from-[--brand-primary]/20 to-[--brand-accent]/20 blur"
-              aria-hidden
-            />
-            <div className="relative overflow-hidden rounded-3xl border border-[--border-subtle] bg-white p-6 shadow-xl">
-              {/* incoming intents */}
-              <div className="min-h-[40px]">
-                <AnimatePresence initial={false}>
-                  <div className="flex flex-wrap items-center gap-2 text-xs">
-                    {rollingIntents.map((sig) => (
-                      <motion.span
-                        key={`${sig.k}-${tick}`}
-                        initial={{ opacity: 0, x: -8 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: 8 }}
-                        transition={{ duration: 0.35, ease: "easeOut" }}
-                        className="rounded-full border border-[--brand-primary]/20 bg-[--brand-primary]/5 px-2.5 py-1 text-[--brand-primary]"
-                      >
-                        {sig.k}
-                      </motion.span>
-                    ))}
-                  </div>
-                </AnimatePresence>
-              </div>
-
-              {/* auto-tag explanation */}
-              <div className="mt-4 rounded-2xl border border-[--border-subtle] bg-[--surface] p-4">
-                <div className="text-[11px] font-semibold text-slate-500">
-                  Auto‑tagged
-                </div>
-                <div className="mt-1 text-sm text-slate-800">
-                  Billing → Refund • Technical → Login • Product → Feature
-                  request
-                </div>
-                <div className="mt-3 min-h-[34px] flex flex-wrap gap-2 text-[11px]">
-                  <AnimatePresence initial={false}>
-                    {rollingActions.map((a) => (
-                      <motion.button
-                        key={`${a.txt}-${tick}`}
-                        initial={{ opacity: 0, y: 6 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -6 }}
-                        transition={{ duration: 0.35, ease: "easeOut" }}
-                        className="rounded-full border border-[--brand-primary]/20 bg-white px-3 py-1 font-medium text-[--brand-primary] hover:bg-[--brand-primary]/5"
-                      >
-                        {a.txt}
-                      </motion.button>
-                    ))}
-                  </AnimatePresence>
-                </div>
-              </div>
-
-              {/* progress bar (looping) */}
-              <div className="mt-5 h-2 w-full rounded bg-[--surface-alt]">
-                <motion.div
-                  className="relative h-2 rounded bg-[--brand-primary]"
-                  initial={{ width: 0 }}
-                  animate={{ width: ["0%", "68%", "60%", "68%"] }}
-                  transition={{
-                    duration: 2.2,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
-                >
-                  <motion.span
-                    className="absolute inset-0 block rounded"
-                    initial={{ backgroundPosition: "-200% 0" }}
-                    animate={{ backgroundPosition: ["-200% 0", "200% 0"] }}
-                    transition={{
-                      duration: 1.8,
-                      repeat: Infinity,
-                      ease: "linear",
-                    }}
-                    style={{
-                      backgroundImage:
-                        "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.35) 50%, rgba(255,255,255,0) 100%)",
-                      backgroundSize: "200% 100%",
-                    }}
-                  />
-                </motion.div>
-              </div>
-              <div className="mt-2 text-right text-xs text-slate-500">
-                Deflection 33%
               </div>
             </div>
           </div>

@@ -15,6 +15,7 @@ const brand = {
 
 export default function SalesConversionAIPage() {
   const [tick, setTick] = useState(0);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const prefersReducedMotion = useReducedMotion();
 
   // Sticky Header Component
@@ -28,22 +29,50 @@ export default function SalesConversionAIPage() {
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">A</span>
               </div>
-              <span className="text-xl font-bold text-gray-900">Advancelytics</span>
+              <span className="text-xl font-bold text-gray-900">
+                Advancelytics
+              </span>
             </a>
           </div>
 
           {/* Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            <a href="#overview" className="text-gray-700 hover:text-blue-600 font-medium">Overview</a>
-            <a href="#how" className="text-gray-700 hover:text-blue-600 font-medium">How It Works</a>
-            <a href="#features" className="text-gray-700 hover:text-blue-600 font-medium">Features</a>
-            <a href="#impact" className="text-gray-700 hover:text-blue-600 font-medium">Impact</a>
-            <a href="#testimonials" className="text-gray-700 hover:text-blue-600 font-medium">Testimonials</a>
-            <a href="#cta" className="text-gray-700 hover:text-blue-600 font-medium">Get Started</a>
-            <a href="/services" className="text-gray-700 hover:text-blue-600 font-medium">Services</a>
-            <a href="/about" className="text-gray-700 hover:text-blue-600 font-medium">About</a>
-            <a href="/contact" className="text-gray-700 hover:text-blue-600 font-medium">Contact</a>
-            <a href="/pricing" className="text-gray-700 hover:text-blue-600 font-medium">Pricing</a>
+            <a
+              href="#overview"
+              className="text-gray-700 hover:text-blue-600 font-medium"
+            >
+              Overview
+            </a>
+            <a
+              href="#how"
+              className="text-gray-700 hover:text-blue-600 font-medium"
+            >
+              How It Works
+            </a>
+            <a
+              href="#features"
+              className="text-gray-700 hover:text-blue-600 font-medium"
+            >
+              Features
+            </a>
+            <a
+              href="#impact"
+              className="text-gray-700 hover:text-blue-600 font-medium"
+            >
+              Impact
+            </a>
+            <a
+              href="#testimonials"
+              className="text-gray-700 hover:text-blue-600 font-medium"
+            >
+              Testimonials
+            </a>
+            <a
+              href="#cta"
+              className="text-gray-700 hover:text-blue-600 font-medium"
+            >
+              Get Started
+            </a>
           </nav>
 
           {/* CTA Button */}
@@ -54,6 +83,32 @@ export default function SalesConversionAIPage() {
             >
               Get Started
             </a>
+            <button
+              id="menuBtn"
+              onClick={() => setMobileOpen(!mobileOpen)}
+              className="md:hidden inline-flex items-center justify-center size-10 rounded-lg border border-slate-300"
+              aria-label="Open menu"
+            >
+              ☰
+            </button>
+          </div>
+        </div>
+        {/* Mobile dropdown menu */}
+        <div
+          id="mobileMenu"
+          className={`md:hidden ${mobileOpen ? '' : 'hidden'} absolute top-full right-0 w-full bg-transparent`}
+        >
+          <div className="w-1/2 ml-auto bg-white border-t border-slate-200 shadow-sm">
+          <nav className="px-6 py-4 grid gap-2 text-slate-800">
+            <a href="#overview" className="block px-3 py-2 rounded hover:bg-slate-50">Overview</a>
+            <a href="#why" className="block px-3 py-2 rounded hover:bg-slate-50">Why It Matters</a>
+            <a href="#how" className="block px-3 py-2 rounded hover:bg-slate-50">How It Works</a>
+            <a href="#brain" className="block px-3 py-2 rounded hover:bg-slate-50">Inside the Brain</a>
+            <a href="#features" className="block px-3 py-2 rounded hover:bg-slate-50">Key Features</a>
+            <a href="#impact" className="block px-3 py-2 rounded hover:bg-slate-50">Real Impact</a>
+            <a href="#testimonials" className="block px-3 py-2 rounded hover:bg-slate-50">Testimonials</a>
+            <a href="#cta" className="block px-3 py-2 rounded hover:bg-slate-50">Get Started</a>
+          </nav>
           </div>
         </div>
       </div>
@@ -136,7 +191,10 @@ export default function SalesConversionAIPage() {
     >
       <StickyHeader />
       {/* 1) HERO */}
-      <section id="overview" className="relative isolate rounded-b-[2rem] bg-[--surface] px-4 py-20 sm:px-6">
+      <section
+        id="overview"
+        className="relative isolate rounded-b-[2rem] bg-[--surface] px-4 py-20 sm:px-6"
+      >
         <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-2">
           {/* Left: Copy */}
           <div className="text-center lg:text-left">
@@ -305,7 +363,10 @@ export default function SalesConversionAIPage() {
       </section>
 
       {/* 3) HOW IT WORKS */}
-      <section id="how" className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6">
+      <section
+        id="how"
+        className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6"
+      >
         <span id="demo" />
         <h2 className="text-3xl font-bold tracking-tight text-center">
           How It Works
@@ -463,7 +524,10 @@ export default function SalesConversionAIPage() {
       </section>
 
       {/* 4) INSIDE THE PROACTIVE BRAIN */}
-      <section id="brain" className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6">
+      <section
+        id="brain"
+        className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6"
+      >
         <h2 className="text-center text-3xl font-bold tracking-tight">
           Inside the Proactive Brain
         </h2>
@@ -594,7 +658,10 @@ export default function SalesConversionAIPage() {
       </section>
 
       {/* 5) KEY FEATURES */}
-      <section id="features" className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6">
+      <section
+        id="features"
+        className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6"
+      >
         <h2 className="text-3xl font-bold tracking-tight text-center">
           Key Features
         </h2>
@@ -673,7 +740,10 @@ export default function SalesConversionAIPage() {
       </section>
 
       {/* 7) TESTIMONIALS */}
-      <section id="testimonials" className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6">
+      <section
+        id="testimonials"
+        className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6"
+      >
         <h2 className="text-3xl font-bold tracking-tight text-center">
           What Sales Teams Are Saying
         </h2>

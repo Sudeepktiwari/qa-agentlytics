@@ -15,6 +15,8 @@ const brand = {
 
 export default function CxAnalyticsDashboardPage() {
   const [tick, setTick] = useState(0);
+  // Mobile menu state
+  const [mobileOpen, setMobileOpen] = useState(false);
   const prefersReducedMotion = useReducedMotion();
 
   useEffect(() => {
@@ -54,7 +56,7 @@ export default function CxAnalyticsDashboardPage() {
     >
       {/* NAVBAR */}
       <header className="sticky top-0 z-40 border-b border-[--border-subtle] bg-white/80 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
+        <div className="relative mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-xl bg-[--brand-primary]" />
             <span className="text-lg font-semibold tracking-tight">Advancelytics</span>
@@ -69,6 +71,50 @@ export default function CxAnalyticsDashboardPage() {
           <div className="flex items-center gap-3">
             <a href="#demo" className="hidden rounded-xl border border-[--border-subtle] px-4 py-2 text-sm font-medium text-slate-700 hover:bg-[--surface] md:inline-block">Watch demo</a>
             <a href="#cta" className="rounded-2xl px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:shadow-lg" style={{ backgroundColor: brand.primary }}>Start free</a>
+            {/* Mobile menu toggle */}
+            <button
+              id="menuBtn"
+              onClick={() => setMobileOpen(!mobileOpen)}
+              className="md:hidden inline-flex items-center justify-center size-10 rounded-lg border border-slate-300"
+              aria-label="Open menu"
+            >
+              ☰
+            </button>
+          </div>
+
+          {/* Mobile dropdown menu */}
+          <div
+            id="mobileMenu"
+            className={`md:hidden ${mobileOpen ? '' : 'hidden'} absolute top-full right-0 w-full bg-transparent`}
+          >
+            <div className="w-1/2 ml-auto bg-white border-t border-[--border-subtle] shadow-sm">
+              <nav className="px-6 py-4 grid gap-2 text-slate-800">
+                {/* Solutions dropdown */}
+                <details className="group border border-[--border-subtle] rounded-lg">
+                  <summary className="flex items-center justify-between px-3 py-2 cursor-pointer">
+                    <span>Solutions</span>
+                    <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M6 8l4 4 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+                  </summary>
+                  <div className="px-2 pb-2 space-y-1">
+                    <a href="/customer-support-ai" className="block px-2 py-2 rounded hover:bg-slate-50">Customer Support AI</a>
+                    <a href="/sales-conversion-ai" className="block px-2 py-2 rounded hover:bg-slate-50">Sales Conversion AI</a>
+                    <a href="/onboarding-automation" className="block px-2 py-2 rounded hover:bg-slate-50">Onboarding Automation</a>
+                    <a href="/knowledge-automation" className="block px-2 py-2 rounded hover:bg-slate-50">Knowledge Automation</a>
+                    <a href="/cx-analytics-dashboard" className="block px-2 py-2 rounded hover:bg-slate-50">CX Analytics Dashboard</a>
+                  </div>
+                </details>
+                {/* Local links */}
+                <a href="#why">Why</a>
+                <a href="#how">How it works</a>
+                <a href="#features">Features</a>
+                <a href="#cta">Pricing</a>
+                {/* Buttons */}
+                <div className="pt-2 border-t border-[--border-subtle] flex gap-3">
+                  <a href="#demo" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-[--border-subtle]">Watch demo</a>
+                  <a href="#cta" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[--brand-primary] text-white">Start free</a>
+                </div>
+              </nav>
+            </div>
           </div>
         </div>
       </header>
