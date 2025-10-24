@@ -589,47 +589,99 @@ export default function Page() {
               <div className="relative group">
                 <button className="inline-flex items-center gap-1 hover:text-slate-900">
                   <span>Products</span>
-                  <svg width="14" height="14" viewBox="0 0 20 20" fill="none" className="text-slate-500 group-hover:text-slate-900"><path d="M5 7l5 5 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 20 20"
+                    fill="none"
+                    className="text-slate-500 group-hover:text-slate-900"
+                  >
+                    <path
+                      d="M5 7l5 5 5-5"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
                 </button>
                 <div className="absolute left-0 top-full pt-3 z-50 w-[720px] rounded-2xl border border-slate-200 bg-white shadow-[0_12px_34px_rgba(2,6,23,.10)] p-6 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto">
                   <div className="grid grid-cols-2 gap-6">
                     {/* Core Products */}
                     <div>
-                      <div className="text-xs font-medium text-slate-600 mb-3">Core Products</div>
+                      <div className="text-xs font-medium text-slate-600 mb-3">
+                        Core Products
+                      </div>
                       <ul className="space-y-3">
                         <li>
-                          <a href="#features" className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50">
-                            <span className="size-8 flex items-center justify-center rounded-lg bg-blue-50 text-blue-600">🤖</span>
+                          <a
+                            href="#features"
+                            className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
+                          >
+                            <span className="size-8 flex items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                              🤖
+                            </span>
                             <div>
-                              <div className="font-semibold text-slate-900">AI Chatbots</div>
-                              <div className="text-sm text-slate-600">Advanced conversational AI</div>
+                              <div className="font-semibold text-slate-900">
+                                AI Chatbots
+                              </div>
+                              <div className="text-sm text-slate-600">
+                                Advanced conversational AI
+                              </div>
                             </div>
                           </a>
                         </li>
                         <li>
-                          <a href="/multipersona" className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50">
-                            <span className="size-8 flex items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">📚</span>
+                          <a
+                            href="/multipersona"
+                            className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
+                          >
+                            <span className="size-8 flex items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+                              📚
+                            </span>
                             <div>
-                              <div className="font-semibold text-slate-900">Knowledge Base AI</div>
-                              <div className="text-sm text-slate-600">Intelligent self‑service portal</div>
+                              <div className="font-semibold text-slate-900">
+                                Knowledge Base AI
+                              </div>
+                              <div className="text-sm text-slate-600">
+                                Intelligent self‑service portal
+                              </div>
                             </div>
                           </a>
                         </li>
                         <li>
-                          <a href="/bant-based-qualification" className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50">
-                            <span className="size-8 flex items-center justify-center rounded-lg bg-cyan-50 text-cyan-600">🎯</span>
+                          <a
+                            href="/bant-based-qualification"
+                            className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
+                          >
+                            <span className="size-8 flex items-center justify-center rounded-lg bg-cyan-50 text-cyan-600">
+                              🎯
+                            </span>
                             <div>
-                              <div className="font-semibold text-slate-900">Lead Generation AI</div>
-                              <div className="text-sm text-slate-600">Smart lead capture & qualification</div>
+                              <div className="font-semibold text-slate-900">
+                                Lead Generation AI
+                              </div>
+                              <div className="text-sm text-slate-600">
+                                Smart lead capture & qualification
+                              </div>
                             </div>
                           </a>
                         </li>
                         <li>
-                          <a href="/crm-and-analytics-sync" className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50">
-                            <span className="size-8 flex items-center justify-center rounded-lg bg-rose-50 text-rose-600">📊</span>
+                          <a
+                            href="/crm-and-analytics-sync"
+                            className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
+                          >
+                            <span className="size-8 flex items-center justify-center rounded-lg bg-rose-50 text-rose-600">
+                              📊
+                            </span>
                             <div>
-                              <div className="font-semibold text-slate-900">Product Dashboard</div>
-                              <div className="text-sm text-slate-600">Central command center</div>
+                              <div className="font-semibold text-slate-900">
+                                Product Dashboard
+                              </div>
+                              <div className="text-sm text-slate-600">
+                                Central command center
+                              </div>
                             </div>
                           </a>
                         </li>
@@ -637,7 +689,7 @@ export default function Page() {
                     </div>
 
                     {/* Advanced Features */}
-                    <div>
+                    {/* <div>
                       <div className="text-xs font-medium text-slate-600 mb-3">Advanced Features</div>
                       <ul className="space-y-3">
                         <li>
@@ -677,7 +729,7 @@ export default function Page() {
                           </a>
                         </li>
                       </ul>
-                    </div>
+                    </div> */}
                   </div>
                 </div>
               </div>
