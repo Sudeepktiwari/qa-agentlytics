@@ -151,7 +151,7 @@ Create realistic personas based on the actual content. Even if content is limite
 
     // Add timestamps and IDs to personas
     extracted.targetAudiences = extracted.targetAudiences.map(
-      (persona: any, index: number) => ({
+      (persona: Partial<CustomerPersona>, index: number) => ({
         ...persona,
         id: persona.id || `persona_${index + 1}`,
         createdAt: new Date(),
@@ -164,7 +164,7 @@ Create realistic personas based on the actual content. Even if content is limite
     );
 
     return extracted;
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error extracting personas:", error);
     // Return default structure if extraction fails
     return {

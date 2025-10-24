@@ -34,9 +34,9 @@ export async function GET(request: NextRequest) {
     // Extract query parameters
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "20");
-    const status = searchParams.get("status") as any;
-    const requestType = searchParams.get("requestType") as any;
-    const priority = searchParams.get("priority") as any;
+    const status = searchParams.get("status") || undefined;
+    const requestType = searchParams.get("requestType") || undefined;
+    const priority = searchParams.get("priority") || undefined;
     const searchTerm = searchParams.get("search") || undefined;
 
     // SECURITY: Force adminId to be the authenticated admin's ID

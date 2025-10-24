@@ -735,6 +735,130 @@ export default function Page() {
                 </div>
               </div>
 
+              {/* Solutions dropdown */}
+              <div className="relative group">
+                <button className="inline-flex items-center gap-1 hover:text-slate-900">
+                  <span>Solutions</span>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 20 20"
+                    fill="none"
+                    className="text-slate-500 group-hover:text-slate-900"
+                  >
+                    <path
+                      d="M5 7l5 5 5-5"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+                <div className="absolute left-0 top-full pt-3 z-50 rounded-2xl border border-slate-200 bg-white shadow-[0_12px_34px_rgba(2,6,23,.10)] p-6 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto">
+                  <div className="w-[300px]">
+                    <ul className="space-y-3">
+                      <li>
+                        <a
+                          href="/customer-support-ai"
+                          className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
+                        >
+                          <span className="size-8 flex items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                            🤖
+                          </span>
+                          <div>
+                            <div className="font-semibold text-slate-900">
+                              Customer Support AI
+                            </div>
+                            <div className="text-sm text-slate-600">
+                              Help teams resolve faster with contextual AI that
+                              learns from past chats and knowledge bases.
+                            </div>
+                          </div>
+                        </a>
+                      </li>
+                      <li>
+                        <a
+                          href="/sales-conversion-ai"
+                          className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
+                        >
+                          <span className="size-8 flex items-center justify-center rounded-lg bg-cyan-50 text-cyan-600">
+                            🎯
+                          </span>
+                          <div>
+                            <div className="font-semibold text-slate-900">
+                              Sales Conversion AI
+                            </div>
+                            <div className="text-sm text-slate-600">
+                              Turn idle visitors into qualified leads through
+                              proactive engagement and behavioral triggers.
+                            </div>
+                          </div>
+                        </a>
+                      </li>
+                      <li>
+                        <a
+                          href="/onboarding-automation"
+                          className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
+                        >
+                          <span className="size-8 flex items-center justify-center rounded-lg bg-rose-50 text-rose-600">
+                            🚀
+                          </span>
+                          <div>
+                            <div className="font-semibold text-slate-900">
+                              Onboarding Automation
+                            </div>
+                            <div className="text-sm text-slate-600">
+                              Converts static onboarding into interactive AI‑led
+                              guidance.
+                            </div>
+                          </div>
+                        </a>
+                      </li>
+                      <li>
+                        <a
+                          href="/knowledge-automation"
+                          className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
+                        >
+                          <span className="size-8 flex items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+                            📚
+                          </span>
+                          <div>
+                            <div className="font-semibold text-slate-900">
+                              Knowledge Automation
+                            </div>
+                            <div className="text-sm text-slate-600">
+                              Auto‑organize and surface information
+                              intelligently across your help center and
+                              chatbots.
+                            </div>
+                          </div>
+                        </a>
+                      </li>
+                      <li>
+                        <a
+                          href="/cx-analytics-dashboard"
+                          className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
+                        >
+                          <span className="size-8 flex items-center justify-center rounded-lg bg-teal-50 text-teal-600">
+                            📈
+                          </span>
+                          <div>
+                            <div className="font-semibold text-slate-900">
+                              CX Analytics Dashboard
+                            </div>
+                            <div className="text-sm text-slate-600">
+                              Gain actionable insights from every customer
+                              interaction — sentiment, resolution, and intent.
+                            </div>
+                          </div>
+                        </a>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
               <a href="#problem" className="hover:text-slate-900">
                 Problem
               </a>
@@ -780,7 +904,109 @@ export default function Page() {
             <nav className="max-w-7xl mx-auto px-6 py-4 grid gap-4 text-slate-800">
               <a href="#problem">Problem</a>
               <a href="#value">Value</a>
-              <a href="#features">Products</a>
+
+              {/* Mobile Products dropdown */}
+              <details className="group border border-slate-200 rounded-lg">
+                <summary className="flex items-center justify-between px-3 py-2 cursor-pointer">
+                  <span>Products</span>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 20 20"
+                    fill="none"
+                    className="text-slate-500 transition-transform group-open:rotate-180"
+                  >
+                    <path
+                      d="M5 7l5 5 5-5"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </summary>
+                <div className="px-3 pb-3 grid gap-2 text-slate-800">
+                  <a
+                    href="/ai-chatbots"
+                    className="block px-2 py-2 rounded hover:bg-slate-50"
+                  >
+                    AI Chatbots
+                  </a>
+                  <a
+                    href="/knowledge-base"
+                    className="block px-2 py-2 rounded hover:bg-slate-50"
+                  >
+                    Knowledge Base AI
+                  </a>
+                  <a
+                    href="/lead-generation-basics"
+                    className="block px-2 py-2 rounded hover:bg-slate-50"
+                  >
+                    Lead Generation AI
+                  </a>
+                  <a
+                    href="/onboarding-ai-bot"
+                    className="block px-2 py-2 rounded hover:bg-slate-50"
+                  >
+                    Onboarding AI Bot
+                  </a>
+                </div>
+              </details>
+
+              {/* Mobile Solutions dropdown */}
+              <details className="group border border-slate-200 rounded-lg">
+                <summary className="flex items-center justify-between px-3 py-2 cursor-pointer">
+                  <span>Solutions</span>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 20 20"
+                    fill="none"
+                    className="text-slate-500 transition-transform group-open:rotate-180"
+                  >
+                    <path
+                      d="M5 7l5 5 5-5"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </summary>
+                <div className="px-3 pb-3 grid gap-2 text-slate-800">
+                  <a
+                    href="/ai-chatbots"
+                    className="block px-2 py-2 rounded hover:bg-slate-50"
+                  >
+                    Customer Support AI
+                  </a>
+                  <a
+                    href="/lead-generation-basics"
+                    className="block px-2 py-2 rounded hover:bg-slate-50"
+                  >
+                    Sales Conversion AI
+                  </a>
+                  <a
+                    href="/onboarding-ai-bot"
+                    className="block px-2 py-2 rounded hover:bg-slate-50"
+                  >
+                    Onboarding Automation
+                  </a>
+                  <a
+                    href="/knowledge-base"
+                    className="block px-2 py-2 rounded hover:bg-slate-50"
+                  >
+                    Knowledge Automation
+                  </a>
+                  <a
+                    href="/crm-and-analytics-sync"
+                    className="block px-2 py-2 rounded hover:bg-slate-50"
+                  >
+                    CX Analytics Dashboard
+                  </a>
+                </div>
+              </details>
+
               <a href="#how">How it works</a>
               <a href="#features">Features</a>
               <a href="#pricing">Pricing</a>

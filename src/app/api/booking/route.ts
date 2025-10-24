@@ -6,10 +6,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { bookingService } from "@/services/bookingService";
 import { calendarService } from "@/services/calendarService";
-import { FeatureFlags } from "@/lib/javascriptSafety";
 import { JavaScriptSafetyUtils } from "@/lib/javascriptSafety";
 import { isFeatureEnabled } from "@/lib/adminSettings";
 import { getUsersCollection } from "@/lib/mongo";
+import { BookingRequest } from "@/types/booking";
 
 interface BookingSubmission {
   // Calendar selection
@@ -212,7 +212,7 @@ export async function POST(request: NextRequest) {
         1,
         50
       );
-      const dup = existing.bookings.find((b: any) => {
+      const dup = existing.bookings.find((b: BookingRequest) => {
         const sameDay =
           new Date(b.preferredDate).toDateString() ===
           requestedDateTime.toDateString();
@@ -253,7 +253,7 @@ export async function POST(request: NextRequest) {
           }
         );
       }
-    } catch (e) {
+    } catch (_) {
       // Ignore duplicate guard errors; proceed with normal flow
     }
 
@@ -827,7 +827,7 @@ async function processBookingData(data: BookingSubmission) {
 /**
  * Create booking with conflict checking
  */
-async function createBookingWithConflictCheck(bookingData: any) {
+async function createBookingWithConflictCheck(bookingData: Partial<BookingRequest>) {
   try {
     // Final availability check before creating
     const finalCheck = await verifyBookingAvailability({
@@ -861,7 +861,7 @@ async function createBookingWithConflictCheck(bookingData: any) {
  * Send booking confirmation
  */
 async function sendBookingConfirmation(
-  booking: any,
+  booking: BookingRequest,
   originalData: BookingSubmission
 ) {
   try {
@@ -888,7 +888,7 @@ async function sendBookingConfirmation(
 /**
  * Generate next steps for user
  */
-function generateNextSteps(booking: any): string[] {
+function generateNextSteps(booking: BookingRequest): string[] {
   const steps = [
     "📧 Check your email for a detailed confirmation and calendar invite",
     `📅 Add the event to your calendar for ${booking.preferredDate.toDateString()} at ${

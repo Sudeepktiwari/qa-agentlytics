@@ -7,10 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   getAdminSettings,
   updateAdminSettings,
-  getAllAdminSettings,
   createDefaultAdminSettings,
-  extractAdminId,
-  AdminSettings,
 } from "@/lib/adminSettings";
 import { verifyAdminAccessFromCookie } from "@/lib/auth";
 
