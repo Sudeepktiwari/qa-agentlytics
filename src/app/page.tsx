@@ -902,9 +902,6 @@ export default function Page() {
             className="md:hidden hidden border-t border-slate-200 bg-white"
           >
             <nav className="max-w-7xl mx-auto px-6 py-4 grid gap-4 text-slate-800">
-              <a href="#problem">Problem</a>
-              <a href="#value">Value</a>
-
               {/* Mobile Products dropdown */}
               <details className="group border border-slate-200 rounded-lg">
                 <summary className="flex items-center justify-between px-3 py-2 cursor-pointer">
@@ -975,38 +972,39 @@ export default function Page() {
                 </summary>
                 <div className="px-3 pb-3 grid gap-2 text-slate-800">
                   <a
-                    href="/ai-chatbots"
+                    href="/customer-support-ai"
                     className="block px-2 py-2 rounded hover:bg-slate-50"
                   >
                     Customer Support AI
                   </a>
                   <a
-                    href="/lead-generation-basics"
+                    href="/sales-conversion-ai"
                     className="block px-2 py-2 rounded hover:bg-slate-50"
                   >
                     Sales Conversion AI
                   </a>
                   <a
-                    href="/onboarding-ai-bot"
+                    href="/onboarding-automation"
                     className="block px-2 py-2 rounded hover:bg-slate-50"
                   >
                     Onboarding Automation
                   </a>
                   <a
-                    href="/knowledge-base"
+                    href="/knowledge-automation"
                     className="block px-2 py-2 rounded hover:bg-slate-50"
                   >
                     Knowledge Automation
                   </a>
                   <a
-                    href="/crm-and-analytics-sync"
+                    href="/cx-analytics-dashboard"
                     className="block px-2 py-2 rounded hover:bg-slate-50"
                   >
                     CX Analytics Dashboard
                   </a>
                 </div>
               </details>
-
+              <a href="#problem">Problem</a>
+              <a href="#value">Value</a>
               <a href="#how">How it works</a>
               <a href="#features">Features</a>
               <a href="#pricing">Pricing</a>

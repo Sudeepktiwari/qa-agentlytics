@@ -17,6 +17,49 @@ export default function SalesConversionAIPage() {
   const [tick, setTick] = useState(0);
   const prefersReducedMotion = useReducedMotion();
 
+  // Sticky Header Component
+  const StickyHeader = () => (
+    <header className="fixed top-0 z-[100] w-full bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          {/* Logo */}
+          <div className="flex items-center">
+            <a href="/" className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-sm">A</span>
+              </div>
+              <span className="text-xl font-bold text-gray-900">Advancelytics</span>
+            </a>
+          </div>
+
+          {/* Navigation */}
+          <nav className="hidden md:flex items-center space-x-8">
+            <a href="#overview" className="text-gray-700 hover:text-blue-600 font-medium">Overview</a>
+            <a href="#how" className="text-gray-700 hover:text-blue-600 font-medium">How It Works</a>
+            <a href="#features" className="text-gray-700 hover:text-blue-600 font-medium">Features</a>
+            <a href="#impact" className="text-gray-700 hover:text-blue-600 font-medium">Impact</a>
+            <a href="#testimonials" className="text-gray-700 hover:text-blue-600 font-medium">Testimonials</a>
+            <a href="#cta" className="text-gray-700 hover:text-blue-600 font-medium">Get Started</a>
+            <a href="/services" className="text-gray-700 hover:text-blue-600 font-medium">Services</a>
+            <a href="/about" className="text-gray-700 hover:text-blue-600 font-medium">About</a>
+            <a href="/contact" className="text-gray-700 hover:text-blue-600 font-medium">Contact</a>
+            <a href="/pricing" className="text-gray-700 hover:text-blue-600 font-medium">Pricing</a>
+          </nav>
+
+          {/* CTA Button */}
+          <div className="flex items-center space-x-4">
+            <a
+              href="/contact"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+            >
+              Get Started
+            </a>
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+
   useEffect(() => {
     const id = setInterval(() => setTick((t) => t + 1), 2500);
     return () => clearInterval(id);
@@ -80,7 +123,7 @@ export default function SalesConversionAIPage() {
 
   return (
     <div
-      className="relative min-h-screen w-full text-slate-900"
+      className="relative min-h-screen w-full text-slate-900 pt-16 scroll-smooth"
       style={
         {
           "--brand-primary": brand.primary,
@@ -91,8 +134,9 @@ export default function SalesConversionAIPage() {
         } as React.CSSProperties
       }
     >
+      <StickyHeader />
       {/* 1) HERO */}
-      <section className="relative isolate rounded-b-[2rem] bg-[--surface] px-4 py-20 sm:px-6">
+      <section id="overview" className="relative isolate rounded-b-[2rem] bg-[--surface] px-4 py-20 sm:px-6">
         <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-2">
           {/* Left: Copy */}
           <div className="text-center lg:text-left">
@@ -220,7 +264,7 @@ export default function SalesConversionAIPage() {
       </section>
 
       {/* 2) WHY IT MATTERS */}
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+      <section id="why" className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
         <div className="grid items-start gap-10 lg:grid-cols-2">
           <div>
             <h2 className="text-3xl font-bold tracking-tight">
@@ -261,7 +305,8 @@ export default function SalesConversionAIPage() {
       </section>
 
       {/* 3) HOW IT WORKS */}
-      <section className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6">
+      <section id="how" className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6">
+        <span id="demo" />
         <h2 className="text-3xl font-bold tracking-tight text-center">
           How It Works
         </h2>
@@ -418,7 +463,7 @@ export default function SalesConversionAIPage() {
       </section>
 
       {/* 4) INSIDE THE PROACTIVE BRAIN */}
-      <section className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6">
+      <section id="brain" className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6">
         <h2 className="text-center text-3xl font-bold tracking-tight">
           Inside the Proactive Brain
         </h2>
@@ -549,7 +594,7 @@ export default function SalesConversionAIPage() {
       </section>
 
       {/* 5) KEY FEATURES */}
-      <section className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6">
+      <section id="features" className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6">
         <h2 className="text-3xl font-bold tracking-tight text-center">
           Key Features
         </h2>
@@ -605,7 +650,7 @@ export default function SalesConversionAIPage() {
       </section>
 
       {/* 6) REAL IMPACT */}
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+      <section id="impact" className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
         <h2 className="text-3xl font-bold tracking-tight">
           Real Impact — Revenue that Speaks
         </h2>
@@ -628,7 +673,7 @@ export default function SalesConversionAIPage() {
       </section>
 
       {/* 7) TESTIMONIALS */}
-      <section className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6">
+      <section id="testimonials" className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6">
         <h2 className="text-3xl font-bold tracking-tight text-center">
           What Sales Teams Are Saying
         </h2>
