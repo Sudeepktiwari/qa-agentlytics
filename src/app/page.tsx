@@ -605,8 +605,9 @@ export default function Page() {
                     />
                   </svg>
                 </button>
-                <div className="absolute left-0 top-full pt-3 z-50 w-[720px] rounded-2xl border border-slate-200 bg-white shadow-[0_12px_34px_rgba(2,6,23,.10)] p-6 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto">
-                  <div className="grid grid-cols-2 gap-6">
+                <div className="absolute left-0 top-full pt-3 z-50  rounded-2xl border border-slate-200 bg-white shadow-[0_12px_34px_rgba(2,6,23,.10)] p-6 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto">
+                  {/* <div className="grid grid-cols-2 gap-6"> */}
+                  <div className="w-[300px]">
                     {/* Core Products */}
                     <div>
                       <div className="text-xs font-medium text-slate-600 mb-3">
