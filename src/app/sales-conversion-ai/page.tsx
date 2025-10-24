@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import Link from "next/link";
 
 // Advancelytics — Sales Conversion AI (Full Page, 8 sections)
 // Calendly-style theme. Buttons accessible. "Brain" ring spins once on reveal and on hover (no endless spin).
@@ -25,14 +26,14 @@ export default function SalesConversionAIPage() {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex items-center">
-            <a href="/" className="flex items-center space-x-2">
+            <Link href="/" className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">A</span>
               </div>
               <span className="text-xl font-bold text-gray-900">
                 Advancelytics
               </span>
-            </a>
+            </Link>
           </div>
 
           {/* Navigation */}
@@ -77,12 +78,12 @@ export default function SalesConversionAIPage() {
 
           {/* CTA Button */}
           <div className="flex items-center space-x-4">
-            <a
+            <Link
               href="/contact"
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
             >
               Get Started
-            </a>
+            </Link>
             <button
               id="menuBtn"
               onClick={() => setMobileOpen(!mobileOpen)}
