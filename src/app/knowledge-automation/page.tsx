@@ -85,6 +85,27 @@ export default function KnowledgeAutomationPage() {
         } as React.CSSProperties
       }
     >
+      {/* NAVBAR */}
+      <header className="sticky top-0 z-40 border-b border-[--border-subtle] bg-white/80 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-xl bg-[--brand-primary]" />
+            <span className="text-lg font-semibold tracking-tight">Advancelytics</span>
+            <span className="ml-2 rounded-full bg-[--surface] px-2 py-0.5 text-xs font-medium text-slate-600">Knowledge Automation</span>
+          </div>
+          <nav className="hidden items-center gap-6 text-sm font-medium text-slate-700 md:flex">
+            <a href="#why" className="hover:text-slate-900">Why</a>
+            <a href="#how" className="hover:text-slate-900">How it works</a>
+            <a href="#features" className="hover:text-slate-900">Features</a>
+            <a href="#cta" className="hover:text-slate-900">Pricing</a>
+          </nav>
+          <div className="flex items-center gap-3">
+            <a href="#demo" className="hidden rounded-xl border border-[--border-subtle] px-4 py-2 text-sm font-medium text-slate-700 hover:bg-[--surface] md:inline-block">Watch demo</a>
+            <a href="#cta" className="rounded-2xl px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:shadow-lg" style={{ backgroundColor: brand.primary }}>Start free</a>
+          </div>
+        </div>
+      </header>
+
       {/* 1) HERO */}
       <section className="relative isolate rounded-b-[2rem] bg-[--surface] px-4 py-20 sm:px-6">
         <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-2">
