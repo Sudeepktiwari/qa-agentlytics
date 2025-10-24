@@ -616,7 +616,7 @@ export default function Page() {
                       <ul className="space-y-3">
                         <li>
                           <a
-                            href="#features"
+                            href="/ai-chatbots"
                             className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
                           >
                             <span className="size-8 flex items-center justify-center rounded-lg bg-blue-50 text-blue-600">
@@ -634,7 +634,7 @@ export default function Page() {
                         </li>
                         <li>
                           <a
-                            href="/multipersona"
+                            href="/knowledge-base"
                             className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
                           >
                             <span className="size-8 flex items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
@@ -652,7 +652,7 @@ export default function Page() {
                         </li>
                         <li>
                           <a
-                            href="/bant-based-qualification"
+                            href="/lead-generation-basics"
                             className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
                           >
                             <span className="size-8 flex items-center justify-center rounded-lg bg-cyan-50 text-cyan-600">
@@ -670,7 +670,7 @@ export default function Page() {
                         </li>
                         <li>
                           <a
-                            href="/crm-and-analytics-sync"
+                            href="/onboarding-ai-bot"
                             className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
                           >
                             <span className="size-8 flex items-center justify-center rounded-lg bg-rose-50 text-rose-600">
@@ -678,10 +678,10 @@ export default function Page() {
                             </span>
                             <div>
                               <div className="font-semibold text-slate-900">
-                                Product Dashboard
+                                Onboarding AI Bot
                               </div>
                               <div className="text-sm text-slate-600">
-                                Central command center
+                                Onboarding assistant for new visitors
                               </div>
                             </div>
                           </a>
