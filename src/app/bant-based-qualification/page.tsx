@@ -1,12 +1,10 @@
 "use client";
+import { useEffect } from "react";
 import { motion } from "framer-motion";
 import {
-  Bot,
   BadgeDollarSign,
-  Building2,
   ClipboardList,
   Timer,
-  Sparkles,
   GaugeCircle,
   CheckCircle2,
   MessageSquare,
@@ -14,16 +12,72 @@ import {
   UserCheck,
   PhoneCall,
   ChartBarBig,
+  Quote,
+  Star,
 } from "lucide-react";
 
 /**
- * Agentlytics – BANT‑Based Qualification (FULL PAGE)
+ * Agentlytics – BANT-Based Qualification (FULL PAGE, UPDATED + FULL TESTIMONIALS)
  * - Next.js-ready single file
  * - TailwindCSS + framer-motion + lucide-react
- * - Modern, responsive, and emphasizes AUTONOMOUS qualification
+ * - Adds pain line, proof logos, testimonial chips, a full Testimonials section, urgent CTAs, and animated lead score card
+ * - Includes lightweight smoke tests to catch common syntax issues
  */
 
+// 🔎 HOW-IT-WORKS data (pulled out so we can test it too)
+const HOW_IT_WORKS = [
+  {
+    icon: <GaugeCircle className="size-6 text-blue-600" />,
+    title: "Ask Contextually",
+    text: "AI asks lightweight, conversational questions to infer B-A-N-T without feeling like a form.",
+  },
+  {
+    icon: <ChartBarBig className="size-6 text-indigo-600" />,
+    title: "Score & Prioritize",
+    text: "Signals combine into an intent score. SQL thresholds are auto-tuned per funnel.",
+  },
+  {
+    icon: <MessageSquare className="size-6 text-cyan-600" />,
+    title: "Route & Sync",
+    text: "Qualified leads are pushed to CRM, Slack, and scheduling — with transcript + BANT summary.",
+  },
+];
+
 export default function BANTQualificationPage() {
+  // 🧪 Smoke tests (run in browser only)
+  useEffect(() => {
+    try {
+      console.assert(
+        Array.isArray(faqs) && faqs.length >= 3,
+        "FAQ list missing or too short"
+      );
+      console.assert(
+        faqs.every(
+          (f) =>
+            typeof f.q === "string" && typeof f.a === "string" && f.q && f.a
+        ),
+        "Each FAQ item must have string q & a"
+      );
+      console.assert(
+        Array.isArray(HOW_IT_WORKS) && HOW_IT_WORKS.length === 3,
+        "HOW_IT_WORKS malformed"
+      );
+      console.assert(
+        HOW_IT_WORKS.every(
+          (s) => typeof s.text === "string" && !/\n$/.test(s.text)
+        ),
+        "HOW_IT_WORKS text contains an unexpected trailing newline"
+      );
+      console.assert(
+        Array.isArray(flows) && flows.length === 3,
+        "flows data missing"
+      );
+    } catch (e) {
+      // Avoid throwing in production; just log
+      console.warn("Smoke test warning:", e);
+    }
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-slate-50 text-slate-900">
       {/* NAV */}
@@ -34,7 +88,7 @@ export default function BANTQualificationPage() {
             <span className="font-semibold tracking-tight">Agentlytics</span>
             <span className="text-slate-400">/</span>
             <span className="font-medium text-slate-600">
-              BANT‑Based Qualification
+              BANT-Based Qualification
             </span>
           </div>
           <div className="hidden sm:flex items-center gap-3">
@@ -48,7 +102,7 @@ export default function BANTQualificationPage() {
               className="px-4 py-2 rounded-xl text-sm font-medium bg-blue-600 text-white shadow hover:bg-blue-700"
               href="#cta"
             >
-              Start free
+              Start free — qualify smarter today.
             </a>
           </div>
         </div>
@@ -57,34 +111,43 @@ export default function BANTQualificationPage() {
       {/* HERO */}
       <section className="relative overflow-hidden">
         {/* background orbs */}
-        <div className="absolute -top-24 -right-16 h-72 w-72 rounded-full bg-blue-500/10 blur-3xl" />
-        <div className="absolute top-32 -left-16 h-72 w-72 rounded-full bg-cyan-400/10 blur-3xl" />
+        <div className="pointer-events-none absolute -top-24 -right-16 h-72 w-72 rounded-full bg-blue-500/10 blur-3xl" />
+        <div className="pointer-events-none absolute top-32 -left-16 h-72 w-72 rounded-full bg-cyan-400/10 blur-3xl" />
 
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-16 md:pt-24 pb-10">
           <div className="grid lg:grid-cols-2 gap-10 items-center">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/70 px-3 py-1 text-xs text-slate-600 shadow-sm">
-                <GaugeCircle className="size-3.5 text-blue-600" /> Real‑time
+                <GaugeCircle className="size-3.5 text-blue-600" /> Real-time
                 lead scoring
               </div>
               <h1 className="mt-4 text-4xl/tight sm:text-5xl/tight font-extrabold tracking-tight">
-                BANT‑Based Qualification —
+                BANT-Based Qualification —
                 <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
-                  {" "}
                   Identify Real Buyers Faster
                 </span>
               </h1>
-              <p className="mt-4 text-slate-600 max-w-xl">
-                The AI <strong>automatically</strong> uncovers Budget,
-                Authority, Need, and Timeline in‑chat, scores intent, and routes
-                qualified leads to your CRM and sales — no scripts to maintain.
+
+              {/* Pain line */}
+              <p className="mt-3 text-slate-500 text-sm italic">
+                “Your reps spend hours qualifying leads that never close.”
               </p>
+
+              {/* Conversion microcopy */}
+              <p className="mt-4 text-slate-700 max-w-xl">
+                AI that knows{" "}
+                <span className="font-semibold">which leads will buy</span>. It
+                automatically uncovers Budget, Authority, Need, and Timeline
+                in-chat, scores intent, and routes qualified leads to your CRM —
+                no scripts to maintain.
+              </p>
+
               <div className="mt-6 flex flex-wrap gap-3">
                 <a
                   href="#cta"
                   className="px-5 py-3 rounded-2xl bg-blue-600 text-white font-medium shadow hover:bg-blue-700"
                 >
-                  Start free
+                  Start free — qualify smarter today.
                 </a>
                 <a
                   href="#demo"
@@ -94,7 +157,10 @@ export default function BANTQualificationPage() {
                 </a>
               </div>
 
-              {/* chips */}
+              {/* Trust logos */}
+              <TrustLogos />
+
+              {/* BANT chips */}
               <div className="mt-6 flex flex-wrap gap-2 text-xs text-slate-600">
                 {[
                   {
@@ -122,7 +188,7 @@ export default function BANTQualificationPage() {
               </div>
             </div>
 
-            {/* Illustration – BANT Canvas */}
+            {/* Illustration – BANT Canvas with animated score card */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -130,8 +196,39 @@ export default function BANTQualificationPage() {
               viewport={{ once: true }}
               className="relative"
             >
-              <div className="relative mx-auto w-full max-w-2xl rounded-3xl border border-slate-200 bg-white p-6 shadow-xl">
+              <div className="relative mx-auto w-full max-w-xl rounded-3xl border border-slate-200 bg-white p-6 shadow-xl">
                 <BANTCanvas />
+
+                {/* Animated scorecard */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.6 }}
+                  className="absolute bottom-4 right-4 bg-blue-50/90 backdrop-blur rounded-xl p-3 text-xs font-medium shadow border border-blue-200"
+                >
+                  <p className="text-slate-700">Lead Score</p>
+                  <div className="mt-1 flex gap-2">
+                    {["A", "B", "C"].map((g, i) => (
+                      <motion.div
+                        key={i}
+                        animate={{ scale: [1, 1.1, 1], opacity: [0.8, 1, 0.8] }}
+                        transition={{
+                          duration: 1.2,
+                          repeat: Infinity,
+                          delay: i * 0.35,
+                        }}
+                        className={`size-7 rounded-md flex items-center justify-center font-semibold ${
+                          g === "A"
+                            ? "bg-emerald-500 text-white"
+                            : "bg-slate-200 text-slate-700"
+                        }`}
+                        aria-label={`Lead grade ${g}`}
+                      >
+                        {g}
+                      </motion.div>
+                    ))}
+                  </div>
+                </motion.div>
               </div>
             </motion.div>
           </div>
@@ -144,23 +241,7 @@ export default function BANTQualificationPage() {
         className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-14"
       >
         <div className="grid md:grid-cols-3 gap-6">
-          {[
-            {
-              icon: <Sparkles className="size-6 text-blue-600" />,
-              title: "Ask Contextually",
-              text: "AI asks lightweight, conversational questions to infer B‑A‑N‑T without feeling like a form.",
-            },
-            {
-              icon: <GaugeCircle className="size-6 text-indigo-600" />,
-              title: "Score & Prioritize",
-              text: "Signals combine into an intent score. SQL thresholds are auto‑tuned per funnel.",
-            },
-            {
-              icon: <ChartBarBig className="size-6 text-cyan-600" />,
-              title: "Route & Sync",
-              text: "Qualified leads are pushed to CRM, Slack, and scheduling — with transcript + BANT summary.",
-            },
-          ].map((s, i) => (
+          {HOW_IT_WORKS.map((s, i) => (
             <motion.div
               key={i}
               initial={{ opacity: 0, y: 20 }}
@@ -200,7 +281,7 @@ export default function BANTQualificationPage() {
         </div>
       </section>
 
-      {/* RESULTS */}
+      {/* RESULTS + MICRO TESTIMONIALS */}
       <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-14">
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
@@ -232,7 +313,41 @@ export default function BANTQualificationPage() {
             </div>
           ))}
         </div>
+
+        {/* Tiny testimonial chips */}
+        <div className="mt-8 flex flex-col sm:flex-row gap-3">
+          {[
+            {
+              quote: "Qualified more in 2 weeks than the last quarter.",
+              name: "GTM Lead, SaaS",
+            },
+            {
+              quote: "Reps only talk to buyers now — huge time saver.",
+              name: "Head of Sales, DTC",
+            },
+            {
+              quote: "Zero scripts to maintain. Set it and it learns.",
+              name: "RevOps, Fintech",
+            },
+          ].map((t, i) => (
+            <div
+              key={i}
+              className="flex-1 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+            >
+              <div className="flex items-start gap-2">
+                <Quote className="size-4 text-indigo-600 mt-1" />
+                <div>
+                  <p className="text-sm text-slate-700">{t.quote}</p>
+                  <p className="mt-2 text-xs text-slate-500">{t.name}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </section>
+
+      {/* FULL TESTIMONIALS SECTION */}
+      <TestimonialsSection />
 
       {/* FAQ */}
       <section className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 pb-20">
@@ -272,7 +387,7 @@ export default function BANTQualificationPage() {
                   className="px-5 py-3 rounded-2xl bg-white text-slate-900 font-medium shadow hover:bg-blue-50"
                   href="#"
                 >
-                  Start free
+                  Start free — qualify smarter today.
                 </a>
                 <a
                   className="px-5 py-3 rounded-2xl border border-white/30 font-medium hover:bg-white/10"
@@ -327,9 +442,9 @@ function BANTCanvas() {
   return (
     <div className="relative">
       {/* mock chat + right side score panel */}
-      <div className=" md:grid md:grid-cols-2 md:gap-4">
+      <div className="grid grid-cols-5 gap-4">
         {/* chat panel */}
-        <div className="md:col-span-1 rounded-2xl border border-slate-200 bg-gradient-to-b from-slate-50 to-white p-4">
+        <div className="col-span-5 md:col-span-3 rounded-2xl border border-slate-200 bg-gradient-to-b from-slate-50 to-white p-4">
           <div className="flex items-center gap-2">
             <div className="size-2.5 rounded-full bg-red-400" />
             <div className="size-2.5 rounded-full bg-yellow-400" />
@@ -388,11 +503,11 @@ function BANTCanvas() {
         </div>
 
         {/* score panel */}
-        <div className="mt-2 md:mt-0 md:col-span-1 rounded-2xl border border-slate-200 bg-white p-4">
+        <div className="col-span-5 md:col-span-2 rounded-2xl border border-slate-200 bg-white p-4">
           <div className="flex items-center justify-between">
             <h4 className="text-sm font-semibold">BANT Summary</h4>
             <span className="text-[10px] rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-slate-600">
-              Auto‑generated
+              Auto-generated
             </span>
           </div>
           <div className="mt-3 grid grid-cols-2 gap-3">
@@ -430,7 +545,7 @@ function BANTCanvas() {
             </div>
             <div className="mt-2 text-xs text-slate-500">
               Rationale: budget in range, decision authority present, clear
-              need, near‑term timeline.
+              need, near-term timeline.
             </div>
           </div>
 
@@ -455,6 +570,138 @@ function BANTCanvas() {
         </div>
       </div>
     </div>
+  );
+}
+
+function TrustLogos() {
+  return (
+    <div className="mt-8">
+      <p className="text-xs uppercase text-slate-400 font-semibold mb-2">
+        Trusted by GTM teams at
+      </p>
+      <div className="flex flex-wrap gap-6 items-center">
+        <img src="/logos/logo1.svg" alt="Logo 1" className="h-6 opacity-70" />
+        <img src="/logos/logo2.svg" alt="Logo 2" className="h-6 opacity-70" />
+        <img src="/logos/logo3.svg" alt="Logo 3" className="h-6 opacity-70" />
+      </div>
+    </div>
+  );
+}
+
+function TestimonialsSection() {
+  const items = [
+    {
+      quote: "Qualified more in 2 weeks than the last quarter.",
+      name: "Aisha Khan",
+      role: "GTM Lead, SaaS",
+      logo: "/logos/logo1.svg",
+      avatar: "/avatars/aisha.jpg",
+      rating: 5,
+    },
+    {
+      quote: "Reps only talk to buyers now — huge time saver.",
+      name: "Marcus Lee",
+      role: "Head of Sales, DTC",
+      logo: "/logos/logo2.svg",
+      avatar: "/avatars/marcus.jpg",
+      rating: 5,
+    },
+    {
+      quote: "Zero scripts to maintain. Set it and it learns.",
+      name: "Priya Shah",
+      role: "RevOps, Fintech",
+      logo: "/logos/logo3.svg",
+      avatar: "/avatars/priya.jpg",
+      rating: 5,
+    },
+    {
+      quote: "The BANT summaries drop straight into our CRM. Chef’s kiss.",
+      name: "Diego Alvarez",
+      role: "Sales Ops, B2B",
+      logo: "/logos/logo2.svg",
+      avatar: "/avatars/diego.jpg",
+      rating: 5,
+    },
+    {
+      quote: "Intent scores are scarily accurate. Fewer demos, higher close.",
+      name: "Hannah Wright",
+      role: "Founder, PLG SaaS",
+      logo: "/logos/logo1.svg",
+      avatar: "/avatars/hannah.jpg",
+      rating: 5,
+    },
+    {
+      quote: "Went live in a day and it just… works.",
+      name: "Kenji Tanaka",
+      role: "Growth PM, eCom",
+      logo: "/logos/logo3.svg",
+      avatar: "/avatars/kenji.jpg",
+      rating: 5,
+    },
+  ];
+
+  return (
+    <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-14">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-xs uppercase tracking-wide text-slate-500">
+            What customers say
+          </p>
+          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+            Testimonials
+          </h2>
+        </div>
+        <div className="hidden sm:flex items-center gap-2 text-amber-500">
+          <Star className="size-5 fill-amber-400" />
+          <Star className="size-5 fill-amber-400" />
+          <Star className="size-5 fill-amber-400" />
+          <Star className="size-5 fill-amber-400" />
+          <Star className="size-5 fill-amber-400" />
+          <span className="ml-2 text-sm text-slate-600">5.0 average</span>
+        </div>
+      </div>
+
+      {/* cards */}
+      <div className="mt-6 grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {items.map((t, i) => (
+          <motion.figure
+            key={i}
+            initial={{ opacity: 0, y: 14 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.4, delay: i * 0.05 }}
+            className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <Quote className="size-4 text-indigo-600 mt-1" />
+              <img src={t.logo} alt="logo" className="h-5 opacity-70" />
+            </div>
+            <blockquote className="mt-3 text-slate-700 text-sm">
+              {t.quote}
+            </blockquote>
+            <figcaption className="mt-4 flex items-center gap-3">
+              <img
+                src={t.avatar}
+                alt={t.name}
+                className="size-8 rounded-full object-cover bg-slate-100"
+              />
+              <div>
+                <div className="text-sm font-medium text-slate-900">
+                  {t.name}
+                </div>
+                <div className="text-xs text-slate-500">{t.role}</div>
+              </div>
+            </figcaption>
+          </motion.figure>
+        ))}
+      </div>
+
+      {/* small helper */}
+      <p className="mt-6 text-xs text-slate-500">
+        Replace placeholder avatars in <code>/avatars/</code> and logos in{" "}
+        <code>/logos/</code>.
+      </p>
+    </section>
   );
 }
 
@@ -556,13 +803,13 @@ const flows = [
   {
     icon: <BadgeDollarSign className="size-5 text-blue-600" />,
     title: "Budget in Range",
-    desc: "If budget ≥ target tier and problem fit is clear → fast‑track to demo scheduling.",
+    desc: "If budget ≥ target tier and problem fit is clear → fast-track to demo scheduling.",
     lines: [
       "budget >= 500",
       "need == 'deflection'",
       "→ send demo picker + ROI snippet",
     ],
-    badge: "AI‑Optimized",
+    badge: "AI-Optimized",
   },
   {
     icon: <UserCheck className="size-5 text-indigo-600" />,
@@ -573,14 +820,14 @@ const flows = [
       "intent_score > 75",
       "→ push CRM + Slack alert",
     ],
-    badge: "Auto‑Detected",
+    badge: "Auto-Detected",
   },
   {
     icon: <Timer className="size-5 text-emerald-600" />,
-    title: "Near‑Term Timeline",
-    desc: "Timeline ≤ 90 days with budget range set → surface success stories and book fit‑check.",
+    title: "Near-Term Timeline",
+    desc: "Timeline ≤ 90 days with budget range set → surface success stories and book fit-check.",
     lines: ["timeline <= 90d", "budget in range", "→ show case study + demo"],
-    badge: "Self‑Tuning",
+    badge: "Self-Tuning",
   },
 ];
 
@@ -613,7 +860,7 @@ const faqs = [
   },
   {
     q: "Is the BANT score configurable?",
-    a: "You can set guardrails or thresholds, but the default model auto‑tunes using your funnel performance.",
+    a: "You can set guardrails or thresholds, but the default model auto-tunes using your funnel performance.",
   },
   {
     q: "Where does the data go?",
