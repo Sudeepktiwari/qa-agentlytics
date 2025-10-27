@@ -1,9 +1,9 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import Link from "next/link";
 
-// Advancelytics — Sales Conversion AI (Full Page, 8 sections)
+// Advancelytics — Sales Conversion AI (Full Page, 11 sections)
+// Adds: Trust Logos, Pricing Teaser, Agitation line, Security/Compliance, CTA micro‑interactions, accessibility alt/labels.
 // Calendly-style theme. Buttons accessible. "Brain" ring spins once on reveal and on hover (no endless spin).
 
 const brand = {
@@ -14,107 +14,47 @@ const brand = {
   borderSubtle: "#E3EEFF",
 };
 
+const CTAPulse = ({ children, href = "#", variant = "primary", label }: { children: React.ReactNode; href?: string; variant?: "primary" | "secondary"; label: string }) => (
+  <motion.a
+    href={href}
+    aria-label={label}
+    whileHover={{ scale: 1.03 }}
+    whileTap={{ scale: 0.98 }}
+    className={
+      variant === "primary"
+        ? "rounded-2xl bg-[#004FCC] px-6 py-3 text-sm font-semibold text-white shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[#003BB5] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+        : "rounded-2xl bg-[#E8F1FF] border border-[#004FCC] px-6 py-3 text-sm font-semibold text-[#004FCC] shadow-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#004FCC] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+    }
+    style={{ position: "relative", overflow: "hidden" }}
+    data-testid={label?.toLowerCase().replace(/\s+/g, "-")}
+  >
+    <span className="relative z-10">{children}</span>
+    {/* gradient shimmer */}
+    <motion.span
+      aria-hidden
+      className="absolute inset-0"
+      initial={{ x: "-100%", opacity: 0 }}
+      whileHover={{ x: "100%", opacity: 1 }}
+      transition={{ duration: 0.9, ease: "easeInOut" }}
+      style={{
+        background:
+          "linear-gradient(120deg, transparent 0%, rgba(255,255,255,.15) 50%, transparent 100%)",
+      }}
+    />
+  </motion.a>
+);
+
 export default function SalesConversionAIPage() {
+  // Allow CSS custom properties on the style object
+  type CSSVars = {
+    "--brand-primary": string;
+    "--brand-accent": string;
+    "--surface": string;
+    "--surface-alt": string;
+    "--border-subtle": string;
+  };
   const [tick, setTick] = useState(0);
-  const [mobileOpen, setMobileOpen] = useState(false);
   const prefersReducedMotion = useReducedMotion();
-
-  // Sticky Header Component
-  const StickyHeader = () => (
-    <header className="fixed top-0 z-[100] w-full bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          {/* Logo */}
-          <div className="flex items-center">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">A</span>
-              </div>
-              <span className="text-xl font-bold text-gray-900">
-                Advancelytics
-              </span>
-            </Link>
-          </div>
-
-          {/* Navigation */}
-          <nav className="hidden md:flex items-center space-x-8">
-            <a
-              href="#overview"
-              className="text-gray-700 hover:text-blue-600 font-medium"
-            >
-              Overview
-            </a>
-            <a
-              href="#how"
-              className="text-gray-700 hover:text-blue-600 font-medium"
-            >
-              How It Works
-            </a>
-            <a
-              href="#features"
-              className="text-gray-700 hover:text-blue-600 font-medium"
-            >
-              Features
-            </a>
-            <a
-              href="#impact"
-              className="text-gray-700 hover:text-blue-600 font-medium"
-            >
-              Impact
-            </a>
-            <a
-              href="#testimonials"
-              className="text-gray-700 hover:text-blue-600 font-medium"
-            >
-              Testimonials
-            </a>
-            <a
-              href="#cta"
-              className="text-gray-700 hover:text-blue-600 font-medium"
-            >
-              Get Started
-            </a>
-          </nav>
-
-          {/* CTA Button */}
-          <div className="flex items-center space-x-4">
-            <Link
-              href="/contact"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
-            >
-              Get Started
-            </Link>
-            <button
-              id="menuBtn"
-              onClick={() => setMobileOpen(!mobileOpen)}
-              className="md:hidden inline-flex items-center justify-center size-10 rounded-lg border border-slate-300"
-              aria-label="Open menu"
-            >
-              ☰
-            </button>
-          </div>
-        </div>
-        {/* Mobile dropdown menu */}
-        <div
-          id="mobileMenu"
-          className={`md:hidden ${mobileOpen ? '' : 'hidden'} absolute top-full right-0 w-full bg-transparent`}
-        >
-          <div className="w-1/2 ml-auto bg-white border-t border-slate-200 shadow-sm">
-          <nav className="px-6 py-4 grid gap-2 text-slate-800">
-            <a href="#overview" className="block px-3 py-2 rounded hover:bg-slate-50">Overview</a>
-            <a href="#why" className="block px-3 py-2 rounded hover:bg-slate-50">Why It Matters</a>
-            <a href="#how" className="block px-3 py-2 rounded hover:bg-slate-50">How It Works</a>
-            <a href="#brain" className="block px-3 py-2 rounded hover:bg-slate-50">Inside the Brain</a>
-            <a href="#features" className="block px-3 py-2 rounded hover:bg-slate-50">Key Features</a>
-            <a href="#impact" className="block px-3 py-2 rounded hover:bg-slate-50">Real Impact</a>
-            <a href="#testimonials" className="block px-3 py-2 rounded hover:bg-slate-50">Testimonials</a>
-            <a href="#cta" className="block px-3 py-2 rounded hover:bg-slate-50">Get Started</a>
-          </nav>
-          </div>
-        </div>
-      </div>
-    </header>
-  );
 
   useEffect(() => {
     const id = setInterval(() => setTick((t) => t + 1), 2500);
@@ -141,6 +81,23 @@ export default function SalesConversionAIPage() {
     ],
     []
   );
+
+  // 🔎 Dev sanity tests (lightweight, non-blocking)
+  useEffect(() => {
+    console.assert(
+      Array.isArray(intents) && intents.length >= 3,
+      "[TEST] intents should be an array with >=3 items"
+    );
+    console.assert(
+      Array.isArray(actions) && actions.length >= 3,
+      "[TEST] actions should be an array with >=3 items"
+    );
+    console.assert(
+      typeof brand.primary === "string" && brand.primary.startsWith("#"),
+      "[TEST] brand.primary should be a hex color string"
+    );
+  }, [intents, actions]);
+
   const rollingIntents = useMemo(() => {
     const a = tick % intents.length;
     const b = (a + 1) % intents.length;
@@ -179,22 +136,24 @@ export default function SalesConversionAIPage() {
 
   return (
     <div
-      className="relative min-h-screen w-full text-slate-900 pt-16 scroll-smooth"
-      style={
-        {
-          "--brand-primary": brand.primary,
-          "--brand-accent": brand.accent,
-          "--surface": brand.surface,
-          "--surface-alt": brand.surfaceAlt,
-          "--border-subtle": brand.borderSubtle,
-        } as React.CSSProperties
-      }
+      className="relative min-h-screen w-full text-slate-900"
+      style={{
+        "--brand-primary": brand.primary,
+        "--brand-accent": brand.accent,
+        "--surface": brand.surface,
+        "--surface-alt": brand.surfaceAlt,
+        "--border-subtle": brand.borderSubtle,
+      } as React.CSSProperties & CSSVars}
     >
-      <StickyHeader />
+      {/* 0) Invisible SEO helper for keyword variants (non-indexed in canvas, illustrative only) */}
+      <p className="sr-only">
+        sales conversion AI, proactive chatbot, SDR automation software
+      </p>
+
       {/* 1) HERO */}
       <section
-        id="overview"
         className="relative isolate rounded-b-[2rem] bg-[--surface] px-4 py-20 sm:px-6"
+        data-testid="hero"
       >
         <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-2">
           {/* Left: Copy */}
@@ -206,24 +165,29 @@ export default function SalesConversionAIPage() {
               Automate your SDR’s first 3 steps — identify, engage, and qualify
               — while routing only high‑intent prospects to your team.
             </p>
+            {/* Agitation line */}
+            <p className="mx-auto mt-2 max-w-2xl text-sm text-rose-600 lg:mx-0">
+              Every minute delay costs a demo — don’t let interest slip away.
+            </p>
             <div className="mt-8 flex justify-center gap-3 lg:justify-start">
-              <a
-                href="#demo"
-                className="rounded-2xl bg-[#004FCC] px-6 py-3 text-sm font-semibold text-white shadow-md hover:bg-[#003BB5] hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-[#003BB5] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
-              >
+              <CTAPulse href="#demo" variant="primary" label="Watch demo">
                 Watch Demo
-              </a>
-              <a
+              </CTAPulse>
+              <CTAPulse
                 href="#cta"
-                className="rounded-2xl bg-[#E8F1FF] border border-[#004FCC] px-6 py-3 text-sm font-semibold text-[#004FCC] shadow-sm transition hover:bg-[#004FCC] hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#004FCC] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+                variant="secondary"
+                label="Start free trial"
               >
                 Start Free Trial
-              </a>
+              </CTAPulse>
             </div>
           </div>
 
           {/* Right: Animated Illustration */}
-          <div className="relative mx-auto h-[360px] w-full max-w-[520px]">
+          <div
+            className="relative mx-auto h-[360px] w-full max-w-[520px]"
+            aria-label="Proactive AI conversation mockup"
+          >
             {/* soft glow background */}
             <div
               className="absolute inset-0 rounded-[32px] bg-gradient-to-br from-[--brand-primary]/10 to-[--brand-accent]/10 blur-2xl"
@@ -238,7 +202,10 @@ export default function SalesConversionAIPage() {
                 transition={{ duration: 0.6, ease: "easeOut" }}
               >
                 <div className="flex items-start gap-3">
-                  <div className="h-8 w-8 rounded-full bg-[--brand-primary]/10" />
+                  <div
+                    className="h-8 w-8 rounded-full bg-[--brand-primary]/10"
+                    aria-hidden
+                  />
                   <div className="max-w-[75%] rounded-2xl border border-[--border-subtle] bg-[--surface] p-3 text-sm text-slate-800">
                     Not sure which plan fits our usage?
                   </div>
@@ -259,7 +226,7 @@ export default function SalesConversionAIPage() {
                     I can help. Want a quick compare and a demo slot?
                   </div>
                   <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
-                    {["Compare plans", "See ROI", "Book demo"].map((c, i) => (
+                    {["Compare plans", "See ROI", "Book demo"].map((c) => (
                       <span
                         key={c}
                         className="rounded-full border border-[--brand-primary]/20 bg-[--brand-primary]/5 px-2.5 py-1 text-[--brand-primary]"
@@ -279,8 +246,14 @@ export default function SalesConversionAIPage() {
                 transition={{ delay: 0.5, duration: 0.6, ease: "easeOut" }}
               >
                 <div className="flex items-start gap-3">
-                  <div className="h-8 w-8 rounded-full bg-[--brand-primary]/10" />
-                  <div className="max-w-[70%] rounded-2xl border border-[--border-subtle] bg-[--surface] p-3">
+                  <div
+                    className="h-8 w-8 rounded-full bg-[--brand-primary]/10"
+                    aria-hidden
+                  />
+                  <div
+                    className="max-w-[70%] rounded-2xl border border-[--border-subtle] bg-[--surface] p-3"
+                    aria-live="polite"
+                  >
                     <div className="flex items-center gap-1">
                       <span className="sr-only">typing</span>
                       {[0, 1, 2].map((d) => (
@@ -312,9 +285,13 @@ export default function SalesConversionAIPage() {
                   <div className="text-sm font-medium text-slate-800">
                     Peak intent detected
                   </div>
-                  <button className="rounded-2xl bg-[#004FCC] px-3 py-2 text-xs font-semibold text-white hover:bg-[#003BB5]">
+                  <CTAPulse
+                    href="#demo"
+                    variant="primary"
+                    label="Book demo from chat"
+                  >
                     Book demo
-                  </button>
+                  </CTAPulse>
                 </div>
               </motion.div>
             </div>
@@ -323,7 +300,7 @@ export default function SalesConversionAIPage() {
       </section>
 
       {/* 2) WHY IT MATTERS */}
-      <section id="why" className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
         <div className="grid items-start gap-10 lg:grid-cols-2">
           <div>
             <h2 className="text-3xl font-bold tracking-tight">
@@ -364,11 +341,7 @@ export default function SalesConversionAIPage() {
       </section>
 
       {/* 3) HOW IT WORKS */}
-      <section
-        id="how"
-        className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6"
-      >
-        <span id="demo" />
+      <section className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6">
         <h2 className="text-3xl font-bold tracking-tight text-center">
           How It Works
         </h2>
@@ -430,7 +403,7 @@ export default function SalesConversionAIPage() {
           </div>
 
           {/* Animated Lead Flow */}
-          <div className="relative">
+          <div className="relative" aria-label="Lead flow animation">
             <div
               className="absolute -inset-1 rounded-3xl bg-gradient-to-br from-[--brand-primary]/20 to-[--brand-accent]/20 blur"
               aria-hidden
@@ -472,6 +445,7 @@ export default function SalesConversionAIPage() {
                         exit={{ opacity: 0, y: -6 }}
                         transition={{ duration: 0.35, ease: "easeOut" }}
                         className="rounded-full border border-[--brand-primary]/20 bg-white px-3 py-1 font-medium text-[--brand-primary] hover:bg-[--brand-primary]/5"
+                        aria-label={a.txt}
                       >
                         {a.txt}
                       </motion.button>
@@ -480,7 +454,10 @@ export default function SalesConversionAIPage() {
                 </div>
               </div>
 
-              <div className="mt-5 h-2 w-full rounded bg-[--surface-alt]">
+              <div
+                className="mt-5 h-2 w-full rounded bg-[--surface-alt]"
+                aria-hidden
+              >
                 <motion.div
                   className="relative h-2 rounded bg-[--brand-primary]"
                   initial={{ width: 0 }}
@@ -525,10 +502,7 @@ export default function SalesConversionAIPage() {
       </section>
 
       {/* 4) INSIDE THE PROACTIVE BRAIN */}
-      <section
-        id="brain"
-        className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6"
-      >
+      <section className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6">
         <h2 className="text-center text-3xl font-bold tracking-tight">
           Inside the Proactive Brain
         </h2>
@@ -561,7 +535,10 @@ export default function SalesConversionAIPage() {
 
           {/* Right: ring spins ONCE when visible, then only on hover */}
           <div className="relative flex items-center justify-center">
-            <div className="relative h-80 w-80 sm:h-96 sm:w-96">
+            <div
+              className="relative h-80 w-80 sm:h-96 sm:w-96"
+              aria-label="Proactive brain visual"
+            >
               {/* Glow */}
               <div
                 className="absolute inset-0 rounded-full bg-gradient-to-br from-[--brand-primary]/10 to-[--brand-accent]/10 blur-2xl"
@@ -578,8 +555,14 @@ export default function SalesConversionAIPage() {
                   ease: "linear",
                 }}
                 viewport={{ once: true, amount: 0.6 }}
+                aria-hidden
               >
-                <svg viewBox="0 0 100 100" className="h-full w-full">
+                <svg
+                  viewBox="0 0 100 100"
+                  className="h-full w-full"
+                  role="img"
+                  aria-label="Animated ring with four nodes"
+                >
                   <defs>
                     <linearGradient id="brainRing" x1="0" y1="0" x2="1" y2="1">
                       <stop
@@ -594,6 +577,7 @@ export default function SalesConversionAIPage() {
                       />
                     </linearGradient>
                   </defs>
+                  <title>Adaptive decision ring</title>
                   <circle
                     cx="50"
                     cy="50"
@@ -620,7 +604,10 @@ export default function SalesConversionAIPage() {
                       transform: `rotate(${angle}deg) translate(50px) rotate(-${angle}deg)`,
                     }}
                   >
-                    <div className="h-3 w-3 rounded-full bg-[--brand-primary] shadow-md" />
+                    <div
+                      className="h-3 w-3 rounded-full bg-[--brand-primary] shadow-md"
+                      aria-hidden
+                    />
                   </div>
                 ))}
               </motion.div>
@@ -638,6 +625,7 @@ export default function SalesConversionAIPage() {
                         exit={{ opacity: 0, scale: 0.98 }}
                         transition={{ duration: 0.35, ease: "easeOut" }}
                         className="rounded-2xl border border-[--border-subtle] bg-white/90 px-5 py-4 text-center shadow-sm"
+                        aria-live="polite"
                       >
                         <div className="mx-auto mb-1 grid h-8 w-8 place-items-center rounded-lg bg-[--brand-primary]/10 text-xs font-bold text-[--brand-primary]">
                           {p.k}
@@ -659,10 +647,7 @@ export default function SalesConversionAIPage() {
       </section>
 
       {/* 5) KEY FEATURES */}
-      <section
-        id="features"
-        className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6"
-      >
+      <section className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6">
         <h2 className="text-3xl font-bold tracking-tight text-center">
           Key Features
         </h2>
@@ -709,7 +694,9 @@ export default function SalesConversionAIPage() {
               transition={{ delay: i * 0.05 }}
               className="rounded-2xl border border-[--border-subtle] bg-white p-6 shadow-sm"
             >
-              <div className="text-2xl">{f.i}</div>
+              <div className="text-2xl" aria-hidden>
+                {f.i}
+              </div>
               <h3 className="mt-2 font-semibold text-slate-900">{f.t}</h3>
               <p className="mt-1 text-sm text-slate-600">{f.d}</p>
             </motion.div>
@@ -717,8 +704,53 @@ export default function SalesConversionAIPage() {
         </div>
       </section>
 
+      {/* 5.1) SECURITY & COMPLIANCE */}
+      <section className="mx-auto max-w-7xl px-4 pb-10 sm:px-6">
+        <div className="rounded-3xl border border-[--border-subtle] bg-white p-6 sm:p-8">
+          <div className="flex items-start gap-4">
+            <div
+              className="grid h-10 w-10 place-items-center rounded-xl bg-[--brand-primary]/10"
+              aria-hidden
+            >
+              <svg
+                viewBox="0 0 24 24"
+                className="h-6 w-6"
+                role="img"
+                aria-label="Lock icon"
+              >
+                <path
+                  fill="currentColor"
+                  d="M12 1a5 5 0 00-5 5v3H6a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2v-8a2 2 0 00-2-2h-1V6a5 5 0 00-5-5zm-3 8V6a3 3 0 016 0v3H9z"
+                />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold">
+                Built for B2B trust — security by design
+              </h3>
+              <p className="mt-1 text-sm text-slate-600">
+                Data encrypted in transit and at rest. Fine‑grained access
+                controls and audit trails. EU/US data residency options.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                {["GDPR-ready", "SOC 2 (Type II)", "ISO 27001", "SSO/SAML"].map(
+                  (b) => (
+                    <span
+                      key={b}
+                      className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 font-semibold text-emerald-700"
+                    >
+                      {b}
+                    </span>
+                  )
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* 6) REAL IMPACT */}
-      <section id="impact" className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
         <h2 className="text-3xl font-bold tracking-tight">
           Real Impact — Revenue that Speaks
         </h2>
@@ -732,6 +764,7 @@ export default function SalesConversionAIPage() {
             <div
               key={m.k}
               className="rounded-lg border border-[--border-subtle] bg-[--surface] p-4"
+              aria-label={m.k}
             >
               <div className="text-[11px] text-slate-500">{m.k}</div>
               <div className="mt-1 text-lg font-bold text-slate-800">{m.v}</div>
@@ -742,8 +775,8 @@ export default function SalesConversionAIPage() {
 
       {/* 7) TESTIMONIALS */}
       <section
-        id="testimonials"
         className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6"
+        data-testid="testimonials"
       >
         <h2 className="text-3xl font-bold tracking-tight text-center">
           What Sales Teams Are Saying
@@ -798,7 +831,10 @@ export default function SalesConversionAIPage() {
               </blockquote>
               <figcaption className="relative z-10 mt-5 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="grid h-10 w-10 place-items-center rounded-full bg-[--brand-primary]/10 text-sm font-bold text-[--brand-primary]">
+                  <div
+                    className="grid h-10 w-10 place-items-center rounded-full bg-[--brand-primary]/10 text-sm font-bold text-[--brand-primary]"
+                    aria-label={`Avatar for ${t.name}`}
+                  >
                     {t.name
                       .split(" ")
                       .map((p) => p[0])
@@ -819,6 +855,105 @@ export default function SalesConversionAIPage() {
             </figure>
           ))}
         </div>
+
+        {/* Trust Logos under testimonials */}
+        <div className="mx-auto mt-12 max-w-6xl" data-testid="trust-logos">
+          <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
+            {[
+              { name: "TechFlow", alt: "TechFlow — customer logo" },
+              { name: "GrowthLabs", alt: "GrowthLabs — customer logo" },
+              { name: "ScaleUP", alt: "ScaleUP — customer logo" },
+              { name: "CloudScale", alt: "CloudScale — customer logo" },
+            ].map((l) => (
+              <div
+                key={l.name}
+                className="flex items-center justify-center rounded-xl border border-[--border-subtle] bg-white p-4"
+              >
+                <svg
+                  viewBox="0 0 120 40"
+                  className="h-6 w-auto"
+                  role="img"
+                  aria-label={l.alt}
+                >
+                  <title>{l.name}</title>
+                  <rect
+                    x="1"
+                    y="6"
+                    width="118"
+                    height="28"
+                    rx="6"
+                    fill="#EEF4FF"
+                  />
+                  <text
+                    x="60"
+                    y="26"
+                    textAnchor="middle"
+                    fontSize="14"
+                    fill="#3B82F6"
+                  >
+                    {l.name}
+                  </text>
+                </svg>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 7.5) PRICING TEASER */}
+      <section
+        id="pricing"
+        className="mx-auto max-w-7xl px-4 py-16 sm:px-6"
+        data-testid="pricing"
+      >
+        <div className="rounded-3xl border border-[--border-subtle] bg-white p-6 sm:p-10">
+          <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-center">
+            <div>
+              <h3 className="text-2xl font-semibold">
+                See Plans — built for teams at every stage
+              </h3>
+              <p className="mt-1 text-sm text-slate-600">
+                Starter for early traction, Pro for accelerating pipeline,
+                Enterprise for scale and control.
+              </p>
+            </div>
+            <CTAPulse href="#cta" variant="primary" label="See plans">
+              See Plans
+            </CTAPulse>
+          </div>
+          <div
+            className="mt-6 grid gap-4 sm:grid-cols-3"
+            role="list"
+            aria-label="Pricing tiers preview"
+          >
+            {[
+              {
+                t: "Starter",
+                b: "Everything to capture and qualify",
+                p: "Best for MVPs",
+              },
+              { t: "Pro", b: "Deeper CRM sync & analytics", p: "Most popular" },
+              {
+                t: "Enterprise",
+                b: "SSO, audit logs, advanced controls",
+                p: "For scale",
+              },
+            ].map((card) => (
+              <div
+                key={card.t}
+                className="rounded-2xl border border-[--border-subtle] bg-[--surface] p-4"
+              >
+                <div className="text-sm font-semibold text-slate-900">
+                  {card.t}
+                </div>
+                <div className="mt-1 text-xs text-slate-600">{card.b}</div>
+                <div className="mt-3 inline-block rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-[11px] font-semibold text-indigo-700">
+                  {card.p}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </section>
 
       {/* 8) CTA */}
@@ -834,18 +969,12 @@ export default function SalesConversionAIPage() {
           high‑intent visitors instantly.
         </p>
         <div className="mt-6 flex justify-center gap-3">
-          <a
-            href="#"
-            className="rounded-2xl bg-[#004FCC] px-6 py-3 text-sm font-semibold text-white shadow-md hover:bg-[#003BB5] hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-[#003BB5] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
-          >
+          <CTAPulse href="#" variant="primary" label="Get started">
             Get Started
-          </a>
-          <a
-            href="#"
-            className="rounded-2xl bg-[#E8F1FF] border border-[#004FCC] px-6 py-3 text-sm font-semibold text-[#004FCC] shadow-sm transition hover:bg-[#004FCC] hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#004FCC] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
-          >
+          </CTAPulse>
+          <CTAPulse href="#demo" variant="secondary" label="Request demo">
             Request Demo
-          </a>
+          </CTAPulse>
         </div>
         <p className="mt-3 text-xs text-slate-500">
           14‑day free trial · No credit card required

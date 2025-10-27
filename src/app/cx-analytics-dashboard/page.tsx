@@ -1,303 +1,360 @@
 "use client";
+
 import React, { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 
-// Advancelytics — Solution: CX Analytics Dashboard (Full Page, 8 sections)
-// Calendly-style palette, accessible CTAs, modern motion. Animated dashboard hero.
+// Advancelytics — Knowledge Automation (FULL PAGE)
+// Fixes: unterminated strings, no `process` usage, safe CTA colors, closed hrefs.
+// Adds: lightweight in-browser self-tests (data-testid), button text visibility, trust logos,
+// hero proof line, before-vs-after visual, and meta keywords injection.
 
 const brand = {
-  primary: "#006BFF", // Calendly blue
-  accent: "#0AE8F0", // Bright turquoise
-  surface: "#F7FBFF", // Light hero/card
+  primary: "#006BFF",
+  accent: "#0AE8F0",
+  surface: "#F7FBFF",
   surfaceAlt: "#F5F9FF",
   borderSubtle: "#E3EEFF",
+  cta: "#003BB5",
+  ctaHover: "#002E99",
 };
 
-export default function CxAnalyticsDashboardPage() {
-  const [tick, setTick] = useState(0);
-  // Mobile menu state
-  const [mobileOpen, setMobileOpen] = useState(false);
+// --- Reusable CTA Button (inline colors to avoid Tailwind dynamic class pitfalls) ---
+function CTAButton({
+  href = "#!",
+  children,
+  variant = "primary",
+  className = "",
+  testId,
+}: {
+  href?: string;
+  children: React.ReactNode;
+  variant?: "primary" | "secondary";
+  className?: string;
+  testId?: string;
+}) {
   const prefersReducedMotion = useReducedMotion();
+  const isPrimary = variant === "primary";
+  const base =
+    "relative overflow-hidden rounded-2xl px-6 py-3 text-sm font-semibold shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white";
+  const style = isPrimary
+    ? {
+        backgroundColor: brand.cta,
+        color: "#FFFFFF",
+        border: `1px solid ${brand.cta}`,
+      }
+    : {
+        backgroundColor: "#E8F1FF",
+        color: brand.cta,
+        border: `1px solid ${brand.cta}`,
+      };
+  return (
+    <motion.a
+      href={href}
+      data-testid={testId}
+      data-ctabtn
+      className={`${base} ${className}`}
+      style={style}
+      initial={{ scale: 1 }}
+      whileHover={prefersReducedMotion ? undefined : { scale: 1.015 }}
+      whileTap={{ scale: 0.98 }}
+    >
+      {/* shimmer */}
+      <motion.span
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        initial={{ backgroundPosition: "-200% 0%" }}
+        whileHover={
+          prefersReducedMotion ? undefined : { backgroundPosition: "200% 0%" }
+        }
+        transition={{
+          duration: 1.6,
+          ease: "linear",
+          repeat: prefersReducedMotion ? 0 : Infinity,
+        }}
+        style={{
+          backgroundImage:
+            "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.22) 50%, rgba(255,255,255,0) 100%)",
+          backgroundSize: "200% 100%",
+          maskImage: "linear-gradient(#000, #000)",
+          WebkitMaskImage: "linear-gradient(#000, #000)",
+        }}
+      />
+      {/* content */}
+      <motion.span className="relative z-[1]">{children}</motion.span>
+    </motion.a>
+  );
+}
+
+export default function KnowledgeAutomationPage() {
+  // Allow CSS custom properties on the style object
+  type CSSVars = {
+    "--brand-primary": string;
+    "--brand-accent": string;
+    "--surface": string;
+    "--surface-alt": string;
+    "--border-subtle": string;
+  };
+  const [tick, setTick] = useState(0);
+  const prefersReducedMotion = useReducedMotion();
+
+  // Inject meta keywords (no next/head dependency)
+  useEffect(() => {
+    const name = "keywords";
+    const content =
+      "AI knowledge base automation, semantic tagging, intent search, CX automation";
+    let meta = document.querySelector(`meta[name="${name}"]`);
+    if (!meta) {
+      meta = document.createElement("meta");
+      meta.setAttribute("name", name);
+      document.head.appendChild(meta);
+    }
+    meta.setAttribute("content", content);
+  }, []);
 
   useEffect(() => {
     const id = setInterval(() => setTick((t) => t + 1), 2500);
     return () => clearInterval(id);
   }, []);
 
-  const heroStats = useMemo(
+  // Illustration data
+  const heroChips = useMemo(
+    () => ["Open Article", "Share in Chat", "Create Macro"],
+    []
+  );
+  const ingestSources = useMemo(
     () => [
-      { k: "Insights generated", v: 324 },
-      { k: "Deflection", v: "27%" },
-      { k: "CSAT", v: "4.7/5" },
+      { k: "PDFs" },
+      { k: "FAQs" },
+      { k: "Chat logs" },
+      { k: "Confluence" },
+      { k: "Zendesk" },
+    ],
+    []
+  );
+  const categories = useMemo(
+    () => [
+      { k: "Security" },
+      { k: "Billing" },
+      { k: "Setup" },
+      { k: "Integrations" },
+      { k: "Policies" },
     ],
     []
   );
 
-  const enginePhases = [
-    { k: "S", t: "Sentiment Flow", d: "Emotion shifts by journey stage." },
-    { k: "R", t: "Resolution Score", d: "Quality, empathy, and clarity." },
-    { k: "I", t: "Intent Clusters", d: "Auto-grouped topics and themes." },
-    { k: "C", t: "CSAT Correlation", d: "Link tone with satisfaction." },
-    { k: "H", t: "Churn Risk", d: "Language cues that signal risk." },
+  const brainPhases = [
+    {
+      k: "I",
+      t: "Intent Detection",
+      d: "Understands what users mean, not just keywords.",
+    },
+    {
+      k: "A",
+      t: "Auto‑Tagging",
+      d: "Classifies by topic, entity, and product area.",
+    },
+    {
+      k: "S",
+      t: "Synonym Mapping",
+      d: "‘SSO’ ↔ ‘Single sign‑on’, ‘Sign in with Okta’.",
+    },
+    {
+      k: "I2",
+      t: "Insights Loop",
+      d: "Finds gaps, flags duplicates, and suggests updates.",
+    },
   ];
+
+  // --- Lightweight browser self-tests (no Node globals) ---
+  useEffect(() => {
+    try {
+      console.assert(
+        typeof CTAButton === "function",
+        "CTAButton should be a function"
+      );
+      const ctas = document.querySelectorAll("a[data-ctabtn]");
+      console.assert(
+        ctas.length >= 3,
+        `Expected at least 3 CTA buttons, found ${ctas.length}`
+      );
+      ctas.forEach((a) =>
+        console.assert(
+          (a.textContent || "").trim().length > 0,
+          "CTA text should not be empty"
+        )
+      );
+      const meta = document.querySelector('meta[name="keywords"]');
+      console.assert(!!meta, "Meta keywords should exist");
+    } catch (_) {
+      // ignore in preview
+    }
+  }, []);
 
   return (
     <div
       className="relative min-h-screen w-full text-slate-900"
-      style={
-        {
-          "--brand-primary": brand.primary,
-          "--brand-accent": brand.accent,
-          "--surface": brand.surface,
-          "--surface-alt": brand.surfaceAlt,
-          "--border-subtle": brand.borderSubtle,
-        } as React.CSSProperties
-      }
+      style={{
+        "--brand-primary": brand.primary,
+        "--brand-accent": brand.accent,
+        "--surface": brand.surface,
+        "--surface-alt": brand.surfaceAlt,
+        "--border-subtle": brand.borderSubtle,
+      } as React.CSSProperties & CSSVars}
     >
-      {/* NAVBAR */}
-      <header className="sticky top-0 z-40 border-b border-[--border-subtle] bg-white/80 backdrop-blur">
-        <div className="relative mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-xl bg-[--brand-primary]" />
-            <span className="text-lg font-semibold tracking-tight">Advancelytics</span>
-            <span className="ml-2 rounded-full bg-[--surface] px-2 py-0.5 text-xs font-medium text-slate-600">CX Analytics Dashboard</span>
-          </div>
-          <nav className="hidden items-center gap-6 text-sm font-medium text-slate-700 md:flex">
-            <a href="#why" className="hover:text-slate-900">Why</a>
-            <a href="#how" className="hover:text-slate-900">How it works</a>
-            <a href="#features" className="hover:text-slate-900">Features</a>
-            <a href="#cta" className="hover:text-slate-900">Pricing</a>
-          </nav>
-          <div className="flex items-center gap-3">
-            <a href="#demo" className="hidden rounded-xl border border-[--border-subtle] px-4 py-2 text-sm font-medium text-slate-700 hover:bg-[--surface] md:inline-block">Watch demo</a>
-            <a href="#cta" className="rounded-2xl px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:shadow-lg" style={{ backgroundColor: brand.primary }}>Start free</a>
-            {/* Mobile menu toggle */}
-            <button
-              id="menuBtn"
-              onClick={() => setMobileOpen(!mobileOpen)}
-              className="md:hidden inline-flex items-center justify-center size-10 rounded-lg border border-slate-300"
-              aria-label="Open menu"
-            >
-              ☰
-            </button>
-          </div>
-
-          {/* Mobile dropdown menu */}
-          <div
-            id="mobileMenu"
-            className={`md:hidden ${mobileOpen ? '' : 'hidden'} absolute top-full right-0 w-full bg-transparent`}
-          >
-            <div className="w-1/2 ml-auto bg-white border-t border-[--border-subtle] shadow-sm">
-              <nav className="px-6 py-4 grid gap-2 text-slate-800">
-                {/* Solutions dropdown */}
-                <details className="group border border-[--border-subtle] rounded-lg">
-                  <summary className="flex items-center justify-between px-3 py-2 cursor-pointer">
-                    <span>Solutions</span>
-                    <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M6 8l4 4 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
-                  </summary>
-                  <div className="px-2 pb-2 space-y-1">
-                    <a href="/customer-support-ai" className="block px-2 py-2 rounded hover:bg-slate-50">Customer Support AI</a>
-                    <a href="/sales-conversion-ai" className="block px-2 py-2 rounded hover:bg-slate-50">Sales Conversion AI</a>
-                    <a href="/onboarding-automation" className="block px-2 py-2 rounded hover:bg-slate-50">Onboarding Automation</a>
-                    <a href="/knowledge-automation" className="block px-2 py-2 rounded hover:bg-slate-50">Knowledge Automation</a>
-                    <a href="/cx-analytics-dashboard" className="block px-2 py-2 rounded hover:bg-slate-50">CX Analytics Dashboard</a>
-                  </div>
-                </details>
-                {/* Local links */}
-                <a href="#why">Why</a>
-                <a href="#how">How it works</a>
-                <a href="#features">Features</a>
-                <a href="#cta">Pricing</a>
-                {/* Buttons */}
-                <div className="pt-2 border-t border-[--border-subtle] flex gap-3">
-                  <a href="#demo" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-[--border-subtle]">Watch demo</a>
-                  <a href="#cta" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[--brand-primary] text-white">Start free</a>
-                </div>
-              </nav>
-            </div>
-          </div>
-        </div>
-      </header>
-
       {/* 1) HERO */}
       <section className="relative isolate rounded-b-[2rem] bg-[--surface] px-4 py-20 sm:px-6">
         <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-2">
           {/* Left: Copy */}
           <div className="text-center lg:text-left">
             <h1 className="mx-auto max-w-3xl text-4xl font-bold leading-tight sm:text-5xl lg:mx-0">
-              Turn Every Conversation into Actionable Insight
+              From Chaos to Clarity — Automate Your Knowledge Base
             </h1>
             <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-600 lg:mx-0">
-              Advancelytics transforms your chat, email, and support data into a
-              unified view of sentiment, resolution quality, and intent trends —
-              so you can coach smarter, prioritize better, and grow faster.
+              Advancelytics ingests your docs, tags them intelligently, and
+              surfaces the right answer across chat, help center, and product —
+              automatically.
+            </p>
+            {/* Proof line */}
+            <p className="mx-auto mt-2 max-w-2xl text-[13px] font-medium text-slate-700 lg:mx-0">
+              Teams see{" "}
+              <span className="text-emerald-700">38% fewer repeats</span> and{" "}
+              <span className="text-emerald-700">
+                25% more self‑serve resolutions
+              </span>
+              .
             </p>
             <div className="mt-8 flex justify-center gap-3 lg:justify-start">
-              <a
-                href="#live"
-                className="rounded-2xl bg-[#004FCC] px-6 py-3 text-sm font-semibold text-white shadow-md hover:bg-[#003BB5] hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-[#003BB5] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
-              >
-                See Live Dashboard
-              </a>
-              <a
-                href="#cta"
-                className="rounded-2xl bg-[#E8F1FF] border border-[#004FCC] px-6 py-3 text-sm font-semibold text-[#004FCC] shadow-sm transition hover:bg-[#004FCC] hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#004FCC] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
-              >
+              <CTAButton href="#how" testId="cta-how">
+                See How It Works
+              </CTAButton>
+              <CTAButton href="#cta" variant="secondary" testId="cta-demo">
                 Request Demo
-              </a>
+              </CTAButton>
             </div>
+            <p className="mt-3 text-xs text-slate-500">
+              Works with Zendesk • Intercom • Confluence • Notion
+            </p>
           </div>
 
-          {/* Right: Animated Dashboard Illustration */}
-          <div className="relative mx-auto h-[420px] w-full max-w-[560px]">
-            {/* soft glow */}
+          {/* Right: Animated Chat + Doc Sorting Illustration */}
+          <div className="relative mx-auto h-[400px] w-full max-w-[560px]">
             <div
               className="absolute inset-0 rounded-[32px] bg-gradient-to-br from-[--brand-primary]/10 to-[--brand-accent]/10 blur-2xl"
               aria-hidden
             />
             <div className="relative h-full w-full rounded-[32px] border border-[--border-subtle] bg-white p-5 shadow-xl">
-              {/* Stat chips */}
-              <div className="flex flex-wrap gap-2 text-xs">
-                {heroStats.map((s, i) => (
-                  <motion.span
-                    key={s.k}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 + i * 0.08, duration: 0.4 }}
-                    className="rounded-full border border-[--brand-primary]/20 bg-[--brand-primary]/5 px-2.5 py-1 text-[--brand-primary]"
-                  >
-                    {s.k}: <span className="font-semibold">{s.v}</span>
-                  </motion.span>
-                ))}
-              </div>
-
-              {/* Card: Sentiment gauge + rating bars */}
+              {/* user question bubble */}
               <motion.div
-                className="mt-4 grid gap-4 sm:grid-cols-2"
-                initial={{ opacity: 0, y: 12 }}
+                className="absolute left-5 top-5 right-5"
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3, duration: 0.5 }}
+                transition={{ duration: 0.6, ease: "easeOut" }}
               >
-                <div className="rounded-2xl border border-[--border-subtle] p-4">
-                  <div className="text-[11px] font-semibold text-slate-500">
-                    Sentiment
+                <div className="flex items-start gap-3">
+                  <div className="h-8 w-8 rounded-full bg-[--brand-primary]/10" />
+                  <div className="max-w-[75%] rounded-2xl border border-[--border-subtle] bg-[--surface] p-3 text-sm text-slate-800">
+                    How do I set up SSO with Okta?
                   </div>
-                  <div className="mt-2 flex items-center gap-4">
-                    <svg viewBox="0 0 36 18" className="h-14 w-28">
-                      <defs>
-                        <linearGradient id="gauge" x1="0" y1="0" x2="1" y2="0">
-                          <stop offset="0%" stopColor="#F59E0B" />
-                          <stop offset="50%" stopColor="#10B981" />
-                          <stop offset="100%" stopColor="#3B82F6" />
-                        </linearGradient>
-                      </defs>
-                      <path
-                        d="M2,16 A16,16 0 0 1 34,16"
-                        fill="none"
-                        stroke="#E3EEFF"
-                        strokeWidth="3"
-                      />
-                      <motion.path
-                        d="M2,16 A16,16 0 0 1 34,16"
-                        fill="none"
-                        stroke="url(#gauge)"
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                        strokeDasharray="50"
-                        strokeDashoffset="50"
-                        animate={{
-                          strokeDashoffset: prefersReducedMotion
-                            ? 8
-                            : [50, 8, 14, 8],
-                        }}
-                        transition={{
-                          duration: prefersReducedMotion ? 0 : 2.2,
-                          repeat: prefersReducedMotion ? 0 : Infinity,
-                          ease: "easeInOut",
-                        }}
-                      />
-                    </svg>
-                    <div>
-                      <div className="text-sm font-semibold text-slate-800">
-                        Positive
-                      </div>
-                      <div className="text-[11px] text-slate-500">
-                        Last 7 days
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="rounded-2xl border border-[--border-subtle] p-4">
-                  <div className="text-[11px] font-semibold text-slate-500">
-                    Chat Ratings
-                  </div>
-                  {[
-                    { k: "Response", v: 82 },
-                    { k: "Empathy", v: 76 },
-                    { k: "Clarity", v: 88 },
-                  ].map((r, i) => (
-                    <div key={r.k} className="mt-2">
-                      <div className="mb-1 flex items-center justify-between text-[11px] text-slate-500">
-                        <span>{r.k}</span>
-                        <span>{r.v}%</span>
-                      </div>
-                      <div className="h-2 w-full rounded bg-[--surface-alt]">
-                        <motion.div
-                          className="h-2 rounded bg-[--brand-primary]"
-                          initial={{ width: 0 }}
-                          whileInView={{ width: `${r.v}%` }}
-                          viewport={{ once: true, amount: 0.6 }}
-                          transition={{
-                            duration: 0.6 + i * 0.1,
-                            ease: "easeOut",
-                          }}
-                        />
-                      </div>
-                    </div>
-                  ))}
                 </div>
               </motion.div>
 
-              {/* Card: Resolution trend (sparkline) + insight chip */}
+              {/* AI answer bubble */}
               <motion.div
-                className="mt-4 rounded-2xl border border-[--border-subtle] p-4"
+                className="absolute left-5 right-5 top-28"
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5, duration: 0.5 }}
+                transition={{ delay: 0.25, duration: 0.6, ease: "easeOut" }}
               >
-                <div className="flex items-center justify-between">
+                <div className="ml-11 max-w-[78%] rounded-2xl border border-[--border-subtle] bg-white p-3 shadow-sm">
                   <div className="text-[11px] font-semibold text-slate-500">
-                    Resolution Trend
+                    Advancelytics
                   </div>
-                  <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
-                    +12% this week
-                  </span>
+                  <div className="mt-1 text-sm text-slate-800">
+                    I found a verified article in{" "}
+                    <span className="font-medium">Security › SSO</span>. Want to
+                    open it or share in chat?
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
+                    {heroChips.map((c) => (
+                      <span
+                        key={c}
+                        className="rounded-full border border-[--brand-primary]/20 bg-[--brand-primary]/5 px-2.5 py-1 text-[--brand-primary]"
+                      >
+                        {c}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-                <svg viewBox="0 0 100 28" className="mt-2 h-14 w-full">
-                  <polyline
-                    points="0,20 10,22 20,18 30,17 40,15 50,16 60,14 70,12 80,13 90,11 100,10"
-                    fill="none"
-                    stroke="#E3EEFF"
-                    strokeWidth="2"
-                  />
-                  <motion.polyline
-                    points="0,20 10,22 20,18 30,17 40,15 50,16 60,14 70,12 80,13 90,11 100,10"
-                    fill="none"
-                    stroke={brand.primary}
-                    strokeWidth="2"
-                    strokeDasharray="140"
-                    strokeDashoffset="140"
-                    animate={{
-                      strokeDashoffset: prefersReducedMotion ? 0 : [140, 0],
-                    }}
-                    transition={{
-                      duration: prefersReducedMotion ? 0 : 1.8,
-                      ease: "easeOut",
-                    }}
-                  />
-                </svg>
-                <div className="mt-1 text-[11px] text-slate-500">
-                  Automatic scoring across chats, emails, and tickets.
+              </motion.div>
+
+              {/* doc ingest icons → sorted categories */}
+              <motion.div
+                className="absolute left-5 right-5 bottom-24"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.55, duration: 0.6, ease: "easeOut" }}
+              >
+                <div className="grid grid-cols-5 gap-2 text-[11px]">
+                  {/* ingest */}
+                  <div className="col-span-2 rounded-2xl border border-[--border-subtle] bg-[--surface] p-3">
+                    <div className="mb-1 font-semibold text-slate-600">
+                      Ingest
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {ingestSources.map((s, i) => (
+                        <motion.span
+                          key={s.k}
+                          className="rounded-md border border-[--border-subtle] bg-white px-2 py-1"
+                          initial={{ opacity: 0, y: 6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.1 + i * 0.06, duration: 0.35 }}
+                        >
+                          {s.k}
+                        </motion.span>
+                      ))}
+                    </div>
+                  </div>
+                  {/* arrow */}
+                  <div className="grid place-items-center text-slate-400">
+                    →
+                  </div>
+                  {/* categories */}
+                  <div className="col-span-2 rounded-2xl border border-[--border-subtle] bg-[--surface] p-3">
+                    <div className="mb-1 font-semibold text-slate-600">
+                      Categories
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {categories.map((c, i) => (
+                        <motion.span
+                          key={c.k}
+                          className="rounded-md border border-[--brand-primary]/20 bg-[--brand-primary]/5 px-2 py-1 text-[--brand-primary]"
+                          initial={{ opacity: 0, y: 6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.1 + i * 0.06, duration: 0.35 }}
+                        >
+                          {c.k}
+                        </motion.span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* bottom CTA bar */}
+              <motion.div
+                className="absolute bottom-5 left-5 right-5"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.75, duration: 0.6, ease: "easeOut" }}
+              >
+                <div className="flex items-center justify-between rounded-2xl border border-[--border-subtle] bg-white p-3 shadow-sm">
+                  <div className="flex items-center gap-3 text-sm font-medium text-slate-800">
+                    <span className="inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                    Verified answer ready
+                  </div>
+                  <CTAButton href="#!" testId="cta-open-article">
+                    Open Article
+                  </CTAButton>
                 </div>
               </motion.div>
             </div>
@@ -305,22 +362,85 @@ export default function CxAnalyticsDashboardPage() {
         </div>
       </section>
 
-      {/* 2) WHY IT MATTERS */}
+      {/* 1.5) BEFORE vs AFTER Metric Visual */}
+      <section className="mx-auto -mt-8 max-w-5xl px-4 sm:px-6">
+        <div className="rounded-2xl border border-[--border-subtle] bg-white p-5 shadow-sm">
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="text-base font-semibold text-slate-900">
+              Before vs After — Answer Accuracy
+            </h3>
+            <span className="text-[11px] text-slate-500">
+              Realistic target example
+            </span>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {/* Before */}
+            <div>
+              <div className="mb-1 flex items-center justify-between text-[11px] text-slate-500">
+                <span>Before (Static KB)</span>
+                <span>55%</span>
+              </div>
+              <div className="h-2 w-full rounded bg-slate-100">
+                <motion.div
+                  className="h-2 rounded bg-rose-400"
+                  initial={{ width: 0 }}
+                  whileInView={{ width: "55%" }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.7 }}
+                />
+              </div>
+            </div>
+            {/* After */}
+            <div>
+              <div className="mb-1 flex items-center justify-between text-[11px] text-slate-500">
+                <span>After (AI‑Led)</span>
+                <span>92%</span>
+              </div>
+              <div className="h-2 w-full rounded bg-[--surface-alt]">
+                <motion.div
+                  className="relative h-2 rounded bg-[--brand-primary]"
+                  initial={{ width: 0 }}
+                  whileInView={{ width: "92%" }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.8 }}
+                >
+                  <motion.span
+                    className="absolute inset-0 block rounded"
+                    initial={{ opacity: 0 }}
+                    whileInView={{ opacity: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.2, duration: 0.6 }}
+                    style={{
+                      backgroundImage:
+                        "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.35) 50%, rgba(255,255,255,0) 100%)",
+                      backgroundSize: "200% 100%",
+                    }}
+                  />
+                </motion.div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 2) WHY MANUAL KNOWLEDGE FAILS */}
       <section id="why" className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
         <div className="grid items-start gap-10 lg:grid-cols-2">
+          {/* Left copy */}
           <div>
             <h2 className="text-3xl font-bold tracking-tight">
-              Why it matters
+              Why manual knowledge bases fail
             </h2>
             <p className="mt-3 max-w-xl text-slate-600">
-              Raw transcripts contain the voice of your customer — but
-              traditional reporting only shows numbers, not narratives.
+              Static knowledge bases decay without constant tagging and cleanup.
+              Duplicates creep in, search is keyword‑only, and agents can’t find
+              what already exists.
             </p>
             <ul className="mt-6 space-y-3 text-sm text-slate-700">
               {[
-                "Disconnected tools and manual tagging",
-                "Surface metrics, no qualitative insights",
-                "Hidden churn signals and burnout patterns",
+                "One‑size‑fits‑all tags — no intent understanding",
+                "Duplicates & drift across chat, portal, docs",
+                "No signal on what’s missing until tickets spike",
               ].map((item, i) => (
                 <li key={i} className="flex items-start gap-3">
                   <span className="mt-1 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-rose-50 text-rose-600 ring-1 ring-rose-200">
@@ -332,34 +452,123 @@ export default function CxAnalyticsDashboardPage() {
             </ul>
           </div>
 
-          {/* Right: AI advantage card */}
+          {/* Right: Animated Static vs AI‑Led card */}
           <div className="relative overflow-hidden rounded-3xl border border-[--border-subtle] bg-white p-6 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
               <div className="text-sm font-semibold text-slate-700">
-                AI‑Driven Advantage
+                Static vs AI‑Led
+              </div>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-slate-500">Static</span>
+                <span className="relative inline-flex h-5 w-10 items-center rounded-full bg-slate-200">
+                  <span className="absolute left-0.5 h-4 w-4 rounded-full bg-white shadow" />
+                </span>
+                <span className="font-semibold text-slate-900">AI‑Led</span>
               </div>
             </div>
-            <div className="grid gap-3 text-sm sm:grid-cols-2">
-              {[
-                "Unified sentiment + topic correlation",
-                "Automated resolution scoring across chats",
-                "Trend detection for intent, tone, and risk",
-                "Voice‑of‑customer themes for Product",
-              ].map((t, i) => (
-                <div
-                  key={i}
-                  className="flex items-start gap-2 rounded-xl border border-[--border-subtle] bg-[--surface] p-3"
-                >
-                  <span className="mt-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-emerald-50 text-[10px] text-emerald-700 ring-1 ring-emerald-200">
-                    ✓
-                  </span>
-                  <span className="text-slate-800">{t}</span>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-3 text-sm">
+                {["Outdated tags", "Poor discovery", "Repetitive answers"].map(
+                  (t, i) => (
+                    <div
+                      key={i}
+                      className="flex items-start gap-2 rounded-xl border border-[--border-subtle] bg-[--surface] p-3"
+                    >
+                      <span className="mt-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-rose-50 text-[10px] text-rose-600 ring-1 ring-rose-200">
+                        –
+                      </span>
+                      <span className="text-slate-800">{t}</span>
+                    </div>
+                  )
+                )}
+                {/* animated drop‑off bar */}
+                <div className="mt-4">
+                  <div className="mb-1 flex items-center justify-between text-[11px] text-slate-500">
+                    <span>Answer found</span>
+                    <span>55%</span>
+                  </div>
+                  <div className="h-2 w-full rounded bg-slate-100">
+                    <motion.div
+                      className="h-2 rounded bg-rose-400"
+                      initial={{ width: 0 }}
+                      whileInView={{ width: "55%" }}
+                      viewport={{ once: true, amount: 0.6 }}
+                      transition={{ duration: 0.8, ease: "easeOut" }}
+                    />
+                  </div>
                 </div>
-              ))}
+              </div>
+
+              <div className="space-y-3 text-sm">
+                {["Auto‑tagged", "Intent‑aware search", "Gap insights"].map(
+                  (t, i) => (
+                    <div
+                      key={i}
+                      className="flex items-start gap-2 rounded-xl border border-[--border-subtle] bg-[--surface] p-3"
+                    >
+                      <span className="mt-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-emerald-50 text-[10px] text-emerald-700 ring-1 ring-emerald-200">
+                        ✓
+                      </span>
+                      <span className="text-slate-800">{t}</span>
+                    </div>
+                  )
+                )}
+                {/* animated improvement bar */}
+                <div className="mt-4">
+                  <div className="mb-1 flex items-center justify-between text-[11px] text-slate-500">
+                    <span>Answer found</span>
+                    <span>92%</span>
+                  </div>
+                  <div className="h-2 w-full rounded bg-[--surface-alt]">
+                    <motion.div
+                      className="relative h-2 rounded bg-[--brand-primary]"
+                      initial={{ width: 0 }}
+                      whileInView={{ width: "92%" }}
+                      viewport={{ once: true, amount: 0.6 }}
+                      transition={{ duration: 0.9, ease: "easeOut" }}
+                    >
+                      <motion.span
+                        className="absolute inset-0 block rounded"
+                        initial={{ opacity: 0 }}
+                        whileInView={{ opacity: 1 }}
+                        viewport={{ once: true, amount: 0.6 }}
+                        transition={{ delay: 0.2, duration: 0.6 }}
+                        style={{
+                          backgroundImage:
+                            "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.35) 50%, rgba(255,255,255,0) 100%)",
+                          backgroundSize: "200% 100%",
+                        }}
+                      />
+                    </motion.div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="pointer-events-none mt-6 text-[11px] text-slate-500">
-              “Teams spend hours compiling what Advancelytics detects in
-              seconds.”
+
+            <div className="pointer-events-none mt-6 grid grid-cols-2 gap-4 text-[11px] text-slate-500">
+              <div className="flex items-center gap-2">
+                <motion.span
+                  initial={{ x: 0, opacity: 0 }}
+                  whileInView={{ x: 6, opacity: 1 }}
+                  viewport={{ once: true, amount: 0.6 }}
+                  transition={{ duration: 0.6, ease: "easeOut" }}
+                >
+                  →
+                </motion.span>
+                <span>Missed answers</span>
+              </div>
+              <div className="flex items-center justify-end gap-2">
+                <span>Precision matches</span>
+                <motion.span
+                  initial={{ x: 0, opacity: 0 }}
+                  whileInView={{ x: -6, opacity: 1 }}
+                  viewport={{ once: true, amount: 0.6 }}
+                  transition={{ duration: 0.6, ease: "easeOut" }}
+                >
+                  →
+                </motion.span>
+              </div>
             </div>
           </div>
         </div>
@@ -370,16 +579,17 @@ export default function CxAnalyticsDashboardPage() {
         id="how"
         className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6"
       >
+        {/* Title row */}
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div>
             <h2 className="text-3xl font-bold tracking-tight">How it works</h2>
             <p className="mt-3 max-w-2xl text-slate-600">
-              Aggregate, analyze, visualize, and recommend — automatically.
+              Ingest, organize, surface, and learn — all automatically.
             </p>
           </div>
           <div className="flex items-center gap-2">
             <span className="rounded-full bg-[--brand-primary]/10 px-3 py-1 text-xs font-semibold text-[--brand-primary]">
-              Multi‑channel
+              Signal‑ready
             </span>
             <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
               Privacy‑aware
@@ -388,7 +598,7 @@ export default function CxAnalyticsDashboardPage() {
         </div>
 
         <div className="mt-10 grid items-start gap-8 lg:grid-cols-2">
-          {/* Steps timeline */}
+          {/* Left: Animated vertical timeline */}
           <div className="relative">
             <div
               className="absolute left-5 top-0 bottom-0 hidden w-[2px] bg-gradient-to-b from-[--brand-primary]/30 via-[--brand-accent]/30 to-transparent lg:block"
@@ -397,23 +607,23 @@ export default function CxAnalyticsDashboardPage() {
             {[
               {
                 n: "1",
-                t: "Aggregate Data Sources",
-                d: "Chat, email, CSAT, CRM.",
+                t: "Ingest & Parse",
+                d: "Connect help center, docs, and transcripts.",
               },
               {
                 n: "2",
-                t: "Analyze & Classify",
-                d: "Sentiment, topic, and agent context.",
+                t: "Organize & Enrich",
+                d: "Auto‑categorize; map entities & synonyms.",
               },
               {
                 n: "3",
-                t: "Visualize Trends",
-                d: "Dynamic dashboards for every team.",
+                t: "Surface Everywhere",
+                d: "Chat, portal, in‑product widget, API.",
               },
               {
                 n: "4",
-                t: "Recommend Actions",
-                d: "Coaching, content, or workflow fixes.",
+                t: "Learn & Improve",
+                d: "Track failed searches; suggest new articles.",
               },
             ].map((s, i) => (
               <motion.div
@@ -453,126 +663,179 @@ export default function CxAnalyticsDashboardPage() {
             ))}
           </div>
 
-          {/* Right: Live dashboard flow card */}
+          {/* Right: Animated pipeline card */}
           <div className="relative">
             <div
               className="absolute -inset-1 rounded-3xl bg-gradient-to-br from-[--brand-primary]/20 to-[--brand-accent]/20 blur"
               aria-hidden
             />
             <div className="relative overflow-hidden rounded-3xl border border-[--border-subtle] bg-white p-6 shadow-xl">
-              <div className="grid gap-4 md:grid-cols-2">
-                {/* Intent clusters */}
-                <div className="rounded-2xl border border-[--border-subtle] p-4">
-                  <div className="text-[11px] font-semibold text-slate-500">
-                    Intent Clusters
+              {/* Stage 1: Signals rolling */}
+              <div className="min-h-[40px]">
+                <AnimatePresence initial={false}>
+                  <div className="flex flex-wrap items-center gap-2 text-xs">
+                    {ingestSources
+                      .slice(tick % ingestSources.length)
+                      .concat(
+                        ingestSources.slice(0, tick % ingestSources.length)
+                      )
+                      .slice(0, 3)
+                      .map((sig, i) => (
+                        <motion.span
+                          key={`${sig.k}-${i}-${tick}`}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: 10 }}
+                          transition={{ duration: 0.35, ease: "easeOut" }}
+                          className="rounded-full border border-[--brand-primary]/20 bg-[--brand-primary]/5 px-2.5 py-1 text-[--brand-primary]"
+                        >
+                          {sig.k}
+                        </motion.span>
+                      ))}
                   </div>
-                  <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
-                    {[
-                      "Billing",
-                      "Login",
-                      "Refunds",
-                      "Integrations",
-                      "Shipping",
-                    ].map((c, i) => (
-                      <motion.span
-                        key={c}
-                        initial={{ opacity: 0, y: 6 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: 0.05 * i }}
-                        className="rounded-full border border-[--brand-primary]/20 bg-[--brand-primary]/5 px-2.5 py-1 text-[--brand-primary]"
-                      >
-                        {c}
-                      </motion.span>
-                    ))}
-                  </div>
+                </AnimatePresence>
+              </div>
+
+              {/* Stage 2: Enrichment */}
+              <div className="mt-4 rounded-2xl border border-[--border-subtle] bg-[--surface] p-4">
+                <div className="text-[11px] font-semibold text-slate-500">
+                  Enrichment
                 </div>
-                {/* Coaching suggestions */}
-                <div className="rounded-2xl border border-[--border-subtle] p-4">
-                  <div className="text-[11px] font-semibold text-slate-500">
-                    Coaching Suggestions
-                  </div>
-                  <ul className="mt-2 space-y-2 text-sm">
-                    {[
-                      "Clarify return window in macro",
-                      "Add KB: SSO renewal steps",
-                      "Nudge: follow-up empathy phrase",
-                    ].map((s, i) => (
-                      <motion.li
-                        key={i}
-                        initial={{ opacity: 0, x: -6 }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: 0.06 * i }}
-                        className="flex items-start gap-2"
-                      >
-                        <span className="mt-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-emerald-50 text-[10px] text-emerald-700 ring-1 ring-emerald-200">
-                          ✓
-                        </span>
-                        <span className="text-slate-800">{s}</span>
-                      </motion.li>
-                    ))}
-                  </ul>
+                <div className="mt-1 text-sm text-slate-800">
+                  Topics • Entities • Synonyms
                 </div>
-                {/* CSAT correlation mini-chart */}
-                <div className="rounded-2xl border border-[--border-subtle] p-4 md:col-span-2">
-                  <div className="flex items-center justify-between">
-                    <div className="text-[11px] font-semibold text-slate-500">
-                      CSAT Correlation
-                    </div>
-                    <span className="rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
-                      91% accuracy
-                    </span>
-                  </div>
-                  <svg viewBox="0 0 100 28" className="mt-2 h-14 w-full">
-                    <polyline
-                      points="0,18 20,16 40,14 60,12 80,10 100,8"
-                      fill="none"
-                      stroke="#E3EEFF"
-                      strokeWidth="2"
-                    />
-                    <motion.polyline
-                      points="0,18 20,16 40,14 60,12 80,10 100,8"
-                      fill="none"
-                      stroke={brand.primary}
-                      strokeWidth="2"
-                      strokeDasharray="140"
-                      strokeDashoffset="140"
+                <div className="mt-3 min-h-[34px] flex flex-wrap gap-2 text-[11px]">
+                  <AnimatePresence initial={false}>
+                    {categories
+                      .slice(tick % categories.length)
+                      .concat(categories.slice(0, tick % categories.length))
+                      .slice(0, 3)
+                      .map((a, i) => (
+                        <motion.button
+                          key={`${a.k}-${i}-${tick}`}
+                          initial={{ opacity: 0, y: 6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -6 }}
+                          transition={{ duration: 0.35, ease: "easeOut" }}
+                          className="rounded-full border border-[--brand-primary]/20 bg-white px-3 py-1 font-medium text-[--brand-primary] hover:bg-[--brand-primary]/5"
+                        >
+                          {a.k}
+                        </motion.button>
+                      ))}
+                  </AnimatePresence>
+                </div>
+              </div>
+
+              {/* Stage 3: Progress shimmer + donut */}
+              <div className="mt-5 grid grid-cols-3 gap-4">
+                <div className="col-span-2">
+                  <div className="h-2 w-full rounded bg-[--surface-alt]">
+                    <motion.div
+                      className="relative h-2 rounded bg-[--brand-primary]"
+                      initial={{ width: 0 }}
                       animate={{
-                        strokeDashoffset: prefersReducedMotion ? 0 : [140, 0],
+                        width: prefersReducedMotion
+                          ? "80%"
+                          : ["0%", "80%", "70%", "80%"],
                       }}
                       transition={{
-                        duration: prefersReducedMotion ? 0 : 1.6,
-                        ease: "easeOut",
+                        duration: prefersReducedMotion ? 0 : 2.2,
+                        repeat: prefersReducedMotion ? 0 : Infinity,
+                        ease: "easeInOut",
+                      }}
+                    >
+                      <motion.span
+                        className="absolute inset-0 block rounded"
+                        initial={{ backgroundPosition: "-200% 0" }}
+                        animate={{
+                          backgroundPosition: prefersReducedMotion
+                            ? "0% 0"
+                            : ["-200% 0", "200% 0"],
+                        }}
+                        transition={{
+                          duration: prefersReducedMotion ? 0 : 1.8,
+                          repeat: prefersReducedMotion ? 0 : Infinity,
+                          ease: "linear",
+                        }}
+                        style={{
+                          backgroundImage:
+                            "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.35) 50%, rgba(255,255,255,0) 100%)",
+                          backgroundSize: "200% 100%",
+                        }}
+                      />
+                    </motion.div>
+                  </div>
+                  <div className="mt-2 text-right text-xs text-slate-500">
+                    Knowledge quality ↑
+                  </div>
+                </div>
+                <div className="grid place-items-center">
+                  <svg viewBox="0 0 36 36" className="h-12 w-12 -rotate-90">
+                    <circle
+                      cx="18"
+                      cy="18"
+                      r="15.5"
+                      fill="none"
+                      stroke="#E3EEFF"
+                      strokeWidth="3"
+                    />
+                    <motion.circle
+                      cx="18"
+                      cy="18"
+                      r="15.5"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                      className="text-[--brand-primary]"
+                      strokeDasharray="97.4"
+                      strokeDashoffset="97.4"
+                      animate={{
+                        strokeDashoffset: prefersReducedMotion
+                          ? 20
+                          : [97.4, 20, 28, 20],
+                      }}
+                      transition={{
+                        duration: prefersReducedMotion ? 0 : 2.2,
+                        repeat: prefersReducedMotion ? 0 : Infinity,
+                        ease: "easeInOut",
                       }}
                     />
                   </svg>
-                  <div className="mt-1 text-[11px] text-slate-500">
-                    Higher clarity and empathy align with better CSAT.
+                  <div className="mt-1 text-[10px] text-slate-500">
+                    Find rate
                   </div>
                 </div>
+              </div>
+
+              {/* Stage 4: CTA row */}
+              <div className="mt-4 flex items-center justify-between rounded-2xl border border-[--border-subtle] bg-white p-3 shadow-sm">
+                <div className="text-sm font-medium text-slate-800">
+                  Relevant answers ready
+                </div>
+                <CTAButton href="#!" testId="cta-preview">
+                  Preview results
+                </CTAButton>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 4) INSIDE THE ANALYTICS ENGINE */}
+      {/* 4) INSIDE THE KNOWLEDGE BRAIN */}
       <section
-        id="engine"
+        id="brain"
         className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6"
       >
         <h2 className="text-center text-3xl font-bold tracking-tight">
-          Inside the Analytics Engine
+          Inside the Knowledge Brain
         </h2>
         <p className="mx-auto mt-2 max-w-2xl text-center text-slate-600">
-          Sentiment • Resolution • Intent • CSAT • Risk
+          Intent • Auto‑tagging • Synonyms • Insights
         </p>
 
         <div className="mt-14 grid items-center gap-14 lg:grid-cols-2">
-          {/* Left: Cards */}
           <div className="grid gap-6 sm:grid-cols-2">
-            {enginePhases.map((b, i) => (
+            {brainPhases.map((b, i) => (
               <motion.div
                 key={b.k}
                 initial={{ opacity: 0, y: 12 }}
@@ -592,7 +855,7 @@ export default function CxAnalyticsDashboardPage() {
             ))}
           </div>
 
-          {/* Right: rotating ring with nodes */}
+          {/* Right: Rotating ring + cycling card */}
           <div className="relative flex items-center justify-center">
             <div className="relative h-80 w-80 sm:h-96 sm:w-96">
               <div
@@ -612,7 +875,7 @@ export default function CxAnalyticsDashboardPage() {
               >
                 <svg viewBox="0 0 100 100" className="h-full w-full">
                   <defs>
-                    <linearGradient id="engineRing" x1="0" y1="0" x2="1" y2="1">
+                    <linearGradient id="brainRing" x1="0" y1="0" x2="1" y2="1">
                       <stop
                         offset="0%"
                         stopColor={brand.primary}
@@ -635,13 +898,13 @@ export default function CxAnalyticsDashboardPage() {
                   />
                   <path
                     d="M50 10 A40 40 0 1 1 49.99 10"
-                    stroke="url(#engineRing)"
+                    stroke="url(#brainRing)"
                     strokeWidth="3"
                     fill="none"
                     strokeLinecap="round"
                   />
                 </svg>
-                {[0, 72, 144, 216, 288].map((angle, i) => (
+                {[0, 90, 180, 270].map((angle, i) => (
                   <div
                     key={i}
                     className="absolute left-1/2 top-1/2"
@@ -653,12 +916,10 @@ export default function CxAnalyticsDashboardPage() {
                   </div>
                 ))}
               </motion.div>
-
-              {/* Center cycling card */}
               <div className="absolute inset-0 grid place-items-center">
                 <AnimatePresence mode="wait">
                   {(() => {
-                    const p = enginePhases[tick % enginePhases.length];
+                    const p = brainPhases[tick % brainPhases.length];
                     return (
                       <motion.div
                         key={`${p.k}-${tick}`}
@@ -696,35 +957,39 @@ export default function CxAnalyticsDashboardPage() {
           Key Features
         </h2>
         <p className="mx-auto mt-2 max-w-2xl text-center text-slate-600">
-          Unified analytics that coach teams and guide decisions.
+          Auto‑organize, enrich, and deliver precise answers — everywhere.
         </p>
         <div className="mt-10 grid gap-6 text-left sm:grid-cols-2 lg:grid-cols-3">
           {[
             {
-              i: "📊",
-              t: "Unified Dashboard",
-              d: "All channels, one analytics view.",
+              i: "🧠",
+              t: "Auto‑Categorization",
+              d: "Classifies by topic, persona, and product area.",
             },
             {
-              i: "🤖",
-              t: "AI‑Scored Chats",
-              d: "Real‑time quality & empathy evaluation.",
+              i: "🔍",
+              t: "Intent‑Aware Search",
+              d: "Semantic retrieval that matches how users ask.",
             },
             {
-              i: "🧭",
-              t: "Intent Tracking",
-              d: "Identify top recurring issues and requests.",
+              i: "🗂️",
+              t: "Duplicate Detection",
+              d: "Flags overlapping or redundant content.",
             },
             {
-              i: "🪄",
-              t: "Auto‑Coaching",
-              d: "Pinpoint skill gaps by conversation type.",
+              i: "📈",
+              t: "Gap Insights",
+              d: "Shows what users search but can’t find.",
             },
-            { i: "💡", t: "VoC Feed", d: "Extract themes & feature requests." },
+            {
+              i: "🔁",
+              t: "Cross‑Channel Sync",
+              d: "Keep chat and help center consistent.",
+            },
             {
               i: "⚙️",
-              t: "Custom Reports",
-              d: "Export for leadership, CS, and product teams.",
+              t: "Native + API Integrations",
+              d: "Zendesk, Intercom, Confluence, Notion, Slack.",
             },
           ].map((f, i) => (
             <motion.div
@@ -745,14 +1010,14 @@ export default function CxAnalyticsDashboardPage() {
       {/* 6) REAL IMPACT */}
       <section id="impact" className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
         <h2 className="text-3xl font-bold tracking-tight">
-          Real Impact — Measurable Improvements
+          Real Impact — Answers that Find You
         </h2>
         <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
-            { k: "Response quality", v: "+38%" },
-            { k: "CSAT correlation", v: "91%" },
-            { k: "Coaching time saved", v: "−52%" },
-            { k: "Churn precision", v: "88%" },
+            { k: "Repeat queries", v: "−38%" },
+            { k: "Agent discovery speed", v: "+60%" },
+            { k: "Duplicate content", v: "−43%" },
+            { k: "Self‑serve deflection", v: "+25%" },
           ].map((m) => (
             <div
               key={m.k}
@@ -774,28 +1039,30 @@ export default function CxAnalyticsDashboardPage() {
           What Teams Are Saying
         </h2>
         <p className="mx-auto mt-2 max-w-2xl text-center text-slate-600">
-          Coach with data, not guesswork.
+          Support and Docs teams recover time while users get precise answers.
         </p>
         <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {[
             {
-              name: "Priya Shah",
-              role: "CX Director, CloudOps",
-              inc: "+31% CSAT",
+              name: "Liam Chen",
+              role: "Knowledge Ops Lead, CloudSuite",
+              inc: "−50% repeats",
               quote:
-                "Our dashboards finally connect empathy and efficiency. We found patterns no spreadsheet ever showed.",
+                "We cut repeat queries in half — the AI finds the best doc and surfaces it in chat.",
             },
             {
-              name: "Marco Silva",
-              role: "Head of Support, RetailTech",
-              inc: "−44% coaching time",
-              quote: "We coach with data now — not guesswork.",
+              name: "Sofia Martins",
+              role: "Head of CX, FinTechCo",
+              inc: "+34% find rate",
+              quote:
+                "Tagging used to be a chore. Now the system flags gaps and keeps our content fresh.",
             },
             {
-              name: "Jade Nguyen",
-              role: "Product Lead, FinServe",
-              inc: "+18% deflection",
-              quote: "Intent trends directly informed our roadmap and macros.",
+              name: "Diego Alvarez",
+              role: "Docs Manager, DevStack",
+              inc: "−41% dups",
+              quote:
+                "Duplicate detection finally gave us a clean, trustworthy KB.",
             },
           ].map((t, i) => (
             <figure
@@ -842,6 +1109,24 @@ export default function CxAnalyticsDashboardPage() {
             </figure>
           ))}
         </div>
+        {/* Trust Logos Strip */}
+        <div className="mx-auto mt-10 max-w-5xl">
+          <div className="rounded-2xl border border-[--border-subtle] bg-white/70 p-4">
+            <p className="text-center text-xs font-medium uppercase tracking-wide text-slate-500">
+              Trusted by teams at
+            </p>
+            <div className="mt-4 grid grid-cols-2 items-center justify-items-center gap-4 sm:grid-cols-3">
+              {["CloudSuite", "DevStack", "FinTechCo"].map((logo) => (
+                <div
+                  key={logo}
+                  className="flex h-10 w-40 items-center justify-center rounded-xl bg-[--surface] text-sm font-semibold text-slate-500 ring-1 ring-[--border-subtle]"
+                >
+                  {logo}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* 8) CTA */}
@@ -849,26 +1134,17 @@ export default function CxAnalyticsDashboardPage() {
         id="cta"
         className="mx-auto max-w-7xl rounded-3xl border border-[--border-subtle] bg-gradient-to-br from-white to-[--brand-primary]/5 px-4 py-16 text-center sm:px-6"
       >
-        <h2 className="text-3xl font-bold">
-          See What Your Conversations Reveal
-        </h2>
+        <h2 className="text-3xl font-bold">Make Knowledge Work for You</h2>
         <p className="mx-auto mt-2 max-w-2xl text-slate-600">
-          Unlock patterns, coaching insights, and sentiment trends hidden in
-          your chat history.
+          Automate categorization, discovery, and improvement with AI.
         </p>
         <div className="mt-6 flex justify-center gap-3">
-          <a
-            href="#"
-            className="rounded-2xl bg-[#004FCC] px-6 py-3 text-sm font-semibold text-white shadow-md hover:bg-[#003BB5] hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-[#003BB5] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
-          >
+          <CTAButton href="#!" testId="cta-start">
             Start Free Trial
-          </a>
-          <a
-            href="#"
-            className="rounded-2xl bg-[#E8F1FF] border border-[#004FCC] px-6 py-3 text-sm font-semibold text-[#004FCC] shadow-sm transition hover:bg-[#004FCC] hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#004FCC] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
-          >
-            View Demo
-          </a>
+          </CTAButton>
+          <CTAButton href="#!" variant="secondary" testId="cta-request">
+            Request Demo
+          </CTAButton>
         </div>
         <p className="mt-3 text-xs text-slate-500">
           14‑day free trial · No credit card required
