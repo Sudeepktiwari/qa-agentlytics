@@ -3,12 +3,21 @@
 // Primary button is solid dark blue (#006BFF / rgb(0,107,255)) for strong contrast.
 
 "use client";
-import React from "react";
+// Advancelytics — Proactive AI Agent (ai-chatbots)
+// Full single-file React component with requested updates:
+// - Social Proof logos & testimonial carousel
+// - StoryBrand "Before → After" success visual
+// - CTA microcopy: "Start Free — Boost Conversions Now"
+// - SEO meta: keywords + description via react-helmet
+// - Accessibility: hover color #004FCC (WCAG AA)
+
+import React, { useEffect, useState } from "react";
+import { Helmet } from "react-helmet";
 
 // Calendly-ish brand tokens
 const brand = {
   primary: "#006BFF", // rgb(0,107,255)
-  primaryHover: "#0055CC",
+  primaryHover: "#004FCC", // darker for WCAG AA
   accent: "#0AE8F0", // Bright Turquoise
   bgFrom: "#CCE1FF", // light wash
   bgTo: "#FFFFFF",
@@ -40,6 +49,43 @@ const ArrowRight = (props: React.SVGProps<SVGSVGElement>) => (
 );
 
 export default function ProactiveAIPage() {
+  // Simple testimonial carousel
+  const testimonials = [
+    {
+      logo: "CloudScale",
+      quote: "We saw 2.9x more qualified demos in week one.",
+      author: "VP Growth, CloudScale",
+      metric: "+2.9x demos",
+    },
+    {
+      logo: "FinServe",
+      quote: "Onboarding time dropped by 42% without extra headcount.",
+      author: "Head of CS, FinServe",
+      metric: "-42% activation time",
+    },
+    {
+      logo: "RetailOps",
+      quote: "Behavior triggers rescued 18% of exit-intent visitors.",
+      author: "Ecom Lead, RetailOps",
+      metric: "+18% recovered",
+    },
+    {
+      logo: "DevSuite",
+      quote: "Sales loved the zero-handoff context. Cycle time shrank fast.",
+      author: "RevOps, DevSuite",
+      metric: "-23% cycle time",
+    },
+  ];
+
+  const [tIndex, setTIndex] = useState(0);
+  useEffect(() => {
+    const id = setInterval(
+      () => setTIndex((i) => (i + 1) % testimonials.length),
+      3500
+    );
+    return () => clearInterval(id);
+  }, []);
+
   return (
     <div
       className="relative min-h-screen w-full text-slate-900"
@@ -50,6 +96,20 @@ export default function ProactiveAIPage() {
         } as React.CSSProperties
       }
     >
+      <Helmet>
+        <title>
+          Advancelytics — Proactive AI That Turns Visitors into Customers
+        </title>
+        <meta
+          name="keywords"
+          content="proactive ai chatbot, lifecycle ai agent, ai sales automation, conversational intelligence"
+        />
+        <meta
+          name="description"
+          content="Boost conversions 2.8x with Advancelytics — a proactive AI chatbot that detects behavior triggers, engages instantly, and automates customer journeys."
+        />
+      </Helmet>
+
       {/* Background wash */}
       <div
         className="pointer-events-none absolute inset-0 -z-10"
@@ -78,6 +138,9 @@ export default function ProactiveAIPage() {
             <a href="#benefits" className="hover:text-slate-900">
               Benefits
             </a>
+            <a href="#proof" className="hover:text-slate-900">
+              Social Proof
+            </a>
             <a href="#compare" className="hover:text-slate-900">
               Compare
             </a>
@@ -95,10 +158,9 @@ export default function ProactiveAIPage() {
             >
               Watch demo
             </a>
-            {/* Primary must be solid dark blue for contrast */}
             <a
               href="#cta"
-              className="rounded-2xl bg-[--brand-primary] px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:shadow-lg"
+              className="rounded-2xl px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:shadow-lg"
               style={{ backgroundColor: brand.primary }}
               onMouseEnter={(e) =>
                 (e.currentTarget.style.backgroundColor = brand.primaryHover)
@@ -107,7 +169,7 @@ export default function ProactiveAIPage() {
                 (e.currentTarget.style.backgroundColor = brand.primary)
               }
             >
-              Try it free
+              Start Free — Boost Conversions Now
             </a>
           </div>
         </div>
@@ -149,7 +211,7 @@ export default function ProactiveAIPage() {
                   (e.currentTarget.style.backgroundColor = brand.primary)
                 }
               >
-                Get started free
+                Start Free — Boost Conversions Now
                 <ArrowRight className="ml-2 h-4 w-4" />
               </a>
               <a
@@ -255,7 +317,7 @@ export default function ProactiveAIPage() {
                     (e.currentTarget.style.backgroundColor = "transparent")
                   }
                 >
-                  Start free
+                  Start Free — Boost Conversions Now
                 </button>
               </div>
             </div>
@@ -277,6 +339,59 @@ export default function ProactiveAIPage() {
               <div className="text-sm text-slate-600">{m.v}</div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* SOCIAL PROOF (logos + carousel) */}
+      <section id="proof" className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <p className="text-center text-xs font-semibold tracking-wide text-slate-500">
+            TRUSTED BY TEAMS AT
+          </p>
+          <div className="mt-4 grid grid-cols-2 place-items-center gap-6 text-slate-400 sm:grid-cols-5">
+            {[
+              "CloudScale",
+              "FinServe",
+              "DevSuite",
+              "RetailOps",
+              "HealthStack",
+            ].map((n) => (
+              <LogoBadge key={n} name={n} />
+            ))}
+          </div>
+
+          {/* Testimonial carousel */}
+          <div className="mt-8 overflow-hidden">
+            <div className="relative mx-auto max-w-3xl">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5 text-center shadow-sm">
+                <div className="mx-auto mb-2 flex items-center justify-center gap-2 text-slate-500">
+                  <div className="h-6 w-6 rounded-full bg-slate-200" />
+                  <span className="text-sm font-semibold">
+                    {testimonials[tIndex].logo}
+                  </span>
+                </div>
+                <blockquote className="text-balance text-lg font-medium text-slate-800">
+                  “{testimonials[tIndex].quote}”
+                </blockquote>
+                <div className="mt-2 text-sm text-slate-600">
+                  {testimonials[tIndex].author}
+                </div>
+                <div className="mt-3 inline-block rounded-full border border-[--brand-primary]/30 bg-[--brand-primary]/5 px-3 py-1 text-xs font-semibold text-[--brand-primary]">
+                  {testimonials[tIndex].metric}
+                </div>
+                <div className="mt-4 flex justify-center gap-1">
+                  {testimonials.map((_, i) => (
+                    <span
+                      key={i}
+                      className={`h-1.5 w-6 rounded-full ${
+                        i === tIndex ? "bg-[--brand-primary]" : "bg-slate-300"
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -681,7 +796,7 @@ export default function ProactiveAIPage() {
                 (e.currentTarget.style.backgroundColor = brand.primary)
               }
             >
-              Start Free Trial
+              Start Free — Boost Conversions Now
               <ArrowRight className="h-4 w-4" />
             </a>
           </div>
@@ -862,6 +977,49 @@ export default function ProactiveAIPage() {
         </div>
       </section>
 
+      {/* BEFORE → AFTER (StoryBrand visual) */}
+      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="flex flex-col items-center gap-6 md:flex-row md:items-stretch">
+            <div className="flex-1 rounded-2xl border border-rose-200 bg-rose-50/50 p-5">
+              <h4 className="text-sm font-semibold text-rose-700">Before</h4>
+              <ul className="mt-2 space-y-2 text-sm text-rose-900/90">
+                {[
+                  "Missed leads on pricing page",
+                  "Visitors repeat themselves at handoffs",
+                  "Reactive chat waits for input",
+                  "Manual follow-ups, slow cycles",
+                ].map((t) => (
+                  <li key={t} className="flex items-start gap-2">
+                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-rose-400" />
+                    {t}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="hidden md:flex h-24 w-24 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[--brand-primary]/10 to-[--brand-accent]/10">
+              <ArrowRight className="h-8 w-8 text-[--brand-primary]" />
+            </div>
+            <div className="flex-1 rounded-2xl border border-emerald-200 bg-emerald-50/50 p-5">
+              <h4 className="text-sm font-semibold text-emerald-700">After</h4>
+              <ul className="mt-2 space-y-2 text-sm text-emerald-900/90">
+                {[
+                  "Automated prompts at peak intent",
+                  "Zero handoff repetition with context",
+                  "2.8x leads, 40% faster onboarding",
+                  "Seamless routing, faster resolutions",
+                ].map((t) => (
+                  <li key={t} className="flex items-start gap-2">
+                    <Check className="mt-0.5 h-4 w-4 text-emerald-600" />
+                    {t}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA */}
       <section
         id="cta"
@@ -900,7 +1058,7 @@ export default function ProactiveAIPage() {
                   (e.currentTarget.style.backgroundColor = brand.primary)
                 }
               >
-                Book a demo
+                Start Free — Boost Conversions Now
               </a>
               <a
                 href="#"
@@ -1067,6 +1225,25 @@ function ChatRow({ who, text }: { who: "agent" | "user"; text: string }) {
       >
         {text}
       </div>
+    </div>
+  );
+}
+
+function LogoBadge({ name }: { name: string }) {
+  return (
+    <div className="flex items-center gap-2 text-slate-500">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
+        <rect
+          x="2"
+          y="4"
+          width="20"
+          height="16"
+          rx="4"
+          className="fill-slate-200"
+        />
+        <path d="M6 12h12" strokeWidth="2" className="stroke-slate-400" />
+      </svg>
+      <span className="text-sm font-semibold">{name}</span>
     </div>
   );
 }
