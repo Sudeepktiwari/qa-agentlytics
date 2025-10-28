@@ -722,6 +722,7 @@ export default function Page() {
                 Start Free Trial
               </a>
             </div>
+            {/* mobile menu  */}
             <button
               id="menuBtn"
               className="md:hidden inline-flex items-center justify-center size-10 rounded-lg border border-slate-300"
@@ -734,7 +735,7 @@ export default function Page() {
             id="mobileMenu"
             className="md:hidden hidden absolute top-full right-0 w-full bg-transparent"
           >
-            <div className="w-1/2 ml-auto bg-white border-t border-slate-200 shadow-sm">
+            <div className="w-[60vw] ml-auto bg-white border-t border-slate-200 shadow-sm">
               <nav className="px-6 py-4 grid gap-4 text-slate-800">
                 {/* Mobile Products dropdown */}
                 <details className="group border border-slate-200 rounded-lg">
@@ -842,7 +843,7 @@ export default function Page() {
                 <a href="#how">How it works</a>
                 <a href="#features">Features</a>
                 <a href="#pricing">Pricing</a>
-                <div className="pt-2 border-t border-slate-200 flex gap-3">
+                <div className="flex-row space-y-2 pt-2 border-t border-slate-200 gap-3">
                   <a
                     href="/demo"
                     className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300"
