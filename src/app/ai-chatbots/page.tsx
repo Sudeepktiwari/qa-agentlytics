@@ -955,7 +955,7 @@ export default function ProactiveAIPage() {
                 </div>
                 {/* Agent bubble with brand border */}
                 <div
-                  className="absolute -right-3 bottom-6 w-[70%] max-w-xs rounded-2xl border px-3 py-2 text-[13px] shadow-sm"
+                  className="absolute -right-3 bottom-12 w-[70%] max-w-xs rounded-2xl border px-3 py-2 text-[13px] shadow-sm"
                   style={{
                     backgroundColor: `${brand.primary}1A`, // ~10% fill
                     color: brand.primary,
