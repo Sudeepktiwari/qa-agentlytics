@@ -77,6 +77,7 @@ export default function ProactiveAIPage() {
     },
   ];
 
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [tIndex, setTIndex] = useState(0);
   useEffect(() => {
     const id = setInterval(
@@ -85,6 +86,17 @@ export default function ProactiveAIPage() {
     );
     return () => clearInterval(id);
   }, []);
+
+  // Close mobile drawer on Escape
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setMobileOpen(false);
+    }
+    if (mobileOpen) {
+      document.addEventListener("keydown", onKey);
+    }
+    return () => document.removeEventListener("keydown", onKey);
+  }, [mobileOpen]);
 
   return (
     <div
@@ -120,12 +132,12 @@ export default function ProactiveAIPage() {
       />
 
       {/* NAVBAR */}
-      <header className="sticky top-0 z-40 border-b border-slate-200/60 bg-white/80 backdrop-blur">
+      <header className="sticky top-0 z-40 border-b border-slate-200 md:bg-white backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">
             <div className="h-8 w-8 rounded-xl bg-[--brand-primary]" />
             <span className="text-lg font-semibold tracking-tight">
-              Advancelytics
+              Agentlytics
             </span>
             <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
               Proactive AI Agent
@@ -160,7 +172,7 @@ export default function ProactiveAIPage() {
             </a>
             <a
               href="#cta"
-              className="rounded-2xl px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:shadow-lg"
+              className="hidden md:inline-block rounded-2xl px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:shadow-lg"
               style={{ backgroundColor: brand.primary }}
               onMouseEnter={(e) =>
                 (e.currentTarget.style.backgroundColor = brand.primaryHover)
@@ -171,9 +183,127 @@ export default function ProactiveAIPage() {
             >
               Start Free — Boost Conversions Now
             </a>
+            <button
+              type="button"
+              aria-controls="mobile-menu"
+              aria-expanded={mobileOpen ? "true" : "false"}
+              aria-label="Toggle menu"
+              className="md:hidden inline-flex items-center justify-center rounded-md p-2 text-slate-700 hover:bg-slate-100"
+              onClick={() => setMobileOpen((o) => !o)}
+            >
+              <svg
+                className="h-6 w-6"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                {mobileOpen ? (
+                  // X icon
+                  <g>
+                    <path d="M18 6L6 18" />
+                    <path d="M6 6l12 12" />
+                  </g>
+                ) : (
+                  // Hamburger icon
+                  <g>
+                    <path d="M3 6h18" />
+                    <path d="M3 12h18" />
+                    <path d="M3 18h18" />
+                  </g>
+                )}
+              </svg>
+            </button>
           </div>
         </div>
+        {/* Mobile menu panel */}
+        <div
+          id="mobile-menu"
+          className={`md:hidden absolute right-0 top-full z-50 border-t border-l border-slate-200 bg-white w-[60vw] shadow-lg ${
+            mobileOpen ? "block" : "hidden"
+          }`}
+        >
+          <nav className="mx-auto px-4 py-3 sm:px-6">
+            <div className="flex flex-col gap-2 text-sm font-medium text-slate-700">
+              <a
+                href="#how"
+                className="py-2 hover:text-slate-900"
+                onClick={() => setMobileOpen(false)}
+              >
+                How it works
+              </a>
+              <a
+                href="#benefits"
+                className="py-2 hover:text-slate-900"
+                onClick={() => setMobileOpen(false)}
+              >
+                Benefits
+              </a>
+              <a
+                href="#proof"
+                className="py-2 hover:text-slate-900"
+                onClick={() => setMobileOpen(false)}
+              >
+                Social Proof
+              </a>
+              <a
+                href="#compare"
+                className="py-2 hover:text-slate-900"
+                onClick={() => setMobileOpen(false)}
+              >
+                Compare
+              </a>
+              <a
+                href="#demo"
+                className="py-2 hover:text-slate-900"
+                onClick={() => setMobileOpen(false)}
+              >
+                Demo
+              </a>
+              <a
+                href="#faq"
+                className="py-2 hover:text-slate-900"
+                onClick={() => setMobileOpen(false)}
+              >
+                FAQ
+              </a>
+              <div className="my-2 border-t border-slate-200" />
+              <a
+                href="#cta"
+                className="w-full rounded-xl px-4 py-2 text-center text-sm font-semibold text-white shadow-md transition hover:shadow-lg"
+                style={{ backgroundColor: brand.primary }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundColor = brand.primaryHover)
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundColor = brand.primary)
+                }
+                onClick={() => setMobileOpen(false)}
+              >
+                Start Free — Boost Conversions Now
+              </a>
+              <a
+                href="#demo"
+                className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-2 text-center text-sm font-medium text-slate-700 hover:bg-slate-50"
+                onClick={() => setMobileOpen(false)}
+              >
+                Watch demo
+              </a>
+            </div>
+          </nav>
+        </div>
       </header>
+
+      {/* Backdrop overlay — outside header to ensure proper stacking and click capture */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 md:hidden "
+          aria-label="Close menu"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
 
       {/* HERO */}
       <section className="relative isolate">

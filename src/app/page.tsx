@@ -8,12 +8,24 @@ export default function Page() {
       "(prefers-reduced-motion: reduce)"
     ).matches;
 
-    // Mobile menu
+    // Mobile menu with outside-click and Escape close
     const menuBtn = document.getElementById("menuBtn");
     const mobileMenu = document.getElementById("mobileMenu");
-    menuBtn?.addEventListener("click", () =>
-      mobileMenu?.classList.toggle("hidden")
-    );
+    const backdrop = document.getElementById("mobileMenuBackdrop");
+    const toggleMenu = () => {
+      mobileMenu?.classList.toggle("hidden");
+      backdrop?.classList.toggle("hidden");
+    };
+    const closeMenu = () => {
+      mobileMenu?.classList.add("hidden");
+      backdrop?.classList.add("hidden");
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeMenu();
+    };
+    menuBtn?.addEventListener("click", toggleMenu);
+    backdrop?.addEventListener("click", closeMenu);
+    document.addEventListener("keydown", onKey);
 
     // Reveal on scroll
     const revObserver = new IntersectionObserver(
@@ -146,6 +158,8 @@ export default function Page() {
 
     return () => {
       menuBtn?.replaceWith(menuBtn.cloneNode(true)); // remove listeners
+      backdrop?.replaceWith(backdrop.cloneNode(true));
+      document.removeEventListener("keydown", onKey);
       playHowBtn?.replaceWith(playHowBtn.cloneNode(true) as Node);
       if (howTimer) clearInterval(howTimer);
       revObserver.disconnect();
@@ -733,9 +747,9 @@ export default function Page() {
           </div>
           <div
             id="mobileMenu"
-            className="md:hidden hidden absolute top-full right-0 w-full bg-transparent"
+            className="md:hidden hidden absolute top-full right-0 z-50 pointer-events-none"
           >
-            <div className="w-[60vw] ml-auto bg-white border-t border-slate-200 shadow-sm">
+            <div className="w-[60vw] ml-auto bg-white border-t border-slate-200 shadow-sm pointer-events-auto">
               <nav className="px-6 py-4 grid gap-4 text-slate-800">
                 {/* Mobile Products dropdown */}
                 <details className="group border border-slate-200 rounded-lg">
@@ -861,6 +875,13 @@ export default function Page() {
             </div>
           </div>
         </header>
+
+        {/* Backdrop overlay for mobile menu (transparent, captures outside clicks) */}
+        <div
+          id="mobileMenuBackdrop"
+          className="md:hidden hidden fixed inset-0 z-40 bg-transparent"
+          aria-label="Close menu"
+        />
 
         {/* HERO */}
         <section
