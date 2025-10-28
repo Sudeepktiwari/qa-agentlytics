@@ -133,7 +133,7 @@ export default function ProactiveAIPage() {
 
       {/* NAVBAR */}
       <header className="sticky top-0 z-40 border-b border-slate-200 md:bg-white backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-0 py-3 sm:px-6">
           <div className="flex items-center gap-3">
             <div className="h-8 w-8 rounded-xl bg-[--brand-primary]" />
             <span className="text-lg font-semibold tracking-tight">
@@ -316,7 +316,7 @@ export default function ProactiveAIPage() {
           aria-hidden
         />
 
-        <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-4 py-16 sm:px-6 md:grid-cols-2 md:py-20">
+        <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-0 py-16 sm:px-6 md:grid-cols-2 md:py-20">
           <div>
             <h1 className="text-balance text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
               Turn Visitors into Conversations —{" "}
@@ -701,7 +701,7 @@ export default function ProactiveAIPage() {
       </section>
 
       {/* HOW IT WORKS */}
-      <section id="how" className="mx-auto max-w-7xl px-4 py-14 sm:px-6">
+      <section id="how" className="mx-auto max-w-7xl px-0 py-14 sm:px-6">
         <div className="flex items-start justify-between gap-8">
           <div>
             <h2 className="text-balance text-3xl font-bold tracking-tight">
@@ -893,7 +893,7 @@ export default function ProactiveAIPage() {
       {/* DEMO (illustration) */}
       <section
         id="demo"
-        className="relative mx-auto max-w-7xl overflow-hidden rounded-3xl border border-slate-200 bg-white px-4 py-10 shadow-sm sm:px-6"
+        className="relative mx-auto max-w-7xl overflow-hidden rounded-3xl border border-slate-200 bg-white px-0 py-10 shadow-sm sm:px-6"
       >
         <div className="grid items-center gap-10 md:grid-cols-2">
           <div>
@@ -1153,7 +1153,7 @@ export default function ProactiveAIPage() {
       {/* CTA */}
       <section
         id="cta"
-        className="relative mx-auto max-w-7xl overflow-hidden rounded-3xl border border-slate-200 bg-gradient-to-br from-white to-[--brand-primary]/5 px-4 py-16 shadow-sm sm:px-6"
+        className="relative mx-auto max-w-7xl overflow-hidden rounded-3xl border border-slate-200 bg-gradient-to-br from-white to-[--brand-primary]/5 px-0 py-16 shadow-sm sm:px-6"
       >
         <div className="pointer-events-none absolute -top-12 right-[-10%] h-72 w-72 rounded-full bg-[--brand-primary]/20 blur-3xl" />
         <div className="grid items-start gap-10 md:grid-cols-5">
@@ -1284,7 +1284,7 @@ export default function ProactiveAIPage() {
       </section>
 
       {/* FAQ */}
-      <section id="faq" className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+      <section id="faq" className="mx-auto max-w-7xl px-0 py-16 sm:px-6">
         <h2 className="text-balance text-3xl font-bold tracking-tight">FAQ</h2>
         <div className="mt-6 divide-y divide-slate-200 overflow-hidden rounded-2xl border border-slate-200 bg-white">
           {[
