@@ -10,7 +10,7 @@ import { motion } from "framer-motion";
  */
 
 /* ================= Inline SVG Icons ================= */
-function IconCloudSync({ className = "w-6 h-6" }: { className?: string }) {
+function IconCloudSync() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-indigo-50 text-slate-900">
       {/* Top Bar */}
