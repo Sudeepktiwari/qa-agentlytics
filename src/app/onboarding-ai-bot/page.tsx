@@ -1,32 +1,319 @@
 // Advancelytics — Onboarding AI Bot (Full Page)
 // Calendly-style theme reused; lighter hero; modern sections
 "use client";
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
+
+// Advancelytics — Onboarding AI Bot (Full Page)
+// ✅ Animated "Proactive Brain" + synced list
+// ✅ SEO meta injection (title, description, keywords)
+// ✅ WCAG-friendly hover color (#004FCC)
+// ✅ Dev-only runtime checks (no Node `process` usage)
 
 const brand = {
   primary: "#006BFF",
-  primaryHover: "#0055CC",
+  primaryHover: "#004FCC", // darker hover for contrast
   accent: "#0AE8F0",
   bgFrom: "#F3F9FF",
   bgTo: "#FFFFFF",
-  glow: "#CDE6FF",
-  surface: "#FDFFFF", // bright hero/card surface
+  surface: "#FDFFFF",
   surfaceAlt: "#F6FBFF",
   borderSubtle: "#E3EEFF",
 };
 
+// --- Shared data for the Proactive Brain ---
+const brainItems = [
+  {
+    key: "I",
+    title: "Intent Detection",
+    desc: "Focus, errors, idle time, and docs viewed trigger the right guidance.",
+  },
+  {
+    key: "S",
+    title: "Smart Prompts",
+    desc: "Offers next best actions like ‘Use sandbox key’ or ‘Map fields’.",
+  },
+  {
+    key: "C",
+    title: "Context Memory",
+    desc: "Remembers answers and preferences to avoid repetition.",
+  },
+  {
+    key: "L",
+    title: "Lifecycle Aware",
+    desc: "Moves from Trial → Activation → Expansion with the right steps.",
+  },
+];
+
+// --- Components ---
+function BrainList() {
+  const [active, setActive] = useState(0);
+  useEffect(() => {
+    const onTick = (e: Event) => {
+      if (e && typeof (e as CustomEvent).detail === "number") setActive((e as CustomEvent).detail);
+    };
+    window.addEventListener("brain-tick", onTick);
+    return () => window.removeEventListener("brain-tick", onTick);
+  }, []);
+
+  return (
+    <div className="mt-6 grid gap-3">
+      {brainItems.map((b, i) => (
+        <div
+          key={b.key}
+          className={`group rounded-2xl border p-4 transition ${
+            i === active
+              ? "border-[--brand-primary]/30 bg-[--brand-primary]/5"
+              : "border-[--border-subtle] bg-white hover:bg-[--surface]"
+          }`}
+        >
+          <div className="flex items-start gap-3">
+            <div
+              className={`grid h-9 w-9 place-items-center rounded-lg text-sm font-bold ${
+                i === active
+                  ? "bg-[--brand-primary]/20 text-[--brand-primary]"
+                  : "bg-[--brand-primary]/10 text-[--brand-primary]"
+              }`}
+            >
+              {b.key}
+            </div>
+            <div>
+              <div className="text-base font-semibold text-slate-900">
+                {b.title}
+              </div>
+              <p className="mt-1 text-sm text-slate-600">{b.desc}</p>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function AnimatedBrain() {
+  const [idx, setIdx] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(
+      () => setIdx((n) => (n + 1) % brainItems.length),
+      2600
+    );
+    return () => clearInterval(id);
+  }, []);
+
+  // Broadcast active index to BrainList
+  useEffect(() => {
+    const evt = new CustomEvent("brain-tick", { detail: idx });
+    window.dispatchEvent(evt);
+  }, [idx]);
+
+  const labels = brainItems.map((b) => b.key);
+
+  return (
+    <div className="relative w-full max-w-[460px]">
+      {/* Inline keyframes for portability */}
+      <style>{`
+        @keyframes spinSlow { from { transform: rotate(0deg);} to { transform: rotate(360deg);} }
+        @keyframes pulseDot { 0%,100%{ transform: scale(1); opacity:.9;} 50%{ transform: scale(1.25); opacity:1;}}
+        @keyframes floatY { 0%,100%{ transform: translateY(0);} 50%{ transform: translateY(-6px);} }
+      `}</style>
+
+      <div className="relative aspect-square w-full">
+        {/* Outer glow */}
+        <div
+          className="pointer-events-none absolute inset-0 rounded-full"
+          style={{
+            background: `radial-gradient(200px 200px at 50% 50%, ${brand.primary}14 0%, transparent 70%)`,
+          }}
+        />
+
+        {/* Rotating ring */}
+        <svg
+          viewBox="0 0 200 200"
+          className="absolute inset-0 h-full w-full"
+          aria-hidden
+        >
+          <defs>
+            <linearGradient id="ring" x1="0" x2="1" y1="0" y2="1">
+              <stop offset="0%" stopColor={brand.primary} stopOpacity="0.35" />
+              <stop offset="100%" stopColor={brand.accent} stopOpacity="0.35" />
+            </linearGradient>
+          </defs>
+          <circle
+            cx="100"
+            cy="100"
+            r="72"
+            fill="none"
+            stroke="url(#ring)"
+            strokeWidth="6"
+            style={{
+              transformOrigin: "100px 100px",
+              animation: "spinSlow 18s linear infinite",
+            }}
+          />
+        </svg>
+
+        {/* Orbiting nodes I,S,C,L */}
+        {[0, 1, 2, 3].map((i) => {
+          const angle = (i * Math.PI * 2) / 4; // quarters
+          const r = 72;
+          const x = 100 + r * Math.cos(angle);
+          const y = 100 + r * Math.sin(angle);
+          const isActive = i === idx;
+          return (
+            <div
+              key={i}
+              className="absolute"
+              style={{ left: x - 16, top: y - 16 }}
+            >
+              <div
+                className={`grid h-8 w-8 place-items-center rounded-full border text-xs font-bold transition ${
+                  isActive
+                    ? "border-[--brand-primary] bg-[--brand-primary]/10 text-[--brand-primary]"
+                    : "border-[--border-subtle] bg-white text-slate-600"
+                }`}
+                style={{
+                  animation: isActive
+                    ? "pulseDot 1.4s ease-in-out infinite"
+                    : undefined,
+                }}
+              >
+                {labels[i]}
+              </div>
+            </div>
+          );
+        })}
+
+        {/* Center nucleus */}
+        <div
+          className="absolute left-1/2 top-1/2 grid h-16 w-16 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-2xl border border-[--brand-primary]/30 bg-[--brand-primary]/5 text-[10px] font-semibold text-[--brand-primary]"
+          style={{ animation: "floatY 5s ease-in-out infinite" }}
+        >
+          PROACTIVE
+        </div>
+      </div>
+
+      {/* Caption synced with active node */}
+      <div className="mt-4 text-center text-sm text-slate-600">
+        <span className="font-semibold text-slate-900">
+          {brainItems[idx].title}
+        </span>
+        <span className="mx-1">—</span>
+        {brainItems[idx].desc}
+      </div>
+    </div>
+  );
+}
+
+// --- SEO injection (no external deps) ---
+function useSEO() {
+  useEffect(() => {
+    const title =
+      "Onboarding AI Bot – Guide users to activation | Advancelytics";
+    document.title = title;
+    const ensure = (name: string, content: string) => {
+      let tag = document.querySelector(`meta[name="${name}"]`);
+      if (!tag) {
+        tag = document.createElement("meta");
+        tag.setAttribute("name", name);
+        document.head.appendChild(tag);
+      }
+      tag.setAttribute("content", content);
+    };
+    ensure(
+      "description",
+      "AI onboarding software for SaaS: conversational setup guidance, real-time validation, adaptive paths, and faster activation."
+    );
+    ensure(
+      "keywords",
+      "AI onboarding software, SaaS activation automation, guided setup assistant, onboarding automation, AI setup guide, SaaS activation bot"
+    );
+  }, []);
+}
+
 export default function OnboardingAIBotPage() {
+  useSEO();
+
+  // Before/After toggle in WHY section
+  const [isAfter, setIsAfter] = useState(true);
+  useEffect(() => {
+    const id = setInterval(() => setIsAfter((s) => !s), 3000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Reveal on scroll for testimonials
+  const revealRef = useRef(null);
+  useEffect(() => {
+    const root = revealRef.current;
+    if (!root) return;
+    const cards = (root as Element).querySelectorAll("[data-reveal]");
+    const obs = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting)
+            e.target.classList.add("opacity-100", "translate-y-0");
+        });
+      },
+      { threshold: 0.12 }
+    );
+    cards.forEach((c) => obs.observe(c));
+    return () => obs.disconnect();
+  }, []);
+
+  // --- DEV RUNTIME CHECKS (browser-safe, no Node `process`) ---
+  const containerRef = useRef(null);
+  useEffect(() => {
+    const isDev =
+      typeof window !== "undefined" &&
+      (/localhost|127\.0\.0\.1/.test(window.location.hostname) ||
+        (window as any).__DEV__ === true);
+    if (!isDev) return;
+    try {
+      console.assert(
+        typeof BrainList === "function",
+        "BrainList should be defined"
+      );
+      console.assert(
+        typeof AnimatedBrain === "function",
+        "AnimatedBrain should be defined"
+      );
+      console.assert(
+        Array.isArray(brainItems) && brainItems.length === 4,
+        "brainItems should have 4 entries"
+      );
+      const metaDesc = document.querySelector('meta[name="description"]');
+      const metaKeys = document.querySelector('meta[name="keywords"]');
+      console.assert(
+        metaDesc?.getAttribute("content")?.length ?? 0 > 0,
+        "Meta description should be set"
+      );
+      console.assert(
+        metaKeys && /onboarding/.test(metaKeys.getAttribute("content") || ""),
+        "Meta keywords should include 'onboarding'"
+      );
+      if (containerRef.current) {
+        const styles = getComputedStyle(containerRef.current);
+        console.assert(
+          styles.getPropertyValue("--brand-primary").trim().length > 0,
+          "CSS var --brand-primary should be applied on container"
+        );
+      }
+    } catch (err) {
+      console.warn("Dev checks encountered an error (non-fatal):", err);
+    }
+  }, []);
+
   return (
     <div
+      ref={containerRef}
       className="relative min-h-screen w-full text-slate-900 antialiased"
       style={
-        {
+        ({
           "--brand-primary": brand.primary,
           "--brand-accent": brand.accent,
           "--surface": brand.surface,
           "--surface-alt": brand.surfaceAlt,
           "--border-subtle": brand.borderSubtle,
-        } as React.CSSProperties
+        } as React.CSSProperties)
       }
     >
       {/* Background */}
@@ -45,7 +332,10 @@ export default function OnboardingAIBotPage() {
       <header className="sticky top-0 z-40 border-b border-[--border-subtle] bg-white/80 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-xl bg-[--brand-primary]" />
+            <div
+              className="h-8 w-8 rounded-xl"
+              style={{ backgroundColor: brand.primary }}
+            />
             <span className="text-lg font-semibold tracking-tight">
               Advancelytics
             </span>
@@ -84,6 +374,12 @@ export default function OnboardingAIBotPage() {
               href="#cta"
               className="rounded-2xl px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:shadow-lg"
               style={{ backgroundColor: brand.primary }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.backgroundColor = brand.primaryHover)
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.backgroundColor = brand.primary)
+              }
             >
               Start free
             </a>
@@ -105,34 +401,49 @@ export default function OnboardingAIBotPage() {
             <h1 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
               Turn onboarding steps into a guided conversation
             </h1>
+            <p className="mt-3 text-base font-medium text-rose-600">
+              Every confusing step costs adoption — guide users before they give
+              up.
+            </p>
             <p className="mt-4 max-w-xl text-lg text-slate-600">
               Traditional onboarding makes people guess what to do next.
               Agentlytics explains why each field matters, answers questions
-              in-flow, and adapts the path so users finish faster — and happier.
+              in‑flow, and adapts the path so users finish faster — and happier.
             </p>
-            <div className="mt-8 flex gap-3">
-              <a
-                href="#cta"
-                className="rounded-2xl px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:shadow-lg"
-                style={{ backgroundColor: brand.primary }}
-              >
-                Start Free Trial
-              </a>
-              <a
-                href="#demo"
-                className="rounded-2xl border border-[--brand-primary] px-6 py-3 text-sm font-semibold text-[--brand-primary] transition hover:text-white"
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.background = `linear-gradient(90deg, ${brand.primary} 0%, ${brand.accent} 100%)`)
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.background = "transparent")
-                }
-              >
-                Book a Demo
-              </a>
+            <div className="mt-8 flex flex-col gap-2 sm:flex-row sm:items-center">
+              <div className="flex gap-3">
+                <a
+                  href="#cta"
+                  className="rounded-2xl px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:shadow-lg"
+                  style={{ backgroundColor: brand.primary }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.backgroundColor = brand.primaryHover)
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.backgroundColor = brand.primary)
+                  }
+                >
+                  Start Free Trial
+                </a>
+                <a
+                  href="#demo"
+                  className="rounded-2xl border border-[--brand-primary] px-6 py-3 text-sm font-semibold text-[--brand-primary] transition hover:text-white"
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.background = `linear-gradient(90deg, ${brand.primary} 0%, ${brand.accent} 100%)`)
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.background = "transparent")
+                  }
+                >
+                  Book a Demo
+                </a>
+              </div>
+              <p className="text-xs text-slate-500">
+                Go live in minutes · Start guiding users today
+              </p>
             </div>
-            <p className="mt-4 text-sm text-slate-500">
-              No code required · Works with your stack · Go live in minutes
+            <p className="mt-3 text-sm text-slate-500">
+              No code required · Works with your stack
             </p>
           </div>
 
@@ -148,9 +459,9 @@ export default function OnboardingAIBotPage() {
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-3">
                   {[
-                    { k: "Company name", v: "Acme Inc" },
-                    { k: "Billing email", v: "billing@acme.co" },
-                    { k: "Webhook URL", v: "https://api.acme.co/hook" },
+                    { k: "Company name", v: "CloudScale" },
+                    { k: "Billing email", v: "ops@cloudscale.io" },
+                    { k: "Webhook URL", v: "https://api.cloudscale.io/hook" },
                   ].map((f) => (
                     <div
                       key={f.k}
@@ -224,7 +535,7 @@ export default function OnboardingAIBotPage() {
                 <div className="mb-2 text-sm font-semibold text-slate-700">
                   Traditional Onboarding
                 </div>
-                <ul className="list-inside list-disc text-sm text-slate-600 space-y-1">
+                <ul className="list-inside list-disc space-y-1 text-sm text-slate-600">
                   <li>One‑size‑fits‑all checklist</li>
                   <li>Confusing fields, no context</li>
                   <li>Support pings for basic questions</li>
@@ -235,7 +546,7 @@ export default function OnboardingAIBotPage() {
                 <div className="mb-2 text-sm font-semibold text-[--brand-primary]">
                   Agentlytics Onboarding AI
                 </div>
-                <ul className="list-inside list-disc text-sm text-slate-700 space-y-1">
+                <ul className="list-inside list-disc space-y-1 text-sm text-slate-700">
                   <li>Explains the why behind each field</li>
                   <li>Instant answers, in‑flow</li>
                   <li>Detects friction & adapts the path</li>
@@ -249,19 +560,34 @@ export default function OnboardingAIBotPage() {
             </div>
           </div>
 
-          {/* Illustration card */}
+          {/* Before vs After animated toggle */}
           <div className="relative overflow-hidden rounded-2xl border border-[--border-subtle] bg-white p-6 shadow">
-            <div className="text-sm font-semibold text-slate-700 mb-4">
-              Before vs After
+            <div className="mb-4 flex items-center justify-between text-sm font-semibold text-slate-700">
+              <span>Before vs After</span>
+              <span className="rounded-full border border-[--brand-primary]/20 bg-[--brand-primary]/5 px-2 py-0.5 text-[--brand-primary]">
+                {isAfter ? "After: With Agent" : "Before: Traditional"}
+              </span>
             </div>
-            <div className="grid grid-cols-2 gap-3 text-xs text-slate-600">
-              <div className="rounded-xl border border-[--border-subtle] bg-[--surface] p-4">
-                <div className="font-bold text-slate-800 mb-2">Traditional</div>
+            <div
+              className={`grid grid-cols-2 gap-3 text-xs text-slate-600 transition-opacity duration-500 ${
+                isAfter ? "opacity-100" : "opacity-90"
+              }`}
+            >
+              <div
+                className={`rounded-xl border border-[--border-subtle] bg-[--surface] p-4 transition-transform duration-500 ${
+                  isAfter ? "scale-[0.98]" : "scale-100"
+                }`}
+              >
+                <div className="mb-2 font-bold text-slate-800">Traditional</div>
                 <p>Confusion on API scopes</p>
                 <p>Idle 40s on “Webhook” step</p>
               </div>
-              <div className="rounded-xl border border-[--brand-primary]/20 bg-[--brand-primary]/5 p-4">
-                <div className="font-bold text-[--brand-primary] mb-2">
+              <div
+                className={`rounded-xl border border-[--brand-primary]/20 bg-[--brand-primary]/5 p-4 transition-transform duration-500 ${
+                  isAfter ? "scale-100" : "scale-[0.98]"
+                }`}
+              >
+                <div className="mb-2 font-bold text-[--brand-primary]">
                   With Agent
                 </div>
                 <p>Explains scopes with examples</p>
@@ -272,183 +598,22 @@ export default function OnboardingAIBotPage() {
         </div>
       </section>
 
-      {/* HOW IT WORKS */}
-      <section
-        id="how"
-        className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6"
-      >
-        <div className="flex flex-wrap items-start justify-between gap-6">
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight">How it works</h2>
-            <p className="mt-3 max-w-2xl text-slate-600">
-              Explain, assist, validate, personalize, and orchestrate — all
-              automatically.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="rounded-full bg-[--brand-primary]/10 px-3 py-1 text-xs font-semibold text-[--brand-primary]">
-              Signal‑ready
-            </span>
-            <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-              Privacy‑aware
-            </span>
-          </div>
-        </div>
-
-        <div className="mt-10 grid items-start gap-8 md:grid-cols-2">
-          {/* Left: Stepper */}
-          <div className="space-y-4">
-            {[
-              {
-                n: "1",
-                t: "Explain",
-                d: "Shows why each field is required with formats and examples.",
-              },
-              {
-                n: "2",
-                t: "Assist",
-                d: "Answers questions instantly and links exact docs or a 20‑sec explainer.",
-              },
-              {
-                n: "3",
-                t: "Validate",
-                d: "Pre‑checks inputs, scopes, and connectivity with in‑place fixes.",
-              },
-              {
-                n: "4",
-                t: "Personalize",
-                d: "Adapts flow by intent (trial, POC, migration) and role.",
-              },
-              {
-                n: "5",
-                t: "Orchestrate",
-                d: "Connects integrations, seeds sample data, and triggers milestones.",
-              },
-            ].map((s, i) => (
-              <div
-                key={s.n}
-                className="group relative rounded-2xl border border-[--border-subtle] bg-white p-5 shadow-sm transition hover:shadow-md"
-              >
-                {i < 4 && (
-                  <div className="absolute left-6 top-[64px] hidden h-8 w-px bg-gradient-to-b from-[--border-subtle] to-transparent md:block" />
-                )}
-                <div className="flex items-start gap-4">
-                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[--brand-primary]/10 text-sm font-bold text-[--brand-primary]">
-                    {s.n}
-                  </div>
-                  <div>
-                    <h3 className="text-base font-semibold text-slate-900">
-                      {s.t}
-                    </h3>
-                    <p className="mt-1 text-sm text-slate-600">{s.d}</p>
-                  </div>
-                </div>
-                <div className="mt-4 h-1 w-0 rounded bg-[--brand-primary] transition-all duration-500 group-hover:w-20" />
-              </div>
-            ))}
-          </div>
-
-          {/* Right: Illustration */}
-          <div className="relative">
-            <div
-              className="absolute -inset-1 rounded-3xl bg-gradient-to-br from-[--brand-primary]/20 to-[--brand-accent]/20 blur"
-              aria-hidden
-            />
-            <div className="relative overflow-hidden rounded-3xl border border-[--border-subtle] bg-white p-6 shadow-xl">
-              <div className="flex flex-wrap items-center gap-2 text-xs">
-                {[
-                  "Field focus",
-                  "Error: invalid key",
-                  "Docs opened",
-                  "Idle 30s",
-                ].map((sig) => (
-                  <span
-                    key={sig}
-                    className="rounded-full border border-[--brand-primary]/20 bg-[--brand-primary]/5 px-2.5 py-1 text-[--brand-primary]"
-                  >
-                    {sig}
-                  </span>
-                ))}
-              </div>
-              <div className="mt-4 rounded-2xl border border-[--border-subtle] bg-[--surface] p-4">
-                <div className="text-[11px] font-semibold text-slate-500">
-                  Agent Tip
-                </div>
-                <div className="mt-1 text-sm text-slate-800">
-                  Need a sandbox key? I can generate one and test the webhook.
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2 text-[11px]">
-                  {[
-                    "Fix format",
-                    "Paste from clipboard",
-                    "Use sandbox key",
-                  ].map((cta) => (
-                    <button
-                      key={cta}
-                      className="rounded-full border border-[--brand-primary]/20 bg-white px-3 py-1 font-medium text-[--brand-primary] hover:bg-[--brand-primary]/5"
-                    >
-                      {cta}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="mt-5 h-2 w-full rounded bg-[--surface-alt]">
-                <div
-                  className="h-2 rounded bg-[--brand-primary]"
-                  style={{ width: "72%" }}
-                />
-              </div>
-              <div className="mt-2 text-right text-xs text-slate-500">
-                Setup 72%
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* INSIDE THE PROACTIVE BRAIN */}
+      {/* INSIDE THE PROACTIVE BRAIN — modernized + animated */}
       <section id="brain" className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
-        <h2 className="text-3xl font-bold tracking-tight">
-          Inside the Proactive Brain
-        </h2>
-        <p className="mt-2 max-w-2xl text-slate-600">
-          Agentlytics reads behavior, not just text — engaging at the perfect
-          moment with the perfect message.
-        </p>
-        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {[
-            {
-              k: "I",
-              t: "Intent Detection",
-              d: "Focus, errors, idle time, and docs viewed trigger the right guidance.",
-            },
-            {
-              k: "S",
-              t: "Smart Prompts",
-              d: "Offers next best actions like ‘Use sandbox key’ or ‘Map fields’.",
-            },
-            {
-              k: "C",
-              t: "Context Memory",
-              d: "Remembers answers and preferences to avoid repetition.",
-            },
-            {
-              k: "L",
-              t: "Lifecycle Aware",
-              d: "Moves from Trial → Activation → Expansion with the right steps.",
-            },
-          ].map((b) => (
-            <div
-              key={b.k}
-              className="rounded-2xl border border-[--border-subtle] bg-white p-6"
-            >
-              <div className="mb-2 grid h-10 w-10 place-items-center rounded-xl bg-[--brand-primary]/10 text-sm font-bold text-[--brand-primary]">
-                {b.k}
-              </div>
-              <h3 className="text-base font-semibold text-slate-900">{b.t}</h3>
-              <p className="mt-2 text-sm text-slate-600">{b.d}</p>
-            </div>
-          ))}
+        <div className="flex flex-wrap items-start justify-between gap-8">
+          <div className="max-w-xl">
+            <h2 className="text-3xl font-bold tracking-tight">
+              Inside the Proactive Brain
+            </h2>
+            <p className="mt-2 text-slate-600">
+              Agentlytics reads behavior, not just text — engaging at the
+              perfect moment with the perfect message.
+            </p>
+            <BrainList />
+          </div>
+          <div className="relative mx-auto grid w-full max-w-xl place-items-center overflow-hidden rounded-3xl border border-[--border-subtle] bg-white p-6 shadow-xl md:mx-0">
+            <AnimatedBrain />
+          </div>
         </div>
       </section>
 
@@ -521,7 +686,7 @@ export default function OnboardingAIBotPage() {
           ].map((f, i) => (
             <div
               key={i}
-              className="group relative overflow-hidden rounded-2xl border border-[--border-subtle] bg-white p-6 shadow-sm transition hover:shadow-md"
+              className="group relative overflow-hidden rounded-2xl border border-[--border-subtle] bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
             >
               <div
                 className="pointer-events-none absolute inset-px rounded-2xl opacity-0 blur-xl transition-opacity duration-300 group-hover:opacity-100"
@@ -530,7 +695,10 @@ export default function OnboardingAIBotPage() {
                 }}
               />
               <div className="relative z-10 flex items-start gap-3">
-                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[--brand-primary]/10 text-xl text-[--brand-primary]">
+                <div
+                  className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[--brand-primary]/10 text-xl"
+                  style={{ color: brand.primary }}
+                >
                   {f.icon}
                 </div>
                 <div>
@@ -540,7 +708,10 @@ export default function OnboardingAIBotPage() {
                   <p className="mt-2 text-sm leading-6 text-slate-600">{f.d}</p>
                 </div>
               </div>
-              <div className="relative z-10 mt-5 h-1 w-0 rounded bg-[--brand-primary] transition-all duration-500 group-hover:w-20" />
+              <div
+                className="relative z-10 mt-5 h-1 w-0 rounded"
+                style={{ backgroundColor: brand.primary }}
+              />
             </div>
           ))}
         </div>
@@ -565,9 +736,17 @@ export default function OnboardingAIBotPage() {
               <li>SSO/SAML, SCIM, and role‑based access</li>
               <li>Full audit trail of agent actions</li>
             </ul>
+            <div className="mt-5 flex flex-wrap items-center gap-2 text-xs font-semibold">
+              <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-emerald-700">
+                SOC 2
+              </span>
+              <span className="rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-blue-700">
+                GDPR Compliant
+              </span>
+            </div>
           </div>
           <div className="rounded-2xl border border-[--border-subtle] bg-white p-6">
-            <div className="text-sm font-semibold text-slate-700 mb-3">
+            <div className="mb-3 text-sm font-semibold text-slate-700">
               Compliance Snapshot
             </div>
             <div className="grid grid-cols-2 gap-3 text-sm">
@@ -582,7 +761,7 @@ export default function OnboardingAIBotPage() {
                   className="rounded-xl border border-[--border-subtle] bg-[--surface] p-3"
                 >
                   <div className="text-[11px] text-slate-500">{row.k}</div>
-                  <div className="text-slate-800 font-medium">{row.v}</div>
+                  <div className="font-medium text-slate-800">{row.v}</div>
                 </div>
               ))}
             </div>
@@ -616,6 +795,7 @@ export default function OnboardingAIBotPage() {
       <section
         id="testimonials"
         className="mx-auto max-w-7xl px-4 py-16 sm:px-6"
+        ref={revealRef}
       >
         <div className="flex items-end justify-between gap-6">
           <div>
@@ -627,14 +807,12 @@ export default function OnboardingAIBotPage() {
               with Agentlytics Onboarding AI.
             </p>
           </div>
-          <div className="hidden md:block text-sm text-slate-500">
+          <div className="hidden text-sm text-slate-500 md:block">
             CSAT ↑, time‑to‑value ↓
           </div>
         </div>
-
-        {/* Logo row (placeholder badges) */}
-        <div className="mt-6 flex flex-wrap items-center gap-3 opacity-80">
-          {["Acme", "Northwind", "Globex", "Innotech", "Umbrella"].map((l) => (
+        <div className="mt-6 flex flex-wrap items-center gap-3 opacity-90">
+          {["CloudScale", "FinServe", "TechFlow"].map((l) => (
             <span
               key={l}
               className="rounded-lg border border-[--border-subtle] bg-white px-3 py-1.5 text-xs font-medium text-slate-600"
@@ -643,27 +821,25 @@ export default function OnboardingAIBotPage() {
             </span>
           ))}
         </div>
-
-        {/* Testimonial cards */}
         <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {[
             {
               name: "Sarah Chen",
-              role: "Head of Product, Acme",
+              role: "Head of Product, CloudScale",
               inc: "+27% activation",
               quote:
-                "Explaining the *why* behind fields cut our drop‑offs dramatically. Users finish setup without Slack pings.",
+                "Explaining the why behind fields cut our drop‑offs dramatically. Users finish setup without Slack pings.",
             },
             {
               name: "Diego Morales",
-              role: "CX Lead, Northwind",
+              role: "CX Lead, FinServe",
               inc: "−31% setup tickets",
               quote:
-                "Inline Q&A and validation removed most “what does this mean?” questions. Our team can focus on complex cases.",
+                "Inline Q&A and validation removed most ‘what does this mean?’ questions. Our team can focus on complex cases.",
             },
             {
               name: "Priya Nair",
-              role: "Growth PM, Innotech",
+              role: "Growth PM, TechFlow",
               inc: "TTFV −29%",
               quote:
                 "Adaptive paths skip irrelevant steps. Time‑to‑first‑value is down and expansion trials go smoother.",
@@ -671,7 +847,8 @@ export default function OnboardingAIBotPage() {
           ].map((t, i) => (
             <figure
               key={i}
-              className="group relative overflow-hidden rounded-2xl border border-[--border-subtle] bg-white p-6 shadow-sm transition hover:shadow-md"
+              data-reveal
+              className="opacity-0 translate-y-3 group relative overflow-hidden rounded-2xl border border-[--border-subtle] bg-white p-6 shadow-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-lg"
             >
               <div
                 className="pointer-events-none absolute inset-px rounded-2xl opacity-0 blur-xl transition-opacity duration-300 group-hover:opacity-100"
@@ -692,7 +869,10 @@ export default function OnboardingAIBotPage() {
               </blockquote>
               <figcaption className="relative z-10 mt-5 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="grid h-10 w-10 place-items-center rounded-full bg-[--brand-primary]/10 text-sm font-bold text-[--brand-primary]">
+                  <div
+                    className="grid h-10 w-10 place-items-center rounded-full bg-[--brand-primary]/10 text-sm font-bold"
+                    style={{ color: brand.primary }}
+                  >
                     {t.name
                       .split(" ")
                       .map((p) => p[0])
@@ -727,30 +907,38 @@ export default function OnboardingAIBotPage() {
           Install once. From there, your agent guides, validates, and gets users
           live — faster.
         </p>
-        <div className="mt-6 flex justify-center gap-3">
-          <a
-            href="#"
-            className="rounded-2xl px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:shadow-lg"
-            style={{ backgroundColor: brand.primary }}
-          >
-            Start Free
-          </a>
-          <a
-            href="#"
-            className="rounded-2xl border border-[--brand-primary] px-6 py-3 text-sm font-semibold text-[--brand-primary] transition hover:text-white"
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.backgroundColor = brand.primary)
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.backgroundColor = "transparent")
-            }
-          >
-            See Pricing
-          </a>
+        <div className="mt-6 flex flex-col items-center justify-center gap-2 sm:flex-row sm:gap-3">
+          <div className="flex gap-3">
+            <a
+              href="#"
+              className="rounded-2xl px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:shadow-lg"
+              style={{ backgroundColor: brand.primary }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.backgroundColor = brand.primaryHover)
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.backgroundColor = brand.primary)
+              }
+            >
+              Start Free — Get Users Live Faster
+            </a>
+            <a
+              href="#"
+              className="rounded-2xl border border-[--brand-primary] px-6 py-3 text-sm font-semibold text-[--brand-primary] transition hover:text-white"
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.backgroundColor = brand.primary)
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.backgroundColor = "transparent")
+              }
+            >
+              See Pricing
+            </a>
+          </div>
+          <p className="text-xs text-slate-500">
+            14‑day free trial · No credit card required
+          </p>
         </div>
-        <p className="mt-3 text-xs text-slate-500">
-          14‑day free trial · No credit card required
-        </p>
       </section>
 
       {/* FOOTER */}
@@ -760,7 +948,7 @@ export default function OnboardingAIBotPage() {
             <p>
               © {new Date().getFullYear()} Advancelytics. All rights reserved.
             </p>
-            <div className="flex flex-wrap gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <a href="#" className="hover:text-slate-700">
                 Privacy
               </a>
@@ -770,6 +958,12 @@ export default function OnboardingAIBotPage() {
               <a href="#" className="hover:text-slate-700">
                 Contact
               </a>
+              <span className="ml-2 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                SOC 2
+              </span>
+              <span className="rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
+                GDPR Compliant
+              </span>
             </div>
           </div>
         </div>
