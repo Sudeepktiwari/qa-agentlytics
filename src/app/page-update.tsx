@@ -1,6 +1,7 @@
 "use client";
 
 import Head from "next/head";
+import Script from "next/script";
 import { useEffect } from "react";
 
 const HomePage: React.FC = () => {
@@ -40,7 +41,7 @@ const HomePage: React.FC = () => {
       } else {
         reveals.forEach((el) => el.classList.add("in-view"));
       }
-    } catch (e) {
+    } catch {
       // ignore if IntersectionObserver not supported
     }
 
@@ -61,7 +62,7 @@ const HomePage: React.FC = () => {
     function showHow(n: number) {
       howCurrent = n;
       howButtons.forEach((btn, i) => {
-        btn.setAttribute("aria-selected", String(i === n - 1));
+        btn.setAttribute("aria-pressed", String(i === n - 1));
       });
       howViews.forEach((view, i) => {
         if (i === n - 1) {
@@ -123,8 +124,15 @@ const HomePage: React.FC = () => {
         function expect(name: string, cond: boolean) {
           tests.push({ name, pass: !!cond });
         }
-        // @ts-ignore
-        expect("Tailwind loaded", !!(window as any).tailwind);
+        function tailwindApplied() {
+          const el = document.createElement("div");
+          el.className = "hidden";
+          document.body.appendChild(el);
+          const applied = getComputedStyle(el).display === "none";
+          el.remove();
+          return applied;
+        }
+        expect("Tailwind loaded", tailwindApplied());
         expect(
           "Hero title exists",
           !!document
@@ -162,7 +170,7 @@ const HomePage: React.FC = () => {
             "color:#16a34a;font-weight:700"
           );
         }
-      } catch (e) {
+      } catch {
         // ignore
       }
     })();
@@ -177,6 +185,13 @@ const HomePage: React.FC = () => {
 
   return (
     <>
+      <Script id="set-js" strategy="beforeInteractive">
+        {"document.documentElement.classList.add('js');"}
+      </Script>
+      <Script src="https://cdn.tailwindcss.com" strategy="beforeInteractive" />
+      <Script id="tailwind-config" strategy="beforeInteractive">
+        {`tailwind.config = { theme: { extend: { colors: { brand: { blue: '#0069FF', sky: '#3BA3FF', midnight: '#0B1B34' } }, boxShadow: { card: '0 12px 34px rgba(2,6,23,.08)', soft: '0 6px 16px rgba(2,6,23,.06)' }, backgroundImage: { 'hero-bg': 'radial-gradient(100% 50% at 0% 0%, rgba(0,105,255,.10), transparent 60%), radial-gradient(80% 40% at 100% 0%, rgba(59,163,255,.12), transparent 60%)' }, keyframes: {}, animation: {} } } }`}
+      </Script>
       <Head>
         <title>Agentlytics — Meet the AI Salesperson Who Never Sleeps</title>
         <meta
@@ -184,23 +199,13 @@ const HomePage: React.FC = () => {
           content="Agentlytics is a lifecycle‑aware AI agent that proactively engages visitors, qualifies leads, schedules sales calls, onboards customers, and supports them — all inside one chat."
         />
         <link rel="canonical" href="https://www.agentlytics.example/" />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: "document.documentElement.classList.add('js');",
-          }}
-        />
-        <script src="https://cdn.tailwindcss.com"></script>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `tailwind.config = { theme: { extend: { colors: { brand: { blue: '#0069FF', sky: '#3BA3FF', midnight: '#0B1B34' } }, boxShadow: { card: '0 12px 34px rgba(2,6,23,.08)', soft: '0 6px 16px rgba(2,6,23,.06)' }, backgroundImage: { 'hero-bg': 'radial-gradient(100% 50% at 0% 0%, rgba(0,105,255,.10), transparent 60%), radial-gradient(80% 40% at 100% 0%, rgba(59,163,255,.12), transparent 60%)' }, keyframes: {}, animation: {} } } }`,
-          }}
-        />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"
           href="https://fonts.gstatic.com"
           crossOrigin="anonymous"
         />
+        {/* eslint-disable-next-line @next/next/no-page-custom-font */}
         <link
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap"
           rel="stylesheet"
@@ -733,7 +738,7 @@ const HomePage: React.FC = () => {
                   <button
                     className="group w-full text-left"
                     data-how-step="1"
-                    aria-selected="true"
+                    aria-pressed="true"
                   >
                     <div className="relative mb-2">
                       <span className="absolute -left-12 top-0 grid place-items-center size-8 rounded-full border-2 border-slate-300 bg-white text-slate-600">
