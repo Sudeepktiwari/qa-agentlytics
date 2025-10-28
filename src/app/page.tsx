@@ -117,7 +117,7 @@ export default function Page() {
         "Hero title exists",
         document
           .querySelector("#top h1")
-          ?.textContent?.includes("Let Your Website")
+          ?.textContent?.includes("Meet the AI Salesperson")
       );
       expect("Problem section present", !!document.getElementById("problem"));
       expect(
@@ -1646,7 +1646,10 @@ export default function Page() {
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5 mt-6">
               {/* cards preserved exactly */}
-              <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-card transition-all hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(2,6,23,.10)] reveal">
+              <a
+                href="/behavioral-trigger"
+                className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-card transition-all hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(2,6,23,.10)] reveal"
+              >
                 <div
                   className="absolute -top-8 -left-8 size-24 rounded-full bg-blue-100/50 blur-2xl"
                   aria-hidden="true"
@@ -1672,9 +1675,12 @@ export default function Page() {
                     UTM aware
                   </li>
                 </ul>
-              </div>
+              </a>
 
-              <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-card transition-all hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(2,6,23,.10)] reveal">
+              <a
+                href="/multi-persona-ai"
+                className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-card transition-all hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(2,6,23,.10)] reveal"
+              >
                 <div
                   className="absolute -top-8 -right-8 size-24 rounded-full bg-sky-100/50 blur-2xl"
                   aria-hidden="true"
@@ -1698,9 +1704,12 @@ export default function Page() {
                     Tone control
                   </li>
                 </ul>
-              </div>
+              </a>
 
-              <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-card transition-all hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(2,6,23,.10)] reveal">
+              <a
+                href="/bant-based-qualification"
+                className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-card transition-all hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(2,6,23,.10)] reveal"
+              >
                 <div className="size-10 rounded-xl bg-blue-50 grid place-items-center text-brand-blue">
                   ✅
                 </div>
@@ -1719,9 +1728,12 @@ export default function Page() {
                     Disqualify logic
                   </li>
                 </ul>
-              </div>
+              </a>
 
-              <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-card transition-all hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(2,6,23,.10)] reveal">
+              <a
+                href="/built-in-scheduling"
+                className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-card transition-all hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(2,6,23,.10)] reveal"
+              >
                 <div
                   className="absolute -bottom-10 -left-8 size-24 rounded-full bg-blue-100/50 blur-2xl"
                   aria-hidden="true"
@@ -1744,9 +1756,12 @@ export default function Page() {
                     No add‑ons
                   </li>
                 </ul>
-              </div>
+              </a>
 
-              <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-card transition-all hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(2,6,23,.10)] reveal">
+              <a
+                href="https://www.advancelytics.com"
+                className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-card transition-all hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(2,6,23,.10)] reveal"
+              >
                 <div className="size-10 rounded-xl bg-blue-50 grid place-items-center text-brand-blue">
                   📊
                 </div>
@@ -1773,9 +1788,12 @@ export default function Page() {
                     +6 more
                   </li>
                 </ul>
-              </div>
+              </a>
 
-              <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-card transition-all hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(2,6,23,.10)] reveal">
+              <a
+                href="https://www.advancelytics.com"
+                className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-card transition-all hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(2,6,23,.10)] reveal"
+              >
                 <div
                   className="absolute -bottom-10 -right-8 size-24 rounded-full bg-sky-100/50 blur-2xl"
                   aria-hidden="true"
@@ -1806,7 +1824,7 @@ export default function Page() {
                     Slack
                   </li>
                 </ul>
-              </div>
+              </a>
             </div>
 
             <div className="mt-8 flex items-center justify-center">
