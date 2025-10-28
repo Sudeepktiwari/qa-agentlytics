@@ -1699,7 +1699,7 @@ export default function Page() {
               </a>
 
               <a
-                href="/multi-persona-ai"
+                href="/multipersona"
                 className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-card transition-all hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(2,6,23,.10)] reveal"
               >
                 <div
@@ -1812,7 +1812,7 @@ export default function Page() {
               </a>
 
               <a
-                href="https://www.advancelytics.com"
+                href="/crm-and-analytics-sync"
                 className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-card transition-all hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(2,6,23,.10)] reveal"
               >
                 <div

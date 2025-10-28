@@ -102,15 +102,11 @@ export default function KnowledgeBasePage() {
     if (isMobileMenuOpen) {
       document.addEventListener("keydown", handleEscape);
       document.addEventListener("click", handleBackdropClick);
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
     }
 
     return () => {
       document.removeEventListener("keydown", handleEscape);
       document.removeEventListener("click", handleBackdropClick);
-      document.body.style.overflow = "";
     };
   }, [isMobileMenuOpen]);
 
@@ -703,7 +699,8 @@ export default function KnowledgeBasePage() {
         id="compare"
         className="mx-auto max-w-7xl rounded-3xl bg-[--surface-alt] px-0 py-14 ring-1 ring-[--border-subtle] sm:px-6"
       >
-        <div className="flex items-center justify-between gap-4">
+        <div className="px-4 sm:px-0">
+          <div className="flex items-center justify-between gap-4">
           <div>
             <h2 className="text-balance text-3xl font-bold tracking-tight">
               Traditional KB vs Advancelytics KB
@@ -721,9 +718,9 @@ export default function KnowledgeBasePage() {
               Agent-integrated
             </span>
           </div>
-        </div>
+          </div>
 
-        <div className="mt-8 grid gap-6 md:grid-cols-2">
+          <div className="mt-8 grid gap-6 md:grid-cols-2">
           {/* Traditional */}
           <div className="group relative overflow-hidden rounded-2xl border border-[--border-subtle] bg-white p-6 shadow-sm">
             <h3 className="text-lg font-semibold">Traditional KB</h3>
@@ -810,13 +807,14 @@ export default function KnowledgeBasePage() {
               ))}
             </div>
           </div>
+          </div>
         </div>
       </section>
 
       {/* ===== ANALYTICS ILLUSTRATION ===== */}
       <section
         id="demo"
-        className="relative mx-auto max-w-7xl overflow-hidden rounded-3xl border border-[--border-subtle] bg-white px-0 py-10 shadow-sm sm:px-6"
+        className="relative mx-4 max-w-7xl overflow-hidden rounded-3xl border border-[--border-subtle] bg-white px-0 py-10 shadow-sm sm:mx-auto sm:px-6"
       >
         <div className="px-4 sm:px-0 grid items-center gap-10 md:grid-cols-2">
           <div>
@@ -892,8 +890,7 @@ export default function KnowledgeBasePage() {
       <section id="faq" className="mx-auto max-w-7xl px-0 py-16 sm:px-6">
         <div className="px-4 sm:px-0">
           <h2 className="text-balance text-3xl font-bold tracking-tight">FAQ</h2>
-        </div>
-        <div className="mt-6 divide-y divide-slate-200 overflow-hidden rounded-2xl border border-[--border-subtle] bg-white">
+          <div className="mt-6 divide-y divide-slate-200 overflow-hidden rounded-2xl border border-[--border-subtle] bg-white">
           {[
             {
               q: "Can we import existing docs?",
@@ -920,13 +917,14 @@ export default function KnowledgeBasePage() {
               <div className="h-px w-full bg-slate-200" />
             </details>
           ))}
+          </div>
         </div>
       </section>
 
       {/* ===== CTA ===== */}
       <section
         id="cta"
-        className="relative mx-auto max-w-7xl overflow-hidden rounded-3xl border border-[--border-subtle] bg-gradient-to-br from-white to-[--brand-primary]/5 px-4 py-16 shadow-sm sm:px-6"
+        className="relative mx-4 max-w-7xl overflow-hidden rounded-3xl border border-[--border-subtle] bg-gradient-to-br from-white to-[--brand-primary]/5 px-4 py-16 shadow-sm sm:mx-auto sm:px-6"
       >
         <div className="pointer-events-none absolute -top-12 right-0 h-72 w-72 rounded-full bg-[--brand-primary]/20 blur-3xl md:right-[-10%]" />
         <div className="grid items-start gap-10 md:grid-cols-5">
