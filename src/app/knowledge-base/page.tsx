@@ -1,7 +1,7 @@
 // Advancelytics — Knowledge Base (Stable Full Page)
 // Calendly-aligned theme, modernized sections, and fixed JSX syntax issues.
 "use client";
-import React from "react";
+import React, { useState, useEffect } from "react";
 
 // ===== Theme tokens (Calendly-ish) =====
 const brand = {
@@ -40,6 +40,30 @@ const ArrowRight = (props: React.SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
+const Menu = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
+    <path
+      d="M3 12h18M3 6h18M3 18h18"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
+const X = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
+    <path
+      d="M18 6L6 18M6 6l12 12"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
 // Dev-only theme sanity check (no-op in prod)
 function devAssertTheme() {
   if (typeof window !== "undefined") {
@@ -59,9 +83,40 @@ function devAssertTheme() {
 devAssertTheme();
 
 export default function KnowledgeBasePage() {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    const handleBackdropClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.id === "mobileMenuBackdrop") {
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    if (isMobileMenuOpen) {
+      document.addEventListener("keydown", handleEscape);
+      document.addEventListener("click", handleBackdropClick);
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+      document.removeEventListener("click", handleBackdropClick);
+      document.body.style.overflow = "";
+    };
+  }, [isMobileMenuOpen]);
+
   return (
     <div
-      className="relative min-h-screen w-full text-slate-900"
+      className="relative min-h-screen w-full overflow-x-hidden text-slate-900"
       style={
         {
           "--brand-primary": brand.primary,
@@ -86,8 +141,8 @@ export default function KnowledgeBasePage() {
 
       {/* ===== NAVBAR ===== */}
       <header className="sticky top-0 z-40 border-b border-[--border-subtle] bg-white/80 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-3">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-0 py-3 sm:px-6">
+          <div className="flex items-center gap-3 px-4 sm:px-0">
             <div className="h-8 w-8 rounded-xl bg-[--brand-primary]" />
             <span className="text-lg font-semibold tracking-tight">
               Advancelytics
@@ -122,27 +177,115 @@ export default function KnowledgeBasePage() {
             </a>
             <a
               href="#cta"
-              className="rounded-2xl px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:shadow-lg"
+              className="hidden rounded-2xl px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:shadow-lg md:inline-block"
               style={{ backgroundColor: brand.primary }}
             >
               Start free
             </a>
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="ml-2 flex h-10 w-10 items-center justify-center rounded-lg text-slate-600 hover:bg-[--surface] md:hidden"
+              aria-label="Toggle mobile menu"
+            >
+              {isMobileMenuOpen ? (
+                <X className="h-5 w-5" />
+              ) : (
+                <Menu className="h-5 w-5" />
+              )}
+            </button>
           </div>
         </div>
+
+        {/* Mobile Menu Panel */}
+        <div
+          id="mobileMenu"
+          aria-hidden={!isMobileMenuOpen}
+          className={`md:hidden absolute right-0 top-full z-50 w-[60vw] border-t border-l border-[--border-subtle] bg-white rounded-b-2xl shadow-lg origin-top-right transform transition-all duration-300 ease-out ${
+            isMobileMenuOpen
+              ? "opacity-100 translate-y-0 scale-100 pointer-events-auto"
+              : "opacity-0 -translate-y-2 scale-95 pointer-events-none"
+          }`}
+        >
+          <nav className="mx-auto px-4 py-3 sm:px-6">
+            <div className="flex flex-col gap-2 text-sm font-medium text-slate-700">
+              <a
+                href="#why"
+                className="py-2 hover:text-slate-900"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Why
+              </a>
+              <a
+                href="#how"
+                className="py-2 hover:text-slate-900"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                How it works
+              </a>
+              <a
+                href="#features"
+                className="py-2 hover:text-slate-900"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Features
+              </a>
+              <a
+                href="#compare"
+                className="py-2 hover:text-slate-900"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Compare
+              </a>
+              <a
+                href="#faq"
+                className="py-2 hover:text-slate-900"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                FAQ
+              </a>
+              <div className="my-2 border-t border-[--border-subtle]" />
+                <a
+                  href="#demo"
+                  className="mt-2 w-full rounded-xl border border-[--border-subtle] px-4 py-2 text-center text-sm font-medium text-slate-700 hover:bg-[--surface]"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Watch demo
+                </a>
+                <a
+                  href="#cta"
+                  className="w-full rounded-2xl px-4 py-2 text-center text-sm font-semibold text-white shadow-md transition hover:shadow-lg"
+                  style={{ backgroundColor: brand.primary }}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Start free
+                </a>
+            </div>
+          </nav>
+        </div>
       </header>
+
+      {/* Mobile Menu Backdrop */}
+      {isMobileMenuOpen && (
+        <div
+          id="mobileMenuBackdrop"
+          className="fixed inset-0 z-40 md:hidden"
+          onClick={() => setIsMobileMenuOpen(false)}
+          aria-hidden
+        />
+      )}
 
       {/* ===== HERO ===== */}
       <section className="relative isolate bg-[--surface]">
         <div
-          className="pointer-events-none absolute -top-32 right-[-10%] h-[420px] w-[420px] rounded-full blur-3xl"
+          className="pointer-events-none absolute -top-32 right-0 h-[420px] w-[420px] rounded-full blur-3xl md:right-[-10%]"
           style={{
             background: `radial-gradient(circle at 30% 30%, ${brand.primary}33 0%, transparent 60%)`,
           }}
           aria-hidden
         />
 
-        <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-4 py-16 sm:px-6 md:grid-cols-2 md:py-20">
-          <div>
+        <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-0 py-16 sm:px-6 md:grid-cols-2 md:py-20">
+          <div className="px-4 sm:px-0">
             <h1 className="text-balance text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
               Turn Your Content into Answers — Instantly
             </h1>
@@ -183,8 +326,8 @@ export default function KnowledgeBasePage() {
           </div>
 
           {/* Hero Illustration */}
-          <div className="relative">
-            <div className="absolute -inset-0.5 rounded-3xl bg-gradient-to-br from-[--brand-primary]/20 to-[--brand-accent]/20 blur" />
+          <div className="relative px-4 sm:px-0">
+            <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-[--brand-primary]/20 to-[--brand-accent]/20 blur md:-inset-0.5" />
             <div className="relative rounded-3xl border border-[--border-subtle] bg-white p-6 shadow-xl">
               {/* Search bar */}
               <div className="flex items-center gap-2 rounded-2xl border border-[--border-subtle] bg-[--surface] px-4 py-3">
@@ -238,10 +381,10 @@ export default function KnowledgeBasePage() {
       {/* ===== WHY IT MATTERS ===== */}
       <section
         id="why"
-        className="mx-auto max-w-7xl rounded-3xl bg-white/60 px-4 py-12 shadow-[inset_0_1px_0_var(--border-subtle)] backdrop-blur-[2px] sm:px-6"
+        className="mx-auto max-w-7xl rounded-3xl bg-white/60 px-0 py-12 shadow-[inset_0_1px_0_var(--border-subtle)] backdrop-blur-[2px] sm:px-6"
       >
-        <div className="grid items-center gap-10 md:grid-cols-2">
-          <div>
+          <div className="grid items-center gap-10 px-4 sm:px-0 md:grid-cols-2">
+            <div>
             <h2 className="text-3xl font-bold tracking-tight">
               Why a unified knowledge base matters
             </h2>
@@ -368,10 +511,11 @@ export default function KnowledgeBasePage() {
       {/* ===== HOW IT WORKS (Modernized) ===== */}
       <section
         id="how"
-        className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6"
+        className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-0 py-16 sm:px-6"
       >
-        {/* Header Row */}
-        <div className="flex flex-wrap items-start justify-between gap-6">
+        <div className="px-4 sm:px-0">
+          {/* Header Row */}
+          <div className="flex flex-wrap items-start justify-between gap-6">
           <div>
             <h2 className="text-3xl font-bold tracking-tight">How it works</h2>
             <p className="mt-3 max-w-2xl text-slate-600">
@@ -472,14 +616,16 @@ export default function KnowledgeBasePage() {
             </div>
           ))}
         </div>
+          </div>
       </section>
 
       {/* ===== FEATURES ===== */}
       <section
         id="features"
-        className="mx-auto max-w-7xl rounded-3xl bg-white px-4 py-14 shadow-sm ring-1 ring-[--border-subtle] sm:px-6"
+        className="mx-auto max-w-7xl rounded-3xl bg-white px-0 py-14 shadow-sm ring-1 ring-[--border-subtle] sm:px-6"
       >
-        <div className="flex items-start justify-between gap-6">
+          <div className="px-4 sm:px-0">
+            <div className="flex items-start justify-between gap-6">
           <div>
             <h2 className="text-balance text-3xl font-bold tracking-tight">
               Core features
@@ -549,12 +695,13 @@ export default function KnowledgeBasePage() {
             </div>
           ))}
         </div>
+          </div>
       </section>
 
       {/* ===== COMPARE ===== */}
       <section
         id="compare"
-        className="mx-auto max-w-7xl rounded-3xl bg-[--surface-alt] px-4 py-14 ring-1 ring-[--border-subtle] sm:px-6"
+        className="mx-auto max-w-7xl rounded-3xl bg-[--surface-alt] px-0 py-14 ring-1 ring-[--border-subtle] sm:px-6"
       >
         <div className="flex items-center justify-between gap-4">
           <div>
@@ -669,9 +816,9 @@ export default function KnowledgeBasePage() {
       {/* ===== ANALYTICS ILLUSTRATION ===== */}
       <section
         id="demo"
-        className="relative mx-auto max-w-7xl overflow-hidden rounded-3xl border border-[--border-subtle] bg-white px-4 py-10 shadow-sm sm:px-6"
+        className="relative mx-auto max-w-7xl overflow-hidden rounded-3xl border border-[--border-subtle] bg-white px-0 py-10 shadow-sm sm:px-6"
       >
-        <div className="grid items-center gap-10 md:grid-cols-2">
+        <div className="px-4 sm:px-0 grid items-center gap-10 md:grid-cols-2">
           <div>
             <h3 className="text-2xl font-bold">
               See which questions your KB cannot answer yet
@@ -742,8 +889,10 @@ export default function KnowledgeBasePage() {
       </section>
 
       {/* ===== FAQ ===== */}
-      <section id="faq" className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
-        <h2 className="text-balance text-3xl font-bold tracking-tight">FAQ</h2>
+      <section id="faq" className="mx-auto max-w-7xl px-0 py-16 sm:px-6">
+        <div className="px-4 sm:px-0">
+          <h2 className="text-balance text-3xl font-bold tracking-tight">FAQ</h2>
+        </div>
         <div className="mt-6 divide-y divide-slate-200 overflow-hidden rounded-2xl border border-[--border-subtle] bg-white">
           {[
             {
@@ -779,7 +928,7 @@ export default function KnowledgeBasePage() {
         id="cta"
         className="relative mx-auto max-w-7xl overflow-hidden rounded-3xl border border-[--border-subtle] bg-gradient-to-br from-white to-[--brand-primary]/5 px-4 py-16 shadow-sm sm:px-6"
       >
-        <div className="pointer-events-none absolute -top-12 right-[-10%] h-72 w-72 rounded-full bg-[--brand-primary]/20 blur-3xl" />
+        <div className="pointer-events-none absolute -top-12 right-0 h-72 w-72 rounded-full bg-[--brand-primary]/20 blur-3xl md:right-[-10%]" />
         <div className="grid items-start gap-10 md:grid-cols-5">
           <div className="md:col-span-3">
             <h3 className="text-3xl font-bold">
@@ -816,7 +965,7 @@ export default function KnowledgeBasePage() {
           </div>
           <div className="md:col-span-2">
             <div className="relative overflow-hidden rounded-2xl border border-[--border-subtle] bg-white p-6 shadow-lg">
-              <div className="absolute right-0 top-0 h-24 w-24 -translate-y-1/2 translate-x-1/2 rounded-full bg-[--brand-primary]/10 blur-2xl" />
+              <div className="absolute right-0 top-0 h-24 w-24 -translate-y-1/2 rounded-full bg-[--brand-primary]/10 blur-2xl md:translate-x-1/2" />
               <h4 className="text-sm font-semibold text-slate-700">
                 Quick Setup
               </h4>
@@ -878,7 +1027,8 @@ export default function KnowledgeBasePage() {
 
       {/* ===== FOOTER ===== */}
       <footer className="border-t border-[--border-subtle] bg-white">
-        <div className="mx-auto max-w-7xl px-4 py-8 text-sm text-slate-500 sm:px-6">
+        <div className="mx-auto max-w-7xl px-0 py-8 text-sm text-slate-500 sm:px-6">
+          <div className="px-4 sm:px-0">
           <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
             <p>
               © {new Date().getFullYear()} Advancelytics. All rights reserved.
@@ -894,6 +1044,7 @@ export default function KnowledgeBasePage() {
                 Contact
               </a>
             </div>
+          </div>
           </div>
         </div>
       </footer>

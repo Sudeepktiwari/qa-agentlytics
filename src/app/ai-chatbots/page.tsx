@@ -221,8 +221,11 @@ export default function ProactiveAIPage() {
         {/* Mobile menu panel */}
         <div
           id="mobile-menu"
-          className={`md:hidden absolute right-0 top-full z-50 border-t border-l border-slate-200 bg-white w-[60vw] shadow-lg ${
-            mobileOpen ? "block" : "hidden"
+          aria-hidden={!mobileOpen}
+          className={`md:hidden absolute right-0 top-full z-50 w-[60vw] border-t border-l border-slate-200 bg-white rounded-b-2xl shadow-lg origin-top-right transform transition-all duration-300 ease-out ${
+            mobileOpen
+              ? "opacity-100 translate-y-0 scale-100 pointer-events-auto"
+              : "opacity-0 -translate-y-2 scale-95 pointer-events-none"
           }`}
         >
           <nav className="mx-auto px-4 py-3 sm:px-6">
