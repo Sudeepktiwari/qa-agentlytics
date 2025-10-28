@@ -1,11 +1,19 @@
 // Advancelytics — Lead Generation (Full Page)
 // Lighter hero, Calendly-style theme, and all sections restored
 "use client";
+// Advancelytics — Lead Generation (Updated Full Page)
+// Fix: Define LOGOS and inline SVG logo components to resolve ReferenceError.
+// Implements: pain‑point line, social proof logos + inline testimonials, numeric impact,
+// CTA microcopy, Before→After mini‑graphic, SEO meta tags (commented Head),
+// accessibility hover color (#004FCC), and marquee with hover‑to‑pause.
+
 import React from "react";
+// If you are on Next.js, uncomment the next line and the <Head> block below for SEO tags.
+// import Head from "next/head";
 
 const brand = {
   primary: "#006BFF",
-  primaryHover: "#0055CC",
+  primaryHover: "#004FCC", // darker for WCAG AA
   accent: "#0AE8F0",
   bgFrom: "#F3F9FF",
   bgTo: "#FFFFFF",
@@ -15,20 +23,161 @@ const brand = {
   borderSubtle: "#E3EEFF",
 };
 
+// -------------------------
+// Inline monochrome SVG logos
+// (Replace with brand SVGs when available; these scale with currentColor.)
+// -------------------------
+const LogoCloudScale = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 120 28" {...props} aria-hidden="true">
+    <g fill="currentColor">
+      <path
+        d="M18 20c-4.971 0-9-3.582-9-8 0-4.084 2.94-7.49 6.96-7.95C17.12 2.86 19.86 1 23 1c5.523 0 10 4.03 10 9 0 .34-.02.675-.06 1.005C37.3 11.45 40 14.38 40 18c0 4.418-4.029 8-9 8H18z"
+        opacity=".18"
+      />
+      <circle cx="22" cy="11" r="4" opacity=".35" />
+      <rect x="48" y="8" width="3" height="12" rx="1" />
+      <rect x="54" y="6" width="3" height="14" rx="1" />
+      <rect x="60" y="10" width="3" height="10" rx="1" />
+      <rect x="66" y="4" width="3" height="16" rx="1" />
+      <text
+        x="78"
+        y="18"
+        fontFamily="Inter,system-ui,Arial"
+        fontSize="10"
+        fontWeight="600"
+      >
+        CloudScale
+      </text>
+    </g>
+  </svg>
+);
+
+const LogoFinServe = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 120 28" {...props} aria-hidden="true">
+    <g fill="currentColor">
+      <path d="M8 20l10-12 6 7 7-9 9 14H8z" opacity=".25" />
+      <rect x="10" y="18" width="96" height="2" rx="1" opacity=".35" />
+      <text
+        x="14"
+        y="16"
+        fontFamily="Inter,system-ui,Arial"
+        fontSize="10"
+        fontWeight="600"
+      >
+        FinServe
+      </text>
+    </g>
+  </svg>
+);
+
+const LogoTechFlow = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 120 28" {...props} aria-hidden="true">
+    <g fill="currentColor">
+      <circle cx="16" cy="12" r="6" opacity=".25" />
+      <path
+        d="M22 12h12m4 0h4m4 0h6"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+      <text
+        x="52"
+        y="16"
+        fontFamily="Inter,system-ui,Arial"
+        fontSize="10"
+        fontWeight="600"
+      >
+        TechFlow
+      </text>
+    </g>
+  </svg>
+);
+
+const LogoGeneric = ({
+  label,
+  ...props
+}: React.SVGProps<SVGSVGElement> & { label: string }) => (
+  <svg viewBox="0 0 120 28" {...props} aria-hidden="true">
+    <g fill="currentColor">
+      <rect x="12" y="6" width="24" height="16" rx="6" opacity=".2" />
+      <rect x="42" y="10" width="8" height="8" rx="2" opacity=".35" />
+      <text
+        x="54"
+        y="16"
+        fontFamily="Inter,system-ui,Arial"
+        fontSize="10"
+        fontWeight="600"
+      >
+        {label}
+      </text>
+    </g>
+  </svg>
+);
+
+// LOGOS used by the marquee — duplicated for seamless loop
+const LOGOS = [
+  { name: "CloudScale", Icon: LogoCloudScale },
+  { name: "FinServe", Icon: LogoFinServe },
+  { name: "TechFlow", Icon: LogoTechFlow },
+  {
+    name: "RetailX",
+    Icon: (p: React.SVGProps<SVGSVGElement>) => (
+      <LogoGeneric label="RetailX" {...p} />
+    ),
+  },
+  {
+    name: "DevSuite",
+    Icon: (p: React.SVGProps<SVGSVGElement>) => (
+      <LogoGeneric label="DevSuite" {...p} />
+    ),
+  },
+  {
+    name: "DataPilot",
+    Icon: (p: React.SVGProps<SVGSVGElement>) => (
+      <LogoGeneric label="DataPilot" {...p} />
+    ),
+  },
+];
+
 export default function LeadGenerationPage() {
+  const styleVars = {
+    "--brand-primary": brand.primary,
+    "--brand-accent": brand.accent,
+    "--surface": brand.surface,
+    "--surface-alt": brand.surfaceAlt,
+    "--border-subtle": brand.borderSubtle,
+  } as React.CSSProperties;
+
   return (
     <div
       className="relative min-h-screen w-full text-slate-900 antialiased"
-      style={
-        {
-          "--brand-primary": brand.primary,
-          "--brand-accent": brand.accent,
-          "--surface": brand.surface,
-          "--surface-alt": brand.surfaceAlt,
-          "--border-subtle": brand.borderSubtle,
-        } as React.CSSProperties
-      }
+      style={styleVars}
     >
+      {/*
+      <Head>
+        <title>Advancelytics — Lead Generation</title>
+        <meta
+          name="description"
+          content="Capture and convert visitors instantly using behavioral AI triggers — 2.8× more leads, 40% faster response."
+        />
+        <meta
+          name="keywords"
+          content="lead capture automation, behavioral ai chatbot, conversion intelligence, crm lead sync"
+        />
+        <link rel="canonical" href="https://www.advancelytics.com/lead-generation" />
+      </Head>
+      */}
+
+      {/* Global styles for marquee animation */}
+      <style>{`
+        @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+        .trusted-wrap{ overflow: hidden; }
+        .trusted-mask{ mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent); -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent); }
+        .trusted-track{ display: flex; gap: 2.5rem; width: max-content; align-items: center; animation: marquee 26s linear infinite; }
+        .trusted-track:hover{ animation-play-state: paused; }
+        @media (prefers-reduced-motion: reduce) { .trusted-track{ animation: none; } }
+      `}</style>
+
       {/* Background */}
       <div
         className="pointer-events-none absolute inset-0 -z-10"
@@ -63,6 +212,9 @@ export default function LeadGenerationPage() {
             <a href="#features" className="hover:text-slate-900">
               Features
             </a>
+            <a href="#logos" className="hover:text-slate-900">
+              Trusted by
+            </a>
             <a href="#cta" className="hover:text-slate-900">
               Pricing
             </a>
@@ -78,8 +230,14 @@ export default function LeadGenerationPage() {
               href="#cta"
               className="rounded-2xl px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:shadow-lg"
               style={{ backgroundColor: brand.primary }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.backgroundColor = brand.primaryHover)
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.backgroundColor = brand.primary)
+              }
             >
-              Start free
+              Start Free — Capture More Leads Instantly
             </a>
           </div>
         </div>
@@ -99,18 +257,39 @@ export default function LeadGenerationPage() {
             <h1 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
               Turn Visitors into Qualified Leads — Automatically
             </h1>
-            <p className="mt-4 max-w-xl text-lg text-slate-600">
+            <p className="mt-3 max-w-xl text-base font-medium text-rose-600">
+              Every unengaged visitor is a lost opportunity — act before they
+              leave.
+            </p>
+            <p className="mt-3 max-w-xl text-lg text-slate-600">
               Agentlytics detects behavior signals like scroll-depth, dwell
               time, and exit intent to trigger personalized prompts that capture
               high-intent leads before they leave.
             </p>
+            <div className="mt-4 flex flex-wrap gap-3 text-[12px] text-slate-500">
+              <span className="rounded-full bg-emerald-50 px-2.5 py-1 font-semibold text-emerald-700">
+                2.8× more leads
+              </span>
+              <span className="rounded-full bg-indigo-50 px-2.5 py-1 font-semibold text-indigo-700">
+                40% faster response
+              </span>
+              <span className="rounded-full bg-cyan-50 px-2.5 py-1 font-semibold text-cyan-700">
+                Live in minutes
+              </span>
+            </div>
             <div className="mt-8 flex gap-3">
               <a
                 href="#cta"
                 className="rounded-2xl px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:shadow-lg"
                 style={{ backgroundColor: brand.primary }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundColor = brand.primaryHover)
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundColor = brand.primary)
+                }
               >
-                Start Free Trial
+                Start Free — Capture More Leads Instantly
               </a>
               <a
                 href="#demo"
@@ -126,9 +305,10 @@ export default function LeadGenerationPage() {
               </a>
             </div>
             <p className="mt-4 text-sm text-slate-500">
-              No code required · Live in minutes · Capture more leads
+              No code required · 14-day free trial · No credit card
             </p>
           </div>
+          {/* Lead Capture Preview */}
           <div className="relative">
             <div className="absolute -inset-1 rounded-3xl bg-gradient-to-br from-[--brand-primary]/10 to-[--brand-accent]/10 blur" />
             <div className="relative rounded-3xl border border-[--border-subtle] bg-white p-6 shadow-xl">
@@ -161,7 +341,79 @@ export default function LeadGenerationPage() {
         </div>
       </section>
 
-      {/* WHY SECTION */}
+      {/* TRUSTED BY / LOGOS + Inline Testimonials */}
+      <section id="logos" className="mx-auto max-w-7xl px-4 pt-6 sm:px-6">
+        <div className="rounded-2xl border border-[--border-subtle] bg-white/70 p-4">
+          <p className="text-center text-sm font-semibold text-slate-600">
+            Trusted by teams at
+          </p>
+          {/* Marquee logos with SVG components */}
+          <div className="trusted-wrap trusted-mask mt-4">
+            <div className="trusted-track text-slate-500">
+              {[...LOGOS, ...LOGOS].map(({ name, Icon }, idx) => (
+                <div
+                  key={`${name}-${idx}`}
+                  className="group flex h-10 w-[160px] items-center justify-center rounded-xl border border-transparent px-3 transition hover:border-[--border-subtle]"
+                  aria-label={name}
+                  title={name}
+                >
+                  <Icon className="h-6 w-auto opacity-80 transition-opacity group-hover:opacity-100" />
+                  <span className="sr-only">{name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <p className="mt-2 text-center text-[11px] text-slate-400">
+            Hover to pause
+          </p>
+
+          {/* Inline Testimonials (inside the same card) */}
+          <div className="mt-6">
+            <h3 className="text-center text-base font-semibold text-slate-700">
+              What customers say
+            </h3>
+            <div className="mt-4 grid gap-4 md:grid-cols-3">
+              {[
+                {
+                  quote:
+                    "2.9× more captured leads in 30 days. Instantly visible in HubSpot.",
+                  name: "Priya S.",
+                  role: "Head of Growth, CloudScale",
+                },
+                {
+                  quote:
+                    "Response times dropped by 42% and demo bookings jumped.",
+                  name: "Alex R.",
+                  role: "VP Sales, FinServe",
+                },
+                {
+                  quote:
+                    "Behavior prompts qualify for us — reps focus only on closers.",
+                  name: "Maya T.",
+                  role: "PMM, TechFlow",
+                },
+              ].map((t, i) => (
+                <figure
+                  key={i}
+                  className="rounded-2xl border border-[--border-subtle] bg-[--surface] p-4"
+                >
+                  <blockquote className="text-sm text-slate-700">
+                    “{t.quote}”
+                  </blockquote>
+                  <figcaption className="mt-3 text-[13px] text-slate-600">
+                    <span className="font-semibold text-slate-900">
+                      {t.name}
+                    </span>{" "}
+                    · {t.role}
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* WHY SECTION with Before→After mini-graphic */}
       <section id="why" className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
         <div className="grid items-center gap-10 md:grid-cols-2">
           <div>
@@ -174,31 +426,31 @@ export default function LeadGenerationPage() {
               starting contextual conversations that convert.
             </p>
             <ul className="mt-5 space-y-2 text-sm text-slate-700">
-              <li>Reduce bounce rate with real-time engagement</li>
-              <li>Boost lead quality using behavior-based qualification</li>
-              <li>Automate capture, scoring, and CRM sync</li>
+              <li>2.8× more leads with behavior-driven prompts</li>
+              <li>40% faster response → faster pipeline velocity</li>
+              <li>Automated capture, scoring, and CRM sync</li>
             </ul>
           </div>
           <div className="relative overflow-hidden rounded-2xl border border-[--border-subtle] bg-white p-6 shadow">
             <div className="mb-4 text-sm font-semibold text-slate-700">
-              Before vs After Agentlytics
+              Before vs After
             </div>
             <div className="grid grid-cols-2 gap-3 text-xs text-slate-600">
               <div className="rounded-xl border border-[--border-subtle] bg-[--surface] p-4">
-                <div className="mb-2 font-bold text-slate-800">Traditional</div>
+                <div className="mb-2 font-bold text-slate-800">Static Form</div>
                 <ul className="list-inside list-disc space-y-1">
-                  <li>Static forms</li>
-                  <li>Low conversion</li>
-                  <li>No personalization</li>
+                  <li>Waits for input</li>
+                  <li>Low intent signal</li>
+                  <li>Drop-offs</li>
                 </ul>
               </div>
               <div className="rounded-xl border border-[--brand-primary]/20 bg-[--brand-primary]/5 p-4">
                 <div className="mb-2 font-bold text-[--brand-primary]">
-                  Agentlytics
+                  AI Conversation
                 </div>
                 <ul className="list-inside list-disc space-y-1">
-                  <li>Behavior-driven prompts</li>
-                  <li>Context-aware capture</li>
+                  <li>Detects & engages</li>
+                  <li>Context-aware prompts</li>
                   <li>CRM-ready leads</li>
                 </ul>
               </div>
@@ -458,6 +710,8 @@ export default function LeadGenerationPage() {
         </div>
       </section>
 
+      {/* (Removed standalone testimonial section; testimonials now live inside the Trusted by card) */}
+
       {/* CTA */}
       <section
         id="cta"
@@ -475,8 +729,14 @@ export default function LeadGenerationPage() {
             href="#"
             className="rounded-2xl px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:shadow-lg"
             style={{ backgroundColor: brand.primary }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.backgroundColor = brand.primaryHover)
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.backgroundColor = brand.primary)
+            }
           >
-            Get Started
+            Start Free — Capture More Leads Instantly
           </a>
           <a
             href="#"
