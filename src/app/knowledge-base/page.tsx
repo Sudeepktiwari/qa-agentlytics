@@ -84,6 +84,31 @@ devAssertTheme();
 
 export default function KnowledgeBasePage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  // Close menu then smooth-scroll to target anchors for reliable navigation
+  const handleMobileNavClick = (
+    e: React.MouseEvent<HTMLAnchorElement, MouseEvent>
+  ) => {
+    const href = (e.currentTarget.getAttribute("href") || "").trim();
+    if (href.startsWith("#")) {
+      e.preventDefault();
+      setIsMobileMenuOpen(false);
+      const el = document.querySelector(href);
+      if (el) {
+        setTimeout(() => {
+          (el as HTMLElement).scrollIntoView({ behavior: "smooth", block: "start" });
+          try {
+            history.replaceState(null, "", href);
+          } catch {}
+        }, 0);
+      } else {
+        try {
+          history.replaceState(null, "", href);
+        } catch {}
+      }
+    } else {
+      setIsMobileMenuOpen(false);
+    }
+  };
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -112,7 +137,7 @@ export default function KnowledgeBasePage() {
 
   return (
     <div
-      className="relative min-h-screen w-full overflow-x-hidden text-slate-900"
+      className="relative min-h-screen w-full overflow-x-hidden text-slate-900 scroll-smooth"
       style={
         {
           "--brand-primary": brand.primary,
@@ -207,35 +232,35 @@ export default function KnowledgeBasePage() {
               <a
                 href="#why"
                 className="py-2 hover:text-slate-900"
-                onClick={() => setIsMobileMenuOpen(false)}
+                onClick={handleMobileNavClick}
               >
                 Why
               </a>
               <a
                 href="#how"
                 className="py-2 hover:text-slate-900"
-                onClick={() => setIsMobileMenuOpen(false)}
+                onClick={handleMobileNavClick}
               >
                 How it works
               </a>
               <a
                 href="#features"
                 className="py-2 hover:text-slate-900"
-                onClick={() => setIsMobileMenuOpen(false)}
+                onClick={handleMobileNavClick}
               >
                 Features
               </a>
               <a
                 href="#compare"
                 className="py-2 hover:text-slate-900"
-                onClick={() => setIsMobileMenuOpen(false)}
+                onClick={handleMobileNavClick}
               >
                 Compare
               </a>
               <a
                 href="#faq"
                 className="py-2 hover:text-slate-900"
-                onClick={() => setIsMobileMenuOpen(false)}
+                onClick={handleMobileNavClick}
               >
                 FAQ
               </a>
@@ -243,7 +268,7 @@ export default function KnowledgeBasePage() {
                 <a
                   href="#demo"
                   className="mt-2 w-full rounded-xl border border-[--border-subtle] px-4 py-2 text-center text-sm font-medium text-slate-700 hover:bg-[--surface]"
-                  onClick={() => setIsMobileMenuOpen(false)}
+                  onClick={handleMobileNavClick}
                 >
                   Watch demo
                 </a>
@@ -251,7 +276,7 @@ export default function KnowledgeBasePage() {
                   href="#cta"
                   className="w-full rounded-2xl px-4 py-2 text-center text-sm font-semibold text-white shadow-md transition hover:shadow-lg"
                   style={{ backgroundColor: brand.primary }}
-                  onClick={() => setIsMobileMenuOpen(false)}
+                  onClick={handleMobileNavClick}
                 >
                   Start free
                 </a>
@@ -264,7 +289,7 @@ export default function KnowledgeBasePage() {
       {isMobileMenuOpen && (
         <div
           id="mobileMenuBackdrop"
-          className="fixed inset-0 z-40 md:hidden"
+          className="fixed inset-0 z-30 md:hidden"
           onClick={() => setIsMobileMenuOpen(false)}
           aria-hidden
         />
@@ -377,7 +402,7 @@ export default function KnowledgeBasePage() {
       {/* ===== WHY IT MATTERS ===== */}
       <section
         id="why"
-        className="mx-auto max-w-7xl rounded-3xl bg-white/60 px-0 py-12 shadow-[inset_0_1px_0_var(--border-subtle)] backdrop-blur-[2px] sm:px-6"
+        className="mx-auto max-w-7xl rounded-3xl bg-white/60 px-0 py-12 shadow-[inset_0_1px_0_var(--border-subtle)] backdrop-blur-[2px] sm:px-6 scroll-mt-24"
       >
           <div className="grid items-center gap-10 px-4 sm:px-0 md:grid-cols-2">
             <div>
@@ -507,7 +532,7 @@ export default function KnowledgeBasePage() {
       {/* ===== HOW IT WORKS (Modernized) ===== */}
       <section
         id="how"
-        className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-0 py-16 sm:px-6"
+        className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-0 py-16 sm:px-6 scroll-mt-24"
       >
         <div className="px-4 sm:px-0">
           {/* Header Row */}
@@ -618,7 +643,7 @@ export default function KnowledgeBasePage() {
       {/* ===== FEATURES ===== */}
       <section
         id="features"
-        className="mx-auto max-w-7xl rounded-3xl bg-white px-0 py-14 shadow-sm ring-1 ring-[--border-subtle] sm:px-6"
+        className="mx-auto max-w-7xl rounded-3xl bg-white px-0 py-14 shadow-sm ring-1 ring-[--border-subtle] sm:px-6 scroll-mt-24"
       >
           <div className="px-4 sm:px-0">
             <div className="flex items-start justify-between gap-6">
@@ -697,7 +722,7 @@ export default function KnowledgeBasePage() {
       {/* ===== COMPARE ===== */}
       <section
         id="compare"
-        className="mx-auto max-w-7xl rounded-3xl bg-[--surface-alt] px-0 py-14 ring-1 ring-[--border-subtle] sm:px-6"
+        className="mx-auto max-w-7xl rounded-3xl bg-[--surface-alt] px-0 py-14 ring-1 ring-[--border-subtle] sm:px-6 scroll-mt-24"
       >
         <div className="px-4 sm:px-0">
           <div className="flex items-center justify-between gap-4">
@@ -887,7 +912,7 @@ export default function KnowledgeBasePage() {
       </section>
 
       {/* ===== FAQ ===== */}
-      <section id="faq" className="mx-auto max-w-7xl px-0 py-16 sm:px-6">
+      <section id="faq" className="mx-auto max-w-7xl px-0 py-16 sm:px-6 scroll-mt-24">
         <div className="px-4 sm:px-0">
           <h2 className="text-balance text-3xl font-bold tracking-tight">FAQ</h2>
           <div className="mt-6 divide-y divide-slate-200 overflow-hidden rounded-2xl border border-[--border-subtle] bg-white">
@@ -924,7 +949,7 @@ export default function KnowledgeBasePage() {
       {/* ===== CTA ===== */}
       <section
         id="cta"
-        className="relative mx-4 max-w-7xl overflow-hidden rounded-3xl border border-[--border-subtle] bg-gradient-to-br from-white to-[--brand-primary]/5 px-4 py-16 shadow-sm sm:mx-auto sm:px-6"
+        className="relative mx-4 max-w-7xl overflow-hidden rounded-3xl border border-[--border-subtle] bg-gradient-to-br from-white to-[--brand-primary]/5 px-4 py-16 shadow-sm sm:mx-auto sm:px-6 scroll-mt-24"
       >
         <div className="pointer-events-none absolute -top-12 right-0 h-72 w-72 rounded-full bg-[--brand-primary]/20 blur-3xl md:right-[-10%]" />
         <div className="grid items-start gap-10 md:grid-cols-5">

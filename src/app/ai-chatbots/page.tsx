@@ -78,6 +78,31 @@ export default function ProactiveAIPage() {
   ];
 
   const [mobileOpen, setMobileOpen] = useState(false);
+  // Close menu then smooth-scroll to target anchors for reliable navigation
+  const handleMobileNavClick = (
+    e: React.MouseEvent<HTMLAnchorElement, MouseEvent>
+  ) => {
+    const href = (e.currentTarget.getAttribute("href") || "").trim();
+    if (href.startsWith("#")) {
+      e.preventDefault();
+      setMobileOpen(false);
+      const el = document.querySelector(href);
+      if (el) {
+        setTimeout(() => {
+          (el as HTMLElement).scrollIntoView({ behavior: "smooth", block: "start" });
+          try {
+            history.replaceState(null, "", href);
+          } catch {}
+        }, 0);
+      } else {
+        try {
+          history.replaceState(null, "", href);
+        } catch {}
+      }
+    } else {
+      setMobileOpen(false);
+    }
+  };
   const [tIndex, setTIndex] = useState(0);
   useEffect(() => {
     const id = setInterval(
@@ -100,7 +125,7 @@ export default function ProactiveAIPage() {
 
   return (
     <div
-      className="relative min-h-screen w-full overflow-x-hidden text-slate-900"
+      className="relative min-h-screen w-full overflow-x-hidden text-slate-900 scroll-smooth"
       style={
         {
           "--brand-primary": brand.primary,
@@ -233,42 +258,42 @@ export default function ProactiveAIPage() {
               <a
                 href="#how"
                 className="py-2 hover:text-slate-900"
-                onClick={() => setMobileOpen(false)}
+                onClick={handleMobileNavClick}
               >
                 How it works
               </a>
               <a
                 href="#benefits"
                 className="py-2 hover:text-slate-900"
-                onClick={() => setMobileOpen(false)}
+                onClick={handleMobileNavClick}
               >
                 Benefits
               </a>
               <a
                 href="#proof"
                 className="py-2 hover:text-slate-900"
-                onClick={() => setMobileOpen(false)}
+                onClick={handleMobileNavClick}
               >
                 Social Proof
               </a>
               <a
                 href="#compare"
                 className="py-2 hover:text-slate-900"
-                onClick={() => setMobileOpen(false)}
+                onClick={handleMobileNavClick}
               >
                 Compare
               </a>
               <a
                 href="#demo"
                 className="py-2 hover:text-slate-900"
-                onClick={() => setMobileOpen(false)}
+                onClick={handleMobileNavClick}
               >
                 Demo
               </a>
               <a
                 href="#faq"
                 className="py-2 hover:text-slate-900"
-                onClick={() => setMobileOpen(false)}
+                onClick={handleMobileNavClick}
               >
                 FAQ
               </a>
@@ -283,14 +308,14 @@ export default function ProactiveAIPage() {
                 onMouseLeave={(e) =>
                   (e.currentTarget.style.backgroundColor = brand.primary)
                 }
-                onClick={() => setMobileOpen(false)}
+                onClick={handleMobileNavClick}
               >
                 Start Free — Boost Conversions Now
               </a>
               <a
                 href="#demo"
                 className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-2 text-center text-sm font-medium text-slate-700 hover:bg-slate-50"
-                onClick={() => setMobileOpen(false)}
+                onClick={handleMobileNavClick}
               >
                 Watch demo
               </a>
@@ -302,7 +327,7 @@ export default function ProactiveAIPage() {
       {/* Backdrop overlay — outside header to ensure proper stacking and click capture */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-40 md:hidden "
+          className="fixed inset-0 z-30 md:hidden"
           aria-label="Close menu"
           onClick={() => setMobileOpen(false)}
         />
@@ -476,7 +501,7 @@ export default function ProactiveAIPage() {
       </section>
 
       {/* SOCIAL PROOF (logos + carousel) */}
-      <section id="proof" className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
+      <section id="proof" className="mx-auto max-w-7xl px-4 py-10 sm:px-6 scroll-mt-24">
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <p className="text-center text-xs font-semibold tracking-wide text-slate-500">
             TRUSTED BY TEAMS AT
@@ -529,7 +554,7 @@ export default function ProactiveAIPage() {
       </section>
 
       {/* COMPARE (modern) */}
-      <section id="compare" className="mx-auto max-w-7xl px-4 py-14 sm:px-6">
+      <section id="compare" className="mx-auto max-w-7xl px-4 py-14 sm:px-6 scroll-mt-24">
         <div className="flex items-center justify-between gap-4">
           <div>
             <h2 className="text-balance text-3xl font-bold tracking-tight">
@@ -704,7 +729,7 @@ export default function ProactiveAIPage() {
       </section>
 
       {/* HOW IT WORKS */}
-      <section id="how" className="mx-auto max-w-7xl px-4 py-14 sm:px-6">
+      <section id="how" className="mx-auto max-w-7xl px-4 py-14 sm:px-6 scroll-mt-24">
         <div className="flex items-start justify-between gap-8">
           <div>
             <h2 className="text-balance text-3xl font-bold tracking-tight">
@@ -896,7 +921,7 @@ export default function ProactiveAIPage() {
       {/* DEMO (illustration) */}
       <section
         id="demo"
-        className="relative mx-auto max-w-7xl overflow-hidden rounded-3xl border border-slate-200 bg-white px-4 py-10 shadow-sm sm:px-6"
+        className="relative mx-auto max-w-7xl overflow-hidden rounded-3xl border border-slate-200 bg-white px-4 py-10 shadow-sm sm:px-6 scroll-mt-24"
       >
         <div className="grid items-center gap-10 md:grid-cols-2">
           <div>
@@ -1019,7 +1044,7 @@ export default function ProactiveAIPage() {
       </section>
 
       {/* BENEFITS */}
-      <section id="benefits" className="mx-auto max-w-7xl px-4 py-14 sm:px-6">
+      <section id="benefits" className="mx-auto max-w-7xl px-4 py-14 sm:px-6 scroll-mt-24">
         <div className="flex items-start justify-between gap-6">
           <div>
             <h2 className="text-balance text-3xl font-bold tracking-tight">
@@ -1156,7 +1181,7 @@ export default function ProactiveAIPage() {
       {/* CTA */}
       <section
         id="cta"
-        className="relative mx-auto max-w-7xl overflow-hidden rounded-3xl border border-slate-200 bg-gradient-to-br from-white to-[--brand-primary]/5 px-4 py-16 shadow-sm sm:px-6"
+        className="relative mx-auto max-w-7xl overflow-hidden rounded-3xl border border-slate-200 bg-gradient-to-br from-white to-[--brand-primary]/5 px-4 py-16 shadow-sm sm:px-6 scroll-mt-24"
       >
         <div className="pointer-events-none absolute -top-12 right-0 md:right-[-10%] h-72 w-72 rounded-full bg-[--brand-primary]/20 blur-3xl" />
         <div className="grid items-start gap-10 md:grid-cols-5">

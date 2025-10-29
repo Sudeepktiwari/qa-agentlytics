@@ -151,6 +151,32 @@ export default function LeadGenerationPage() {
   // Mobile menu state
   const [menuOpen, setMenuOpen] = useState(false);
 
+  // Close menu then smooth-scroll to target anchors for reliable navigation
+  const handleMobileNavClick = (
+    e: React.MouseEvent<HTMLAnchorElement, MouseEvent>
+  ) => {
+    const href = (e.currentTarget.getAttribute("href") || "").trim();
+    if (href.startsWith("#")) {
+      e.preventDefault();
+      setMenuOpen(false);
+      const el = document.querySelector(href);
+      if (el) {
+        setTimeout(() => {
+          (el as HTMLElement).scrollIntoView({ behavior: "smooth", block: "start" });
+          try {
+            history.replaceState(null, "", href);
+          } catch {}
+        }, 0);
+      } else {
+        try {
+          history.replaceState(null, "", href);
+        } catch {}
+      }
+    } else {
+      setMenuOpen(false);
+    }
+  };
+
   // Close menu on Escape
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -162,7 +188,7 @@ export default function LeadGenerationPage() {
 
   return (
     <div
-      className="relative min-h-screen w-full overflow-x-hidden text-slate-900 antialiased"
+      className="relative min-h-screen w-full overflow-x-hidden text-slate-900 antialiased scroll-smooth"
       style={styleVars}
     >
       {/*
@@ -267,7 +293,7 @@ export default function LeadGenerationPage() {
               </svg>
             </button>
             <a
-              href="#demo"
+              href="#cta"
               className="hidden rounded-xl border border-[--border-subtle] px-4 py-2 text-sm font-medium text-slate-700 hover:bg-[--surface] md:inline-block"
             >
               Watch demo
@@ -302,35 +328,35 @@ export default function LeadGenerationPage() {
               <a
                 href="#why"
                 className="py-2 hover:text-slate-900"
-                onClick={() => setMenuOpen(false)}
+                onClick={handleMobileNavClick}
               >
                 Why
               </a>
               <a
                 href="#how"
                 className="py-2 hover:text-slate-900"
-                onClick={() => setMenuOpen(false)}
+                onClick={handleMobileNavClick}
               >
                 How it works
               </a>
               <a
                 href="#features"
                 className="py-2 hover:text-slate-900"
-                onClick={() => setMenuOpen(false)}
+                onClick={handleMobileNavClick}
               >
                 Features
               </a>
               <a
                 href="#logos"
                 className="py-2 hover:text-slate-900"
-                onClick={() => setMenuOpen(false)}
+                onClick={handleMobileNavClick}
               >
                 Trusted by
               </a>
               <a
                 href="#cta"
                 className="py-2 hover:text-slate-900"
-                onClick={() => setMenuOpen(false)}
+                onClick={handleMobileNavClick}
               >
                 Pricing
               </a>
@@ -345,14 +371,14 @@ export default function LeadGenerationPage() {
                 onMouseLeave={(e) =>
                   (e.currentTarget.style.backgroundColor = brand.primary)
                 }
-                onClick={() => setMenuOpen(false)}
+                onClick={handleMobileNavClick}
               >
                 Start Free — Capture More Leads Instantly
               </a>
               <a
-                href="#demo"
+                href="#cta"
                 className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-2 text-center text-sm font-medium text-slate-700 hover:bg-slate-50"
-                onClick={() => setMenuOpen(false)}
+                onClick={handleMobileNavClick}
               >
                 Watch demo
               </a>
@@ -364,7 +390,7 @@ export default function LeadGenerationPage() {
       {/* Backdrop overlay — match ai-chatbots (no tint, click to close) */}
       {menuOpen && (
         <div
-          className="fixed inset-0 z-40 md:hidden"
+          className="fixed inset-0 z-30 md:hidden"
           aria-label="Close menu"
           onClick={() => setMenuOpen(false)}
         />
@@ -419,7 +445,7 @@ export default function LeadGenerationPage() {
                 Start Free — Capture More Leads Instantly
               </a>
               <a
-                href="#demo"
+                href="#cta"
                 className="rounded-2xl border border-[--brand-primary] px-6 py-3 text-sm font-semibold text-[--brand-primary] transition hover:text-white"
                 onMouseEnter={(e) =>
                   (e.currentTarget.style.background = `linear-gradient(90deg, ${brand.primary} 0%, ${brand.accent} 100%)`)
@@ -469,7 +495,7 @@ export default function LeadGenerationPage() {
       </section>
 
       {/* TRUSTED BY / LOGOS + Inline Testimonials */}
-      <section id="logos" className="mx-auto max-w-7xl px-4 pt-6 sm:px-6">
+      <section id="logos" className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 scroll-mt-24">
         <div className="rounded-2xl border border-[--border-subtle] bg-white/70 p-4">
           <p className="text-center text-sm font-semibold text-slate-600">
             Trusted by teams at
@@ -541,7 +567,7 @@ export default function LeadGenerationPage() {
       </section>
 
       {/* WHY SECTION with Before→After mini-graphic */}
-      <section id="why" className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+      <section id="why" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 scroll-mt-24">
         <div className="grid items-center gap-10 md:grid-cols-2">
           <div>
             <h2 className="text-3xl font-bold tracking-tight">
@@ -589,7 +615,7 @@ export default function LeadGenerationPage() {
       {/* HOW IT WORKS */}
       <section
         id="how"
-        className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6"
+        className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6 scroll-mt-24"
       >
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div>
@@ -759,7 +785,7 @@ export default function LeadGenerationPage() {
       </section>
 
       {/* FEATURES */}
-      <section id="features" className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+      <section id="features" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 scroll-mt-24">
         <div className="flex items-start justify-between gap-6">
           <div>
             <h2 className="text-3xl font-bold tracking-tight">Key Features</h2>
@@ -842,7 +868,7 @@ export default function LeadGenerationPage() {
       {/* CTA */}
       <section
         id="cta"
-        className="relative mx-4 sm:mx-auto max-w-7xl rounded-3xl border border-[--border-subtle] bg-gradient-to-br from-white to-[--brand-primary]/5 px-4 py-16 text-center sm:px-6"
+        className="relative mx-4 sm:mx-auto max-w-7xl rounded-3xl border border-[--border-subtle] bg-gradient-to-br from-white to-[--brand-primary]/5 px-4 py-16 text-center sm:px-6 scroll-mt-24"
       >
         <h2 className="text-3xl font-bold">
           Capture high-intent leads before they bounce

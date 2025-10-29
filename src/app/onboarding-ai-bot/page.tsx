@@ -250,6 +250,32 @@ export default function OnboardingAIBotPage() {
     return () => document.removeEventListener("keydown", onKey);
   }, []);
 
+  // Close menu then smooth-scroll to target anchors for reliable navigation
+  const handleMobileNavClick = (
+    e: React.MouseEvent<HTMLAnchorElement, MouseEvent>
+  ) => {
+    const href = (e.currentTarget.getAttribute("href") || "").trim();
+    if (href.startsWith("#")) {
+      e.preventDefault();
+      setMenuOpen(false);
+      const el = document.querySelector(href);
+      if (el) {
+        setTimeout(() => {
+          (el as HTMLElement).scrollIntoView({ behavior: "smooth", block: "start" });
+          try {
+            history.replaceState(null, "", href);
+          } catch {}
+        }, 0);
+      } else {
+        try {
+          history.replaceState(null, "", href);
+        } catch {}
+      }
+    } else {
+      setMenuOpen(false);
+    }
+  };
+
   // Reveal on scroll for testimonials
   const revealRef = useRef(null);
   useEffect(() => {
@@ -315,7 +341,7 @@ export default function OnboardingAIBotPage() {
   return (
     <div
       ref={containerRef}
-      className="relative min-h-screen w-full overflow-x-hidden text-slate-900 antialiased"
+      className="relative min-h-screen w-full overflow-x-hidden text-slate-900 antialiased scroll-smooth"
       style={
         ({
           "--brand-primary": brand.primary,
@@ -357,7 +383,7 @@ export default function OnboardingAIBotPage() {
             <a href="#why" className="hover:text-slate-900">
               Why
             </a>
-            <a href="#how" className="hover:text-slate-900">
+            <a href="#brain" className="hover:text-slate-900">
               How it works
             </a>
             <a href="#brain" className="hover:text-slate-900">
@@ -375,7 +401,7 @@ export default function OnboardingAIBotPage() {
           </nav>
           <div className="flex items-center gap-3">
             <a
-              href="#demo"
+              href="#cta"
               className="hidden rounded-xl border border-[--border-subtle] px-4 py-2 text-sm font-medium text-slate-700 hover:bg-[--surface] md:inline-block"
             >
               Watch demo
@@ -439,17 +465,17 @@ export default function OnboardingAIBotPage() {
         >
           <nav className="mx-auto px-4 py-3 sm:px-6">
             <div className="flex flex-col gap-2 text-sm font-medium text-slate-700">
-              <a href="#why" className="py-2 hover:text-slate-900" onClick={() => setMenuOpen(false)}>Why</a>
-              <a href="#how" className="py-2 hover:text-slate-900" onClick={() => setMenuOpen(false)}>How it works</a>
-              <a href="#brain" className="py-2 hover:text-slate-900" onClick={() => setMenuOpen(false)}>Inside the Brain</a>
-              <a href="#features" className="py-2 hover:text-slate-900" onClick={() => setMenuOpen(false)}>Features</a>
-              <a href="#security" className="py-2 hover:text-slate-900" onClick={() => setMenuOpen(false)}>Security</a>
-              <a href="#cta" className="py-2 hover:text-slate-900" onClick={() => setMenuOpen(false)}>Pricing</a>
+              <a href="#why" className="py-2 hover:text-slate-900" onClick={handleMobileNavClick}>Why</a>
+              <a href="#brain" className="py-2 hover:text-slate-900" onClick={handleMobileNavClick}>How it works</a>
+              <a href="#brain" className="py-2 hover:text-slate-900" onClick={handleMobileNavClick}>Inside the Brain</a>
+              <a href="#features" className="py-2 hover:text-slate-900" onClick={handleMobileNavClick}>Features</a>
+              <a href="#security" className="py-2 hover:text-slate-900" onClick={handleMobileNavClick}>Security</a>
+              <a href="#cta" className="py-2 hover:text-slate-900" onClick={handleMobileNavClick}>Pricing</a>
               {/* Buttons in dropdown */}
               <a
-                href="#demo"
+                href="#cta"
                 className="mt-2 w-full rounded-xl border border-[--border-subtle] px-4 py-2 text-center text-sm font-medium text-slate-700 hover:bg-[--surface]"
-                onClick={() => setMenuOpen(false)}
+                onClick={handleMobileNavClick}
               >
                 Watch demo
               </a>
@@ -463,7 +489,7 @@ export default function OnboardingAIBotPage() {
                 onMouseLeave={(e) =>
                   (e.currentTarget.style.backgroundColor = brand.primary)
                 }
-                onClick={() => setMenuOpen(false)}
+                onClick={handleMobileNavClick}
               >
                 Start free
               </a>
@@ -475,7 +501,7 @@ export default function OnboardingAIBotPage() {
       {/* Backdrop overlay — outside header for proper stacking */}
       {menuOpen && (
         <div
-          className="fixed inset-0 z-40 bg-transparent md:hidden"
+          className="fixed inset-0 z-30 bg-transparent md:hidden"
           aria-label="Close menu"
           onClick={() => setMenuOpen(false)}
         />
@@ -614,7 +640,7 @@ export default function OnboardingAIBotPage() {
       </section>
 
       {/* WHY THIS MATTERS */}
-      <section id="why" className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+      <section id="why" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 scroll-mt-24">
         <div className="grid items-start gap-10 md:grid-cols-2">
           <div>
             <h2 className="text-3xl font-bold tracking-tight">
@@ -693,7 +719,7 @@ export default function OnboardingAIBotPage() {
       </section>
 
       {/* INSIDE THE PROACTIVE BRAIN — modernized + animated */}
-      <section id="brain" className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+      <section id="brain" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 scroll-mt-24">
         <div className="flex flex-wrap items-start justify-between gap-8">
           <div className="max-w-xl">
             <h2 className="text-3xl font-bold tracking-tight">
@@ -712,7 +738,7 @@ export default function OnboardingAIBotPage() {
       </section>
 
       {/* FEATURES */}
-      <section id="features" className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+      <section id="features" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 scroll-mt-24">
         <div className="flex items-start justify-between gap-6">
           <div>
             <h2 className="text-3xl font-bold tracking-tight">Key Features</h2>
@@ -814,7 +840,7 @@ export default function OnboardingAIBotPage() {
       {/* SECURITY & PRIVACY */}
       <section
         id="security"
-        className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6"
+        className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6 scroll-mt-24"
       >
         <div className="grid gap-8 md:grid-cols-2">
           <div>
@@ -992,7 +1018,7 @@ export default function OnboardingAIBotPage() {
       {/* CTA */}
       <section
         id="cta"
-        className="relative mx-auto max-w-7xl rounded-3xl border border-[--border-subtle] bg-gradient-to-br from-white to-[--brand-primary]/5 px-4 py-16 text-center sm:px-6"
+        className="relative mx-auto max-w-7xl rounded-3xl border border-[--border-subtle] bg-gradient-to-br from-white to-[--brand-primary]/5 px-4 py-16 text-center sm:px-6 scroll-mt-24"
       >
         <h2 className="text-3xl font-bold">
           Let your onboarding explain itself
