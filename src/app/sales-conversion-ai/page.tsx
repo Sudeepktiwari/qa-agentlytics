@@ -56,6 +56,45 @@ export default function SalesConversionAIPage() {
   const [tick, setTick] = useState(0);
   const prefersReducedMotion = useReducedMotion();
 
+  // Mobile menu state and Escape-to-close (match onboarding page)
+  const [menuOpen, setMenuOpen] = useState(false);
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setMenuOpen(false);
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
+
+  // Close menu then smooth-scroll to target anchors (match onboarding handler)
+  const handleMobileNavClick = (
+    e: React.MouseEvent<HTMLAnchorElement, MouseEvent>
+  ) => {
+    const href = (e.currentTarget.getAttribute("href") || "").trim();
+    if (href.startsWith("#")) {
+      e.preventDefault();
+      setMenuOpen(false);
+      const el = document.querySelector(href);
+      if (el) {
+        setTimeout(() => {
+          (el as HTMLElement).scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+          try {
+            history.replaceState(null, "", href);
+          } catch {}
+        }, 0);
+      } else {
+        try {
+          history.replaceState(null, "", href);
+        } catch {}
+      }
+    } else {
+      setMenuOpen(false);
+    }
+  };
+
   useEffect(() => {
     const id = setInterval(() => setTick((t) => t + 1), 2500);
     return () => clearInterval(id);
@@ -136,7 +175,7 @@ export default function SalesConversionAIPage() {
 
   return (
     <div
-      className="relative min-h-screen w-full text-slate-900"
+      className="relative min-h-screen w-full text-slate-900 scroll-smooth"
       style={{
         "--brand-primary": brand.primary,
         "--brand-accent": brand.accent,
@@ -145,6 +184,95 @@ export default function SalesConversionAIPage() {
         "--border-subtle": brand.borderSubtle,
       } as React.CSSProperties & CSSVars}
     >
+      {/* Header — match onboarding mobile menu CSS and structure */}
+      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-xl" style={{ backgroundColor: brand.primary }} />
+            <span className="text-lg font-semibold tracking-tight">Advancelytics</span>
+            <span className="ml-2 rounded-full bg-[--surface] px-2 py-0.5 text-xs font-medium text-slate-600">Sales Conversion AI</span>
+          </div>
+          <nav className="hidden items-center gap-6 text-sm font-medium text-slate-700 md:flex">
+            <a href="#why" className="hover:text-slate-900">Why</a>
+            <a href="#how" className="hover:text-slate-900">How it works</a>
+            <a href="#brain" className="hover:text-slate-900">Inside the Brain</a>
+            <a href="#features" className="hover:text-slate-900">Features</a>
+            <a href="#outcomes" className="hover:text-slate-900">Outcomes</a>
+            <a href="#testimonials" className="hover:text-slate-900">Testimonials</a>
+            <a href="#pricing" className="hover:text-slate-900">Pricing</a>
+          </nav>
+          <div className="flex items-center gap-3">
+            <a href="#cta" className="hidden rounded-xl border border-[--border-subtle] px-4 py-2 text-sm font-medium text-slate-700 hover:bg-[--surface] md:inline-block">Watch demo</a>
+            <a
+              href="#cta"
+              className="hidden rounded-2xl px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:shadow-lg md:inline-block"
+              style={{ backgroundColor: brand.primary }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = brand.primary)}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = brand.primary)}
+            >
+              Start free
+            </a>
+            <button
+              type="button"
+              aria-controls="mobile-menu"
+              aria-expanded={menuOpen ? "true" : "false"}
+              aria-label="Toggle menu"
+              className="md:hidden inline-flex items-center justify-center rounded-md p-2 text-slate-700 hover:bg-slate-100"
+              onClick={() => setMenuOpen((o) => !o)}
+            >
+              <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                {menuOpen ? (
+                  <g>
+                    <path d="M18 6L6 18" />
+                    <path d="M6 6l12 12" />
+                  </g>
+                ) : (
+                  <g>
+                    <path d="M3 6h18" />
+                    <path d="M3 12h18" />
+                    <path d="M3 18h18" />
+                  </g>
+                )}
+              </svg>
+            </button>
+          </div>
+        </div>
+        {/* Mobile menu panel — dropdown under header */}
+        <div
+          id="mobile-menu"
+          aria-hidden={!menuOpen}
+          className={`md:hidden absolute right-0 top-full z-50 w-[60vw] bg-white rounded-b-2xl shadow-lg origin-top-right transform transition-all duration-300 ease-out ${
+            menuOpen ? "opacity-100 translate-y-0 scale-100 pointer-events-auto" : "opacity-0 -translate-y-2 scale-95 pointer-events-none"
+          }`}
+        >
+          <nav className="mx-auto px-4 py-3 sm:px-6">
+            <div className="flex flex-col gap-2 text-sm font-medium text-slate-700">
+              <a href="#why" className="py-2 hover:text-slate-900" onClick={handleMobileNavClick}>Why</a>
+              <a href="#how" className="py-2 hover:text-slate-900" onClick={handleMobileNavClick}>How it works</a>
+              <a href="#brain" className="py-2 hover:text-slate-900" onClick={handleMobileNavClick}>Inside the Brain</a>
+              <a href="#features" className="py-2 hover:text-slate-900" onClick={handleMobileNavClick}>Features</a>
+              <a href="#outcomes" className="py-2 hover:text-slate-900" onClick={handleMobileNavClick}>Outcomes</a>
+              <a href="#testimonials" className="py-2 hover:text-slate-900" onClick={handleMobileNavClick}>Testimonials</a>
+              <a href="#pricing" className="py-2 hover:text-slate-900" onClick={handleMobileNavClick}>Pricing</a>
+              {/* Buttons in dropdown */}
+              <a href="#cta" className="mt-2 w-full rounded-xl border border-[--border-subtle] px-4 py-2 text-center text-sm font-medium text-slate-700 hover:bg-[--surface]" onClick={handleMobileNavClick}>Watch demo</a>
+              <a
+                href="#cta"
+                className="inline-flex w-full items-center justify-center rounded-2xl px-4 py-2 text-center text-sm font-semibold text-white shadow-md transition hover:shadow-lg"
+                style={{ backgroundColor: brand.primary }}
+                onClick={handleMobileNavClick}
+              >
+                Start free
+              </a>
+            </div>
+          </nav>
+        </div>
+      </header>
+
+      {/* Backdrop overlay — outside header for proper stacking */}
+      {menuOpen && (
+        <div className="fixed inset-0 z-30 bg-transparent md:hidden" aria-label="Close menu" onClick={() => setMenuOpen(false)} />
+      )}
       {/* 0) Invisible SEO helper for keyword variants (non-indexed in canvas, illustrative only) */}
       <p className="sr-only">
         sales conversion AI, proactive chatbot, SDR automation software
@@ -170,7 +298,7 @@ export default function SalesConversionAIPage() {
               Every minute delay costs a demo — don’t let interest slip away.
             </p>
             <div className="mt-8 flex justify-center gap-3 lg:justify-start">
-              <CTAPulse href="#demo" variant="primary" label="Watch demo">
+              <CTAPulse href="#cta" variant="primary" label="Watch demo">
                 Watch Demo
               </CTAPulse>
               <CTAPulse
@@ -286,7 +414,7 @@ export default function SalesConversionAIPage() {
                     Peak intent detected
                   </div>
                   <CTAPulse
-                    href="#demo"
+                    href="#cta"
                     variant="primary"
                     label="Book demo from chat"
                   >
@@ -300,7 +428,7 @@ export default function SalesConversionAIPage() {
       </section>
 
       {/* 2) WHY IT MATTERS */}
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+      <section id="why" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 scroll-mt-24">
         <div className="grid items-start gap-10 lg:grid-cols-2">
           <div>
             <h2 className="text-3xl font-bold tracking-tight">
@@ -341,7 +469,7 @@ export default function SalesConversionAIPage() {
       </section>
 
       {/* 3) HOW IT WORKS */}
-      <section className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6">
+      <section id="how" className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6 scroll-mt-24">
         <h2 className="text-3xl font-bold tracking-tight text-center">
           How It Works
         </h2>
@@ -502,7 +630,7 @@ export default function SalesConversionAIPage() {
       </section>
 
       {/* 4) INSIDE THE PROACTIVE BRAIN */}
-      <section className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6">
+      <section id="brain" className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 scroll-mt-24">
         <h2 className="text-center text-3xl font-bold tracking-tight">
           Inside the Proactive Brain
         </h2>
@@ -647,7 +775,7 @@ export default function SalesConversionAIPage() {
       </section>
 
       {/* 5) KEY FEATURES */}
-      <section className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6">
+      <section id="features" className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6 scroll-mt-24">
         <h2 className="text-3xl font-bold tracking-tight text-center">
           Key Features
         </h2>
@@ -750,7 +878,7 @@ export default function SalesConversionAIPage() {
       </section>
 
       {/* 6) REAL IMPACT */}
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+      <section id="outcomes" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 scroll-mt-24">
         <h2 className="text-3xl font-bold tracking-tight">
           Real Impact — Revenue that Speaks
         </h2>
@@ -775,7 +903,8 @@ export default function SalesConversionAIPage() {
 
       {/* 7) TESTIMONIALS */}
       <section
-        className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6"
+        id="testimonials"
+        className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6 scroll-mt-24"
         data-testid="testimonials"
       >
         <h2 className="text-3xl font-bold tracking-tight text-center">
@@ -903,7 +1032,7 @@ export default function SalesConversionAIPage() {
       {/* 7.5) PRICING TEASER */}
       <section
         id="pricing"
-        className="mx-auto max-w-7xl px-4 py-16 sm:px-6"
+        className="mx-auto max-w-7xl px-4 py-16 sm:px-6 scroll-mt-24"
         data-testid="pricing"
       >
         <div className="rounded-3xl border border-[--border-subtle] bg-white p-6 sm:p-10">
@@ -959,7 +1088,7 @@ export default function SalesConversionAIPage() {
       {/* 8) CTA */}
       <section
         id="cta"
-        className="mx-auto max-w-7xl rounded-3xl border border-[--border-subtle] bg-gradient-to-br from-white to-[--brand-primary]/5 px-4 py-16 text-center sm:px-6"
+        className="mx-auto max-w-7xl rounded-3xl border border-[--border-subtle] bg-gradient-to-br from-white to-[--brand-primary]/5 px-4 py-16 text-center sm:px-6 scroll-mt-24"
       >
         <h2 className="text-3xl font-bold">
           Boost Conversions with Intelligent Engagement
@@ -972,7 +1101,7 @@ export default function SalesConversionAIPage() {
           <CTAPulse href="#" variant="primary" label="Get started">
             Get Started
           </CTAPulse>
-          <CTAPulse href="#demo" variant="secondary" label="Request demo">
+          <CTAPulse href="#cta" variant="secondary" label="Request demo">
             Request Demo
           </CTAPulse>
         </div>
