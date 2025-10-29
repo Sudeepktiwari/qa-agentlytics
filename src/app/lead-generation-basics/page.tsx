@@ -162,7 +162,7 @@ export default function LeadGenerationPage() {
 
   return (
     <div
-      className="relative min-h-screen w-full text-slate-900 antialiased"
+      className="relative min-h-screen w-full overflow-x-hidden text-slate-900 antialiased"
       style={styleVars}
     >
       {/*
