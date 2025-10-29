@@ -1018,9 +1018,45 @@ export default function CustomerSupportAIPage() {
     return () => clearInterval(id);
   }, [testimonials.length]);
 
+  // Mobile menu state and Escape-to-close
+  const [menuOpen, setMenuOpen] = useState(false);
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setMenuOpen(false);
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
+
+  // Close menu then smooth-scroll to target anchors for reliable navigation
+  const handleMobileNavClick = (
+    e: React.MouseEvent<HTMLAnchorElement, MouseEvent>
+  ) => {
+    const href = (e.currentTarget.getAttribute("href") || "").trim();
+    if (href.startsWith("#")) {
+      e.preventDefault();
+      setMenuOpen(false);
+      const el = document.querySelector(href);
+      if (el) {
+        setTimeout(() => {
+          (el as HTMLElement).scrollIntoView({ behavior: "smooth", block: "start" });
+          try {
+            history.replaceState(null, "", href);
+          } catch {}
+        }, 0);
+      } else {
+        try {
+          history.replaceState(null, "", href);
+        } catch {}
+      }
+    } else {
+      setMenuOpen(false);
+    }
+  };
+
   return (
     <div
-      className="relative min-h-screen w-full text-slate-900 antialiased"
+      className="relative min-h-screen w-full text-slate-900 antialiased scroll-smooth"
       style={
         {
           "--brand-primary": brand.primary,
@@ -1077,21 +1113,98 @@ export default function CustomerSupportAIPage() {
           </nav>
           <div className="flex items-center gap-3">
             <a
-              href="#demo"
+              href="#cta"
               className="hidden rounded-xl border border-[--border-subtle] px-4 py-2 text-sm font-medium text-slate-700 hover:bg-[--surface] md:inline-block"
             >
               Watch demo
             </a>
             <a
               href="#cta"
-              className="rounded-2xl px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:shadow-lg"
+              className="hidden rounded-2xl px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:shadow-lg md:inline-block"
               style={{ backgroundColor: brand.primary }}
             >
               Start Free — Boost CSAT Today
             </a>
+            {/* Mobile menu toggle */}
+            <button
+              type="button"
+              aria-controls="mobile-menu"
+              aria-expanded={menuOpen ? "true" : "false"}
+              aria-label="Toggle menu"
+              className="md:hidden inline-flex items-center justify-center rounded-md p-2 text-slate-700 hover:bg-slate-100"
+              onClick={() => setMenuOpen((o) => !o)}
+            >
+              <svg
+                className="h-6 w-6"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                {menuOpen ? (
+                  <g>
+                    <path d="M18 6L6 18" />
+                    <path d="M6 6l12 12" />
+                  </g>
+                ) : (
+                  <g>
+                    <path d="M3 6h18" />
+                    <path d="M3 12h18" />
+                    <path d="M3 18h18" />
+                  </g>
+                )}
+              </svg>
+            </button>
           </div>
         </div>
+        {/* Mobile menu panel */}
+        <div
+          id="mobile-menu"
+          aria-hidden={!menuOpen}
+          className={`md:hidden absolute right-0 top-full z-50 w-[60vw] border-t border-l border-slate-200 bg-white rounded-b-2xl shadow-lg origin-top-right transform transition-all duration-300 ease-out ${
+            menuOpen
+              ? "opacity-100 translate-y-0 scale-100 pointer-events-auto"
+              : "opacity-0 -translate-y-2 scale-95 pointer-events-none"
+          }`}
+        >
+          <nav className="mx-auto px-4 py-3 sm:px-6">
+            <div className="flex flex-col gap-2 text-sm font-medium text-slate-700">
+              <a href="#why" className="py-2 hover:text-slate-900" onClick={handleMobileNavClick}>Why</a>
+              <a href="#how" className="py-2 hover:text-slate-900" onClick={handleMobileNavClick}>How it works</a>
+              <a href="#plan" className="py-2 hover:text-slate-900" onClick={handleMobileNavClick}>Plan</a>
+              <a href="#features" className="py-2 hover:text-slate-900" onClick={handleMobileNavClick}>Features</a>
+              <a href="#testimonials" className="py-2 hover:text-slate-900" onClick={handleMobileNavClick}>Proof</a>
+              <a href="#cta" className="py-2 hover:text-slate-900" onClick={handleMobileNavClick}>Pricing</a>
+              <a
+                href="#cta"
+                className="mt-2 w-full rounded-xl border border-[--border-subtle] px-4 py-2 text-center text-sm font-medium text-slate-700 hover:bg-[--surface]"
+                onClick={handleMobileNavClick}
+              >
+                Watch demo
+              </a>
+              <a
+                href="#cta"
+                className="inline-flex w-full items-center justify-center rounded-2xl px-4 py-2 text-center text-sm font-semibold text-white shadow-md transition hover:shadow-lg"
+                style={{ backgroundColor: brand.primary }}
+                onClick={handleMobileNavClick}
+              >
+                Start free
+              </a>
+            </div>
+          </nav>
+        </div>
       </header>
+
+      {/* Backdrop overlay — outside header for proper stacking */}
+      {menuOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-transparent md:hidden"
+          aria-label="Close menu"
+          onClick={() => setMenuOpen(false)}
+        />
+      )}
 
       {/* HERO */}
       <section className="relative isolate rounded-b-[2rem] bg-[--surface] py-20 px-4 sm:px-6">
@@ -1121,7 +1234,7 @@ export default function CustomerSupportAIPage() {
                 Start Free — Boost CSAT Today
               </a>
               <a
-                href="#demo"
+                href="#cta"
                 className="rounded-2xl border border-[--brand-primary] px-6 py-3 text-sm font-semibold text-[--brand-primary] transition hover:text-white"
                 onMouseEnter={(e) =>
                   (e.currentTarget.style.background = `linear-gradient(90deg, ${brand.primary} 0%, ${brand.accent} 100%)`)
@@ -1226,7 +1339,7 @@ export default function CustomerSupportAIPage() {
       </section>
 
       {/* WHY THIS MATTERS */}
-      <section id="why" className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+      <section id="why" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 scroll-mt-24">
         {/* Local animation styles */}
         <style>{`
           @keyframes floatIn {
@@ -1408,7 +1521,7 @@ export default function CustomerSupportAIPage() {
       {/* HOW IT WORKS */}
       <section
         id="how"
-        className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6"
+        className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6 scroll-mt-24"
       >
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div>
@@ -1576,7 +1689,7 @@ export default function CustomerSupportAIPage() {
       </section>
 
       {/* STORYBRAND PLAN */}
-      <section id="plan" className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+      <section id="plan" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 scroll-mt-24">
         <div className="text-center">
           <h2 className="text-3xl font-bold tracking-tight">
             Your 3‑step plan
@@ -1630,7 +1743,7 @@ export default function CustomerSupportAIPage() {
       </section>
 
       {/* FEATURES */}
-      <section id="features" className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+      <section id="features" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 scroll-mt-24">
         <div className="flex items-start justify-between gap-6">
           <div>
             <h2 className="text-3xl font-bold tracking-tight">Key Features</h2>
@@ -1709,7 +1822,7 @@ export default function CustomerSupportAIPage() {
       </section>
 
       {/* OUTCOMES */}
-      <section id="outcomes" className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+      <section id="outcomes" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 scroll-mt-24">
         <h2 className="text-3xl font-bold tracking-tight">
           Customer support that compounds
         </h2>
@@ -1734,7 +1847,7 @@ export default function CustomerSupportAIPage() {
       {/* TESTIMONIALS — Carousel */}
       <section
         id="testimonials"
-        className="mx-auto max-w-7xl px-4 py-16 sm:px-6"
+        className="mx-auto max-w-7xl px-4 py-16 sm:px-6 scroll-mt-24"
       >
         <div className="flex items-end justify-between gap-6">
           <div>
@@ -1848,7 +1961,7 @@ export default function CustomerSupportAIPage() {
       {/* CTA */}
       <section
         id="cta"
-        className="relative mx-auto max-w-7xl rounded-3xl border border-[--border-subtle] bg-gradient-to-br from-white to-[--brand-primary]/5 px-4 py-16 text-center sm:px-6"
+        className="relative mx-auto max-w-7xl rounded-3xl border border-[--border-subtle] bg-gradient-to-br from-white to-[--brand-primary]/5 px-4 py-16 text-center sm:px-6 scroll-mt-24"
       >
         <h2 className="text-3xl font-bold">
           Empower your support with proactive intelligence
