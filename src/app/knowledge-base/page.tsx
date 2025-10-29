@@ -95,7 +95,10 @@ export default function KnowledgeBasePage() {
       const el = document.querySelector(href);
       if (el) {
         setTimeout(() => {
-          (el as HTMLElement).scrollIntoView({ behavior: "smooth", block: "start" });
+          (el as HTMLElement).scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
           try {
             history.replaceState(null, "", href);
           } catch {}
@@ -161,7 +164,7 @@ export default function KnowledgeBasePage() {
       />
 
       {/* ===== NAVBAR ===== */}
-      <header className="sticky top-0 z-40 border-b border-[--border-subtle] bg-white/80 backdrop-blur">
+      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-0 py-3 sm:px-6">
           <div className="flex items-center gap-3 px-4 sm:px-0">
             <div className="h-8 w-8 rounded-xl bg-[--brand-primary]" />
@@ -221,7 +224,7 @@ export default function KnowledgeBasePage() {
         <div
           id="mobileMenu"
           aria-hidden={!isMobileMenuOpen}
-          className={`md:hidden absolute right-0 top-full z-50 w-[60vw] border-t border-l border-[--border-subtle] bg-white rounded-b-2xl shadow-lg origin-top-right transform transition-all duration-300 ease-out ${
+          className={`md:hidden absolute right-0 top-full z-50 w-[60vw] bg-white rounded-b-2xl shadow-lg origin-top-right transform transition-all duration-300 ease-out ${
             isMobileMenuOpen
               ? "opacity-100 translate-y-0 scale-100 pointer-events-auto"
               : "opacity-0 -translate-y-2 scale-95 pointer-events-none"
@@ -265,21 +268,21 @@ export default function KnowledgeBasePage() {
                 FAQ
               </a>
               <div className="my-2 border-t border-[--border-subtle]" />
-                <a
-                  href="#demo"
-                  className="mt-2 w-full rounded-xl border border-[--border-subtle] px-4 py-2 text-center text-sm font-medium text-slate-700 hover:bg-[--surface]"
-                  onClick={handleMobileNavClick}
-                >
-                  Watch demo
-                </a>
-                <a
-                  href="#cta"
-                  className="w-full rounded-2xl px-4 py-2 text-center text-sm font-semibold text-white shadow-md transition hover:shadow-lg"
-                  style={{ backgroundColor: brand.primary }}
-                  onClick={handleMobileNavClick}
-                >
-                  Start free
-                </a>
+              <a
+                href="#demo"
+                className="mt-2 w-full rounded-xl border border-[--border-subtle] px-4 py-2 text-center text-sm font-medium text-slate-700 hover:bg-[--surface]"
+                onClick={handleMobileNavClick}
+              >
+                Watch demo
+              </a>
+              <a
+                href="#cta"
+                className="w-full rounded-2xl px-4 py-2 text-center text-sm font-semibold text-white shadow-md transition hover:shadow-lg"
+                style={{ backgroundColor: brand.primary }}
+                onClick={handleMobileNavClick}
+              >
+                Start free
+              </a>
             </div>
           </nav>
         </div>
@@ -404,8 +407,8 @@ export default function KnowledgeBasePage() {
         id="why"
         className="mx-auto max-w-7xl rounded-3xl bg-white/60 px-0 py-12 shadow-[inset_0_1px_0_var(--border-subtle)] backdrop-blur-[2px] sm:px-6 scroll-mt-24"
       >
-          <div className="grid items-center gap-10 px-4 sm:px-0 md:grid-cols-2">
-            <div>
+        <div className="grid items-center gap-10 px-4 sm:px-0 md:grid-cols-2">
+          <div>
             <h2 className="text-3xl font-bold tracking-tight">
               Why a unified knowledge base matters
             </h2>
@@ -537,107 +540,114 @@ export default function KnowledgeBasePage() {
         <div className="px-4 sm:px-0">
           {/* Header Row */}
           <div className="flex flex-wrap items-start justify-between gap-6">
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight">How it works</h2>
-            <p className="mt-3 max-w-2xl text-slate-600">
-              Capture, organize, enable, and optimize — all in one place.
-            </p>
+            <div>
+              <h2 className="text-3xl font-bold tracking-tight">
+                How it works
+              </h2>
+              <p className="mt-3 max-w-2xl text-slate-600">
+                Capture, organize, enable, and optimize — all in one place.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="rounded-full bg-[--brand-primary]/10 px-3 py-1 text-xs font-semibold text-[--brand-primary]">
+                Signal-ready
+              </span>
+              <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                Privacy-aware
+              </span>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="rounded-full bg-[--brand-primary]/10 px-3 py-1 text-xs font-semibold text-[--brand-primary]">
-              Signal-ready
-            </span>
-            <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-              Privacy-aware
-            </span>
-          </div>
-        </div>
 
-        {/* Modern Stepper Grid */}
-        <div className="relative mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {[
-            {
-              k: "1",
-              t: "Capture & Import",
-              d: "Bring in existing docs, FAQs, PDFs and chat transcripts.",
-            },
-            {
-              k: "2",
-              t: "Organize & Tag",
-              d: "Categories, entities and synonyms power smarter search.",
-            },
-            {
-              k: "3",
-              t: "Enable Everywhere",
-              d: "Expose in chat, portal and product with one toggle.",
-            },
-            {
-              k: "4",
-              t: "Optimize & Evolve",
-              d: "Analytics reveal gaps; improve articles iteratively.",
-            },
-          ].map((c, idx) => (
-            <div
-              key={c.k}
-              className="group relative overflow-hidden rounded-2xl border border-[--border-subtle] bg-white p-6 shadow-sm transition duration-300 hover:shadow-md"
-            >
-              {/* Glow / Accent */}
+          {/* Modern Stepper Grid */}
+          <div className="relative mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              {
+                k: "1",
+                t: "Capture & Import",
+                d: "Bring in existing docs, FAQs, PDFs and chat transcripts.",
+              },
+              {
+                k: "2",
+                t: "Organize & Tag",
+                d: "Categories, entities and synonyms power smarter search.",
+              },
+              {
+                k: "3",
+                t: "Enable Everywhere",
+                d: "Expose in chat, portal and product with one toggle.",
+              },
+              {
+                k: "4",
+                t: "Optimize & Evolve",
+                d: "Analytics reveal gaps; improve articles iteratively.",
+              },
+            ].map((c, idx) => (
               <div
-                className="pointer-events-none absolute inset-px rounded-2xl opacity-0 blur-xl transition-opacity duration-300 group-hover:opacity-100"
-                style={{
-                  background: `radial-gradient(300px 160px at 30% 0%, ${brand.primary}14 0%, transparent 70%)`,
-                }}
-                aria-hidden
-              />
+                key={c.k}
+                className="group relative overflow-hidden rounded-2xl border border-[--border-subtle] bg-white p-6 shadow-sm transition duration-300 hover:shadow-md"
+              >
+                {/* Glow / Accent */}
+                <div
+                  className="pointer-events-none absolute inset-px rounded-2xl opacity-0 blur-xl transition-opacity duration-300 group-hover:opacity-100"
+                  style={{
+                    background: `radial-gradient(300px 160px at 30% 0%, ${brand.primary}14 0%, transparent 70%)`,
+                  }}
+                  aria-hidden
+                />
 
-              {/* Step Badge */}
-              <div className="flex items-center gap-3">
-                <div className="grid h-10 w-10 place-items-center rounded-xl bg-[--brand-primary]/10 text-sm font-bold text-[--brand-primary]">
-                  {c.k}
+                {/* Step Badge */}
+                <div className="flex items-center gap-3">
+                  <div className="grid h-10 w-10 place-items-center rounded-xl bg-[--brand-primary]/10 text-sm font-bold text-[--brand-primary]">
+                    {c.k}
+                  </div>
+                  <h3 className="text-lg font-semibold text-slate-900">
+                    {c.t}
+                  </h3>
                 </div>
-                <h3 className="text-lg font-semibold text-slate-900">{c.t}</h3>
+
+                <p className="mt-3 text-sm leading-6 text-slate-600">{c.d}</p>
+
+                {/* Progress underline */}
+                <div className="mt-5 h-1 w-0 rounded bg-[--brand-primary] transition-all duration-500 group-hover:w-20" />
+
+                {/* Connectors (only on larger screens) */}
+                {idx !== 3 && (
+                  <div className="absolute right-[-12px] top-[38px] hidden h-px w-6 bg-gradient-to-r from-[--border-subtle] to-transparent lg:block" />
+                )}
               </div>
-
-              <p className="mt-3 text-sm leading-6 text-slate-600">{c.d}</p>
-
-              {/* Progress underline */}
-              <div className="mt-5 h-1 w-0 rounded bg-[--brand-primary] transition-all duration-500 group-hover:w-20" />
-
-              {/* Connectors (only on larger screens) */}
-              {idx !== 3 && (
-                <div className="absolute right-[-12px] top-[38px] hidden h-px w-6 bg-gradient-to-r from-[--border-subtle] to-transparent lg:block" />
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* Inline Tips Row */}
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {[
-            {
-              label: "Import sources",
-              value: "Notion · Confluence · Drive · HTML · PDF",
-            },
-            { label: "Tagging helpers", value: "Synonyms · Entities · Owners" },
-            {
-              label: "Channels",
-              value: "Chat Widget · Help Center · In-product",
-            },
-            {
-              label: "Optimization",
-              value: "No-result queries · CTR · Article health",
-            },
-          ].map(({ label, value }) => (
-            <div
-              key={label}
-              className="rounded-xl border border-[--border-subtle] bg-white p-4 text-xs"
-            >
-              <div className="font-semibold text-slate-700">{label}</div>
-              <div className="mt-1 text-slate-500">{value}</div>
-            </div>
-          ))}
-        </div>
+            ))}
           </div>
+
+          {/* Inline Tips Row */}
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              {
+                label: "Import sources",
+                value: "Notion · Confluence · Drive · HTML · PDF",
+              },
+              {
+                label: "Tagging helpers",
+                value: "Synonyms · Entities · Owners",
+              },
+              {
+                label: "Channels",
+                value: "Chat Widget · Help Center · In-product",
+              },
+              {
+                label: "Optimization",
+                value: "No-result queries · CTR · Article health",
+              },
+            ].map(({ label, value }) => (
+              <div
+                key={label}
+                className="rounded-xl border border-[--border-subtle] bg-white p-4 text-xs"
+              >
+                <div className="font-semibold text-slate-700">{label}</div>
+                <div className="mt-1 text-slate-500">{value}</div>
+              </div>
+            ))}
+          </div>
+        </div>
       </section>
 
       {/* ===== FEATURES ===== */}
@@ -645,78 +655,79 @@ export default function KnowledgeBasePage() {
         id="features"
         className="mx-auto max-w-7xl rounded-3xl bg-white px-0 py-14 shadow-sm ring-1 ring-[--border-subtle] sm:px-6 scroll-mt-24"
       >
-          <div className="px-4 sm:px-0">
-            <div className="flex items-start justify-between gap-6">
-          <div>
-            <h2 className="text-balance text-3xl font-bold tracking-tight">
-              Core features
-            </h2>
-            <p className="mt-3 max-w-2xl text-slate-600">
-              Everything you need to make content useful, and keep it that way.
-            </p>
-          </div>
-          <div className="hidden items-center gap-2 md:flex">
-            <span className="rounded-full bg-[--brand-primary]/10 px-3 py-1 text-xs font-semibold text-[--brand-primary]">
-              Built-in analytics
-            </span>
-            <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-              Team workflows
-            </span>
-          </div>
-        </div>
-
-        <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {[
-            {
-              icon: "🔎",
-              t: "Smart search",
-              d: "Natural-language queries, typo-tolerant and context-aware suggestions.",
-            },
-            {
-              icon: "📚",
-              t: "Unified repository",
-              d: "Centralize internal and external knowledge in one place.",
-            },
-            {
-              icon: "📈",
-              t: "Gap analytics",
-              d: "Track no-result queries and article performance to fill gaps.",
-            },
-            {
-              icon: "✍️",
-              t: "Authoring & versioning",
-              d: "Simple editor, drafts, approvals and change history.",
-            },
-            {
-              icon: "🔐",
-              t: "Permissions & roles",
-              d: "Control access with RBAC and private collections.",
-            },
-            {
-              icon: "🌐",
-              t: "Multichannel delivery",
-              d: "Serve content in chat, help center, app and mobile.",
-            },
-          ].map((b, i) => (
-            <div
-              key={i}
-              className="group relative overflow-hidden rounded-2xl border border-[--border-subtle] bg-white p-6 shadow-sm transition hover:shadow-md"
-            >
-              <div className="relative z-10">
-                <div className="flex items-center gap-3">
-                  <div className="grid h-10 w-10 place-items-center rounded-lg bg-[--brand-primary]/10 text-xl text-[--brand-primary]">
-                    {b.icon}
-                  </div>
-                  <h3 className="text-lg font-semibold text-slate-800">
-                    {b.t}
-                  </h3>
-                </div>
-                <p className="mt-2 text-sm text-slate-600">{b.d}</p>
-              </div>
+        <div className="px-4 sm:px-0">
+          <div className="flex items-start justify-between gap-6">
+            <div>
+              <h2 className="text-balance text-3xl font-bold tracking-tight">
+                Core features
+              </h2>
+              <p className="mt-3 max-w-2xl text-slate-600">
+                Everything you need to make content useful, and keep it that
+                way.
+              </p>
             </div>
-          ))}
-        </div>
+            <div className="hidden items-center gap-2 md:flex">
+              <span className="rounded-full bg-[--brand-primary]/10 px-3 py-1 text-xs font-semibold text-[--brand-primary]">
+                Built-in analytics
+              </span>
+              <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                Team workflows
+              </span>
+            </div>
           </div>
+
+          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {[
+              {
+                icon: "🔎",
+                t: "Smart search",
+                d: "Natural-language queries, typo-tolerant and context-aware suggestions.",
+              },
+              {
+                icon: "📚",
+                t: "Unified repository",
+                d: "Centralize internal and external knowledge in one place.",
+              },
+              {
+                icon: "📈",
+                t: "Gap analytics",
+                d: "Track no-result queries and article performance to fill gaps.",
+              },
+              {
+                icon: "✍️",
+                t: "Authoring & versioning",
+                d: "Simple editor, drafts, approvals and change history.",
+              },
+              {
+                icon: "🔐",
+                t: "Permissions & roles",
+                d: "Control access with RBAC and private collections.",
+              },
+              {
+                icon: "🌐",
+                t: "Multichannel delivery",
+                d: "Serve content in chat, help center, app and mobile.",
+              },
+            ].map((b, i) => (
+              <div
+                key={i}
+                className="group relative overflow-hidden rounded-2xl border border-[--border-subtle] bg-white p-6 shadow-sm transition hover:shadow-md"
+              >
+                <div className="relative z-10">
+                  <div className="flex items-center gap-3">
+                    <div className="grid h-10 w-10 place-items-center rounded-lg bg-[--brand-primary]/10 text-xl text-[--brand-primary]">
+                      {b.icon}
+                    </div>
+                    <h3 className="text-lg font-semibold text-slate-800">
+                      {b.t}
+                    </h3>
+                  </div>
+                  <p className="mt-2 text-sm text-slate-600">{b.d}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </section>
 
       {/* ===== COMPARE ===== */}
@@ -726,112 +737,112 @@ export default function KnowledgeBasePage() {
       >
         <div className="px-4 sm:px-0">
           <div className="flex items-center justify-between gap-4">
-          <div>
-            <h2 className="text-balance text-3xl font-bold tracking-tight">
-              Traditional KB vs Advancelytics KB
-            </h2>
-            <p className="mt-3 max-w-2xl text-slate-600">
-              Reactive content sits and waits. Our KB powers proactive answers
-              in the moment of need.
-            </p>
-          </div>
-          <div className="hidden md:block">
-            <span className="rounded-full bg-[--brand-primary]/10 px-3 py-1 text-xs font-semibold text-[--brand-primary]">
-              Lifecycle-aware
-            </span>
-            <span className="ml-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-              Agent-integrated
-            </span>
-          </div>
+            <div>
+              <h2 className="text-balance text-3xl font-bold tracking-tight">
+                Traditional KB vs Advancelytics KB
+              </h2>
+              <p className="mt-3 max-w-2xl text-slate-600">
+                Reactive content sits and waits. Our KB powers proactive answers
+                in the moment of need.
+              </p>
+            </div>
+            <div className="hidden md:block">
+              <span className="rounded-full bg-[--brand-primary]/10 px-3 py-1 text-xs font-semibold text-[--brand-primary]">
+                Lifecycle-aware
+              </span>
+              <span className="ml-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                Agent-integrated
+              </span>
+            </div>
           </div>
 
           <div className="mt-8 grid gap-6 md:grid-cols-2">
-          {/* Traditional */}
-          <div className="group relative overflow-hidden rounded-2xl border border-[--border-subtle] bg-white p-6 shadow-sm">
-            <h3 className="text-lg font-semibold">Traditional KB</h3>
-            <ul className="mt-4 space-y-3 text-sm text-slate-600">
-              {[
-                "Relies on users to search manually",
-                "Limited understanding of intent",
-                "Articles often go stale",
-                "No insight into what is missing",
-              ].map((t) => (
-                <li key={t} className="flex items-start gap-3">
-                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-300" />
-                  {t}
-                </li>
-              ))}
-            </ul>
-            <div className="mt-6 grid grid-cols-3 gap-3">
-              {[
-                { k: "Static", v: "Experience" },
-                { k: "Low", v: "Find rate" },
-                { k: "Manual", v: "Upkeep" },
-              ].map((m) => (
-                <div
-                  key={m.v}
-                  className="rounded-xl border border-[--border-subtle] bg-[--surface] p-3 text-center"
-                >
-                  <div className="text-base font-bold text-slate-800">
-                    {m.k}
+            {/* Traditional */}
+            <div className="group relative overflow-hidden rounded-2xl border border-[--border-subtle] bg-white p-6 shadow-sm">
+              <h3 className="text-lg font-semibold">Traditional KB</h3>
+              <ul className="mt-4 space-y-3 text-sm text-slate-600">
+                {[
+                  "Relies on users to search manually",
+                  "Limited understanding of intent",
+                  "Articles often go stale",
+                  "No insight into what is missing",
+                ].map((t) => (
+                  <li key={t} className="flex items-start gap-3">
+                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-300" />
+                    {t}
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-6 grid grid-cols-3 gap-3">
+                {[
+                  { k: "Static", v: "Experience" },
+                  { k: "Low", v: "Find rate" },
+                  { k: "Manual", v: "Upkeep" },
+                ].map((m) => (
+                  <div
+                    key={m.v}
+                    className="rounded-xl border border-[--border-subtle] bg-[--surface] p-3 text-center"
+                  >
+                    <div className="text-base font-bold text-slate-800">
+                      {m.k}
+                    </div>
+                    <div className="text-[11px] text-slate-500">{m.v}</div>
                   </div>
-                  <div className="text-[11px] text-slate-500">{m.v}</div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
 
-          {/* Advancelytics */}
-          <div className="group relative overflow-hidden rounded-2xl border border-[--border-subtle] bg-white p-6 shadow-[0_8px_30px_rgba(0,106,255,0.08)] transition hover:shadow-[0_10px_40px_rgba(0,106,255,0.15)]">
-            <h3 className="text-lg font-semibold text-[--brand-primary]">
-              Advancelytics KB
-            </h3>
-            <ul className="mt-4 space-y-3 text-sm text-slate-700">
-              {[
-                "Proactive surfacing based on behavior signals",
-                "Intent-aware suggestions in chat and portal",
-                "Auto-gap detection and content recommendations",
-                "Unified answers across channels",
-              ].map((t) => (
-                <li key={t} className="flex items-start gap-3">
-                  <Check className="mt-0.5 h-5 w-5 text-[--brand-primary]" />
-                  {t}
-                </li>
-              ))}
-            </ul>
-            <div className="mt-6 grid grid-cols-3 gap-3">
-              {[
-                { k: "Dynamic", v: "Experience" },
-                { k: "High", v: "Find rate" },
-                { k: "Continuous", v: "Improvement" },
-              ].map((m) => (
-                <div
-                  key={m.v}
-                  className="rounded-xl border border-[--brand-primary]/20 bg-white p-3 text-center shadow-sm"
-                >
-                  <div className="text-base font-bold text-[--brand-primary]">
-                    {m.k}
+            {/* Advancelytics */}
+            <div className="group relative overflow-hidden rounded-2xl border border-[--border-subtle] bg-white p-6 shadow-[0_8px_30px_rgba(0,106,255,0.08)] transition hover:shadow-[0_10px_40px_rgba(0,106,255,0.15)]">
+              <h3 className="text-lg font-semibold text-[--brand-primary]">
+                Advancelytics KB
+              </h3>
+              <ul className="mt-4 space-y-3 text-sm text-slate-700">
+                {[
+                  "Proactive surfacing based on behavior signals",
+                  "Intent-aware suggestions in chat and portal",
+                  "Auto-gap detection and content recommendations",
+                  "Unified answers across channels",
+                ].map((t) => (
+                  <li key={t} className="flex items-start gap-3">
+                    <Check className="mt-0.5 h-5 w-5 text-[--brand-primary]" />
+                    {t}
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-6 grid grid-cols-3 gap-3">
+                {[
+                  { k: "Dynamic", v: "Experience" },
+                  { k: "High", v: "Find rate" },
+                  { k: "Continuous", v: "Improvement" },
+                ].map((m) => (
+                  <div
+                    key={m.v}
+                    className="rounded-xl border border-[--brand-primary]/20 bg-white p-3 text-center shadow-sm"
+                  >
+                    <div className="text-base font-bold text-[--brand-primary]">
+                      {m.k}
+                    </div>
+                    <div className="text-[11px] text-slate-500">{m.v}</div>
                   </div>
-                  <div className="text-[11px] text-slate-500">{m.v}</div>
-                </div>
-              ))}
+                ))}
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2 text-[11px]">
+                {[
+                  "Search intent",
+                  "Pricing help",
+                  "Onboarding tips",
+                  "Troubleshooting",
+                ].map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded-full border border-[--brand-primary]/20 bg-[--brand-primary]/5 px-2.5 py-1 text-[--brand-primary]"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
             </div>
-            <div className="mt-4 flex flex-wrap gap-2 text-[11px]">
-              {[
-                "Search intent",
-                "Pricing help",
-                "Onboarding tips",
-                "Troubleshooting",
-              ].map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded-full border border-[--brand-primary]/20 bg-[--brand-primary]/5 px-2.5 py-1 text-[--brand-primary]"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          </div>
           </div>
         </div>
       </section>
@@ -912,36 +923,41 @@ export default function KnowledgeBasePage() {
       </section>
 
       {/* ===== FAQ ===== */}
-      <section id="faq" className="mx-auto max-w-7xl px-0 py-16 sm:px-6 scroll-mt-24">
+      <section
+        id="faq"
+        className="mx-auto max-w-7xl px-0 py-16 sm:px-6 scroll-mt-24"
+      >
         <div className="px-4 sm:px-0">
-          <h2 className="text-balance text-3xl font-bold tracking-tight">FAQ</h2>
+          <h2 className="text-balance text-3xl font-bold tracking-tight">
+            FAQ
+          </h2>
           <div className="mt-6 divide-y divide-slate-200 overflow-hidden rounded-2xl border border-[--border-subtle] bg-white">
-          {[
-            {
-              q: "Can we import existing docs?",
-              a: "Yes. Upload markdown, HTML or PDFs, or sync from tools like Notion, Confluence or Google Drive.",
-            },
-            {
-              q: "Does it work with the Proactive Agent?",
-              a: "Yes. The agent uses KB content to craft answers and proactive prompts, keeping context across channels.",
-            },
-            {
-              q: "How long does setup take?",
-              a: "Most teams go live in minutes using the import wizard and presets.",
-            },
-            {
-              q: "What analytics are included?",
-              a: "Search trends, click-through, no-result queries, article performance and satisfaction scores.",
-            },
-          ].map((f) => (
-            <details key={f.q} className="group">
-              <summary className="cursor-pointer list-none px-5 py-4 text-sm font-semibold text-slate-800 transition hover:bg-[--surface]">
-                {f.q}
-              </summary>
-              <div className="px-5 pb-5 text-sm text-slate-600">{f.a}</div>
-              <div className="h-px w-full bg-slate-200" />
-            </details>
-          ))}
+            {[
+              {
+                q: "Can we import existing docs?",
+                a: "Yes. Upload markdown, HTML or PDFs, or sync from tools like Notion, Confluence or Google Drive.",
+              },
+              {
+                q: "Does it work with the Proactive Agent?",
+                a: "Yes. The agent uses KB content to craft answers and proactive prompts, keeping context across channels.",
+              },
+              {
+                q: "How long does setup take?",
+                a: "Most teams go live in minutes using the import wizard and presets.",
+              },
+              {
+                q: "What analytics are included?",
+                a: "Search trends, click-through, no-result queries, article performance and satisfaction scores.",
+              },
+            ].map((f) => (
+              <details key={f.q} className="group">
+                <summary className="cursor-pointer list-none px-5 py-4 text-sm font-semibold text-slate-800 transition hover:bg-[--surface]">
+                  {f.q}
+                </summary>
+                <div className="px-5 pb-5 text-sm text-slate-600">{f.a}</div>
+                <div className="h-px w-full bg-slate-200" />
+              </details>
+            ))}
           </div>
         </div>
       </section>
@@ -1052,22 +1068,22 @@ export default function KnowledgeBasePage() {
       <footer className="border-t border-[--border-subtle] bg-white">
         <div className="mx-auto max-w-7xl px-0 py-8 text-sm text-slate-500 sm:px-6">
           <div className="px-4 sm:px-0">
-          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-            <p>
-              © {new Date().getFullYear()} Advancelytics. All rights reserved.
-            </p>
-            <div className="flex flex-wrap gap-4">
-              <a href="#" className="hover:text-slate-700">
-                Privacy
-              </a>
-              <a href="#" className="hover:text-slate-700">
-                Terms
-              </a>
-              <a href="#" className="hover:text-slate-700">
-                Contact
-              </a>
+            <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+              <p>
+                © {new Date().getFullYear()} Advancelytics. All rights reserved.
+              </p>
+              <div className="flex flex-wrap gap-4">
+                <a href="#" className="hover:text-slate-700">
+                  Privacy
+                </a>
+                <a href="#" className="hover:text-slate-700">
+                  Terms
+                </a>
+                <a href="#" className="hover:text-slate-700">
+                  Contact
+                </a>
+              </div>
             </div>
-          </div>
           </div>
         </div>
       </footer>

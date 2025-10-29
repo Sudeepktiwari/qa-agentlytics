@@ -49,7 +49,8 @@ function BrainList() {
   const [active, setActive] = useState(0);
   useEffect(() => {
     const onTick = (e: Event) => {
-      if (e && typeof (e as CustomEvent).detail === "number") setActive((e as CustomEvent).detail);
+      if (e && typeof (e as CustomEvent).detail === "number")
+        setActive((e as CustomEvent).detail);
     };
     window.addEventListener("brain-tick", onTick);
     return () => window.removeEventListener("brain-tick", onTick);
@@ -261,7 +262,10 @@ export default function OnboardingAIBotPage() {
       const el = document.querySelector(href);
       if (el) {
         setTimeout(() => {
-          (el as HTMLElement).scrollIntoView({ behavior: "smooth", block: "start" });
+          (el as HTMLElement).scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
           try {
             history.replaceState(null, "", href);
           } catch {}
@@ -343,13 +347,13 @@ export default function OnboardingAIBotPage() {
       ref={containerRef}
       className="relative min-h-screen w-full overflow-x-hidden text-slate-900 antialiased scroll-smooth"
       style={
-        ({
+        {
           "--brand-primary": brand.primary,
           "--brand-accent": brand.accent,
           "--surface": brand.surface,
           "--surface-alt": brand.surfaceAlt,
           "--border-subtle": brand.borderSubtle,
-        } as React.CSSProperties)
+        } as React.CSSProperties
       }
     >
       {/* Background */}
@@ -365,7 +369,7 @@ export default function OnboardingAIBotPage() {
       />
 
       {/* NAVBAR */}
-      <header className="sticky top-0 z-40 border-b border-[--border-subtle] bg-white/80 backdrop-blur">
+      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-2">
             <div
@@ -457,7 +461,7 @@ export default function OnboardingAIBotPage() {
         <div
           id="mobile-menu"
           aria-hidden={!menuOpen}
-          className={`md:hidden absolute right-0 top-full z-50 w-[60vw] border-t border-l border-slate-200 bg-white rounded-b-2xl shadow-lg origin-top-right transform transition-all duration-300 ease-out ${
+          className={`md:hidden absolute right-0 top-full z-50 w-[60vw] bg-white rounded-b-2xl shadow-lg origin-top-right transform transition-all duration-300 ease-out ${
             menuOpen
               ? "opacity-100 translate-y-0 scale-100 pointer-events-auto"
               : "opacity-0 -translate-y-2 scale-95 pointer-events-none"
@@ -465,12 +469,48 @@ export default function OnboardingAIBotPage() {
         >
           <nav className="mx-auto px-4 py-3 sm:px-6">
             <div className="flex flex-col gap-2 text-sm font-medium text-slate-700">
-              <a href="#why" className="py-2 hover:text-slate-900" onClick={handleMobileNavClick}>Why</a>
-              <a href="#brain" className="py-2 hover:text-slate-900" onClick={handleMobileNavClick}>How it works</a>
-              <a href="#brain" className="py-2 hover:text-slate-900" onClick={handleMobileNavClick}>Inside the Brain</a>
-              <a href="#features" className="py-2 hover:text-slate-900" onClick={handleMobileNavClick}>Features</a>
-              <a href="#security" className="py-2 hover:text-slate-900" onClick={handleMobileNavClick}>Security</a>
-              <a href="#cta" className="py-2 hover:text-slate-900" onClick={handleMobileNavClick}>Pricing</a>
+              <a
+                href="#why"
+                className="py-2 hover:text-slate-900"
+                onClick={handleMobileNavClick}
+              >
+                Why
+              </a>
+              <a
+                href="#brain"
+                className="py-2 hover:text-slate-900"
+                onClick={handleMobileNavClick}
+              >
+                How it works
+              </a>
+              <a
+                href="#brain"
+                className="py-2 hover:text-slate-900"
+                onClick={handleMobileNavClick}
+              >
+                Inside the Brain
+              </a>
+              <a
+                href="#features"
+                className="py-2 hover:text-slate-900"
+                onClick={handleMobileNavClick}
+              >
+                Features
+              </a>
+              <a
+                href="#security"
+                className="py-2 hover:text-slate-900"
+                onClick={handleMobileNavClick}
+              >
+                Security
+              </a>
+              <a
+                href="#cta"
+                className="py-2 hover:text-slate-900"
+                onClick={handleMobileNavClick}
+              >
+                Pricing
+              </a>
               {/* Buttons in dropdown */}
               <a
                 href="#cta"
@@ -640,7 +680,10 @@ export default function OnboardingAIBotPage() {
       </section>
 
       {/* WHY THIS MATTERS */}
-      <section id="why" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 scroll-mt-24">
+      <section
+        id="why"
+        className="mx-auto max-w-7xl px-4 py-16 sm:px-6 scroll-mt-24"
+      >
         <div className="grid items-start gap-10 md:grid-cols-2">
           <div>
             <h2 className="text-3xl font-bold tracking-tight">
@@ -719,7 +762,10 @@ export default function OnboardingAIBotPage() {
       </section>
 
       {/* INSIDE THE PROACTIVE BRAIN — modernized + animated */}
-      <section id="brain" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 scroll-mt-24">
+      <section
+        id="brain"
+        className="mx-auto max-w-7xl px-4 py-16 sm:px-6 scroll-mt-24"
+      >
         <div className="flex flex-wrap items-start justify-between gap-8">
           <div className="max-w-xl">
             <h2 className="text-3xl font-bold tracking-tight">
@@ -738,7 +784,10 @@ export default function OnboardingAIBotPage() {
       </section>
 
       {/* FEATURES */}
-      <section id="features" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 scroll-mt-24">
+      <section
+        id="features"
+        className="mx-auto max-w-7xl px-4 py-16 sm:px-6 scroll-mt-24"
+      >
         <div className="flex items-start justify-between gap-6">
           <div>
             <h2 className="text-3xl font-bold tracking-tight">Key Features</h2>

@@ -162,7 +162,10 @@ export default function LeadGenerationPage() {
       const el = document.querySelector(href);
       if (el) {
         setTimeout(() => {
-          (el as HTMLElement).scrollIntoView({ behavior: "smooth", block: "start" });
+          (el as HTMLElement).scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
           try {
             history.replaceState(null, "", href);
           } catch {}
@@ -229,7 +232,7 @@ export default function LeadGenerationPage() {
       />
 
       {/* NAVBAR */}
-      <header className="sticky top-0 z-40 border-b border-[--border-subtle] bg-white/80 backdrop-blur">
+      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-xl bg-[--brand-primary]" />
@@ -317,7 +320,7 @@ export default function LeadGenerationPage() {
         <div
           id="mobile-menu"
           aria-hidden={!menuOpen}
-          className={`md:hidden absolute right-0 top-full z-50 w-[60vw] border-t border-l border-slate-200 bg-white rounded-b-2xl shadow-lg origin-top-right transform transition-all duration-300 ease-out ${
+          className={`md:hidden absolute right-0 top-full z-50 w-[60vw] bg-white rounded-b-2xl shadow-lg origin-top-right transform transition-all duration-300 ease-out ${
             menuOpen
               ? "opacity-100 translate-y-0 scale-100 pointer-events-auto"
               : "opacity-0 -translate-y-2 scale-95 pointer-events-none"
@@ -495,7 +498,10 @@ export default function LeadGenerationPage() {
       </section>
 
       {/* TRUSTED BY / LOGOS + Inline Testimonials */}
-      <section id="logos" className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 scroll-mt-24">
+      <section
+        id="logos"
+        className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 scroll-mt-24"
+      >
         <div className="rounded-2xl border border-[--border-subtle] bg-white/70 p-4">
           <p className="text-center text-sm font-semibold text-slate-600">
             Trusted by teams at
@@ -567,7 +573,10 @@ export default function LeadGenerationPage() {
       </section>
 
       {/* WHY SECTION with Before→After mini-graphic */}
-      <section id="why" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 scroll-mt-24">
+      <section
+        id="why"
+        className="mx-auto max-w-7xl px-4 py-16 sm:px-6 scroll-mt-24"
+      >
         <div className="grid items-center gap-10 md:grid-cols-2">
           <div>
             <h2 className="text-3xl font-bold tracking-tight">
@@ -785,7 +794,10 @@ export default function LeadGenerationPage() {
       </section>
 
       {/* FEATURES */}
-      <section id="features" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 scroll-mt-24">
+      <section
+        id="features"
+        className="mx-auto max-w-7xl px-4 py-16 sm:px-6 scroll-mt-24"
+      >
         <div className="flex items-start justify-between gap-6">
           <div>
             <h2 className="text-3xl font-bold tracking-tight">Key Features</h2>

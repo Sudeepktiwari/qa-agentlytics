@@ -1039,7 +1039,10 @@ export default function CustomerSupportAIPage() {
       const el = document.querySelector(href);
       if (el) {
         setTimeout(() => {
-          (el as HTMLElement).scrollIntoView({ behavior: "smooth", block: "start" });
+          (el as HTMLElement).scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
           try {
             history.replaceState(null, "", href);
           } catch {}
@@ -1080,7 +1083,7 @@ export default function CustomerSupportAIPage() {
       />
 
       {/* NAVBAR */}
-      <header className="sticky top-0 z-40 border-b border-[--border-subtle] bg-white/80 backdrop-blur">
+      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-xl bg-[--brand-primary]" />
@@ -1163,7 +1166,7 @@ export default function CustomerSupportAIPage() {
         <div
           id="mobile-menu"
           aria-hidden={!menuOpen}
-          className={`md:hidden absolute right-0 top-full z-50 w-[60vw] border-t border-l border-slate-200 bg-white rounded-b-2xl shadow-lg origin-top-right transform transition-all duration-300 ease-out ${
+          className={`md:hidden absolute right-0 top-full z-50 w-[60vw] bg-white rounded-b-2xl shadow-lg origin-top-right transform transition-all duration-300 ease-out ${
             menuOpen
               ? "opacity-100 translate-y-0 scale-100 pointer-events-auto"
               : "opacity-0 -translate-y-2 scale-95 pointer-events-none"
@@ -1171,12 +1174,48 @@ export default function CustomerSupportAIPage() {
         >
           <nav className="mx-auto px-4 py-3 sm:px-6">
             <div className="flex flex-col gap-2 text-sm font-medium text-slate-700">
-              <a href="#why" className="py-2 hover:text-slate-900" onClick={handleMobileNavClick}>Why</a>
-              <a href="#how" className="py-2 hover:text-slate-900" onClick={handleMobileNavClick}>How it works</a>
-              <a href="#plan" className="py-2 hover:text-slate-900" onClick={handleMobileNavClick}>Plan</a>
-              <a href="#features" className="py-2 hover:text-slate-900" onClick={handleMobileNavClick}>Features</a>
-              <a href="#testimonials" className="py-2 hover:text-slate-900" onClick={handleMobileNavClick}>Proof</a>
-              <a href="#cta" className="py-2 hover:text-slate-900" onClick={handleMobileNavClick}>Pricing</a>
+              <a
+                href="#why"
+                className="py-2 hover:text-slate-900"
+                onClick={handleMobileNavClick}
+              >
+                Why
+              </a>
+              <a
+                href="#how"
+                className="py-2 hover:text-slate-900"
+                onClick={handleMobileNavClick}
+              >
+                How it works
+              </a>
+              <a
+                href="#plan"
+                className="py-2 hover:text-slate-900"
+                onClick={handleMobileNavClick}
+              >
+                Plan
+              </a>
+              <a
+                href="#features"
+                className="py-2 hover:text-slate-900"
+                onClick={handleMobileNavClick}
+              >
+                Features
+              </a>
+              <a
+                href="#testimonials"
+                className="py-2 hover:text-slate-900"
+                onClick={handleMobileNavClick}
+              >
+                Proof
+              </a>
+              <a
+                href="#cta"
+                className="py-2 hover:text-slate-900"
+                onClick={handleMobileNavClick}
+              >
+                Pricing
+              </a>
               <a
                 href="#cta"
                 className="mt-2 w-full rounded-xl border border-[--border-subtle] px-4 py-2 text-center text-sm font-medium text-slate-700 hover:bg-[--surface]"
@@ -1339,7 +1378,10 @@ export default function CustomerSupportAIPage() {
       </section>
 
       {/* WHY THIS MATTERS */}
-      <section id="why" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 scroll-mt-24">
+      <section
+        id="why"
+        className="mx-auto max-w-7xl px-4 py-16 sm:px-6 scroll-mt-24"
+      >
         {/* Local animation styles */}
         <style>{`
           @keyframes floatIn {
@@ -1689,7 +1731,10 @@ export default function CustomerSupportAIPage() {
       </section>
 
       {/* STORYBRAND PLAN */}
-      <section id="plan" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 scroll-mt-24">
+      <section
+        id="plan"
+        className="mx-auto max-w-7xl px-4 py-16 sm:px-6 scroll-mt-24"
+      >
         <div className="text-center">
           <h2 className="text-3xl font-bold tracking-tight">
             Your 3‑step plan
@@ -1743,7 +1788,10 @@ export default function CustomerSupportAIPage() {
       </section>
 
       {/* FEATURES */}
-      <section id="features" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 scroll-mt-24">
+      <section
+        id="features"
+        className="mx-auto max-w-7xl px-4 py-16 sm:px-6 scroll-mt-24"
+      >
         <div className="flex items-start justify-between gap-6">
           <div>
             <h2 className="text-3xl font-bold tracking-tight">Key Features</h2>
@@ -1822,7 +1870,10 @@ export default function CustomerSupportAIPage() {
       </section>
 
       {/* OUTCOMES */}
-      <section id="outcomes" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 scroll-mt-24">
+      <section
+        id="outcomes"
+        className="mx-auto max-w-7xl px-4 py-16 sm:px-6 scroll-mt-24"
+      >
         <h2 className="text-3xl font-bold tracking-tight">
           Customer support that compounds
         </h2>
