@@ -1059,7 +1059,7 @@ export default function CustomerSupportAIPage() {
 
   return (
     <div
-      className="relative min-h-screen w-full text-slate-900 antialiased scroll-smooth"
+      className="relative min-h-screen w-full text-slate-900 antialiased scroll-smooth overflow-x-hidden"
       style={
         {
           "--brand-primary": brand.primary,
@@ -1246,7 +1246,7 @@ export default function CustomerSupportAIPage() {
       )}
 
       {/* HERO */}
-      <section className="relative isolate rounded-b-[2rem] bg-[--surface] py-20 px-4 sm:px-6">
+      <section id="why" className="relative isolate rounded-b-[2rem] bg-[--surface] py-20 px-4 sm:px-6 scroll-mt-24">
         <div
           className="pointer-events-none absolute -top-24 right-[-10%] h-[420px] w-[420px] rounded-full blur-3xl"
           style={{
