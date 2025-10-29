@@ -2022,7 +2022,7 @@ export default function CustomerSupportAIPage() {
       {/* CTA */}
       <section
         id="cta"
-        className="relative mx-auto max-w-7xl rounded-3xl border border-[--border-subtle] bg-gradient-to-br from-white to-[--brand-primary]/5 px-4 py-16 text-center sm:px-6 scroll-mt-24"
+        className="relative mx-4 sm:mx-auto max-w-7xl rounded-3xl border border-[--border-subtle] bg-gradient-to-br from-white to-[--brand-primary]/5 px-4 py-16 text-center sm:px-6 scroll-mt-24"
       >
         <h2 className="text-3xl font-bold">
           Empower your support with proactive intelligence
