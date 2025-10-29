@@ -121,22 +121,45 @@ export default function KnowledgeAutomationPage() {
       }
     >
       {/* NAVBAR */}
-      <header className="sticky top-0 z-40 border-b border-[--border-subtle] bg-white/80 backdrop-blur">
+      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur">
         <div className="relative mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-xl bg-[--brand-primary]" />
-            <span className="text-lg font-semibold tracking-tight">Advancelytics</span>
-            <span className="ml-2 rounded-full bg-[--surface] px-2 py-0.5 text-xs font-medium text-slate-600">Knowledge Automation</span>
+            <span className="text-lg font-semibold tracking-tight">
+              Advancelytics
+            </span>
+            <span className="ml-2 rounded-full bg-[--surface] px-2 py-0.5 text-xs font-medium text-slate-600">
+              Knowledge Automation
+            </span>
           </div>
           <nav className="hidden items-center gap-6 text-sm font-medium text-slate-700 md:flex">
-            <a href="#why" className="hover:text-slate-900">Why</a>
-            <a href="#how" className="hover:text-slate-900">How it works</a>
-            <a href="#features" className="hover:text-slate-900">Features</a>
-            <a href="#cta" className="hover:text-slate-900">Pricing</a>
+            <a href="#why" className="hover:text-slate-900">
+              Why
+            </a>
+            <a href="#how" className="hover:text-slate-900">
+              How it works
+            </a>
+            <a href="#features" className="hover:text-slate-900">
+              Features
+            </a>
+            <a href="#cta" className="hover:text-slate-900">
+              Pricing
+            </a>
           </nav>
           <div className="flex items-center gap-3">
-            <a href="#demo" className="hidden rounded-xl border border-[--border-subtle] px-4 py-2 text-sm font-medium text-slate-700 hover:bg-[--surface] md:inline-block">Watch demo</a>
-            <a href="#cta" className="hidden rounded-2xl px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:shadow-lg md:inline-block" style={{ backgroundColor: brand.primary }}>Start free</a>
+            <a
+              href="#demo"
+              className="hidden rounded-xl border border-[--border-subtle] px-4 py-2 text-sm font-medium text-slate-700 hover:bg-[--surface] md:inline-block"
+            >
+              Watch demo
+            </a>
+            <a
+              href="#cta"
+              className="hidden rounded-2xl px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:shadow-lg md:inline-block"
+              style={{ backgroundColor: brand.primary }}
+            >
+              Start free
+            </a>
             {/* Mobile menu toggle */}
             <button
               type="button"
@@ -146,7 +169,15 @@ export default function KnowledgeAutomationPage() {
               className="md:hidden inline-flex items-center justify-center rounded-md p-2 text-slate-700 hover:bg-slate-100"
               onClick={() => setMenuOpen((o) => !o)}
             >
-              <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                className="h-6 w-6"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 {menuOpen ? (
                   <g>
                     <path d="M18 6L6 18" />
@@ -168,16 +199,48 @@ export default function KnowledgeAutomationPage() {
             id="mobile-menu"
             aria-hidden={!menuOpen}
             className={`md:hidden absolute right-0 top-full z-50 w-[60vw] bg-white rounded-b-2xl shadow-lg origin-top-right transform transition-all duration-300 ease-out ${
-              menuOpen ? "opacity-100 translate-y-0 scale-100 pointer-events-auto" : "opacity-0 -translate-y-2 scale-95 pointer-events-none"
+              menuOpen
+                ? "opacity-100 translate-y-0 scale-100 pointer-events-auto"
+                : "opacity-0 -translate-y-2 scale-95 pointer-events-none"
             }`}
           >
             <nav className="mx-auto px-4 py-3 sm:px-6">
               <div className="flex flex-col gap-2 text-sm font-medium text-slate-700">
-                <a href="#why" className="py-2 hover:text-slate-900" onClick={handleMobileNavClick}>Why</a>
-                <a href="#how" className="py-2 hover:text-slate-900" onClick={handleMobileNavClick}>How it works</a>
-                <a href="#features" className="py-2 hover:text-slate-900" onClick={handleMobileNavClick}>Features</a>
-                <a href="#cta" className="py-2 hover:text-slate-900" onClick={handleMobileNavClick}>Pricing</a>
-                <a href="#demo" className="mt-2 w-full rounded-xl border border-[--border-subtle] px-4 py-2 text-center text-sm font-medium text-slate-700 hover:bg-[--surface]" onClick={handleMobileNavClick}>Watch demo</a>
+                <a
+                  href="#why"
+                  className="py-2 hover:text-slate-900"
+                  onClick={handleMobileNavClick}
+                >
+                  Why
+                </a>
+                <a
+                  href="#how"
+                  className="py-2 hover:text-slate-900"
+                  onClick={handleMobileNavClick}
+                >
+                  How it works
+                </a>
+                <a
+                  href="#features"
+                  className="py-2 hover:text-slate-900"
+                  onClick={handleMobileNavClick}
+                >
+                  Features
+                </a>
+                <a
+                  href="#cta"
+                  className="py-2 hover:text-slate-900"
+                  onClick={handleMobileNavClick}
+                >
+                  Pricing
+                </a>
+                <a
+                  href="#demo"
+                  className="mt-2 w-full rounded-xl border border-[--border-subtle] px-4 py-2 text-center text-sm font-medium text-slate-700 hover:bg-[--surface]"
+                  onClick={handleMobileNavClick}
+                >
+                  Watch demo
+                </a>
                 <a
                   href="#cta"
                   className="inline-flex w-full items-center justify-center rounded-2xl px-4 py-2 text-center text-sm font-semibold text-white shadow-md transition hover:shadow-lg"
@@ -194,7 +257,11 @@ export default function KnowledgeAutomationPage() {
 
       {/* Backdrop overlay — outside header for proper stacking */}
       {menuOpen && (
-        <div className="fixed inset-0 z-30 bg-transparent md:hidden" aria-label="Close menu" onClick={() => setMenuOpen(false)} />
+        <div
+          className="fixed inset-0 z-30 bg-transparent md:hidden"
+          aria-label="Close menu"
+          onClick={() => setMenuOpen(false)}
+        />
       )}
 
       {/* 1) HERO */}
@@ -357,7 +424,10 @@ export default function KnowledgeAutomationPage() {
       </section>
 
       {/* 2) WHY MANUAL KNOWLEDGE FAILS */}
-      <section id="why" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 scroll-mt-24">
+      <section
+        id="why"
+        className="mx-auto max-w-7xl px-4 py-16 sm:px-6 scroll-mt-24"
+      >
         <div className="grid items-start gap-10 lg:grid-cols-2">
           {/* Left copy */}
           <div>
