@@ -132,7 +132,7 @@ export default function OnboardingAutomationPage() {
 
   return (
     <div
-      className="relative min-h-screen w-full text-slate-900 scroll-smooth"
+      className="relative min-h-screen w-full text-slate-900 scroll-smooth overflow-x-hidden"
       style={
         {
           "--brand-primary": brand.primary,
@@ -1038,7 +1038,7 @@ export default function OnboardingAutomationPage() {
           <p className="text-center text-xs font-semibold tracking-wide text-slate-500">
             TRUSTED BY GTM TEAMS AT
           </p>
-          <div className="mt-4 grid grid-cols-3 items-center gap-6 sm:gap-10">
+          <div className="mt-4 grid grid-cols-2 items-center gap-6 sm:grid-cols-3 sm:gap-10">
             {["CloudScale", "FinServe", "DevSuite"].map((logo) => (
               <div
                 key={logo}
