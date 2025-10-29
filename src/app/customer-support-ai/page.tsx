@@ -1611,14 +1611,16 @@ export default function CustomerSupportAIPage() {
             ].map((s, i) => (
               <motion.div
                 key={s.n}
-                initial={{ opacity: 0, y: 10 }}
+                initial={false}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{
-                  delay: i * 0.12,
-                  duration: 0.45,
-                  ease: "easeOut",
+                  type: "tween",
+                  ease: [0.22, 1, 0.36, 1],
+                  duration: 0.35,
+                  delay: i * 0.06,
                 }}
-                className="group relative rounded-2xl border border-[--border-subtle] bg-white p-5 shadow-sm transition hover:shadow-md"
+                className="group relative rounded-2xl border border-[--border-subtle] bg-white p-5 shadow-sm transition hover:shadow-md transform-gpu"
+                style={{ willChange: "transform" }}
               >
                 {i < 3 && (
                   <div className="absolute left-6 top-[64px] hidden h-8 w-px bg-gradient-to-b from-[--border-subtle] to-transparent md:block" />
@@ -1675,14 +1677,15 @@ export default function CustomerSupportAIPage() {
                   Billing → Refund • Technical → Login • Product → Feature
                   request
                 </div>
-                <div className="mt-3 min-h-[34px] flex flex-wrap gap-2 text-[11px]">
-                  <AnimatePresence initial={false}>
+                <motion.div layout className="mt-3 min-h-[34px] flex flex-wrap gap-2 text-[11px]" style={{ willChange: "transform" }}>
+                  <AnimatePresence initial={false} mode="popLayout">
                     {rollingActions.map((a) => (
                       <motion.button
+                        layout
                         key={`${a.txt}-${tick}`}
-                        initial={{ opacity: 0, y: 6 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -6 }}
+                        initial={{ opacity: 0, x: -8 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 8 }}
                         transition={{ duration: 0.35, ease: "easeOut" }}
                         className="rounded-full border border-[--brand-primary]/20 bg-white px-3 py-1 font-medium text-[--brand-primary] hover:bg-[--brand-primary]/5"
                       >
@@ -1690,7 +1693,7 @@ export default function CustomerSupportAIPage() {
                       </motion.button>
                     ))}
                   </AnimatePresence>
-                </div>
+                </motion.div>
               </div>
 
               {/* progress bar (looping) */}

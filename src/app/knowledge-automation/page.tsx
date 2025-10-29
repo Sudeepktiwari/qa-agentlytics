@@ -709,18 +709,19 @@ export default function KnowledgeAutomationPage() {
                 <div className="mt-1 text-sm text-slate-800">
                   Topics • Entities • Synonyms
                 </div>
-                <div className="mt-3 min-h-[34px] flex flex-wrap gap-2 text-[11px]">
-                  <AnimatePresence initial={false}>
+                <motion.div layout className="mt-3 min-h-[34px] flex flex-wrap gap-2 text-[11px]" style={{ willChange: "transform" }}>
+                  <AnimatePresence initial={false} mode="popLayout">
                     {categories
                       .slice(tick % categories.length)
                       .concat(categories.slice(0, tick % categories.length))
                       .slice(0, 3)
                       .map((a, i) => (
                         <motion.button
+                          layout
                           key={`${a.k}-${i}-${tick}`}
-                          initial={{ opacity: 0, y: 6 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -6 }}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: 10 }}
                           transition={{ duration: 0.35, ease: "easeOut" }}
                           className="rounded-full border border-[--brand-primary]/20 bg-white px-3 py-1 font-medium text-[--brand-primary] hover:bg-[--brand-primary]/5"
                         >
@@ -728,7 +729,7 @@ export default function KnowledgeAutomationPage() {
                         </motion.button>
                       ))}
                   </AnimatePresence>
-                </div>
+                </motion.div>
               </div>
 
               {/* Stage 3: Progress shimmer + donut */}

@@ -563,14 +563,15 @@ export default function SalesConversionAIPage() {
                 <div className="mt-1 text-sm text-slate-800">
                   Plan compare • ROI sheet • Calendar handoff
                 </div>
-                <div className="mt-3 min-h-[34px] flex flex-wrap gap-2 text-[11px]">
-                  <AnimatePresence initial={false}>
+                <motion.div layout className="mt-3 min-h-[34px] flex flex-wrap gap-2 text-[11px]" style={{ willChange: "transform" }}>
+                  <AnimatePresence initial={false} mode="popLayout">
                     {rollingActions.map((a) => (
                       <motion.button
+                        layout
                         key={`${a.txt}-${tick}`}
-                        initial={{ opacity: 0, y: 6 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -6 }}
+                        initial={{ opacity: 0, x: -8 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 8 }}
                         transition={{ duration: 0.35, ease: "easeOut" }}
                         className="rounded-full border border-[--brand-primary]/20 bg-white px-3 py-1 font-medium text-[--brand-primary] hover:bg-[--brand-primary]/5"
                         aria-label={a.txt}
@@ -579,7 +580,7 @@ export default function SalesConversionAIPage() {
                       </motion.button>
                     ))}
                   </AnimatePresence>
-                </div>
+                </motion.div>
               </div>
 
               <div
