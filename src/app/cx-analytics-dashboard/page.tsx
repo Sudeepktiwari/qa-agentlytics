@@ -96,6 +96,8 @@ export default function KnowledgeAutomationPage() {
   };
   const [tick, setTick] = useState(0);
   const prefersReducedMotion = useReducedMotion();
+  // Mobile menu state
+  const [menuOpen, setMenuOpen] = useState(false);
 
   // Inject meta keywords (no next/head dependency)
   useEffect(() => {
@@ -115,6 +117,38 @@ export default function KnowledgeAutomationPage() {
     const id = setInterval(() => setTick((t) => t + 1), 2500);
     return () => clearInterval(id);
   }, []);
+
+  // Close mobile menu on Escape
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenuOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  const handleMobileNavClick = (
+    e: React.MouseEvent<HTMLAnchorElement, MouseEvent>
+  ) => {
+    const href = (e.currentTarget.getAttribute("href") || "").trim();
+    if (href.startsWith("#")) {
+      e.preventDefault();
+      const id = href.slice(1);
+      let el = document.getElementById(id);
+      if (!el && id === "demo") {
+        el = document.getElementById("cta");
+      }
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+        try {
+          history.replaceState(null, "", `#${id}`);
+        } catch {}
+      }
+      setMenuOpen(false);
+    } else {
+      setMenuOpen(false);
+    }
+  };
 
   // Illustration data
   const heroChips = useMemo(
@@ -192,7 +226,7 @@ export default function KnowledgeAutomationPage() {
 
   return (
     <div
-      className="relative min-h-screen w-full text-slate-900"
+      className="relative min-h-screen w-full text-slate-900 scroll-smooth"
       style={{
         "--brand-primary": brand.primary,
         "--brand-accent": brand.accent,
@@ -201,6 +235,59 @@ export default function KnowledgeAutomationPage() {
         "--border-subtle": brand.borderSubtle,
       } as React.CSSProperties & CSSVars}
     >
+      {/* Header */}
+      <header className="sticky top-0 z-40 border-b border-[--border-subtle] bg-white/80 backdrop-blur">
+        <div className="relative mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-xl bg-[--brand-primary]" />
+            <span className="text-lg font-semibold tracking-tight">Advancelytics</span>
+            <span className="ml-2 rounded-full bg-[--surface] px-2 py-0.5 text-xs font-medium text-slate-600">CX Analytics Dashboard</span>
+          </div>
+          <nav className="hidden items-center gap-6 text-sm font-medium text-slate-700 md:flex">
+            <a href="#why" className="hover:text-slate-900">Why</a>
+            <a href="#how" className="hover:text-slate-900">How it works</a>
+            <a href="#features" className="hover:text-slate-900">Features</a>
+            <a href="#cta" className="hover:text-slate-900">Pricing</a>
+          </nav>
+          <div className="flex items-center gap-3">
+            <a href="#demo" className="hidden rounded-xl border border-[--border-subtle] px-4 py-2 text-sm font-medium text-slate-700 hover:bg-[--surface] md:inline-block">Watch demo</a>
+            <a href="#cta" className="hidden rounded-2xl px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:shadow-lg md:inline-block" style={{ backgroundColor: brand.primary }}>Start free</a>
+            {/* Mobile menu toggle */}
+            <button
+              onClick={() => setMenuOpen((v) => !v)}
+              className="inline-flex size-10 items-center justify-center rounded-lg border border-slate-300 md:hidden"
+              aria-label="Toggle menu"
+            >
+              ☰
+            </button>
+          </div>
+
+          {/* Mobile menu panel */}
+          <div className={`absolute right-0 top-full w-full bg-transparent md:hidden ${menuOpen ? "" : "pointer-events-none"}`}>
+            <div className={`ml-auto w-1/2 rounded-b-lg border border-[--border-subtle] bg-white shadow-sm transition-all duration-200 ${menuOpen ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"}`}>
+              <nav className="grid gap-2 px-6 py-4 text-slate-800">
+                <a href="#why" onClick={handleMobileNavClick} className="rounded px-2 py-2 hover:bg-slate-50">Why</a>
+                <a href="#how" onClick={handleMobileNavClick} className="rounded px-2 py-2 hover:bg-slate-50">How it works</a>
+                <a href="#features" onClick={handleMobileNavClick} className="rounded px-2 py-2 hover:bg-slate-50">Features</a>
+                <a href="#cta" onClick={handleMobileNavClick} className="rounded px-2 py-2 hover:bg-slate-50">Pricing</a>
+                <div className="mt-2 flex gap-3 border-t border-[--border-subtle] pt-3">
+                  <a href="#demo" onClick={handleMobileNavClick} className="inline-flex items-center gap-2 rounded-lg border border-[--border-subtle] px-4 py-2">Watch demo</a>
+                  <a href="#cta" onClick={handleMobileNavClick} className="inline-flex items-center gap-2 rounded-lg bg-[--brand-primary] px-4 py-2 text-white">Start free</a>
+                </div>
+              </nav>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Backdrop overlay */}
+      {menuOpen && (
+        <button
+          aria-label="Close menu"
+          className="fixed inset-0 z-30 bg-transparent md:hidden"
+          onClick={() => setMenuOpen(false)}
+        />
+      )}
       {/* 1) HERO */}
       <section className="relative isolate rounded-b-[2rem] bg-[--surface] px-4 py-20 sm:px-6">
         <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-2">
@@ -424,7 +511,7 @@ export default function KnowledgeAutomationPage() {
       </section>
 
       {/* 2) WHY MANUAL KNOWLEDGE FAILS */}
-      <section id="why" className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+      <section id="why" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 scroll-mt-24">
         <div className="grid items-start gap-10 lg:grid-cols-2">
           {/* Left copy */}
           <div>
@@ -577,7 +664,7 @@ export default function KnowledgeAutomationPage() {
       {/* 3) HOW IT WORKS */}
       <section
         id="how"
-        className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6"
+        className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6 scroll-mt-24"
       >
         {/* Title row */}
         <div className="flex flex-wrap items-start justify-between gap-6">
@@ -824,7 +911,7 @@ export default function KnowledgeAutomationPage() {
       {/* 4) INSIDE THE KNOWLEDGE BRAIN */}
       <section
         id="brain"
-        className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6"
+        className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 scroll-mt-24"
       >
         <h2 className="text-center text-3xl font-bold tracking-tight">
           Inside the Knowledge Brain
@@ -951,7 +1038,7 @@ export default function KnowledgeAutomationPage() {
       {/* 5) KEY FEATURES */}
       <section
         id="features"
-        className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6"
+        className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6 scroll-mt-24"
       >
         <h2 className="text-3xl font-bold tracking-tight text-center">
           Key Features
@@ -1033,7 +1120,7 @@ export default function KnowledgeAutomationPage() {
       {/* 7) TESTIMONIALS */}
       <section
         id="testimonials"
-        className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6"
+        className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6 scroll-mt-24"
       >
         <h2 className="text-3xl font-bold tracking-tight text-center">
           What Teams Are Saying
@@ -1132,7 +1219,7 @@ export default function KnowledgeAutomationPage() {
       {/* 8) CTA */}
       <section
         id="cta"
-        className="mx-auto max-w-7xl rounded-3xl border border-[--border-subtle] bg-gradient-to-br from-white to-[--brand-primary]/5 px-4 py-16 text-center sm:px-6"
+        className="mx-auto max-w-7xl rounded-3xl border border-[--border-subtle] bg-gradient-to-br from-white to-[--brand-primary]/5 px-4 py-16 text-center sm:px-6 scroll-mt-24"
       >
         <h2 className="text-3xl font-bold">Make Knowledge Work for You</h2>
         <p className="mx-auto mt-2 max-w-2xl text-slate-600">

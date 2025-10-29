@@ -16,14 +16,47 @@ const brand = {
 
 export default function KnowledgeAutomationPage() {
   const [tick, setTick] = useState(0);
-  // Add mobile menu state
-  const [mobileOpen, setMobileOpen] = useState(false);
+  // Mobile menu state
+  const [menuOpen, setMenuOpen] = useState(false);
   const prefersReducedMotion = useReducedMotion();
 
   useEffect(() => {
     const id = setInterval(() => setTick((t) => t + 1), 2500);
     return () => clearInterval(id);
   }, []);
+
+  // Close mobile menu on Escape
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenuOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  // Smooth-scroll + close handler
+  const handleMobileNavClick = (
+    e: React.MouseEvent<HTMLAnchorElement, MouseEvent>
+  ) => {
+    const href = (e.currentTarget.getAttribute("href") || "").trim();
+    if (href.startsWith("#")) {
+      e.preventDefault();
+      const id = href.slice(1);
+      let el = document.getElementById(id);
+      if (!el && id === "demo") {
+        el = document.getElementById("cta");
+      }
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+        try {
+          history.replaceState(null, "", `#${id}`);
+        } catch {}
+      }
+      setMenuOpen(false);
+    } else {
+      setMenuOpen(false);
+    }
+  };
 
   // Small looping content used in illustrations
   const heroChips = useMemo(
@@ -76,7 +109,7 @@ export default function KnowledgeAutomationPage() {
 
   return (
     <div
-      className="relative min-h-screen w-full text-slate-900"
+      className="relative min-h-screen w-full text-slate-900 scroll-smooth"
       style={
         {
           "--brand-primary": brand.primary,
@@ -103,54 +136,43 @@ export default function KnowledgeAutomationPage() {
           </nav>
           <div className="flex items-center gap-3">
             <a href="#demo" className="hidden rounded-xl border border-[--border-subtle] px-4 py-2 text-sm font-medium text-slate-700 hover:bg-[--surface] md:inline-block">Watch demo</a>
-            <a href="#cta" className="rounded-2xl px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:shadow-lg" style={{ backgroundColor: brand.primary }}>Start free</a>
+            <a href="#cta" className="hidden rounded-2xl px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:shadow-lg md:inline-block" style={{ backgroundColor: brand.primary }}>Start free</a>
             {/* Mobile menu toggle */}
             <button
-              id="menuBtn"
-              onClick={() => setMobileOpen(!mobileOpen)}
-              className="md:hidden inline-flex items-center justify-center size-10 rounded-lg border border-slate-300"
-              aria-label="Open menu"
+              onClick={() => setMenuOpen((v) => !v)}
+              className="inline-flex size-10 items-center justify-center rounded-lg border border-slate-300 md:hidden"
+              aria-label="Toggle menu"
             >
               ☰
             </button>
           </div>
 
-          {/* Mobile dropdown menu */}
-          <div
-            id="mobileMenu"
-            className={`md:hidden ${mobileOpen ? '' : 'hidden'} absolute top-full right-0 w-full bg-transparent`}
-          >
-            <div className="w-1/2 ml-auto bg-white border-t border-[--border-subtle] shadow-sm">
-              <nav className="px-6 py-4 grid gap-2 text-slate-800">
-                {/* Solutions dropdown */}
-                <details className="group border border-[--border-subtle] rounded-lg">
-                  <summary className="flex items-center justify-between px-3 py-2 cursor-pointer">
-                    <span>Solutions</span>
-                    <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M6 8l4 4 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
-                  </summary>
-                  <div className="px-2 pb-2 space-y-1">
-                    <a href="/customer-support-ai" className="block px-2 py-2 rounded hover:bg-slate-50">Customer Support AI</a>
-                    <a href="/sales-conversion-ai" className="block px-2 py-2 rounded hover:bg-slate-50">Sales Conversion AI</a>
-                    <a href="/onboarding-automation" className="block px-2 py-2 rounded hover:bg-slate-50">Onboarding Automation</a>
-                    <a href="/knowledge-automation" className="block px-2 py-2 rounded hover:bg-slate-50">Knowledge Automation</a>
-                    <a href="/cx-analytics-dashboard" className="block px-2 py-2 rounded hover:bg-slate-50">CX Analytics Dashboard</a>
-                  </div>
-                </details>
-                {/* Local links */}
-                <a href="#why">Why</a>
-                <a href="#how">How it works</a>
-                <a href="#features">Features</a>
-                <a href="#cta">Pricing</a>
-                {/* Buttons */}
-                <div className="pt-2 border-t border-[--border-subtle] flex gap-3">
-                  <a href="#demo" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-[--border-subtle]">Watch demo</a>
-                  <a href="#cta" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[--brand-primary] text-white">Start free</a>
+          {/* Mobile menu panel */}
+          <div className={`absolute right-0 top-full w-full bg-transparent md:hidden ${menuOpen ? "" : "pointer-events-none"}`}>
+            <div className={`ml-auto w-1/2 rounded-b-lg border border-[--border-subtle] bg-white shadow-sm transition-all duration-200 ${menuOpen ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"}`}>
+              <nav className="grid gap-2 px-6 py-4 text-slate-800">
+                <a href="#why" onClick={handleMobileNavClick} className="rounded px-2 py-2 hover:bg-slate-50">Why</a>
+                <a href="#how" onClick={handleMobileNavClick} className="rounded px-2 py-2 hover:bg-slate-50">How it works</a>
+                <a href="#features" onClick={handleMobileNavClick} className="rounded px-2 py-2 hover:bg-slate-50">Features</a>
+                <a href="#cta" onClick={handleMobileNavClick} className="rounded px-2 py-2 hover:bg-slate-50">Pricing</a>
+                <div className="mt-2 flex gap-3 border-t border-[--border-subtle] pt-3">
+                  <a href="#demo" onClick={handleMobileNavClick} className="inline-flex items-center gap-2 rounded-lg border border-[--border-subtle] px-4 py-2">Watch demo</a>
+                  <a href="#cta" onClick={handleMobileNavClick} className="inline-flex items-center gap-2 rounded-lg bg-[--brand-primary] px-4 py-2 text-white">Start free</a>
                 </div>
               </nav>
             </div>
           </div>
         </div>
       </header>
+
+      {/* Backdrop overlay */}
+      {menuOpen && (
+        <button
+          aria-label="Close menu"
+          className="fixed inset-0 z-30 bg-transparent md:hidden"
+          onClick={() => setMenuOpen(false)}
+        />
+      )}
 
       {/* 1) HERO */}
       <section className="relative isolate rounded-b-[2rem] bg-[--surface] px-4 py-20 sm:px-6">
@@ -312,7 +334,7 @@ export default function KnowledgeAutomationPage() {
       </section>
 
       {/* 2) WHY MANUAL KNOWLEDGE FAILS */}
-      <section id="why" className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+      <section id="why" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 scroll-mt-24">
         <div className="grid items-start gap-10 lg:grid-cols-2">
           {/* Left copy */}
           <div>
@@ -465,7 +487,7 @@ export default function KnowledgeAutomationPage() {
       {/* 3) HOW IT WORKS */}
       <section
         id="how"
-        className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6"
+        className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6 scroll-mt-24"
       >
         {/* Title row */}
         <div className="flex flex-wrap items-start justify-between gap-6">
@@ -715,7 +737,7 @@ export default function KnowledgeAutomationPage() {
       {/* 4) INSIDE THE KNOWLEDGE BRAIN */}
       <section
         id="brain"
-        className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6"
+        className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 scroll-mt-24"
       >
         <h2 className="text-center text-3xl font-bold tracking-tight">
           Inside the Knowledge Brain
@@ -845,7 +867,7 @@ export default function KnowledgeAutomationPage() {
       {/* 5) KEY FEATURES */}
       <section
         id="features"
-        className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6"
+        className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6 scroll-mt-24"
       >
         <h2 className="text-3xl font-bold tracking-tight text-center">
           Key Features
@@ -1008,7 +1030,7 @@ export default function KnowledgeAutomationPage() {
       {/* 8) CTA */}
       <section
         id="cta"
-        className="mx-auto max-w-7xl rounded-3xl border border-[--border-subtle] bg-gradient-to-br from-white to-[--brand-primary]/5 px-4 py-16 text-center sm:px-6"
+        className="mx-auto max-w-7xl rounded-3xl border border-[--border-subtle] bg-gradient-to-br from-white to-[--brand-primary]/5 px-4 py-16 text-center sm:px-6 scroll-mt-24"
       >
         <h2 className="text-3xl font-bold">Make Knowledge Work for You</h2>
         <p className="mx-auto mt-2 max-w-2xl text-slate-600">
