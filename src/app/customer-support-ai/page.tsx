@@ -1246,7 +1246,10 @@ export default function CustomerSupportAIPage() {
       )}
 
       {/* HERO */}
-      <section id="why" className="relative isolate rounded-b-[2rem] bg-[--surface] py-20 px-4 sm:px-6 scroll-mt-24">
+      <section
+        id="why"
+        className="relative isolate rounded-b-[2rem] bg-[--surface] py-20 px-4 sm:px-6 scroll-mt-24"
+      >
         <div
           className="pointer-events-none absolute -top-24 right-[-10%] h-[420px] w-[420px] rounded-full blur-3xl"
           style={{
@@ -1497,7 +1500,7 @@ export default function CustomerSupportAIPage() {
                       className="flex items-center justify-between gap-3 text-xs"
                     >
                       <span
-                        className="rounded-full border border-[--brand-primary]/20 bg-white px-2.5 py-1 font-medium text-[--brand-primary] animate-routeRight"
+                        className="rounded-full border border-[--brand-primary]/20 bg-white px-3 py-2 font-medium text-[--brand-primary] "
                         style={{ animationDelay: `${i * 0.25}s` }}
                       >
                         {row.txt}
@@ -1526,7 +1529,7 @@ export default function CustomerSupportAIPage() {
 
                 {/* arrow accent */}
                 <svg
-                  className="pointer-events-none absolute -right-8 -top-6 hidden h-24 w-24 md:block"
+                  className="pointer-events-none absolute -right-8 -top-8 hidden h-24 w-24 md:block"
                   viewBox="0 0 100 100"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
@@ -1677,7 +1680,11 @@ export default function CustomerSupportAIPage() {
                   Billing → Refund • Technical → Login • Product → Feature
                   request
                 </div>
-                <motion.div layout className="mt-3 min-h-[34px] flex flex-wrap gap-2 text-[11px]" style={{ willChange: "transform" }}>
+                <motion.div
+                  layout
+                  className="mt-3 min-h-[34px] flex flex-wrap gap-2 text-[11px]"
+                  style={{ willChange: "transform" }}
+                >
                   <AnimatePresence initial={false} mode="popLayout">
                     {rollingActions.map((a) => (
                       <motion.button
@@ -1933,7 +1940,7 @@ export default function CustomerSupportAIPage() {
 
         {/* Rotating quote cards */}
         <div className="relative mt-8 overflow-hidden">
-          <div className="relative h-[220px]">
+          <div className="relative min-h-[220px]">
             <AnimatePresence mode="popLayout">
               <motion.div
                 key={activeIndex}
