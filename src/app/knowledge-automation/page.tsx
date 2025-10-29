@@ -139,39 +139,62 @@ export default function KnowledgeAutomationPage() {
             <a href="#cta" className="hidden rounded-2xl px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:shadow-lg md:inline-block" style={{ backgroundColor: brand.primary }}>Start free</a>
             {/* Mobile menu toggle */}
             <button
-              onClick={() => setMenuOpen((v) => !v)}
-              className="inline-flex size-10 items-center justify-center rounded-lg border border-slate-300 md:hidden"
+              type="button"
+              aria-controls="mobile-menu"
+              aria-expanded={menuOpen ? "true" : "false"}
               aria-label="Toggle menu"
+              className="md:hidden inline-flex items-center justify-center rounded-md p-2 text-slate-700 hover:bg-slate-100"
+              onClick={() => setMenuOpen((o) => !o)}
             >
-              ☰
+              <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                {menuOpen ? (
+                  <g>
+                    <path d="M18 6L6 18" />
+                    <path d="M6 6l12 12" />
+                  </g>
+                ) : (
+                  <g>
+                    <path d="M3 6h18" />
+                    <path d="M3 12h18" />
+                    <path d="M3 18h18" />
+                  </g>
+                )}
+              </svg>
             </button>
           </div>
 
           {/* Mobile menu panel */}
-          <div className={`absolute right-0 top-full w-full bg-transparent md:hidden ${menuOpen ? "" : "pointer-events-none"}`}>
-            <div className={`ml-auto w-1/2 rounded-b-lg border border-[--border-subtle] bg-white shadow-sm transition-all duration-200 ${menuOpen ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"}`}>
-              <nav className="grid gap-2 px-6 py-4 text-slate-800">
-                <a href="#why" onClick={handleMobileNavClick} className="rounded px-2 py-2 hover:bg-slate-50">Why</a>
-                <a href="#how" onClick={handleMobileNavClick} className="rounded px-2 py-2 hover:bg-slate-50">How it works</a>
-                <a href="#features" onClick={handleMobileNavClick} className="rounded px-2 py-2 hover:bg-slate-50">Features</a>
-                <a href="#cta" onClick={handleMobileNavClick} className="rounded px-2 py-2 hover:bg-slate-50">Pricing</a>
-                <div className="mt-2 flex gap-3 border-t border-[--border-subtle] pt-3">
-                  <a href="#demo" onClick={handleMobileNavClick} className="inline-flex items-center gap-2 rounded-lg border border-[--border-subtle] px-4 py-2">Watch demo</a>
-                  <a href="#cta" onClick={handleMobileNavClick} className="inline-flex items-center gap-2 rounded-lg bg-[--brand-primary] px-4 py-2 text-white">Start free</a>
-                </div>
-              </nav>
-            </div>
+          <div
+            id="mobile-menu"
+            aria-hidden={!menuOpen}
+            className={`md:hidden absolute right-0 top-full z-50 w-[60vw] bg-white rounded-b-2xl shadow-lg origin-top-right transform transition-all duration-300 ease-out ${
+              menuOpen ? "opacity-100 translate-y-0 scale-100 pointer-events-auto" : "opacity-0 -translate-y-2 scale-95 pointer-events-none"
+            }`}
+          >
+            <nav className="mx-auto px-4 py-3 sm:px-6">
+              <div className="flex flex-col gap-2 text-sm font-medium text-slate-700">
+                <a href="#why" className="py-2 hover:text-slate-900" onClick={handleMobileNavClick}>Why</a>
+                <a href="#how" className="py-2 hover:text-slate-900" onClick={handleMobileNavClick}>How it works</a>
+                <a href="#features" className="py-2 hover:text-slate-900" onClick={handleMobileNavClick}>Features</a>
+                <a href="#cta" className="py-2 hover:text-slate-900" onClick={handleMobileNavClick}>Pricing</a>
+                <a href="#demo" className="mt-2 w-full rounded-xl border border-[--border-subtle] px-4 py-2 text-center text-sm font-medium text-slate-700 hover:bg-[--surface]" onClick={handleMobileNavClick}>Watch demo</a>
+                <a
+                  href="#cta"
+                  className="inline-flex w-full items-center justify-center rounded-2xl px-4 py-2 text-center text-sm font-semibold text-white shadow-md transition hover:shadow-lg"
+                  style={{ backgroundColor: brand.primary }}
+                  onClick={handleMobileNavClick}
+                >
+                  Start free
+                </a>
+              </div>
+            </nav>
           </div>
         </div>
       </header>
 
-      {/* Backdrop overlay */}
+      {/* Backdrop overlay — outside header for proper stacking */}
       {menuOpen && (
-        <button
-          aria-label="Close menu"
-          className="fixed inset-0 z-30 bg-transparent md:hidden"
-          onClick={() => setMenuOpen(false)}
-        />
+        <div className="fixed inset-0 z-30 bg-transparent md:hidden" aria-label="Close menu" onClick={() => setMenuOpen(false)} />
       )}
 
       {/* 1) HERO */}
