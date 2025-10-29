@@ -14,7 +14,17 @@ const brand = {
   borderSubtle: "#E3EEFF",
 };
 
-const CTAPulse = ({ children, href = "#", variant = "primary", label }: { children: React.ReactNode; href?: string; variant?: "primary" | "secondary"; label: string }) => (
+const CTAPulse = ({
+  children,
+  href = "#",
+  variant = "primary",
+  label,
+}: {
+  children: React.ReactNode;
+  href?: string;
+  variant?: "primary" | "secondary";
+  label: string;
+}) => (
   <motion.a
     href={href}
     aria-label={label}
@@ -176,39 +186,71 @@ export default function SalesConversionAIPage() {
   return (
     <div
       className="relative min-h-screen w-full text-slate-900 scroll-smooth"
-      style={{
-        "--brand-primary": brand.primary,
-        "--brand-accent": brand.accent,
-        "--surface": brand.surface,
-        "--surface-alt": brand.surfaceAlt,
-        "--border-subtle": brand.borderSubtle,
-      } as React.CSSProperties & CSSVars}
+      style={
+        {
+          "--brand-primary": brand.primary,
+          "--brand-accent": brand.accent,
+          "--surface": brand.surface,
+          "--surface-alt": brand.surfaceAlt,
+          "--border-subtle": brand.borderSubtle,
+        } as React.CSSProperties & CSSVars
+      }
     >
       {/* Header — match onboarding mobile menu CSS and structure */}
       <header className="sticky top-0 z-40 bg-white/80 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-xl" style={{ backgroundColor: brand.primary }} />
-            <span className="text-lg font-semibold tracking-tight">Advancelytics</span>
-            <span className="ml-2 rounded-full bg-[--surface] px-2 py-0.5 text-xs font-medium text-slate-600">Sales Conversion AI</span>
+            <div
+              className="h-8 w-8 rounded-xl"
+              style={{ backgroundColor: brand.primary }}
+            />
+            <span className="text-lg font-semibold tracking-tight">
+              Advancelytics
+            </span>
+            <span className="ml-2 rounded-full bg-[--surface] px-2 py-0.5 text-xs font-medium text-slate-600">
+              Sales Conversion AI
+            </span>
           </div>
           <nav className="hidden items-center gap-6 text-sm font-medium text-slate-700 md:flex">
-            <a href="#why" className="hover:text-slate-900">Why</a>
-            <a href="#how" className="hover:text-slate-900">How it works</a>
-            <a href="#brain" className="hover:text-slate-900">Inside the Brain</a>
-            <a href="#features" className="hover:text-slate-900">Features</a>
-            <a href="#outcomes" className="hover:text-slate-900">Outcomes</a>
-            <a href="#testimonials" className="hover:text-slate-900">Testimonials</a>
-            <a href="#pricing" className="hover:text-slate-900">Pricing</a>
+            <a href="#why" className="hover:text-slate-900">
+              Why
+            </a>
+            <a href="#how" className="hover:text-slate-900">
+              How it works
+            </a>
+            <a href="#brain" className="hover:text-slate-900">
+              Inside the Brain
+            </a>
+            <a href="#features" className="hover:text-slate-900">
+              Features
+            </a>
+            <a href="#outcomes" className="hover:text-slate-900">
+              Outcomes
+            </a>
+            <a href="#testimonials" className="hover:text-slate-900">
+              Testimonials
+            </a>
+            <a href="#pricing" className="hover:text-slate-900">
+              Pricing
+            </a>
           </nav>
           <div className="flex items-center gap-3">
-            <a href="#cta" className="hidden rounded-xl border border-[--border-subtle] px-4 py-2 text-sm font-medium text-slate-700 hover:bg-[--surface] md:inline-block">Watch demo</a>
+            <a
+              href="#cta"
+              className="hidden rounded-xl border border-[--border-subtle] px-4 py-2 text-sm font-medium text-slate-700 hover:bg-[--surface] md:inline-block"
+            >
+              Watch demo
+            </a>
             <a
               href="#cta"
               className="hidden rounded-2xl px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:shadow-lg md:inline-block"
               style={{ backgroundColor: brand.primary }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = brand.primary)}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = brand.primary)}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.backgroundColor = brand.primary)
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.backgroundColor = brand.primary)
+              }
             >
               Start free
             </a>
@@ -220,7 +262,15 @@ export default function SalesConversionAIPage() {
               className="md:hidden inline-flex items-center justify-center rounded-md p-2 text-slate-700 hover:bg-slate-100"
               onClick={() => setMenuOpen((o) => !o)}
             >
-              <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                className="h-6 w-6"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 {menuOpen ? (
                   <g>
                     <path d="M18 6L6 18" />
@@ -242,20 +292,70 @@ export default function SalesConversionAIPage() {
           id="mobile-menu"
           aria-hidden={!menuOpen}
           className={`md:hidden absolute right-0 top-full z-50 w-[60vw] bg-white rounded-b-2xl shadow-lg origin-top-right transform transition-all duration-300 ease-out ${
-            menuOpen ? "opacity-100 translate-y-0 scale-100 pointer-events-auto" : "opacity-0 -translate-y-2 scale-95 pointer-events-none"
+            menuOpen
+              ? "opacity-100 translate-y-0 scale-100 pointer-events-auto"
+              : "opacity-0 -translate-y-2 scale-95 pointer-events-none"
           }`}
         >
           <nav className="mx-auto px-4 py-3 sm:px-6">
             <div className="flex flex-col gap-2 text-sm font-medium text-slate-700">
-              <a href="#why" className="py-2 hover:text-slate-900" onClick={handleMobileNavClick}>Why</a>
-              <a href="#how" className="py-2 hover:text-slate-900" onClick={handleMobileNavClick}>How it works</a>
-              <a href="#brain" className="py-2 hover:text-slate-900" onClick={handleMobileNavClick}>Inside the Brain</a>
-              <a href="#features" className="py-2 hover:text-slate-900" onClick={handleMobileNavClick}>Features</a>
-              <a href="#outcomes" className="py-2 hover:text-slate-900" onClick={handleMobileNavClick}>Outcomes</a>
-              <a href="#testimonials" className="py-2 hover:text-slate-900" onClick={handleMobileNavClick}>Testimonials</a>
-              <a href="#pricing" className="py-2 hover:text-slate-900" onClick={handleMobileNavClick}>Pricing</a>
+              <a
+                href="#why"
+                className="py-2 hover:text-slate-900"
+                onClick={handleMobileNavClick}
+              >
+                Why
+              </a>
+              <a
+                href="#how"
+                className="py-2 hover:text-slate-900"
+                onClick={handleMobileNavClick}
+              >
+                How it works
+              </a>
+              <a
+                href="#brain"
+                className="py-2 hover:text-slate-900"
+                onClick={handleMobileNavClick}
+              >
+                Inside the Brain
+              </a>
+              <a
+                href="#features"
+                className="py-2 hover:text-slate-900"
+                onClick={handleMobileNavClick}
+              >
+                Features
+              </a>
+              <a
+                href="#outcomes"
+                className="py-2 hover:text-slate-900"
+                onClick={handleMobileNavClick}
+              >
+                Outcomes
+              </a>
+              <a
+                href="#testimonials"
+                className="py-2 hover:text-slate-900"
+                onClick={handleMobileNavClick}
+              >
+                Testimonials
+              </a>
+              <a
+                href="#pricing"
+                className="py-2 hover:text-slate-900"
+                onClick={handleMobileNavClick}
+              >
+                Pricing
+              </a>
               {/* Buttons in dropdown */}
-              <a href="#cta" className="mt-2 w-full rounded-xl border border-[--border-subtle] px-4 py-2 text-center text-sm font-medium text-slate-700 hover:bg-[--surface]" onClick={handleMobileNavClick}>Watch demo</a>
+              <a
+                href="#cta"
+                className="mt-2 w-full rounded-xl border border-[--border-subtle] px-4 py-2 text-center text-sm font-medium text-slate-700 hover:bg-[--surface]"
+                onClick={handleMobileNavClick}
+              >
+                Watch demo
+              </a>
               <a
                 href="#cta"
                 className="inline-flex w-full items-center justify-center rounded-2xl px-4 py-2 text-center text-sm font-semibold text-white shadow-md transition hover:shadow-lg"
@@ -271,7 +371,11 @@ export default function SalesConversionAIPage() {
 
       {/* Backdrop overlay — outside header for proper stacking */}
       {menuOpen && (
-        <div className="fixed inset-0 z-30 bg-transparent md:hidden" aria-label="Close menu" onClick={() => setMenuOpen(false)} />
+        <div
+          className="fixed inset-0 z-30 bg-transparent md:hidden"
+          aria-label="Close menu"
+          onClick={() => setMenuOpen(false)}
+        />
       )}
       {/* 0) Invisible SEO helper for keyword variants (non-indexed in canvas, illustrative only) */}
       <p className="sr-only">
@@ -368,7 +472,7 @@ export default function SalesConversionAIPage() {
 
               {/* typing indicator card */}
               <motion.div
-                className="absolute bottom-24 left-5 right-5"
+                className="absolute bottom-27 left-5 right-5"
                 initial={{ opacity: 0, y: 14 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5, duration: 0.6, ease: "easeOut" }}
@@ -428,7 +532,10 @@ export default function SalesConversionAIPage() {
       </section>
 
       {/* 2) WHY IT MATTERS */}
-      <section id="why" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 scroll-mt-24">
+      <section
+        id="why"
+        className="mx-auto max-w-7xl px-4 py-16 sm:px-6 scroll-mt-24"
+      >
         <div className="grid items-start gap-10 lg:grid-cols-2">
           <div>
             <h2 className="text-3xl font-bold tracking-tight">
@@ -469,7 +576,10 @@ export default function SalesConversionAIPage() {
       </section>
 
       {/* 3) HOW IT WORKS */}
-      <section id="how" className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6 scroll-mt-24">
+      <section
+        id="how"
+        className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6 scroll-mt-24"
+      >
         <h2 className="text-3xl font-bold tracking-tight text-center">
           How It Works
         </h2>
@@ -563,7 +673,11 @@ export default function SalesConversionAIPage() {
                 <div className="mt-1 text-sm text-slate-800">
                   Plan compare • ROI sheet • Calendar handoff
                 </div>
-                <motion.div layout className="mt-3 min-h-[34px] flex flex-wrap gap-2 text-[11px]" style={{ willChange: "transform" }}>
+                <motion.div
+                  layout
+                  className="mt-3 min-h-[34px] flex flex-wrap gap-2 text-[11px]"
+                  style={{ willChange: "transform" }}
+                >
                   <AnimatePresence initial={false} mode="popLayout">
                     {rollingActions.map((a) => (
                       <motion.button
@@ -631,7 +745,10 @@ export default function SalesConversionAIPage() {
       </section>
 
       {/* 4) INSIDE THE PROACTIVE BRAIN */}
-      <section id="brain" className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 scroll-mt-24">
+      <section
+        id="brain"
+        className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 scroll-mt-24"
+      >
         <h2 className="text-center text-3xl font-bold tracking-tight">
           Inside the Proactive Brain
         </h2>
@@ -776,7 +893,10 @@ export default function SalesConversionAIPage() {
       </section>
 
       {/* 5) KEY FEATURES */}
-      <section id="features" className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6 scroll-mt-24">
+      <section
+        id="features"
+        className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6 scroll-mt-24"
+      >
         <h2 className="text-3xl font-bold tracking-tight text-center">
           Key Features
         </h2>
@@ -879,7 +999,10 @@ export default function SalesConversionAIPage() {
       </section>
 
       {/* 6) REAL IMPACT */}
-      <section id="outcomes" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 scroll-mt-24">
+      <section
+        id="outcomes"
+        className="mx-auto max-w-7xl px-4 py-16 sm:px-6 scroll-mt-24"
+      >
         <h2 className="text-3xl font-bold tracking-tight">
           Real Impact — Revenue that Speaks
         </h2>
@@ -1001,7 +1124,7 @@ export default function SalesConversionAIPage() {
               >
                 <svg
                   viewBox="0 0 120 40"
-                  className="h-6 w-auto"
+                  className="h-full w-auto"
                   role="img"
                   aria-label={l.alt}
                 >
@@ -1089,7 +1212,7 @@ export default function SalesConversionAIPage() {
       {/* 8) CTA */}
       <section
         id="cta"
-        className="mx-auto max-w-7xl rounded-3xl border border-[--border-subtle] bg-gradient-to-br from-white to-[--brand-primary]/5 px-4 py-16 text-center sm:px-6 scroll-mt-24"
+        className="mx-auto mb-12 max-w-7xl rounded-3xl border border-[--border-subtle] bg-gradient-to-br from-white to-[--brand-primary]/5 px-4 py-16 text-center sm:px-6 scroll-mt-24"
       >
         <h2 className="text-3xl font-bold">
           Boost Conversions with Intelligent Engagement
