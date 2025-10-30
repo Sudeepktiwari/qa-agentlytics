@@ -1,9 +1,13 @@
 "use client";
 import React from "react";
+import { usePathname } from "next/navigation";
 
 export default function GlobalHeader() {
+  const pathname = usePathname();
+  const isHome = pathname === "/";
+  const headerPositionClasses = isHome ? "relative" : "sticky top-0";
   return (
-    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur border-b border-slate-200">
+    <header className={`${headerPositionClasses} z-50 bg-white/80 backdrop-blur border-b border-slate-200`}>
       <div className="max-w-7xl mx-auto h-16 px-4 sm:px-6 lg:px-8 flex items-center justify-between">
         <a
           href="/"

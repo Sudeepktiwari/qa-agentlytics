@@ -422,7 +422,7 @@ export default function Page() {
       {/* PAGE */}
       <div className="scroll-smooth">
         {/* Header */}
-  <header className="sticky top-0 z-30 bg-white/80 backdrop-blur border-b border-slate-200">
+  <header className="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-slate-200">
           <div className="w-full h-16  flex items-center justify-center relative right-[84px]">
             <nav className="hidden md:flex items-center gap-6 text-slate-600">
               <a href="#problem" className="hover:text-slate-900">
@@ -453,7 +453,7 @@ export default function Page() {
           </div>
           <div
             id="mobileMenu"
-            className="md:hidden hidden absolute top-full right-0 z-50 pointer-events-none"
+            className="md:hidden hidden absolute top-full right-0 z-10 pointer-events-none"
           >
             <div className="w-[60vw] ml-auto bg-white border-t border-slate-200 shadow-sm pointer-events-auto">
               <nav className="px-6 py-4 grid gap-4 text-slate-800">
@@ -625,7 +625,7 @@ export default function Page() {
         {/* Backdrop overlay for mobile menu (transparent, captures outside clicks) */}
         <div
           id="mobileMenuBackdrop"
-          className="md:hidden hidden fixed inset-0 z-40 bg-transparent"
+          className="md:hidden hidden fixed inset-0 z-10 bg-transparent"
           aria-label="Close menu"
         />
 
