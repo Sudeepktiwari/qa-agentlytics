@@ -423,289 +423,8 @@ export default function Page() {
       <div className="scroll-smooth">
         {/* Header */}
         <header className="sticky top-0 z-50 bg-white/80 backdrop-blur border-b border-slate-200">
-          <div className="max-w-7xl mx-auto h-16 px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-            <a
-              href="#top"
-              className="flex items-center gap-2 font-display font-extrabold tracking-tight text-[color:var(--brand-midnight)]"
-            >
-              <span className="size-7 rounded-lg bg-[conic-gradient(from_220deg,#0069FF,#3BA3FF)]" />
-              <span>Agentlytics</span>
-            </a>
+          <div className="w-full h-16  flex items-center justify-center relative right-[84px]">
             <nav className="hidden md:flex items-center gap-6 text-slate-600">
-              {/* Products dropdown */}
-              <div className="relative group">
-                <button className="inline-flex items-center gap-1 hover:text-slate-900">
-                  <span>Products</span>
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 20 20"
-                    fill="none"
-                    className="text-slate-500 group-hover:text-slate-900"
-                  >
-                    <path
-                      d="M5 7l5 5 5-5"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </button>
-                <div className="absolute left-0 top-full pt-3 z-50  rounded-2xl border border-slate-200 bg-white shadow-[0_12px_34px_rgba(2,6,23,.10)] p-6 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto">
-                  {/* <div className="grid grid-cols-2 gap-6"> */}
-                  <div className="w-[300px]">
-                    {/* Core Products */}
-                    <div>
-                      <div className="text-xs font-medium text-slate-600 mb-3">
-                        Core Products
-                      </div>
-                      <ul className="space-y-3">
-                        <li>
-                          <a
-                            href="/ai-chatbots"
-                            className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
-                          >
-                            <span className="size-8 flex items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-                              🤖
-                            </span>
-                            <div>
-                              <div className="font-semibold text-slate-900">
-                                AI Chatbots
-                              </div>
-                              <div className="text-sm text-slate-600">
-                                Advanced conversational AI
-                              </div>
-                            </div>
-                          </a>
-                        </li>
-                        <li>
-                          <a
-                            href="/knowledge-base"
-                            className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
-                          >
-                            <span className="size-8 flex items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
-                              📚
-                            </span>
-                            <div>
-                              <div className="font-semibold text-slate-900">
-                                Knowledge Base AI
-                              </div>
-                              <div className="text-sm text-slate-600">
-                                Intelligent self‑service portal
-                              </div>
-                            </div>
-                          </a>
-                        </li>
-                        <li>
-                          <a
-                            href="/lead-generation-basics"
-                            className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
-                          >
-                            <span className="size-8 flex items-center justify-center rounded-lg bg-cyan-50 text-cyan-600">
-                              🎯
-                            </span>
-                            <div>
-                              <div className="font-semibold text-slate-900">
-                                Lead Generation AI
-                              </div>
-                              <div className="text-sm text-slate-600">
-                                Smart lead capture & qualification
-                              </div>
-                            </div>
-                          </a>
-                        </li>
-                        <li>
-                          <a
-                            href="/onboarding-ai-bot"
-                            className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
-                          >
-                            <span className="size-8 flex items-center justify-center rounded-lg bg-rose-50 text-rose-600">
-                              📊
-                            </span>
-                            <div>
-                              <div className="font-semibold text-slate-900">
-                                Onboarding AI Bot
-                              </div>
-                              <div className="text-sm text-slate-600">
-                                Onboarding assistant for new visitors
-                              </div>
-                            </div>
-                          </a>
-                        </li>
-                      </ul>
-                    </div>
-
-                    {/* Advanced Features */}
-                    {/* <div>
-                      <div className="text-xs font-medium text-slate-600 mb-3">Advanced Features</div>
-                      <ul className="space-y-3">
-                        <li>
-                          <a href="#features" className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50">
-                            <span className="size-8 flex items-center justify-center rounded-lg bg-amber-50 text-amber-600">🧑‍💻</span>
-                            <div>
-                              <div className="font-semibold text-slate-900">Live Chat Handoff</div>
-                              <div className="text-sm text-slate-600">Seamless human escalation</div>
-                            </div>
-                          </a>
-                        </li>
-                        <li>
-                          <a href="/crm-and-analytics-sync" className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50">
-                            <span className="size-8 flex items-center justify-center rounded-lg bg-teal-50 text-teal-600">📈</span>
-                            <div>
-                              <div className="font-semibold text-slate-900">Analytics Dashboard</div>
-                              <div className="text-sm text-slate-600">Real‑time performance insights</div>
-                            </div>
-                          </a>
-                        </li>
-                        <li>
-                          <a href="/crm-and-analytics-sync" className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50">
-                            <span className="size-8 flex items-center justify-center rounded-lg bg-fuchsia-50 text-fuchsia-600">🔗</span>
-                            <div>
-                              <div className="font-semibold text-slate-900">Smart Integrations</div>
-                              <div className="text-sm text-slate-600">Connect your favorite tools</div>
-                            </div>
-                          </a>
-                        </li>
-                        <li>
-                          <a href="/multipersona" className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50">
-                            <span className="size-8 flex items-center justify-center rounded-lg bg-purple-50 text-purple-600">⚙️</span>
-                            <div>
-                              <div className="font-semibold text-slate-900">Custom Workflows</div>
-                              <div className="text-sm text-slate-600">Build custom automation</div>
-                            </div>
-                          </a>
-                        </li>
-                      </ul>
-                    </div> */}
-                  </div>
-                </div>
-              </div>
-
-              {/* Solutions dropdown */}
-              <div className="relative group">
-                <button className="inline-flex items-center gap-1 hover:text-slate-900">
-                  <span>Solutions</span>
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 20 20"
-                    fill="none"
-                    className="text-slate-500 group-hover:text-slate-900"
-                  >
-                    <path
-                      d="M5 7l5 5 5-5"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </button>
-                <div className="absolute left-0 top-full pt-3 z-50 rounded-2xl border border-slate-200 bg-white shadow-[0_12px_34px_rgba(2,6,23,.10)] p-6 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto">
-                  <div className="w-[300px]">
-                    <ul className="space-y-3">
-                      <li>
-                        <a
-                          href="/customer-support-ai"
-                          className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
-                        >
-                          <span className="size-8 flex items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-                            🤖
-                          </span>
-                          <div>
-                            <div className="font-semibold text-slate-900">
-                              Customer Support AI
-                            </div>
-                            <div className="text-sm text-slate-600">
-                              Help teams resolve faster with contextual AI that
-                              learns from past chats and knowledge bases.
-                            </div>
-                          </div>
-                        </a>
-                      </li>
-                      <li>
-                        <a
-                          href="/sales-conversion-ai"
-                          className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
-                        >
-                          <span className="size-8 flex items-center justify-center rounded-lg bg-cyan-50 text-cyan-600">
-                            🎯
-                          </span>
-                          <div>
-                            <div className="font-semibold text-slate-900">
-                              Sales Conversion AI
-                            </div>
-                            <div className="text-sm text-slate-600">
-                              Turn idle visitors into qualified leads through
-                              proactive engagement and behavioral triggers.
-                            </div>
-                          </div>
-                        </a>
-                      </li>
-                      <li>
-                        <a
-                          href="/onboarding-automation"
-                          className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
-                        >
-                          <span className="size-8 flex items-center justify-center rounded-lg bg-rose-50 text-rose-600">
-                            🚀
-                          </span>
-                          <div>
-                            <div className="font-semibold text-slate-900">
-                              Onboarding Automation
-                            </div>
-                            <div className="text-sm text-slate-600">
-                              Converts static onboarding into interactive AI‑led
-                              guidance.
-                            </div>
-                          </div>
-                        </a>
-                      </li>
-                      <li>
-                        <a
-                          href="/knowledge-automation"
-                          className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
-                        >
-                          <span className="size-8 flex items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
-                            📚
-                          </span>
-                          <div>
-                            <div className="font-semibold text-slate-900">
-                              Knowledge Automation
-                            </div>
-                            <div className="text-sm text-slate-600">
-                              Auto‑organize and surface information
-                              intelligently across your help center and
-                              chatbots.
-                            </div>
-                          </div>
-                        </a>
-                      </li>
-                      <li>
-                        <a
-                          href="/cx-analytics-dashboard"
-                          className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
-                        >
-                          <span className="size-8 flex items-center justify-center rounded-lg bg-teal-50 text-teal-600">
-                            📈
-                          </span>
-                          <div>
-                            <div className="font-semibold text-slate-900">
-                              CX Analytics Dashboard
-                            </div>
-                            <div className="text-sm text-slate-600">
-                              Gain actionable insights from every customer
-                              interaction — sentiment, resolution, and intent.
-                            </div>
-                          </div>
-                        </a>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-
               <a href="#problem" className="hover:text-slate-900">
                 Problem
               </a>
@@ -722,20 +441,7 @@ export default function Page() {
                 Pricing
               </a>
             </nav>
-            <div className="hidden md:flex items-center gap-3">
-              <a
-                href="/demo"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 text-slate-800 hover:bg-slate-50"
-              >
-                Book a Demo
-              </a>
-              <a
-                href="#trial"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[color:var(--brand-blue)] text-white hover:bg-blue-600"
-              >
-                Start Free Trial
-              </a>
-            </div>
+            <div className="hidden md:flex items-center gap-3"></div>
             {/* mobile menu  */}
             <button
               id="menuBtn"
@@ -850,6 +556,46 @@ export default function Page() {
                     >
                       CX Analytics Dashboard
                     </a>
+                  </div>
+                </details>
+
+                {/* Mobile Platforms & Partners dropdown */}
+                <details className="group border border-slate-200 rounded-lg">
+                  <summary className="flex items-center justify-between px-3 py-2 cursor-pointer">
+                    <span>Platforms & Partners</span>
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 20 20"
+                      fill="none"
+                      className="text-slate-500 transition-transform group-open:rotate-180"
+                    >
+                      <path
+                        d="M5 7l5 5 5-5"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </summary>
+                  <div className="px-3 pb-3 grid gap-2 text-slate-800">
+                    {[
+                      "Agentlytics + Agentforce",
+                      "Agentlytics + Hubspot",
+                      "Agentlytics + Intercom",
+                      "Agentlytics + Drift",
+                      "Agentlytics + Freshworks",
+                      "Agentlytics + Zoho",
+                    ].map((label) => (
+                      <a
+                        key={label}
+                        href="#"
+                        className="block px-2 py-2 rounded hover:bg-slate-50"
+                      >
+                        {label}
+                      </a>
+                    ))}
                   </div>
                 </details>
                 <a href="#problem">Problem</a>
