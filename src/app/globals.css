@@ -2,7 +2,11 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #000000;
+  --foreground: #0f172a;
+  /* Global brand colors for header/buttons across all pages */
+  --brand-blue: #0069ff;
+  --brand-sky: #3ba3ff;
+  --brand-midnight: #0b1b34;
 }
 
 @theme inline {
@@ -12,19 +16,112 @@
   --font-mono: var(--font-geist-mono);
 }
 
-/* Force white background and black text, override dark mode */
+/* Force white background and consistent text color, override dark mode */
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #ffffff;
-    --foreground: #000000;
+    --foreground: #0f172a;
   }
 }
 
 body {
-  background: #ffffff !important;
-  color: #000000 !important;
-  font-family: Arial, Helvetica, sans-serif;
+  background: #ffffff;
+  color: var(--foreground);
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
 }
+
+.font-display {
+  font-family: Poppins, Inter, system-ui, sans-serif;
+}
+
+/* Reveal on scroll utility */
+.reveal {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.reveal.in-view {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Global keyframes used by homepage and subpages */
+@keyframes floaty {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+@keyframes typeDots {
+  0% { opacity: 0.2; }
+  33% { opacity: 0.6; }
+  66% { opacity: 1; }
+  100% { opacity: 0.2; }
+}
+@keyframes wobble {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-1.5%) rotate(-0.4deg); }
+  75% { transform: translateX(1.5%) rotate(0.4deg); }
+}
+@keyframes zzDrift {
+  0% { transform: translateY(0); opacity: 0.8; }
+  100% { transform: translateY(-14px); opacity: 0; }
+}
+@keyframes radar {
+  0% { transform: scale(0.6); opacity: 0.35; }
+  70% { transform: scale(1.15); opacity: 0; }
+  100% { transform: scale(1.2); opacity: 0; }
+}
+@keyframes slideIn {
+  0% { transform: translateX(-8px); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+@keyframes scrollHint {
+  0% { transform: translateY(0); opacity: 0.7; }
+  100% { transform: translateY(20px); opacity: 0.7; }
+}
+@keyframes dash {
+  0% { stroke-dashoffset: 160; }
+  100% { stroke-dashoffset: 0; }
+}
+@keyframes breath {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+@keyframes pingSoft {
+  0% { transform: scale(1); opacity: 0.7; }
+  80%, 100% { transform: scale(1.4); opacity: 0; }
+}
+@keyframes fadeUp {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes scaleIn {
+  0% { opacity: 0; transform: scale(0.98); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Utility classes for animations */
+.animate-floaty, .anim-floaty { animation: floaty 6s ease-in-out infinite; }
+.animate-pulseGlow, .anim-pulseGlow { animation: pulseGlow 3s ease-in-out infinite; }
+.animate-typeDots, .anim-typeDots { animation: typeDots 1.2s ease-in-out infinite; }
+.animate-wobble, .anim-wobble { animation: wobble 0.9s ease-in-out; }
+.animate-zzDrift, .anim-zzDrift { animation: zzDrift 1.6s ease-out forwards; }
+.animate-radar, .anim-radar { animation: radar 1.8s cubic-bezier(0.22,0.61,0.36,1) infinite; }
+.animate-slideIn, .anim-slideIn { animation: slideIn 0.5s ease-out forwards; }
+.animate-scrollHint, .anim-scrollHint { animation: scrollHint 1.2s ease-in-out infinite alternate; }
+.animate-dash, .anim-dash { animation: dash 4s ease-in-out infinite; }
+.animate-breath, .anim-breath { animation: breath 6s ease-in-out infinite; }
+.animate-pingSoft, .anim-pingSoft { animation: pingSoft 2.2s ease-out infinite; }
+.animate-fadeUp, .anim-fadeUp { animation: fadeUp 0.5s ease-out both; }
+.animate-scaleIn, .anim-scaleIn { animation: scaleIn 0.4s ease-out both; }
+.animate-shimmer, .anim-shimmer { animation: shimmer 1.6s linear infinite; background-size: 200% 100%; }
 
 /* Enhanced blockquote styling for chatbot messages */
 blockquote {

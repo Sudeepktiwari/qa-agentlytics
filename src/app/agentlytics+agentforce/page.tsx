@@ -179,46 +179,33 @@ export default function AgentlyticsVsAgentforce() {
   };
 
   return (
-    <div className="relative min-h-screen w-full overflow-x-hidden bg-gradient-to-b from-blue-50 to-blue-100 text-slate-800">
-      {/* Nav */}
-      <nav
-        className={`fixed inset-x-0 top-0 z-40 backdrop-blur supports-[backdrop-filter]:bg-white/70 ${
-          scrolled ? "shadow-md" : ""
-        }`}
+    <div className="relative min-h-screen w-full overflow-x-hidden bg-gradient-to-b from-blue-50 to-blue-100 text-slate-800 scroll-smooth">
+      {/* Page-specific menu to match homepage header */}
+      <header
+        className={`${scrolled ? "top-0" : "top-16"} fixed left-0 right-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top] duration-200`}
       >
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-2 font-semibold tracking-tight text-blue-800">
-            <span className="inline-flex h-6 w-6 items-center justify-center rounded bg-blue-200 text-blue-700">
-              A
-            </span>
-            Agentlytics
-          </div>
-          <div className="hidden items-center gap-6 md:flex text-sm text-blue-700">
-            <a href="#integration" className="hover:text-blue-900">
+        <div className="w-full h-16 flex items-center justify-center relative md:right-[84px]">
+          <nav className="flex items-center gap-4 md:gap-6 text-slate-600 text-sm">
+            <a href="#integration" className="hover:text-slate-900">
               Overview
             </a>
-            <a href="#compare" className="hover:text-blue-900">
+            <a href="#compare" className="hover:text-slate-900">
               Quick Compare
             </a>
-            <a href="#why" className="hover:text-blue-900">
+            <a href="#why" className="hover:text-slate-900">
               Why
             </a>
-            <a href="#outcomes" className="hover:text-blue-900">
+            <a href="#outcomes" className="hover:text-slate-900">
               Outcomes
             </a>
-            <a href="#faqs" className="hover:text-blue-900">
+            <a href="#faqs" className="hover:text-slate-900">
               FAQs
             </a>
-          </div>
-          <a
-            href="#start"
-            className="group inline-flex items-center gap-2 rounded-full bg-blue-600 px-4 py-2 text-white font-semibold shadow-md transition hover:bg-blue-700"
-          >
-            Start Free — See How Fast You Convert
-            <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
-          </a>
+          </nav>
         </div>
-      </nav>
+      </header>
+      {/* Spacer to prevent content from hiding under fixed header when stuck */}
+      <div className={scrolled ? "h-16" : "h-0"} />
 
       {/* Hero */}
       <section className="relative overflow-hidden bg-gradient-to-r from-blue-500 to-blue-700 pt-28 pb-24 text-center text-white">
@@ -780,7 +767,9 @@ export default function AgentlyticsVsAgentforce() {
       `}</style>
 
       {/* Diagnostics (test cases) */}
-      <Diagnostics />
+      <div className="pb-12">
+        <Diagnostics />
+      </div>
     </div>
   );
 }

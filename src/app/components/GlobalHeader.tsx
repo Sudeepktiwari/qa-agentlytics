@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 export default function GlobalHeader() {
   const pathname = usePathname();
   const isHome = pathname === "/";
-  const headerPositionClasses = isHome ? "relative" : "sticky top-0";
+  const headerPositionClasses = "relative";
   // Mobile accordion refs so only one dropdown stays open at a time
   const productsRef = useRef<HTMLDetailsElement | null>(null);
   const solutionsRef = useRef<HTMLDetailsElement | null>(null);
@@ -277,24 +277,128 @@ export default function GlobalHeader() {
                     "Agentlytics + Drift",
                     "Agentlytics + Freshworks",
                     "Agentlytics + Zoho",
-                  ].map((label) => (
+                  ].map((label, idx) => (
                     <li key={label}>
-                      <a
-                        href="#"
-                        className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
-                      >
-                        <span className="size-8 flex items-center justify-center rounded-lg bg-slate-50 text-slate-600">
-                          🤝
-                        </span>
-                        <div>
-                          <div className="font-semibold text-slate-900">
-                            {label}
+                      {idx === 0 ? (
+                        <Link
+                          href="/agentlytics+agentforce"
+                          className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
+                        >
+                          <span className="size-8 flex items-center justify-center rounded-lg bg-slate-50 text-slate-600">
+                            🤝
+                          </span>
+                          <div>
+                            <div className="font-semibold text-slate-900">
+                              {label}
+                            </div>
+                            <div className="text-sm text-slate-600">
+                              Integration overview and best practices
+                            </div>
                           </div>
-                          <div className="text-sm text-slate-600">
-                            Integration overview and best practices
+                        </Link>
+                      ) : idx === 1 ? (
+                        <Link
+                          href="/agentlytics+hubspot"
+                          className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
+                        >
+                          <span className="size-8 flex items-center justify-center rounded-lg bg-slate-50 text-slate-600">
+                            🤝
+                          </span>
+                          <div>
+                            <div className="font-semibold text-slate-900">
+                              {label}
+                            </div>
+                            <div className="text-sm text-slate-600">
+                              Integration overview and best practices
+                            </div>
                           </div>
-                        </div>
-                      </a>
+                        </Link>
+                      ) : idx === 2 ? (
+                        <Link
+                          href="/agentlytics+intercom"
+                          className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
+                        >
+                          <span className="size-8 flex items-center justify-center rounded-lg bg-slate-50 text-slate-600">
+                            🤝
+                          </span>
+                          <div>
+                            <div className="font-semibold text-slate-900">
+                              {label}
+                            </div>
+                            <div className="text-sm text-slate-600">
+                              Integration overview and best practices
+                            </div>
+                          </div>
+                        </Link>
+                      ) : idx === 3 ? (
+                        <Link
+                          href="/agentlytics+drift"
+                          className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
+                        >
+                          <span className="size-8 flex items-center justify-center rounded-lg bg-slate-50 text-slate-600">
+                            🤝
+                          </span>
+                          <div>
+                            <div className="font-semibold text-slate-900">
+                              {label}
+                            </div>
+                            <div className="text-sm text-slate-600">
+                              Integration overview and best practices
+                            </div>
+                          </div>
+                        </Link>
+                      ) : idx === 4 ? (
+                        <Link
+                          href="/agentlytics+freshworks"
+                          className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
+                        >
+                          <span className="size-8 flex items-center justify-center rounded-lg bg-slate-50 text-slate-600">
+                            🤝
+                          </span>
+                          <div>
+                            <div className="font-semibold text-slate-900">
+                              {label}
+                            </div>
+                            <div className="text-sm text-slate-600">
+                              Integration overview and best practices
+                            </div>
+                          </div>
+                        </Link>
+                      ) : idx === 5 ? (
+                        <Link
+                          href="/agentlytics+zoho"
+                          className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
+                        >
+                          <span className="size-8 flex items-center justify-center rounded-lg bg-slate-50 text-slate-600">
+                            🤝
+                          </span>
+                          <div>
+                            <div className="font-semibold text-slate-900">
+                              {label}
+                            </div>
+                            <div className="text-sm text-slate-600">
+                              Integration overview and best practices
+                            </div>
+                          </div>
+                        </Link>
+                      ) : (
+                        <a
+                          href="#"
+                          className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
+                        >
+                          <span className="size-8 flex items-center justify-center rounded-lg bg-slate-50 text-slate-600">
+                            🤝
+                          </span>
+                          <div>
+                            <div className="font-semibold text-slate-900">
+                              {label}
+                            </div>
+                            <div className="text-sm text-slate-600">
+                              Integration overview and best practices
+                            </div>
+                          </div>
+                        </a>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -486,15 +590,25 @@ export default function GlobalHeader() {
                     "Agentlytics + Drift",
                     "Agentlytics + Freshworks",
                     "Agentlytics + Zoho",
-                  ].map((label) => (
-                    <a
-                      key={label}
-                      href="#"
-                      className="block px-2 py-1 rounded hover:bg-slate-50"
-                    >
-                      {label}
-                    </a>
-                  ))}
+                  ].map((label, idx) =>
+                    idx === 0 ? (
+                      <Link
+                        key={label}
+                        href="/agentlytics+agentforce"
+                        className="block px-2 py-1 rounded hover:bg-slate-50"
+                      >
+                        {label}
+                      </Link>
+                    ) : (
+                      <a
+                        key={label}
+                        href="#"
+                        className="block px-2 py-1 rounded hover:bg-slate-50"
+                      >
+                        {label}
+                      </a>
+                    )
+                  )}
                 </div>
               </details>
 
