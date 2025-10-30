@@ -297,7 +297,7 @@ export default function KnowledgeAutomationPage() {
           </div>
 
           {/* Right: Animated Chat + Doc Sorting Illustration */}
-          <div className="relative mx-auto h-[400px] w-full max-w-[560px]">
+          <div className="relative mx-auto h-[580px] md:h-[420px] w-full max-w-[560px]">
             {/* soft glow background */}
             <div
               className="absolute inset-0 rounded-[32px] bg-gradient-to-br from-[--brand-primary]/10 to-[--brand-accent]/10 blur-2xl"
@@ -321,7 +321,7 @@ export default function KnowledgeAutomationPage() {
 
               {/* AI answer bubble */}
               <motion.div
-                className="absolute left-5 right-5 top-28"
+                className="absolute left-5 right-5 top-20"
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.25, duration: 0.6, ease: "easeOut" }}
@@ -357,7 +357,7 @@ export default function KnowledgeAutomationPage() {
               >
                 <div className="grid grid-cols-5 gap-2 text-[11px]">
                   {/* ingest */}
-                  <div className="col-span-2 rounded-2xl border border-[--border-subtle] bg-[--surface] p-3">
+                  <div className="col-span-2 rounded-2xl border sm:border border-[--border-subtle] bg-[--surface] p-4 sm:p-3">
                     <div className="mb-1 font-semibold text-slate-600">
                       Ingest
                     </div>
@@ -376,11 +376,11 @@ export default function KnowledgeAutomationPage() {
                     </div>
                   </div>
                   {/* arrow */}
-                  <div className="grid place-items-center text-slate-400">
+                  <div className="grid place-items-center text-slate-800 text-2xl">
                     →
                   </div>
                   {/* categories */}
-                  <div className="col-span-2 rounded-2xl border border-[--border-subtle] bg-[--surface] p-3">
+                  <div className="col-span-2 rounded-2xl border sm:border border-[--border-subtle] bg-[--surface] p-4 sm:p-3">
                     <div className="mb-1 font-semibold text-slate-600">
                       Categories
                     </div>
@@ -709,7 +709,11 @@ export default function KnowledgeAutomationPage() {
                 <div className="mt-1 text-sm text-slate-800">
                   Topics • Entities • Synonyms
                 </div>
-                <motion.div layout className="mt-3 min-h-[34px] flex flex-wrap gap-2 text-[11px]" style={{ willChange: "transform" }}>
+                <motion.div
+                  layout
+                  className="mt-3 min-h-[34px] flex flex-wrap gap-2 text-[11px]"
+                  style={{ willChange: "transform" }}
+                >
                   <AnimatePresence initial={false} mode="popLayout">
                     {categories
                       .slice(tick % categories.length)
@@ -1124,7 +1128,7 @@ export default function KnowledgeAutomationPage() {
       {/* 8) CTA */}
       <section
         id="cta"
-        className="mx-auto max-w-7xl rounded-3xl border border-[--border-subtle] bg-gradient-to-br from-white to-[--brand-primary]/5 px-4 py-16 text-center sm:px-6 scroll-mt-24"
+        className="mx-4 md:mx-auto mb-12 max-w-7xl rounded-3xl border border-[--border-subtle] bg-gradient-to-br from-white to-[--brand-primary]/5 px-4 py-16 text-center sm:px-6 scroll-mt-24"
       >
         <h2 className="text-3xl font-bold">Make Knowledge Work for You</h2>
         <p className="mx-auto mt-2 max-w-2xl text-slate-600">

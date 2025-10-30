@@ -369,7 +369,7 @@ export default function OnboardingAutomationPage() {
 
               {/* AI answer bubble */}
               <motion.div
-                className="absolute left-5 right-5 top-28"
+                className="absolute left-5 right-5 top-26"
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.25, duration: 0.6, ease: "easeOut" }}
@@ -398,7 +398,7 @@ export default function OnboardingAutomationPage() {
 
               {/* typing indicator */}
               <motion.div
-                className="absolute bottom-24 left-5 right-5"
+                className="absolute bottom-22 left-5 right-5"
                 initial={{ opacity: 0, y: 14 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5, duration: 0.6, ease: "easeOut" }}
@@ -722,7 +722,11 @@ export default function OnboardingAutomationPage() {
                 <div className="mt-1 text-sm text-slate-800">
                   Invite team • Set roles • Connect Slack
                 </div>
-                <motion.div layout className="mt-3 min-h-[34px] flex flex-wrap gap-2 text-[11px]" style={{ willChange: "transform" }}>
+                <motion.div
+                  layout
+                  className="mt-3 min-h-[34px] flex flex-wrap gap-2 text-[11px]"
+                  style={{ willChange: "transform" }}
+                >
                   <AnimatePresence initial={false} mode="popLayout">
                     {flowActions
                       .slice(tick % flowActions.length)
@@ -1154,7 +1158,7 @@ export default function OnboardingAutomationPage() {
       {/* 8) CTA */}
       <section
         id="cta"
-        className="mx-auto max-w-7xl rounded-3xl border border-[--border-subtle] bg-gradient-to-br from-white to-[--brand-primary]/5 px-4 py-16 text-center sm:px-6 scroll-mt-24"
+        className="mx-4 md:mx-auto mb-12 max-w-7xl rounded-3xl border border-[--border-subtle] bg-gradient-to-br from-white to-[--brand-primary]/5 px-4 py-16 text-center sm:px-6 scroll-mt-24"
       >
         <h2 className="text-3xl font-bold">
           Make Every Onboarding Interactive

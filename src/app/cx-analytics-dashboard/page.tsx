@@ -416,7 +416,7 @@ export default function KnowledgeAutomationPage() {
           </div>
 
           {/* Right: Animated Chat + Doc Sorting Illustration */}
-          <div className="relative mx-auto h-[400px] w-full max-w-[560px]">
+          <div className="relative mx-auto h-[580px] md:h-[440px] w-full max-w-[560px]">
             <div
               className="absolute inset-0 rounded-[32px] bg-gradient-to-br from-[--brand-primary]/10 to-[--brand-accent]/10 blur-2xl"
               aria-hidden
@@ -439,7 +439,7 @@ export default function KnowledgeAutomationPage() {
 
               {/* AI answer bubble */}
               <motion.div
-                className="absolute left-5 right-5 top-28"
+                className="absolute left-5 right-5 top-20"
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.25, duration: 0.6, ease: "easeOut" }}
@@ -468,7 +468,7 @@ export default function KnowledgeAutomationPage() {
 
               {/* doc ingest icons → sorted categories */}
               <motion.div
-                className="absolute left-5 right-5 bottom-24"
+                className="absolute left-5 right-5 bottom-28"
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.55, duration: 0.6, ease: "easeOut" }}
@@ -858,7 +858,10 @@ export default function KnowledgeAutomationPage() {
                   <motion.div
                     layout
                     className="flex flex-wrap items-center gap-2 text-xs"
-                    style={{ transform: "translateZ(0)", willChange: "transform" }}
+                    style={{
+                      transform: "translateZ(0)",
+                      willChange: "transform",
+                    }}
                   >
                     {ingestSources
                       .slice(tick % ingestSources.length)
@@ -895,7 +898,10 @@ export default function KnowledgeAutomationPage() {
                 <motion.div
                   layout
                   className="mt-3 min-h-[34px] flex flex-wrap gap-2 text-[11px]"
-                  style={{ transform: "translateZ(0)", willChange: "transform" }}
+                  style={{
+                    transform: "translateZ(0)",
+                    willChange: "transform",
+                  }}
                 >
                   <AnimatePresence initial={false} mode="popLayout">
                     {categories
@@ -1326,7 +1332,7 @@ export default function KnowledgeAutomationPage() {
       {/* 8) CTA */}
       <section
         id="cta"
-        className="mx-auto max-w-7xl rounded-3xl border border-[--border-subtle] bg-gradient-to-br from-white to-[--brand-primary]/5 px-4 py-16 text-center sm:px-6 scroll-mt-24"
+        className="mx-4 md:mx-auto mb-12 max-w-7xl rounded-3xl border border-[--border-subtle] bg-gradient-to-br from-white to-[--brand-primary]/5 px-4 py-16 text-center sm:px-6 scroll-mt-24"
       >
         <h2 className="text-3xl font-bold">Make Knowledge Work for You</h2>
         <p className="mx-auto mt-2 max-w-2xl text-slate-600">
