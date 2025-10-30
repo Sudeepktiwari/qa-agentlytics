@@ -422,7 +422,7 @@ export default function Page() {
       {/* PAGE */}
       <div className="scroll-smooth">
         {/* Header */}
-        <header className="sticky top-0 z-50 bg-white/80 backdrop-blur border-b border-slate-200">
+  <header className="sticky top-0 z-30 bg-white/80 backdrop-blur border-b border-slate-200">
           <div className="w-full h-16  flex items-center justify-center relative right-[84px]">
             <nav className="hidden md:flex items-center gap-6 text-slate-600">
               <a href="#problem" className="hover:text-slate-900">

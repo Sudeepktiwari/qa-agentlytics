@@ -23,7 +23,7 @@ export default function GlobalHeader() {
                 <path d="M5 7l5 5 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </button>
-            <div className="absolute left-0 top-full pt-3 z-50 rounded-2xl border border-slate-200 bg-white shadow-[0_12px_34px_rgba(2,6,23,.10)] p-6 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto">
+            <div className="absolute left-0 top-full pt-3 z-[100] rounded-2xl border border-slate-200 bg-white shadow-[0_12px_34px_rgba(2,6,23,.10)] p-6 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto">
               <div className="w-[300px]">
                 <ul className="space-y-3">
                   <li>
@@ -75,7 +75,7 @@ export default function GlobalHeader() {
                 <path d="M5 7l5 5 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </button>
-            <div className="absolute left-0 top-full pt-3 z-50 rounded-2xl border border-slate-200 bg-white shadow-[0_12px_34px_rgba(2,6,23,.10)] p-6 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto">
+            <div className="absolute left-0 top-full pt-3 z-[100] rounded-2xl border border-slate-200 bg-white shadow-[0_12px_34px_rgba(2,6,23,.10)] p-6 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto">
               <div className="w-[300px]">
                 <ul className="space-y-3">
                   <li>
@@ -136,7 +136,7 @@ export default function GlobalHeader() {
                 <path d="M5 7l5 5 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </button>
-            <div className="absolute left-0 top-full pt-3 z-50 rounded-2xl border border-slate-200 bg-white shadow-[0_12px_34px_rgba(2,6,23,.10)] p-6 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto">
+            <div className="absolute left-0 top-full pt-3 z-[100] rounded-2xl border border-slate-200 bg-white shadow-[0_12px_34px_rgba(2,6,23,.10)] p-6 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto">
               <div className="w-[300px]">
                 <ul className="space-y-3">
                   {[
