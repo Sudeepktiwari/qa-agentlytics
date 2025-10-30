@@ -1,5 +1,6 @@
 "use client";
 import React, { useRef } from "react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 export default function GlobalHeader() {
@@ -17,13 +18,13 @@ export default function GlobalHeader() {
       className={`${headerPositionClasses} z-50 bg-white/80 backdrop-blur border-b border-slate-200`}
     >
       <div className="max-w-7xl mx-auto h-16 px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-        <a
+        <Link
           href="/"
           className="flex items-center gap-2 font-display font-extrabold tracking-tight text-[color:var(--brand-midnight)]"
         >
           <span className="size-7 rounded-lg bg-[conic-gradient(from_220deg,#0069FF,#3BA3FF)]" />
           <span>Agentlytics</span>
-        </a>
+        </Link>
 
         {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-6 text-slate-600">
@@ -51,7 +52,7 @@ export default function GlobalHeader() {
               <div className="w-[300px]">
                 <ul className="space-y-3">
                   <li>
-                    <a
+                    <Link
                       href="/ai-chatbots"
                       className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
                     >
@@ -66,10 +67,10 @@ export default function GlobalHeader() {
                           Advanced conversational AI
                         </div>
                       </div>
-                    </a>
+                    </Link>
                   </li>
                   <li>
-                    <a
+                    <Link
                       href="/knowledge-base"
                       className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
                     >
@@ -84,10 +85,10 @@ export default function GlobalHeader() {
                           Intelligent self‑service portal
                         </div>
                       </div>
-                    </a>
+                    </Link>
                   </li>
                   <li>
-                    <a
+                    <Link
                       href="/lead-generation-basics"
                       className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
                     >
@@ -102,10 +103,10 @@ export default function GlobalHeader() {
                           Smart lead capture & qualification
                         </div>
                       </div>
-                    </a>
+                    </Link>
                   </li>
                   <li>
-                    <a
+                    <Link
                       href="/onboarding-ai-bot"
                       className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
                     >
@@ -120,7 +121,7 @@ export default function GlobalHeader() {
                           Onboarding assistant for new visitors
                         </div>
                       </div>
-                    </a>
+                    </Link>
                   </li>
                 </ul>
               </div>
@@ -151,7 +152,7 @@ export default function GlobalHeader() {
               <div className="w-[300px]">
                 <ul className="space-y-3">
                   <li>
-                    <a
+                    <Link
                       href="/customer-support-ai"
                       className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
                     >
@@ -167,10 +168,10 @@ export default function GlobalHeader() {
                           knowledge bases.
                         </div>
                       </div>
-                    </a>
+                    </Link>
                   </li>
                   <li>
-                    <a
+                    <Link
                       href="/sales-conversion-ai"
                       className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
                     >
@@ -185,10 +186,10 @@ export default function GlobalHeader() {
                           Proactive engagement and behavioral triggers.
                         </div>
                       </div>
-                    </a>
+                    </Link>
                   </li>
                   <li>
-                    <a
+                    <Link
                       href="/onboarding-automation"
                       className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
                     >
@@ -203,10 +204,10 @@ export default function GlobalHeader() {
                           Interactive AI‑led guidance.
                         </div>
                       </div>
-                    </a>
+                    </Link>
                   </li>
                   <li>
-                    <a
+                    <Link
                       href="/knowledge-automation"
                       className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
                     >
@@ -221,10 +222,10 @@ export default function GlobalHeader() {
                           Auto‑organize and surface information intelligently.
                         </div>
                       </div>
-                    </a>
+                    </Link>
                   </li>
                   <li>
-                    <a
+                    <Link
                       href="/cx-analytics-dashboard"
                       className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
                     >
@@ -239,7 +240,7 @@ export default function GlobalHeader() {
                           Insights from every customer interaction.
                         </div>
                       </div>
-                    </a>
+                    </Link>
                   </li>
                 </ul>
               </div>
@@ -304,12 +305,12 @@ export default function GlobalHeader() {
 
         {/* Desktop CTAs */}
         <div className="hidden md:flex items-center gap-3">
-          <a
+          <Link
             href="/demo"
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 text-slate-800 hover:bg-slate-50"
           >
             Book a Demo
-          </a>
+          </Link>
           <a
             href="#trial"
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[color:var(--brand-blue)] text-white hover:bg-blue-600"
@@ -358,30 +359,30 @@ export default function GlobalHeader() {
                   </svg>
                 </summary>
                 <div className="px-3 pb-2 grid gap-2 text-slate-800">
-                  <a
+                  <Link
                     href="/ai-chatbots"
                     className="block px-2 py-1 rounded hover:bg-slate-50"
                   >
                     AI Chatbots
-                  </a>
-                  <a
+                  </Link>
+                  <Link
                     href="/knowledge-base"
                     className="block px-2 py-1 rounded hover:bg-slate-50"
                   >
                     Knowledge Base AI
-                  </a>
-                  <a
+                  </Link>
+                  <Link
                     href="/lead-generation-basics"
                     className="block px-2 py-1 rounded hover:bg-slate-50"
                   >
                     Lead Generation AI
-                  </a>
-                  <a
+                  </Link>
+                  <Link
                     href="/onboarding-ai-bot"
                     className="block px-2 py-1 rounded hover:bg-slate-50"
                   >
                     Onboarding AI Bot
-                  </a>
+                  </Link>
                 </div>
               </details>
 
@@ -415,36 +416,36 @@ export default function GlobalHeader() {
                   </svg>
                 </summary>
                 <div className="px-3 pb-2 grid gap-2 text-slate-800">
-                  <a
+                  <Link
                     href="/customer-support-ai"
                     className="block px-2 py-1 rounded hover:bg-slate-50"
                   >
                     Customer Support AI
-                  </a>
-                  <a
+                  </Link>
+                  <Link
                     href="/sales-conversion-ai"
                     className="block px-2 py-1 rounded hover:bg-slate-50"
                   >
                     Sales Conversion AI
-                  </a>
-                  <a
+                  </Link>
+                  <Link
                     href="/onboarding-automation"
                     className="block px-2 py-1 rounded hover:bg-slate-50"
                   >
                     Onboarding Automation
-                  </a>
-                  <a
+                  </Link>
+                  <Link
                     href="/knowledge-automation"
                     className="block px-2 py-1 rounded hover:bg-slate-50"
                   >
                     Knowledge Automation
-                  </a>
-                  <a
+                  </Link>
+                  <Link
                     href="/cx-analytics-dashboard"
                     className="block px-2 py-1 rounded hover:bg-slate-50"
                   >
                     CX Analytics Dashboard
-                  </a>
+                  </Link>
                 </div>
               </details>
 
@@ -498,12 +499,12 @@ export default function GlobalHeader() {
               </details>
 
               <div className="flex-row space-y-2 pt-2 border-t border-slate-200 gap-3">
-                <a
+                <Link
                   href="/demo"
                   className="inline-flex items-center gap-2 px-4 py-2 w-full justify-center rounded-lg border border-slate-300"
                 >
                   Book a Demo
-                </a>
+                </Link>
                 <a
                   href="#trial"
                   className="inline-flex items-center gap-2 px-4 py-2 w-full justify-center rounded-lg bg-[color:var(--brand-blue)] text-white"
