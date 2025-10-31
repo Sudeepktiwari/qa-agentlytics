@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 export default function DriftComparisonPage() {
   // Brand palette inspired by Drift blue and neutral base
   const BRAND_BLUE = "#0A5BFF"; // Drift Blue per Brandfetch
@@ -8,12 +8,21 @@ export default function DriftComparisonPage() {
 
   // Match Agentforce sticky menu behavior
   const [scrolled, setScrolled] = useState(false);
+  const headerRef = useRef<HTMLElement | null>(null);
+  const [headerHeight, setHeaderHeight] = useState(64);
   useEffect(() => {
     const handleScroll = () => {
       if (typeof window !== "undefined") setScrolled(window.scrollY > 8);
     };
+    const updateHeaderHeight = () => {
+      if (headerRef.current) {
+        setHeaderHeight(headerRef.current.offsetHeight || 64);
+      }
+    };
     if (typeof window !== "undefined") {
       window.addEventListener("scroll", handleScroll);
+      window.addEventListener("resize", updateHeaderHeight);
+      updateHeaderHeight();
       return () => window.removeEventListener("scroll", handleScroll);
     }
   }, []);
@@ -46,9 +55,10 @@ export default function DriftComparisonPage() {
         className={`${
           scrolled ? "top-0" : "top-16"
         } fixed left-0 right-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top] duration-200`}
+        ref={headerRef}
       >
-        <div className="w-full h-16 flex items-center justify-center relative md:right-[84px]">
-          <nav className="flex items-center gap-4 md:gap-6 text-slate-600 text-sm">
+        <div className="w-full sm:h-16 h-auto flex items-center justify-center relative md:right-[84px] px-3">
+          <nav className="flex flex-wrap sm:flex-nowrap items-center justify-center gap-x-3 gap-y-2 sm:gap-6 text-slate-600 text-sm">
             <a href="#overview" className="hover:text-slate-900">
               Overview
             </a>
@@ -68,7 +78,7 @@ export default function DriftComparisonPage() {
         </div>
       </header>
       {/* Spacer to prevent content from hiding under fixed header when stuck */}
-      <div className={scrolled ? "h-16" : "h-0"} />
+      <div style={{ height: scrolled ? headerHeight : 0 }} />
 
       {/* HERO */}
       <section className="relative overflow-hidden">
@@ -542,6 +552,42 @@ export default function DriftComparisonPage() {
 }
 
 function Carousel() {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    // Only run auto-scroll on mobile viewports
+    const isMobile = typeof window !== "undefined" && window.matchMedia("(max-width: 639px)").matches;
+    if (!isMobile) return;
+
+    let rafId: number;
+    let paused = false;
+    const step = () => {
+      if (!paused) {
+        el.scrollLeft += 1; // ~60px/sec
+        if (el.scrollLeft >= el.scrollWidth - el.clientWidth) {
+          el.scrollLeft = 0; // loop back to start
+        }
+      }
+      rafId = requestAnimationFrame(step);
+    };
+
+    const onPointerDown = () => {
+      paused = true;
+    };
+    const onPointerUp = () => {
+      paused = false;
+    };
+
+    rafId = requestAnimationFrame(step);
+    el.addEventListener("pointerdown", onPointerDown);
+    window.addEventListener("pointerup", onPointerUp);
+    return () => {
+      cancelAnimationFrame(rafId);
+      el.removeEventListener("pointerdown", onPointerDown);
+      window.removeEventListener("pointerup", onPointerUp);
+    };
+  }, []);
   const items = [
     {
       logo: "CloudScale",
@@ -564,10 +610,10 @@ function Carousel() {
 
   return (
     <div className="mt-10">
-      <div className="relative overflow-hidden rounded-2xl border bg-white">
-        <div className="flex animate-[slide_16s_linear_infinite] hover:[animation-play-state:paused]">
+      <div className="group relative overflow-x-auto sm:overflow-hidden rounded-2xl border bg-white" ref={containerRef}>
+        <div className="flex gap-0 snap-x snap-mandatory sm:snap-none sm:animate-[slide_16s_linear_infinite] sm:group-hover:[animation-play-state:paused]">
           {[...items, ...items].map((item, idx) => (
-            <div key={idx} className="w-full sm:w-1/3 shrink-0 p-6">
+            <div key={idx} className="w-[60vw] sm:w-1/3 shrink-0 p-6 snap-center">
               <div className="h-full rounded-xl border p-6 shadow-sm bg-white">
                 <div className="text-xs font-semibold text-slate-500">
                   {item.logo}
@@ -587,7 +633,8 @@ function Carousel() {
       <style>{`
         @keyframes slide { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
       `}</style>
-      <p className="mt-2 text-xs text-slate-500">Hover to pause</p>
+      <p className="mt-2 hidden sm:block text-xs text-slate-500">Hover to pause</p>
+      <p className="mt-2 sm:hidden text-xs text-slate-500 text-center">Touch and hold to pause</p>
     </div>
   );
 }
