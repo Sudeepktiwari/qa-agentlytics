@@ -302,7 +302,7 @@ export default function GlobalHeader() {
                           className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
                         >
                           <span className="size-8 flex items-center justify-center rounded-lg bg-slate-50 text-slate-600">
-                            🤝
+                            ⚙️
                           </span>
                           <div>
                             <div className="font-semibold text-slate-900">
@@ -319,7 +319,7 @@ export default function GlobalHeader() {
                           className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
                         >
                           <span className="size-8 flex items-center justify-center rounded-lg bg-slate-50 text-slate-600">
-                            🤝
+                            💬
                           </span>
                           <div>
                             <div className="font-semibold text-slate-900">
@@ -336,7 +336,7 @@ export default function GlobalHeader() {
                           className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
                         >
                           <span className="size-8 flex items-center justify-center rounded-lg bg-slate-50 text-slate-600">
-                            🤝
+                            🚀
                           </span>
                           <div>
                             <div className="font-semibold text-slate-900">
@@ -353,7 +353,7 @@ export default function GlobalHeader() {
                           className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
                         >
                           <span className="size-8 flex items-center justify-center rounded-lg bg-slate-50 text-slate-600">
-                            🤝
+                            🌱
                           </span>
                           <div>
                             <div className="font-semibold text-slate-900">
@@ -370,7 +370,7 @@ export default function GlobalHeader() {
                           className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
                         >
                           <span className="size-8 flex items-center justify-center rounded-lg bg-slate-50 text-slate-600">
-                            🤝
+                            🔍
                           </span>
                           <div>
                             <div className="font-semibold text-slate-900">
@@ -590,16 +590,22 @@ export default function GlobalHeader() {
                     "Agentlytics + Drift",
                     "Agentlytics + Freshworks",
                     "Agentlytics + Zoho",
-                  ].map((label, idx) =>
-                    idx === 0 ? (
-                      <Link
-                        key={label}
-                        href="/agentlytics+agentforce"
-                        className="block px-2 py-1 rounded hover:bg-slate-50"
-                      >
-                        {label}
-                      </Link>
-                    ) : (
+                  ].map((label, idx) => {
+                    const href =
+                      idx === 0
+                        ? "/agentlytics+agentforce"
+                        : idx === 1
+                        ? "/agentlytics+hubspot"
+                        : idx === 2
+                        ? "/agentlytics+intercom"
+                        : idx === 3
+                        ? "/agentlytics+drift"
+                        : idx === 4
+                        ? "/agentlytics+freshworks"
+                        : idx === 5
+                        ? "/agentlytics+zoho"
+                        : "#";
+                    return href === "#" ? (
                       <a
                         key={label}
                         href="#"
@@ -607,8 +613,16 @@ export default function GlobalHeader() {
                       >
                         {label}
                       </a>
-                    )
-                  )}
+                    ) : (
+                      <Link
+                        key={label}
+                        href={href}
+                        className="block px-2 py-1 rounded hover:bg-slate-50"
+                      >
+                        {label}
+                      </Link>
+                    );
+                  })}
                 </div>
               </details>
 
