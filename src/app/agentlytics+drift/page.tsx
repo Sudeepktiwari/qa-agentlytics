@@ -43,16 +43,27 @@ export default function DriftComparisonPage() {
 
       {/* Page-specific menu to match Agentforce header */}
       <header
-        className={`${scrolled ? "top-0" : "top-16"} fixed left-0 right-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top] duration-200`}
+        className={`${
+          scrolled ? "top-0" : "top-16"
+        } fixed left-0 right-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top] duration-200`}
       >
         <div className="w-full h-16 flex items-center justify-center relative md:right-[84px]">
           <nav className="flex items-center gap-4 md:gap-6 text-slate-600 text-sm">
-            <a href="#overview" className="hover:text-slate-900">Overview</a>
-            <a href="#switch" className="hover:text-slate-900">Why Switch</a>
-            <a href="#brain" className="hover:text-slate-900">Proactive Brain</a>
-            <a href="#outcomes" className="hover:text-slate-900">Outcomes</a>
-            <a href="#integrations" className="hover:text-slate-900">Integrations</a>
-            <a href="#cta" className="hover:text-slate-900">Get Started</a>
+            <a href="#overview" className="hover:text-slate-900">
+              Overview
+            </a>
+            <a href="#switch" className="hover:text-slate-900">
+              Why Switch
+            </a>
+            <a href="#brain" className="hover:text-slate-900">
+              Proactive Brain
+            </a>
+            <a href="#outcomes" className="hover:text-slate-900">
+              Outcomes
+            </a>
+            <a href="#integrations" className="hover:text-slate-900">
+              Integrations
+            </a>
           </nav>
         </div>
       </header>

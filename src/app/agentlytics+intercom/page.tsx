@@ -75,7 +75,7 @@ const Row = ({
   left: React.ReactNode;
   right: React.ReactNode;
 }) => (
-  <div className="grid grid-cols-1 gap-4 rounded-xl bg-white p-4 shadow md:grid-cols-2">
+  <div className="grid grid-cols-1 gap-4 rounded-xl bg-white p-4 shadow sm:grid-cols-2">
     <div className="font-medium text-slate-800">{left}</div>
     <div className="text-slate-600">{right}</div>
   </div>
@@ -319,7 +319,7 @@ export default function Page() {
       <section id="overview" className="mx-auto max-w-7xl px-4 pb-8">
         <FadeIn>
           <div className="rounded-2xl bg-white/95 p-5 shadow">
-            <div className="mb-4 flex items-center justify-between">
+            <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
               <h2 className="text-xl font-semibold">🔍 Quick Overview</h2>
               <div className="flex items-center gap-2 text-xs text-slate-500">
                 <Logo label="CloudScale" /> <Logo label="FinServe" />{" "}
@@ -404,13 +404,13 @@ export default function Page() {
       {/* WHY IT MATTERS */}
       <section className="mx-auto max-w-7xl px-4 py-8">
         <FadeIn>
-          <div className="rounded-2xl bg-white/95 p-6 shadow">
-            <h3 className="text-lg font-semibold">⚡ Why It Matters</h3>
-            <p className="mt-2 text-slate-700">
+          <div className="rounded-2xl bg-white/95 p-4 sm:p-6 shadow">
+            <h3 className="text-base sm:text-lg font-semibold">⚡ Why It Matters</h3>
+            <p className="mt-2 text-sm sm:text-base text-slate-700">
               Most tools react after users ask for help. Agentlytics acts when
               intent peaks.
             </p>
-            <blockquote className="mt-3 rounded-xl bg-[#F9FBFF] p-4 text-slate-700 ring-1 ring-slate-200/70">
+            <blockquote className="mt-3 rounded-xl bg-[#F9FBFF] p-3 sm:p-4 text-sm sm:text-base text-slate-700 ring-1 ring-slate-200/70">
               “Every missed scroll, pause, or exit is a silent dropout —
               Agentlytics catches them before they leave.”
             </blockquote>
