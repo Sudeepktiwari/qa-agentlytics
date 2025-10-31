@@ -597,7 +597,7 @@ export default function AgentlyticsVsAgentforce() {
       </section>
 
       {/* Outcomes + logos */}
-      <section id="outcomes2" className="py-20 bg-white">
+      <section id="outcomes" className="py-20 bg-white">
         <div className="container mx-auto max-w-6xl px-6">
           <motion.h2
             {...fadeUp}
