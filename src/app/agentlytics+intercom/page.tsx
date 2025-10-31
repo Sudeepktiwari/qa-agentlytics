@@ -123,17 +123,17 @@ const TestimonialCard = ({
   quote: string;
   author: string;
 }) => (
-  <div className="min-w-[280px] max-w-sm shrink-0 rounded-xl bg-white/95 p-5 shadow">
+  <div className="min-w-[280px] max-w-sm shrink-0 snap-start rounded-xl bg-white/95 p-4 sm:p-5 shadow">
     <p className="text-[15px] leading-relaxed text-slate-700">“{quote}”</p>
     <div className="mt-3 text-sm font-semibold text-slate-900">{author}</div>
   </div>
 );
 
 const Carousel = () => (
-  <div className="group relative overflow-hidden">
-    <div className="absolute inset-y-0 left-0 w-20 bg-gradient-to-r from-[#F9FBFF] to-transparent pointer-events-none" />
-    <div className="absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-[#F9FBFF] to-transparent pointer-events-none" />
-    <div className="flex gap-4 animate-[scroll_25s_linear_infinite] group-hover:[animation-play-state:paused] will-change-transform">
+  <div className="group relative overflow-x-auto md:overflow-hidden">
+    <div className="hidden md:block absolute inset-y-0 left-0 w-20 bg-gradient-to-r from-[#F9FBFF] to-transparent pointer-events-none" />
+    <div className="hidden md:block absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-[#F9FBFF] to-transparent pointer-events-none" />
+    <div className="flex gap-4 snap-x snap-mandatory md:animate-[scroll_25s_linear_infinite] md:group-hover:[animation-play-state:paused] will-change-transform">
       {[
         {
           quote:
@@ -544,8 +544,8 @@ export default function Page() {
       <section className="mx-auto max-w-7xl px-4 py-6">
         <FadeIn>
           <div className="rounded-2xl bg-white/95 p-6 shadow">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-semibold">✨ What customers say</h3>
+            <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+              <h3 className="text-base sm:text-lg font-semibold">✨ What customers say</h3>
               <div className="flex items-center gap-2">
                 <Logo label="CloudScale" />
                 <Logo label="FinServe" />
@@ -553,9 +553,8 @@ export default function Page() {
               </div>
             </div>
             <Carousel />
-            <div className="mt-4 text-right text-xs text-slate-500">
-              Hover to pause
-            </div>
+            <div className="mt-4 hidden md:block text-right text-xs text-slate-500">Hover to pause</div>
+            <div className="mt-4 md:hidden text-center text-xs text-slate-500">Swipe to scroll</div>
           </div>
         </FadeIn>
       </section>
