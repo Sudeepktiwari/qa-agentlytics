@@ -102,8 +102,20 @@ export default function AgentlyticsVsFreshchat() {
         </div>
       </section>
 
+      {/* Page Menu */}
+      <div className="sticky top-16 z-40 bg-white/80 backdrop-blur border-b border-slate-200">
+        <div className="max-w-6xl mx-auto px-6 py-2 flex gap-4 overflow-x-auto text-sm text-slate-700">
+          <a href="#overview" className="px-2 py-1 hover:text-slate-900">Overview</a>
+          <a href="#switch" className="px-2 py-1 hover:text-slate-900">Why Switch</a>
+          <a href="#engine" className="px-2 py-1 hover:text-slate-900">AI Engine</a>
+          <a href="#outcomes" className="px-2 py-1 hover:text-slate-900">Outcomes</a>
+          <a href="#integrations" className="px-2 py-1 hover:text-slate-900">Integrations</a>
+          <a href="#cta" className="px-2 py-1 hover:text-slate-900">Get Started</a>
+        </div>
+      </div>
+
       {/* QUICK OVERVIEW */}
-      <section className="py-20 bg-white" data-testid="quick-overview">
+      <section id="overview" className="py-20 bg-white" data-testid="quick-overview">
         <div className="max-w-6xl mx-auto px-6">
           <h2 className="text-3xl font-bold text-center text-[#2C63F4] mb-10">
             The Freshchat Alternative for SaaS Teams
@@ -173,7 +185,7 @@ export default function AgentlyticsVsFreshchat() {
       </section>
 
       {/* WHY TEAMS SWITCH */}
-      <section className="py-20 bg-[#F8FAFF]" data-testid="why-switch">
+      <section id="switch" className="py-20 bg-[#F8FAFF]" data-testid="why-switch">
         <div className="max-w-6xl mx-auto px-6 space-y-12">
           <h2 className="text-3xl font-bold text-center text-[#2C63F4]">
             💡 Why Teams Switch from Freshchat to Agentlytics
@@ -210,7 +222,7 @@ export default function AgentlyticsVsFreshchat() {
       </section>
 
       {/* ADAPTIVE AI ENGINE */}
-      <section className="py-20 bg-white" data-testid="engine">
+      <section id="engine" className="py-20 bg-white" data-testid="engine">
         <div className="max-w-6xl mx-auto px-6">
           <h2 className="text-3xl font-bold text-center text-[#2C63F4] mb-10">
             🧠 Inside the Adaptive AI Engine
@@ -260,7 +272,7 @@ export default function AgentlyticsVsFreshchat() {
       </section>
 
       {/* TESTIMONIALS */}
-      <section className="py-20 bg-[#F8FAFF]" data-testid="testimonials">
+      <section id="outcomes" className="py-20 bg-[#F8FAFF]" data-testid="testimonials">
         <div className="max-w-6xl mx-auto px-6 text-center">
           <h2 className="text-3xl font-bold text-[#2C63F4] mb-10">
             📈 Real Outcomes
@@ -316,6 +328,7 @@ export default function AgentlyticsVsFreshchat() {
 
       {/* INTEGRATIONS */}
       <section
+        id="integrations"
         className="py-20 bg-white text-center"
         data-testid="integrations"
       >
@@ -347,6 +360,7 @@ export default function AgentlyticsVsFreshchat() {
 
       {/* CTA */}
       <section
+        id="cta"
         className="py-20 bg-gradient-to-br from-[#2C63F4] to-[#00BFA6] text-white text-center"
         data-testid="final-cta"
       >

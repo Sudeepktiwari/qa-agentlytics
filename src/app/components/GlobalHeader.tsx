@@ -15,6 +15,7 @@ export default function GlobalHeader() {
   const mobileMenuRef = useRef<HTMLDetailsElement | null>(null);
   return (
     <header
+      data-global-header
       className={`${headerPositionClasses} z-50 bg-white/80 backdrop-blur border-b border-slate-200`}
     >
       <div className="max-w-7xl mx-auto h-16 px-4 sm:px-6 lg:px-8 flex items-center justify-between">

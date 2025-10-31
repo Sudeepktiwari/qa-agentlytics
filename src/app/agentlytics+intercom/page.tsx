@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 // Intercom-style light theme — white backgrounds, blue accents, soft (light) shadows, minimal borders
 
@@ -183,19 +183,24 @@ const Carousel = () => (
 );
 
 export default function Page() {
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
   return (
     <div className="min-h-screen bg-[#F9FBFF] text-[#0B1F33]">
       <style>{`@keyframes scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }`}</style>
 
       {/* NAV */}
-      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur ring-1 ring-slate-200/70">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-xl bg-[#006EFF] shadow" />
-            <span className="text-sm font-semibold tracking-tight">
-              Agentlytics
-            </span>
-          </div>
+      <header
+        className={`fixed left-0 right-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200 transition-all ${
+          scrolled ? "top-0" : "top-16"
+        }`}
+      >
+        <div className="mx-auto flex max-w-7xl items-center justify-center px-4 py-3">
           <nav className="hidden items-center gap-6 text-sm text-slate-600 md:flex">
             <a href="#overview" className="hover:text-slate-900">
               Overview
@@ -210,16 +215,10 @@ export default function Page() {
               Integrations
             </a>
           </nav>
-          <div className="flex items-center gap-3">
-            <Button href="#demo" variant="secondary">
-              Book a Comparison Demo
-            </Button>
-            <Button href="#start">
-              Start Free — Engage Visitors Automatically
-            </Button>
-          </div>
         </div>
       </header>
+      {/* Spacer to prevent content overlap */}
+      <div className={scrolled ? "h-16" : "h-0"} />
 
       {/* HERO */}
       <section className="relative">

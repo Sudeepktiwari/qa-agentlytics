@@ -1,9 +1,22 @@
 "use client";
+import { useEffect, useState } from "react";
 export default function DriftComparisonPage() {
   // Brand palette inspired by Drift blue and neutral base
   const BRAND_BLUE = "#0A5BFF"; // Drift Blue per Brandfetch
   const BRAND_DARK = "#0B1020"; // deep navy for headings
   const BRAND_GRAY = "#0F172A"; // slate-like for body text
+
+  // Match Agentforce sticky menu behavior
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const handleScroll = () => {
+      if (typeof window !== "undefined") setScrolled(window.scrollY > 8);
+    };
+    if (typeof window !== "undefined") {
+      window.addEventListener("scroll", handleScroll);
+      return () => window.removeEventListener("scroll", handleScroll);
+    }
+  }, []);
 
   return (
     <div
@@ -27,6 +40,24 @@ export default function DriftComparisonPage() {
           content="Split view showing Drift’s static playbook vs Agentlytics’ proactive AI detection."
         />
       </head>
+
+      {/* Page-specific menu to match Agentforce header */}
+      <header
+        className={`${scrolled ? "top-0" : "top-16"} fixed left-0 right-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top] duration-200`}
+      >
+        <div className="w-full h-16 flex items-center justify-center relative md:right-[84px]">
+          <nav className="flex items-center gap-4 md:gap-6 text-slate-600 text-sm">
+            <a href="#overview" className="hover:text-slate-900">Overview</a>
+            <a href="#switch" className="hover:text-slate-900">Why Switch</a>
+            <a href="#brain" className="hover:text-slate-900">Proactive Brain</a>
+            <a href="#outcomes" className="hover:text-slate-900">Outcomes</a>
+            <a href="#integrations" className="hover:text-slate-900">Integrations</a>
+            <a href="#cta" className="hover:text-slate-900">Get Started</a>
+          </nav>
+        </div>
+      </header>
+      {/* Spacer to prevent content from hiding under fixed header when stuck */}
+      <div className={scrolled ? "h-16" : "h-0"} />
 
       {/* HERO */}
       <section className="relative overflow-hidden">
@@ -242,7 +273,7 @@ export default function DriftComparisonPage() {
       </section>
 
       {/* Why Teams Switch */}
-      <section className="mx-auto max-w-7xl px-6 py-16">
+      <section className="mx-auto max-w-7xl px-6 py-16" id="switch">
         <h2
           className="text-2xl sm:text-3xl font-bold"
           style={{ color: BRAND_DARK }}
@@ -282,7 +313,7 @@ export default function DriftComparisonPage() {
       </section>
 
       {/* Inside the Proactive Brain */}
-      <section className="mx-auto max-w-7xl px-6 py-16">
+      <section className="mx-auto max-w-7xl px-6 py-16" id="brain">
         <h2
           className="text-2xl sm:text-3xl font-bold"
           style={{ color: BRAND_DARK }}
@@ -333,7 +364,7 @@ export default function DriftComparisonPage() {
       </section>
 
       {/* Real Outcomes — Testimonial Carousel */}
-      <section className="mx-auto max-w-7xl px-6 py-16">
+      <section className="mx-auto max-w-7xl px-6 py-16" id="outcomes">
         <h2
           className="text-2xl sm:text-3xl font-bold"
           style={{ color: BRAND_DARK }}
@@ -400,7 +431,7 @@ export default function DriftComparisonPage() {
       </section>
 
       {/* Integrations & Add‑ons */}
-      <section className="mx-auto max-w-7xl px-6 py-16">
+      <section className="mx-auto max-w-7xl px-6 py-16" id="integrations">
         <h2
           className="text-2xl sm:text-3xl font-bold"
           style={{ color: BRAND_DARK }}
@@ -442,7 +473,7 @@ export default function DriftComparisonPage() {
       </section>
 
       {/* Final CTA */}
-      <section className="relative">
+      <section className="relative" id="cta">
         <div
           className="absolute inset-0 -z-10"
           aria-hidden

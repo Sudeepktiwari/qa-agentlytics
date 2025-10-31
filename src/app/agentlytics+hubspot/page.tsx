@@ -432,8 +432,21 @@ export default function AgentlyticsVsHubSpotPage() {
         </Container>
       </section>
 
+      {/* Page Menu */}
+      <div className="sticky top-16 z-40 bg-white/80 backdrop-blur border-b border-slate-200">
+        <Container className="flex gap-4 overflow-x-auto py-2 text-sm text-slate-700">
+          <a href="#overview" className="px-2 py-1 hover:text-slate-900">Overview</a>
+          <a href="#why" className="px-2 py-1 hover:text-slate-900">Why It Matters</a>
+          <a href="#compare" className="px-2 py-1 hover:text-slate-900">Compare</a>
+          <a href="#differentiators" className="px-2 py-1 hover:text-slate-900">Differentiators</a>
+          <a href="#outcomes" className="px-2 py-1 hover:text-slate-900">Outcomes</a>
+          <a href="#testimonials" className="px-2 py-1 hover:text-slate-900">Testimonials</a>
+          <a href="#decision" className="px-2 py-1 hover:text-slate-900">Decision</a>
+        </Container>
+      </div>
+
       {/* Quick Overview */}
-      <section className="py-16 md:py-20" style={{ background: hs.bgAlt }}>
+      <section id="overview" className="py-16 md:py-20" style={{ background: hs.bgAlt }}>
         <Container>
           <SectionTitle
             center
@@ -445,7 +458,7 @@ export default function AgentlyticsVsHubSpotPage() {
       </section>
 
       {/* Why It Matters */}
-      <section className="py-16 md:py-20">
+      <section id="why" className="py-16 md:py-20">
         <Container>
           <SectionTitle
             title="Why It Matters"
@@ -497,7 +510,7 @@ export default function AgentlyticsVsHubSpotPage() {
       </section>
 
       {/* Deep Comparison Bullets */}
-      <section className="py-16 md:py-20" style={{ background: hs.bgAlt }}>
+      <section id="compare" className="py-16 md:py-20" style={{ background: hs.bgAlt }}>
         <Container>
           <SectionTitle center title="Deep Comparison (Simplified)" />
           <BulletTable />
@@ -505,7 +518,7 @@ export default function AgentlyticsVsHubSpotPage() {
       </section>
 
       {/* Key Differentiators */}
-      <section className="py-16 md:py-20">
+      <section id="differentiators" className="py-16 md:py-20">
         <Container>
           <SectionTitle title="Key Differentiators" />
           <div className="grid md:grid-cols-2 gap-6">
@@ -644,7 +657,7 @@ export default function AgentlyticsVsHubSpotPage() {
       </section>
 
       {/* Proof & Outcomes */}
-      <section className="py-16 md:py-20" style={{ background: hs.bgAlt }}>
+      <section id="outcomes" className="py-16 md:py-20" style={{ background: hs.bgAlt }}>
         <Container>
           <SectionTitle center title="Proof & Outcomes" />
           <div className="overflow-x-auto rounded-xl border border-[#E0E6EB] shadow-sm bg-white">
@@ -736,7 +749,7 @@ export default function AgentlyticsVsHubSpotPage() {
       </section>
 
       {/* Testimonials */}
-      <section className="py-16 md:py-20">
+      <section id="testimonials" className="py-16 md:py-20">
         <Container>
           <SectionTitle
             center
@@ -748,7 +761,7 @@ export default function AgentlyticsVsHubSpotPage() {
       </section>
 
       {/* When to choose which */}
-      <section className="py-16 md:py-20" style={{ background: hs.bgAlt }}>
+      <section id="decision" className="py-16 md:py-20" style={{ background: hs.bgAlt }}>
         <Container>
           <SectionTitle title="When to Choose Which" />
           <div className="grid md:grid-cols-2 gap-6">
@@ -796,7 +809,7 @@ export default function AgentlyticsVsHubSpotPage() {
       </section>
 
       {/* Final CTA */}
-      <section className="py-16 md:py-20 text-center text-white bg-gradient-to-r from-[#FF7A59] to-[#FF5C35]">
+      <section id="cta" className="py-16 md:py-20 text-center text-white bg-gradient-to-r from-[#FF7A59] to-[#FF5C35]">
         <Container>
           <h2 className="text-3xl md:text-4xl font-bold">
             HubSpot Collects Leads. Agentlytics Converts Them.

@@ -27,6 +27,7 @@ import {
 
 export default function AgentlyticsVsAgentforce() {
   const [scrolled, setScrolled] = useState(false);
+  const [floating, setFloating] = useState(false);
 
   // Sticky nav shadow
   useEffect(() => {
@@ -38,6 +39,11 @@ export default function AgentlyticsVsAgentforce() {
       return () => window.removeEventListener("scroll", handleScroll);
     }
   }, []);
+
+  // Float exactly when the sticky bar touches the top
+  useEffect(() => {
+    setFloating(scrolled);
+  }, [scrolled]);
 
   // Meta (Canvas-safe)
   useEffect(() => {
@@ -180,9 +186,9 @@ export default function AgentlyticsVsAgentforce() {
 
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden bg-gradient-to-b from-blue-50 to-blue-100 text-slate-800 scroll-smooth">
-      {/* Page-specific menu to match homepage header */}
+      {/* Page-specific menu matching homepage header — smooth crossfade to floating pill */}
       <header
-        className={`${scrolled ? "top-0" : "top-16"} fixed left-0 right-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top] duration-200`}
+        className={`${scrolled ? "top-0" : "top-16"} fixed left-0 right-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top,opacity,transform] duration-300 ease-out ${floating ? "opacity-0 -translate-y-1 pointer-events-none" : "opacity-100 translate-y-0"}`}
       >
         <div className="w-full h-16 flex items-center justify-center relative md:right-[84px]">
           <nav className="flex items-center gap-4 md:gap-6 text-slate-600 text-sm">
@@ -201,6 +207,22 @@ export default function AgentlyticsVsAgentforce() {
             <a href="#faqs" className="hover:text-slate-900">
               FAQs
             </a>
+          </nav>
+        </div>
+      </header>
+
+      {/* Floating bar — exact same look/feel as sticky header */}
+      <header
+        className={`fixed left-0 right-0 top-0 z-50 bg-white/80 backdrop-blur border-b border-slate-200 transition-opacity duration-300 ease-out ${floating ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        aria-hidden={!floating}
+      >
+        <div className="w-full h-16 flex items-center justify-center relative md:right-[84px]">
+          <nav className="flex items-center gap-4 md:gap-6 text-slate-600 text-sm">
+            <a href="#integration" className="hover:text-slate-900">Overview</a>
+            <a href="#compare" className="hover:text-slate-900">Quick Compare</a>
+            <a href="#why" className="hover:text-slate-900">Why</a>
+            <a href="#outcomes" className="hover:text-slate-900">Outcomes</a>
+            <a href="#faqs" className="hover:text-slate-900">FAQs</a>
           </nav>
         </div>
       </header>

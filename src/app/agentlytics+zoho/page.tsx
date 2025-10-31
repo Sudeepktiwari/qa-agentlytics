@@ -120,8 +120,19 @@ export default function ZohoComparisonPage() {
         </div>
       </section>
 
+      {/* Page Menu */}
+      <div className="sticky top-16 z-40 bg-white/80 backdrop-blur border-b border-slate-200">
+        <div className="max-w-6xl mx-auto px-6 py-2 flex gap-4 overflow-x-auto text-sm text-gray-800">
+          <a href="#overview" className="px-2 py-1 hover:text-black">Overview</a>
+          <a href="#switch" className="px-2 py-1 hover:text-black">Why Switch</a>
+          <a href="#engine" className="px-2 py-1 hover:text-black">Intent Engine</a>
+          <a href="#outcomes" className="px-2 py-1 hover:text-black">Outcomes</a>
+          <a href="#integrations" className="px-2 py-1 hover:text-black">Integrations</a>
+        </div>
+      </div>
+
       {/* QUICK OVERVIEW TABLE */}
-      <section className="bg-[#FDF3EF] py-16">
+      <section id="overview" className="bg-[#FDF3EF] py-16">
         <div className="max-w-6xl mx-auto px-6">
           <h2 className="text-3xl font-bold text-center text-[#E94F2E] mb-10">
             🔍 Quick Overview
@@ -191,7 +202,7 @@ export default function ZohoComparisonPage() {
       </section>
 
       {/* WHY TEAMS SWITCH */}
-      <section className="max-w-6xl mx-auto px-6 py-20">
+      <section id="switch" className="max-w-6xl mx-auto px-6 py-20">
         <h2 className="text-3xl font-bold text-center text-[#E94F2E] mb-10">
           💡 Why Teams Switch from Zoho SalesIQ to Agentlytics
         </h2>
@@ -234,7 +245,7 @@ export default function ZohoComparisonPage() {
       </section>
 
       {/* INSIDE INTENT ENGINE */}
-      <section className="bg-[#FDF3EF] py-20">
+      <section id="engine" className="bg-[#FDF3EF] py-20">
         <div className="max-w-6xl mx-auto px-6">
           <h2 className="text-3xl font-bold text-center text-[#E94F2E] mb-10">
             🧠 Inside the Intent Engine
@@ -284,7 +295,7 @@ export default function ZohoComparisonPage() {
       </section>
 
       {/* OUTCOMES & TESTIMONIALS */}
-      <section className="max-w-6xl mx-auto px-6 py-20 text-center">
+      <section id="outcomes" className="max-w-6xl mx-auto px-6 py-20 text-center">
         <h2 className="text-3xl font-bold text-[#E94F2E] mb-10">
           📈 Real Outcomes
         </h2>
@@ -329,7 +340,7 @@ export default function ZohoComparisonPage() {
       </section>
 
       {/* INTEGRATION SECTION */}
-      <section className="bg-[#FDF3EF] py-20 text-center">
+      <section id="integrations" className="bg-[#FDF3EF] py-20 text-center">
         <h2 className="text-3xl font-bold text-[#E94F2E] mb-10">
           🧩 Works with Your Stack
         </h2>
