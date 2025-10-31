@@ -184,41 +184,48 @@ const Carousel = () => (
 
 export default function Page() {
   const [scrolled, setScrolled] = useState(false);
+  const [floating, setFloating] = useState(false);
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+  useEffect(() => {
+    setFloating(scrolled);
+  }, [scrolled]);
   return (
     <div className="min-h-screen bg-[#F9FBFF] text-[#0B1F33]">
       <style>{`@keyframes scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }`}</style>
 
-      {/* NAV */}
+      {/* Sticky header (below global until scrolled) */}
       <header
-        className={`fixed left-0 right-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200 transition-all ${
-          scrolled ? "top-0" : "top-16"
-        }`}
+        className={`${scrolled ? "top-0" : "top-16"} fixed left-0 right-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top,opacity,transform] duration-300 ease-out ${floating ? "opacity-0 -translate-y-1 pointer-events-none" : "opacity-100 translate-y-0"}`}
       >
-        <div className="mx-auto flex max-w-7xl items-center justify-center px-4 py-3">
-          <nav className="hidden items-center gap-6 text-sm text-slate-600 md:flex">
-            <a href="#overview" className="hover:text-slate-900">
-              Overview
-            </a>
-            <a href="#difference" className="hover:text-slate-900">
-              Difference
-            </a>
-            <a href="#compare" className="hover:text-slate-900">
-              Deep Compare
-            </a>
-            <a href="#integrations" className="hover:text-slate-900">
-              Integrations
-            </a>
+        <div className="w-full h-16 flex items-center justify-center relative md:right-[84px]">
+          <nav className="flex items-center gap-4 md:gap-6 text-slate-600 text-sm">
+            <a href="#overview" className="hover:text-slate-900">Overview</a>
+            <a href="#difference" className="hover:text-slate-900">Difference</a>
+            <a href="#compare" className="hover:text-slate-900">Deep Compare</a>
+            <a href="#integrations" className="hover:text-slate-900">Integrations</a>
+          </nav>
+        </div>
+      </header>
+      {/* Floating header (on top at handoff) */}
+      <header
+        className={`fixed left-0 right-0 top-0 z-50 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top,opacity,transform] duration-300 ease-out ${floating ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-1 pointer-events-none"}`}
+      >
+        <div className="w-full h-16 flex items-center justify-center">
+          <nav className="flex items-center gap-4 md:gap-6 text-slate-600 text-sm">
+            <a href="#overview" className="hover:text-slate-900">Overview</a>
+            <a href="#difference" className="hover:text-slate-900">Difference</a>
+            <a href="#compare" className="hover:text-slate-900">Deep Compare</a>
+            <a href="#integrations" className="hover:text-slate-900">Integrations</a>
           </nav>
         </div>
       </header>
       {/* Spacer to prevent content overlap */}
-      <div className={scrolled ? "h-16" : "h-0"} />
+      <div className="h-16" />
 
       {/* HERO */}
       <section className="relative">

@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 
 // HubSpot-style palette helpers
@@ -389,8 +389,61 @@ const TestimonialCarousel = () => (
 );
 
 export default function AgentlyticsVsHubSpotPage() {
+  const [scrolled, setScrolled] = useState(false);
+  const [floating, setFloating] = useState(false);
+
+  // Match Agentforce sticky menu behavior
+  useEffect(() => {
+    const handleScroll = () => {
+      if (typeof window !== "undefined") setScrolled(window.scrollY > 8);
+    };
+    if (typeof window !== "undefined") {
+      window.addEventListener("scroll", handleScroll);
+      return () => window.removeEventListener("scroll", handleScroll);
+    }
+  }, []);
+
+  // Float exactly when the sticky bar touches the top
+  useEffect(() => {
+    setFloating(scrolled);
+  }, [scrolled]);
+
   return (
     <main className="font-sans bg-white text-[#33475B]">
+      {/* Page-specific menu — match Agentforce (smooth crossfade to floating) */}
+      <header
+        className={`${scrolled ? "top-0" : "top-16"} fixed left-0 right-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top,opacity,transform] duration-300 ease-out ${floating ? "opacity-0 -translate-y-1 pointer-events-none" : "opacity-100 translate-y-0"}`}
+      >
+        <div className="w-full h-16 flex items-center justify-center relative md:right-[84px]">
+          <nav className="flex items-center gap-4 md:gap-6 text-slate-600 text-sm">
+            <a href="#overview" className="hover:text-slate-900">Overview</a>
+            <a href="#compare" className="hover:text-slate-900">Quick Compare</a>
+            <a href="#why" className="hover:text-slate-900">Why</a>
+            <a href="#outcomes" className="hover:text-slate-900">Outcomes</a>
+            <a href="#testimonials" className="hover:text-slate-900">Testimonials</a>
+            <a href="#decision" className="hover:text-slate-900">Decision</a>
+          </nav>
+        </div>
+      </header>
+
+      {/* Floating bar — exact same look/feel as sticky header */}
+      <header
+        className={`fixed left-0 right-0 top-0 z-50 bg-white/80 backdrop-blur border-b border-slate-200 transition-opacity duration-300 ease-out ${floating ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        aria-hidden={!floating}
+      >
+        <div className="w-full h-16 flex items-center justify-center relative md:right-[84px]">
+          <nav className="flex items-center gap-4 md:gap-6 text-slate-600 text-sm">
+            <a href="#overview" className="hover:text-slate-900">Overview</a>
+            <a href="#compare" className="hover:text-slate-900">Quick Compare</a>
+            <a href="#why" className="hover:text-slate-900">Why</a>
+            <a href="#outcomes" className="hover:text-slate-900">Outcomes</a>
+            <a href="#testimonials" className="hover:text-slate-900">Testimonials</a>
+            <a href="#decision" className="hover:text-slate-900">Decision</a>
+          </nav>
+        </div>
+      </header>
+      {/* Spacer to prevent content from hiding under fixed header when stuck */}
+      <div className={scrolled ? "h-16" : "h-0"} />
       {/* Hero */}
       <section className="bg-gradient-to-r from-[#FFF7F5] to-[#F5F8FA] py-20 md:py-24">
         <Container className="text-center">
@@ -432,18 +485,6 @@ export default function AgentlyticsVsHubSpotPage() {
         </Container>
       </section>
 
-      {/* Page Menu */}
-      <div className="sticky top-16 z-40 bg-white/80 backdrop-blur border-b border-slate-200">
-        <Container className="flex gap-4 overflow-x-auto py-2 text-sm text-slate-700">
-          <a href="#overview" className="px-2 py-1 hover:text-slate-900">Overview</a>
-          <a href="#why" className="px-2 py-1 hover:text-slate-900">Why It Matters</a>
-          <a href="#compare" className="px-2 py-1 hover:text-slate-900">Compare</a>
-          <a href="#differentiators" className="px-2 py-1 hover:text-slate-900">Differentiators</a>
-          <a href="#outcomes" className="px-2 py-1 hover:text-slate-900">Outcomes</a>
-          <a href="#testimonials" className="px-2 py-1 hover:text-slate-900">Testimonials</a>
-          <a href="#decision" className="px-2 py-1 hover:text-slate-900">Decision</a>
-        </Container>
-      </div>
 
       {/* Quick Overview */}
       <section id="overview" className="py-16 md:py-20" style={{ background: hs.bgAlt }}>
