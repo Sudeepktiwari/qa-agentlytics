@@ -24,7 +24,7 @@ export default function GlobalHeader() {
           className="flex items-center gap-2 font-display font-extrabold tracking-tight text-[color:var(--brand-midnight)]"
         >
           <span className="size-7 rounded-lg bg-[conic-gradient(from_220deg,#0069FF,#3BA3FF)]" />
-          <span>Agentlytics</span>
+          <span>Advancelytics</span>
         </Link>
 
         {/* Desktop nav */}
