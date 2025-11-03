@@ -146,3 +146,26 @@ blockquote {
     border-left-color: #0070f3;
   }
 }
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; transition: none; }
+  .reveal.in-view { opacity: 1; transform: none; }
+  .animate-floaty, .anim-floaty,
+  .animate-pulseGlow, .anim-pulseGlow,
+  .animate-typeDots, .anim-typeDots,
+  .animate-wobble, .anim-wobble,
+  .animate-zzDrift, .anim-zzDrift,
+  .animate-radar, .anim-radar,
+  .animate-slideIn, .anim-slideIn,
+  .animate-scrollHint, .anim-scrollHint,
+  .animate-dash, .anim-dash,
+  .animate-breath, .anim-breath,
+  .animate-pingSoft, .anim-pingSoft,
+  .animate-fadeUp, .anim-fadeUp,
+  .animate-scaleIn, .anim-scaleIn,
+  .animate-shimmer, .anim-shimmer {
+    animation: none !important;
+    transition: none !important;
+  }
+}

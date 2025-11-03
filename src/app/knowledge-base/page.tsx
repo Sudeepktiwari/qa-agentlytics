@@ -1,6 +1,8 @@
 // Updated page.tsx — Knowledge Base with richer card & illustration animations
 "use client";
 import React, { useState, useEffect } from "react";
+import ProcessIllustration from "../components/ProcessIllustration";
+import { motion, useAnimation } from "framer-motion";
 
 // ===== Theme tokens (Calendly-ish) =====
 const brand = {
@@ -179,7 +181,45 @@ export default function KnowledgeBasePage() {
 
     return () => observer.disconnect();
   }, []);
+  const steps = [
+    {
+      id: 1,
+      title: "Capture & Import",
+      desc: "Bring in docs, FAQs, PDFs, transcripts.",
+    },
+    { id: 2, title: "Organize & Tag", desc: "Categories, entities, synonyms." },
+    {
+      id: 3,
+      title: "Enable Everywhere",
+      desc: "Publish to chat, portal & product.",
+    },
+    {
+      id: 4,
+      title: "Optimize & Evolve",
+      desc: "Analytics reveal gaps for iteration.",
+    },
+  ];
 
+  const controls = useAnimation();
+
+  React.useEffect(() => {
+    // loop a simple progress animation that highlights each step in order
+    async function loop() {
+      while (true) {
+        for (let i = 0; i < steps.length; i++) {
+          await controls.start(
+            (idx) =>
+              idx === i
+                ? { scale: 1.03, boxShadow: "0 18px 40px rgba(2,6,23,0.08)" }
+                : { scale: 1, boxShadow: "0 8px 30px rgba(15,23,42,0.04)" },
+            { duration: 0.42 }
+          );
+          await new Promise((r) => setTimeout(r, 520));
+        }
+      }
+    }
+    loop();
+  }, [controls, steps.length]);
   return (
     <div
       className="relative min-h-screen w-full overflow-x-hidden text-slate-900 scroll-smooth"
@@ -687,223 +727,346 @@ export default function KnowledgeBasePage() {
           </div>
 
           {/* Upgraded Illustration (animated sparkline + floating badges) */}
-          <div className="relative reveal" data-anim-delay="80">
-            <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
-              <div className="pointer-events-none absolute left-1/2 top-0 h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[--brand-primary]/15 blur-xl animate-pulseGlow" />
+          <section
+            id="demo-analytics"
+            className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 scroll-mt-24 bg-gradient-to-b from-[--brand-sky]/10 via-white to-[--brand-blue]/5"
+          >
+            <div className="relative reveal" data-anim-delay="80">
+              <div
+                className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-white via-[--brand-sky]/10 to-[--brand-blue]/10 shadow-[0_12px_40px_rgba(3,36,92,0.06)] p-8 card-hover"
+                style={{ backdropFilter: "blur(8px)" }}
+              >
+                {/* soft center aura */}
+                <div
+                  className="pointer-events-none absolute left-1/2 top-0 h-28 w-28 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl animate-pulseGlow"
+                  style={{
+                    background:
+                      "radial-gradient(circle, var(--brand-sky) 0%, transparent 60%)",
+                    opacity: 0.7,
+                  }}
+                  aria-hidden="true"
+                />
 
-              {/* Header + sparkline */}
-              <div className="flex items-center justify-between">
-                <div className="text-sm font-semibold text-slate-800">
-                  Search activity (last 7 days)
+                {/* header */}
+                <div className="flex items-center justify-between">
+                  <div className="text-sm font-semibold text-slate-800">
+                    Search activity (last 7 days)
+                  </div>
+                  <div className="inline-flex items-center gap-2 text-xs text-slate-500">
+                    <span className="relative inline-flex items-center justify-center">
+                      <span className="inline-block h-2.5 w-2.5 rounded-full bg-[--brand-sky]" />
+                      <span className="absolute h-2.5 w-2.5 rounded-full bg-[--brand-sky]/40 animate-pingSoft" />
+                    </span>
+                    Live
+                  </div>
                 </div>
-                <div className="inline-flex items-center gap-2 text-xs text-slate-500">
-                  <span className="relative inline-flex items-center justify-center">
-                    <span className="inline-block h-2 w-2 rounded-full bg-[--brand-primary]" />
-                    <span className="absolute h-2 w-2 rounded-full bg-[--brand-primary]/40 animate-pingSoft" />
-                  </span>
-                  Live
+
+                {/* sparkline */}
+                <div className="mt-4">
+                  <div className="grid grid-cols-12 items-end gap-1 h-28">
+                    {[18, 24, 30, 22, 34, 38, 44, 36, 28, 48, 52, 47].map(
+                      (h, i) => (
+                        <div
+                          key={i}
+                          className="rounded-t-md"
+                          style={{
+                            height: `${h}px`,
+                            opacity: 0.4 + (i / 12) * 0.6,
+                            transform: "translateY(10px) scaleY(.94)",
+                            transformOrigin: "bottom center",
+                            background: `linear-gradient(180deg, var(--brand-sky), var(--brand-blue))`,
+                            transition:
+                              "transform .6s cubic-bezier(.2,.9,.2,1), opacity .6s ease",
+                            boxShadow: "inset 0 -6px 16px rgba(2,19,79,0.08)",
+                          }}
+                          data-anim-delay={`${i * 30 + 60}`}
+                        />
+                      )
+                    )}
+                  </div>
+
+                  <div className="mt-6 flex justify-between text-[11px] font-medium text-slate-500">
+                    {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(
+                      (d) => (
+                        <span key={d} className="w-12 text-center">
+                          {d}
+                        </span>
+                      )
+                    )}
+                  </div>
+                </div>
+
+                {/* two-column info */}
+                <div className="mt-8 grid gap-6 md:grid-cols-2">
+                  {/* left: query resolution */}
+                  <div className="rounded-2xl bg-gradient-to-br from-[--brand-sky]/10 to-white p-5 shadow-card backdrop-blur-sm">
+                    <div className="text-xs font-semibold text-[--brand-blue]">
+                      Query → Article resolution
+                    </div>
+
+                    <div className="mt-3 rounded-xl border border-[--brand-sky]/20 bg-white p-3 text-sm text-slate-800 shadow-sm">
+                      Query: “How do I set up pricing tiers?”
+                    </div>
+
+                    <div className="mt-2 text-xs text-slate-500">
+                      Suggested article
+                    </div>
+
+                    <div
+                      className="mt-2 inline-flex items-center gap-2 rounded-full bg-[--brand-blue]/10 px-3 py-1.5 text-xs text-[--brand-midnight] animate-scaleIn"
+                      data-anim-delay="120"
+                    >
+                      <span className="inline-block h-1.5 w-1.5 rounded-full bg-[--brand-blue]" />
+                      Pricing &amp; Plans →{" "}
+                      <span className="text-slate-500">Guide</span>
+                    </div>
+
+                    <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-700 shadow-sm">
+                      <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500 animate-scaleIn" />
+                      Resolved via KB
+                    </div>
+                  </div>
+
+                  {/* right: top intents */}
+                  <div className="rounded-2xl bg-gradient-to-br from-white to-[--brand-sky]/10 p-5 shadow-card">
+                    <div className="text-xs font-semibold text-[--brand-blue]">
+                      Top intents
+                    </div>
+
+                    <div className="mt-3 space-y-3">
+                      {[
+                        { q: "pricing setup", v: 82 },
+                        { q: "sso login", v: 63 },
+                        { q: "import csv", v: 41 },
+                        { q: "cancel plan", v: 24 },
+                      ].map((i, idx) => (
+                        <div key={i.q} data-anim-delay={`${idx * 70 + 80}`}>
+                          <div className="flex items-center justify-between text-[12px] text-slate-800">
+                            <span className="truncate pr-2">{i.q}</span>
+                            <span className="font-medium text-[--brand-blue]">
+                              {i.v}%
+                            </span>
+                          </div>
+                          <div className="mt-2 h-2 w-full rounded bg-[--surface-alt] overflow-hidden">
+                            <div
+                              className="h-2 rounded bg-gradient-to-r from-[--brand-sky] to-[--brand-blue]"
+                              style={{
+                                width: `${i.v}%`,
+                                transition:
+                                  "width .9s cubic-bezier(.2,.9,.2,1) .12s",
+                              }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="mt-4 rounded-lg border border-[--brand-blue]/12 bg-[--brand-blue]/6 p-3 text-[11px] text-[--brand-midnight] shadow-sm">
+                      Insight: 42% of searches relate to pricing setup. Add a
+                      guided article.
+                    </div>
+                  </div>
                 </div>
               </div>
-
-              {/* sparkline bars (staggered) */}
-              <div className="mt-3">
-                <div className="grid grid-cols-12 items-end gap-1 h-24">
-                  {[18, 24, 30, 22, 34, 38, 44, 36, 28, 48, 52, 47].map(
-                    (h, i) => (
-                      <div
-                        key={i}
-                        className="rounded-t bg-[--brand-primary]"
-                        style={{
-                          height: `${h}px`,
-                          opacity: 0.32 + (i / 12) * 0.6,
-                          transition:
-                            "transform .6s cubic-bezier(.2,.9,.2,1), opacity .6s ease",
-                          transform: "translateY(14px) scaleY(.9)",
-                          transformOrigin: "bottom center",
-                        }}
-                        data-anim-delay={`${i * 30 + 60}`}
-                      />
-                    )
-                  )}
-                </div>
-                <div className="mt-2 flex justify-between text-[10px] text-slate-500">
-                  {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(
-                    (d) => (
-                      <span key={d} className="w-12 text-center">
-                        {d}
-                      </span>
-                    )
-                  )}
-                </div>
-              </div>
-
-              <div className="mt-5 grid gap-4 md:grid-cols-2">
-                <div className="rounded-xl border border-[--border-subtle] bg-[--surface] p-4">
-                  <div className="text-xs font-semibold text-slate-600">
-                    Query → Article resolution
-                  </div>
-                  <div className="mt-3 rounded-xl border border-[--border-subtle] bg-white p-3 text-sm text-slate-700">
-                    Query: "How do I set up pricing tiers?"
-                  </div>
-                  <div className="mt-2 text-xs text-slate-600">
-                    Suggested article
-                  </div>
-                  <div
-                    className="mt-2 inline-flex items-center gap-2 rounded-full border border-[--brand-primary]/20 bg-[--brand-primary]/5 px-3 py-1.5 text-xs text-[--brand-primary]"
-                    data-anim-delay="120"
-                  >
-                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-[--brand-primary]" />{" "}
-                    Pricing &amp; Plans →{" "}
-                    <span className="text-slate-500">Guide</span>
-                  </div>
-                  <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-700">
-                    {" "}
-                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-600 animate-scaleIn" />{" "}
-                    Resolved via KB
-                  </div>
-                </div>
-
-                <div className="rounded-xl border border-[--border-subtle] bg-white p-4">
-                  <div className="text-xs font-semibold text-slate-600">
-                    Top intents
-                  </div>
-                  <div className="mt-3 space-y-3">
-                    {[
-                      { q: "pricing setup", v: 82 },
-                      { q: "sso login", v: 63 },
-                      { q: "import csv", v: 41 },
-                      { q: "cancel plan", v: 24 },
-                    ].map((i, idx) => (
-                      <div key={i.q} data-anim-delay={`${idx * 70 + 80}`}>
-                        <div className="flex items-center justify-between text-[11px] text-slate-600">
-                          <span className="truncate pr-2">{i.q}</span>
-                          <span>{i.v}%</span>
-                        </div>
-                        <div className="mt-1 h-2 w-full rounded bg-[--surface-alt]">
-                          <div
-                            className="h-2 rounded bg-[--brand-primary]"
-                            style={{
-                              width: `${i.v}%`,
-                              transition: "width .8s cubic-bezier(.2,.9,.2,1)",
-                            }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-4 rounded-lg border border-[--brand-primary]/20 bg-[--brand-primary]/5 p-3 text-[11px] text-[--brand-primary]">
-                    Insight: 42% of searches relate to pricing setup. Add a
-                    guided article.
-                  </div>
-                </div>
+              {/* floating badge — moved outside the card to avoid clipping */}
+              <div
+                className="absolute -left-5 -top-8 w-40 rounded-2xl bg-gradient-to-r from-[--brand-sky]/10 to-[--brand-blue]/10 p-3 text-center text-xs text-[--brand-midnight] shadow-lg animate-floaty border border-[--brand-blue]/10"
+                aria-hidden
+              >
+                +23% search success ↑
               </div>
             </div>
-          </div>
+          </section>
         </div>
       </section>
 
       {/* HOW */}
       <section
         id="how"
-        className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-0 py-16 sm:px-6 scroll-mt-24 reveal"
+        className="mx-auto max-w-[83rem] rounded-3xl bg-[--surface] px-0 py-16 sm:px-6 scroll-mt-24 reveal"
         data-anim-delay="60"
       >
         <div className="px-4 sm:px-0">
-          <div className="flex flex-wrap items-start justify-between gap-6">
-            <div>
-              <h2 className="text-3xl font-bold tracking-tight">
-                How it works
-              </h2>
-              <p className="mt-3 max-w-2xl text-slate-600">
-                Capture, organize, enable, and optimize — all in one place.
-              </p>
+          <div className=" rounded-2xl bg-white/95 p-6 shadow-lg border border-slate-100">
+            <div className="flex-row md:flex items-start justify-between gap-6">
+              <div>
+                <h3 className="text-3xl font-bold text-slate-900">
+                  How it works
+                </h3>
+                <p className="mt-1 text-slate-600">
+                  Capture, organize, enable and optimize — everything in one
+                  streamlined flow.
+                </p>
+              </div>
+              <div className="pt-4 md:pt-0 flex items-center gap-3">
+                <span className="rounded-full bg-[--brand-primary]/10 px-3 py-1 text-xs font-semibold text-[--brand-primary]">
+                  Signal-ready
+                </span>
+                <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                  Privacy-aware
+                </span>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="rounded-full bg-[--brand-primary]/10 px-3 py-1 text-xs font-semibold text-[--brand-primary]">
-                Signal-ready
-              </span>
-              <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-                Privacy-aware
-              </span>
-            </div>
-          </div>
 
-          <div className="relative mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              {
-                k: "1",
-                t: "Capture & Import",
-                d: "Bring in existing docs, FAQs, PDFs and chat transcripts.",
-              },
-              {
-                k: "2",
-                t: "Organize & Tag",
-                d: "Categories, entities and synonyms power smarter search.",
-              },
-              {
-                k: "3",
-                t: "Enable Everywhere",
-                d: "Expose in chat, portal and product with one toggle.",
-              },
-              {
-                k: "4",
-                t: "Optimize & Evolve",
-                d: "Analytics reveal gaps; improve articles iteratively.",
-              },
-            ].map((c, idx) => (
-              <div
-                key={c.k}
-                className="relative rounded-xl border border-[--border-subtle] bg-white p-6 shadow-none card-hover reveal"
-                data-anim-delay={`${idx * 90 + 80}`}
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className="grid h-10 w-10 place-items-center rounded-xl bg-[--brand-primary]/10 text-sm font-bold text-[--brand-primary] card-icon animate-floaty"
-                    style={{ transitionDelay: `${idx * 80}ms` }}
-                  >
-                    {c.k}
+            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-4">
+              {steps.map((s, i) => (
+                <motion.div
+                  key={s.id}
+                  custom={i}
+                  animate={controls}
+                  initial={{ scale: 1 }}
+                  className="relative flex flex-col gap-2 rounded-xl bg-gradient-to-br from-white to-[--brand-sky]/4 p-4 transition-transform card-hover"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[--brand-primary]/10 text-[--brand-primary] font-bold">
+                      {s.id}
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-slate-900">
+                        {s.title}
+                      </div>
+                      <div className="mt-1 text-xs text-slate-500">
+                        {s.desc}
+                      </div>
+                    </div>
                   </div>
-                  <h3 className="text-lg font-semibold text-slate-900">
-                    {c.t}
-                  </h3>
-                </div>
 
-                <p className="mt-3 text-sm leading-6 text-slate-600">{c.d}</p>
+                  {/* small footer showing actionability */}
+                  <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
+                    <div className="flex items-center gap-2">
+                      <svg
+                        width="12"
+                        height="12"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M5 12h14"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                      <span>
+                        {i === 0
+                          ? "Ingest"
+                          : i === 1
+                          ? "Tag"
+                          : i === 2
+                          ? "Publish"
+                          : "Measure"}
+                      </span>
+                    </div>
+                    <div className="font-medium text-[--brand-primary]">
+                      View →
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
 
-                <div className="mt-5 h-1 w-20 rounded bg-[--brand-primary]" />
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              {
-                label: "Import sources",
-                value: "Notion · Confluence · Drive · HTML · PDF",
-              },
-              {
-                label: "Tagging helpers",
-                value: "Synonyms · Entities · Owners",
-              },
-              {
-                label: "Channels",
-                value: "Chat Widget · Help Center · In-product",
-              },
-              {
-                label: "Optimization",
-                value: "No-result queries · CTR · Article health",
-              },
-            ].map((box, i) => (
-              <div
-                key={box.label}
-                className="rounded-xl border border-[--border-subtle] bg-white p-4 reveal card-hover"
-                data-anim-delay={`${i * 70 + 120}`}
+            {/* Animated flow line for desktop */}
+            <div className="mt-6 hidden sm:block">
+              <svg
+                viewBox="0 0 1000 60"
+                className="w-full h-14"
+                preserveAspectRatio="none"
+                aria-hidden
               >
-                <div className="font-semibold text-slate-700">{box.label}</div>
-                <div className="mt-1 text-slate-500">{box.value}</div>
-              </div>
-            ))}
+                <defs>
+                  <linearGradient id="flowGradient" x1="0" x2="1">
+                    <stop
+                      offset="0"
+                      stopColor="var(--brand-sky)"
+                      stopOpacity="0.85"
+                    />
+                    <stop
+                      offset="1"
+                      stopColor="var(--brand-primary)"
+                      stopOpacity="0.95"
+                    />
+                  </linearGradient>
+                </defs>
+
+                {/* base path */}
+                <path
+                  d="M36 42 C 240 10, 760 10, 964 42"
+                  stroke="#E6EEF9"
+                  strokeWidth="6"
+                  strokeLinecap="round"
+                  fill="none"
+                />
+
+                {/* moving dot (loop) */}
+                <motion.circle
+                  cx="36"
+                  cy="42"
+                  r="8"
+                  fill="url(#flowGradient)"
+                  animate={{ cx: [36, 260, 500, 740, 964, 36] }}
+                  transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                />
+
+                {/* markers for steps */}
+                {[60, 260, 500, 740, 940].map((x, idx) => (
+                  <circle
+                    key={idx}
+                    cx={x}
+                    cy={42}
+                    r={4}
+                    fill={idx < 4 ? "var(--brand-primary)" : "#E2E8F0"}
+                  />
+                ))}
+              </svg>
+            </div>
+
+            {/* Mobile compact flow (vertical) */}
+            <div className="mt-4 sm:hidden flex flex-col items-center gap-2">
+              {steps.map((s, i) => (
+                <div key={s.id} className="flex w-full items-center gap-3">
+                  <div className="h-2 w-8 rounded-full bg-[--brand-sky]" />
+                  <div className="flex-1 text-xs text-slate-600">{s.title}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Feature boxes below animation */}
+            <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {[
+                {
+                  label: "Import sources",
+                  value: "Notion · Confluence · Drive · HTML · PDF",
+                },
+                {
+                  label: "Tagging helpers",
+                  value: "Synonyms · Entities · Owners",
+                },
+                {
+                  label: "Channels",
+                  value: "Chat Widget · Help Center · In-product",
+                },
+                {
+                  label: "Optimization",
+                  value: "No-result queries · CTR · Article health",
+                },
+              ].map((box, i) => (
+                <div
+                  key={box.label}
+                  className="rounded-xl bg-[--surface] p-4 shadow-sm reveal card-hover hover:-translate-y-0.5 hover:shadow-md transition-all"
+                  data-anim-delay={`${i * 70 + 120}`}
+                >
+                  <div className="font-semibold text-slate-700">
+                    {box.label}
+                  </div>
+                  <div className="mt-1 text-slate-500">{box.value}</div>
+                </div>
+              ))}
+            </div>
           </div>
+
+          {/* Removed styled-jsx block to avoid nested styled-jsx error in Next.js. */}
         </div>
       </section>
 
