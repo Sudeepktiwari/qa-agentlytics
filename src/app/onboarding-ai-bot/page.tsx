@@ -2,6 +2,7 @@
 // Calendly-style theme reused; lighter hero; modern sections
 "use client";
 import React, { useEffect, useRef, useState } from "react";
+import HowItWorks from "./how-it-works";
 
 // Advancelytics — Onboarding AI Bot (Full Page)
 // ✅ Animated "Proactive Brain" + synced list
@@ -548,9 +549,9 @@ export default function OnboardingAIBotPage() {
       )}
 
       {/* HERO */}
-      <section className="relative isolate rounded-b-[2rem] bg-[--surface] py-20 px-4 sm:px-6">
+      <section className="relative isolate rounded-b-[2rem] bg-[--surface] py-16 sm:py-20 px-4 sm:px-6">
         <div
-          className="pointer-events-none absolute -top-24 right-[-10%] h-[420px] w-[420px] rounded-full blur-3xl"
+          className="pointer-events-none absolute -top-24 right-[-10%] h-[420px] w-[420px] rounded-full blur-3xl hidden sm:block"
           style={{
             background: `radial-gradient(circle at 30% 30%, ${brand.primary}26 0%, transparent 60%)`,
           }}
@@ -678,7 +679,9 @@ export default function OnboardingAIBotPage() {
           </div>
         </div>
       </section>
-
+      <section id="how-it-works">
+        <HowItWorks />
+      </section>
       {/* WHY THIS MATTERS */}
       <section
         id="why"
@@ -1067,9 +1070,9 @@ export default function OnboardingAIBotPage() {
       {/* CTA */}
       <section
         id="cta"
-        className="relative mx-auto max-w-7xl rounded-3xl border border-[--border-subtle] bg-gradient-to-br from-white to-[--brand-primary]/5 px-4 py-16 text-center sm:px-6 scroll-mt-24"
+        className="relative mx-4 sm:mx-auto max-w-7xl overflow-hidden rounded-3xl bg-gradient-to-br from-white to-[--brand-primary]/6 px-3 sm:px-6 py-12 sm:py-16 text-center shadow-md scroll-mt-24"
       >
-        <h2 className="text-3xl font-bold">
+        <h2 className="text-2xl sm:text-3xl font-bold">
           Let your onboarding explain itself
         </h2>
         <p className="mx-auto mt-2 max-w-2xl text-slate-600">
@@ -1080,7 +1083,7 @@ export default function OnboardingAIBotPage() {
           <div className="flex gap-3">
             <a
               href="#"
-              className="rounded-2xl px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:shadow-lg"
+              className="rounded-2xl px-4 py-2 sm:px-6 sm:py-3 text-sm font-semibold text-white shadow-md transition hover:shadow-lg"
               style={{ backgroundColor: brand.primary }}
               onMouseEnter={(e) =>
                 (e.currentTarget.style.backgroundColor = brand.primaryHover)
@@ -1093,7 +1096,7 @@ export default function OnboardingAIBotPage() {
             </a>
             <a
               href="#"
-              className="rounded-2xl border border-[--brand-primary] px-6 py-3 text-sm font-semibold text-[--brand-primary] transition hover:text-white"
+              className="rounded-2xl border border-[--brand-primary] px-4 py-2 sm:px-6 sm:py-3 text-sm font-semibold text-[--brand-primary] transition hover:text-white"
               onMouseEnter={(e) =>
                 (e.currentTarget.style.backgroundColor = brand.primary)
               }
