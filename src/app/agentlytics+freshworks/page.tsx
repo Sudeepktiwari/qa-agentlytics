@@ -1,5 +1,45 @@
 "use client";
+import { useEffect, useRef, useState } from "react";
 export default function AgentlyticsVsFreshchat() {
+  // Page-specific sticky menu state
+  const [scrolled, setScrolled] = useState(false);
+  const headerRef = useRef<HTMLElement | null>(null);
+  const [headerHeight, setHeaderHeight] = useState(64);
+  useEffect(() => {
+    const handleScroll = () => {
+      if (typeof window !== "undefined") setScrolled(window.scrollY > 8);
+    };
+    const updateHeaderHeight = () => {
+      if (headerRef.current)
+        setHeaderHeight(headerRef.current.offsetHeight || 64);
+    };
+    if (typeof window !== "undefined") {
+      window.addEventListener("scroll", handleScroll);
+      window.addEventListener("resize", updateHeaderHeight);
+      updateHeaderHeight();
+
+      // Observe header size changes (e.g., wrapping to two lines)
+      let ro: ResizeObserver | null = null;
+      if (headerRef.current && typeof ResizeObserver !== "undefined") {
+        ro = new ResizeObserver((entries) => {
+          const rect = entries[0]?.contentRect;
+          const next = rect?.height ?? headerRef.current?.offsetHeight ?? 64;
+          setHeaderHeight(next);
+        });
+        ro.observe(headerRef.current);
+      }
+
+      return () => {
+        window.removeEventListener("scroll", handleScroll);
+        window.removeEventListener("resize", updateHeaderHeight);
+        if (ro) ro.disconnect();
+      };
+    }
+  }, []);
+  useEffect(() => {
+    if (headerRef.current)
+      setHeaderHeight(headerRef.current.offsetHeight || 64);
+  }, [scrolled]);
   return (
     <div className="bg-[#F8FAFF] text-gray-800 font-sans">
       {/* HERO SECTION */}
@@ -102,20 +142,45 @@ export default function AgentlyticsVsFreshchat() {
         </div>
       </section>
 
-      {/* Page Menu */}
-      <div className="sticky top-16 z-40 bg-white/80 backdrop-blur border-b border-slate-200">
-        <div className="max-w-6xl mx-auto px-6 py-2 flex gap-4 overflow-x-auto text-sm text-slate-700">
-          <a href="#overview" className="px-2 py-1 hover:text-slate-900">Overview</a>
-          <a href="#switch" className="px-2 py-1 hover:text-slate-900">Why Switch</a>
-          <a href="#engine" className="px-2 py-1 hover:text-slate-900">AI Engine</a>
-          <a href="#outcomes" className="px-2 py-1 hover:text-slate-900">Outcomes</a>
-          <a href="#integrations" className="px-2 py-1 hover:text-slate-900">Integrations</a>
-          <a href="#cta" className="px-2 py-1 hover:text-slate-900">Get Started</a>
+      {/* Page-specific menu (sticky, auto-resizes, mobile-friendly) */}
+      <header
+        className={`${
+          scrolled ? "top-0" : "top-16"
+        } fixed left-0 right-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top] duration-200`}
+        ref={headerRef}
+      >
+        <div className="w-full h-auto min-h-[56px] sm:h-16 sm:min-h-0 py-2 sm:py-0 flex items-center justify-center px-3">
+          <nav
+            className="max-w-6xl w-full mx-auto flex flex-wrap sm:flex-nowrap items-center relative md:right-[84px]
+          justify-center gap-x-3 gap-y-2 sm:gap-6 text-slate-700 text-sm"
+          >
+            <a href="#overview" className="px-2 py-1 hover:text-slate-900">
+              Overview
+            </a>
+            <a href="#switch" className="px-2 py-1 hover:text-slate-900">
+              Why Switch
+            </a>
+            <a href="#engine" className="px-2 py-1 hover:text-slate-900">
+              AI Engine
+            </a>
+            <a href="#outcomes" className="px-2 py-1 hover:text-slate-900">
+              Outcomes
+            </a>
+            <a href="#integrations" className="px-2 py-1 hover:text-slate-900">
+              Integrations
+            </a>
+          </nav>
         </div>
-      </div>
+      </header>
+      {/* Spacer to prevent content hiding under fixed header when stuck */}
+      <div style={{ height: scrolled ? headerHeight : 0 }} />
 
       {/* QUICK OVERVIEW */}
-      <section id="overview" className="py-20 bg-white" data-testid="quick-overview">
+      <section
+        id="overview"
+        className="py-20 bg-white"
+        data-testid="quick-overview"
+      >
         <div className="max-w-6xl mx-auto px-6">
           <h2 className="text-3xl font-bold text-center text-[#2C63F4] mb-10">
             The Freshchat Alternative for SaaS Teams
@@ -185,7 +250,11 @@ export default function AgentlyticsVsFreshchat() {
       </section>
 
       {/* WHY TEAMS SWITCH */}
-      <section id="switch" className="py-20 bg-[#F8FAFF]" data-testid="why-switch">
+      <section
+        id="switch"
+        className="py-20 bg-[#F8FAFF]"
+        data-testid="why-switch"
+      >
         <div className="max-w-6xl mx-auto px-6 space-y-12">
           <h2 className="text-3xl font-bold text-center text-[#2C63F4]">
             💡 Why Teams Switch from Freshchat to Agentlytics
@@ -272,7 +341,11 @@ export default function AgentlyticsVsFreshchat() {
       </section>
 
       {/* TESTIMONIALS */}
-      <section id="outcomes" className="py-20 bg-[#F8FAFF]" data-testid="testimonials">
+      <section
+        id="outcomes"
+        className="py-20 bg-[#F8FAFF]"
+        data-testid="testimonials"
+      >
         <div className="max-w-6xl mx-auto px-6 text-center">
           <h2 className="text-3xl font-bold text-[#2C63F4] mb-10">
             📈 Real Outcomes
