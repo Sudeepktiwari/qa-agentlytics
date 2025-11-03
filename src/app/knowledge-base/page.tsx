@@ -1,5 +1,4 @@
-// Advancelytics — Knowledge Base (Stable Full Page)
-// Calendly-aligned theme, modernized sections, and fixed JSX syntax issues.
+// Updated page.tsx — Knowledge Base with richer card & illustration animations
 "use client";
 import React, { useState, useEffect } from "react";
 
@@ -7,13 +6,13 @@ import React, { useState, useEffect } from "react";
 const brand = {
   primary: "#006BFF", // Calendly Blue
   primaryHover: "#0055CC",
-  accent: "#0AE8F0", // Bright Turquoise
-  bgFrom: "#CCE1FF", // light wash
+  accent: "#0AE8F0",
+  bgFrom: "#CCE1FF",
   bgTo: "#FFFFFF",
-  glow: "#99C3FF", // soft glow
-  surface: "#F5F9FF", // card surface
-  surfaceAlt: "#ECF4FF", // alt section wash
-  borderSubtle: "#E3EEFF", // subtle borders
+  glow: "#99C3FF",
+  surface: "#F5F9FF",
+  surfaceAlt: "#ECF4FF",
+  borderSubtle: "#E3EEFF",
 };
 
 const Check = (props: React.SVGProps<SVGSVGElement>) => (
@@ -79,12 +78,11 @@ function devAssertTheme() {
     });
   }
 }
-
 devAssertTheme();
 
 export default function KnowledgeBasePage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  // Close menu then smooth-scroll to target anchors for reliable navigation
+  // Mobile nav helper
   const handleMobileNavClick = (
     e: React.MouseEvent<HTMLAnchorElement, MouseEvent>
   ) => {
@@ -94,15 +92,17 @@ export default function KnowledgeBasePage() {
       setIsMobileMenuOpen(false);
       const el = document.querySelector(href);
       if (el) {
-        setTimeout(() => {
-          (el as HTMLElement).scrollIntoView({
-            behavior: "smooth",
-            block: "start",
-          });
-          try {
-            history.replaceState(null, "", href);
-          } catch {}
-        }, 0);
+        setTimeout(
+          () =>
+            (el as HTMLElement).scrollIntoView({
+              behavior: "smooth",
+              block: "start",
+            }),
+          0
+        );
+        try {
+          history.replaceState(null, "", href);
+        } catch {}
       } else {
         try {
           history.replaceState(null, "", href);
@@ -115,28 +115,70 @@ export default function KnowledgeBasePage() {
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setIsMobileMenuOpen(false);
-      }
+      if (e.key === "Escape") setIsMobileMenuOpen(false);
     };
-
     const handleBackdropClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.id === "mobileMenuBackdrop") {
-        setIsMobileMenuOpen(false);
-      }
+      const t = e.target as HTMLElement;
+      if (t.id === "mobileMenuBackdrop") setIsMobileMenuOpen(false);
     };
-
     if (isMobileMenuOpen) {
       document.addEventListener("keydown", handleEscape);
       document.addEventListener("click", handleBackdropClick);
     }
-
     return () => {
       document.removeEventListener("keydown", handleEscape);
       document.removeEventListener("click", handleBackdropClick);
     };
   }, [isMobileMenuOpen]);
+
+  // Reveal on scroll + animation stagger wiring
+  useEffect(() => {
+    const prefersReduced = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+
+    // Intersection observer for reveal
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const el = entry.target as HTMLElement;
+            // if element has children with data-anim-delay, add in-view with stagger
+            if (el.querySelectorAll("[data-anim-delay]").length) {
+              el.querySelectorAll<HTMLElement>("[data-anim-delay]").forEach(
+                (child) => {
+                  const d = Number(child.dataset.animDelay || "0");
+                  setTimeout(() => child.classList.add("in-view"), d);
+                }
+              );
+            }
+            el.classList.add("in-view");
+            observer.unobserve(el);
+          }
+        });
+      },
+      { threshold: 0.12 }
+    );
+
+    const reveals = Array.from(document.querySelectorAll(".reveal"));
+    if (prefersReduced) {
+      reveals.forEach((r) => r.classList.add("in-view"));
+    } else {
+      reveals.forEach((r) => observer.observe(r));
+    }
+
+    // Respect reduced motion: remove animations inline
+    if (prefersReduced) {
+      document
+        .querySelectorAll('[class*="anim-"], [class*="animate-"]')
+        .forEach((el) => {
+          (el as HTMLElement).style.animation = "none";
+          (el as HTMLElement).style.transition = "none";
+        });
+    }
+
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <div
@@ -151,7 +193,178 @@ export default function KnowledgeBasePage() {
         } as React.CSSProperties
       }
     >
-      {/* ===== Background Wash (layered) ===== */}
+      {/* Global animation keyframes & small helpers injected locally so this file is self-contained */}
+      <style jsx global>{`
+        :root {
+          --brand-primary: ${brand.primary};
+          --brand-accent: ${brand.accent};
+          --brand-midnight: #0b1b34;
+        }
+        /* Reveal */
+        .reveal {
+          opacity: 0;
+          transform: translateY(10px);
+          transition: opacity 0.45s ease, transform 0.45s ease;
+        }
+        .reveal.in-view {
+          opacity: 1;
+          transform: translateY(0);
+        }
+
+        /* keyframes */
+        @keyframes floaty {
+          0%,
+          100% {
+            transform: translateY(0);
+          }
+          50% {
+            transform: translateY(-8px);
+          }
+        }
+        @keyframes pulseGlow {
+          0%,
+          100% {
+            opacity: 0.6;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 1;
+            transform: scale(1.03);
+          }
+        }
+        @keyframes pingSoft {
+          0% {
+            transform: scale(1);
+            opacity: 0.8;
+          }
+          80%,
+          100% {
+            transform: scale(1.6);
+            opacity: 0;
+          }
+        }
+        @keyframes wobble {
+          0%,
+          100% {
+            transform: translateX(0);
+          }
+          25% {
+            transform: translateX(-1.5%) rotate(-0.4deg);
+          }
+          75% {
+            transform: translateX(1.5%) rotate(0.4deg);
+          }
+        }
+        @keyframes scaleIn {
+          0% {
+            opacity: 0;
+            transform: scale(0.98);
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+        @keyframes shimmer {
+          0% {
+            background-position: -200% 0;
+          }
+          100% {
+            background-position: 200% 0;
+          }
+        }
+
+        /* utilities */
+        .animate-floaty,
+        .anim-floaty {
+          animation: floaty 6s ease-in-out infinite;
+          transform-origin: center;
+        }
+        .animate-pulseGlow,
+        .anim-pulseGlow {
+          animation: pulseGlow 3s ease-in-out infinite;
+        }
+        .animate-pingSoft,
+        .anim-pingSoft {
+          animation: pingSoft 2s ease-out infinite;
+        }
+        .animate-wobble,
+        .anim-wobble {
+          animation: wobble 1s ease-in-out infinite;
+        }
+        .animate-scaleIn,
+        .anim-scaleIn {
+          animation: scaleIn 0.45s cubic-bezier(0.2, 0.9, 0.2, 1) both;
+        }
+        .animate-shimmer,
+        .anim-shimmer {
+          animation: shimmer 1.6s linear infinite;
+          background-size: 200% 100%;
+        }
+
+        /* stagger helper: elements with data-anim-delay will be initially invisible; in-view class set by JS */
+        [data-anim-delay] {
+          opacity: 0;
+          transform: translateY(6px) scale(0.995);
+          transition: opacity 0.45s ease, transform 0.45s ease;
+        }
+        [data-anim-delay].in-view {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+
+        /* hover micro-interactions for cards */
+        .card-hover {
+          transition: transform 0.28s cubic-bezier(0.2, 0.9, 0.2, 1),
+            box-shadow 0.28s cubic-bezier(0.2, 0.9, 0.2, 1);
+        }
+        .card-hover:hover {
+          transform: translateY(-6px) scale(1.01);
+          box-shadow: 0 18px 40px rgba(2, 6, 23, 0.08);
+        }
+        .card-hover:hover .card-icon {
+          transform: translateY(-4px) rotate(-4deg);
+          transition: transform 0.3s ease;
+        }
+
+        /* subtle decorative motion on illustration badges */
+        .badge-float {
+          transition: transform 0.4s ease;
+        }
+        .badge-float.animate {
+          transform: translateY(-6px) scale(1.02);
+        }
+
+        /* Respect reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+          .animate-floaty,
+          .animate-pulseGlow,
+          .animate-pingSoft,
+          .animate-wobble,
+          .animate-scaleIn,
+          .animate-shimmer,
+          .anim-floaty,
+          .anim-pulseGlow,
+          .anim-pingSoft,
+          .anim-wobble,
+          .anim-scaleIn,
+          .anim-shimmer {
+            animation: none !important;
+            transition: none !important;
+          }
+          [data-anim-delay] {
+            transition: none !important;
+            opacity: 1 !important;
+            transform: none !important;
+          }
+          .card-hover:hover {
+            transform: none !important;
+            box-shadow: none !important;
+          }
+        }
+      `}</style>
+
+      {/* Background wash */}
       <div
         className="pointer-events-none absolute inset-0 -z-10"
         aria-hidden
@@ -163,10 +376,10 @@ export default function KnowledgeBasePage() {
         }}
       />
 
-      {/* ===== NAVBAR ===== */}
+      {/* NAV */}
       <header className="sticky top-0 z-40 bg-white/80 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-0 py-3 sm:px-6">
-          <div className="flex items-center gap-3 px-4 sm:px-0">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
+          <div className="flex items-center gap-3">
             <div className="h-8 w-8 rounded-xl bg-[--brand-primary]" />
             <span className="text-lg font-semibold tracking-tight">
               Advancelytics
@@ -175,6 +388,7 @@ export default function KnowledgeBasePage() {
               Knowledge Base
             </span>
           </div>
+
           <nav className="hidden gap-6 text-sm font-medium text-slate-700 md:flex">
             <a href="#why" className="hover:text-slate-900">
               Why
@@ -192,6 +406,7 @@ export default function KnowledgeBasePage() {
               FAQ
             </a>
           </nav>
+
           <div className="flex items-center gap-3">
             <a
               href="#demo"
@@ -207,8 +422,8 @@ export default function KnowledgeBasePage() {
               Start free
             </a>
             <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="ml-2 flex h-10 w-10 items-center justify-center rounded-lg text-slate-600 hover:bg-[--surface] md:hidden"
+              onClick={() => setIsMobileMenuOpen((s) => !s)}
+              className="ml-2 md:hidden inline-flex h-10 w-10 items-center justify-center rounded-lg text-slate-600 hover:bg-[--surface]"
               aria-label="Toggle mobile menu"
             >
               {isMobileMenuOpen ? (
@@ -220,7 +435,7 @@ export default function KnowledgeBasePage() {
           </div>
         </div>
 
-        {/* Mobile Menu Panel */}
+        {/* Mobile menu */}
         <div
           id="mobileMenu"
           aria-hidden={!isMobileMenuOpen}
@@ -288,28 +503,25 @@ export default function KnowledgeBasePage() {
         </div>
       </header>
 
-      {/* Mobile Menu Backdrop */}
-      {isMobileMenuOpen && (
+      {/* HERO */}
+      <section
+        className="relative isolate overflow-hidden bg-[--surface]"
+        style={{
+          backgroundImage:
+            "radial-gradient(100% 50% at 0% 0%, rgba(0,105,255,.10), transparent 60%), radial-gradient(80% 40% at 100% 0%, rgba(59,163,255,.12), transparent 60%)",
+        }}
+      >
         <div
-          id="mobileMenuBackdrop"
-          className="fixed inset-0 z-30 md:hidden"
-          onClick={() => setIsMobileMenuOpen(false)}
+          className="pointer-events-none absolute -top-20 -left-20 w-[520px] h-[520px] rounded-full bg-blue-100 blur-3xl animate-pulseGlow"
           aria-hidden
         />
-      )}
-
-      {/* ===== HERO ===== */}
-      <section className="relative isolate bg-[--surface]">
         <div
-          className="pointer-events-none absolute -top-32 right-0 h-[420px] w-[420px] rounded-full blur-3xl md:right-[-10%]"
-          style={{
-            background: `radial-gradient(circle at 30% 30%, ${brand.primary}33 0%, transparent 60%)`,
-          }}
+          className="pointer-events-none absolute -bottom-28 -right-24 w-[460px] h-[460px] rounded-full bg-sky-100 blur-3xl animate-pulseGlow"
           aria-hidden
         />
 
-        <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-0 py-16 sm:px-6 md:grid-cols-2 md:py-20">
-          <div className="px-4 sm:px-0">
+        <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-4 py-16 sm:px-6 md:grid-cols-2 md:py-20">
+          <div className="px-4 sm:px-0 reveal">
             <h1 className="text-balance text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
               Turn Your Content into Answers — Instantly
             </h1>
@@ -324,8 +536,7 @@ export default function KnowledgeBasePage() {
                 className="inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-semibold text-white shadow-md transition"
                 style={{ backgroundColor: brand.primary }}
               >
-                Start free trial
-                <ArrowRight className="ml-2 h-4 w-4" />
+                Start free trial <ArrowRight className="ml-2 h-4 w-4" />
               </a>
               <a
                 href="#demo"
@@ -349,20 +560,19 @@ export default function KnowledgeBasePage() {
             </div>
           </div>
 
-          {/* Hero Illustration */}
-          <div className="relative px-4 sm:px-0">
-            <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-[--brand-primary]/20 to-[--brand-accent]/20 blur md:-inset-0.5" />
-            <div className="relative rounded-3xl border border-[--border-subtle] bg-white p-6 shadow-xl">
-              {/* Search bar */}
-              <div className="flex items-center gap-2 rounded-2xl border border-[--border-subtle] bg-[--surface] px-4 py-3">
-                <div className="h-3 w-3 rounded-full bg-[--brand-primary]" />
+          {/* Hero Illustration — more animated cards */}
+          <div className="relative px-4 sm:px-0 reveal" data-anim-delay="50">
+            <div className="absolute inset-0 rounded-[32px] bg-gradient-to-br from-[#DCEBFF] to-[#F2F7FF]" />
+            <div className="relative rounded-2xl border border-slate-200 bg-white p-6 shadow-card card-hover">
+              <div className="flex items-center gap-2 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 shadow-sm animate-floaty">
+                <span className="size-2 rounded-full bg-blue-400 card-icon" />
                 <input
-                  className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400"
+                  className="w-full bg-transparent text-sm outline-none placeholder:text-slate-500"
                   placeholder="Search articles, guides, and FAQs"
                 />
               </div>
-              {/* Results preview */}
-              <div className="mt-4 space-y-3">
+
+              <div className="mt-4 grid gap-3">
                 {[
                   {
                     t: "Getting started: 3 step setup",
@@ -376,20 +586,35 @@ export default function KnowledgeBasePage() {
                     t: "Enable proactive prompts from the KB",
                     k: ["Signals", "Prompts", "Targeting"],
                   },
-                ].map((r) => (
+                ].map((r, i) => (
                   <div
                     key={r.t}
-                    className="rounded-xl border border-[--border-subtle] bg-white p-3"
+                    className="rounded-2xl border border-blue-200 bg-blue-50 p-4 shadow-sm relative overflow-visible card-hover"
+                    data-anim-delay={`${i * 80}`}
                   >
-                    <div className="text-sm font-semibold text-slate-800">
+                    {/* floating badge */}
+                    <div className="absolute -top-3 right-3 flex items-center gap-2">
+                      <div
+                        className="h-7 w-7 rounded-full bg-white flex items-center justify-center shadow-sm badge-float"
+                        data-anim-delay={`${i * 80 + 30}`}
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24">
+                          <circle cx="12" cy="12" r="9" fill="url(#g)" />
+                        </svg>
+                      </div>
+                    </div>
+
+                    <div className="text-base font-semibold text-slate-800">
                       {r.t}
                     </div>
-                    <div className="mt-1 flex flex-wrap gap-2 text-[11px]">
-                      {r.k.map((tag) => (
+                    <div className="mt-3 flex flex-wrap gap-2 text-[12px]">
+                      {r.k.map((tag, j) => (
                         <span
                           key={tag}
-                          className="rounded-full border border-[--brand-primary]/20 bg-[--brand-primary]/5 px-2 py-0.5 text-[10px] text-[--brand-primary]"
+                          className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-blue-700"
+                          data-anim-delay={`${i * 80 + j * 40}`}
                         >
+                          <span className="size-1.5 rounded-full bg-blue-400" />{" "}
                           {tag}
                         </span>
                       ))}
@@ -397,15 +622,41 @@ export default function KnowledgeBasePage() {
                   </div>
                 ))}
               </div>
+
+              {/* decorative floating KPIs */}
+              <div
+                className="absolute -left-4 -top-6 w-36 rounded-xl border bg-white p-3 text-center shadow-sm animate-pulseGlow"
+                style={{ borderColor: `${brand.primary}33` }}
+                data-anim-delay="120"
+              >
+                <div className="text-sm font-bold text-[--brand-primary]">
+                  +2.8x
+                </div>
+                <div className="text-[11px] text-slate-500">Leads</div>
+              </div>
+
+              <div
+                className="absolute -right-4 bottom-10 w-40 rounded-xl border bg-white p-3 text-center shadow-sm animate-floaty"
+                style={{ borderColor: `${brand.primary}33` }}
+                data-anim-delay="180"
+              >
+                <div className="text-sm font-bold text-[--brand-primary]">
+                  -40%
+                </div>
+                <div className="text-[11px] text-slate-500">
+                  Time to onboard
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ===== WHY IT MATTERS ===== */}
+      {/* WHY */}
       <section
         id="why"
-        className="mx-auto max-w-7xl rounded-3xl bg-white/60 px-0 py-12 shadow-[inset_0_1px_0_var(--border-subtle)] backdrop-blur-[2px] sm:px-6 scroll-mt-24"
+        className="mx-auto max-w-7xl rounded-3xl bg-white/60 px-0 py-12 shadow-[inset_0_1px_0_var(--border-subtle)] backdrop-blur-[2px] sm:px-6 scroll-mt-24 reveal"
+        data-anim-delay="40"
       >
         <div className="grid items-center gap-10 px-4 sm:px-0 md:grid-cols-2">
           <div>
@@ -422,78 +673,96 @@ export default function KnowledgeBasePage() {
                 "Reduce repetitive tickets and cost per resolution",
                 "Deliver consistent answers across chat, portal and app",
                 "Unlock 24/7 self-service with search that understands intent",
-              ].map((b) => (
-                <li key={b} className="flex items-start gap-2">
-                  <Check className="mt-0.5 h-5 w-5 text-emerald-600" />
+              ].map((b, i) => (
+                <li
+                  key={b}
+                  className="flex items-start gap-2"
+                  data-anim-delay={`${i * 80}`}
+                >
+                  <Check className="mt-0.5 h-5 w-5 text-emerald-600 animate-scaleIn" />
                   {b}
                 </li>
               ))}
             </ul>
           </div>
 
-          {/* Upgraded Illustration */}
-          <div className="relative">
-            <div className="relative overflow-hidden rounded-2xl border border-[--border-subtle] bg-white p-5 shadow-sm">
-              {/* Card header */}
+          {/* Upgraded Illustration (animated sparkline + floating badges) */}
+          <div className="relative reveal" data-anim-delay="80">
+            <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
+              <div className="pointer-events-none absolute left-1/2 top-0 h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[--brand-primary]/15 blur-xl animate-pulseGlow" />
+
+              {/* Header + sparkline */}
               <div className="flex items-center justify-between">
                 <div className="text-sm font-semibold text-slate-800">
-                  Searches (last 7 days)
+                  Search activity (last 7 days)
                 </div>
                 <div className="inline-flex items-center gap-2 text-xs text-slate-500">
-                  <span className="inline-block h-2 w-2 rounded-full bg-[--brand-primary]" />{" "}
+                  <span className="relative inline-flex items-center justify-center">
+                    <span className="inline-block h-2 w-2 rounded-full bg-[--brand-primary]" />
+                    <span className="absolute h-2 w-2 rounded-full bg-[--brand-primary]/40 animate-pingSoft" />
+                  </span>
                   Live
                 </div>
               </div>
 
-              {/* Sparkline bars */}
-              <div className="mt-3 grid grid-cols-12 items-end gap-1">
-                {[18, 24, 30, 22, 34, 38, 44, 36, 28, 48, 52, 47].map(
-                  (h, i) => (
-                    <div
-                      key={i}
-                      className="rounded-t bg-[--brand-primary]"
-                      style={{
-                        height: `${h}px`,
-                        opacity: 0.35 + (i / 12) * 0.5,
-                      }}
-                    />
-                  )
-                )}
+              {/* sparkline bars (staggered) */}
+              <div className="mt-3">
+                <div className="grid grid-cols-12 items-end gap-1 h-24">
+                  {[18, 24, 30, 22, 34, 38, 44, 36, 28, 48, 52, 47].map(
+                    (h, i) => (
+                      <div
+                        key={i}
+                        className="rounded-t bg-[--brand-primary]"
+                        style={{
+                          height: `${h}px`,
+                          opacity: 0.32 + (i / 12) * 0.6,
+                          transition:
+                            "transform .6s cubic-bezier(.2,.9,.2,1), opacity .6s ease",
+                          transform: "translateY(14px) scaleY(.9)",
+                          transformOrigin: "bottom center",
+                        }}
+                        data-anim-delay={`${i * 30 + 60}`}
+                      />
+                    )
+                  )}
+                </div>
+                <div className="mt-2 flex justify-between text-[10px] text-slate-500">
+                  {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(
+                    (d) => (
+                      <span key={d} className="w-12 text-center">
+                        {d}
+                      </span>
+                    )
+                  )}
+                </div>
               </div>
 
               <div className="mt-5 grid gap-4 md:grid-cols-2">
-                {/* Left: Chat → Article flow */}
                 <div className="rounded-xl border border-[--border-subtle] bg-[--surface] p-4">
                   <div className="text-xs font-semibold text-slate-600">
-                    Chat → Article resolution
+                    Query → Article resolution
                   </div>
-
-                  {/* User bubble */}
-                  <div className="mt-3 max-w-[92%] rounded-2xl bg-white p-3 text-sm text-slate-700 shadow-sm ring-1 ring-[--border-subtle]">
-                    "How do I set up pricing tiers?"
+                  <div className="mt-3 rounded-xl border border-[--border-subtle] bg-white p-3 text-sm text-slate-700">
+                    Query: "How do I set up pricing tiers?"
                   </div>
-
-                  {/* Agent suggestion */}
-                  <div className="mt-2 flex items-center gap-2">
-                    <span className="inline-block h-6 w-6 rounded-full bg-[--brand-primary]/10" />
-                    <div className="text-xs text-slate-600">Agent suggests</div>
+                  <div className="mt-2 text-xs text-slate-600">
+                    Suggested article
                   </div>
-
-                  {/* Article pill */}
-                  <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-[--brand-primary]/20 bg-[--brand-primary]/5 px-3 py-1.5 text-xs text-[--brand-primary]">
+                  <div
+                    className="mt-2 inline-flex items-center gap-2 rounded-full border border-[--brand-primary]/20 bg-[--brand-primary]/5 px-3 py-1.5 text-xs text-[--brand-primary]"
+                    data-anim-delay="120"
+                  >
                     <span className="inline-block h-1.5 w-1.5 rounded-full bg-[--brand-primary]" />{" "}
                     Pricing &amp; Plans →{" "}
                     <span className="text-slate-500">Guide</span>
                   </div>
-
-                  {/* Success tag */}
                   <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-700">
-                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-600" />{" "}
+                    {" "}
+                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-600 animate-scaleIn" />{" "}
                     Resolved via KB
                   </div>
                 </div>
 
-                {/* Right: Top intents with progress */}
                 <div className="rounded-xl border border-[--border-subtle] bg-white p-4">
                   <div className="text-xs font-semibold text-slate-600">
                     Top intents
@@ -504,8 +773,8 @@ export default function KnowledgeBasePage() {
                       { q: "sso login", v: 63 },
                       { q: "import csv", v: 41 },
                       { q: "cancel plan", v: 24 },
-                    ].map((i) => (
-                      <div key={i.q}>
+                    ].map((i, idx) => (
+                      <div key={i.q} data-anim-delay={`${idx * 70 + 80}`}>
                         <div className="flex items-center justify-between text-[11px] text-slate-600">
                           <span className="truncate pr-2">{i.q}</span>
                           <span>{i.v}%</span>
@@ -513,14 +782,15 @@ export default function KnowledgeBasePage() {
                         <div className="mt-1 h-2 w-full rounded bg-[--surface-alt]">
                           <div
                             className="h-2 rounded bg-[--brand-primary]"
-                            style={{ width: `${i.v}%` }}
+                            style={{
+                              width: `${i.v}%`,
+                              transition: "width .8s cubic-bezier(.2,.9,.2,1)",
+                            }}
                           />
                         </div>
                       </div>
                     ))}
                   </div>
-
-                  {/* Insight banner */}
                   <div className="mt-4 rounded-lg border border-[--brand-primary]/20 bg-[--brand-primary]/5 p-3 text-[11px] text-[--brand-primary]">
                     Insight: 42% of searches relate to pricing setup. Add a
                     guided article.
@@ -532,13 +802,13 @@ export default function KnowledgeBasePage() {
         </div>
       </section>
 
-      {/* ===== HOW IT WORKS (Modernized) ===== */}
+      {/* HOW */}
       <section
         id="how"
-        className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-0 py-16 sm:px-6 scroll-mt-24"
+        className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-0 py-16 sm:px-6 scroll-mt-24 reveal"
+        data-anim-delay="60"
       >
         <div className="px-4 sm:px-0">
-          {/* Header Row */}
           <div className="flex flex-wrap items-start justify-between gap-6">
             <div>
               <h2 className="text-3xl font-bold tracking-tight">
@@ -558,7 +828,6 @@ export default function KnowledgeBasePage() {
             </div>
           </div>
 
-          {/* Modern Stepper Grid */}
           <div className="relative mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {[
               {
@@ -584,20 +853,14 @@ export default function KnowledgeBasePage() {
             ].map((c, idx) => (
               <div
                 key={c.k}
-                className="group relative overflow-hidden rounded-2xl border border-[--border-subtle] bg-white p-6 shadow-sm transition duration-300 hover:shadow-md"
+                className="relative rounded-xl border border-[--border-subtle] bg-white p-6 shadow-none card-hover reveal"
+                data-anim-delay={`${idx * 90 + 80}`}
               >
-                {/* Glow / Accent */}
-                <div
-                  className="pointer-events-none absolute inset-px rounded-2xl opacity-0 blur-xl transition-opacity duration-300 group-hover:opacity-100"
-                  style={{
-                    background: `radial-gradient(300px 160px at 30% 0%, ${brand.primary}14 0%, transparent 70%)`,
-                  }}
-                  aria-hidden
-                />
-
-                {/* Step Badge */}
                 <div className="flex items-center gap-3">
-                  <div className="grid h-10 w-10 place-items-center rounded-xl bg-[--brand-primary]/10 text-sm font-bold text-[--brand-primary]">
+                  <div
+                    className="grid h-10 w-10 place-items-center rounded-xl bg-[--brand-primary]/10 text-sm font-bold text-[--brand-primary] card-icon animate-floaty"
+                    style={{ transitionDelay: `${idx * 80}ms` }}
+                  >
                     {c.k}
                   </div>
                   <h3 className="text-lg font-semibold text-slate-900">
@@ -607,18 +870,11 @@ export default function KnowledgeBasePage() {
 
                 <p className="mt-3 text-sm leading-6 text-slate-600">{c.d}</p>
 
-                {/* Progress underline */}
-                <div className="mt-5 h-1 w-0 rounded bg-[--brand-primary] transition-all duration-500 group-hover:w-20" />
-
-                {/* Connectors (only on larger screens) */}
-                {idx !== 3 && (
-                  <div className="absolute right-[-12px] top-[38px] hidden h-px w-6 bg-gradient-to-r from-[--border-subtle] to-transparent lg:block" />
-                )}
+                <div className="mt-5 h-1 w-20 rounded bg-[--brand-primary]" />
               </div>
             ))}
           </div>
 
-          {/* Inline Tips Row */}
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {[
               {
@@ -637,23 +893,25 @@ export default function KnowledgeBasePage() {
                 label: "Optimization",
                 value: "No-result queries · CTR · Article health",
               },
-            ].map(({ label, value }) => (
+            ].map((box, i) => (
               <div
-                key={label}
-                className="rounded-xl border border-[--border-subtle] bg-white p-4 text-xs"
+                key={box.label}
+                className="rounded-xl border border-[--border-subtle] bg-white p-4 reveal card-hover"
+                data-anim-delay={`${i * 70 + 120}`}
               >
-                <div className="font-semibold text-slate-700">{label}</div>
-                <div className="mt-1 text-slate-500">{value}</div>
+                <div className="font-semibold text-slate-700">{box.label}</div>
+                <div className="mt-1 text-slate-500">{box.value}</div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ===== FEATURES ===== */}
+      {/* FEATURES */}
       <section
         id="features"
-        className="mx-auto max-w-7xl rounded-3xl bg-white px-0 py-14 shadow-sm ring-1 ring-[--border-subtle] sm:px-6 scroll-mt-24"
+        className="mx-auto max-w-7xl rounded-3xl bg-white px-0 py-14 shadow-sm ring-1 ring-[--border-subtle] sm:px-6 scroll-mt-24 reveal"
+        data-anim-delay="100"
       >
         <div className="px-4 sm:px-0">
           <div className="flex items-start justify-between gap-6">
@@ -711,11 +969,12 @@ export default function KnowledgeBasePage() {
             ].map((b, i) => (
               <div
                 key={i}
-                className="group relative overflow-hidden rounded-2xl border border-[--border-subtle] bg-white p-6 shadow-sm transition hover:shadow-md"
+                className="relative rounded-xl border border-[--border-subtle] bg-white p-6 shadow-none card-hover reveal"
+                data-anim-delay={`${i * 70 + 140}`}
               >
                 <div className="relative z-10">
                   <div className="flex items-center gap-3">
-                    <div className="grid h-10 w-10 place-items-center rounded-lg bg-[--brand-primary]/10 text-xl text-[--brand-primary]">
+                    <div className="grid h-10 w-10 place-items-center rounded-lg bg-[--brand-primary]/10 text-xl text-[--brand-primary] card-icon animate-floaty">
                       {b.icon}
                     </div>
                     <h3 className="text-lg font-semibold text-slate-800">
@@ -730,127 +989,11 @@ export default function KnowledgeBasePage() {
         </div>
       </section>
 
-      {/* ===== COMPARE ===== */}
-      <section
-        id="compare"
-        className="mx-auto max-w-7xl rounded-3xl bg-[--surface-alt] px-0 py-14 ring-1 ring-[--border-subtle] sm:px-6 scroll-mt-24"
-      >
-        <div className="px-4 sm:px-0">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <h2 className="text-balance text-3xl font-bold tracking-tight">
-                Traditional KB vs Advancelytics KB
-              </h2>
-              <p className="mt-3 max-w-2xl text-slate-600">
-                Reactive content sits and waits. Our KB powers proactive answers
-                in the moment of need.
-              </p>
-            </div>
-            <div className="hidden md:block">
-              <span className="rounded-full bg-[--brand-primary]/10 px-3 py-1 text-xs font-semibold text-[--brand-primary]">
-                Lifecycle-aware
-              </span>
-              <span className="ml-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-                Agent-integrated
-              </span>
-            </div>
-          </div>
-
-          <div className="mt-8 grid gap-6 md:grid-cols-2">
-            {/* Traditional */}
-            <div className="group relative overflow-hidden rounded-2xl border border-[--border-subtle] bg-white p-6 shadow-sm">
-              <h3 className="text-lg font-semibold">Traditional KB</h3>
-              <ul className="mt-4 space-y-3 text-sm text-slate-600">
-                {[
-                  "Relies on users to search manually",
-                  "Limited understanding of intent",
-                  "Articles often go stale",
-                  "No insight into what is missing",
-                ].map((t) => (
-                  <li key={t} className="flex items-start gap-3">
-                    <span className="mt-1 h-1.5 w-1.5 rounded-full bg-slate-300" />
-                    {t}
-                  </li>
-                ))}
-              </ul>
-              <div className="mt-6 grid grid-cols-3 gap-3">
-                {[
-                  { k: "Static", v: "Experience" },
-                  { k: "Low", v: "Find rate" },
-                  { k: "Manual", v: "Upkeep" },
-                ].map((m) => (
-                  <div
-                    key={m.v}
-                    className="rounded-xl border border-[--border-subtle] bg-[--surface] p-3 text-center"
-                  >
-                    <div className="text-base font-bold text-slate-800">
-                      {m.k}
-                    </div>
-                    <div className="text-[11px] text-slate-500">{m.v}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Advancelytics */}
-            <div className="group relative overflow-hidden rounded-2xl border border-[--border-subtle] bg-white p-6 shadow-[0_8px_30px_rgba(0,106,255,0.08)] transition hover:shadow-[0_10px_40px_rgba(0,106,255,0.15)]">
-              <h3 className="text-lg font-semibold text-[--brand-primary]">
-                Advancelytics KB
-              </h3>
-              <ul className="mt-4 space-y-3 text-sm text-slate-700">
-                {[
-                  "Proactive surfacing based on behavior signals",
-                  "Intent-aware suggestions in chat and portal",
-                  "Auto-gap detection and content recommendations",
-                  "Unified answers across channels",
-                ].map((t) => (
-                  <li key={t} className="flex items-start gap-3">
-                    <Check className="mt-0.5 h-5 w-5 text-[--brand-primary]" />
-                    {t}
-                  </li>
-                ))}
-              </ul>
-              <div className="mt-6 grid grid-cols-3 gap-3">
-                {[
-                  { k: "Dynamic", v: "Experience" },
-                  { k: "High", v: "Find rate" },
-                  { k: "Continuous", v: "Improvement" },
-                ].map((m) => (
-                  <div
-                    key={m.v}
-                    className="rounded-xl border border-[--brand-primary]/20 bg-white p-3 text-center shadow-sm"
-                  >
-                    <div className="text-base font-bold text-[--brand-primary]">
-                      {m.k}
-                    </div>
-                    <div className="text-[11px] text-slate-500">{m.v}</div>
-                  </div>
-                ))}
-              </div>
-              <div className="mt-4 flex flex-wrap gap-2 text-[11px]">
-                {[
-                  "Search intent",
-                  "Pricing help",
-                  "Onboarding tips",
-                  "Troubleshooting",
-                ].map((tag) => (
-                  <span
-                    key={tag}
-                    className="rounded-full border border-[--brand-primary]/20 bg-[--brand-primary]/5 px-2.5 py-1 text-[--brand-primary]"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ===== ANALYTICS ILLUSTRATION ===== */}
+      {/* ANALYTICS ILLUSTRATION */}
       <section
         id="demo"
-        className="relative mx-4 max-w-7xl overflow-hidden rounded-3xl border border-[--border-subtle] bg-white px-0 py-10 shadow-sm sm:mx-auto sm:px-6"
+        className="relative mx-4 max-w-7xl overflow-hidden rounded-3xl border border-[--border-subtle] bg-white px-0 py-10 shadow-sm sm:mx-auto sm:px-6 reveal"
+        data-anim-delay="160"
       >
         <div className="px-4 sm:px-0 grid items-center gap-10 md:grid-cols-2">
           <div>
@@ -866,16 +1009,13 @@ export default function KnowledgeBasePage() {
               className="mt-6 inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-white shadow-md transition"
               style={{ backgroundColor: brand.primary }}
             >
-              See how it works
-              <ArrowRight className="h-4 w-4" />
+              See how it works <ArrowRight className="h-4 w-4" />
             </a>
           </div>
 
-          {/* Illustration */}
           <div className="relative">
-            <div className="relative w-full overflow-hidden rounded-2xl border border-[--border-subtle] bg-gradient-to-br from-slate-50 to-[--brand-primary]/5 p-5">
-              <div className="relative mx-auto h-64 w-full max-w-md rounded-2xl border border-[--border-subtle] bg-white p-4 shadow">
-                {/* Simple analytics bars */}
+            <div className="relative w-full overflow-hidden rounded-2xl border border-[--border-subtle] bg-white p-5">
+              <div className="relative mx-auto h-64 w-full max-w-md rounded-2xl border border-[--border-subtle] bg-white p-4 shadow-sm">
                 <div className="text-xs font-semibold text-slate-500">
                   Top searches
                 </div>
@@ -885,8 +1025,12 @@ export default function KnowledgeBasePage() {
                     { q: "sso login", v: 56 },
                     { q: "import csv", v: 38 },
                     { q: "cancel plan", v: 22 },
-                  ].map((i) => (
-                    <div key={i.q}>
+                  ].map((i, idx) => (
+                    <div
+                      key={i.q}
+                      className="reveal"
+                      data-anim-delay={`${idx * 90 + 180}`}
+                    >
                       <div className="flex items-center justify-between text-[11px] text-slate-600">
                         <span>{i.q}</span>
                         <span>{i.v}%</span>
@@ -894,7 +1038,10 @@ export default function KnowledgeBasePage() {
                       <div className="mt-1 h-2 w-full rounded bg-[--surface-alt]">
                         <div
                           className="h-2 rounded bg-[--brand-primary]"
-                          style={{ width: `${i.v}%` }}
+                          style={{
+                            width: `${i.v}%`,
+                            transition: "width .8s cubic-bezier(.2,.9,.2,1)",
+                          }}
                         />
                       </div>
                     </div>
@@ -904,10 +1051,11 @@ export default function KnowledgeBasePage() {
                   No-result queries
                 </div>
                 <div className="mt-2 space-y-1 text-[11px] text-slate-600">
-                  {["data residency", "mfa device reset"].map((t) => (
+                  {["data residency", "mfa device reset"].map((t, idx) => (
                     <div
                       key={t}
-                      className="inline-flex items-center gap-2 rounded border border-[--brand-primary]/20 bg-[--brand-primary]/5 px-2 py-1 text-[--brand-primary]"
+                      className="inline-flex items-center gap-2 rounded border border-[--brand-primary]/20 bg-[--brand-primary]/5 px-2 py-1 text-[--brand-primary] reveal"
+                      data-anim-delay={`${idx * 80 + 240}`}
                     >
                       {t}
                     </div>
@@ -922,10 +1070,11 @@ export default function KnowledgeBasePage() {
         </div>
       </section>
 
-      {/* ===== FAQ ===== */}
+      {/* FAQ */}
       <section
         id="faq"
-        className="mx-auto max-w-7xl px-0 py-16 sm:px-6 scroll-mt-24"
+        className="mx-auto max-w-7xl px-0 py-16 sm:px-6 scroll-mt-24 reveal"
+        data-anim-delay="200"
       >
         <div className="px-4 sm:px-0">
           <h2 className="text-balance text-3xl font-bold tracking-tight">
@@ -949,8 +1098,12 @@ export default function KnowledgeBasePage() {
                 q: "What analytics are included?",
                 a: "Search trends, click-through, no-result queries, article performance and satisfaction scores.",
               },
-            ].map((f) => (
-              <details key={f.q} className="group">
+            ].map((f, i) => (
+              <details
+                key={f.q}
+                className="group reveal"
+                data-anim-delay={`${i * 80 + 260}`}
+              >
                 <summary className="cursor-pointer list-none px-5 py-4 text-sm font-semibold text-slate-800 transition hover:bg-[--surface]">
                   {f.q}
                 </summary>
@@ -962,12 +1115,13 @@ export default function KnowledgeBasePage() {
         </div>
       </section>
 
-      {/* ===== CTA ===== */}
+      {/* CTA */}
       <section
         id="cta"
-        className="relative mx-4 max-w-7xl overflow-hidden rounded-3xl border border-[--border-subtle] bg-gradient-to-br from-white to-[--brand-primary]/5 px-4 py-16 shadow-sm sm:mx-auto sm:px-6 scroll-mt-24"
+        className="relative mx-4 max-w-7xl overflow-hidden rounded-3xl border border-[--border-subtle] bg-gradient-to-br from-white to-[--brand-primary]/5 px-4 py-16 shadow-sm sm:mx-auto sm:px-6 scroll-mt-24 reveal"
+        data-anim-delay="320"
       >
-        <div className="pointer-events-none absolute -top-12 right-0 h-72 w-72 rounded-full bg-[--brand-primary]/20 blur-3xl md:right-[-10%]" />
+        <div className="pointer-events-none absolute -top-12 right-0 h-72 w-72 rounded-full bg-[--brand-primary]/20 blur-3xl md:right-[-10%] animate-pulseGlow" />
         <div className="grid items-start gap-10 md:grid-cols-5">
           <div className="md:col-span-3">
             <h3 className="text-3xl font-bold">
@@ -1002,9 +1156,10 @@ export default function KnowledgeBasePage() {
               </span>
             </div>
           </div>
-          <div className="md:col-span-2">
-            <div className="relative overflow-hidden rounded-2xl border border-[--border-subtle] bg-white p-6 shadow-lg">
-              <div className="absolute right-0 top-0 h-24 w-24 -translate-y-1/2 rounded-full bg-[--brand-primary]/10 blur-2xl md:translate-x-1/2" />
+
+          <div className="md:col-span-2 reveal" data-anim-delay="360">
+            <div className="relative overflow-hidden rounded-2xl border border-[--border-subtle] bg-white p-6 shadow-lg card-hover">
+              <div className="absolute right-0 top-0 h-24 w-24 -translate-y-1/2 rounded-full bg-[--brand-primary]/10 blur-2xl md:translate-x-1/2 animate-pulseGlow" />
               <h4 className="text-sm font-semibold text-slate-700">
                 Quick Setup
               </h4>
@@ -1030,8 +1185,12 @@ export default function KnowledgeBasePage() {
                     t: "Measure & improve",
                     s: "Use analytics to fill gaps and keep content fresh.",
                   },
-                ].map((step) => (
-                  <li key={step.n} className="flex items-start gap-3">
+                ].map((step, i) => (
+                  <li
+                    key={step.n}
+                    className="flex items-start gap-3 reveal"
+                    data-anim-delay={`${i * 90 + 380}`}
+                  >
                     <div
                       className="grid h-7 w-7 shrink-0 place-items-center rounded-full border bg-[--brand-primary]/5 text-xs font-semibold text-[--brand-primary]"
                       style={{ borderColor: `${brand.primary}4D` }}
@@ -1047,14 +1206,16 @@ export default function KnowledgeBasePage() {
                   </li>
                 ))}
               </ol>
+
               <div className="mt-5 rounded-xl border border-[--border-subtle] bg-[--surface] p-3 text-[11px] text-slate-700">
                 <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
                   Install snippet
                 </div>
                 <pre className="overflow-x-auto whitespace-pre-wrap break-words text-[11px]">{`<script src="https://cdn.agentlytics.dev/knowledge-base.js" async></script>`}</pre>
               </div>
+
               <div className="mt-4 flex items-center gap-2 rounded-xl border border-[--border-subtle] bg-white p-3 text-[11px]">
-                <span className="inline-block h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                <span className="inline-block h-2.5 w-2.5 rounded-full bg-emerald-500 animate-scaleIn" />
                 <span className="text-slate-600">
                   Safe defaults, easy rollback, no vendor lock-in.
                 </span>
@@ -1064,25 +1225,23 @@ export default function KnowledgeBasePage() {
         </div>
       </section>
 
-      {/* ===== FOOTER ===== */}
+      {/* FOOTER */}
       <footer className="border-t border-[--border-subtle] bg-white">
-        <div className="mx-auto max-w-7xl px-0 py-8 text-sm text-slate-500 sm:px-6">
-          <div className="px-4 sm:px-0">
-            <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-              <p>
-                © {new Date().getFullYear()} Advancelytics. All rights reserved.
-              </p>
-              <div className="flex flex-wrap gap-4">
-                <a href="#" className="hover:text-slate-700">
-                  Privacy
-                </a>
-                <a href="#" className="hover:text-slate-700">
-                  Terms
-                </a>
-                <a href="#" className="hover:text-slate-700">
-                  Contact
-                </a>
-              </div>
+        <div className="mx-auto max-w-7xl px-4 py-8 text-sm text-slate-500 sm:px-6">
+          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+            <p>
+              © {new Date().getFullYear()} Advancelytics. All rights reserved.
+            </p>
+            <div className="flex flex-wrap gap-4">
+              <a href="#" className="hover:text-slate-700">
+                Privacy
+              </a>
+              <a href="#" className="hover:text-slate-700">
+                Terms
+              </a>
+              <a href="#" className="hover:text-slate-700">
+                Contact
+              </a>
             </div>
           </div>
         </div>

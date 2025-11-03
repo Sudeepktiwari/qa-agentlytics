@@ -1,20 +1,8 @@
-// Advancelytics — Proactive AI Agent (ai-chatbots)
-// Full single-file React component using Calendly-aligned palette.
-// Primary button is solid dark blue (#006BFF / rgb(0,107,255)) for strong contrast.
-
 "use client";
-// Advancelytics — Proactive AI Agent (ai-chatbots)
-// Full single-file React component with requested updates:
-// - Social Proof logos & testimonial carousel
-// - StoryBrand "Before → After" success visual
-// - CTA microcopy: "Start Free — Boost Conversions Now"
-// - SEO meta: keywords + description via react-helmet
-// - Accessibility: hover color #004FCC (WCAG AA)
-
 import React, { useEffect, useState } from "react";
 import { Helmet } from "react-helmet";
 
-// Calendly-ish brand tokens
+// Calendly-ish brand tokens (kept for programmatic uses)
 const brand = {
   primary: "#006BFF", // rgb(0,107,255)
   primaryHover: "#004FCC", // darker for WCAG AA
@@ -78,32 +66,9 @@ export default function ProactiveAIPage() {
   ];
 
   const [mobileOpen, setMobileOpen] = useState(false);
-  // Close menu then smooth-scroll to target anchors for reliable navigation
-  const handleMobileNavClick = (
-    e: React.MouseEvent<HTMLAnchorElement, MouseEvent>
-  ) => {
-    const href = (e.currentTarget.getAttribute("href") || "").trim();
-    if (href.startsWith("#")) {
-      e.preventDefault();
-      setMobileOpen(false);
-      const el = document.querySelector(href);
-      if (el) {
-        setTimeout(() => {
-          (el as HTMLElement).scrollIntoView({ behavior: "smooth", block: "start" });
-          try {
-            history.replaceState(null, "", href);
-          } catch {}
-        }, 0);
-      } else {
-        try {
-          history.replaceState(null, "", href);
-        } catch {}
-      }
-    } else {
-      setMobileOpen(false);
-    }
-  };
   const [tIndex, setTIndex] = useState(0);
+
+  // Testimonial auto rotate
   useEffect(() => {
     const id = setInterval(
       () => setTIndex((i) => (i + 1) % testimonials.length),
@@ -123,13 +88,79 @@ export default function ProactiveAIPage() {
     return () => document.removeEventListener("keydown", onKey);
   }, [mobileOpen]);
 
+  // Reveal on scroll + prefers-reduced-motion handling
+  useEffect(() => {
+    const prefersReduced = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+
+    if (prefersReduced) {
+      // disable animations gracefully by inlining style overrides
+      document
+        .querySelectorAll('[class*="anim-"], [class*="animate-"]')
+        .forEach((el) => {
+          (el as HTMLElement).style.animation = "none";
+        });
+      return;
+    }
+
+    const revObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            e.target.classList.add("in-view");
+            revObserver.unobserve(e.target as Element);
+          }
+        });
+      },
+      { threshold: 0.12 }
+    );
+
+    document
+      .querySelectorAll(".reveal")
+      .forEach((el) => revObserver.observe(el));
+
+    return () => revObserver.disconnect();
+  }, []);
+
+  // Mobile nav click smooth scroll helper
+  const handleMobileNavClick = (
+    e: React.MouseEvent<HTMLAnchorElement, MouseEvent>
+  ) => {
+    const href = (e.currentTarget.getAttribute("href") || "").trim();
+    if (href.startsWith("#")) {
+      e.preventDefault();
+      setMobileOpen(false);
+      const el = document.querySelector(href);
+      if (el) {
+        setTimeout(() => {
+          (el as HTMLElement).scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+          try {
+            history.replaceState(null, "", href);
+          } catch {}
+        }, 0);
+      } else {
+        try {
+          history.replaceState(null, "", href);
+        } catch {}
+      }
+    } else {
+      setMobileOpen(false);
+    }
+  };
+
   return (
     <div
       className="relative min-h-screen w-full overflow-x-hidden text-slate-900 scroll-smooth"
       style={
         {
-          "--brand-primary": brand.primary,
-          "--brand-accent": brand.accent,
+          // Provide CSS custom properties for the theme for any inline usage
+          "--brand-blue": brand.primary,
+          "--brand-sky": "#3BA3FF",
+          "--brand-midnight": "#0B1B34",
         } as React.CSSProperties
       }
     >
@@ -147,6 +178,306 @@ export default function ProactiveAIPage() {
         />
       </Helmet>
 
+      {/* Global styles & animations (applied site-wide) */}
+      <style jsx global>{`
+        :root {
+          --brand-blue: ${brand.primary};
+          --brand-sky: #3ba3ff;
+          --brand-midnight: #0b1b34;
+        }
+        html,
+        body {
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+        }
+        body {
+          background: #fff;
+          color: #0f172a;
+          font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto,
+            Arial, sans-serif;
+        }
+        .font-display {
+          font-family: Poppins, Inter, system-ui, sans-serif;
+        }
+
+        /* Reveal on scroll helper */
+        .reveal {
+          opacity: 0;
+          transform: translateY(10px);
+          transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+        .reveal.in-view {
+          opacity: 1;
+          transform: translateY(0);
+        }
+
+        /* Keyframes */
+        @keyframes floaty {
+          0%,
+          100% {
+            transform: translateY(0);
+          }
+          50% {
+            transform: translateY(-8px);
+          }
+        }
+        @keyframes pulseGlow {
+          0%,
+          100% {
+            opacity: 0.5;
+          }
+          50% {
+            opacity: 1;
+          }
+        }
+        @keyframes typeDots {
+          0% {
+            opacity: 0.2;
+          }
+          33% {
+            opacity: 0.6;
+          }
+          66% {
+            opacity: 1;
+          }
+          100% {
+            opacity: 0.2;
+          }
+        }
+        @keyframes wobble {
+          0%,
+          100% {
+            transform: translateX(0);
+          }
+          25% {
+            transform: translateX(-1.5%) rotate(-0.4deg);
+          }
+          75% {
+            transform: translateX(1.5%) rotate(0.4deg);
+          }
+        }
+        @keyframes zzDrift {
+          0% {
+            transform: translateY(0);
+            opacity: 0.8;
+          }
+          100% {
+            transform: translateY(-14px);
+            opacity: 0;
+          }
+        }
+        @keyframes radar {
+          0% {
+            transform: scale(0.6);
+            opacity: 0.35;
+          }
+          70% {
+            transform: scale(1.15);
+            opacity: 0;
+          }
+          100% {
+            transform: scale(1.2);
+            opacity: 0;
+          }
+        }
+        @keyframes slideIn {
+          0% {
+            transform: translateX(-8px);
+            opacity: 0;
+          }
+          100% {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+        @keyframes scrollHint {
+          0% {
+            transform: translateY(0);
+            opacity: 0.7;
+          }
+          100% {
+            transform: translateY(20px);
+            opacity: 0.7;
+          }
+        }
+        @keyframes dash {
+          0% {
+            stroke-dashoffset: 160;
+          }
+          100% {
+            stroke-dashoffset: 0;
+          }
+        }
+        @keyframes breath {
+          0%,
+          100% {
+            transform: scale(1);
+          }
+          50% {
+            transform: scale(1.04);
+          }
+        }
+        @keyframes pingSoft {
+          0% {
+            transform: scale(1);
+            opacity: 0.7;
+          }
+          80%,
+          100% {
+            transform: scale(1.4);
+            opacity: 0;
+          }
+        }
+        @keyframes fadeUp {
+          0% {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @keyframes scaleIn {
+          0% {
+            opacity: 0;
+            transform: scale(0.98);
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+        @keyframes shimmer {
+          0% {
+            background-position: -200% 0;
+          }
+          100% {
+            background-position: 200% 0;
+          }
+        }
+
+        /* Utility animation classes */
+        .animate-floaty,
+        .anim-floaty {
+          animation: floaty 6s ease-in-out infinite;
+        }
+        .animate-pulseGlow,
+        .anim-pulseGlow {
+          animation: pulseGlow 3s ease-in-out infinite;
+        }
+        .animate-typeDots,
+        .anim-typeDots {
+          animation: typeDots 1.2s ease-in-out infinite;
+        }
+        .animate-wobble,
+        .anim-wobble {
+          animation: wobble 0.9s ease-in-out;
+        }
+        .animate-zzDrift,
+        .anim-zzDrift {
+          animation: zzDrift 1.6s ease-out forwards;
+        }
+        .animate-radar,
+        .anim-radar {
+          animation: radar 1.8s cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
+        }
+        .animate-slideIn,
+        .anim-slideIn {
+          animation: slideIn 0.5s ease-out forwards;
+        }
+        .animate-scrollHint,
+        .anim-scrollHint {
+          animation: scrollHint 1.2s ease-in-out infinite alternate;
+        }
+        .animate-dash,
+        .anim-dash {
+          animation: dash 4s ease-in-out infinite;
+        }
+        .animate-breath,
+        .anim-breath {
+          animation: breath 6s ease-in-out infinite;
+        }
+        .animate-pingSoft,
+        .anim-pingSoft {
+          animation: pingSoft 2.2s ease-out infinite;
+        }
+        .animate-fadeUp,
+        .anim-fadeUp {
+          animation: fadeUp 0.5s ease-out both;
+        }
+        .animate-scaleIn,
+        .anim-scaleIn {
+          animation: scaleIn 0.4s ease-out both;
+        }
+        .animate-shimmer,
+        .anim-shimmer {
+          animation: shimmer 1.6s linear infinite;
+          background-size: 200% 100%;
+        }
+
+        /* small helpers used by page */
+        .size-1 {
+          width: 6px;
+          height: 6px;
+        }
+        .size-1.5 {
+          width: 10px;
+          height: 10px;
+        }
+        .size-2 {
+          width: 12px;
+          height: 12px;
+        }
+        .size-6 {
+          width: 24px;
+          height: 24px;
+        }
+        .size-8 {
+          width: 32px;
+          height: 32px;
+        }
+        .size-10 {
+          width: 40px;
+          height: 40px;
+        }
+        .size-24 {
+          width: 96px;
+          height: 96px;
+        }
+
+        /* Respect reduced motion for users */
+        @media (prefers-reduced-motion: reduce) {
+          .animate-floaty,
+          .animate-pulseGlow,
+          .animate-typeDots,
+          .animate-radar,
+          .animate-slideIn,
+          .animate-scrollHint,
+          .animate-dash,
+          .animate-breath,
+          .animate-pingSoft,
+          .animate-fadeUp,
+          .animate-scaleIn,
+          .animate-shimmer,
+          .anim-floaty,
+          .anim-pulseGlow,
+          .anim-typeDots,
+          .anim-radar,
+          .anim-slideIn,
+          .anim-scrollHint,
+          .anim-dash,
+          .anim-breath,
+          .anim-pingSoft,
+          .anim-fadeUp,
+          .anim-scaleIn,
+          .anim-shimmer {
+            animation: none !important;
+            transition: none !important;
+          }
+        }
+      `}</style>
+
       {/* Background wash */}
       <div
         className="pointer-events-none absolute inset-0 -z-10"
@@ -160,7 +491,7 @@ export default function ProactiveAIPage() {
       <header className="sticky top-0 z-40 border-b border-slate-200 md:bg-white backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-xl bg-[--brand-primary]" />
+            <div className="h-8 w-8 rounded-xl bg-[--brand-blue]" />
             <span className="text-lg font-semibold tracking-tight">
               Agentlytics
             </span>
@@ -226,13 +557,11 @@ export default function ProactiveAIPage() {
                 strokeLinejoin="round"
               >
                 {mobileOpen ? (
-                  // X icon
                   <g>
                     <path d="M18 6L6 18" />
                     <path d="M6 6l12 12" />
                   </g>
                 ) : (
-                  // Hamburger icon
                   <g>
                     <path d="M3 6h18" />
                     <path d="M3 12h18" />
@@ -243,6 +572,7 @@ export default function ProactiveAIPage() {
             </button>
           </div>
         </div>
+
         {/* Mobile menu panel */}
         <div
           id="mobile-menu"
@@ -324,7 +654,7 @@ export default function ProactiveAIPage() {
         </div>
       </header>
 
-      {/* Backdrop overlay — outside header to ensure proper stacking and click capture */}
+      {/* Mobile backdrop */}
       {mobileOpen && (
         <div
           className="fixed inset-0 z-30 md:hidden"
@@ -337,7 +667,7 @@ export default function ProactiveAIPage() {
       <section className="relative isolate">
         {/* Decorative orb */}
         <div
-          className="pointer-events-none absolute -top-32 right-0 md:right-[-10%] h-[420px] w-[420px] rounded-full blur-3xl"
+          className="pointer-events-none absolute -top-32 right-0 md:right-[-10%] h-[420px] w-[420px] rounded-full blur-3xl animate-pulseGlow"
           style={{
             background: `radial-gradient(circle at 30% 30%, ${brand.primary}33 0%, transparent 60%)`,
           }}
@@ -345,10 +675,10 @@ export default function ProactiveAIPage() {
         />
 
         <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-4 py-16 sm:px-6 md:grid-cols-2 md:py-20">
-          <div>
+          <div className="reveal">
             <h1 className="text-balance text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
               Turn Visitors into Conversations —{" "}
-              <span className="text-[--brand-primary]">Before They Leave</span>
+              <span className="text-[--brand-blue]">Before They Leave</span>
             </h1>
             <p className="mt-5 max-w-xl text-lg text-slate-600">
               Most chatbots wait.{" "}
@@ -374,7 +704,7 @@ export default function ProactiveAIPage() {
               </a>
               <a
                 href="#demo"
-                className="rounded-2xl border border-[--brand-primary] px-5 py-3 text-sm font-semibold text-[--brand-primary] transition hover:text-white"
+                className="rounded-2xl border border-[--brand-blue] px-5 py-3 text-sm font-semibold text-[--brand-blue] transition hover:text-white"
                 onMouseEnter={(e) =>
                   (e.currentTarget.style.background = `linear-gradient(90deg, ${brand.primary} 0%, ${brand.accent} 100%)`)
                 }
@@ -395,12 +725,12 @@ export default function ProactiveAIPage() {
           </div>
 
           {/* Hero Demo Card */}
-          <div className="relative">
-            <div className="absolute inset-0 md:-inset-0.5 rounded-3xl bg-gradient-to-br from-[--brand-primary]/20 to-[--brand-accent]/20 blur" />
+          <div className="relative reveal">
+            <div className="absolute inset-0 md:-inset-0.5 rounded-3xl bg-gradient-to-br from-[--brand-blue]/20 to-[--brand-sky]/20 blur animate-pulseGlow" />
             <div className="relative rounded-3xl border border-slate-200 bg-white p-6 shadow-xl">
               <div className="mb-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-full bg-[--brand-primary]" />
+                  <div className="h-8 w-8 rounded-full bg-[--brand-blue]" />
                   <span className="text-sm font-semibold">
                     Agentlytics Chat
                   </span>
@@ -409,7 +739,7 @@ export default function ProactiveAIPage() {
                   Live
                 </span>
               </div>
-              {/* Persona chips */}
+
               <div className="mb-4 flex flex-wrap gap-2">
                 {[
                   "Pricing Explorer",
@@ -425,23 +755,50 @@ export default function ProactiveAIPage() {
                   </span>
                 ))}
               </div>
-              <div className="space-y-3 rounded-2xl bg-slate-50 p-4">
-                <ChatRow
-                  who="agent"
-                  text="Noticed you on Pricing for 45s — want a quick ROI snapshot?"
-                />
-                <ChatRow
-                  who="user"
-                  text={
-                    "Yes. We're \u003C50 agents. What uplift can we expect?"
-                  }
-                />
-                <ChatRow
-                  who="agent"
-                  text="Teams like yours see 2.8x more leads and 40% faster onboarding. Want the 3-step rollout plan?"
-                />
-                <ChatRow who="user" text="Show me." />
+
+              <div className="space-y-3">
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <div className="text-xs font-semibold text-slate-600">
+                    Signals detected
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-slate-600">
+                    {["Pricing dwell 45s", "Scroll 75%", "Exit intent"].map(
+                      (tag) => (
+                        <span
+                          key={tag}
+                          className="rounded-full bg-[--brand-blue]/10 px-2.5 py-1 text-[--brand-blue]"
+                        >
+                          {tag}
+                        </span>
+                      )
+                    )}
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-[--brand-blue]/20 bg-[--brand-blue]/5 p-3">
+                  <div className="text-xs font-semibold text-[--brand-blue]">
+                    Suggested opener
+                  </div>
+                  <div className="mt-2 text-sm text-slate-700">
+                    “Want a quick ROI snapshot or 2-min walkthrough?”
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-white p-3">
+                  <div className="text-xs font-semibold text-slate-600">
+                    Outcome
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-slate-600">
+                    <span className="rounded-full bg-emerald-50 px-2.5 py-1 font-semibold text-emerald-700">
+                      Lead captured
+                    </span>
+                    <span className="rounded-full bg-indigo-50 px-2.5 py-1 font-semibold text-indigo-700">
+                      Booked demo
+                    </span>
+                  </div>
+                </div>
               </div>
+
               <div className="mt-4 flex flex-wrap gap-3">
                 <button
                   className="rounded-xl px-4 py-2 text-xs font-semibold text-white shadow-sm"
@@ -456,7 +813,7 @@ export default function ProactiveAIPage() {
                   See ROI model
                 </button>
                 <button
-                  className="rounded-xl border border-[--brand-primary] px-4 py-2 text-xs font-semibold text-[--brand-primary] transition hover:text-white"
+                  className="rounded-xl border border-[--brand-blue] px-4 py-2 text-xs font-semibold text-[--brand-blue] transition hover:text-white"
                   onMouseEnter={(e) =>
                     (e.currentTarget.style.backgroundColor = brand.primary)
                   }
@@ -467,7 +824,7 @@ export default function ProactiveAIPage() {
                   Talk to sales
                 </button>
                 <button
-                  className="rounded-xl border border-[--brand-primary] px-4 py-2 text-xs font-semibold text-[--brand-primary] transition hover:text-white"
+                  className="rounded-xl border border-[--brand-blue] px-4 py-2 text-xs font-semibold text-[--brand-blue] transition hover:text-white"
                   onMouseEnter={(e) =>
                     (e.currentTarget.style.backgroundColor = brand.primary)
                   }
@@ -492,7 +849,7 @@ export default function ProactiveAIPage() {
             { k: "3x", v: "Faster Resolution" },
             { k: "24/7", v: "Always On" },
           ].map((m) => (
-            <div key={m.k} className="text-center">
+            <div key={m.k} className="text-center reveal">
               <div className="text-2xl font-bold text-slate-900">{m.k}</div>
               <div className="text-sm text-slate-600">{m.v}</div>
             </div>
@@ -501,8 +858,11 @@ export default function ProactiveAIPage() {
       </section>
 
       {/* SOCIAL PROOF (logos + carousel) */}
-      <section id="proof" className="mx-auto max-w-7xl px-4 py-10 sm:px-6 scroll-mt-24">
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <section
+        id="proof"
+        className="mx-auto max-w-7xl px-4 py-10 sm:px-6 scroll-mt-24"
+      >
+        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm reveal">
           <p className="text-center text-xs font-semibold tracking-wide text-slate-500">
             TRUSTED BY TEAMS AT
           </p>
@@ -518,7 +878,6 @@ export default function ProactiveAIPage() {
             ))}
           </div>
 
-          {/* Testimonial carousel */}
           <div className="mt-8 overflow-hidden">
             <div className="relative mx-auto max-w-3xl">
               <div className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5 text-center shadow-sm">
@@ -534,7 +893,7 @@ export default function ProactiveAIPage() {
                 <div className="mt-2 text-sm text-slate-600">
                   {testimonials[tIndex].author}
                 </div>
-                <div className="mt-3 inline-block rounded-full border border-[--brand-primary]/30 bg-[--brand-primary]/5 px-3 py-1 text-xs font-semibold text-[--brand-primary]">
+                <div className="mt-3 inline-block rounded-full border border-[--brand-blue]/30 bg-[--brand-blue]/5 px-3 py-1 text-xs font-semibold text-[--brand-blue]">
                   {testimonials[tIndex].metric}
                 </div>
                 <div className="mt-4 flex justify-center gap-1">
@@ -542,7 +901,7 @@ export default function ProactiveAIPage() {
                     <span
                       key={i}
                       className={`h-1.5 w-6 rounded-full ${
-                        i === tIndex ? "bg-[--brand-primary]" : "bg-slate-300"
+                        i === tIndex ? "bg-[--brand-blue]" : "bg-slate-300"
                       }`}
                     />
                   ))}
@@ -554,7 +913,10 @@ export default function ProactiveAIPage() {
       </section>
 
       {/* COMPARE (modern) */}
-      <section id="compare" className="mx-auto max-w-7xl px-4 py-14 sm:px-6 scroll-mt-24">
+      <section
+        id="compare"
+        className="mx-auto max-w-7xl px-4 py-14 sm:px-6 scroll-mt-24 reveal"
+      >
         <div className="flex items-center justify-between gap-4">
           <div>
             <h2 className="text-balance text-3xl font-bold tracking-tight">
@@ -562,15 +924,15 @@ export default function ProactiveAIPage() {
             </h2>
             <p className="mt-3 max-w-2xl text-slate-600">
               Reactive waits for input. Proactive reads behavior and acts at
-              peak intent. Here’s the side‑by‑side reality.
+              peak intent. Here’s the side-by-side reality.
             </p>
           </div>
           <div className="hidden md:block">
-            <span className="rounded-full bg-[--brand-primary]/10 px-3 py-1 text-xs font-semibold text-[--brand-primary]">
-              Lifecycle‑aware
+            <span className="rounded-full bg-[--brand-blue]/10 px-3 py-1 text-xs font-semibold text-[--brand-blue]">
+              Lifecycle-aware
             </span>
             <span className="ml-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-              Human‑handoff ready
+              Human-handoff ready
             </span>
           </div>
         </div>
@@ -592,7 +954,7 @@ export default function ProactiveAIPage() {
               {[
                 "Waits for user to message",
                 "No understanding of visitor intent",
-                "One‑size‑fits‑all answers",
+                "One-size-fits-all answers",
                 "Missed leads & poor timing",
               ].map((t) => (
                 <li key={t} className="flex items-start gap-3">
@@ -622,26 +984,26 @@ export default function ProactiveAIPage() {
 
           {/* Proactive card */}
           <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_8px_30px_rgba(0,106,255,0.08)] transition hover:shadow-[0_10px_40px_rgba(0,106,255,0.15)]">
-            <div className="absolute left-1/2 top-0 h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[--brand-primary]/15 blur-2xl" />
-            <h3 className="flex items-center gap-2 text-lg font-semibold text-[--brand-primary]">
-              <span className="grid h-8 w-8 place-items-center rounded-lg bg-[--brand-primary]/10 text-[--brand-primary]">
+            <div className="absolute left-1/2 top-0 h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[--brand-blue]/15 blur-2xl animate-pingSoft" />
+            <h3 className="flex items-center gap-2 text-lg font-semibold text-[--brand-blue]">
+              <span className="grid h-8 w-8 place-items-center rounded-lg bg-[--brand-blue]/10 text-[--brand-blue]">
                 P
               </span>
               Proactive AI Agent
             </h3>
             <p className="mt-2 text-sm text-slate-700">
               Detects intent, personalizes the opener, and engages before
-              drop‑off.
+              drop-off.
             </p>
             <ul className="mt-5 space-y-3 text-sm text-slate-700">
               {[
-                "Detects scroll‑depth, dwell time, exit intent",
+                "Detects scroll-depth, dwell time, exit intent",
                 "Predicts buying or churn signals",
                 "Personalized prompts by journey stage",
                 "Triggers at peak intent to convert",
               ].map((t) => (
                 <li key={t} className="flex items-start gap-3">
-                  <Check className="mt-0.5 h-5 w-5 text-[--brand-primary]" />
+                  <Check className="mt-0.5 h-5 w-5 text-[--brand-blue]" />
                   {t}
                 </li>
               ))}
@@ -654,9 +1016,9 @@ export default function ProactiveAIPage() {
               ].map((m) => (
                 <div
                   key={m.v}
-                  className="rounded-xl border border-[--brand-primary]/20 bg-white p-3 text-center shadow-sm"
+                  className="rounded-xl border border-[--brand-blue]/20 bg-white p-3 text-center shadow-sm"
                 >
-                  <div className="text-base font-bold text-[--brand-primary]">
+                  <div className="text-base font-bold text-[--brand-blue]">
                     {m.k}
                   </div>
                   <div className="text-[11px] text-slate-500">{m.v}</div>
@@ -674,7 +1036,7 @@ export default function ProactiveAIPage() {
               ].map((tag) => (
                 <span
                   key={tag}
-                  className="rounded-full border border-[--brand-primary]/20 bg-[--brand-primary]/5 px-2.5 py-1 text-[--brand-primary]"
+                  className="rounded-full border border-[--brand-blue]/20 bg-[--brand-blue]/5 px-2.5 py-1 text-[--brand-blue]"
                 >
                   {tag}
                 </span>
@@ -696,8 +1058,8 @@ export default function ProactiveAIPage() {
               r: false,
               p: true,
             },
-            { cap: "Journey‑aware prompts", r: false, p: true },
-            { cap: "Auto‑qualify & route", r: false, p: true },
+            { cap: "Journey-aware prompts", r: false, p: true },
+            { cap: "Auto-qualify & route", r: false, p: true },
             { cap: "Knowledge search", r: true, p: true },
             { cap: "Human handoff with context", r: true, p: true },
             { cap: "Learning from outcomes", r: false, p: true },
@@ -718,7 +1080,7 @@ export default function ProactiveAIPage() {
               </div>
               <div className="col-span-3 text-center">
                 {row.p ? (
-                  <Check className="mx-auto h-5 w-5 text-[--brand-primary]" />
+                  <Check className="mx-auto h-5 w-5 text-[--brand-blue]" />
                 ) : (
                   <span className="text-slate-400">—</span>
                 )}
@@ -729,7 +1091,10 @@ export default function ProactiveAIPage() {
       </section>
 
       {/* HOW IT WORKS */}
-      <section id="how" className="mx-auto max-w-7xl px-4 py-14 sm:px-6 scroll-mt-24">
+      <section
+        id="how"
+        className="mx-auto max-w-7xl px-4 py-14 sm:px-6 scroll-mt-24 reveal"
+      >
         <div className="flex items-start justify-between gap-8">
           <div>
             <h2 className="text-balance text-3xl font-bold tracking-tight">
@@ -741,11 +1106,11 @@ export default function ProactiveAIPage() {
             </p>
           </div>
           <div className="hidden md:flex items-center gap-2">
-            <span className="rounded-full bg-[--brand-primary]/10 px-3 py-1 text-xs font-semibold text-[--brand-primary]">
-              Signal‑driven
+            <span className="rounded-full bg-[--brand-blue]/10 px-3 py-1 text-xs font-semibold text-[--brand-blue]">
+              Signal-driven
             </span>
             <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-              Privacy‑aware
+              Privacy-aware
             </span>
           </div>
         </div>
@@ -763,7 +1128,7 @@ export default function ProactiveAIPage() {
           ].map((tag) => (
             <span
               key={tag}
-              className="rounded-full border border-[--brand-primary]/20 bg-[--brand-primary]/5 px-2.5 py-1 text-[--brand-primary]"
+              className="rounded-full border border-[--brand-blue]/20 bg-[--brand-blue]/5 px-2.5 py-1 text-[--brand-blue]"
             >
               {tag}
             </span>
@@ -776,10 +1141,10 @@ export default function ProactiveAIPage() {
               {
                 key: "I",
                 title: "Intent Detection",
-                body: "Scrolls, clicks, dwell‑time & exit intent trigger the right opener.",
+                body: "Scrolls, clicks, dwell-time & exit intent trigger the right opener.",
                 tips: [
                   "Detect peak attention",
-                  "Suppress during form‑fill",
+                  "Suppress during form-fill",
                   "Respect cooldowns",
                 ],
               },
@@ -788,7 +1153,7 @@ export default function ProactiveAIPage() {
                 title: "Smart Prompts",
                 body: "Pricing explorers, comparers, or support seekers get tailored lines.",
                 tips: [
-                  "Persona‑aware openers",
+                  "Persona-aware openers",
                   "Value props per page",
                   "A/B test prompts",
                 ],
@@ -808,7 +1173,7 @@ export default function ProactiveAIPage() {
                 title: "Lifecycle Aware",
                 body: "Flows from Lead → Onboarding → Support without friction.",
                 tips: [
-                  "Auto‑qualify & route",
+                  "Auto-qualify & route",
                   "Nudge for activation",
                   "Proactive success cues",
                 ],
@@ -816,10 +1181,10 @@ export default function ProactiveAIPage() {
             ].map((card) => (
               <div
                 key={card.title}
-                className="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-md"
+                className="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-md reveal"
               >
                 <div className="flex items-center gap-3">
-                  <div className="grid h-10 w-10 place-items-center rounded-lg bg-[--brand-primary]/10 text-[--brand-primary] font-bold">
+                  <div className="grid h-10 w-10 place-items-center rounded-lg bg-[--brand-blue]/10 text-[--brand-blue] font-bold">
                     {card.key}
                   </div>
                   <h3 className="text-lg font-semibold">{card.title}</h3>
@@ -833,12 +1198,12 @@ export default function ProactiveAIPage() {
                     </li>
                   ))}
                 </ul>
-                <div className="mt-4 h-1 w-0 bg-[--brand-primary] transition-all duration-300 group-hover:w-16" />
+                <div className="mt-4 h-1 w-0 bg-[--brand-blue] transition-all duration-300 group-hover:w-16" />
               </div>
             ))}
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm reveal">
             <h4 className="text-sm font-semibold text-slate-700">
               Signal → Intent → Prompt → Outcome
             </h4>
@@ -862,7 +1227,7 @@ export default function ProactiveAIPage() {
                   desc: "Personalized opener based on journey",
                   chips: [
                     "ROI snapshot?",
-                    "2‑min walkthrough?",
+                    "2-min walkthrough?",
                     "Troubleshoot now?",
                   ],
                 },
@@ -888,7 +1253,7 @@ export default function ProactiveAIPage() {
                     {row.chips.map((c) => (
                       <span
                         key={c}
-                        className="rounded-full border border-[--brand-primary]/20 bg-[--brand-primary]/5 px-2 py-0.5 text-[10px] text-[--brand-primary]"
+                        className="rounded-full border border-[--brand-blue]/20 bg-[--brand-blue]/5 px-2 py-0.5 text-[10px] text-[--brand-blue]"
                       >
                         {c}
                       </span>
@@ -905,9 +1270,9 @@ export default function ProactiveAIPage() {
               ].map((m) => (
                 <div
                   key={m.v}
-                  className="rounded-xl border border-[--brand-primary]/20 bg-white p-3 text-center shadow-sm"
+                  className="rounded-xl border border-[--brand-blue]/20 bg-white p-3 text-center shadow-sm"
                 >
-                  <div className="text-base font-bold text-[--brand-primary]">
+                  <div className="text-base font-bold text-[--brand-blue]">
                     {m.k}
                   </div>
                   <div className="text-[11px] text-slate-500">{m.v}</div>
@@ -921,7 +1286,7 @@ export default function ProactiveAIPage() {
       {/* DEMO (illustration) */}
       <section
         id="demo"
-        className="relative mx-auto max-w-7xl overflow-hidden rounded-3xl border border-slate-200 bg-white px-4 py-10 shadow-sm sm:px-6 scroll-mt-24"
+        className="relative mx-auto max-w-7xl overflow-hidden rounded-3xl border border-slate-200 bg-white px-4 py-10 shadow-sm sm:px-6 scroll-mt-24 reveal"
       >
         <div className="grid items-center gap-10 md:grid-cols-2">
           <div>
@@ -930,7 +1295,7 @@ export default function ProactiveAIPage() {
             </h3>
             <p className="mt-2 max-w-md text-slate-600">
               Watch how behavior signals trigger targeted prompts that convert.
-              No code required to get started — just drop‑in and go.
+              No code required to get started — just drop-in and go.
             </p>
             <div className="mt-4 flex flex-wrap gap-3 text-sm text-slate-600">
               <span className="rounded-full bg-slate-100 px-3 py-1">
@@ -961,7 +1326,7 @@ export default function ProactiveAIPage() {
 
           {/* Illustration with brand-aligned bubble borders */}
           <div className="relative">
-            <div className="relative w-full overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 to-[--brand-primary]/5 p-5">
+            <div className="relative w-full overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 to-[--brand-blue]/5 p-5">
               <div className="relative mx-auto h-64 w-full max-w-md rounded-2xl border border-slate-200 bg-white shadow">
                 <div className="flex items-center gap-2 border-b border-slate-200 px-3 py-2">
                   <span className="h-2.5 w-2.5 rounded-full bg-rose-300" />
@@ -981,17 +1346,19 @@ export default function ProactiveAIPage() {
                     <div className="h-16 w-full rounded-lg border border-slate-200 bg-slate-50" />
                   </div>
                 </div>
+
                 {/* Agent bubble with brand border */}
                 <div
                   className="absolute -right-3 bottom-12 w-[70%] max-w-xs rounded-2xl border px-3 py-2 text-[13px] shadow-sm"
                   style={{
-                    backgroundColor: `${brand.primary}1A`, // ~10% fill
+                    backgroundColor: `${brand.primary}1A`,
                     color: brand.primary,
                     borderColor: brand.primary,
                   }}
                 >
                   Noticed high pricing dwell — want a quick ROI snapshot?
                 </div>
+
                 {/* User bubble with soft brand-tinted border */}
                 <div
                   className="absolute left-3 bottom-2 max-w-[60%] rounded-2xl border bg-white px-3 py-2 text-[13px] text-slate-800 shadow-sm"
@@ -1000,12 +1367,13 @@ export default function ProactiveAIPage() {
                   Yes, show me.
                 </div>
               </div>
+
               {/* Floating KPI cards */}
               <div
                 className="pointer-events-none absolute -left-4 -top-4 w-36 rounded-xl border bg-white p-3 text-center shadow-sm"
                 style={{ borderColor: `${brand.primary}33` }}
               >
-                <div className="text-sm font-bold text-[--brand-primary]">
+                <div className="text-sm font-bold text-[--brand-blue]">
                   +2.8x
                 </div>
                 <div className="text-[11px] text-slate-500">Leads</div>
@@ -1014,7 +1382,7 @@ export default function ProactiveAIPage() {
                 className="pointer-events-none absolute -right-4 top-8 w-40 rounded-xl border bg-white p-3 text-center shadow-sm"
                 style={{ borderColor: `${brand.primary}33` }}
               >
-                <div className="text-sm font-bold text-[--brand-primary]">
+                <div className="text-sm font-bold text-[--brand-blue]">
                   -40%
                 </div>
                 <div className="text-[11px] text-slate-500">
@@ -1025,7 +1393,7 @@ export default function ProactiveAIPage() {
                 {["Pricing dwell", "Scroll 75%", "Exit intent"].map((tag) => (
                   <span
                     key={tag}
-                    className="rounded-full border px-2.5 py-1 text-[--brand-primary]"
+                    className="rounded-full border px-2.5 py-1 text-[--brand-blue]"
                     style={{
                       borderColor: `${brand.primary}33`,
                       backgroundColor: `${brand.primary}0D`,
@@ -1044,7 +1412,10 @@ export default function ProactiveAIPage() {
       </section>
 
       {/* BENEFITS */}
-      <section id="benefits" className="mx-auto max-w-7xl px-4 py-14 sm:px-6 scroll-mt-24">
+      <section
+        id="benefits"
+        className="mx-auto max-w-7xl px-4 py-14 sm:px-6 scroll-mt-24 reveal"
+      >
         <div className="flex items-start justify-between gap-6">
           <div>
             <h2 className="text-balance text-3xl font-bold tracking-tight">
@@ -1057,7 +1428,7 @@ export default function ProactiveAIPage() {
             </p>
           </div>
           <div className="hidden md:flex items-center gap-2">
-            <span className="rounded-full bg-[--brand-primary]/10 px-3 py-1 text-xs font-semibold text-[--brand-primary]">
+            <span className="rounded-full bg-[--brand-blue]/10 px-3 py-1 text-xs font-semibold text-[--brand-blue]">
               CX-driven
             </span>
             <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
@@ -1065,6 +1436,7 @@ export default function ProactiveAIPage() {
             </span>
           </div>
         </div>
+
         <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {[
             {
@@ -1100,11 +1472,11 @@ export default function ProactiveAIPage() {
           ].map((b, i) => (
             <div
               key={i}
-              className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-md"
+              className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-md reveal"
             >
               <div className="relative z-10">
                 <div className="flex items-center gap-3">
-                  <div className="grid h-10 w-10 place-items-center rounded-lg bg-[--brand-primary]/10 text-xl text-[--brand-primary]">
+                  <div className="grid h-10 w-10 place-items-center rounded-lg bg-[--brand-blue]/10 text-xl text-[--brand-blue]">
                     {b.icon}
                   </div>
                   <h3 className="text-lg font-semibold text-slate-800">
@@ -1116,7 +1488,8 @@ export default function ProactiveAIPage() {
             </div>
           ))}
         </div>
-        <div className="mt-10 grid grid-cols-3 gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-6">
+
+        <div className="mt-10 grid grid-cols-3 gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-6 reveal">
           {[
             { k: "2.8x", v: "Leads" },
             { k: "40%", v: "Faster Onboarding" },
@@ -1126,7 +1499,7 @@ export default function ProactiveAIPage() {
             { k: "Zero", v: "Code Setup" },
           ].map((m) => (
             <div key={m.v} className="text-center">
-              <div className="text-base font-bold text-[--brand-primary]">
+              <div className="text-base font-bold text-[--brand-blue]">
                 {m.k}
               </div>
               <div className="text-[11px] text-slate-500">{m.v}</div>
@@ -1136,7 +1509,7 @@ export default function ProactiveAIPage() {
       </section>
 
       {/* BEFORE → AFTER (StoryBrand visual) */}
-      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
+      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 reveal">
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex flex-col items-center gap-6 md:flex-row md:items-stretch">
             <div className="flex-1 rounded-2xl border border-rose-200 bg-rose-50/50 p-5">
@@ -1155,8 +1528,8 @@ export default function ProactiveAIPage() {
                 ))}
               </ul>
             </div>
-            <div className="hidden md:flex h-24 w-24 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[--brand-primary]/10 to-[--brand-accent]/10">
-              <ArrowRight className="h-8 w-8 text-[--brand-primary]" />
+            <div className="hidden md:flex h-24 w-24 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[--brand-blue]/10 to-[--brand-accent]/10">
+              <ArrowRight className="h-8 w-8 text-[--brand-blue]" />
             </div>
             <div className="flex-1 rounded-2xl border border-emerald-200 bg-emerald-50/50 p-5">
               <h4 className="text-sm font-semibold text-emerald-700">After</h4>
@@ -1181,9 +1554,9 @@ export default function ProactiveAIPage() {
       {/* CTA */}
       <section
         id="cta"
-        className="relative mx-auto max-w-7xl overflow-hidden rounded-3xl border border-slate-200 bg-gradient-to-br from-white to-[--brand-primary]/5 px-4 py-16 shadow-sm sm:px-6 scroll-mt-24"
+        className="relative mx-auto max-w-7xl overflow-hidden rounded-3xl border border-slate-200 bg-gradient-to-br from-white to-[--brand-blue]/5 px-4 py-16 shadow-sm sm:px-6 scroll-mt-24 reveal"
       >
-        <div className="pointer-events-none absolute -top-12 right-0 md:right-[-10%] h-72 w-72 rounded-full bg-[--brand-primary]/20 blur-3xl" />
+        <div className="pointer-events-none absolute -top-12 right-0 md:right-[-10%] h-72 w-72 rounded-full bg-[--brand-blue]/20 blur-3xl animate-pulseGlow" />
         <div className="grid items-start gap-10 md:grid-cols-5">
           <div className="md:col-span-3">
             <h3 className="text-3xl font-bold">Let Your Website Talk First</h3>
@@ -1220,7 +1593,7 @@ export default function ProactiveAIPage() {
               </a>
               <a
                 href="#"
-                className="rounded-2xl border border-[--brand-primary] px-5 py-3 text-sm font-semibold text-[--brand-primary] transition hover:text-white"
+                className="rounded-2xl border border-[--brand-blue] px-5 py-3 text-sm font-semibold text-[--brand-blue] transition hover:text-white"
                 onMouseEnter={(e) =>
                   (e.currentTarget.style.backgroundColor = brand.primary)
                 }
@@ -1234,6 +1607,7 @@ export default function ProactiveAIPage() {
                 14-day free trial · No credit card required
               </span>
             </div>
+
             <div className="mt-6 flex flex-wrap items-center gap-3 text-[11px] text-slate-500">
               <span className="rounded-full border border-slate-200 bg-white px-3 py-1">
                 SOC 2 ready
@@ -1249,9 +1623,10 @@ export default function ProactiveAIPage() {
               </span>
             </div>
           </div>
-          <div className="md:col-span-2">
+
+          <div className="md:col-span-2 reveal">
             <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-lg">
-              <div className="absolute right-0 top-0 h-24 w-24 -translate-y-1/2 translate-x-1/2 rounded-full bg-[--brand-primary]/10 blur-2xl" />
+              <div className="absolute right-0 top-0 h-24 w-24 -translate-y-1/2 translate-x-1/2 rounded-full bg-[--brand-blue]/10 blur-2xl animate-pulseGlow" />
               <h4 className="text-sm font-semibold text-slate-700">
                 Quick Setup
               </h4>
@@ -1280,7 +1655,7 @@ export default function ProactiveAIPage() {
                 ].map((step) => (
                   <li key={step.n} className="flex items-start gap-3">
                     <div
-                      className="grid h-7 w-7 shrink-0 place-items-center rounded-full border bg-[--brand-primary]/5 text-xs font-semibold text-[--brand-primary]"
+                      className="grid h-7 w-7 shrink-0 place-items-center rounded-full border bg-[--brand-blue]/5 text-xs font-semibold text-[--brand-blue]"
                       style={{ borderColor: `${brand.primary}4D` }}
                     >
                       {step.n}
@@ -1294,12 +1669,14 @@ export default function ProactiveAIPage() {
                   </li>
                 ))}
               </ol>
+
               <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-3 text-[11px] text-slate-700">
                 <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
                   Install snippet
                 </div>
                 <pre className="overflow-x-auto whitespace-pre-wrap break-words text-[11px]">{`<script src="https://cdn.agentlytics.dev/agent.js" async></script>`}</pre>
               </div>
+
               <div className="mt-4 flex items-center gap-2 rounded-xl border border-slate-200 bg-white p-3 text-[11px]">
                 <span className="inline-block h-2.5 w-2.5 rounded-full bg-emerald-500" />
                 <span className="text-slate-600">
@@ -1312,7 +1689,7 @@ export default function ProactiveAIPage() {
       </section>
 
       {/* FAQ */}
-      <section id="faq" className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+      <section id="faq" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 reveal">
         <h2 className="text-balance text-3xl font-bold tracking-tight">FAQ</h2>
         <div className="mt-6 divide-y divide-slate-200 overflow-hidden rounded-2xl border border-slate-200 bg-white">
           {[

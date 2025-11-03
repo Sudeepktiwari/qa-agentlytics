@@ -123,6 +123,10 @@ body {
 .animate-scaleIn, .anim-scaleIn { animation: scaleIn 0.4s ease-out both; }
 .animate-shimmer, .anim-shimmer { animation: shimmer 1.6s linear infinite; background-size: 200% 100%; }
 
+/* Shadow utilities to mirror homepage visuals */
+.shadow-card { box-shadow: 0 12px 34px rgba(2, 6, 23, 0.10); }
+.shadow-soft { box-shadow: 0 6px 16px rgba(2, 6, 23, 0.08); }
+
 /* Enhanced blockquote styling for chatbot messages */
 blockquote {
   border-left: 4px solid #0070f3;
