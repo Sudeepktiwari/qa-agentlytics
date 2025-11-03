@@ -16,7 +16,9 @@ function Button({ children, className = "", ...props }: any) {
 
 function Card({ children, className = "" }: any) {
   return (
-    <div className={`rounded-2xl border bg-white shadow-sm ${className}`}>{children}</div>
+    <div className={`rounded-2xl border bg-white shadow-sm ${className}`}>
+      {children}
+    </div>
   );
 }
 
@@ -167,29 +169,59 @@ export default function ZohoComparisonPage() {
 
       {/* Page-specific menu (dual headers, mobile-friendly, auto-resizes) */}
       <header
-        className={`${scrolled ? "top-0" : "top-16"} fixed left-0 right-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top,opacity,transform] duration-300 ease-out ${floating ? "opacity-0 -translate-y-1 pointer-events-none" : "opacity-100 translate-y-0"}`}
+        className={`${
+          scrolled ? "top-0" : "top-16"
+        } fixed left-0 right-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top,opacity,transform] duration-300 ease-out ${
+          floating
+            ? "opacity-0 -translate-y-1 pointer-events-none"
+            : "opacity-100 translate-y-0"
+        }`}
         ref={headerRef}
       >
-        <div className="w-full h-auto min-h-[56px] sm:h-16 sm:min-h-0 py-2 sm:py-0 flex items-center justify-center px-3">
+        <div className="w-full h-auto min-h-[56px] sm:h-16 sm:min-h-0 py-2 sm:py-0 flex items-center justify-center px-3 relative md:right-[84px]">
           <nav className="max-w-6xl w-full mx-auto flex flex-wrap sm:flex-nowrap items-center justify-center gap-x-3 gap-y-2 sm:gap-6 text-gray-800 text-sm">
-            <a href="#overview" className="px-2 py-1 hover:text-black">Overview</a>
-            <a href="#switch" className="px-2 py-1 hover:text-black">Why Switch</a>
-            <a href="#engine" className="px-2 py-1 hover:text-black">Intent Engine</a>
-            <a href="#outcomes" className="px-2 py-1 hover:text-black">Outcomes</a>
-            <a href="#integrations" className="px-2 py-1 hover:text-black">Integrations</a>
+            <a href="#overview" className="px-2 py-1 hover:text-black">
+              Overview
+            </a>
+            <a href="#switch" className="px-2 py-1 hover:text-black">
+              Why Switch
+            </a>
+            <a href="#engine" className="px-2 py-1 hover:text-black">
+              Intent Engine
+            </a>
+            <a href="#outcomes" className="px-2 py-1 hover:text-black">
+              Outcomes
+            </a>
+            <a href="#integrations" className="px-2 py-1 hover:text-black">
+              Integrations
+            </a>
           </nav>
         </div>
       </header>
       <header
-        className={`fixed left-0 right-0 top-0 z-50 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top,opacity,transform] duration-300 ease-out ${floating ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-1 pointer-events-none"}`}
+        className={`fixed left-0 right-0 top-0 z-50 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top,opacity,transform] duration-300 ease-out ${
+          floating
+            ? "opacity-100 translate-y-0"
+            : "opacity-0 -translate-y-1 pointer-events-none"
+        }`}
       >
         <div className="w-full h-auto min-h-[56px] sm:h-16 sm:min-h-0 py-2 sm:py-0 flex items-center justify-center px-3">
           <nav className="max-w-6xl w-full mx-auto flex flex-wrap sm:flex-nowrap items-center justify-center gap-x-3 gap-y-2 sm:gap-6 text-gray-800 text-sm">
-            <a href="#overview" className="px-2 py-1 hover:text-black">Overview</a>
-            <a href="#switch" className="px-2 py-1 hover:text-black">Why Switch</a>
-            <a href="#engine" className="px-2 py-1 hover:text-black">Intent Engine</a>
-            <a href="#outcomes" className="px-2 py-1 hover:text-black">Outcomes</a>
-            <a href="#integrations" className="px-2 py-1 hover:text-black">Integrations</a>
+            <a href="#overview" className="px-2 py-1 hover:text-black">
+              Overview
+            </a>
+            <a href="#switch" className="px-2 py-1 hover:text-black">
+              Why Switch
+            </a>
+            <a href="#engine" className="px-2 py-1 hover:text-black">
+              Intent Engine
+            </a>
+            <a href="#outcomes" className="px-2 py-1 hover:text-black">
+              Outcomes
+            </a>
+            <a href="#integrations" className="px-2 py-1 hover:text-black">
+              Integrations
+            </a>
           </nav>
         </div>
       </header>
@@ -360,7 +392,10 @@ export default function ZohoComparisonPage() {
       </section>
 
       {/* OUTCOMES & TESTIMONIALS */}
-      <section id="outcomes" className="max-w-6xl mx-auto px-6 py-20 text-center">
+      <section
+        id="outcomes"
+        className="max-w-6xl mx-auto px-6 py-20 text-center"
+      >
         <h2 className="text-3xl font-bold text-[#E94F2E] mb-10">
           📈 Real Outcomes
         </h2>
