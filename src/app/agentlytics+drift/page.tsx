@@ -23,9 +23,31 @@ export default function DriftComparisonPage() {
       window.addEventListener("scroll", handleScroll);
       window.addEventListener("resize", updateHeaderHeight);
       updateHeaderHeight();
-      return () => window.removeEventListener("scroll", handleScroll);
+
+      // Observe header size changes (e.g., wrapping to two lines) and update spacer height automatically
+      let ro: ResizeObserver | null = null;
+      if (headerRef.current && typeof ResizeObserver !== "undefined") {
+        ro = new ResizeObserver((entries) => {
+          const rect = entries[0]?.contentRect;
+          const next = rect?.height ?? headerRef.current?.offsetHeight ?? 64;
+          setHeaderHeight(next);
+        });
+        ro.observe(headerRef.current);
+      }
+
+      return () => {
+        window.removeEventListener("scroll", handleScroll);
+        window.removeEventListener("resize", updateHeaderHeight);
+        if (ro) ro.disconnect();
+      };
     }
   }, []);
+
+  // Also update height when sticky state toggles
+  useEffect(() => {
+    if (headerRef.current)
+      setHeaderHeight(headerRef.current.offsetHeight || 64);
+  }, [scrolled]);
 
   return (
     <div
@@ -57,7 +79,7 @@ export default function DriftComparisonPage() {
         } fixed left-0 right-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top] duration-200`}
         ref={headerRef}
       >
-        <div className="w-full sm:h-16 h-auto flex items-center justify-center relative md:right-[84px] px-3">
+        <div className="w-full h-auto min-h-[56px] sm:h-16 sm:min-h-0 py-3 sm:py-0 flex items-center justify-center relative md:right-[84px] px-3">
           <nav className="flex flex-wrap sm:flex-nowrap items-center justify-center gap-x-3 gap-y-2 sm:gap-6 text-slate-600 text-sm">
             <a href="#overview" className="hover:text-slate-900">
               Overview
@@ -170,7 +192,7 @@ export default function DriftComparisonPage() {
 
             {/* Visual Suggestion (split view mock) */}
             <div className="relative">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-4 md:grid grid-cols-2 gap-4 ">
                 <div className="rounded-2xl border bg-white p-4 shadow-sm">
                   <div className="text-xs font-semibold text-slate-500 mb-3">
                     Drift — Static Chat Flow
@@ -557,7 +579,9 @@ function Carousel() {
     const el = containerRef.current;
     if (!el) return;
     // Only run auto-scroll on mobile viewports
-    const isMobile = typeof window !== "undefined" && window.matchMedia("(max-width: 639px)").matches;
+    const isMobile =
+      typeof window !== "undefined" &&
+      window.matchMedia("(max-width: 639px)").matches;
     if (!isMobile) return;
 
     let rafId: number;
@@ -610,10 +634,16 @@ function Carousel() {
 
   return (
     <div className="mt-10">
-      <div className="group relative overflow-x-auto sm:overflow-hidden rounded-2xl border bg-white" ref={containerRef}>
+      <div
+        className="group relative overflow-x-auto sm:overflow-hidden rounded-2xl border bg-white"
+        ref={containerRef}
+      >
         <div className="flex gap-0 snap-x snap-mandatory sm:snap-none sm:animate-[slide_16s_linear_infinite] sm:group-hover:[animation-play-state:paused]">
           {[...items, ...items].map((item, idx) => (
-            <div key={idx} className="w-[60vw] sm:w-1/3 shrink-0 p-6 snap-center">
+            <div
+              key={idx}
+              className="w-[60vw] sm:w-1/3 shrink-0 p-6 snap-center"
+            >
               <div className="h-full rounded-xl border p-6 shadow-sm bg-white">
                 <div className="text-xs font-semibold text-slate-500">
                   {item.logo}
@@ -633,8 +663,12 @@ function Carousel() {
       <style>{`
         @keyframes slide { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
       `}</style>
-      <p className="mt-2 hidden sm:block text-xs text-slate-500">Hover to pause</p>
-      <p className="mt-2 sm:hidden text-xs text-slate-500 text-center">Touch and hold to pause</p>
+      <p className="mt-2 hidden sm:block text-xs text-slate-500">
+        Hover to pause
+      </p>
+      <p className="mt-2 sm:hidden text-xs text-slate-500 text-center">
+        Touch and hold to pause
+      </p>
     </div>
   );
 }
