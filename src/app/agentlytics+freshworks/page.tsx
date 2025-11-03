@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 export default function AgentlyticsVsFreshchat() {
   // Page-specific sticky menu state
   const [scrolled, setScrolled] = useState(false);
+  const [floating, setFloating] = useState(false);
   const headerRef = useRef<HTMLElement | null>(null);
   const [headerHeight, setHeaderHeight] = useState(64);
   useEffect(() => {
@@ -39,6 +40,10 @@ export default function AgentlyticsVsFreshchat() {
   useEffect(() => {
     if (headerRef.current)
       setHeaderHeight(headerRef.current.offsetHeight || 64);
+  }, [scrolled]);
+  // Intercom-style header handoff: floating follows scrolled
+  useEffect(() => {
+    setFloating(scrolled);
   }, [scrolled]);
   return (
     <div className="bg-[#F8FAFF] text-gray-800 font-sans">
@@ -142,38 +147,40 @@ export default function AgentlyticsVsFreshchat() {
         </div>
       </section>
 
-      {/* Page-specific menu (sticky, auto-resizes, mobile-friendly) */}
+      {/* Intercom-style dual headers: sticky below global, floating at top */}
       <header
-        className={`${
-          scrolled ? "top-0" : "top-16"
-        } fixed left-0 right-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top] duration-200`}
+        className={`${scrolled ? "top-0" : "top-16"} fixed left-0 right-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top,opacity,transform] duration-300 ease-out ${floating ? "opacity-0 -translate-y-1 pointer-events-none" : "opacity-100 translate-y-0"}`}
         ref={headerRef}
       >
         <div className="w-full h-auto min-h-[56px] sm:h-16 sm:min-h-0 py-2 sm:py-0 flex items-center justify-center px-3">
           <nav
-            className="max-w-6xl w-full mx-auto flex flex-wrap sm:flex-nowrap items-center relative md:right-[84px]
-          justify-center gap-x-3 gap-y-2 sm:gap-6 text-slate-700 text-sm"
+            className="max-w-6xl w-full mx-auto flex flex-wrap sm:flex-nowrap items-center justify-center gap-x-3 gap-y-2 sm:gap-6 text-slate-700 text-sm transform md:translate-x-6"
           >
-            <a href="#overview" className="px-2 py-1 hover:text-slate-900">
-              Overview
-            </a>
-            <a href="#switch" className="px-2 py-1 hover:text-slate-900">
-              Why Switch
-            </a>
-            <a href="#engine" className="px-2 py-1 hover:text-slate-900">
-              AI Engine
-            </a>
-            <a href="#outcomes" className="px-2 py-1 hover:text-slate-900">
-              Outcomes
-            </a>
-            <a href="#integrations" className="px-2 py-1 hover:text-slate-900">
-              Integrations
-            </a>
+            <a href="#overview" className="px-2 py-1 hover:text-slate-900">Overview</a>
+            <a href="#switch" className="px-2 py-1 hover:text-slate-900">Why Switch</a>
+            <a href="#engine" className="px-2 py-1 hover:text-slate-900">AI Engine</a>
+            <a href="#outcomes" className="px-2 py-1 hover:text-slate-900">Outcomes</a>
+            <a href="#integrations" className="px-2 py-1 hover:text-slate-900">Integrations</a>
           </nav>
         </div>
       </header>
-      {/* Spacer to prevent content hiding under fixed header when stuck */}
-      <div style={{ height: scrolled ? headerHeight : 0 }} />
+      <header
+        className={`fixed left-0 right-0 top-0 z-50 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top,opacity,transform] duration-300 ease-out ${floating ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-1 pointer-events-none"}`}
+      >
+        <div className="w-full h-auto min-h-[56px] sm:h-16 sm:min-h-0 py-2 sm:py-0 flex items-center justify-center px-3">
+          <nav
+            className="max-w-6xl w-full mx-auto flex flex-wrap sm:flex-nowrap items-center justify-center gap-x-3 gap-y-2 sm:gap-6 text-slate-700 text-sm transform md:translate-x-6"
+          >
+            <a href="#overview" className="px-2 py-1 hover:text-slate-900">Overview</a>
+            <a href="#switch" className="px-2 py-1 hover:text-slate-900">Why Switch</a>
+            <a href="#engine" className="px-2 py-1 hover:text-slate-900">AI Engine</a>
+            <a href="#outcomes" className="px-2 py-1 hover:text-slate-900">Outcomes</a>
+            <a href="#integrations" className="px-2 py-1 hover:text-slate-900">Integrations</a>
+          </nav>
+        </div>
+      </header>
+      {/* Spacer to prevent content hiding under floating header */}
+      <div style={{ height: floating ? headerHeight : 0 }} />
 
       {/* QUICK OVERVIEW */}
       <section

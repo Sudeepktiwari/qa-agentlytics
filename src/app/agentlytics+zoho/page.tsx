@@ -1,5 +1,6 @@
 "use client";
 import { motion } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
 
 // Lightweight local UI primitives to avoid external modules
 function Button({ children, className = "", ...props }: any) {
@@ -30,6 +31,50 @@ function CardContent({ children, className = "" }: any) {
 // Soft table header: #FBE2DA
 
 export default function ZohoComparisonPage() {
+  // Page-specific sticky menu state (Intercom-style handoff)
+  const [scrolled, setScrolled] = useState(false);
+  const [floating, setFloating] = useState(false);
+  const headerRef = useRef<HTMLElement | null>(null);
+  const [headerHeight, setHeaderHeight] = useState(64);
+  useEffect(() => {
+    const handleScroll = () => {
+      if (typeof window !== "undefined") setScrolled(window.scrollY > 8);
+    };
+    const updateHeaderHeight = () => {
+      if (headerRef.current)
+        setHeaderHeight(headerRef.current.offsetHeight || 64);
+    };
+    if (typeof window !== "undefined") {
+      window.addEventListener("scroll", handleScroll);
+      window.addEventListener("resize", updateHeaderHeight);
+      updateHeaderHeight();
+
+      // Observe header size changes (e.g., wrapping to two lines)
+      let ro: ResizeObserver | null = null;
+      if (headerRef.current && typeof ResizeObserver !== "undefined") {
+        ro = new ResizeObserver((entries) => {
+          const rect = entries[0]?.contentRect;
+          const next = rect?.height ?? headerRef.current?.offsetHeight ?? 64;
+          setHeaderHeight(next);
+        });
+        ro.observe(headerRef.current);
+      }
+
+      return () => {
+        window.removeEventListener("scroll", handleScroll);
+        window.removeEventListener("resize", updateHeaderHeight);
+        if (ro) ro.disconnect();
+      };
+    }
+  }, []);
+  useEffect(() => {
+    if (headerRef.current)
+      setHeaderHeight(headerRef.current.offsetHeight || 64);
+  }, [scrolled]);
+  useEffect(() => {
+    setFloating(scrolled);
+  }, [scrolled]);
+
   return (
     <div className="bg-[#FCE9E3] text-gray-900 font-inter">
       {/* HERO SECTION */}
@@ -120,16 +165,36 @@ export default function ZohoComparisonPage() {
         </div>
       </section>
 
-      {/* Page Menu */}
-      <div className="sticky top-16 z-40 bg-white/80 backdrop-blur border-b border-slate-200">
-        <div className="max-w-6xl mx-auto px-6 py-2 flex gap-4 overflow-x-auto text-sm text-gray-800">
-          <a href="#overview" className="px-2 py-1 hover:text-black">Overview</a>
-          <a href="#switch" className="px-2 py-1 hover:text-black">Why Switch</a>
-          <a href="#engine" className="px-2 py-1 hover:text-black">Intent Engine</a>
-          <a href="#outcomes" className="px-2 py-1 hover:text-black">Outcomes</a>
-          <a href="#integrations" className="px-2 py-1 hover:text-black">Integrations</a>
+      {/* Page-specific menu (dual headers, mobile-friendly, auto-resizes) */}
+      <header
+        className={`${scrolled ? "top-0" : "top-16"} fixed left-0 right-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top,opacity,transform] duration-300 ease-out ${floating ? "opacity-0 -translate-y-1 pointer-events-none" : "opacity-100 translate-y-0"}`}
+        ref={headerRef}
+      >
+        <div className="w-full h-auto min-h-[56px] sm:h-16 sm:min-h-0 py-2 sm:py-0 flex items-center justify-center px-3">
+          <nav className="max-w-6xl w-full mx-auto flex flex-wrap sm:flex-nowrap items-center justify-center gap-x-3 gap-y-2 sm:gap-6 text-gray-800 text-sm">
+            <a href="#overview" className="px-2 py-1 hover:text-black">Overview</a>
+            <a href="#switch" className="px-2 py-1 hover:text-black">Why Switch</a>
+            <a href="#engine" className="px-2 py-1 hover:text-black">Intent Engine</a>
+            <a href="#outcomes" className="px-2 py-1 hover:text-black">Outcomes</a>
+            <a href="#integrations" className="px-2 py-1 hover:text-black">Integrations</a>
+          </nav>
         </div>
-      </div>
+      </header>
+      <header
+        className={`fixed left-0 right-0 top-0 z-50 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top,opacity,transform] duration-300 ease-out ${floating ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-1 pointer-events-none"}`}
+      >
+        <div className="w-full h-auto min-h-[56px] sm:h-16 sm:min-h-0 py-2 sm:py-0 flex items-center justify-center px-3">
+          <nav className="max-w-6xl w-full mx-auto flex flex-wrap sm:flex-nowrap items-center justify-center gap-x-3 gap-y-2 sm:gap-6 text-gray-800 text-sm">
+            <a href="#overview" className="px-2 py-1 hover:text-black">Overview</a>
+            <a href="#switch" className="px-2 py-1 hover:text-black">Why Switch</a>
+            <a href="#engine" className="px-2 py-1 hover:text-black">Intent Engine</a>
+            <a href="#outcomes" className="px-2 py-1 hover:text-black">Outcomes</a>
+            <a href="#integrations" className="px-2 py-1 hover:text-black">Integrations</a>
+          </nav>
+        </div>
+      </header>
+      {/* Spacer to prevent content overlap when floating header is visible */}
+      <div style={{ height: floating ? headerHeight : 0 }} />
 
       {/* QUICK OVERVIEW TABLE */}
       <section id="overview" className="bg-[#FDF3EF] py-16">

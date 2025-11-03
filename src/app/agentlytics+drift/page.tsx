@@ -8,6 +8,7 @@ export default function DriftComparisonPage() {
 
   // Match Agentforce sticky menu behavior
   const [scrolled, setScrolled] = useState(false);
+  const [floating, setFloating] = useState(false);
   const headerRef = useRef<HTMLElement | null>(null);
   const [headerHeight, setHeaderHeight] = useState(64);
   useEffect(() => {
@@ -49,6 +50,11 @@ export default function DriftComparisonPage() {
       setHeaderHeight(headerRef.current.offsetHeight || 64);
   }, [scrolled]);
 
+  // Intercom-style header handoff: floating follows scrolled
+  useEffect(() => {
+    setFloating(scrolled);
+  }, [scrolled]);
+
   return (
     <div
       className="min-h-screen bg-white text-slate-800"
@@ -72,35 +78,36 @@ export default function DriftComparisonPage() {
         />
       </head>
 
-      {/* Page-specific menu to match Agentforce header */}
+      {/* Intercom-style dual headers: sticky below global, floating at top */}
       <header
-        className={`${
-          scrolled ? "top-0" : "top-16"
-        } fixed left-0 right-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top] duration-200`}
+        className={`${scrolled ? "top-0" : "top-16"} fixed left-0 right-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top,opacity,transform] duration-300 ease-out ${floating ? "opacity-0 -translate-y-1 pointer-events-none" : "opacity-100 translate-y-0"}`}
         ref={headerRef}
       >
         <div className="w-full h-auto min-h-[56px] sm:h-16 sm:min-h-0 py-3 sm:py-0 flex items-center justify-center relative md:right-[84px] px-3">
           <nav className="flex flex-wrap sm:flex-nowrap items-center justify-center gap-x-3 gap-y-2 sm:gap-6 text-slate-600 text-sm">
-            <a href="#overview" className="hover:text-slate-900">
-              Overview
-            </a>
-            <a href="#switch" className="hover:text-slate-900">
-              Why Switch
-            </a>
-            <a href="#brain" className="hover:text-slate-900">
-              Proactive Brain
-            </a>
-            <a href="#outcomes" className="hover:text-slate-900">
-              Outcomes
-            </a>
-            <a href="#integrations" className="hover:text-slate-900">
-              Integrations
-            </a>
+            <a href="#overview" className="hover:text-slate-900">Overview</a>
+            <a href="#switch" className="hover:text-slate-900">Why Switch</a>
+            <a href="#brain" className="hover:text-slate-900">Proactive Brain</a>
+            <a href="#outcomes" className="hover:text-slate-900">Outcomes</a>
+            <a href="#integrations" className="hover:text-slate-900">Integrations</a>
           </nav>
         </div>
       </header>
-      {/* Spacer to prevent content from hiding under fixed header when stuck */}
-      <div style={{ height: scrolled ? headerHeight : 0 }} />
+      <header
+        className={`fixed left-0 right-0 top-0 z-50 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top,opacity,transform] duration-300 ease-out ${floating ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-1 pointer-events-none"}`}
+      >
+        <div className="w-full h-auto min-h-[56px] sm:h-16 sm:min-h-0 py-3 sm:py-0 flex items-center justify-center px-3">
+          <nav className="flex flex-wrap sm:flex-nowrap items-center justify-center gap-x-3 gap-y-2 sm:gap-6 text-slate-600 text-sm">
+            <a href="#overview" className="hover:text-slate-900">Overview</a>
+            <a href="#switch" className="hover:text-slate-900">Why Switch</a>
+            <a href="#brain" className="hover:text-slate-900">Proactive Brain</a>
+            <a href="#outcomes" className="hover:text-slate-900">Outcomes</a>
+            <a href="#integrations" className="hover:text-slate-900">Integrations</a>
+          </nav>
+        </div>
+      </header>
+      {/* Spacer to prevent content from hiding under floating header */}
+      <div style={{ height: floating ? headerHeight : 0 }} />
 
       {/* HERO */}
       <section className="relative overflow-hidden">
