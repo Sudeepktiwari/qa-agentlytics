@@ -220,6 +220,21 @@ export default function KnowledgeBasePage() {
     }
     loop();
   }, [controls, steps.length]);
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    // trigger entrance animations after mount
+    const t = setTimeout(() => setMounted(true), 80);
+    return () => clearTimeout(t);
+  }, []);
+
+  const topSearches = [
+    { q: "pricing setup", v: 80, label: "high" },
+    { q: "sso login", v: 56, label: "medium" },
+    { q: "import csv", v: 38, label: "low" },
+    { q: "cancel plan", v: 22, label: "low" },
+  ];
+
   return (
     <div
       className="relative min-h-screen w-full overflow-x-hidden text-slate-900 scroll-smooth"
@@ -922,10 +937,10 @@ export default function KnowledgeBasePage() {
                       {s.id}
                     </div>
                     <div>
-                      <div className="text-sm font-semibold text-slate-900">
+                      <div className="text-lg font-semibold text-slate-900">
                         {s.title}
                       </div>
-                      <div className="mt-1 text-xs text-slate-500">
+                      <div className="mt-1 text-sm text-slate-500">
                         {s.desc}
                       </div>
                     </div>
@@ -1057,10 +1072,10 @@ export default function KnowledgeBasePage() {
                   className="rounded-xl bg-[--surface] p-4 shadow-sm reveal card-hover hover:-translate-y-0.5 hover:shadow-md transition-all"
                   data-anim-delay={`${i * 70 + 120}`}
                 >
-                  <div className="font-semibold text-slate-700">
+                  <div className="text-lg font-semibold text-slate-700">
                     {box.label}
                   </div>
-                  <div className="mt-1 text-slate-500">{box.value}</div>
+                  <div className="mt-1 text-sm text-slate-500">{box.value}</div>
                 </div>
               ))}
             </div>
@@ -1132,7 +1147,7 @@ export default function KnowledgeBasePage() {
             ].map((b, i) => (
               <div
                 key={i}
-                className="relative rounded-xl border border-[--border-subtle] bg-white p-6 shadow-none card-hover reveal"
+                className="group relative rounded-xl bg-gradient-to-br from-white to-slate-50/50 p-6 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 reveal"
                 data-anim-delay={`${i * 70 + 140}`}
               >
                 <div className="relative z-10">
@@ -1151,83 +1166,311 @@ export default function KnowledgeBasePage() {
           </div>
         </div>
       </section>
+      <section
+        id="cta"
+        className="relative mx-4 max-w-7xl overflow-hidden rounded-3xl bg-gradient-to-br from-white to-[--brand-primary]/5 px-4 py-16 shadow-md sm:mx-auto sm:px-6 scroll-mt-24"
+        aria-labelledby="cta-heading"
+        style={{ WebkitFontSmoothing: "antialiased" }}
+      >
+        {/* soft decorative glow */}
+        <div className="pointer-events-none absolute -top-12 right-0 h-72 w-72 rounded-full bg-[--brand-primary]/20 blur-3xl md:-right-1/12" />
+
+        <div className="grid items-start gap-10 md:grid-cols-5">
+          {/* left - headline + CTA */}
+          <div className="md:col-span-3 h-full flex flex-col justify-center">
+            <h2 id="cta-heading" className="text-3xl font-bold text-slate-900">
+              Transform content into conversions
+            </h2>
+
+            <p className="mt-3 max-w-xl text-slate-600">
+              Publish once, answer everywhere. Your knowledge base fuels
+              proactive support and onboarding.
+            </p>
+
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              <a
+                href="#"
+                className="rounded-2xl px-5 py-3 text-sm font-semibold text-white shadow-md transition-transform duration-150 hover:-translate-y-0.5"
+                style={{ backgroundColor: brand.primary }}
+              >
+                Book a demo
+              </a>
+
+              <a
+                href="#"
+                className="rounded-2xl px-5 py-3 text-sm font-semibold transition-colors duration-150"
+                style={{
+                  border: `1px solid ${brand.primary}`,
+                  color: brand.primary,
+                  backgroundColor: "transparent",
+                }}
+              >
+                See pricing
+              </a>
+
+              <span className="ml-auto text-xs text-slate-500">
+                14-day free trial · No credit card required
+              </span>
+            </div>
+          </div>
+
+          {/* right - quick setup card (borderless, modern) */}
+          <div className="md:col-span-2">
+            <div
+              className={`relative overflow-hidden rounded-2xl bg-white p-6 shadow-lg transform transition-all duration-400 ${
+                mounted
+                  ? "opacity-100 translate-y-0"
+                  : "opacity-0 translate-y-3"
+              }`}
+              role="region"
+              aria-label="Quick setup steps"
+            >
+              {/* subtle gradient blob */}
+              <div
+                className="absolute right-4 top-0 h-28 w-28 -translate-y-1/2 rounded-full bg-[--brand-primary]/10 blur-2xl"
+                aria-hidden
+              />
+
+              <h3 className="text-sm font-semibold text-slate-700">
+                Quick Setup
+              </h3>
+
+              <ol className="mt-4 space-y-4">
+                {steps.map((s) => (
+                  <li key={s.id} className="flex items-start gap-3">
+                    <div
+                      className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-semibold"
+                      style={{
+                        background: `linear-gradient(180deg, ${brand.primary}20, ${brand.primary}10)`,
+                        color: brand.primary,
+                        border: `1px solid ${brand.primary}30`,
+                      }}
+                      aria-hidden
+                    >
+                      {s.id}
+                    </div>
+
+                    <div>
+                      <div className="text-sm font-semibold text-slate-800">
+                        {s.title}
+                      </div>
+                      <div className="text-xs text-slate-500">{s.desc}</div>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+
+              <div className="mt-5 rounded-xl bg-[--surface] p-3 text-[11px] text-slate-700">
+                <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                  Install snippet
+                </div>
+                <pre className="overflow-x-auto whitespace-pre-wrap break-words text-[11px] bg-transparent p-0 m-0">
+                  &lt;script src="https://cdn.agentlytics.dev/knowledge-base.js"
+                  async&gt;&lt;/script&gt;
+                </pre>
+              </div>
+
+              <div className="mt-4 flex items-center gap-2 rounded-xl bg-white p-3 text-[11px]">
+                <span
+                  className="inline-block h-2.5 w-2.5 rounded-full bg-emerald-500"
+                  aria-hidden
+                />
+                <span className="text-slate-600">
+                  Safe defaults, easy rollback, no vendor lock-in.
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* ANALYTICS ILLUSTRATION */}
       <section
         id="demo"
-        className="relative mx-4 max-w-7xl overflow-hidden rounded-3xl border border-[--border-subtle] bg-white px-0 py-10 shadow-sm sm:mx-auto sm:px-6 reveal"
-        data-anim-delay="160"
+        className="relative mx-4 mt-4 max-w-7xl overflow-hidden rounded-3xl bg-white px-6 py-12 shadow-md sm:mx-auto sm:px-8"
+        aria-labelledby="demo-heading"
       >
-        <div className="px-4 sm:px-0 grid items-center gap-10 md:grid-cols-2">
-          <div>
-            <h3 className="text-2xl font-bold">
+        <div className="grid items-start gap-10 md:grid-cols-2">
+          {/* Left: headline + CTA */}
+          <div className="pr-2 h-full flex flex-col justify-center">
+            <h3
+              id="demo-heading"
+              className="text-2xl font-bold leading-tight text-slate-900"
+            >
               See which questions your KB cannot answer yet
             </h3>
-            <p className="mt-2 max-w-md text-slate-600">
+            <p className="mt-3 max-w-lg text-slate-600">
               Gap analytics reveal what users search, what they click, and where
-              they get stuck so you can prioritize new content.
+              they get stuck — so you can prioritize high-impact content
+              quickly.
             </p>
-            <a
-              href="#cta"
-              className="mt-6 inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold text-white shadow-md transition"
-              style={{ backgroundColor: brand.primary }}
-            >
-              See how it works <ArrowRight className="h-4 w-4" />
-            </a>
+
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              <a
+                href="#cta"
+                className="inline-flex items-center gap-2 rounded-lg px-5 py-3 text-sm font-semibold text-white shadow transition-transform duration-150 hover:-translate-y-0.5"
+                style={{ backgroundColor: brand.primary }}
+              >
+                See how it works
+                <svg
+                  className="h-4 w-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  aria-hidden
+                >
+                  <path
+                    d="M5 12h14M13 6l6 6-6 6"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </a>
+
+              <button
+                className="rounded-md px-3 py-2 text-xs font-medium bg-slate-100 text-slate-700 hover:bg-slate-200"
+                type="button"
+              >
+                Live demo
+              </button>
+
+              <a
+                className="ml-auto text-sm font-medium text-slate-500 underline-offset-2 hover:text-slate-700"
+                href="#demo-details"
+              >
+                View sample report
+              </a>
+            </div>
+
+            {/* short features row */}
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="rounded-lg bg-slate-50 p-3 text-xs">
+                <div className="font-semibold text-slate-700">Sources</div>
+                <div className="mt-1 text-slate-500">Notion · Drive · PDF</div>
+              </div>
+              <div className="rounded-lg bg-slate-50 p-3 text-xs">
+                <div className="font-semibold text-slate-700">Tagging</div>
+                <div className="mt-1 text-slate-500">Synonyms · Entities</div>
+              </div>
+              <div className="rounded-lg bg-slate-50 p-3 text-xs">
+                <div className="font-semibold text-slate-700">Channels</div>
+                <div className="mt-1 text-slate-500">Widget · Help Center</div>
+              </div>
+              <div className="rounded-lg bg-slate-50 p-3 text-xs">
+                <div className="font-semibold text-slate-700">Optimize</div>
+                <div className="mt-1 text-slate-500">CTR · Article health</div>
+              </div>
+            </div>
           </div>
 
-          <div className="relative">
-            <div className="relative w-full overflow-hidden rounded-2xl border border-[--border-subtle] bg-white p-5">
-              <div className="relative mx-auto h-64 w-full max-w-md rounded-2xl border border-[--border-subtle] bg-white p-4 shadow-sm">
-                <div className="text-xs font-semibold text-slate-500">
-                  Top searches
+          {/* Right: modern analytics panel (no image) */}
+          <div>
+            <div
+              className={`overflow-hidden rounded-2xl bg-gradient-to-b from-white to-slate-50 p-5 shadow-sm transition-transform duration-400 ${
+                mounted
+                  ? "opacity-100 translate-y-0"
+                  : "opacity-0 translate-y-3"
+              }`}
+            >
+              {/* header */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-xs font-semibold text-slate-500">
+                    Top searches
+                  </div>
+                  <div className="text-[11px] text-slate-400">
+                    Last 30 days · realtime
+                  </div>
                 </div>
-                <div className="mt-2 space-y-2">
-                  {[
-                    { q: "pricing setup", v: 80 },
-                    { q: "sso login", v: 56 },
-                    { q: "import csv", v: 38 },
-                    { q: "cancel plan", v: 22 },
-                  ].map((i, idx) => (
-                    <div
-                      key={i.q}
-                      className="reveal"
-                      data-anim-delay={`${idx * 90 + 180}`}
-                    >
-                      <div className="flex items-center justify-between text-[11px] text-slate-600">
-                        <span>{i.q}</span>
-                        <span>{i.v}%</span>
+
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-2 rounded-full bg-[--brand-primary]/10 px-3 py-1 text-xs font-semibold text-[--brand-primary]">
+                    Live
+                  </span>
+                  <button className="text-xs text-slate-400 hover:text-slate-700">
+                    Export
+                  </button>
+                </div>
+              </div>
+
+              {/* highlighted flow blocks (colored bands) */}
+              <div className="mt-4 grid gap-3">
+                {topSearches.map((s, idx) => (
+                  <div
+                    key={s.q}
+                    className={`flex items-center justify-between rounded-xl p-3 transition-transform duration-200 hover:scale-[1.01]`}
+                  >
+                    <div className="flex-1">
+                      <div className="text-sm font-semibold text-slate-900">
+                        {s.q}
                       </div>
-                      <div className="mt-1 h-2 w-full rounded bg-[--surface-alt]">
+                      <div className="mt-1 text-xs text-slate-500">
+                        Trending search — review content gaps
+                      </div>
+                    </div>
+
+                    <div className="ml-4 w-28">
+                      <div className="flex items-center justify-between text-xs text-slate-600">
+                        <span>{s.v}%</span>
+                      </div>
+                      <div className="mt-2 h-2 w-full rounded-full bg-white/60">
                         <div
-                          className="h-2 rounded bg-[--brand-primary]"
+                          className="h-2 rounded-full"
                           style={{
-                            width: `${i.v}%`,
-                            transition: "width .8s cubic-bezier(.2,.9,.2,1)",
+                            width: `${s.v}%`,
+                            background: `linear-gradient(90deg, var(--brand-sky) 0%, ${brand.primary} 100%)`,
+                            transition: "width .9s cubic-bezier(.2,.9,.2,1)",
                           }}
                         />
                       </div>
                     </div>
-                  ))}
-                </div>
-                <div className="mt-4 text-xs font-semibold text-slate-500">
+                  </div>
+                ))}
+              </div>
+
+              {/* flow summary strip */}
+              <div className="mt-5 flex items-center gap-3">
+                <div className="flex-1 text-sm font-semibold text-slate-800">
                   No-result queries
                 </div>
-                <div className="mt-2 space-y-1 text-[11px] text-slate-600">
-                  {["data residency", "mfa device reset"].map((t, idx) => (
-                    <div
+                <div className="text-xs text-slate-500">
+                  Actionable insights
+                </div>
+              </div>
+
+              <div className="mt-3 flex flex-wrap gap-2">
+                {["data residency", "mfa device reset", "session timeout"].map(
+                  (t) => (
+                    <span
                       key={t}
-                      className="inline-flex items-center gap-2 rounded border border-[--brand-primary]/20 bg-[--brand-primary]/5 px-2 py-1 text-[--brand-primary] reveal"
-                      data-anim-delay={`${idx * 80 + 240}`}
+                      className="rounded-md bg-white/60 px-3 py-1 text-[13px] font-medium text-slate-700"
                     >
                       {t}
-                    </div>
-                  ))}
+                    </span>
+                  )
+                )}
+              </div>
+
+              {/* micro KPI row */}
+              <div className="mt-6 grid grid-cols-3 gap-3">
+                <div className="rounded-lg bg-white p-3 text-center">
+                  <div className="text-xs text-slate-500">Unique queries</div>
+                  <div className="mt-1 font-semibold text-slate-900">3.4k</div>
+                </div>
+                <div className="rounded-lg bg-white p-3 text-center">
+                  <div className="text-xs text-slate-500">No-result %</div>
+                  <div className="mt-1 font-semibold text-slate-900">12%</div>
+                </div>
+                <div className="rounded-lg bg-white p-3 text-center">
+                  <div className="text-xs text-slate-500">High priority</div>
+                  <div className="mt-1 font-semibold text-slate-900">42</div>
                 </div>
               </div>
             </div>
+
             <div className="mt-3 text-xs text-slate-500">
-              Illustration preview (replace with product visuals anytime).
+              Panel — showing highlighted sections for quick scannability.
             </div>
           </div>
         </div>
@@ -1243,7 +1486,7 @@ export default function KnowledgeBasePage() {
           <h2 className="text-balance text-3xl font-bold tracking-tight">
             FAQ
           </h2>
-          <div className="mt-6 divide-y divide-slate-200 overflow-hidden rounded-2xl border border-[--border-subtle] bg-white">
+          <div className="mt-6 divide-y divide-slate-200/60 overflow-hidden rounded-2xl bg-white/70 backdrop-blur shadow-[inset_0_1px_0_var(--border-subtle)]">
             {[
               {
                 q: "Can we import existing docs?",
@@ -1264,14 +1507,30 @@ export default function KnowledgeBasePage() {
             ].map((f, i) => (
               <details
                 key={f.q}
-                className="group reveal"
+                className="group reveal overflow-hidden rounded-xl"
                 data-anim-delay={`${i * 80 + 260}`}
               >
-                <summary className="cursor-pointer list-none px-5 py-4 text-sm font-semibold text-slate-800 transition hover:bg-[--surface]">
-                  {f.q}
+                <summary className="flex items-center justify-between cursor-pointer list-none px-5 py-4 text-sm font-semibold text-slate-800 transition hover:bg-[--surface]">
+                  <span>{f.q}</span>
+                  <span
+                    className="ml-3 text-slate-500 transition-transform duration-300 group-open:rotate-180"
+                    aria-hidden
+                  >
+                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none">
+                      <path
+                        d="M6 9l6 6 6-6"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </span>
                 </summary>
-                <div className="px-5 pb-5 text-sm text-slate-600">{f.a}</div>
-                <div className="h-px w-full bg-slate-200" />
+                <div className="px-5 pb-5 text-sm text-slate-600 transition group-open:bg-[--surface]">
+                  {f.a}
+                </div>
+                <div className="h-px w-full bg-[--border-subtle]" />
               </details>
             ))}
           </div>
@@ -1279,53 +1538,73 @@ export default function KnowledgeBasePage() {
       </section>
 
       {/* CTA */}
+
       <section
         id="cta"
-        className="relative mx-4 max-w-7xl overflow-hidden rounded-3xl border border-[--border-subtle] bg-gradient-to-br from-white to-[--brand-primary]/5 px-4 py-16 shadow-sm sm:mx-auto sm:px-6 scroll-mt-24 reveal"
-        data-anim-delay="320"
+        className="relative mx-4 max-w-7xl overflow-hidden rounded-3xl bg-gradient-to-br from-white to-[--brand-primary]/6 px-4 py-16 shadow-md sm:mx-auto sm:px-6 scroll-mt-24"
+        aria-labelledby="cta-heading"
       >
-        <div className="pointer-events-none absolute -top-12 right-0 h-72 w-72 rounded-full bg-[--brand-primary]/20 blur-3xl md:right-[-10%] animate-pulseGlow" />
+        {/* soft decorative glow */}
+        <div className="pointer-events-none absolute -top-12 right-0 h-72 w-72 rounded-full bg-[--brand-primary]/20 blur-3xl md:-right-1/12" />
+
         <div className="grid items-start gap-10 md:grid-cols-5">
-          <div className="md:col-span-3">
-            <h3 className="text-3xl font-bold">
+          {/* left: headline + CTA */}
+          <div className="md:col-span-3 h-full flex flex-col justify-center">
+            <h2 id="cta-heading" className="text-3xl font-bold text-slate-900">
               Transform content into conversions
-            </h3>
-            <p className="mt-2 max-w-xl text-slate-600">
+            </h2>
+
+            <p className="mt-3 max-w-xl text-slate-600">
               Publish once, answer everywhere. Your knowledge base fuels
               proactive support and onboarding.
             </p>
+
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <a
                 href="#"
-                className="rounded-2xl px-5 py-3 text-sm font-semibold text-white shadow-md transition"
+                className="rounded-2xl px-5 py-3 text-sm font-semibold text-white shadow-md transition-transform duration-150 hover:-translate-y-0.5"
                 style={{ backgroundColor: brand.primary }}
               >
                 Book a demo
               </a>
+
               <a
                 href="#"
-                className="rounded-2xl border border-[--brand-primary] px-5 py-3 text-sm font-semibold text-[--brand-primary] transition hover:text-white"
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.backgroundColor = brand.primary)
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.backgroundColor = "transparent")
-                }
+                className="rounded-2xl px-5 py-3 text-sm font-semibold transition-colors duration-150"
+                style={{
+                  color: brand.primary,
+                  borderRadius: "12px",
+                  border: `1px solid rgba(0,0,0,0)`,
+                }}
               >
-                See pricing
+                <span className="inline-block px-1 py-0.5 rounded-md hover:bg-[--brand-primary] hover:text-white transition-colors">
+                  See pricing
+                </span>
               </a>
-              <span className="text-xs text-slate-500">
+
+              <span className="ml-auto text-xs text-slate-500">
                 14-day free trial · No credit card required
               </span>
             </div>
           </div>
 
-          <div className="md:col-span-2 reveal" data-anim-delay="360">
-            <div className="relative overflow-hidden rounded-2xl border border-[--border-subtle] bg-white p-6 shadow-lg card-hover">
-              <div className="absolute right-0 top-0 h-24 w-24 -translate-y-1/2 rounded-full bg-[--brand-primary]/10 blur-2xl md:translate-x-1/2 animate-pulseGlow" />
-              <h4 className="text-sm font-semibold text-slate-700">
+          {/* right: quick setup card (borderless, modern) */}
+          <div className="md:col-span-2">
+            <div
+              className={`relative overflow-hidden rounded-2xl bg-white p-6 shadow-lg transform transition-all duration-400`}
+              role="region"
+              aria-label="Quick setup steps"
+            >
+              {/* subtle gradient blob */}
+              <div
+                className="absolute right-4 top-0 h-28 w-28 -translate-y-1/2 rounded-full bg-[--brand-primary]/10 blur-2xl"
+                aria-hidden
+              />
+
+              <h3 className="text-sm font-semibold text-slate-700">
                 Quick Setup
-              </h4>
+              </h3>
+
               <ol className="mt-4 space-y-4">
                 {[
                   {
@@ -1348,18 +1627,19 @@ export default function KnowledgeBasePage() {
                     t: "Measure & improve",
                     s: "Use analytics to fill gaps and keep content fresh.",
                   },
-                ].map((step, i) => (
-                  <li
-                    key={step.n}
-                    className="flex items-start gap-3 reveal"
-                    data-anim-delay={`${i * 90 + 380}`}
-                  >
+                ].map((step) => (
+                  <li key={step.n} className="flex items-start gap-3">
                     <div
-                      className="grid h-7 w-7 shrink-0 place-items-center rounded-full border bg-[--brand-primary]/5 text-xs font-semibold text-[--brand-primary]"
-                      style={{ borderColor: `${brand.primary}4D` }}
+                      className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-semibold"
+                      style={{
+                        background: `linear-gradient(180deg, ${brand.primary}20, ${brand.primary}12)`,
+                        color: brand.primary,
+                      }}
+                      aria-hidden
                     >
                       {step.n}
                     </div>
+
                     <div>
                       <div className="text-sm font-semibold text-slate-800">
                         {step.t}
@@ -1370,15 +1650,21 @@ export default function KnowledgeBasePage() {
                 ))}
               </ol>
 
-              <div className="mt-5 rounded-xl border border-[--border-subtle] bg-[--surface] p-3 text-[11px] text-slate-700">
+              <div className="mt-5 rounded-xl bg-[--surface] p-3 text-[11px] text-slate-700">
                 <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
                   Install snippet
                 </div>
-                <pre className="overflow-x-auto whitespace-pre-wrap break-words text-[11px]">{`<script src="https://cdn.agentlytics.dev/knowledge-base.js" async></script>`}</pre>
+                <pre className="overflow-x-auto whitespace-pre-wrap break-words text-[11px] bg-transparent p-0 m-0">
+                  &lt;script src="https://cdn.agentlytics.dev/knowledge-base.js"
+                  async&gt;&lt;/script&gt;
+                </pre>
               </div>
 
-              <div className="mt-4 flex items-center gap-2 rounded-xl border border-[--border-subtle] bg-white p-3 text-[11px]">
-                <span className="inline-block h-2.5 w-2.5 rounded-full bg-emerald-500 animate-scaleIn" />
+              <div className="mt-4 flex items-center gap-2 rounded-xl bg-white p-3 text-[11px]">
+                <span
+                  className="inline-block h-2.5 w-2.5 rounded-full bg-emerald-500"
+                  aria-hidden
+                />
                 <span className="text-slate-600">
                   Safe defaults, easy rollback, no vendor lock-in.
                 </span>
@@ -1389,7 +1675,7 @@ export default function KnowledgeBasePage() {
       </section>
 
       {/* FOOTER */}
-      <footer className="border-t border-[--border-subtle] bg-white">
+      <footer className=" bg-white">
         <div className="mx-auto max-w-7xl px-4 py-8 text-sm text-slate-500 sm:px-6">
           <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
             <p>
