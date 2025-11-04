@@ -5,6 +5,9 @@ import React, { useEffect, useRef, useState } from "react";
 import HowItWorks from "./how-it-works";
 import GuidedOnboardingPreview from "./hero-illustration";
 import WhySection from "./why-section";
+import BrainSection from "./brain-section";
+import FeaturesSection from "./features-section";
+import SecuritySection from "./security-section";
 
 // Advancelytics — Onboarding AI Bot (Full Page)
 // ✅ Animated "Proactive Brain" + synced list
@@ -623,181 +626,13 @@ export default function OnboardingAIBotPage() {
       </section>
 
       {/* INSIDE THE PROACTIVE BRAIN — modernized + animated */}
-      <section
-        id="brain"
-        className="mx-auto max-w-7xl px-4 py-16 sm:px-6 scroll-mt-24"
-      >
-        <div className="flex flex-wrap items-start justify-between gap-8">
-          <div className="max-w-xl">
-            <h2 className="text-3xl font-bold tracking-tight">
-              Inside the Proactive Brain
-            </h2>
-            <p className="mt-2 text-slate-600">
-              Agentlytics reads behavior, not just text — engaging at the
-              perfect moment with the perfect message.
-            </p>
-            <BrainList />
-          </div>
-          <div className="relative mx-auto grid w-full max-w-xl place-items-center overflow-hidden rounded-3xl border border-[--border-subtle] bg-white p-6 shadow-xl md:mx-0">
-            <AnimatedBrain />
-          </div>
-        </div>
-      </section>
+      <BrainSection />
 
       {/* FEATURES */}
-      <section
-        id="features"
-        className="mx-auto max-w-7xl px-4 py-16 sm:px-6 scroll-mt-24"
-      >
-        <div className="flex items-start justify-between gap-6">
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight">Key Features</h2>
-            <p className="mt-2 max-w-2xl text-slate-600">
-              Designed to move users from “What is this?” to “I’m live.” — with
-              fewer tickets.
-            </p>
-          </div>
-          <div className="hidden items-center gap-2 md:flex">
-            <span className="rounded-full bg-[--brand-primary]/10 px-3 py-1 text-xs font-semibold text-[--brand-primary]">
-              Inline guidance
-            </span>
-            <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-              CRM & Docs aware
-            </span>
-          </div>
-        </div>
-        <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {[
-            {
-              icon: "🧭",
-              t: "Guided Explanations",
-              d: "Inline ‘Why this field?’ clarity for every step with examples.",
-            },
-            {
-              icon: "💬",
-              t: "Instant Q&A",
-              d: "Ask anything; get precise, contextual answers from your docs.",
-            },
-            {
-              icon: "✅",
-              t: "Real‑time Validation",
-              d: "Format checks, connectivity tests, dependency alerts and fixes.",
-            },
-            {
-              icon: "🧠",
-              t: "Adaptive Paths",
-              d: "Auto‑skip irrelevant steps; insert only what’s needed.",
-            },
-            {
-              icon: "📦",
-              t: "Sample Data & Presets",
-              d: "Seed a working setup in seconds with safe defaults.",
-            },
-            {
-              icon: "🤝",
-              t: "Human Handoff",
-              d: "Escalate to a human with full context and transcript when needed.",
-            },
-            {
-              icon: "📊",
-              t: "Analytics Dashboard",
-              d: "See drop‑offs, time‑to‑value, and friction hotspots.",
-            },
-            {
-              icon: "🔗",
-              t: "Smart Integrations",
-              d: "Pull config from HubSpot, Salesforce, Slack, Segment and more.",
-            },
-            {
-              icon: "🔒",
-              t: "Compliance Ready",
-              d: "PII controls, redact rules, and audit logs for enterprises.",
-            },
-          ].map((f, i) => (
-            <div
-              key={i}
-              className="group relative overflow-hidden rounded-2xl border border-[--border-subtle] bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-            >
-              <div
-                className="pointer-events-none absolute inset-px rounded-2xl opacity-0 blur-xl transition-opacity duration-300 group-hover:opacity-100"
-                style={{
-                  background: `radial-gradient(260px 140px at 20% 0%, ${brand.primary}22 0%, transparent 70%)`,
-                }}
-              />
-              <div className="relative z-10 flex items-start gap-3">
-                <div
-                  className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[--brand-primary]/10 text-xl"
-                  style={{ color: brand.primary }}
-                >
-                  {f.icon}
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-slate-800">
-                    {f.t}
-                  </h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">{f.d}</p>
-                </div>
-              </div>
-              <div
-                className="relative z-10 mt-5 h-1 w-0 rounded"
-                style={{ backgroundColor: brand.primary }}
-              />
-            </div>
-          ))}
-        </div>
-      </section>
+      <FeaturesSection />
 
       {/* SECURITY & PRIVACY */}
-      <section
-        id="security"
-        className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6 scroll-mt-24"
-      >
-        <div className="grid gap-8 md:grid-cols-2">
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight">
-              Built for security‑first teams
-            </h2>
-            <p className="mt-3 max-w-xl text-slate-600">
-              Enterprise‑grade controls ensure privacy at every step.
-            </p>
-            <ul className="mt-5 space-y-2 text-sm text-slate-700">
-              <li>Field‑level redaction and least‑privilege scopes</li>
-              <li>Region‑aware data residency</li>
-              <li>SSO/SAML, SCIM, and role‑based access</li>
-              <li>Full audit trail of agent actions</li>
-            </ul>
-            <div className="mt-5 flex flex-wrap items-center gap-2 text-xs font-semibold">
-              <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-emerald-700">
-                SOC 2
-              </span>
-              <span className="rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-blue-700">
-                GDPR Compliant
-              </span>
-            </div>
-          </div>
-          <div className="rounded-2xl border border-[--border-subtle] bg-white p-6">
-            <div className="mb-3 text-sm font-semibold text-slate-700">
-              Compliance Snapshot
-            </div>
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              {[
-                { k: "Data residency", v: "EU/US/IN" },
-                { k: "SSO/SAML", v: "Okta, Azure AD" },
-                { k: "PII controls", v: "Redact & mask" },
-                { k: "Audit", v: "Full event log" },
-              ].map((row) => (
-                <div
-                  key={row.k}
-                  className="rounded-xl border border-[--border-subtle] bg-[--surface] p-3"
-                >
-                  <div className="text-[11px] text-slate-500">{row.k}</div>
-                  <div className="font-medium text-slate-800">{row.v}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
+      <SecuritySection />
 
       {/* OUTCOMES */}
       <section id="outcomes" className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
