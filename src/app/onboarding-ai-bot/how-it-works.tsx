@@ -302,7 +302,7 @@ function DocsToDoneIllustration() {
 
 export default function HowItWorks() {
   return (
-    <div className="min-h-screen bg-white text-gray-900 dark:bg-[#0a0f25] dark:text-gray-100">
+    <div className="dark min-h-screen bg-white text-gray-900 dark:bg-[#0a0f25] dark:text-gray-100">
       <main className="py-10">
         <DocsToDoneIllustration />
       </main>
