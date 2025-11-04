@@ -114,14 +114,15 @@ export default function WhyLeadCapture({
             </div>
 
             {/* Comparison cards */}
-            <div className="mt-4 grid grid-cols-2 gap-3 text-sm text-slate-600">
+
+            <div className="mt-4 md:grid grid-cols-2 gap-3 text-sm text-slate-600">
               {/* Before card */}
               <div
                 className={`rounded-xl p-4 transition-all duration-300 ${
                   showAfter
-                    ? "opacity-80 scale-[0.98]"
-                    : "opacity-100 scale-100"
-                } bg-[--surface]`}
+                    ? "opacity-80 scale-[0.98] bg-[--surface]"
+                    : "opacity-100 scale-100 shadow-md bg-gradient-to-b from-white to-[--brand-primary]/5"
+                }`}
               >
                 <div className="mb-2 font-semibold text-slate-800">
                   Static Form
