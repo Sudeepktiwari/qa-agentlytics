@@ -395,7 +395,7 @@ export default function OnboardingAIBotPage() {
             <a href="#why" className="hover:text-slate-900">
               Why
             </a>
-            <a href="#brain" className="hover:text-slate-900">
+            <a href="#how-it-works" className="hover:text-slate-900">
               How it works
             </a>
             <a href="#brain" className="hover:text-slate-900">
@@ -485,7 +485,7 @@ export default function OnboardingAIBotPage() {
                 Why
               </a>
               <a
-                href="#brain"
+                href="#how-it-works"
                 className="py-2 hover:text-slate-900"
                 onClick={handleMobileNavClick}
               >

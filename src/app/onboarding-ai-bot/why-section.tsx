@@ -133,7 +133,7 @@ export default function WhySectionAuto({
           </div>
 
           {/* Cards */}
-          <div className="grid grid-cols-2 gap-3 text-sm text-slate-600">
+          <div className="md:grid grid-cols-2 gap-3 text-sm text-slate-600">
             {/* Before */}
             <div
               className={`rounded-xl p-4 transition-all duration-500 ${

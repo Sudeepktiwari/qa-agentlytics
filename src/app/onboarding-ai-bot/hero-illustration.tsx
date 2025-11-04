@@ -176,7 +176,7 @@ export default function GuidedOnboardingPreview({
         </div>
 
         {/* metrics row: stacks to 1-col on small screens */}
-        <div className="mt-5 grid grid-cols-3 gap-3 text-center sm:grid-cols-3 xs:grid-cols-1">
+        <div className="mt-5 grid grid-cols-1 gap-3 text-center sm:grid-cols-3">
           {metrics.map((m, idx) => (
             <div
               key={m.k}

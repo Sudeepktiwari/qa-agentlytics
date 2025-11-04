@@ -2,10 +2,11 @@
 import React from "react";
 
 /**
- * BrainSection — interactive with restored I / S / C / L options
- * - Options: Intent Detection, Smart Prompts, Context Memory, Lifecycle Aware
- * - Auto-cycles every 3s; pauses on hover/focus or manual select (6s)
- * - Mobile-first, Tailwind-only. Pass brand = { primary, sky } if desired.
+ * BrainSection (no layout-shift on mobile)
+ * - Desktop: inline details (no big change)
+ * - Mobile (<md): open a fixed bottom-sheet overlay for details (prevents pushing content)
+ * - Auto-cycles every 3s; pause on hover/focus or manual select (6s)
+ * - Tailwind-only, SSR-safe
  */
 export default function BrainSection({
   brand = { primary: "var(--brand-primary)", sky: "var(--brand-sky)" },
@@ -57,9 +58,31 @@ export default function BrainSection({
   const [activeIdx, setActiveIdx] = React.useState(0);
   const [paused, setPaused] = React.useState(false);
   const [mounted, setMounted] = React.useState(false);
-  // Numeric timer IDs in the browser
-  const cycleRef = React.useRef<number | null>(null);
-  const pauseTimeoutRef = React.useRef<number | null>(null);
+  const cycleRef = React.useRef<ReturnType<typeof setInterval> | null>(null);
+  const pauseTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+
+  // mobile overlay state
+  const [isMobile, setIsMobile] = React.useState(false);
+  const [sheetOpen, setSheetOpen] = React.useState(false);
+
+  // detect mobile (md breakpoint) client-side only
+  React.useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  // prevent body scroll when sheet open
+  React.useEffect(() => {
+    if (sheetOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+  }, [sheetOpen]);
 
   React.useEffect(() => {
     const t = setTimeout(() => setMounted(true), 80);
@@ -68,39 +91,38 @@ export default function BrainSection({
 
   // auto-cycle every 3s unless paused
   React.useEffect(() => {
-    if (cycleRef.current !== null) {
-      window.clearInterval(cycleRef.current);
+    if (cycleRef.current) {
+      clearInterval(cycleRef.current);
       cycleRef.current = null;
     }
     if (!paused) {
-      cycleRef.current = window.setInterval(() => {
+      cycleRef.current = setInterval(() => {
         setActiveIdx((s) => (s + 1) % options.length);
       }, 3000);
     }
     return () => {
-      if (cycleRef.current !== null) {
-        window.clearInterval(cycleRef.current);
-        cycleRef.current = null;
-      }
+      if (cycleRef.current) clearInterval(cycleRef.current);
     };
   }, [paused]);
 
   function manualSelect(idx: number) {
     setActiveIdx(idx);
-    setPaused(true);
-    if (pauseTimeoutRef.current !== null) {
-      window.clearTimeout(pauseTimeoutRef.current);
+    // if mobile, open sheet overlay instead of expanding inline
+    if (isMobile) {
+      setSheetOpen(true);
     }
-    pauseTimeoutRef.current = window.setTimeout(() => setPaused(false), 6000);
+    setPaused(true);
+    if (pauseTimeoutRef.current) clearTimeout(pauseTimeoutRef.current);
+    pauseTimeoutRef.current = setTimeout(() => setPaused(false), 6000);
   }
 
   return (
     <section
       id="brain"
-      className="mx-auto max-w-7xl px-4 py-8 sm:px-6 scroll-mt-24 h-[100svh] overflow-hidden md:h-[70vh] md:overflow-visible"
+      className="mx-auto max-w-7xl px-4 py-16 sm:px-6 scroll-mt-24 h-auto md:h-[64vh] "
     >
-      <div className="flex h-full min-h-0 flex-col-reverse gap-8 overflow-y-auto overscroll-contain [scrollbar-gutter:stable] lg:flex-row lg:items-start lg:justify-between lg:overflow-visible">
-        {/* LEFT: heading + option cards */}
+      <div className="flex flex-col-reverse gap-8 lg:flex-row lg:items-start lg:justify-between">
+        {/* LEFT: options */}
         <div className="max-w-xl">
           <h2 className="text-3xl font-bold tracking-tight text-slate-900">
             Inside the Proactive Brain
@@ -156,7 +178,8 @@ export default function BrainSection({
                       {opt.short}
                     </div>
 
-                    {isActive && (
+                    {/* show detail inline only on desktop (prevent mobile layout shift) */}
+                    {!isMobile && isActive && (
                       <div className="mt-3 text-xs text-slate-500">
                         {opt.detail}
                       </div>
@@ -181,8 +204,8 @@ export default function BrainSection({
           </div>
         </div>
 
-        {/* RIGHT: brain card + interactive SVG */}
-        <div className="relative mx-auto w-full max-w-xl lg:mx-0">
+        {/* RIGHT: brain card + svg */}
+        <div className="relative mx-auto w-full max-w-xl lg:mx-0 h-[70vh] md:h-auto">
           <div
             className={`relative rounded-3xl bg-white/95 p-6 shadow-2xl transform transition-all duration-400 ${
               mounted ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
@@ -198,16 +221,15 @@ export default function BrainSection({
             </div>
 
             <div className="flex flex-col items-center justify-center">
-              {/* svg area */}
+              {/* svg */}
               <div className="relative">
-                {/* decorative radial */}
                 <svg
                   className="absolute -z-10 h-60 w-60 opacity-30"
                   viewBox="0 0 200 200"
                   aria-hidden
                 >
                   <defs>
-                    <radialGradient id="rgrad3" cx="50%" cy="40%">
+                    <radialGradient id="rgradA" cx="50%" cy="40%">
                       <stop
                         offset="0%"
                         stopColor="var(--brand-sky)"
@@ -220,7 +242,7 @@ export default function BrainSection({
                       />
                     </radialGradient>
                   </defs>
-                  <circle cx="100" cy="100" r="85" fill="url(#rgrad3)" />
+                  <circle cx="100" cy="100" r="85" fill="url(#rgradA)" />
                 </svg>
 
                 <svg
@@ -229,15 +251,12 @@ export default function BrainSection({
                   fill="none"
                   aria-hidden
                 >
-                  {/* brain outline */}
                   <path
                     d="M44 96c-2-18 4-38 22-48 18-10 38-6 52 2 8 5 22 3 34-2 14-6 36-8 52 2 18 11 25 28 23 48-2 18-16 30-34 34-22 5-38-1-50-8-7-4-20-3-30 1-14 5-34 11-54-3-12-9-22-24-21-60z"
                     stroke="rgba(6,30,85,0.12)"
                     strokeWidth="2"
                     fill="white"
                   />
-
-                  {/* connector lines */}
                   <path
                     d="M70 85 C90 70, 130 60, 150 75"
                     stroke="rgba(0,107,255,0.08)"
@@ -251,7 +270,6 @@ export default function BrainSection({
                     strokeLinecap="round"
                   />
 
-                  {/* nodes */}
                   {options.map((opt, i) => {
                     const isActive = i === activeIdx;
                     const { cx, cy, r } = opt.node;
@@ -306,7 +324,7 @@ export default function BrainSection({
                 </svg>
               </div>
 
-              {/* caption and active detail */}
+              {/* caption + desktop inline detail */}
               <div className="mt-4 w-full max-w-[44rem] text-center">
                 <div className="text-sm font-semibold text-slate-800">
                   {options[activeIdx].title}
@@ -316,7 +334,6 @@ export default function BrainSection({
                 </div>
 
                 <div className="mt-4 flex items-center justify-center gap-3">
-                  {/* prev / pause / next */}
                   <button
                     onClick={() =>
                       manualSelect(
@@ -350,14 +367,84 @@ export default function BrainSection({
                   </button>
                 </div>
               </div>
-            </div>
 
-            <div className="mt-4 text-center text-xs text-slate-500">
-              Tap an option to highlight its node.
+              <div className="mt-4 text-center text-xs text-slate-500">
+                Tap an option on mobile to open details.
+              </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Mobile bottom-sheet overlay for details (prevents layout shift) */}
+      {isMobile && sheetOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`${options[activeIdx].title} details`}
+          onClick={() => setSheetOpen(false)}
+        >
+          {/* backdrop */}
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+
+          {/* sheet */}
+          <div
+            className="relative z-10 w-full max-w-3xl rounded-t-2xl bg-white p-4 pb-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxHeight: "78vh", overflowY: "auto" }}
+          >
+            <div className="flex items-start justify-between">
+              <div>
+                <div className="text-sm font-semibold text-slate-800">
+                  {options[activeIdx].title}
+                </div>
+                <div className="mt-1 text-xs text-slate-500">
+                  {options[activeIdx].short}
+                </div>
+              </div>
+              <button
+                onClick={() => setSheetOpen(false)}
+                aria-label="Close"
+                className="rounded-md p-2 text-slate-600 hover:bg-slate-100 focus:outline-none"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mt-4 text-sm text-slate-700">
+              {options[activeIdx].detail}
+            </div>
+
+            <div className="mt-5 flex items-center gap-3">
+              <button
+                onClick={() =>
+                  manualSelect(
+                    (activeIdx - 1 + options.length) % options.length
+                  )
+                }
+                className="rounded-full bg-slate-100 px-3 py-1 text-sm"
+                aria-label="Previous"
+              >
+                ‹ Prev
+              </button>
+              <button
+                onClick={() => setPaused((p) => !p)}
+                className="rounded-full bg-white px-4 py-1 text-sm shadow-sm"
+              >
+                {paused ? "Resume" : "Pause"}
+              </button>
+              <button
+                onClick={() => manualSelect((activeIdx + 1) % options.length)}
+                className="rounded-full bg-slate-100 px-3 py-1 text-sm"
+                aria-label="Next"
+              >
+                Next ›
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
