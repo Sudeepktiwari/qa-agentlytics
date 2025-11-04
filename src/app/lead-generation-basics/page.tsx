@@ -151,6 +151,27 @@ export default function LeadGenerationPage() {
   // Mobile menu state
   const [menuOpen, setMenuOpen] = useState(false);
 
+  // Mobile sticky/floating header state (match Agentforce feel)
+  const [scrolled, setScrolled] = useState(false);
+  const [floating, setFloating] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => {
+      const y = window.scrollY || document.documentElement.scrollTop || 0;
+      setScrolled(y > 8);
+      const hero = document.getElementById("hero");
+      if (hero) {
+        const rect = hero.getBoundingClientRect();
+        setFloating(rect.top < -60);
+      } else {
+        setFloating(y > 200);
+      }
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   // Close menu then smooth-scroll to target anchors for reliable navigation
   const handleMobileNavClick = (
     e: React.MouseEvent<HTMLAnchorElement, MouseEvent>
@@ -231,13 +252,44 @@ export default function LeadGenerationPage() {
         }}
       />
 
+      {/* Mobile page-specific menu — match Agentforce style */}
+      <header
+        className={`${scrolled ? "top-0" : "top-16"} fixed left-0 right-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top,opacity,transform] duration-300 ease-out md:hidden ${floating ? "opacity-0 -translate-y-1 pointer-events-none" : "opacity-100 translate-y-0"}`}
+      >
+        <div className="w-full h-14 flex items-center justify-center">
+          <nav className="flex items-center gap-3 text-slate-600 text-sm">
+            <a href="#why" className="hover:text-slate-900">Why</a>
+            <a href="#how" className="hover:text-slate-900">How it works</a>
+            <a href="#features" className="hover:text-slate-900">Features</a>
+            <a href="#logos" className="hover:text-slate-900">Trusted by</a>
+            <a href="#cta" className="hover:text-slate-900">Pricing</a>
+          </nav>
+        </div>
+      </header>
+
+      {/* Floating bar — identical look/feel for smooth crossfade */}
+      <header
+        className={`fixed left-0 right-0 top-0 z-50 bg-white/80 backdrop-blur border-b border-slate-200 transition-opacity duration-300 ease-out md:hidden ${floating ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        aria-hidden={!floating}
+      >
+        <div className="w-full h-14 flex items-center justify-center">
+          <nav className="flex items-center gap-3 text-slate-600 text-sm">
+            <a href="#why" className="hover:text-slate-900">Why</a>
+            <a href="#how" className="hover:text-slate-900">How it works</a>
+            <a href="#features" className="hover:text-slate-900">Features</a>
+            <a href="#logos" className="hover:text-slate-900">Trusted by</a>
+            <a href="#cta" className="hover:text-slate-900">Pricing</a>
+          </nav>
+        </div>
+      </header>
+
       {/* NAVBAR */}
-      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-2">
+      <header className="sticky top-0 z-30 bg-white/80 backdrop-blur hidden md:block">
+        <div className="mx-auto flex max-w-7xl items-center px-4 py-3 sm:px-6">
+          <div className="flex items-center gap-2 md:pr-20">
             <div className="h-8 w-8 rounded-xl bg-[--brand-primary]" />
             <span className="text-lg font-semibold tracking-tight">
-              Advancelytics
+              Agentlytics
             </span>
             <span className="ml-2 rounded-full bg-[--surface] px-2 py-0.5 text-xs font-medium text-slate-600">
               Lead Generation
@@ -295,25 +347,6 @@ export default function LeadGenerationPage() {
                 )}
               </svg>
             </button>
-            <a
-              href="#cta"
-              className="hidden rounded-xl border border-[--border-subtle] px-4 py-2 text-sm font-medium text-slate-700 hover:bg-[--surface] md:inline-block"
-            >
-              Watch demo
-            </a>
-            <a
-              href="#cta"
-              className="hidden md:inline-block rounded-2xl px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:shadow-lg"
-              style={{ backgroundColor: brand.primary }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.backgroundColor = brand.primaryHover)
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.backgroundColor = brand.primary)
-              }
-            >
-              Start Free — Capture More Leads Instantly
-            </a>
           </div>
         </div>
         {/* Mobile menu panel — match ai-chatbots animation and CSS */}

@@ -119,7 +119,7 @@ export default function BrainSection({
   return (
     <section
       id="brain"
-      className="mx-auto max-w-7xl px-4 py-16 sm:px-6 scroll-mt-24 h-auto md:h-[64vh] "
+      className="mx-auto max-w-7xl px-4 py-20 sm:px-6 h-auto md:min-h-[64vh]"
     >
       <div className="flex flex-col-reverse gap-8 lg:flex-row lg:items-start lg:justify-between">
         {/* LEFT: options */}
@@ -205,7 +205,7 @@ export default function BrainSection({
         </div>
 
         {/* RIGHT: brain card + svg */}
-        <div className="relative mx-auto w-full max-w-xl lg:mx-0 h-[70vh] md:h-auto">
+        <div className="relative mx-auto w-full max-w-xl lg:mx-0">
           <div
             className={`relative rounded-3xl bg-white/95 p-6 shadow-2xl transform transition-all duration-400 ${
               mounted ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"

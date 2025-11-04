@@ -259,6 +259,27 @@ export default function OnboardingAIBotPage() {
     return () => document.removeEventListener("keydown", onKey);
   }, []);
 
+  // Mobile sticky/floating header state (match Agentforce style)
+  const [scrolled, setScrolled] = useState(false);
+  const [floating, setFloating] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => {
+      const y = window.scrollY || document.documentElement.scrollTop || 0;
+      setScrolled(y > 8);
+      const hero = document.getElementById("hero");
+      if (hero) {
+        const rect = hero.getBoundingClientRect();
+        setFloating(rect.top < -60);
+      } else {
+        setFloating(y > 200);
+      }
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   // Close menu then smooth-scroll to target anchors for reliable navigation
   const handleMobileNavClick = (
     e: React.MouseEvent<HTMLAnchorElement, MouseEvent>
@@ -376,27 +397,23 @@ export default function OnboardingAIBotPage() {
         }}
       />
 
-      {/* NAVBAR */}
-      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-2">
-            <div
-              className="h-8 w-8 rounded-xl"
-              style={{ backgroundColor: brand.primary }}
-            />
-            <span className="text-lg font-semibold tracking-tight">
-              Advancelytics
-            </span>
-            <span className="ml-2 rounded-full bg-[--surface] px-2 py-0.5 text-xs font-medium text-slate-600">
-              Onboarding AI Bot
-            </span>
-          </div>
-          <nav className="hidden items-center gap-6 text-sm font-medium text-slate-700 md:flex">
-            <a href="#why" className="hover:text-slate-900">
-              Why
-            </a>
+      {/* Mobile page-specific menu — match Agentforce style */}
+      <header
+        className={`${
+          scrolled ? "top-0" : "top-16"
+        } fixed left-0 right-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top,opacity,transform] duration-300 ease-out md:hidden ${
+          floating
+            ? "opacity-0 -translate-y-1 pointer-events-none"
+            : "opacity-100 translate-y-0"
+        }`}
+      >
+        <div className="w-full h-auto min-h-16 px-3 py-2 flex items-center justify-center">
+          <nav className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-slate-600 text-sm">
             <a href="#how-it-works" className="hover:text-slate-900">
               How it works
+            </a>
+            <a href="#why" className="hover:text-slate-900">
+              Why
             </a>
             <a href="#brain" className="hover:text-slate-900">
               Inside the Brain
@@ -407,30 +424,76 @@ export default function OnboardingAIBotPage() {
             <a href="#security" className="hover:text-slate-900">
               Security
             </a>
-            <a href="#cta" className="hover:text-slate-900">
-              Pricing
+            <a href="#reviews" className="hover:text-slate-900">
+              Reviews
+            </a>
+          </nav>
+        </div>
+      </header>
+
+      {/* Floating bar — identical look/feel for smooth crossfade */}
+      <header
+        className={`fixed left-0 right-0 top-0 z-50 bg-white/80 backdrop-blur border-b border-slate-200 transition-opacity duration-300 ease-out md:hidden ${
+          floating ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
+        aria-hidden={!floating}
+      >
+        <div className="w-full h-auto min-h-16 px-3 py-2 flex items-center justify-center">
+          <nav className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-slate-600 text-sm">
+            <a href="#how-it-works" className="hover:text-slate-900">
+              How it works
+            </a>
+            <a href="#why" className="hover:text-slate-900">
+              Why
+            </a>
+            <a href="#brain" className="hover:text-slate-900">
+              Inside the Brain
+            </a>
+            <a href="#features" className="hover:text-slate-900">
+              Features
+            </a>
+            <a href="#security" className="hover:text-slate-900">
+              Security
+            </a>
+            <a href="#reviews" className="hover:text-slate-900">
+              Reviews
+            </a>
+          </nav>
+        </div>
+      </header>
+
+      {/* NAVBAR */}
+      <header className="sticky top-0 z-30 bg-white/80 backdrop-blur hidden md:block">
+        <div className="mx-auto flex max-w-7xl items-center px-4 py-3 sm:px-6">
+          <div className="flex items-center gap-2 md:pl-2 md:pr-12">
+            <span className="text-lg font-semibold tracking-tight">
+              Agentlytics
+            </span>
+            <span className="ml-2 rounded-full bg-[--surface] px-2 py-0.5 text-xs font-medium text-slate-600">
+              Onboarding AI Bot
+            </span>
+          </div>
+          <nav className="hidden items-center gap-6 text-sm font-medium text-slate-700 md:flex">
+            <a href="#how-it-works" className="hover:text-slate-900">
+              How it works
+            </a>
+            <a href="#why" className="hover:text-slate-900">
+              Why
+            </a>
+            <a href="#brain" className="hover:text-slate-900">
+              Inside the Brain
+            </a>
+            <a href="#features" className="hover:text-slate-900">
+              Features
+            </a>
+            <a href="#security" className="hover:text-slate-900">
+              Security
+            </a>
+            <a href="#reviews" className="hover:text-slate-900">
+              Reviews
             </a>
           </nav>
           <div className="flex items-center gap-3">
-            <a
-              href="#cta"
-              className="hidden rounded-xl border border-[--border-subtle] px-4 py-2 text-sm font-medium text-slate-700 hover:bg-[--surface] md:inline-block"
-            >
-              Watch demo
-            </a>
-            <a
-              href="#cta"
-              className="hidden rounded-2xl px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:shadow-lg md:inline-block"
-              style={{ backgroundColor: brand.primary }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.backgroundColor = brand.primaryHover)
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.backgroundColor = brand.primary)
-              }
-            >
-              Start free
-            </a>
             {/* Mobile menu toggle — match Lead Generation Basics */}
             <button
               type="button"
@@ -478,18 +541,18 @@ export default function OnboardingAIBotPage() {
           <nav className="mx-auto px-4 py-3 sm:px-6">
             <div className="flex flex-col gap-2 text-sm font-medium text-slate-700">
               <a
-                href="#why"
-                className="py-2 hover:text-slate-900"
-                onClick={handleMobileNavClick}
-              >
-                Why
-              </a>
-              <a
                 href="#how-it-works"
                 className="py-2 hover:text-slate-900"
                 onClick={handleMobileNavClick}
               >
                 How it works
+              </a>
+              <a
+                href="#why"
+                className="py-2 hover:text-slate-900"
+                onClick={handleMobileNavClick}
+              >
+                Why
               </a>
               <a
                 href="#brain"
@@ -513,11 +576,11 @@ export default function OnboardingAIBotPage() {
                 Security
               </a>
               <a
-                href="#cta"
+                href="#reviews"
                 className="py-2 hover:text-slate-900"
                 onClick={handleMobileNavClick}
               >
-                Pricing
+                Reviews
               </a>
               {/* Buttons in dropdown */}
               <a

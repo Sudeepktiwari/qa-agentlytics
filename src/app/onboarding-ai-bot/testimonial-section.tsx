@@ -43,14 +43,14 @@ export default function TestimonialsSection({
 
   return (
     <section
-      id="testimonials"
+      id="reviews"
       className="mx-auto max-w-7xl px-4 py-16 sm:px-6"
-      aria-labelledby="testimonials-heading"
+      aria-labelledby="reviews-heading"
     >
       <div className="flex flex-col-reverse gap-6 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-2xl">
           <h2
-            id="testimonials-heading"
+            id="reviews-heading"
             className="text-3xl font-bold tracking-tight text-slate-900"
           >
             Loved by product and success teams

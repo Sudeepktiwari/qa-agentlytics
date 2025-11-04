@@ -84,6 +84,26 @@ devAssertTheme();
 
 export default function KnowledgeBasePage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  // Mobile sticky/floating header state
+  const [scrolled, setScrolled] = useState(false);
+  const [floating, setFloating] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => {
+      const y = window.scrollY || document.documentElement.scrollTop || 0;
+      setScrolled(y > 8);
+      const hero = document.getElementById("hero");
+      if (hero) {
+        const rect = hero.getBoundingClientRect();
+        setFloating(rect.top < -60);
+      } else {
+        setFloating(y > 200);
+      }
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
   // Mobile nav helper
   const handleMobileNavClick = (
     e: React.MouseEvent<HTMLAnchorElement, MouseEvent>
@@ -431,13 +451,44 @@ export default function KnowledgeBasePage() {
         }}
       />
 
+      {/* Mobile page-specific menu — match Agentforce style */}
+      <header
+        className={`${scrolled ? "top-0" : "top-16"} fixed left-0 right-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top,opacity,transform] duration-300 ease-out md:hidden ${floating ? "opacity-0 -translate-y-1 pointer-events-none" : "opacity-100 translate-y-0"}`}
+      >
+        <div className="w-full h-14 flex items-center justify-center">
+          <nav className="flex items-center gap-3 text-slate-600 text-sm">
+            <a href="#why" className="hover:text-slate-900">Why</a>
+            <a href="#how" className="hover:text-slate-900">How it works</a>
+            <a href="#features" className="hover:text-slate-900">Features</a>
+            <a href="#compare" className="hover:text-slate-900">Compare</a>
+            <a href="#faq" className="hover:text-slate-900">FAQ</a>
+          </nav>
+        </div>
+      </header>
+
+      {/* Floating bar — identical look/feel for smooth crossfade */}
+      <header
+        className={`fixed left-0 right-0 top-0 z-50 bg-white/80 backdrop-blur border-b border-slate-200 transition-opacity duration-300 ease-out md:hidden ${floating ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        aria-hidden={!floating}
+      >
+        <div className="w-full h-14 flex items-center justify-center">
+          <nav className="flex items-center gap-3 text-slate-600 text-sm">
+            <a href="#why" className="hover:text-slate-900">Why</a>
+            <a href="#how" className="hover:text-slate-900">How it works</a>
+            <a href="#features" className="hover:text-slate-900">Features</a>
+            <a href="#compare" className="hover:text-slate-900">Compare</a>
+            <a href="#faq" className="hover:text-slate-900">FAQ</a>
+          </nav>
+        </div>
+      </header>
+
       {/* NAV */}
-      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-3">
+      <header className="sticky top-0 z-30 bg-white/80 backdrop-blur hidden md:block">
+        <div className="mx-auto flex max-w-7xl items-center px-4 py-3 md:px-6">
+          <div className="flex items-center gap-3 md:pr-22">
             <div className="h-8 w-8 rounded-xl bg-[--brand-primary]" />
             <span className="text-lg font-semibold tracking-tight">
-              Advancelytics
+              Agentlytics
             </span>
             <span className="ml-2 rounded-full bg-[--surface] px-2 py-0.5 text-xs font-medium text-slate-600">
               Knowledge Base
@@ -463,19 +514,6 @@ export default function KnowledgeBasePage() {
           </nav>
 
           <div className="flex items-center gap-3">
-            <a
-              href="#demo"
-              className="hidden rounded-xl border border-[--border-subtle] px-4 py-2 text-sm font-medium text-slate-700 hover:bg-[--surface] md:inline-block"
-            >
-              Watch demo
-            </a>
-            <a
-              href="#cta"
-              className="hidden rounded-2xl px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:shadow-lg md:inline-block"
-              style={{ backgroundColor: brand.primary }}
-            >
-              Start free
-            </a>
             <button
               onClick={() => setIsMobileMenuOpen((s) => !s)}
               className="ml-2 md:hidden inline-flex h-10 w-10 items-center justify-center rounded-lg text-slate-600 hover:bg-[--surface]"
@@ -1550,7 +1588,10 @@ export default function KnowledgeBasePage() {
         <div className="grid items-start gap-6 md:gap-10 md:grid-cols-5">
           {/* left: headline + CTA */}
           <div className="md:col-span-3 h-full flex flex-col justify-center">
-            <h2 id="cta-heading" className="text-2xl sm:text-3xl font-bold text-slate-900">
+            <h2
+              id="cta-heading"
+              className="text-2xl sm:text-3xl font-bold text-slate-900"
+            >
               Transform content into conversions
             </h2>
 

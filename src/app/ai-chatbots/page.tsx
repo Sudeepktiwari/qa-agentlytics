@@ -67,6 +67,8 @@ export default function ProactiveAIPage() {
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [tIndex, setTIndex] = useState(0);
+  const [scrolled, setScrolled] = useState(false);
+  const [floating, setFloating] = useState(false);
 
   // Testimonial auto rotate
   useEffect(() => {
@@ -87,6 +89,22 @@ export default function ProactiveAIPage() {
     }
     return () => document.removeEventListener("keydown", onKey);
   }, [mobileOpen]);
+
+  // Mobile sticky nav shadow and floating state (match Agentforce behavior)
+  useEffect(() => {
+    const handleScroll = () => {
+      if (typeof window !== "undefined") setScrolled(window.scrollY > 8);
+    };
+    if (typeof window !== "undefined") {
+      window.addEventListener("scroll", handleScroll);
+      return () => window.removeEventListener("scroll", handleScroll);
+    }
+  }, []);
+
+  // Float exactly when the sticky bar touches the top
+  useEffect(() => {
+    setFloating(scrolled);
+  }, [scrolled]);
 
   // Reveal on scroll + prefers-reduced-motion handling
   useEffect(() => {
@@ -487,10 +505,43 @@ export default function ProactiveAIPage() {
         }}
       />
 
-      {/* NAVBAR */}
-      <header className="sticky top-0 z-40 border-b border-slate-200 md:bg-white backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-3">
+      {/* Mobile page-specific menu — match Agentforce style */}
+      <header
+        className={`${scrolled ? "top-0" : "top-16"} fixed left-0 right-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top,opacity,transform] duration-300 ease-out md:hidden ${floating ? "opacity-0 -translate-y-1 pointer-events-none" : "opacity-100 translate-y-0"}`}
+      >
+        <div className="w-full h-14 flex items-center justify-center">
+          <nav className="flex items-center gap-3 text-slate-600 text-sm">
+            <a href="#how" className="hover:text-slate-900">How it works</a>
+            <a href="#benefits" className="hover:text-slate-900">Benefits</a>
+            <a href="#proof" className="hover:text-slate-900">Social Proof</a>
+            <a href="#compare" className="hover:text-slate-900">Compare</a>
+            <a href="#demo" className="hover:text-slate-900">Demo</a>
+            <a href="#faq" className="hover:text-slate-900">FAQ</a>
+          </nav>
+        </div>
+      </header>
+
+      {/* Floating bar — identical look/feel for smooth crossfade */}
+      <header
+        className={`fixed left-0 right-0 top-0 z-50 bg-white/80 backdrop-blur border-b border-slate-200 transition-opacity duration-300 ease-out md:hidden ${floating ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        aria-hidden={!floating}
+      >
+        <div className="w-full h-14 flex items-center justify-center">
+          <nav className="flex items-center gap-3 text-slate-600 text-sm">
+            <a href="#how" className="hover:text-slate-900">How it works</a>
+            <a href="#benefits" className="hover:text-slate-900">Benefits</a>
+            <a href="#proof" className="hover:text-slate-900">Social Proof</a>
+            <a href="#compare" className="hover:text-slate-900">Compare</a>
+            <a href="#demo" className="hover:text-slate-900">Demo</a>
+            <a href="#faq" className="hover:text-slate-900">FAQ</a>
+          </nav>
+        </div>
+      </header>
+
+      {/* NAVBAR (desktop only) */}
+      <header className="sticky top-0 z-30 border-b border-slate-200 md:bg-white backdrop-blur hidden md:block">
+        <div className="mx-auto flex max-w-7xl items-center px-4 py-3 sm:px-6">
+          <div className="flex items-center gap-3 md:pr-6">
             <div className="h-8 w-8 rounded-xl bg-[--brand-blue]" />
             <span className="text-lg font-semibold tracking-tight">
               Agentlytics
@@ -519,149 +570,10 @@ export default function ProactiveAIPage() {
               FAQ
             </a>
           </nav>
-          <div className="flex items-center gap-3">
-            <a
-              href="#demo"
-              className="hidden rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 md:inline-block"
-            >
-              Watch demo
-            </a>
-            <a
-              href="#cta"
-              className="hidden md:inline-block rounded-2xl px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:shadow-lg"
-              style={{ backgroundColor: brand.primary }}
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.backgroundColor = brand.primaryHover)
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.backgroundColor = brand.primary)
-              }
-            >
-              Start Free — Boost Conversions Now
-            </a>
-            <button
-              type="button"
-              aria-controls="mobile-menu"
-              aria-expanded={mobileOpen ? "true" : "false"}
-              aria-label="Toggle menu"
-              className="md:hidden inline-flex items-center justify-center rounded-md p-2 text-slate-700 hover:bg-slate-100"
-              onClick={() => setMobileOpen((o) => !o)}
-            >
-              <svg
-                className="h-6 w-6"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                {mobileOpen ? (
-                  <g>
-                    <path d="M18 6L6 18" />
-                    <path d="M6 6l12 12" />
-                  </g>
-                ) : (
-                  <g>
-                    <path d="M3 6h18" />
-                    <path d="M3 12h18" />
-                    <path d="M3 18h18" />
-                  </g>
-                )}
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile menu panel */}
-        <div
-          id="mobile-menu"
-          aria-hidden={!mobileOpen}
-          className={`md:hidden absolute right-0 top-full z-50 w-[60vw] border-t border-l border-slate-200 bg-white rounded-b-2xl shadow-lg origin-top-right transform transition-all duration-300 ease-out ${
-            mobileOpen
-              ? "opacity-100 translate-y-0 scale-100 pointer-events-auto"
-              : "opacity-0 -translate-y-2 scale-95 pointer-events-none"
-          }`}
-        >
-          <nav className="mx-auto px-4 py-3 sm:px-6">
-            <div className="flex flex-col gap-2 text-sm font-medium text-slate-700">
-              <a
-                href="#how"
-                className="py-2 hover:text-slate-900"
-                onClick={handleMobileNavClick}
-              >
-                How it works
-              </a>
-              <a
-                href="#benefits"
-                className="py-2 hover:text-slate-900"
-                onClick={handleMobileNavClick}
-              >
-                Benefits
-              </a>
-              <a
-                href="#proof"
-                className="py-2 hover:text-slate-900"
-                onClick={handleMobileNavClick}
-              >
-                Social Proof
-              </a>
-              <a
-                href="#compare"
-                className="py-2 hover:text-slate-900"
-                onClick={handleMobileNavClick}
-              >
-                Compare
-              </a>
-              <a
-                href="#demo"
-                className="py-2 hover:text-slate-900"
-                onClick={handleMobileNavClick}
-              >
-                Demo
-              </a>
-              <a
-                href="#faq"
-                className="py-2 hover:text-slate-900"
-                onClick={handleMobileNavClick}
-              >
-                FAQ
-              </a>
-              <div className="my-2 border-t border-slate-200" />
-              <a
-                href="#cta"
-                className="w-full rounded-xl px-4 py-2 text-center text-sm font-semibold text-white shadow-md transition hover:shadow-lg"
-                style={{ backgroundColor: brand.primary }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.backgroundColor = brand.primaryHover)
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.backgroundColor = brand.primary)
-                }
-                onClick={handleMobileNavClick}
-              >
-                Start Free — Boost Conversions Now
-              </a>
-              <a
-                href="#demo"
-                className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-2 text-center text-sm font-medium text-slate-700 hover:bg-slate-50"
-                onClick={handleMobileNavClick}
-              >
-                Watch demo
-              </a>
-            </div>
-          </nav>
+          <div className="flex items-center gap-3" />
         </div>
       </header>
 
-      {/* Mobile backdrop */}
-      {mobileOpen && (
-        <div
-          className="fixed inset-0 z-30 md:hidden"
-          aria-label="Close menu"
-          onClick={() => setMobileOpen(false)}
-        />
-      )}
 
       {/* HERO */}
       <section className="relative isolate">
