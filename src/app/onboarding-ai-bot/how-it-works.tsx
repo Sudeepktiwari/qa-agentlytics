@@ -246,7 +246,7 @@ function DocsToDoneIllustration() {
 
       {/* Header */}
       <div className="text-center">
-        <span className="inline-flex items-center gap-2 rounded-full bg-blue-50 text-blue-900 px-3 py-1 text-xs ring-1 ring-blue-100">
+        <span className="inline-flex items-center gap-2 rounded-full bg-blue-50 text-blue-900 px-3 py-1 text-2xl md:text-3xl font-bold ring-1 ring-blue-100">
           How it works
         </span>
         <h2
