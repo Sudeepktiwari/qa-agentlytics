@@ -3,6 +3,8 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import HowItWorks from "./how-it-works";
+import GuidedOnboardingPreview from "./hero-illustration";
+import WhySection from "./why-section";
 
 // Advancelytics — Onboarding AI Bot (Full Page)
 // ✅ Animated "Proactive Brain" + synced list
@@ -609,159 +611,15 @@ export default function OnboardingAIBotPage() {
           </div>
 
           {/* Hero Illustration */}
-          <div className="relative">
-            <div className="absolute -inset-1 rounded-3xl bg-gradient-to-br from-[--brand-primary]/10 to-[--brand-accent]/10 blur" />
-            <div className="relative rounded-3xl border border-[--border-subtle] bg-white p-6 shadow-xl">
-              <div className="mb-4 text-sm font-semibold text-slate-700">
-                Guided Onboarding Preview
-              </div>
-
-              {/* Form + Bot Assist */}
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-3">
-                  {[
-                    { k: "Company name", v: "CloudScale" },
-                    { k: "Billing email", v: "ops@cloudscale.io" },
-                    { k: "Webhook URL", v: "https://api.cloudscale.io/hook" },
-                  ].map((f) => (
-                    <div
-                      key={f.k}
-                      className="rounded-xl border border-[--border-subtle] bg-[--surface] p-3"
-                    >
-                      <div className="text-[11px] text-slate-500">{f.k}</div>
-                      <div className="text-sm font-medium text-slate-800">
-                        {f.v}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="rounded-xl border border-[--border-subtle] bg-[--surface] p-3">
-                  <div className="text-[11px] font-semibold text-slate-500">
-                    Agent Tip
-                  </div>
-                  <div className="mt-1 text-sm text-slate-800">
-                    Webhook URL lets us send event updates to your system.
-                  </div>
-                  <div className="mt-3 flex flex-wrap gap-2 text-[11px]">
-                    {["Why required?", "Use sample data", "Skip for now"].map(
-                      (cta) => (
-                        <button
-                          key={cta}
-                          className="rounded-full border border-[--brand-primary]/20 bg-white px-3 py-1 font-medium text-[--brand-primary] hover:bg-[--brand-primary]/5"
-                        >
-                          {cta}
-                        </button>
-                      )
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Progress */}
-              <div className="mt-5 grid grid-cols-3 gap-3 text-center">
-                {[
-                  { k: "Setup", v: 72 },
-                  { k: "Validated", v: 56 },
-                  { k: "Complete", v: 38 },
-                ].map((m) => (
-                  <div
-                    key={m.k}
-                    className="rounded-lg border border-[--border-subtle] bg-[--surface] p-3"
-                  >
-                    <div className="text-[11px] text-slate-500">{m.k}</div>
-                    <div className="mt-1 text-base font-bold text-slate-800">
-                      {m.v}%
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+          <GuidedOnboardingPreview />
         </div>
       </section>
       <section id="how-it-works">
         <HowItWorks />
       </section>
       {/* WHY THIS MATTERS */}
-      <section
-        id="why"
-        className="mx-auto max-w-7xl px-4 py-16 sm:px-6 scroll-mt-24"
-      >
-        <div className="grid items-start gap-10 md:grid-cols-2">
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight">
-              Why AI‑guided onboarding wins
-            </h2>
-            <p className="mt-3 max-w-xl text-slate-600">
-              Static checklists create drop‑offs. Our agent makes onboarding
-              conversational, contextual, and confidence‑building.
-            </p>
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              <div className="rounded-2xl border border-[--border-subtle] bg-white p-4">
-                <div className="mb-2 text-sm font-semibold text-slate-700">
-                  Traditional Onboarding
-                </div>
-                <ul className="list-inside list-disc space-y-1 text-sm text-slate-600">
-                  <li>One‑size‑fits‑all checklist</li>
-                  <li>Confusing fields, no context</li>
-                  <li>Support pings for basic questions</li>
-                  <li>High drop‑off on technical steps</li>
-                </ul>
-              </div>
-              <div className="rounded-2xl border border-[--brand-primary]/20 bg-[--brand-primary]/5 p-4">
-                <div className="mb-2 text-sm font-semibold text-[--brand-primary]">
-                  Agentlytics Onboarding AI
-                </div>
-                <ul className="list-inside list-disc space-y-1 text-sm text-slate-700">
-                  <li>Explains the why behind each field</li>
-                  <li>Instant answers, in‑flow</li>
-                  <li>Detects friction & adapts the path</li>
-                  <li>Faster time‑to‑value</li>
-                </ul>
-              </div>
-            </div>
-            <div className="mt-4 rounded-xl border border-[--border-subtle] bg-[--surface] p-4 text-sm text-slate-700">
-              Insight: 42% of users pause on API credentials. A guided “Why this
-              matters” tooltip + sample keys increased completion by 28%.
-            </div>
-          </div>
-
-          {/* Before vs After animated toggle */}
-          <div className="relative overflow-hidden rounded-2xl border border-[--border-subtle] bg-white p-6 shadow">
-            <div className="mb-4 flex items-center justify-between text-sm font-semibold text-slate-700">
-              <span>Before vs After</span>
-              <span className="rounded-full border border-[--brand-primary]/20 bg-[--brand-primary]/5 px-2 py-0.5 text-[--brand-primary]">
-                {isAfter ? "After: With Agent" : "Before: Traditional"}
-              </span>
-            </div>
-            <div
-              className={`grid grid-cols-2 gap-3 text-xs text-slate-600 transition-opacity duration-500 ${
-                isAfter ? "opacity-100" : "opacity-90"
-              }`}
-            >
-              <div
-                className={`rounded-xl border border-[--border-subtle] bg-[--surface] p-4 transition-transform duration-500 ${
-                  isAfter ? "scale-[0.98]" : "scale-100"
-                }`}
-              >
-                <div className="mb-2 font-bold text-slate-800">Traditional</div>
-                <p>Confusion on API scopes</p>
-                <p>Idle 40s on “Webhook” step</p>
-              </div>
-              <div
-                className={`rounded-xl border border-[--brand-primary]/20 bg-[--brand-primary]/5 p-4 transition-transform duration-500 ${
-                  isAfter ? "scale-100" : "scale-[0.98]"
-                }`}
-              >
-                <div className="mb-2 font-bold text-[--brand-primary]">
-                  With Agent
-                </div>
-                <p>Explains scopes with examples</p>
-                <p>Offers sandbox key + test ping</p>
-              </div>
-            </div>
-          </div>
-        </div>
+      <section id="why">
+        <WhySection />
       </section>
 
       {/* INSIDE THE PROACTIVE BRAIN — modernized + animated */}
