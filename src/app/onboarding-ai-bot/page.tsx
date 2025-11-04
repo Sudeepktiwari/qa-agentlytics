@@ -8,6 +8,8 @@ import WhySection from "./why-section";
 import BrainSection from "./brain-section";
 import FeaturesSection from "./features-section";
 import SecuritySection from "./security-section";
+import OutcomesSection from "./outcomes-section";
+import TestimonialSection from "./testimonial-section";
 
 // Advancelytics — Onboarding AI Bot (Full Page)
 // ✅ Animated "Proactive Brain" + synced list
@@ -635,130 +637,10 @@ export default function OnboardingAIBotPage() {
       <SecuritySection />
 
       {/* OUTCOMES */}
-      <section id="outcomes" className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
-        <h2 className="text-3xl font-bold tracking-tight">
-          Activation that compounds
-        </h2>
-        <div className="mt-6 grid grid-cols-3 gap-3 text-center">
-          {[
-            { k: "Time‑to‑value", v: "−32%" },
-            { k: "Completion rate", v: "+24%" },
-            { k: "Setup tickets", v: "−18%" },
-          ].map((m) => (
-            <div
-              key={m.k}
-              className="rounded-lg border border-[--border-subtle] bg-[--surface] p-4"
-            >
-              <div className="text-[11px] text-slate-500">{m.k}</div>
-              <div className="mt-1 text-lg font-bold text-slate-800">{m.v}</div>
-            </div>
-          ))}
-        </div>
-      </section>
+      <OutcomesSection />
 
       {/* TESTIMONIALS */}
-      <section
-        id="testimonials"
-        className="mx-auto max-w-7xl px-4 py-16 sm:px-6"
-        ref={revealRef}
-      >
-        <div className="flex items-end justify-between gap-6">
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight">
-              Loved by product and success teams
-            </h2>
-            <p className="mt-2 max-w-2xl text-slate-600">
-              Real companies accelerating activation and reducing setup tickets
-              with Agentlytics Onboarding AI.
-            </p>
-          </div>
-          <div className="hidden text-sm text-slate-500 md:block">
-            CSAT ↑, time‑to‑value ↓
-          </div>
-        </div>
-        <div className="mt-6 flex flex-wrap items-center gap-3 opacity-90">
-          {["CloudScale", "FinServe", "TechFlow"].map((l) => (
-            <span
-              key={l}
-              className="rounded-lg border border-[--border-subtle] bg-white px-3 py-1.5 text-xs font-medium text-slate-600"
-            >
-              {l}
-            </span>
-          ))}
-        </div>
-        <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {[
-            {
-              name: "Sarah Chen",
-              role: "Head of Product, CloudScale",
-              inc: "+27% activation",
-              quote:
-                "Explaining the why behind fields cut our drop‑offs dramatically. Users finish setup without Slack pings.",
-            },
-            {
-              name: "Diego Morales",
-              role: "CX Lead, FinServe",
-              inc: "−31% setup tickets",
-              quote:
-                "Inline Q&A and validation removed most ‘what does this mean?’ questions. Our team can focus on complex cases.",
-            },
-            {
-              name: "Priya Nair",
-              role: "Growth PM, TechFlow",
-              inc: "TTFV −29%",
-              quote:
-                "Adaptive paths skip irrelevant steps. Time‑to‑first‑value is down and expansion trials go smoother.",
-            },
-          ].map((t, i) => (
-            <figure
-              key={i}
-              data-reveal
-              className="opacity-0 translate-y-3 group relative overflow-hidden rounded-2xl border border-[--border-subtle] bg-white p-6 shadow-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-lg"
-            >
-              <div
-                className="pointer-events-none absolute inset-px rounded-2xl opacity-0 blur-xl transition-opacity duration-300 group-hover:opacity-100"
-                style={{
-                  background: `radial-gradient(260px 140px at 20% 0%, ${brand.primary}22 0%, transparent 70%)`,
-                }}
-              />
-              <blockquote className="relative z-10 text-slate-800">
-                <div
-                  className="flex items-center gap-1 text-amber-500"
-                  aria-label="rating"
-                >
-                  {"★★★★★"}
-                </div>
-                <p className="mt-3 text-sm leading-6 text-slate-700">
-                  {t.quote}
-                </p>
-              </blockquote>
-              <figcaption className="relative z-10 mt-5 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div
-                    className="grid h-10 w-10 place-items-center rounded-full bg-[--brand-primary]/10 text-sm font-bold"
-                    style={{ color: brand.primary }}
-                  >
-                    {t.name
-                      .split(" ")
-                      .map((p) => p[0])
-                      .slice(0, 2)
-                      .join("")}
-                  </div>
-                  <div>
-                    <div className="text-sm font-semibold text-slate-900">
-                      {t.name}
-                    </div>
-                    <div className="text-xs text-slate-500">{t.role}</div>
-                  </div>
-                </div>
-                <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
-                  {t.inc}
-                </span>
-              </figcaption>
-            </figure>
-          ))}
-        </div>
-      </section>
+      <TestimonialSection />
 
       {/* CTA */}
       <section
@@ -807,7 +689,7 @@ export default function OnboardingAIBotPage() {
       </section>
 
       {/* FOOTER */}
-      <footer className="mt-12 border-t border-[--border-subtle] bg-white">
+      <footer className="mt-12 bg-white">
         <div className="mx-auto max-w-7xl px-4 py-8 text-sm text-slate-500 sm:px-6">
           <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
             <p>
