@@ -142,8 +142,9 @@ export default function PricingSection() {
                 Yearly (save 2 months)
               </button>
             </div>
-
-            <CTAPulse href="#cta" label="See plans" />
+            {/* <div className="mt-4 md:mt-0">
+              <CTAPulse href="#cta" label="See plans" />
+            </div> */}
           </div>
         </div>
 
