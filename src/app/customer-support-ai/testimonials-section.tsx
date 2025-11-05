@@ -199,9 +199,9 @@ export default function TestimonialsSection() {
       {/* small video row below (placeholder) */}
       <div className="mt-8 grid gap-4 md:flex md:items-center md:justify-between">
         <div className="flex items-center gap-4">
-          <div className="h-14 w-24 rounded-lg bg-gradient-to-tr from-blue-100 to-blue-50 flex items-center justify-center text-sm font-semibold text-blue-700 shadow-inner">
+          {/* <div className="h-14 w-24 rounded-lg bg-gradient-to-tr from-blue-100 to-blue-50 flex items-center justify-center text-sm font-semibold text-blue-700 shadow-inner">
             Video
-          </div>
+          </div> */}
           <div>
             <div className="text-sm font-semibold text-slate-900">
               Customer Stories
