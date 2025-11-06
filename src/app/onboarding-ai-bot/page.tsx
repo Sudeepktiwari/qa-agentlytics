@@ -460,8 +460,12 @@ export default function OnboardingAIBotPage() {
       <header
         className={`${scrolled ? "top-0" : "top-16"} fixed left-0 right-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top,opacity,transform] duration-300 ease-out hidden md:block ${floating ? "opacity-0 -translate-y-1 pointer-events-none" : "opacity-100 translate-y-0"}`}
       >
-        <div className="w-full h-auto min-h-16 px-3 py-2 flex items-center justify-center">
-          <nav className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-slate-600 text-sm">
+        <div className="mx-auto flex max-w-7xl items-center px-4 py-3 sm:px-6">
+          <div className="flex items-center gap-2 md:pl-2 md:pr-12">
+            <span className="text-lg font-semibold tracking-tight">Agentlytics</span>
+            <span className="ml-2 rounded-full bg-[--surface] px-2 py-0.5 text-xs font-medium text-slate-600">Onboarding AI Bot</span>
+          </div>
+          <nav className="hidden items-center gap-6 text-sm font-medium text-slate-700 md:flex">
             <a href="#how-it-works" className="hover:text-slate-900">How it works</a>
             <a href="#why" className="hover:text-slate-900">Why</a>
             <a href="#brain" className="hover:text-slate-900">Inside the Brain</a>
@@ -492,151 +496,6 @@ export default function OnboardingAIBotPage() {
       {/* Spacer to avoid content jump when header is fixed (desktop only) */}
       <div className="hidden md:block h-16" aria-hidden />
       {/* NAVBAR */}
-      <header className="sticky top-0 z-30 bg-white/80 backdrop-blur hidden md:block">
-        <div className="mx-auto flex max-w-7xl items-center px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-2 md:pl-2 md:pr-12">
-            <span className="text-lg font-semibold tracking-tight">
-              Agentlytics
-            </span>
-            <span className="ml-2 rounded-full bg-[--surface] px-2 py-0.5 text-xs font-medium text-slate-600">
-              Onboarding AI Bot
-            </span>
-          </div>
-          <nav className="hidden items-center gap-6 text-sm font-medium text-slate-700 md:flex">
-            <a href="#how-it-works" className="hover:text-slate-900">
-              How it works
-            </a>
-            <a href="#why" className="hover:text-slate-900">
-              Why
-            </a>
-            <a href="#brain" className="hover:text-slate-900">
-              Inside the Brain
-            </a>
-            <a href="#features" className="hover:text-slate-900">
-              Features
-            </a>
-            <a href="#security" className="hover:text-slate-900">
-              Security
-            </a>
-            <a href="#reviews" className="hover:text-slate-900">
-              Reviews
-            </a>
-          </nav>
-          <div className="flex items-center gap-3">
-            {/* Mobile menu toggle — match Lead Generation Basics */}
-            <button
-              type="button"
-              aria-controls="mobile-menu"
-              aria-expanded={menuOpen ? "true" : "false"}
-              aria-label="Toggle menu"
-              className="md:hidden inline-flex items-center justify-center rounded-md p-2 text-slate-700 hover:bg-slate-100"
-              onClick={() => setMenuOpen((o) => !o)}
-            >
-              <svg
-                className="h-6 w-6"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                {menuOpen ? (
-                  <g>
-                    <path d="M18 6L6 18" />
-                    <path d="M6 6l12 12" />
-                  </g>
-                ) : (
-                  <g>
-                    <path d="M3 6h18" />
-                    <path d="M3 12h18" />
-                    <path d="M3 18h18" />
-                  </g>
-                )}
-              </svg>
-            </button>
-          </div>
-        </div>
-        {/* Mobile menu panel — match Lead Generation Basics */}
-        <div
-          id="mobile-menu"
-          aria-hidden={!menuOpen}
-          className={`md:hidden absolute right-0 top-full z-50 w-[60vw] bg-white rounded-b-2xl shadow-lg origin-top-right transform transition-all duration-300 ease-out ${
-            menuOpen
-              ? "opacity-100 translate-y-0 scale-100 pointer-events-auto"
-              : "opacity-0 -translate-y-2 scale-95 pointer-events-none"
-          }`}
-        >
-          <nav className="mx-auto px-4 py-3 sm:px-6">
-            <div className="flex flex-col gap-2 text-sm font-medium text-slate-700">
-              <a
-                href="#how-it-works"
-                className="py-2 hover:text-slate-900"
-                onClick={handleMobileNavClick}
-              >
-                How it works
-              </a>
-              <a
-                href="#why"
-                className="py-2 hover:text-slate-900"
-                onClick={handleMobileNavClick}
-              >
-                Why
-              </a>
-              <a
-                href="#brain"
-                className="py-2 hover:text-slate-900"
-                onClick={handleMobileNavClick}
-              >
-                Inside the Brain
-              </a>
-              <a
-                href="#features"
-                className="py-2 hover:text-slate-900"
-                onClick={handleMobileNavClick}
-              >
-                Features
-              </a>
-              <a
-                href="#security"
-                className="py-2 hover:text-slate-900"
-                onClick={handleMobileNavClick}
-              >
-                Security
-              </a>
-              <a
-                href="#reviews"
-                className="py-2 hover:text-slate-900"
-                onClick={handleMobileNavClick}
-              >
-                Reviews
-              </a>
-              {/* Buttons in dropdown */}
-              <a
-                href="#cta"
-                className="mt-2 w-full rounded-xl border border-[--border-subtle] px-4 py-2 text-center text-sm font-medium text-slate-700 hover:bg-[--surface]"
-                onClick={handleMobileNavClick}
-              >
-                Watch demo
-              </a>
-              <a
-                href="#cta"
-                className="inline-flex w-full items-center justify-center rounded-2xl px-4 py-2 text-center text-sm font-semibold text-white shadow-md transition hover:shadow-lg"
-                style={{ backgroundColor: brand.primary }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.backgroundColor = brand.primaryHover)
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.backgroundColor = brand.primary)
-                }
-                onClick={handleMobileNavClick}
-              >
-                Start free
-              </a>
-            </div>
-          </nav>
-        </div>
-      </header>
 
       {/* Backdrop overlay — outside header for proper stacking */}
       {menuOpen && (
