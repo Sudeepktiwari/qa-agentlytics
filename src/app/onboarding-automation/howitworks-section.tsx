@@ -34,14 +34,16 @@ export default function HowItWorksFlow() {
     []
   );
 
-  // brand css variables
+  // brand css variables (single source of truth)
   const brandVars: React.CSSProperties = {
     ["--brand" as any]: BRAND,
     ["--brand-10" as any]: "rgba(0,107,255,0.06)",
     ["--brand-20" as any]: "rgba(0,107,255,0.12)",
+    ["--brand-30" as any]: "rgba(0,107,255,0.18)",
+    ["--brand-dark" as any]: "#0050d6",
     ["--border-subtle" as any]: "rgba(2,6,23,0.06)",
     ["--surface" as any]: "#ffffff",
-    ["--surface-alt" as any]: "rgba(243,246,255,0.85)",
+    ["--surface-alt" as any]: "rgba(243,246,255,0.92)",
   };
 
   // tick drives which items are shown
@@ -52,24 +54,21 @@ export default function HowItWorksFlow() {
   // interval timing
   const ACTION_INTERVAL_MS = prefersReducedMotion ? 6000 : 2500;
 
-  // start interval that increments tick; use functional updates and ref to avoid stale closures
+  // keep ref in sync
   useEffect(() => {
     tickRef.current = tick;
   }, [tick]);
 
+  // rotate items periodically unless reduced motion
   useEffect(() => {
-    if (prefersReducedMotion) return; // avoid periodic motion if reduced-motion requested
-
+    if (prefersReducedMotion) return;
     const id = window.setInterval(() => {
-      if (!paused) {
-        setTick((t) => t + 1);
-      }
+      if (!paused) setTick((t) => t + 1);
     }, ACTION_INTERVAL_MS);
-
     return () => clearInterval(id);
   }, [ACTION_INTERVAL_MS, paused, prefersReducedMotion]);
 
-  // helpers: get rolling window of N items starting from tick offset (wrap-around)
+  // helpers: rolling window
   const takeWindow = <T,>(arr: T[], start: number, n: number) => {
     const out: T[] = [];
     for (let i = 0; i < n; i++) {
@@ -78,7 +77,6 @@ export default function HowItWorksFlow() {
     return out;
   };
 
-  // compute current visible chips/buttons
   const signalWindow = takeWindow(flowSignals, tick % flowSignals.length, 3);
   const actionWindow = takeWindow(flowActions, tick % flowActions.length, 3);
 
@@ -104,17 +102,35 @@ export default function HowItWorksFlow() {
     >
       <div className="flex flex-wrap items-start justify-between gap-6">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">How it works</h2>
+          <h2 className="text-3xl font-bold tracking-tight text-slate-900">
+            How it works
+          </h2>
           <p className="mt-3 max-w-2xl text-slate-600">
             Detect, guide, assist, and optimize — all automatically.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="rounded-full bg-[--brand-10] px-3 py-1 text-xs font-semibold text-[--brand]">
+          <span
+            className="rounded-full px-3 py-1 text-xs font-semibold"
+            style={{
+              background: "var(--brand-10)",
+              color: "var(--brand)",
+            }}
+          >
             Signal-ready
           </span>
-          <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+
+          {/* privacy-aware replaced with brand tone, still visually distinct */}
+          <span
+            className="rounded-full px-3 py-1 text-xs font-semibold"
+            style={{
+              background:
+                "linear-gradient(180deg,var(--brand-10), transparent)",
+              color: "var(--brand-dark)",
+              border: "1px solid var(--brand-20)",
+            }}
+          >
             Privacy-aware
           </span>
         </div>
@@ -151,16 +167,27 @@ export default function HowItWorksFlow() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.18 }}
               transition={{ delay: i * 0.08, duration: 0.45, ease: "easeOut" }}
-              className="group relative rounded-2xl border p-5 shadow-sm transition hover:shadow-md"
+              className="group relative rounded-2xl border p-5 shadow-sm transition hover:shadow-lg"
               style={{
                 borderColor: "var(--border-subtle)",
-                background: "white",
+                background:
+                  "linear-gradient(180deg, white, var(--surface-alt))",
               }}
             >
               <div className="flex items-start gap-4">
-                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[--brand-10] text-sm font-bold text-[--brand]">
+                <div
+                  className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-sm font-bold"
+                  style={{
+                    background:
+                      "linear-gradient(180deg,var(--brand-10), transparent)",
+                    color: "var(--brand)",
+                    border: "1px solid var(--brand-20)",
+                  }}
+                  aria-hidden
+                >
                   {s.n}
                 </div>
+
                 <div>
                   <h3 className="text-base font-semibold text-slate-900">
                     {s.t}
@@ -168,6 +195,7 @@ export default function HowItWorksFlow() {
                   <p className="mt-1 text-sm text-slate-600">{s.d}</p>
                 </div>
               </div>
+
               <div className="mt-4 h-1 w-0 rounded bg-[--brand] transition-all duration-500 group-hover:w-24" />
             </motion.div>
           ))}
@@ -176,9 +204,14 @@ export default function HowItWorksFlow() {
         {/* Animated flow card */}
         <div className="relative">
           <div
-            className="absolute -inset-1 rounded-3xl bg-gradient-to-br from-[--brand-20] to-[--brand-10] blur"
+            className="absolute -inset-1 rounded-3xl blur"
+            style={{
+              background:
+                "linear-gradient(135deg, var(--brand-20), rgba(0,107,255,0.02))",
+            }}
             aria-hidden
           />
+
           <div
             className="relative overflow-hidden rounded-3xl border bg-white p-6 shadow-xl"
             style={{ borderColor: "var(--border-subtle)" }}
@@ -203,9 +236,10 @@ export default function HowItWorksFlow() {
                       transition={{ duration: 0.35, ease: "easeOut" }}
                       className="rounded-full border px-2.5 py-1 text-[11px] font-medium"
                       style={{
-                        borderColor: "rgba(0,107,255,0.18)",
-                        background: "rgba(0,107,255,0.06)",
-                        color: "rgb(0 63 190)",
+                        borderColor: "var(--brand-20)",
+                        background: "var(--brand-10)",
+                        color: "var(--brand-dark)",
+                        boxShadow: "inset 0 -1px 0 rgba(0,0,0,0.02)",
                       }}
                     >
                       {sig.k}
@@ -220,7 +254,10 @@ export default function HowItWorksFlow() {
               className="mt-4 rounded-2xl border bg-[--surface] p-4"
               style={{ borderColor: "var(--border-subtle)" }}
             >
-              <div className="text-[11px] font-semibold text-slate-500">
+              <div
+                className="text-[11px] font-semibold"
+                style={{ color: "rgb(71 85 105)" }}
+              >
                 Next Best Actions
               </div>
               <div className="mt-1 text-sm text-slate-800">
@@ -244,9 +281,11 @@ export default function HowItWorksFlow() {
                       transition={{ duration: 0.32, ease: "easeOut" }}
                       className="rounded-full border px-3 py-1 text-[11px] font-medium"
                       style={{
-                        borderColor: "rgba(0,107,255,0.18)",
-                        background: "white",
-                        color: "var(--brand)",
+                        borderColor: "var(--brand-20)",
+                        background:
+                          "linear-gradient(180deg, white, var(--brand-10))",
+                        color: "var(--brand-dark)",
+                        boxShadow: "0 2px 8px rgba(2,6,23,0.04)",
                       }}
                       aria-label={`Action: ${a.txt}`}
                     >
@@ -263,7 +302,11 @@ export default function HowItWorksFlow() {
               aria-hidden
             >
               <motion.div
-                className="relative h-2 rounded bg-[--brand]"
+                className="relative h-2 rounded"
+                style={{
+                  background:
+                    "linear-gradient(90deg,var(--brand),var(--brand-dark))",
+                }}
                 initial={{ width: 0 }}
                 animate={
                   prefersReducedMotion
@@ -291,15 +334,18 @@ export default function HowItWorksFlow() {
                   }}
                   style={{
                     backgroundImage:
-                      "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.35) 50%, rgba(255,255,255,0) 100%)",
+                      "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.28) 50%, rgba(255,255,255,0) 100%)",
                     backgroundSize: "200% 100%",
-                    opacity: 0.75,
+                    opacity: 0.6,
                   }}
                 />
               </motion.div>
             </div>
 
-            <div className="mt-2 text-right text-xs text-slate-500">
+            <div
+              className="mt-2 text-right text-xs"
+              style={{ color: "rgb(99 102 241 / 0.9)" }}
+            >
               Activation progress ↑
             </div>
           </div>
