@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
+import type { Variants } from "framer-motion";
 
 /**
  * ImpactSection — styled like the OutcomesSection you provided,
@@ -105,14 +106,84 @@ export default function ImpactSection() {
     return () => obs.disconnect();
   }, [prefersReducedMotion]);
 
-  const itemVariant = {
+  const bezierEase: [number, number, number, number] = [0.22, 1, 0.36, 1];
+  const itemVariant: Variants = {
     hidden: { opacity: 0, y: 10 },
     show: (i: number) => ({
       opacity: 1,
       y: 0,
-      transition: { delay: i * 0.08, duration: 0.45, ease: [0.22, 1, 0.36, 1] },
+      transition: { delay: i * 0.08, duration: 0.45, ease: bezierEase },
     }),
   };
+
+  // Child component to respect Rules of Hooks
+  function MetricCard({ m, i }: { m: Metric; i: number }) {
+    const display = useCountUp(m.v, active);
+    const isTimesGain = /[×xX]/.test(m.v);
+    const isPositive =
+      m.v.startsWith("+") || m.v.startsWith("↑") || isTimesGain;
+    const valueColor = isPositive ? "var(--brand)" : "rgb(220 38 38)";
+
+    return (
+      <motion.div
+        custom={i}
+        initial={prefersReducedMotion ? undefined : "hidden"}
+        whileInView={prefersReducedMotion ? undefined : "show"}
+        viewport={{ once: true, amount: 0.3 }}
+        variants={itemVariant}
+        whileHover={
+          prefersReducedMotion
+            ? undefined
+            : {
+                scale: 1.04,
+                boxShadow: "0 12px 24px rgba(0,107,255,0.12)",
+              }
+        }
+        className="relative overflow-hidden rounded-2xl border bg-[--surface] p-4 text-center shadow-sm transition-transform"
+        style={{
+          borderColor: "var(--border-subtle)",
+          background:
+            "linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(250,252,255,1) 100%)",
+        }}
+        role="region"
+        aria-label={`${m.k}: ${m.v}`}
+      >
+        <span
+          aria-hidden
+          className="absolute left-0 top-0 h-1 w-full rounded-t-2xl"
+          style={{
+            background:
+              "linear-gradient(90deg, var(--brand), var(--brand-dark))",
+            opacity: 0.85,
+          }}
+        />
+
+        <div className="pt-2 text-[11px] font-medium text-slate-500 uppercase tracking-wide">
+          {m.k}
+        </div>
+
+        <div
+          className="mt-2 text-2xl font-extrabold tracking-tight tabular-nums"
+          style={{ color: valueColor }}
+        >
+          {display}
+        </div>
+
+        <span className="sr-only">{m.v}</span>
+
+        <motion.div
+          className="absolute inset-0 pointer-events-none"
+          initial={{ opacity: 0 }}
+          whileHover={{ opacity: 1 }}
+          transition={{ duration: 0.4 }}
+          style={{
+            background:
+              "radial-gradient(circle at 50% 60%, rgba(0,107,255,0.06), transparent 60%)",
+          }}
+        />
+      </motion.div>
+    );
+  }
 
   return (
     <section
@@ -135,77 +206,9 @@ export default function ImpactSection() {
         className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4"
         ref={containerRef}
       >
-        {metrics.map((m, i) => {
-          const display = useCountUp(m.v, active);
-
-          // color positive vs negative
-          // Treat multiplicative gains (e.g., "2.8×" or "2.8x") as positive
-          const isTimesGain = /[×xX]/.test(m.v);
-          const isPositive =
-            m.v.startsWith("+") || m.v.startsWith("↑") || isTimesGain;
-          const valueColor = isPositive ? "var(--brand)" : "rgb(220 38 38)";
-
-          return (
-            <motion.div
-              key={m.k}
-              custom={i}
-              initial={prefersReducedMotion ? undefined : "hidden"}
-              whileInView={prefersReducedMotion ? undefined : "show"}
-              viewport={{ once: true, amount: 0.3 }}
-              variants={itemVariant as any}
-              whileHover={
-                prefersReducedMotion
-                  ? undefined
-                  : {
-                      scale: 1.04,
-                      boxShadow: "0 12px 24px rgba(0,107,255,0.12)",
-                    }
-              }
-              className="relative overflow-hidden rounded-2xl border bg-[--surface] p-4 text-center shadow-sm transition-transform"
-              style={{
-                borderColor: "var(--border-subtle)",
-                background:
-                  "linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(250,252,255,1) 100%)",
-              }}
-              role="region"
-              aria-label={`${m.k}: ${m.v}`}
-            >
-              <span
-                aria-hidden
-                className="absolute left-0 top-0 h-1 w-full rounded-t-2xl"
-                style={{
-                  background:
-                    "linear-gradient(90deg, var(--brand), var(--brand-dark))",
-                  opacity: 0.85,
-                }}
-              />
-
-              <div className="pt-2 text-[11px] font-medium text-slate-500 uppercase tracking-wide">
-                {m.k}
-              </div>
-
-              <div
-                className="mt-2 text-2xl font-extrabold tracking-tight tabular-nums"
-                style={{ color: valueColor }}
-              >
-                {display}
-              </div>
-
-              <span className="sr-only">{m.v}</span>
-
-              <motion.div
-                className="absolute inset-0 pointer-events-none"
-                initial={{ opacity: 0 }}
-                whileHover={{ opacity: 1 }}
-                transition={{ duration: 0.4 }}
-                style={{
-                  background:
-                    "radial-gradient(circle at 50% 60%, rgba(0,107,255,0.06), transparent 60%)",
-                }}
-              />
-            </motion.div>
-          );
-        })}
+        {metrics.map((m, i) => (
+          <MetricCard key={m.k} m={m} i={i} />
+        ))}
       </div>
     </section>
   );
