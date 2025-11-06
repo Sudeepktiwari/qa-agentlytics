@@ -76,7 +76,7 @@ export default function WhyOnboardingSection() {
                 <span
                   className="mt-1 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-white"
                   style={{
-                    background: "linear-gradient(180deg,var(--brand), #0047D3)",
+                    background: "linear-gradient(180deg, #FF6B6B, #D30000)",
                   }}
                   aria-hidden
                 >

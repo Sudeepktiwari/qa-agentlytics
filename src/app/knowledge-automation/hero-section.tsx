@@ -1,5 +1,5 @@
 import React from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import type { Variants } from "framer-motion";
 
 // KnowledgeHeroSection.tsx (refined layout + text/options restored to original)
@@ -25,16 +25,18 @@ function CTA({
 }
 
 export default function KnowledgeHeroSection() {
+  const reduce = useReducedMotion();
 
-  const bezierEase: [number, number, number, number] = [0.22, 1, 0.36, 1];
-  const easeInOut: [number, number, number, number] = [0.42, 0, 0.58, 1];
+  // Use tuple-typed cubic-bezier easings to satisfy Framer Motion types
+  const easeOutBezier = [0.22, 1, 0.36, 1] as const;
+  const easeInOutBezier = [0.42, 0, 0.58, 1] as const;
 
   const appear: Variants = {
     hidden: { opacity: 0, y: 8 },
     show: (i: number = 0) => ({
       opacity: 1,
       y: 0,
-      transition: { delay: i * 0.06, duration: 0.42, ease: bezierEase },
+      transition: { delay: i * 0.06, duration: 0.42, ease: easeOutBezier },
     }),
   };
 
@@ -181,7 +183,7 @@ export default function KnowledgeHeroSection() {
                           repeat: Infinity,
                           duration: 0.9,
                           delay: d * 0.12,
-                          ease: easeInOut,
+                          ease: easeInOutBezier,
                         }}
                       />
                     ))}
