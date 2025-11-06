@@ -93,7 +93,7 @@ export default function ProactiveAIPage() {
   // Mobile sticky nav shadow and floating state (match Agentforce behavior)
   useEffect(() => {
     const handleScroll = () => {
-      if (typeof window !== "undefined") setScrolled(window.scrollY > 8);
+      if (typeof window !== "undefined") setScrolled(window.scrollY > 1);
     };
     if (typeof window !== "undefined") {
       window.addEventListener("scroll", handleScroll);
@@ -538,41 +538,47 @@ export default function ProactiveAIPage() {
         </div>
       </header>
 
-      {/* NAVBAR (desktop only) */}
-      <header className="sticky top-0 z-30 border-b border-slate-200 md:bg-white backdrop-blur hidden md:block">
+      {/* DESKTOP page-specific menu — match Knowledge Base crossfade */}
+      <header
+        className={`${scrolled ? "top-0" : "top-16"} fixed left-0 right-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top,opacity,transform] duration-300 ease-out hidden md:block ${floating ? "opacity-0 -translate-y-1 pointer-events-none" : "opacity-100 translate-y-0"}`}
+      >
         <div className="mx-auto flex max-w-7xl items-center px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3 md:pr-6">
             <div className="h-8 w-8 rounded-xl bg-[--brand-blue]" />
-            <span className="text-lg font-semibold tracking-tight">
-              Agentlytics
-            </span>
-            <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
-              Proactive AI Agent
-            </span>
+            <span className="text-lg font-semibold tracking-tight">Agentlytics</span>
+            <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">Proactive AI Agent</span>
           </div>
           <nav className="hidden gap-6 text-sm font-medium text-slate-700 md:flex">
-            <a href="#how" className="hover:text-slate-900">
-              How it works
-            </a>
-            <a href="#benefits" className="hover:text-slate-900">
-              Benefits
-            </a>
-            <a href="#proof" className="hover:text-slate-900">
-              Social Proof
-            </a>
-            <a href="#compare" className="hover:text-slate-900">
-              Compare
-            </a>
-            <a href="#demo" className="hover:text-slate-900">
-              Demo
-            </a>
-            <a href="#faq" className="hover:text-slate-900">
-              FAQ
-            </a>
+            <a href="#how" className="hover:text-slate-900">How it works</a>
+            <a href="#benefits" className="hover:text-slate-900">Benefits</a>
+            <a href="#proof" className="hover:text-slate-900">Social Proof</a>
+            <a href="#compare" className="hover:text-slate-900">Compare</a>
+            <a href="#demo" className="hover:text-slate-900">Demo</a>
+            <a href="#faq" className="hover:text-slate-900">FAQ</a>
           </nav>
           <div className="flex items-center gap-3" />
         </div>
       </header>
+
+      {/* DESKTOP Floating bar — identical look/feel for smooth crossfade */}
+      <header
+        className={`fixed left-0 right-0 top-0 z-50 bg-white/80 backdrop-blur border-b border-slate-200 transition-opacity duration-300 ease-out hidden md:block ${floating ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        aria-hidden={!floating}
+      >
+        <div className="w-full h-auto min-h-16 px-3 py-2 flex items-center justify-center">
+          <nav className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-slate-600 text-sm">
+            <a href="#how" className="hover:text-slate-900">How it works</a>
+            <a href="#benefits" className="hover:text-slate-900">Benefits</a>
+            <a href="#proof" className="hover:text-slate-900">Social Proof</a>
+            <a href="#compare" className="hover:text-slate-900">Compare</a>
+            <a href="#demo" className="hover:text-slate-900">Demo</a>
+            <a href="#faq" className="hover:text-slate-900">FAQ</a>
+          </nav>
+        </div>
+      </header>
+
+      {/* Spacer to avoid content jump when header is fixed (desktop only) */}
+      <div className="hidden md:block h-16" aria-hidden />
 
 
       {/* HERO */}

@@ -1,28 +1,29 @@
 "use client";
 
 import React from "react";
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 
 const BRAND = "#006BFF";
 
 const problems = [
-  "Same flow for everyone, regardless of goals",
-  "No in-flow help → tickets spike, time-to-value increases",
-  "CSMs repeat the same instructions",
+  "Same KPIs for every role — no personalization or context",
+  "Insights hidden in complex charts and filters",
+  "Teams spend hours explaining reports manually",
 ];
 
 const staticList = [
-  "One-size-fits-all steps",
-  "No help mid-step",
-  "Tickets escalate later",
-];
-const aiList = [
-  "Path adapts to role and goal",
-  "Explains the ‘why’ at each field",
-  "Resolves questions in-flow",
+  "Generic dashboards for all users",
+  "No context for metrics",
+  "Manual data interpretation",
 ];
 
-export default function WhyOnboardingSection() {
+const aiList = [
+  "KPIs adapt by team and goal",
+  "Insights explained in plain language",
+  "Proactive insights and anomaly alerts",
+];
+
+export default function WhyAnalyticsSection() {
   const prefersReducedMotion = useReducedMotion();
 
   const sectionVars: React.CSSProperties = {
@@ -49,17 +50,18 @@ export default function WhyOnboardingSection() {
       id="why"
       className="mx-auto max-w-7xl px-4 py-16 sm:px-6 scroll-mt-24"
       style={sectionVars}
-      aria-label="Why traditional onboarding fails"
+      aria-label="Why customer analytics dashboards fail"
     >
       <div className="grid items-start gap-10 lg:grid-cols-2">
         {/* LEFT */}
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-slate-900">
-            Why traditional onboarding fails
+            Why customer analytics dashboards fail
           </h2>
           <p className="mt-3 max-w-xl text-slate-600">
-            Static steps cause confusion and drop-offs. Users need guidance,
-            context, and the ability to ask questions in the moment.
+            Dashboards often look impressive but rarely drive action. Without
+            contextual insights or tailored views, teams miss the “why” behind
+            trends — leading to slow, reactive decisions.
           </p>
 
           <ul className="mt-6 space-y-3 text-sm text-slate-700">
@@ -80,7 +82,6 @@ export default function WhyOnboardingSection() {
                   }}
                   aria-hidden
                 >
-                  {/* cross icon */}
                   <svg
                     width="12"
                     height="12"
@@ -102,10 +103,10 @@ export default function WhyOnboardingSection() {
             ))}
           </ul>
 
-          {/* small note */}
           <div className="mt-6 text-sm text-slate-500">
-            Tip: Personalized, contextual help reduces tickets and shortens
-            time-to-value — and your CS team actually enjoys onboarding again.
+            Tip: Personalized analytics and AI-driven storytelling help teams
+            understand insights faster — turning data into action instead of
+            static charts.
           </div>
         </div>
 
@@ -115,9 +116,10 @@ export default function WhyOnboardingSection() {
           style={{ background: "var(--surface)" }}
         >
           <div className="mb-4 flex items-center justify-between">
-            <div className="font-semibold text-slate-700">Static vs AI-Led</div>
+            <div className="font-semibold text-slate-700">
+              Static vs AI-Driven Analytics
+            </div>
 
-            {/* Visual toggle (static visual only) */}
             <div
               className="flex items-center gap-2 text-xs select-none"
               aria-hidden
@@ -160,23 +162,22 @@ export default function WhyOnboardingSection() {
                 </motion.div>
               ))}
 
-              {/* drop-off bar */}
+              {/* engagement bar */}
               <div className="mt-4">
                 <div className="mb-1 flex items-center justify-between text-[11px] text-slate-500">
-                  <span>Completion</span>
-                  <span>38%</span>
+                  <span>Engagement</span>
+                  <span>42%</span>
                 </div>
                 <div className="h-2 w-full rounded bg-slate-100 overflow-hidden">
                   <motion.div
                     className="h-2 rounded"
                     initial={{ width: 0 }}
-                    whileInView={{ width: "38%" }}
+                    whileInView={{ width: "42%" }}
                     viewport={{ once: true, amount: 0.6 }}
                     transition={{ duration: 0.8, ease: "easeOut" }}
                     style={{
                       background: "linear-gradient(90deg,#ff7b9b,#ff5a7a)",
                     }}
-                    aria-hidden
                   />
                 </div>
               </div>
@@ -211,14 +212,14 @@ export default function WhyOnboardingSection() {
               {/* improvement bar */}
               <div className="mt-4">
                 <div className="mb-1 flex items-center justify-between text-[11px] text-slate-500">
-                  <span>Completion</span>
-                  <span>81%</span>
+                  <span>Engagement</span>
+                  <span>89%</span>
                 </div>
                 <div className="h-2 w-full rounded bg-[--surface-alt] overflow-hidden">
                   <motion.div
                     className="relative h-2 rounded"
                     initial={{ width: 0 }}
-                    whileInView={{ width: "81%" }}
+                    whileInView={{ width: "89%" }}
                     viewport={{ once: true, amount: 0.6 }}
                     transition={{ duration: 0.9, ease: "easeOut" }}
                     style={{
@@ -244,7 +245,7 @@ export default function WhyOnboardingSection() {
             </div>
           </div>
 
-          {/* Animated arrows / flow indicators */}
+          {/* flow captions */}
           <div className="pointer-events-none mt-6 grid grid-cols-2 gap-4 text-[11px] text-slate-500">
             <div className="flex items-center gap-2">
               <motion.span
@@ -259,7 +260,7 @@ export default function WhyOnboardingSection() {
                 aria-hidden
                 className="text-slate-500"
               >
-                → Drop-off
+                → Confusion
               </motion.span>
             </div>
 
@@ -276,12 +277,12 @@ export default function WhyOnboardingSection() {
                 aria-hidden
                 className="text-slate-500"
               >
-                Guided progress →
+                Clarity & Action →
               </motion.span>
             </div>
           </div>
 
-          {/* subtle connector SVG to imply left→right transformation */}
+          {/* connector SVG */}
           <div className="absolute inset-0 -z-10 hidden lg:block" aria-hidden>
             <svg
               width="100%"

@@ -92,13 +92,8 @@ export default function KnowledgeBasePage() {
     const onScroll = () => {
       const y = window.scrollY || document.documentElement.scrollTop || 0;
       setScrolled(y > 8);
-      const hero = document.getElementById("hero");
-      if (hero) {
-        const rect = hero.getBoundingClientRect();
-        setFloating(rect.top < -60);
-      } else {
-        setFloating(y > 200);
-      }
+      // Show floating menu immediately after any scroll
+      setFloating(y > 1);
     };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -482,8 +477,10 @@ export default function KnowledgeBasePage() {
         </div>
       </header>
 
-      {/* NAV */}
-      <header className="sticky top-0 z-30 bg-white/80 backdrop-blur hidden md:block">
+      {/* NAV — desktop page-specific menu with smooth crossfade to floating pill */}
+      <header
+        className={`${scrolled ? "top-0" : "top-16"} fixed left-0 right-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top,opacity,transform] duration-300 ease-out hidden md:block ${floating ? "opacity-0 -translate-y-1 pointer-events-none" : "opacity-100 translate-y-0"}`}
+      >
         <div className="mx-auto flex max-w-7xl items-center px-4 py-3 md:px-6">
           <div className="flex items-center gap-3 md:pr-22">
             <div className="h-8 w-8 rounded-xl bg-[--brand-primary]" />
@@ -596,8 +593,27 @@ export default function KnowledgeBasePage() {
         </div>
       </header>
 
+      {/* Floating bar — identical look/feel for smooth crossfade (desktop) */}
+      <header
+        className={`fixed left-0 right-0 top-0 z-50 bg-white/80 backdrop-blur border-b border-slate-200 transition-opacity duration-300 ease-out hidden md:block ${floating ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        aria-hidden={!floating}
+      >
+        <div className="w-full h-16 flex items-center justify-center">
+          <nav className="flex items-center gap-6 text-slate-700 text-sm font-medium">
+            <a href="#why" className="hover:text-slate-900">Why</a>
+            <a href="#how" className="hover:text-slate-900">How it works</a>
+            <a href="#features" className="hover:text-slate-900">Features</a>
+            <a href="#compare" className="hover:text-slate-900">Compare</a>
+            <a href="#faq" className="hover:text-slate-900">FAQ</a>
+          </nav>
+        </div>
+      </header>
+      {/* Spacer to prevent content from hiding under fixed header when stuck (desktop) */}
+      <div className={`hidden md:block ${scrolled ? "h-16" : "h-0"}`} />
+
       {/* HERO */}
       <section
+        id="hero"
         className="relative isolate overflow-hidden bg-[--surface]"
         style={{
           backgroundImage:

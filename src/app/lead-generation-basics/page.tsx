@@ -163,14 +163,8 @@ export default function LeadGenerationPage() {
   useEffect(() => {
     const onScroll = () => {
       const y = window.scrollY || document.documentElement.scrollTop || 0;
-      setScrolled(y > 8);
-      const hero = document.getElementById("hero");
-      if (hero) {
-        const rect = hero.getBoundingClientRect();
-        setFloating(rect.top < -60);
-      } else {
-        setFloating(y > 200);
-      }
+      setScrolled(y > 1);
+      setFloating(y > 1);
     };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -316,145 +310,46 @@ export default function LeadGenerationPage() {
         </div>
       </header>
 
-      {/* NAVBAR */}
-      <header className="sticky top-0 z-30 bg-white/80 backdrop-blur hidden md:block">
+      {/* DESKTOP page-specific menu — match Knowledge Base crossfade */}
+      <header
+        className={`${scrolled ? "top-0" : "top-16"} fixed left-0 right-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top,opacity,transform] duration-300 ease-out hidden md:block ${floating ? "opacity-0 -translate-y-1 pointer-events-none" : "opacity-100 translate-y-0"}`}
+      >
         <div className="mx-auto flex max-w-7xl items-center px-4 py-3 sm:px-6">
           <div className="flex items-center gap-2 md:pr-20">
             <div className="h-8 w-8 rounded-xl bg-[--brand-primary]" />
-            <span className="text-lg font-semibold tracking-tight">
-              Agentlytics
-            </span>
-            <span className="ml-2 rounded-full bg-[--surface] px-2 py-0.5 text-xs font-medium text-slate-600">
-              Lead Generation
-            </span>
+            <span className="text-lg font-semibold tracking-tight">Agentlytics</span>
+            <span className="ml-2 rounded-full bg-[--surface] px-2 py-0.5 text-xs font-medium text-slate-600">Lead Generation</span>
           </div>
           <nav className="hidden items-center gap-6 text-sm font-medium text-slate-700 md:flex">
-            <a href="#why" className="hover:text-slate-900">
-              Why
-            </a>
-            <a href="#how" className="hover:text-slate-900">
-              How it works
-            </a>
-            <a href="#features" className="hover:text-slate-900">
-              Features
-            </a>
-            <a href="#logos" className="hover:text-slate-900">
-              Trusted by
-            </a>
-            <a href="#cta" className="hover:text-slate-900">
-              Pricing
-            </a>
-          </nav>
-          <div className="flex items-center gap-3">
-            {/* Mobile menu toggle — match ai-chatbots */}
-            <button
-              type="button"
-              aria-controls="mobile-menu"
-              aria-expanded={menuOpen ? "true" : "false"}
-              aria-label="Toggle menu"
-              className="md:hidden inline-flex items-center justify-center rounded-md p-2 text-slate-700 hover:bg-slate-100"
-              onClick={() => setMenuOpen((o) => !o)}
-            >
-              <svg
-                className="h-6 w-6"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                {menuOpen ? (
-                  // X icon
-                  <g>
-                    <path d="M18 6L6 18" />
-                    <path d="M6 6l12 12" />
-                  </g>
-                ) : (
-                  // Hamburger icon
-                  <g>
-                    <path d="M3 6h18" />
-                    <path d="M3 12h18" />
-                    <path d="M3 18h18" />
-                  </g>
-                )}
-              </svg>
-            </button>
-          </div>
-        </div>
-        {/* Mobile menu panel — match ai-chatbots animation and CSS */}
-        <div
-          id="mobile-menu"
-          aria-hidden={!menuOpen}
-          className={`md:hidden absolute right-0 top-full z-50 w-[60vw] bg-white rounded-b-2xl shadow-lg origin-top-right transform transition-all duration-300 ease-out ${
-            menuOpen
-              ? "opacity-100 translate-y-0 scale-100 pointer-events-auto"
-              : "opacity-0 -translate-y-2 scale-95 pointer-events-none"
-          }`}
-        >
-          <nav className="mx-auto px-4 py-3 sm:px-6">
-            <div className="flex flex-col gap-2 text-sm font-medium text-slate-700">
-              <a
-                href="#why"
-                className="py-2 hover:text-slate-900"
-                onClick={handleMobileNavClick}
-              >
-                Why
-              </a>
-              <a
-                href="#how"
-                className="py-2 hover:text-slate-900"
-                onClick={handleMobileNavClick}
-              >
-                How it works
-              </a>
-              <a
-                href="#features"
-                className="py-2 hover:text-slate-900"
-                onClick={handleMobileNavClick}
-              >
-                Features
-              </a>
-              <a
-                href="#logos"
-                className="py-2 hover:text-slate-900"
-                onClick={handleMobileNavClick}
-              >
-                Trusted by
-              </a>
-              <a
-                href="#cta"
-                className="py-2 hover:text-slate-900"
-                onClick={handleMobileNavClick}
-              >
-                Pricing
-              </a>
-              {/* Buttons in dropdown */}
-              <a
-                href="#cta"
-                className="mt-3 inline-flex w-full items-center justify-center rounded-2xl px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:shadow-lg"
-                style={{ backgroundColor: brand.primary }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.backgroundColor = brand.primaryHover)
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.backgroundColor = brand.primary)
-                }
-                onClick={handleMobileNavClick}
-              >
-                Start Free — Capture More Leads Instantly
-              </a>
-              <a
-                href="#cta"
-                className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-2 text-center text-sm font-medium text-slate-700 hover:bg-slate-50"
-                onClick={handleMobileNavClick}
-              >
-                Watch demo
-              </a>
-            </div>
+            <a href="#why" className="hover:text-slate-900">Why</a>
+            <a href="#how" className="hover:text-slate-900">How it works</a>
+            <a href="#features" className="hover:text-slate-900">Features</a>
+            <a href="#logos" className="hover:text-slate-900">Trusted by</a>
+            <a href="#cta" className="hover:text-slate-900">Pricing</a>
           </nav>
         </div>
       </header>
+
+      {/* DESKTOP Floating bar — identical look/feel for smooth crossfade */}
+      <header
+        className={`fixed left-0 right-0 top-0 z-50 bg-white/80 backdrop-blur border-b border-slate-200 transition-opacity duration-300 ease-out hidden md:block ${floating ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        aria-hidden={!floating}
+      >
+        <div className="w-full h-14 flex items-center justify-center">
+          <nav className="flex items-center gap-3 text-slate-600 text-sm">
+            <a href="#why" className="hover:text-slate-900">Why</a>
+            <a href="#how" className="hover:text-slate-900">How it works</a>
+            <a href="#features" className="hover:text-slate-900">Features</a>
+            <a href="#logos" className="hover:text-slate-900">Trusted by</a>
+            <a href="#cta" className="hover:text-slate-900">Pricing</a>
+          </nav>
+        </div>
+      </header>
+
+      {/* Spacer to avoid content jump when header is fixed (desktop only) */}
+      <div className="hidden md:block h-16" aria-hidden />
+
+      {/* NAVBAR */}
 
       {/* Backdrop overlay — match ai-chatbots (no tint, click to close) */}
       {menuOpen && (
