@@ -31,6 +31,23 @@ export default function GlobalHeader() {
     // On route change, close mobile menus and ensure desktop dropdowns are hidden
     closeAllMenus();
   }, [pathname]);
+
+  // Close mobile menu when clicking/touching outside
+  useEffect(() => {
+    const handlePointerDown = (e: Event) => {
+      const target = e.target as Node | null;
+      const mobileMenu = mobileMenuRef.current;
+      if (!mobileMenu) return;
+      if (!mobileMenu.open) return;
+      if (target && mobileMenu.contains(target)) return;
+      mobileMenu.open = false;
+    };
+    // Use capture so we catch early, and work for both mouse/touch/pointer
+    document.addEventListener("pointerdown", handlePointerDown, true);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown, true);
+    };
+  }, []);
   return (
     <header
       data-global-header

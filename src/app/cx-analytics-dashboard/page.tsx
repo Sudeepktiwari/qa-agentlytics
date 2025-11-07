@@ -517,13 +517,16 @@ export default function CxAnalyticsDashboardPage() {
         id="cta"
         className="mx-4 md:mt-12 mt-4 md:mx-auto mb-12 max-w-7xl rounded-3xl bg-gradient-to-br from-white to-[--brand-primary]/5 px-4 py-16 text-center sm:px-6 scroll-mt-24"
       >
-        <h2 className="text-3xl font-bold">Make Knowledge Work for You</h2>
+        <h2 className="text-3xl font-bold">
+          See What Your Conversations Reveal
+        </h2>
         <p className="mx-auto mt-2 max-w-2xl text-slate-600">
-          Automate categorization, discovery, and improvement with AI.
+          Unlock patterns, coaching insights, and sentiment trends hidden in
+          your chat history.
         </p>
-        <div className="mt-6 flex justify-center gap-3">
+        <div className="mt-6 flex flex-col md:flex-row justify-center gap-3">
           <CTAButton href="#!" testId="cta-start">
-            Start Free Trial
+            Start Free Trial — Reveal Insights in Minutes
           </CTAButton>
           <CTAButton href="#!" variant="secondary" testId="cta-request">
             Request Demo

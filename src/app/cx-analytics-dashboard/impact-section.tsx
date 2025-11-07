@@ -5,17 +5,17 @@ import { motion } from "framer-motion";
 // - Negative metrics now show in red, positive in blue
 
 const METRICS = [
-  { k: "Repeat queries", v: "−38%" },
-  { k: "Agent discovery speed", v: "+60%" },
-  { k: "Duplicate content", v: "−43%" },
-  { k: "Self-serve deflection", v: "+25%" },
+  { k: "Response quality", v: "+38%" },
+  { k: "CSAT correlation", v: "91%" },
+  { k: "Coaching time saved", v: "−52%" },
+  { k: "Churn precision", v: "88%" },
 ];
 
 export default function ImpactSectionPolished() {
   return (
     <section id="impact" className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
       <h2 className="text-3xl font-bold tracking-tight text-slate-900">
-        Real Impact — Answers that Find You
+        Real Impact — Measurable Improvements
       </h2>
 
       <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">

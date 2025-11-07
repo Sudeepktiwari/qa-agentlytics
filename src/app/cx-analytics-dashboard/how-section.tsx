@@ -7,39 +7,31 @@ import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 // - Uses accessible reduced-motion; rolling chips are seeded and safe
 
 const STEPS = [
-  {
-    n: "1",
-    t: "Ingest & Parse",
-    d: "Connect help center, docs, and transcripts.",
-  },
+  { n: "1", t: "Aggregate Data Sources", d: "Chat, email, CSAT, CRM." },
   {
     n: "2",
-    t: "Organize & Enrich",
-    d: "Auto‑categorize; map entities & synonyms.",
+    t: "Analyze & Classify",
+    d: "Sentiment, topic, and agent context.",
   },
-  {
-    n: "3",
-    t: "Surface Everywhere",
-    d: "Chat, portal, in‑product widget, API.",
-  },
+  { n: "3", t: "Visualize Trends", d: "Dynamic dashboards for every team." },
   {
     n: "4",
-    t: "Learn & Improve",
-    d: "Track failed searches; suggest new articles.",
+    t: "Recommend Actions",
+    d: "Coaching, content, or workflow fixes.",
   },
 ];
 
 const INGEST = [
-  { k: "Zendesk" },
-  { k: "Confluence" },
-  { k: "Notion" },
-  { k: "GDrive" },
+  { k: "Billing" },
+  { k: "Login" },
+  { k: "Refunds" },
+  { k: "Integrations" },
+  { k: "Shipping" },
 ];
 const CATEGORIES = [
-  { k: "SSO" },
-  { k: "Auth" },
-  { k: "Config" },
-  { k: "Billing" },
+  { k: "Clarify return window in macro" },
+  { k: "Add KB: SSO renewal steps" },
+  { k: "Nudge: follow‑up empathy phrase" },
 ];
 
 export default function HowSectionPolished() {
@@ -76,12 +68,12 @@ export default function HowSectionPolished() {
             How it works
           </h2>
           <p className="mt-3 max-w-2xl text-slate-600">
-            Ingest, organize, surface, and learn — all automatically.
+            Aggregate, analyze, visualize, and recommend — automatically.
           </p>
         </div>
         <div className="flex items-center gap-2">
           <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-            Signal‑ready
+            Multi‑channel
           </span>
           <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-800">
             Privacy‑aware
@@ -163,13 +155,13 @@ export default function HowSectionPolished() {
               </AnimatePresence>
             </div>
 
-            {/* Enrichment */}
+            {/* Coaching Suggestions */}
             <div className="mt-4 rounded-2xl bg-blue-50 p-4">
               <div className="text-[11px] font-semibold text-slate-500">
-                Enrichment
+                Coaching Suggestions
               </div>
               <div className="mt-1 text-sm text-slate-800">
-                Topics • Entities • Synonyms
+                Practical hints to improve responses
               </div>
 
               <motion.div
@@ -215,7 +207,7 @@ export default function HowSectionPolished() {
                   />
                 </div>
                 <div className="mt-2 text-right text-xs text-slate-500">
-                  Knowledge quality ↑
+                  91% accuracy
                 </div>
               </div>
 

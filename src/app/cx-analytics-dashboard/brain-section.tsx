@@ -7,22 +7,11 @@ import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 // - Subtle shadows/rings instead of heavy borders; responsive sizing
 
 const brainPhases = [
-  { k: "1", t: "Intent Detection", d: "Detects user intent across channels." },
-  {
-    k: "2",
-    t: "Auto‑tagging",
-    d: "Automatically tags content with high precision.",
-  },
-  {
-    k: "3",
-    t: "Synonyms Mapping",
-    d: "Normalizes wording so searches find the right articles.",
-  },
-  {
-    k: "4",
-    t: "Insights Loop",
-    d: "Surfaces gaps and prompt suggestions for new docs.",
-  },
+  { k: "1", t: "Sentiment Analysis", d: "Measures tone across conversations to flag dips early." },
+  { k: "2", t: "Resolution Tracking", d: "Monitors closure rates to highlight blockers and delays." },
+  { k: "3", t: "Intent Classification", d: "Groups customer intents for faster routing and answers." },
+  { k: "4", t: "CSAT Forecasting", d: "Predicts satisfaction trends to guide proactive fixes." },
+  { k: "5", t: "Risk Detection", d: "Identifies churn and escalation risk in real time." },
 ];
 
 export default function BrainSection() {
@@ -57,10 +46,10 @@ export default function BrainSection() {
       className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 scroll-mt-24"
     >
       <h2 className="text-center text-3xl font-bold tracking-tight text-slate-900">
-        Inside the Knowledge Brain
+        Inside the Analytics Engine
       </h2>
       <p className="mx-auto mt-2 max-w-2xl text-center text-slate-600">
-        Intent • Auto‑tagging • Synonyms • Insights
+        Sentiment • Resolution • Intent • CSAT • Risk
       </p>
 
       <div className="mt-14 grid items-center gap-14 lg:grid-cols-2">
@@ -132,8 +121,8 @@ export default function BrainSection() {
                 />
               </svg>
 
-              {/* 4 markers around the ring */}
-              {[0, 90, 180, 270].map((angle, i) => (
+              {/* markers around the ring */}
+              {[0, 72, 144, 216, 288].map((angle, i) => (
                 <div
                   key={i}
                   className="absolute left-1/2 top-1/2"

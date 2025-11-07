@@ -6,24 +6,23 @@ import React from "react";
 
 const TESTIMONIALS = [
   {
-    name: "Liam Chen",
-    role: "Knowledge Ops Lead, CloudSuite",
-    inc: "−50% repeats",
+    name: "Priya Shah",
+    role: "CX Director, CloudOps",
+    inc: "+31% CSAT",
     quote:
-      "We cut repeat queries in half — the AI finds the best doc and surfaces it in chat.",
+      "Our dashboards finally connect empathy and efficiency. We found patterns no spreadsheet ever showed.",
   },
   {
-    name: "Sofia Martins",
-    role: "Head of CX, FinTechCo",
-    inc: "+34% find rate",
-    quote:
-      "Tagging used to be a chore. Now the system flags gaps and keeps our content fresh.",
+    name: "Marco Silva",
+    role: "Head of Support, RetailTech",
+    inc: "−44% coaching time",
+    quote: "We coach with data now — not guesswork.",
   },
   {
-    name: "Diego Alvarez",
-    role: "Docs Manager, DevStack",
-    inc: "−41% dups",
-    quote: "Duplicate detection finally gave us a clean, trustworthy KB.",
+    name: "Jade Nguyen",
+    role: "Product Lead, FinServe",
+    inc: "+18% deflection",
+    quote: "Intent trends directly informed our roadmap and macros.",
   },
 ];
 
@@ -37,7 +36,7 @@ export default function TestimonialsSection() {
         What Teams Are Saying
       </h2>
       <p className="mx-auto mt-2 max-w-2xl text-center text-slate-600">
-        Support and Docs teams recover time while users get precise answers.
+        Coach with data, not guesswork.
       </p>
 
       <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -97,6 +96,45 @@ export default function TestimonialsSection() {
             </figure>
           );
         })}
+      </div>
+
+      {/* Trusted by marquee */}
+      <div className="mt-12">
+        <div className="text-center text-sm font-medium text-slate-600">Trusted by teams at</div>
+        <div
+          className="relative mx-auto mt-4 max-w-6xl overflow-hidden"
+          style={{
+            WebkitMaskImage:
+              "linear-gradient(to right, transparent, black 8%, black 92%, transparent)",
+            maskImage:
+              "linear-gradient(to right, transparent, black 8%, black 92%, transparent)",
+          }}
+        >
+          <div className="marquee flex animate-[marquee_16s_linear_infinite] gap-6 sm:gap-8 opacity-90">
+            {["CloudOps", "FinServe", "RetailTech", "DevSuite", "HealthScale", "PayFlow"].map(
+              (logo, i) => (
+                <div
+                  key={`logo-${i}`}
+                  className="flex h-10 w-28 sm:h-12 sm:w-36 items-center justify-center rounded-xl bg-white px-3 ring-1 ring-blue-50"
+                >
+                  <span className="text-xs sm:text-sm font-semibold text-slate-700">{logo}</span>
+                </div>
+              )
+            )}
+            {["CloudOps", "FinServe", "RetailTech", "DevSuite", "HealthScale", "PayFlow"].map(
+              (logo, i) => (
+                <div
+                  key={`dup-${i}`}
+                  className="flex h-10 w-28 sm:h-12 sm:w-36 items-center justify-center rounded-xl bg-white px-3 ring-1 ring-blue-50"
+                >
+                  <span className="text-xs sm:text-sm font-semibold text-slate-700">{logo}</span>
+                </div>
+              )
+            )}
+          </div>
+        </div>
+        <style>{`@keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) { .marquee { animation: none !important; } }`}</style>
       </div>
     </section>
   );
