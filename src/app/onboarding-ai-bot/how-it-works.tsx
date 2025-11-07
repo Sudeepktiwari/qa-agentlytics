@@ -87,7 +87,7 @@ function StepCard({
 }: StepCardProps) {
   return (
     <div
-      className={`relative rounded-2xl border border-gray-200 dark:border-white/10 bg-white/80 dark:bg-white/5 backdrop-blur p-5 anim-slide`}
+      className={`relative rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5 anim-slide`}
       style={{ animationDelay: `${index * 80}ms` }}
     >
       <div
@@ -101,7 +101,7 @@ function StepCard({
           Step {index + 1}
         </div>
         <h3 className="text-lg font-semibold">{title}</h3>
-        <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
+        <p className="mt-1 text-sm text-gray-300">
           {subtitle}
         </p>
         {Array.isArray(bullets) && bullets.length > 0 && (
@@ -154,7 +154,7 @@ function Connector({ flip = false }: { flip?: boolean }) {
 /* ------------------------------ Live Agent Card ----------------------------- */
 function LiveAgentCard() {
   return (
-    <div className="relative rounded-2xl border border-emerald-300/60 dark:border-emerald-400/30 bg-emerald-50/70 dark:bg-emerald-500/10 p-6 overflow-hidden">
+    <div className="relative rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-6 overflow-hidden">
       <div
         className="absolute -inset-1 bg-gradient-to-br from-emerald-200/20 to-teal-300/20 blur-2xl"
         aria-hidden
@@ -164,11 +164,11 @@ function LiveAgentCard() {
           <IcoBot />
         </div>
         <div>
-          <div className="text-sm uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
+          <div className="text-sm uppercase tracking-wider text-emerald-300">
             Your AI Onboarding Agent
           </div>
           <div className="text-xl font-bold">Live and guiding users now</div>
-          <div className="text-sm text-emerald-800/90 dark:text-emerald-200/90">
+          <div className="text-sm text-emerald-200/90">
             Answers questions, verifies steps, and drives activation —
             automatically.
           </div>
@@ -176,21 +176,21 @@ function LiveAgentCard() {
       </div>
       {/* Chat bubble shimmer */}
       <div className="relative mt-4 grid gap-2 max-w-md">
-        <div className="rounded-xl bg-white/80 dark:bg-white/10 border border-white/50 dark:border-white/10 p-3 anim-float">
+        <div className="rounded-xl bg-white/10 border border-white/10 p-3 anim-float">
           <div className="text-xs text-gray-500">Agent</div>
           <div className="text-sm">
             Need help connecting your webhook? I can test it for you.
           </div>
         </div>
         <div
-          className="rounded-xl bg-emerald-100/80 dark:bg-emerald-400/10 border border-emerald-200/60 dark:border-emerald-400/20 p-3 anim-float"
+          className="rounded-xl bg-emerald-400/10 border border-emerald-400/20 p-3 anim-float"
           style={{ animationDelay: "250ms" }}
         >
-          <div className="text-xs text-gray-600 dark:text-gray-300">User</div>
+          <div className="text-xs text-gray-300">User</div>
           <div className="text-sm">Yes, please run a test ping.</div>
         </div>
         <div
-          className="rounded-xl bg-white/80 dark:bg-white/10 border border-white/50 dark:border-white/10 p-3 anim-float"
+          className="rounded-xl bg-white/10 border border-white/10 p-3 anim-float"
           style={{ animationDelay: "500ms" }}
         >
           <div className="text-xs text-gray-500">Agent</div>
@@ -255,7 +255,7 @@ function DocsToDoneIllustration() {
         >
           From docs → done, in three easy steps
         </h2>
-        <p className="mt-3 text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+        <p className="mt-3 text-gray-300 max-w-2xl mx-auto">
           Upload once. Our system parses your onboarding docs, builds the flow,
           and your AI agent goes live.
         </p>
@@ -288,7 +288,7 @@ function DocsToDoneIllustration() {
         </a>
         <a
           href="#"
-          className="px-5 py-3 text-sm font-semibold rounded-xl border border-gray-200 hover:bg-gray-50 dark:border-white/10 dark:hover:bg-white/10"
+          className="px-5 py-3 text-sm font-semibold rounded-xl border border-white/10 hover:bg-white/10"
         >
           Try with a Sample Doc
         </a>
@@ -302,7 +302,7 @@ function DocsToDoneIllustration() {
 
 export default function HowItWorks() {
   return (
-    <div className="dark min-h-screen bg-[#0a0f25] text-gray-100">
+    <div className="min-h-screen bg-[#0a0f25] text-gray-100">
       <main className="py-10">
         <DocsToDoneIllustration />
       </main>
