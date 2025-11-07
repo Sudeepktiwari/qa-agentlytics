@@ -18,13 +18,15 @@ export default function GlobalHeader() {
       data-global-header
       className={`${headerPositionClasses} z-50 bg-white/80 backdrop-blur border-b border-slate-200`}
     >
-      <div className="max-w-7xl mx-auto h-16 px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto h-16 px-4 md:p-6 flex items-center justify-between">
         <Link
           href="/"
           // className="flex items-center gap-2 font-display font-extrabold tracking-tight text-[color:var(--brand-midnight)]"
         >
-          <span className="size-7 rounded-lg bg-[conic-gradient(from_220deg,#0069FF,#3BA3FF)] " />
-          <span className="font-bold hidden md:inline">Advancelytics</span>
+          {/* <span className="size-7 rounded-lg bg-[conic-gradient(from_220deg,#0069FF,#3BA3FF)] " /> */}
+          <span className="font-bold text-lg hidden md:inline">
+            Advancelytics
+          </span>
           <span className="font-bold md:hidden">Agentlytics</span>
         </Link>
 

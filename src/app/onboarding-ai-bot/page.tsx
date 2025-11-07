@@ -458,37 +458,73 @@ export default function OnboardingAIBotPage() {
 
       {/* DESKTOP page-specific menu — match Knowledge Base crossfade */}
       <header
-        className={`${scrolled ? "top-0" : "top-16"} fixed left-0 right-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top,opacity,transform] duration-300 ease-out hidden md:block ${floating ? "opacity-0 -translate-y-1 pointer-events-none" : "opacity-100 translate-y-0"}`}
+        className={`${
+          scrolled ? "top-0" : "top-16"
+        } fixed left-0 right-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top,opacity,transform] duration-300 ease-out hidden md:block ${
+          floating
+            ? "opacity-0 -translate-y-1 pointer-events-none"
+            : "opacity-100 translate-y-0"
+        }`}
       >
         <div className="mx-auto flex max-w-7xl items-center px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-2 md:pl-2 md:pr-12">
-            <span className="text-lg font-semibold tracking-tight">Agentlytics</span>
-            <span className="ml-2 rounded-full bg-[--surface] px-2 py-0.5 text-xs font-medium text-slate-600">Onboarding AI Bot</span>
+          <div className="flex items-center gap-2 md:pr-12">
+            <span className="text-lg font-semibold tracking-tight">
+              Agentlytics
+            </span>
+            <span className="ml-2 rounded-full bg-[--surface] px-2 py-0.5 text-xs font-medium text-slate-600">
+              Onboarding AI Bot
+            </span>
           </div>
           <nav className="hidden items-center gap-6 text-sm font-medium text-slate-700 md:flex">
-            <a href="#how-it-works" className="hover:text-slate-900">How it works</a>
-            <a href="#why" className="hover:text-slate-900">Why</a>
-            <a href="#brain" className="hover:text-slate-900">Inside the Brain</a>
-            <a href="#features" className="hover:text-slate-900">Features</a>
-            <a href="#security" className="hover:text-slate-900">Security</a>
-            <a href="#reviews" className="hover:text-slate-900">Reviews</a>
+            <a href="#how-it-works" className="hover:text-slate-900">
+              How it works
+            </a>
+            <a href="#why" className="hover:text-slate-900">
+              Why
+            </a>
+            <a href="#brain" className="hover:text-slate-900">
+              Inside the Brain
+            </a>
+            <a href="#features" className="hover:text-slate-900">
+              Features
+            </a>
+            <a href="#security" className="hover:text-slate-900">
+              Security
+            </a>
+            <a href="#reviews" className="hover:text-slate-900">
+              Reviews
+            </a>
           </nav>
         </div>
       </header>
 
       {/* DESKTOP Floating bar — identical look/feel for smooth crossfade */}
       <header
-        className={`fixed left-0 right-0 top-0 z-50 bg-white/80 backdrop-blur border-b border-slate-200 transition-opacity duration-300 ease-out hidden md:block ${floating ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        className={`fixed left-0 right-0 top-0 z-50 bg-white/80 backdrop-blur border-b border-slate-200 transition-opacity duration-300 ease-out hidden md:block ${
+          floating ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
         aria-hidden={!floating}
       >
         <div className="w-full h-auto min-h-16 px-3 py-2 flex items-center justify-center">
           <nav className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-slate-600 text-sm">
-            <a href="#how-it-works" className="hover:text-slate-900">How it works</a>
-            <a href="#why" className="hover:text-slate-900">Why</a>
-            <a href="#brain" className="hover:text-slate-900">Inside the Brain</a>
-            <a href="#features" className="hover:text-slate-900">Features</a>
-            <a href="#security" className="hover:text-slate-900">Security</a>
-            <a href="#reviews" className="hover:text-slate-900">Reviews</a>
+            <a href="#how-it-works" className="hover:text-slate-900">
+              How it works
+            </a>
+            <a href="#why" className="hover:text-slate-900">
+              Why
+            </a>
+            <a href="#brain" className="hover:text-slate-900">
+              Inside the Brain
+            </a>
+            <a href="#features" className="hover:text-slate-900">
+              Features
+            </a>
+            <a href="#security" className="hover:text-slate-900">
+              Security
+            </a>
+            <a href="#reviews" className="hover:text-slate-900">
+              Reviews
+            </a>
           </nav>
         </div>
       </header>

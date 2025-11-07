@@ -312,36 +312,67 @@ export default function LeadGenerationPage() {
 
       {/* DESKTOP page-specific menu — match Knowledge Base crossfade */}
       <header
-        className={`${scrolled ? "top-0" : "top-16"} fixed left-0 right-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top,opacity,transform] duration-300 ease-out hidden md:block ${floating ? "opacity-0 -translate-y-1 pointer-events-none" : "opacity-100 translate-y-0"}`}
+        className={`${
+          scrolled ? "top-0" : "top-16"
+        } fixed left-0 right-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top,opacity,transform] duration-300 ease-out hidden md:block ${
+          floating
+            ? "opacity-0 -translate-y-1 pointer-events-none"
+            : "opacity-100 translate-y-0"
+        }`}
       >
         <div className="mx-auto flex max-w-7xl items-center px-4 py-3 sm:px-6">
           <div className="flex items-center gap-2 md:pr-20">
-            <div className="h-8 w-8 rounded-xl bg-[--brand-primary]" />
-            <span className="text-lg font-semibold tracking-tight">Agentlytics</span>
-            <span className="ml-2 rounded-full bg-[--surface] px-2 py-0.5 text-xs font-medium text-slate-600">Lead Generation</span>
+            <span className="text-lg font-semibold tracking-tight">
+              Agentlytics
+            </span>
+            <span className="ml-2 rounded-full bg-[--surface] px-2 py-0.5 text-xs font-medium text-slate-600">
+              Lead Generation
+            </span>
           </div>
-          <nav className="hidden items-center gap-6 text-sm font-medium text-slate-700 md:flex">
-            <a href="#why" className="hover:text-slate-900">Why</a>
-            <a href="#how" className="hover:text-slate-900">How it works</a>
-            <a href="#features" className="hover:text-slate-900">Features</a>
-            <a href="#logos" className="hover:text-slate-900">Trusted by</a>
-            <a href="#cta" className="hover:text-slate-900">Pricing</a>
+          <nav className="hidden items-center gap-6 text-sm font-medium text-slate-700 md:flex ml-8">
+            <a href="#why" className="hover:text-slate-900">
+              Why
+            </a>
+            <a href="#how" className="hover:text-slate-900">
+              How it works
+            </a>
+            <a href="#features" className="hover:text-slate-900">
+              Features
+            </a>
+            <a href="#logos" className="hover:text-slate-900">
+              Trusted by
+            </a>
+            <a href="#cta" className="hover:text-slate-900">
+              Pricing
+            </a>
           </nav>
         </div>
       </header>
 
       {/* DESKTOP Floating bar — identical look/feel for smooth crossfade */}
       <header
-        className={`fixed left-0 right-0 top-0 z-50 bg-white/80 backdrop-blur border-b border-slate-200 transition-opacity duration-300 ease-out hidden md:block ${floating ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        className={`fixed left-0 right-0 top-0 z-50 bg-white/80 backdrop-blur border-b border-slate-200 transition-opacity duration-300 ease-out hidden md:block ${
+          floating ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
         aria-hidden={!floating}
       >
         <div className="w-full h-14 flex items-center justify-center">
           <nav className="flex items-center gap-3 text-slate-600 text-sm">
-            <a href="#why" className="hover:text-slate-900">Why</a>
-            <a href="#how" className="hover:text-slate-900">How it works</a>
-            <a href="#features" className="hover:text-slate-900">Features</a>
-            <a href="#logos" className="hover:text-slate-900">Trusted by</a>
-            <a href="#cta" className="hover:text-slate-900">Pricing</a>
+            <a href="#why" className="hover:text-slate-900">
+              Why
+            </a>
+            <a href="#how" className="hover:text-slate-900">
+              How it works
+            </a>
+            <a href="#features" className="hover:text-slate-900">
+              Features
+            </a>
+            <a href="#logos" className="hover:text-slate-900">
+              Trusted by
+            </a>
+            <a href="#cta" className="hover:text-slate-900">
+              Pricing
+            </a>
           </nav>
         </div>
       </header>

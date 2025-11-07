@@ -448,42 +448,76 @@ export default function KnowledgeBasePage() {
 
       {/* Mobile page-specific menu — match Agentforce style */}
       <header
-        className={`${scrolled ? "top-0" : "top-16"} fixed left-0 right-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top,opacity,transform] duration-300 ease-out md:hidden ${floating ? "opacity-0 -translate-y-1 pointer-events-none" : "opacity-100 translate-y-0"}`}
+        className={`${
+          scrolled ? "top-0" : "top-16"
+        } fixed left-0 right-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top,opacity,transform] duration-300 ease-out md:hidden ${
+          floating
+            ? "opacity-0 -translate-y-1 pointer-events-none"
+            : "opacity-100 translate-y-0"
+        }`}
       >
         <div className="w-full h-14 flex items-center justify-center">
           <nav className="flex items-center gap-3 text-slate-600 text-sm">
-            <a href="#why" className="hover:text-slate-900">Why</a>
-            <a href="#how" className="hover:text-slate-900">How it works</a>
-            <a href="#features" className="hover:text-slate-900">Features</a>
-            <a href="#compare" className="hover:text-slate-900">Compare</a>
-            <a href="#faq" className="hover:text-slate-900">FAQ</a>
+            <a href="#why" className="hover:text-slate-900">
+              Why
+            </a>
+            <a href="#how" className="hover:text-slate-900">
+              How it works
+            </a>
+            <a href="#features" className="hover:text-slate-900">
+              Features
+            </a>
+            <a href="#compare" className="hover:text-slate-900">
+              Compare
+            </a>
+            <a href="#faq" className="hover:text-slate-900">
+              FAQ
+            </a>
           </nav>
         </div>
       </header>
 
       {/* Floating bar — identical look/feel for smooth crossfade */}
       <header
-        className={`fixed left-0 right-0 top-0 z-50 bg-white/80 backdrop-blur border-b border-slate-200 transition-opacity duration-300 ease-out md:hidden ${floating ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        className={`fixed left-0 right-0 top-0 z-50 bg-white/80 backdrop-blur border-b border-slate-200 transition-opacity duration-300 ease-out md:hidden ${
+          floating ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
         aria-hidden={!floating}
       >
         <div className="w-full h-14 flex items-center justify-center">
           <nav className="flex items-center gap-3 text-slate-600 text-sm">
-            <a href="#why" className="hover:text-slate-900">Why</a>
-            <a href="#how" className="hover:text-slate-900">How it works</a>
-            <a href="#features" className="hover:text-slate-900">Features</a>
-            <a href="#compare" className="hover:text-slate-900">Compare</a>
-            <a href="#faq" className="hover:text-slate-900">FAQ</a>
+            <a href="#why" className="hover:text-slate-900">
+              Why
+            </a>
+            <a href="#how" className="hover:text-slate-900">
+              How it works
+            </a>
+            <a href="#features" className="hover:text-slate-900">
+              Features
+            </a>
+            <a href="#compare" className="hover:text-slate-900">
+              Compare
+            </a>
+            <a href="#faq" className="hover:text-slate-900">
+              FAQ
+            </a>
           </nav>
         </div>
       </header>
 
       {/* NAV — desktop page-specific menu with smooth crossfade to floating pill */}
       <header
-        className={`${scrolled ? "top-0" : "top-16"} fixed left-0 right-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top,opacity,transform] duration-300 ease-out hidden md:block ${floating ? "opacity-0 -translate-y-1 pointer-events-none" : "opacity-100 translate-y-0"}`}
+        className={`${
+          scrolled ? "top-0" : "top-16"
+        } fixed left-0 right-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top,opacity,transform] duration-300 ease-out hidden md:block ${
+          floating
+            ? "opacity-0 -translate-y-1 pointer-events-none"
+            : "opacity-100 translate-y-0"
+        }`}
       >
         <div className="mx-auto flex max-w-7xl items-center px-4 py-3 md:px-6">
           <div className="flex items-center gap-3 md:pr-22">
-            <div className="h-8 w-8 rounded-xl bg-[--brand-primary]" />
+            {/* <div className="h-8 w-8 rounded-xl bg-[--brand-primary]" /> */}
             <span className="text-lg font-semibold tracking-tight">
               Agentlytics
             </span>
@@ -492,7 +526,7 @@ export default function KnowledgeBasePage() {
             </span>
           </div>
 
-          <nav className="hidden gap-6 text-sm font-medium text-slate-700 md:flex">
+          <nav className="hidden gap-6 text-sm font-medium text-slate-700 md:flex ml-8 ">
             <a href="#why" className="hover:text-slate-900">
               Why
             </a>
@@ -595,16 +629,28 @@ export default function KnowledgeBasePage() {
 
       {/* Floating bar — identical look/feel for smooth crossfade (desktop) */}
       <header
-        className={`fixed left-0 right-0 top-0 z-50 bg-white/80 backdrop-blur border-b border-slate-200 transition-opacity duration-300 ease-out hidden md:block ${floating ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        className={`fixed left-0 right-0 top-0 z-50 bg-white/80 backdrop-blur border-b border-slate-200 transition-opacity duration-300 ease-out hidden md:block ${
+          floating ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
         aria-hidden={!floating}
       >
         <div className="w-full h-16 flex items-center justify-center">
           <nav className="flex items-center gap-6 text-slate-700 text-sm font-medium">
-            <a href="#why" className="hover:text-slate-900">Why</a>
-            <a href="#how" className="hover:text-slate-900">How it works</a>
-            <a href="#features" className="hover:text-slate-900">Features</a>
-            <a href="#compare" className="hover:text-slate-900">Compare</a>
-            <a href="#faq" className="hover:text-slate-900">FAQ</a>
+            <a href="#why" className="hover:text-slate-900">
+              Why
+            </a>
+            <a href="#how" className="hover:text-slate-900">
+              How it works
+            </a>
+            <a href="#features" className="hover:text-slate-900">
+              Features
+            </a>
+            <a href="#compare" className="hover:text-slate-900">
+              Compare
+            </a>
+            <a href="#faq" className="hover:text-slate-900">
+              FAQ
+            </a>
           </nav>
         </div>
       </header>
