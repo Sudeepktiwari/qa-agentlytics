@@ -146,7 +146,7 @@ export default function WhySection() {
                     className="flex items-center justify-between gap-2 text-xs"
                   >
                     <motion.span
-                      className="rounded-full bg-white/80 px-3 py-2 font-medium text-blue-700 shadow-sm"
+                      className="rounded-full bg-white/80 px-3 py-2 text-xs md:text-md font-medium text-blue-700 shadow-sm"
                       initial={{ x: 0, opacity: 0 }}
                       animate={{ x: 8, opacity: 1 }}
                       transition={{

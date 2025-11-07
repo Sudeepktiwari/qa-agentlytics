@@ -282,6 +282,9 @@ export default function SalesConversionAIPage() {
         </div>
       </header>
 
+      {/* Spacer to avoid content being overlapped by fixed header (mobile only) */}
+      <div className="md:hidden h-16" aria-hidden />
+
       {/* Mobile floating bar — crossfades in when scrolled */}
       <header
         className={`fixed left-0 right-0 top-0 z-50 bg-white/80 backdrop-blur border-b border-slate-200 transition-opacity duration-300 ease-out md:hidden ${floating ? "opacity-100" : "opacity-0 pointer-events-none"}`}

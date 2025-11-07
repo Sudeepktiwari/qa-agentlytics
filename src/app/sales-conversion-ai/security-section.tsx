@@ -115,12 +115,12 @@ export default function SecurityTrustCard() {
             </div>
 
             {/* CTA / Meta row */}
-            <div className="mt-5 flex items-center justify-between gap-4">
+            <div className="mt-5 md:flex items-center justify-between gap-4">
               <div className="text-xs text-slate-500">
                 Enterprise-grade controls & flexible residency
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 mt-4 md:mt-0">
                 <span className="text-xs font-medium text-slate-700">
                   Request SOC 2 report
                 </span>

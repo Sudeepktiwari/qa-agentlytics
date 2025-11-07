@@ -96,11 +96,11 @@ export default function TestimonialsSection() {
       </div>
 
       {/* logo badges */}
-      <div className="mt-6 flex flex-wrap items-center gap-3 opacity-90">
+      <div className="mt-6 flex justify-center flex-wrap  items-center gap-3 opacity-90">
         {SAMPLE_LOGOS.map((l) => (
           <span
             key={l}
-            className="rounded-lg bg-white/80 px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm"
+            className="rounded-lg bg-white/80 px-3 py-1.5 text-md font-medium text-slate-700 shadow-sm"
           >
             {l}
           </span>

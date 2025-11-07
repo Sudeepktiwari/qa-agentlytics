@@ -107,7 +107,7 @@ export default function HeroSupportSection({
             {/* secondary CTA: outline -> filled on hover */}
             <a
               href="#demo"
-              className="rounded-2xl px-6 py-3 text-sm font-semibold border border-[--brand-primary] text-[--brand-primary] transition-colors duration-150 hover:bg-[--brand-primary] hover:text-white focus:outline-none focus:ring-4 focus:ring-[--brand-primary]/20"
+              className="rounded-2xl px-6 py-3 text-sm font-semibold border border-[--brand-primary] text-[--brand-primary] transition-colors duration-150 hover:bg-[#006BFF] hover:text-white focus:outline-none focus:ring-4 focus:ring-[--brand-primary]/20"
               aria-label="Watch Demo"
             >
               Watch Demo

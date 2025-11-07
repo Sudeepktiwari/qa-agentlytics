@@ -236,11 +236,11 @@ const ProactiveHelpIllustration: React.FC = () => {
             <span
               className={`${badgeColor(
                 active.sentiment
-              )} px-3 py-1 rounded-full text-sm font-semibold`}
+              )} px-3 py-1 rounded-full text-xs md:text-sm font-semibold`}
             >
               Sentiment: {active.sentiment}
             </span>
-            <span className="bg-slate-100 text-slate-800 px-3 py-1 rounded-lg text-sm font-medium">
+            <span className="bg-slate-100 text-slate-800 px-3 py-1 rounded-lg text-xs md:text-sm font-medium">
               Action: {active.action}
             </span>
           </div>
