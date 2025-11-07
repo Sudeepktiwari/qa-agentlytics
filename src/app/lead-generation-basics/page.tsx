@@ -272,12 +272,6 @@ export default function LeadGenerationPage() {
             <a href="#features" className="hover:text-slate-900">
               Features
             </a>
-            <a href="#logos" className="hover:text-slate-900">
-              Trusted by
-            </a>
-            <a href="#cta" className="hover:text-slate-900">
-              Pricing
-            </a>
           </nav>
         </div>
       </header>
@@ -299,12 +293,6 @@ export default function LeadGenerationPage() {
             </a>
             <a href="#features" className="hover:text-slate-900">
               Features
-            </a>
-            <a href="#logos" className="hover:text-slate-900">
-              Trusted by
-            </a>
-            <a href="#cta" className="hover:text-slate-900">
-              Pricing
             </a>
           </nav>
         </div>
@@ -329,7 +317,7 @@ export default function LeadGenerationPage() {
               Lead Generation
             </span>
           </div>
-          <nav className="hidden items-center gap-6 text-sm font-medium text-slate-700 md:flex ml-8">
+          <nav className="hidden items-center gap-6 text-sm font-medium text-slate-700 md:flex ml-28">
             <a href="#why" className="hover:text-slate-900">
               Why
             </a>
@@ -338,12 +326,6 @@ export default function LeadGenerationPage() {
             </a>
             <a href="#features" className="hover:text-slate-900">
               Features
-            </a>
-            <a href="#logos" className="hover:text-slate-900">
-              Trusted by
-            </a>
-            <a href="#cta" className="hover:text-slate-900">
-              Pricing
             </a>
           </nav>
         </div>
@@ -366,12 +348,6 @@ export default function LeadGenerationPage() {
             </a>
             <a href="#features" className="hover:text-slate-900">
               Features
-            </a>
-            <a href="#logos" className="hover:text-slate-900">
-              Trusted by
-            </a>
-            <a href="#cta" className="hover:text-slate-900">
-              Pricing
             </a>
           </nav>
         </div>
