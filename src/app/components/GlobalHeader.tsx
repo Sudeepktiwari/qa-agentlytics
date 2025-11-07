@@ -1,5 +1,5 @@
 "use client";
-import React, { useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -13,6 +13,24 @@ export default function GlobalHeader() {
   const platformsRef = useRef<HTMLDetailsElement | null>(null);
   // Root mobile menu ref for click-outside close
   const mobileMenuRef = useRef<HTMLDetailsElement | null>(null);
+
+  // Desktop dropdown controlled hover state
+  const [hoveredDropdown, setHoveredDropdown] = useState<null | "products" | "solutions" | "platforms">(null);
+
+  // Helper: close all <details> menus
+  const closeAllMenus = () => {
+    if (mobileMenuRef.current) mobileMenuRef.current.open = false;
+    if (productsRef.current) productsRef.current.open = false;
+    if (solutionsRef.current) solutionsRef.current.open = false;
+    if (platformsRef.current) platformsRef.current.open = false;
+    setHoveredDropdown(null);
+  };
+
+  // On route change, force-close any open menus and briefly suppress hover dropdowns
+  useEffect(() => {
+    // On route change, close mobile menus and ensure desktop dropdowns are hidden
+    closeAllMenus();
+  }, [pathname]);
   return (
     <header
       data-global-header
@@ -31,9 +49,22 @@ export default function GlobalHeader() {
         </Link>
 
         {/* Desktop nav */}
-        <nav className="hidden md:flex items-center gap-6 text-slate-600">
+        <nav
+          className="hidden md:flex items-center gap-6 text-slate-600"
+          onClick={(e) => {
+            const target = e.target as HTMLElement;
+            if (target.closest("a")) {
+              // Close any open desktop dropdown when a link is clicked
+              setHoveredDropdown(null);
+            }
+          }}
+        >
           {/* Products dropdown */}
-          <div className="relative group">
+          <div
+            className="relative"
+            onMouseEnter={() => setHoveredDropdown("products")}
+            onMouseLeave={() => setHoveredDropdown(null)}
+          >
             <button className="inline-flex items-center gap-1 hover:text-slate-900">
               <span>Products</span>
               <svg
@@ -52,7 +83,13 @@ export default function GlobalHeader() {
                 />
               </svg>
             </button>
-            <div className="absolute left-0 top-full pt-3 z-[100] rounded-2xl border border-slate-200 bg-white shadow-[0_12px_34px_rgba(2,6,23,.10)] p-6 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto">
+            <div
+              className={`absolute left-0 top-full pt-3 z-[100] rounded-2xl border border-slate-200 bg-white shadow-[0_12px_34px_rgba(2,6,23,.10)] p-6 ${hoveredDropdown === "products" ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
+              onClick={(e) => {
+                const target = e.target as HTMLElement;
+                if (target.closest("a")) setHoveredDropdown(null);
+              }}
+            >
               <div className="w-[300px]">
                 <ul className="space-y-3">
                   <li>
@@ -133,7 +170,11 @@ export default function GlobalHeader() {
           </div>
 
           {/* Solutions dropdown */}
-          <div className="relative group">
+          <div
+            className="relative"
+            onMouseEnter={() => setHoveredDropdown("solutions")}
+            onMouseLeave={() => setHoveredDropdown(null)}
+          >
             <button className="inline-flex items-center gap-1 hover:text-slate-900">
               <span>Solutions</span>
               <svg
@@ -152,7 +193,13 @@ export default function GlobalHeader() {
                 />
               </svg>
             </button>
-            <div className="absolute left-0 top-full pt-3 z-[100] rounded-2xl border border-slate-200 bg-white shadow-[0_12px_34px_rgba(2,6,23,.10)] p-6 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto">
+            <div
+              className={`absolute left-0 top-full pt-3 z-[100] rounded-2xl border border-slate-200 bg-white shadow-[0_12px_34px_rgba(2,6,23,.10)] p-6 ${hoveredDropdown === "solutions" ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
+              onClick={(e) => {
+                const target = e.target as HTMLElement;
+                if (target.closest("a")) setHoveredDropdown(null);
+              }}
+            >
               <div className="w-[300px]">
                 <ul className="space-y-3">
                   <li>
@@ -252,7 +299,11 @@ export default function GlobalHeader() {
           </div>
 
           {/* Platforms & Partners dropdown */}
-          <div className="relative group">
+          <div
+            className="relative"
+            onMouseEnter={() => setHoveredDropdown("platforms")}
+            onMouseLeave={() => setHoveredDropdown(null)}
+          >
             <button className="inline-flex items-center gap-1 hover:text-slate-900">
               <span>Platforms & Partners</span>
               <svg
@@ -271,7 +322,13 @@ export default function GlobalHeader() {
                 />
               </svg>
             </button>
-            <div className="absolute left-0 top-full pt-3 z-[100] rounded-2xl border border-slate-200 bg-white shadow-[0_12px_34px_rgba(2,6,23,.10)] p-6 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto">
+            <div
+              className={`absolute left-0 top-full pt-3 z-[100] rounded-2xl border border-slate-200 bg-white shadow-[0_12px_34px_rgba(2,6,23,.10)] p-6 ${hoveredDropdown === "platforms" ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
+              onClick={(e) => {
+                const target = e.target as HTMLElement;
+                if (target.closest("a")) setHoveredDropdown(null);
+              }}
+            >
               <div className="w-[300px]">
                 <ul className="space-y-3">
                   {[
@@ -436,7 +493,16 @@ export default function GlobalHeader() {
             ☰
           </summary>
           <div className="absolute right-0 top-full z-50 w-[80vw] ml-auto bg-white border-t border-slate-200 shadow-sm">
-            <nav className="px-4 py-2 grid gap-4 text-slate-800">
+            <nav
+              className="px-4 py-2 grid gap-4 text-slate-800"
+              onClick={(e) => {
+                const target = e.target as HTMLElement;
+                if (target.closest("a")) {
+                  // Close on link click for mobile menu
+                  closeAllMenus();
+                }
+              }}
+            >
               {/* Mobile Products dropdown */}
               <details
                 ref={productsRef}

@@ -41,10 +41,10 @@ export default function HeroSection() {
             .
           </p>
 
-          <div className="mt-8 flex justify-center gap-3 lg:justify-start">
+          <div className="mt-8 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-center lg:justify-start">
             <motion.a
               href="#cta"
-              className="relative overflow-hidden rounded-2xl px-6 py-3 text-sm font-semibold text-white shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+              className="relative overflow-hidden rounded-2xl px-6 py-3 text-sm font-semibold text-white shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 w-full sm:w-auto text-center"
               style={{
                 background: "linear-gradient(180deg, var(--brand), #0047D3)",
                 boxShadow: "0 10px 25px rgba(0,107,255,0.2)",
@@ -80,7 +80,7 @@ export default function HeroSection() {
 
             <a
               href="#demo"
-              className="rounded-2xl border px-6 py-3 text-sm font-semibold shadow-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+              className="rounded-2xl border px-6 py-3 text-sm font-semibold shadow-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 w-full sm:w-auto text-center"
               style={{
                 borderColor: brandBorder,
                 background: brandLighter,

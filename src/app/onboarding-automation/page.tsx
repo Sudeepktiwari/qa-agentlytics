@@ -392,7 +392,7 @@ export default function OnboardingAutomationPage() {
         <p className="mx-auto mt-2 max-w-2xl text-slate-600">
           Guide users like a human — automatically.
         </p>
-        <div className="mt-6 flex justify-center gap-3">
+        <div className="mt-6 flex flex-col md:flex-row justify-center gap-3">
           <motion.a
             href="#"
             className="relative overflow-hidden rounded-2xl bg-[#004FCC] px-6 py-3 text-sm font-semibold text-white shadow-md hover:brightness-90 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-[#003BB5] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
