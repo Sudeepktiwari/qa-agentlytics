@@ -127,9 +127,10 @@ export default function ImpactSection() {
     return (
       <motion.div
         custom={i}
-        initial={prefersReducedMotion ? undefined : "hidden"}
-        whileInView={prefersReducedMotion ? undefined : "show"}
-        viewport={{ once: true, amount: 0.3 }}
+        // Fix disappearing/flicker by tying visibility to IntersectionObserver state
+        // We animate once when the section first becomes visible and keep it shown afterward
+        initial={prefersReducedMotion || active ? undefined : "hidden"}
+        animate={prefersReducedMotion ? undefined : active ? "show" : undefined}
         variants={itemVariant}
         whileHover={
           prefersReducedMotion

@@ -69,7 +69,7 @@ export default function HeroSupportSection({
 
   return (
     <section
-      id="why"
+      id="hero"
       ref={rootRef}
       className="relative isolate rounded-b-[2rem] bg-[--surface] px-4 sm:px-6"
       style={cssVars as React.CSSProperties}
