@@ -42,7 +42,7 @@ export default function HeroSection() {
 
   return (
     <section
-      className="relative isolate rounded-b-[2rem] bg-gradient-to-b from-white to-blue-50 px-4 py-20 sm:px-6"
+      className="relative isolate rounded-b-[2rem] bg-gradient-to-b from-white to-blue-50 px-4 py-20 sm:px-6 overflow-hidden"
       data-testid="hero"
     >
       <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-2">
