@@ -59,7 +59,7 @@ export default function WhySection() {
           whileInView={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.7, ease: "easeOut" }}
           viewport={{ once: true }}
-          className="relative rounded-3xl border border-gray-200 bg-white/80 p-6 shadow-xl backdrop-blur-sm"
+          className="relative overflow-hidden rounded-3xl border border-gray-200 bg-white/80 p-6 shadow-xl backdrop-blur-sm"
         >
           <div className="mb-4 text-sm font-semibold text-slate-700 tracking-wide uppercase">
             Intent Detection in Action

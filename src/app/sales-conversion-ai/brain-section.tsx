@@ -131,7 +131,7 @@ export default function ProactiveBrainSection() {
         {/* Right: spinning ring + center card */}
         <div className="relative flex items-center justify-center">
           <div
-            className="relative h-72 w-72 sm:h-80 sm:w-80"
+            className="relative h-72 w-72 sm:h-80 sm:w-80 overflow-hidden"
             aria-label="Proactive brain visual"
             onMouseEnter={() => setPaused(true)}
             onMouseLeave={() => setPaused(false)}

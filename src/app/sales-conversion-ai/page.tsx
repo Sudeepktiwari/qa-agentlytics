@@ -211,7 +211,7 @@ export default function SalesConversionAIPage() {
 
   return (
     <div
-      className="relative min-h-screen w-full text-slate-900 scroll-smooth"
+      className="relative min-h-screen w-full text-slate-900 scroll-smooth overflow-x-hidden"
       style={
         {
           "--brand-primary": brand.primary,
