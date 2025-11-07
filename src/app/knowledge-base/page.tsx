@@ -467,9 +467,7 @@ export default function KnowledgeBasePage() {
             <a href="#features" className="hover:text-slate-900">
               Features
             </a>
-            <a href="#compare" className="hover:text-slate-900">
-              Compare
-            </a>
+
             <a href="#faq" className="hover:text-slate-900">
               FAQ
             </a>
@@ -495,9 +493,7 @@ export default function KnowledgeBasePage() {
             <a href="#features" className="hover:text-slate-900">
               Features
             </a>
-            <a href="#compare" className="hover:text-slate-900">
-              Compare
-            </a>
+
             <a href="#faq" className="hover:text-slate-900">
               FAQ
             </a>
@@ -526,7 +522,7 @@ export default function KnowledgeBasePage() {
             </span>
           </div>
 
-          <nav className="hidden gap-6 text-sm font-medium text-slate-700 md:flex ml-8 ">
+          <nav className="hidden gap-6 text-sm font-medium text-slate-700 md:flex ml-18 ">
             <a href="#why" className="hover:text-slate-900">
               Why
             </a>
@@ -536,9 +532,7 @@ export default function KnowledgeBasePage() {
             <a href="#features" className="hover:text-slate-900">
               Features
             </a>
-            <a href="#compare" className="hover:text-slate-900">
-              Compare
-            </a>
+
             <a href="#faq" className="hover:text-slate-900">
               FAQ
             </a>
@@ -592,13 +586,7 @@ export default function KnowledgeBasePage() {
               >
                 Features
               </a>
-              <a
-                href="#compare"
-                className="py-2 hover:text-slate-900"
-                onClick={handleMobileNavClick}
-              >
-                Compare
-              </a>
+
               <a
                 href="#faq"
                 className="py-2 hover:text-slate-900"
@@ -645,9 +633,7 @@ export default function KnowledgeBasePage() {
             <a href="#features" className="hover:text-slate-900">
               Features
             </a>
-            <a href="#compare" className="hover:text-slate-900">
-              Compare
-            </a>
+
             <a href="#faq" className="hover:text-slate-900">
               FAQ
             </a>
@@ -1638,144 +1624,6 @@ export default function KnowledgeBasePage() {
       </section>
 
       {/* CTA */}
-
-      <section
-        id="cta"
-        className="relative mx-4 max-w-7xl overflow-hidden rounded-3xl bg-gradient-to-br from-white to-[--brand-primary]/6 px-3 sm:px-6 py-12 sm:py-16 shadow-md sm:mx-auto scroll-mt-24"
-        aria-labelledby="cta-heading"
-      >
-        {/* soft decorative glow (hidden on mobile to avoid overflow) */}
-        <div className="pointer-events-none absolute -top-12 right-0 h-72 w-72 rounded-full bg-[--brand-primary]/20 blur-3xl md:-right-1/12 hidden sm:block" />
-
-        <div className="grid items-start gap-6 md:gap-10 md:grid-cols-5">
-          {/* left: headline + CTA */}
-          <div className="md:col-span-3 h-full flex flex-col justify-center">
-            <h2
-              id="cta-heading"
-              className="text-2xl sm:text-3xl font-bold text-slate-900"
-            >
-              Transform content into conversions
-            </h2>
-
-            <p className="mt-3 max-w-xl text-slate-600">
-              Publish once, answer everywhere. Your knowledge base fuels
-              proactive support and onboarding.
-            </p>
-
-            <div className="mt-6 flex flex-wrap items-center gap-3">
-              <a
-                href="#"
-                className="rounded-2xl px-4 py-2 sm:px-5 sm:py-3 text-sm font-semibold text-white shadow-md transition-transform duration-150 hover:-translate-y-0.5"
-                style={{ backgroundColor: brand.primary }}
-              >
-                Book a demo
-              </a>
-
-              <a
-                href="#"
-                className="rounded-2xl px-4 py-2 sm:px-5 sm:py-3 text-sm font-semibold transition-colors duration-150"
-                style={{
-                  color: brand.primary,
-                  borderRadius: "12px",
-                  border: `1px solid rgba(0,0,0,0)`,
-                }}
-              >
-                <span className="inline-block px-1 py-0.5 rounded-md hover:bg-[--brand-primary] hover:text-white transition-colors">
-                  See pricing
-                </span>
-              </a>
-
-              <span className="w-full md:w-auto md:ml-auto text-left md:text-right text-xs text-slate-500">
-                14-day free trial · No credit card required
-              </span>
-            </div>
-          </div>
-
-          {/* right: quick setup card (borderless, modern) */}
-          <div className="md:col-span-2">
-            <div
-              className={`relative overflow-hidden rounded-2xl bg-white p-4 sm:p-6 shadow-lg transform transition-all duration-400`}
-              role="region"
-              aria-label="Quick setup steps"
-            >
-              {/* subtle gradient blob */}
-              <div
-                className="absolute right-4 top-0 h-24 w-24 sm:h-28 sm:w-28 -translate-y-1/2 rounded-full bg-[--brand-primary]/10 blur-2xl hidden sm:block"
-                aria-hidden
-              />
-
-              <h3 className="text-sm font-semibold text-slate-700">
-                Quick Setup
-              </h3>
-
-              <ol className="mt-4 space-y-3 sm:space-y-4">
-                {[
-                  {
-                    n: 1,
-                    t: "Import content",
-                    s: "Upload or sync from docs, sites and tools.",
-                  },
-                  {
-                    n: 2,
-                    t: "Tag & organize",
-                    s: "Create categories, synonyms and owners.",
-                  },
-                  {
-                    n: 3,
-                    t: "Enable in channels",
-                    s: "Expose in chat, help center and inside your app.",
-                  },
-                  {
-                    n: 4,
-                    t: "Measure & improve",
-                    s: "Use analytics to fill gaps and keep content fresh.",
-                  },
-                ].map((step) => (
-                  <li key={step.n} className="flex items-start gap-3">
-                    <div
-                      className="grid h-6 w-6 sm:h-7 sm:w-7 shrink-0 place-items-center rounded-full text-xs font-semibold"
-                      style={{
-                        background: `linear-gradient(180deg, ${brand.primary}20, ${brand.primary}12)`,
-                        color: brand.primary,
-                      }}
-                      aria-hidden
-                    >
-                      {step.n}
-                    </div>
-
-                    <div>
-                      <div className="text-[13px] sm:text-sm font-semibold text-slate-800">
-                        {step.t}
-                      </div>
-                      <div className="text-xs text-slate-500">{step.s}</div>
-                    </div>
-                  </li>
-                ))}
-              </ol>
-
-              <div className="mt-5 rounded-xl bg-[--surface] p-3 text-[11px] text-slate-700">
-                <div className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-                  Install snippet
-                </div>
-                <pre className="overflow-x-auto whitespace-pre-wrap break-words text-[11px] bg-transparent p-0 m-0">
-                  &lt;script src="https://cdn.agentlytics.dev/knowledge-base.js"
-                  async&gt;&lt;/script&gt;
-                </pre>
-              </div>
-
-              <div className="mt-4 flex items-center gap-2 rounded-xl bg-white p-2 sm:p-3 text-[11px]">
-                <span
-                  className="inline-block h-2.5 w-2.5 rounded-full bg-emerald-500"
-                  aria-hidden
-                />
-                <span className="text-slate-600">
-                  Safe defaults, easy rollback, no vendor lock-in.
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* FOOTER */}
       <footer className=" bg-white">
