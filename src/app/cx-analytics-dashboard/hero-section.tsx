@@ -73,13 +73,13 @@ export default function DashboardHeroSection(): React.ReactElement {
         </div>
 
         {/* Right: Dashboard Illustration */}
-        <div className="relative mx-auto h-[420px] w-full max-w-[560px]">
+        <div className="relative mx-auto w-full max-w-[560px] lg:h-[420px]">
           <div
             className="absolute inset-0 rounded-[32px] bg-gradient-to-br from-blue-50/60 to-blue-100/25 blur-3xl opacity-80"
             aria-hidden
           />
 
-          <div className="relative h-full w-full rounded-[28px] bg-white p-5 shadow-[0_14px_40px_rgba(14,30,60,0.06)] ring-1 ring-blue-50">
+          <div className="relative w-full rounded-[28px] bg-white p-5 shadow-[0_14px_40px_rgba(14,30,60,0.06)] ring-1 ring-blue-50">
             {/* Stat chips */}
             <div className="flex flex-wrap gap-2 text-xs">
               {heroStats.map((s, i) => (
