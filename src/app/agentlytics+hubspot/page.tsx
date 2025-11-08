@@ -414,8 +414,8 @@ export default function AgentlyticsVsHubSpotPage() {
       <header
         className={`${scrolled ? "top-0" : "top-16"} fixed left-0 right-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top,opacity,transform] duration-300 ease-out ${floating ? "opacity-0 -translate-y-1 pointer-events-none" : "opacity-100 translate-y-0"}`}
       >
-        <div className="w-full h-16 flex items-center justify-center relative md:right-[84px]">
-          <nav className="flex items-center gap-4 md:gap-6 text-slate-600 text-sm">
+        <div className="w-full relative md:right-[84px] py-2">
+          <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 md:gap-x-6 text-slate-600 text-sm px-4">
             <a href="#overview" className="hover:text-slate-900">Overview</a>
             <a href="#compare" className="hover:text-slate-900">Quick Compare</a>
             <a href="#why" className="hover:text-slate-900">Why</a>
@@ -431,8 +431,8 @@ export default function AgentlyticsVsHubSpotPage() {
         className={`fixed left-0 right-0 top-0 z-50 bg-white/80 backdrop-blur border-b border-slate-200 transition-opacity duration-300 ease-out ${floating ? "opacity-100" : "opacity-0 pointer-events-none"}`}
         aria-hidden={!floating}
       >
-        <div className="w-full h-16 flex items-center justify-center relative md:right-[84px]">
-          <nav className="flex items-center gap-4 md:gap-6 text-slate-600 text-sm">
+        <div className="w-full relative md:right-[84px] py-2">
+          <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 md:gap-x-6 text-slate-600 text-sm px-4">
             <a href="#overview" className="hover:text-slate-900">Overview</a>
             <a href="#compare" className="hover:text-slate-900">Quick Compare</a>
             <a href="#why" className="hover:text-slate-900">Why</a>
@@ -443,7 +443,7 @@ export default function AgentlyticsVsHubSpotPage() {
         </div>
       </header>
       {/* Spacer to prevent content from hiding under fixed header when stuck */}
-      <div className={scrolled ? "h-16" : "h-0"} />
+      <div className={scrolled ? "h-[72px] md:h-16" : "h-0"} />
       {/* Hero */}
       <section className="bg-gradient-to-r from-[#FFF7F5] to-[#F5F8FA] py-20 md:py-24">
         <Container className="text-center">
