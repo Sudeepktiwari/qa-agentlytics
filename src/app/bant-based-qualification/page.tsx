@@ -629,14 +629,6 @@ function InitialAvatar({ name }: { name: string }) {
   );
 }
 
-function PlaceholderLogo() {
-  return (
-    <span className="h-5 w-16 rounded bg-slate-200/80 flex items-center justify-center text-[10px] text-slate-600">
-      Logo
-    </span>
-  );
-}
-
 function TestimonialsSection() {
   const items: Array<{
     quote: string;
@@ -714,9 +706,8 @@ function TestimonialsSection() {
             transition={{ duration: 0.4, delay: i * 0.05 }}
             className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
           >
-            <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3">
               <Quote className="size-4 text-indigo-600 mt-1" />
-              <PlaceholderLogo />
             </div>
             <blockquote className="mt-3 text-slate-700 text-sm">
               {t.quote}
@@ -736,8 +727,7 @@ function TestimonialsSection() {
 
       {/* small helper */}
       <p className="mt-6 text-xs text-slate-500">
-        Logos use react-icons and avatars use initials for reliability. Replace
-        with brand assets anytime.
+        Avatars use initials for reliability. Logos are omitted in cards.
       </p>
     </section>
   );
