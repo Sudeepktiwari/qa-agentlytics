@@ -13,6 +13,15 @@ import {
   ShieldCheck,
   History,
 } from "lucide-react";
+import {
+  SiGoogle,
+  SiSlack,
+  SiStripe,
+  SiHubspot,
+  SiSalesforce,
+} from "react-icons/si";
+import { TfiMicrosoftAlt } from "react-icons/tfi";
+import { FaAws } from "react-icons/fa";
 
 /**
  * Agentlytics – Multi‑Persona AI (UPDATED FULL PAGE)
@@ -160,10 +169,28 @@ export default function MultiPersonaAIPage() {
           Trusted by teams who sell and support online
         </h3>
         <div className="flex flex-wrap justify-center items-center gap-8 opacity-80">
-          {/* Replace with your logos */}
-          <img src="/logos/logo1.svg" alt="Logo 1" className="h-8" />
-          <img src="/logos/logo2.svg" alt="Logo 2" className="h-8" />
-          <img src="/logos/logo3.svg" alt="Logo 3" className="h-8" />
+          {/* React Icons – trusted by logos */}
+          <span title="Google" aria-label="Google" className="inline-flex items-center justify-center">
+            <SiGoogle className="size-8 text-slate-500" />
+          </span>
+          <span title="Microsoft" aria-label="Microsoft" className="inline-flex items-center justify-center">
+            <TfiMicrosoftAlt className="size-8 text-slate-500" />
+          </span>
+          <span title="AWS" aria-label="AWS" className="inline-flex items-center justify-center">
+            <FaAws className="size-8 text-slate-500" />
+          </span>
+          <span title="Slack" aria-label="Slack" className="inline-flex items-center justify-center">
+            <SiSlack className="size-8 text-slate-500" />
+          </span>
+          <span title="Stripe" aria-label="Stripe" className="inline-flex items-center justify-center">
+            <SiStripe className="size-8 text-slate-500" />
+          </span>
+          <span title="HubSpot" aria-label="HubSpot" className="inline-flex items-center justify-center">
+            <SiHubspot className="size-8 text-slate-500" />
+          </span>
+          <span title="Salesforce" aria-label="Salesforce" className="inline-flex items-center justify-center">
+            <SiSalesforce className="size-8 text-slate-500" />
+          </span>
         </div>
         <p className="mt-6 text-center text-slate-600 text-sm italic max-w-2xl mx-auto">
           “It switched from Sales to Onboarding mid‑chat without losing the

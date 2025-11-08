@@ -15,6 +15,15 @@ import {
   Quote,
   Star,
 } from "lucide-react";
+import {
+  SiGoogle,
+  SiSlack,
+  SiStripe,
+  SiHubspot,
+  SiSalesforce,
+} from "react-icons/si";
+import { TfiMicrosoftAlt } from "react-icons/tfi";
+import { FaAws } from "react-icons/fa";
 
 /**
  * Agentlytics – BANT-Based Qualification (FULL PAGE, UPDATED + FULL TESTIMONIALS)
@@ -580,62 +589,95 @@ function TrustLogos() {
         Trusted by GTM teams at
       </p>
       <div className="flex flex-wrap gap-6 items-center">
-        <img src="/logos/logo1.svg" alt="Logo 1" className="h-6 opacity-70" />
-        <img src="/logos/logo2.svg" alt="Logo 2" className="h-6 opacity-70" />
-        <img src="/logos/logo3.svg" alt="Logo 3" className="h-6 opacity-70" />
+        <span title="Google" aria-label="Google" className="inline-flex items-center justify-center">
+          <SiGoogle className="size-6 text-slate-500" />
+        </span>
+        <span title="Microsoft" aria-label="Microsoft" className="inline-flex items-center justify-center">
+          <TfiMicrosoftAlt className="size-6 text-slate-500" />
+        </span>
+        <span title="AWS" aria-label="AWS" className="inline-flex items-center justify-center">
+          <FaAws className="size-6 text-slate-500" />
+        </span>
+        <span title="Slack" aria-label="Slack" className="inline-flex items-center justify-center">
+          <SiSlack className="size-6 text-slate-500" />
+        </span>
+        <span title="Stripe" aria-label="Stripe" className="inline-flex items-center justify-center">
+          <SiStripe className="size-6 text-slate-500" />
+        </span>
+        <span title="HubSpot" aria-label="HubSpot" className="inline-flex items-center justify-center">
+          <SiHubspot className="size-6 text-slate-500" />
+        </span>
+        <span title="Salesforce" aria-label="Salesforce" className="inline-flex items-center justify-center">
+          <SiSalesforce className="size-6 text-slate-500" />
+        </span>
       </div>
     </div>
   );
 }
 
+function InitialAvatar({ name }: { name: string }) {
+  const initials = name
+    .split(" ")
+    .map((n) => n[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+  return (
+    <div className="size-8 rounded-full bg-slate-100 text-slate-700 grid place-items-center font-semibold text-xs">
+      {initials}
+    </div>
+  );
+}
+
+function PlaceholderLogo() {
+  return (
+    <span className="h-5 w-16 rounded bg-slate-200/80 flex items-center justify-center text-[10px] text-slate-600">
+      Logo
+    </span>
+  );
+}
+
 function TestimonialsSection() {
-  const items = [
+  const items: Array<{
+    quote: string;
+    name: string;
+    role: string;
+    rating: number;
+  }> = [
     {
       quote: "Qualified more in 2 weeks than the last quarter.",
       name: "Aisha Khan",
       role: "GTM Lead, SaaS",
-      logo: "/logos/logo1.svg",
-      avatar: "/avatars/aisha.jpg",
       rating: 5,
     },
     {
       quote: "Reps only talk to buyers now — huge time saver.",
       name: "Marcus Lee",
       role: "Head of Sales, DTC",
-      logo: "/logos/logo2.svg",
-      avatar: "/avatars/marcus.jpg",
       rating: 5,
     },
     {
       quote: "Zero scripts to maintain. Set it and it learns.",
       name: "Priya Shah",
       role: "RevOps, Fintech",
-      logo: "/logos/logo3.svg",
-      avatar: "/avatars/priya.jpg",
       rating: 5,
     },
     {
       quote: "The BANT summaries drop straight into our CRM. Chef’s kiss.",
       name: "Diego Alvarez",
       role: "Sales Ops, B2B",
-      logo: "/logos/logo2.svg",
-      avatar: "/avatars/diego.jpg",
       rating: 5,
     },
     {
       quote: "Intent scores are scarily accurate. Fewer demos, higher close.",
       name: "Hannah Wright",
       role: "Founder, PLG SaaS",
-      logo: "/logos/logo1.svg",
-      avatar: "/avatars/hannah.jpg",
       rating: 5,
     },
     {
       quote: "Went live in a day and it just… works.",
       name: "Kenji Tanaka",
       role: "Growth PM, eCom",
-      logo: "/logos/logo3.svg",
-      avatar: "/avatars/kenji.jpg",
       rating: 5,
     },
   ];
@@ -674,17 +716,13 @@ function TestimonialsSection() {
           >
             <div className="flex items-start justify-between gap-3">
               <Quote className="size-4 text-indigo-600 mt-1" />
-              <img src={t.logo} alt="logo" className="h-5 opacity-70" />
+              <PlaceholderLogo />
             </div>
             <blockquote className="mt-3 text-slate-700 text-sm">
               {t.quote}
             </blockquote>
             <figcaption className="mt-4 flex items-center gap-3">
-              <img
-                src={t.avatar}
-                alt={t.name}
-                className="size-8 rounded-full object-cover bg-slate-100"
-              />
+              <InitialAvatar name={t.name} />
               <div>
                 <div className="text-sm font-medium text-slate-900">
                   {t.name}
@@ -698,8 +736,8 @@ function TestimonialsSection() {
 
       {/* small helper */}
       <p className="mt-6 text-xs text-slate-500">
-        Replace placeholder avatars in <code>/avatars/</code> and logos in{" "}
-        <code>/logos/</code>.
+        Logos use react-icons and avatars use initials for reliability. Replace
+        with brand assets anytime.
       </p>
     </section>
   );

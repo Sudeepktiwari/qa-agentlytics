@@ -546,7 +546,7 @@ export default function GlobalHeader() {
                       </span>
                       <div>
                         <div className="font-semibold text-slate-900">
-                          Multipersona
+                          Multi-persona AI
                         </div>
                         <div className="text-sm text-slate-600">
                           Build assistants for multiple roles.
@@ -897,7 +897,7 @@ export default function GlobalHeader() {
                     href="/multipersona"
                     className="block px-2 py-1 rounded hover:bg-slate-50"
                   >
-                    Multipersona
+                    Multi-persona AI
                   </Link>
                   <Link
                     href="/bant-based-qualification"
