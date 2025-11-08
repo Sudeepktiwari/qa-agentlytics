@@ -1,6 +1,15 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { Helmet } from "react-helmet";
+import {
+  SiHubspot,
+  SiSalesforce,
+  SiSlack,
+  SiStripe,
+  SiGoogle,
+} from "react-icons/si";
+import { TfiMicrosoftAlt } from "react-icons/tfi";
+import { FaAws } from "react-icons/fa";
 
 // Calendly-ish brand tokens (kept for programmatic uses)
 const brand = {
@@ -850,16 +859,28 @@ export default function ProactiveAIPage() {
           <p className="text-center text-xs font-semibold tracking-wide text-slate-500">
             TRUSTED BY TEAMS AT
           </p>
-          <div className="mt-4 grid grid-cols-2 place-items-center gap-6 text-slate-400 sm:grid-cols-5">
-            {[
-              "CloudScale",
-              "FinServe",
-              "DevSuite",
-              "RetailOps",
-              "HealthStack",
-            ].map((n) => (
-              <LogoBadge key={n} name={n} />
-            ))}
+          <div className="mt-4 grid grid-cols-3 sm:grid-cols-7 place-items-center gap-6 text-slate-500">
+            <span title="Google" aria-label="Google" className="inline-flex items-center justify-center">
+              <SiGoogle className="size-6" />
+            </span>
+            <span title="Microsoft" aria-label="Microsoft" className="inline-flex items-center justify-center">
+              <TfiMicrosoftAlt className="size-6" />
+            </span>
+            <span title="AWS" aria-label="AWS" className="inline-flex items-center justify-center">
+              <FaAws className="size-6" />
+            </span>
+            <span title="Slack" aria-label="Slack" className="inline-flex items-center justify-center">
+              <SiSlack className="size-6" />
+            </span>
+            <span title="Stripe" aria-label="Stripe" className="inline-flex items-center justify-center">
+              <SiStripe className="size-6" />
+            </span>
+            <span title="HubSpot" aria-label="HubSpot" className="inline-flex items-center justify-center">
+              <SiHubspot className="size-6" />
+            </span>
+            <span title="Salesforce" aria-label="Salesforce" className="inline-flex items-center justify-center">
+              <SiSalesforce className="size-6" />
+            </span>
           </div>
 
           <div className="mt-8 overflow-hidden">
