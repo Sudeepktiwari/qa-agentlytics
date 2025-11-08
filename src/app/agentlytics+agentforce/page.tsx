@@ -188,7 +188,13 @@ export default function AgentlyticsVsAgentforce() {
     <div className="relative min-h-screen w-full overflow-x-hidden bg-gradient-to-b from-blue-50 to-blue-100 text-slate-800 scroll-smooth">
       {/* Page-specific menu matching homepage header — smooth crossfade to floating pill */}
       <header
-        className={`${scrolled ? "top-0" : "top-16"} fixed left-0 right-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top,opacity,transform] duration-300 ease-out ${floating ? "opacity-0 -translate-y-1 pointer-events-none" : "opacity-100 translate-y-0"}`}
+        className={`${
+          scrolled ? "top-0" : "top-16"
+        } fixed left-0 right-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top,opacity,transform] duration-300 ease-out ${
+          floating
+            ? "opacity-0 -translate-y-1 pointer-events-none"
+            : "opacity-100 translate-y-0"
+        }`}
       >
         <div className="w-full h-16 flex items-center justify-center relative md:right-[84px]">
           <nav className="flex items-center gap-4 md:gap-6 text-slate-600 text-sm">
@@ -213,16 +219,28 @@ export default function AgentlyticsVsAgentforce() {
 
       {/* Floating bar — exact same look/feel as sticky header */}
       <header
-        className={`fixed left-0 right-0 top-0 z-50 bg-white/80 backdrop-blur border-b border-slate-200 transition-opacity duration-300 ease-out ${floating ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+        className={`fixed left-0 right-0 top-0 z-50 bg-white/80 backdrop-blur border-b border-slate-200 transition-opacity duration-300 ease-out ${
+          floating ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
         aria-hidden={!floating}
       >
         <div className="w-full h-16 flex items-center justify-center relative md:right-[84px]">
           <nav className="flex items-center gap-4 md:gap-6 text-slate-600 text-sm">
-            <a href="#integration" className="hover:text-slate-900">Overview</a>
-            <a href="#compare" className="hover:text-slate-900">Quick Compare</a>
-            <a href="#why" className="hover:text-slate-900">Why</a>
-            <a href="#outcomes" className="hover:text-slate-900">Outcomes</a>
-            <a href="#faqs" className="hover:text-slate-900">FAQs</a>
+            <a href="#integration" className="hover:text-slate-900">
+              Overview
+            </a>
+            <a href="#compare" className="hover:text-slate-900">
+              Quick Compare
+            </a>
+            <a href="#why" className="hover:text-slate-900">
+              Why
+            </a>
+            <a href="#outcomes" className="hover:text-slate-900">
+              Outcomes
+            </a>
+            <a href="#faqs" className="hover:text-slate-900">
+              FAQs
+            </a>
           </nav>
         </div>
       </header>
@@ -777,7 +795,7 @@ export default function AgentlyticsVsAgentforce() {
         © {new Date().getFullYear()} Agentlytics — Comparison Page.
       </footer>
 
-      {/* Micro‑interactions */}
+      {/* Micro‑interactions
       <style>{`
         @keyframes float { 0%, 100% { transform: translateY(0px);} 50% { transform: translateY(-2px);} }
         .cta { position: relative; overflow: hidden; box-shadow: 0 10px 30px rgba(2, 6, 23, 0.15); }
@@ -789,9 +807,9 @@ export default function AgentlyticsVsAgentforce() {
       `}</style>
 
       {/* Diagnostics (test cases) */}
-      <div className="pb-12">
+      {/* <div className="pb-12">
         <Diagnostics />
-      </div>
+      </div>  */}
     </div>
   );
 }
