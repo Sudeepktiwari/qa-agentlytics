@@ -812,16 +812,16 @@ export default function BehavioralTriggersPage() {
               ))}
             </ol>
 
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="mt-8 flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3">
               <a
                 href="#cta"
-                className="px-6 py-3 rounded-2xl bg-indigo-600 text-white font-semibold shadow hover:bg-indigo-700"
+                className="w-full sm:w-auto text-center px-6 py-3 rounded-2xl bg-indigo-600 text-white font-semibold shadow hover:bg-indigo-700"
               >
                 Start free — capture intent today
               </a>
               <a
                 href="#demo"
-                className="px-6 py-3 rounded-2xl border border-slate-200 bg-white font-medium hover:bg-slate-50"
+                className="w-full sm:w-auto text-center px-6 py-3 rounded-2xl border border-slate-200 bg-white font-medium hover:bg-slate-50"
               >
                 Watch demo
               </a>
@@ -834,7 +834,7 @@ export default function BehavioralTriggersPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
-            className="relative"
+            className="relative overflow-hidden"
           >
             <div className="relative mx-auto w-full max-w-xl rounded-3xl border border-slate-200 bg-white p-6 shadow-xl">
               {/* Browser mock */}
@@ -875,7 +875,7 @@ export default function BehavioralTriggersPage() {
                 </motion.div>
 
                 {/* Step 2: signals anim */}
-                <div className="mt-4 grid grid-cols-3 gap-3">
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {["Dwell 30s", "Scroll 60%", "Frustrated clicks"].map(
                     (t, idx) => (
                       <motion.div
@@ -1101,14 +1101,14 @@ export default function BehavioralTriggersPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
           <div className="grid lg:grid-cols-2 gap-8 items-center">
             <div>
-              <h2 className="text-3xl font-extrabold tracking-tight">
+              <h2 className="text-3xl font-extrabold tracking-tight text-center md:text-left">
                 Turn intent into action.
               </h2>
-              <p className="mt-2 text-blue-100">
+              <p className="mt-2 text-blue-100 text-center md:text-left max-w-prose md:max-w-none mx-auto">
                 Install the lightweight snippet and go live in minutes. No
                 redesign. No cookies needed for core signals.
               </p>
-              <div className="mt-6 flex flex-col sm:flex-row sm:flex-wrap gap-3 sm:gap-4">
+              <div className="mt-6 flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center justify-center md:justify-start gap-3 sm:gap-4">
                 <a
                   className="w-full sm:w-auto text-center break-words px-5 py-3 rounded-2xl bg-white text-slate-900 font-medium shadow hover:bg-blue-50"
                   href="#"
