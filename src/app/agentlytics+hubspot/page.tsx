@@ -368,15 +368,15 @@ const TestimonialCarousel = () => (
       ].map((t, i) => (
         <figure
           key={i}
-          className="shrink-0 w-[85%] md:w-[46%] lg:w-[32%] rounded-2xl border border-[#E0E6EB] bg-white p-6 shadow-sm"
+          className="shrink-0 w-[85%] md:w-[46%] lg:w-[32%] rounded-2xl border border-[#E0E6EB] bg-white p-6 shadow-sm whitespace-normal"
         >
           <blockquote
-            className="text-[15px] md:text-base"
-            style={{ color: hs.navy2 }}
+            className="text-[15px] md:text-base break-words whitespace-normal"
+            style={{ color: hs.navy2, wordBreak: "break-word", overflowWrap: "anywhere" }}
           >
             “{t.quote}”
           </blockquote>
-          <figcaption className="mt-3 font-semibold" style={{ color: hs.navy }}>
+          <figcaption className="mt-3 font-semibold whitespace-normal break-words" style={{ color: hs.navy }}>
             — {t.author}
           </figcaption>
         </figure>
