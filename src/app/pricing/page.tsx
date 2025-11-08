@@ -24,7 +24,7 @@ export default function PricingPage() {
                 Starter Plan
               </h2>
               <div className="mb-6">
-                <span className="text-4xl font-bold text-blue-600">$29</span>
+                <span className="text-4xl font-bold text-blue-600">$49</span>
                 <span className="text-gray-600">/month</span>
               </div>
             </div>

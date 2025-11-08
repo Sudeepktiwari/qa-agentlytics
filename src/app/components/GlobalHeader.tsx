@@ -11,11 +11,14 @@ export default function GlobalHeader() {
   const productsRef = useRef<HTMLDetailsElement | null>(null);
   const solutionsRef = useRef<HTMLDetailsElement | null>(null);
   const platformsRef = useRef<HTMLDetailsElement | null>(null);
+  const othersRef = useRef<HTMLDetailsElement | null>(null);
   // Root mobile menu ref for click-outside close
   const mobileMenuRef = useRef<HTMLDetailsElement | null>(null);
 
   // Desktop dropdown controlled hover state
-  const [hoveredDropdown, setHoveredDropdown] = useState<null | "products" | "solutions" | "platforms">(null);
+  const [hoveredDropdown, setHoveredDropdown] = useState<
+    null | "products" | "solutions" | "platforms" | "others"
+  >(null);
 
   // Helper: close all <details> menus
   const closeAllMenus = () => {
@@ -23,6 +26,7 @@ export default function GlobalHeader() {
     if (productsRef.current) productsRef.current.open = false;
     if (solutionsRef.current) solutionsRef.current.open = false;
     if (platformsRef.current) platformsRef.current.open = false;
+    if (othersRef.current) othersRef.current.open = false;
     setHoveredDropdown(null);
   };
 
@@ -101,7 +105,11 @@ export default function GlobalHeader() {
               </svg>
             </button>
             <div
-              className={`absolute left-0 top-full pt-3 z-[100] rounded-2xl border border-slate-200 bg-white shadow-[0_12px_34px_rgba(2,6,23,.10)] p-6 ${hoveredDropdown === "products" ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
+              className={`absolute left-0 top-full pt-3 z-[100] rounded-2xl border border-slate-200 bg-white shadow-[0_12px_34px_rgba(2,6,23,.10)] p-6 ${
+                hoveredDropdown === "products"
+                  ? "opacity-100 pointer-events-auto"
+                  : "opacity-0 pointer-events-none"
+              }`}
               onClick={(e) => {
                 const target = e.target as HTMLElement;
                 if (target.closest("a")) setHoveredDropdown(null);
@@ -211,7 +219,11 @@ export default function GlobalHeader() {
               </svg>
             </button>
             <div
-              className={`absolute left-0 top-full pt-3 z-[100] rounded-2xl border border-slate-200 bg-white shadow-[0_12px_34px_rgba(2,6,23,.10)] p-6 ${hoveredDropdown === "solutions" ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
+              className={`absolute left-0 top-full pt-3 z-[100] rounded-2xl border border-slate-200 bg-white shadow-[0_12px_34px_rgba(2,6,23,.10)] p-6 ${
+                hoveredDropdown === "solutions"
+                  ? "opacity-100 pointer-events-auto"
+                  : "opacity-0 pointer-events-none"
+              }`}
               onClick={(e) => {
                 const target = e.target as HTMLElement;
                 if (target.closest("a")) setHoveredDropdown(null);
@@ -340,7 +352,11 @@ export default function GlobalHeader() {
               </svg>
             </button>
             <div
-              className={`absolute left-0 top-full pt-3 z-[100] rounded-2xl border border-slate-200 bg-white shadow-[0_12px_34px_rgba(2,6,23,.10)] p-6 ${hoveredDropdown === "platforms" ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
+              className={`absolute left-0 top-full pt-3 z-[100] rounded-2xl border border-slate-200 bg-white shadow-[0_12px_34px_rgba(2,6,23,.10)] p-6 ${
+                hoveredDropdown === "platforms"
+                  ? "opacity-100 pointer-events-auto"
+                  : "opacity-0 pointer-events-none"
+              }`}
               onClick={(e) => {
                 const target = e.target as HTMLElement;
                 if (target.closest("a")) setHoveredDropdown(null);
@@ -483,6 +499,137 @@ export default function GlobalHeader() {
               </div>
             </div>
           </div>
+          {/* Others dropdown */}
+          <div
+            className="relative"
+            onMouseEnter={() => setHoveredDropdown("others")}
+            onMouseLeave={() => setHoveredDropdown(null)}
+          >
+            <button className="inline-flex items-center gap-1 hover:text-slate-900">
+              <span>Others</span>
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 20 20"
+                fill="none"
+                className="text-slate-500 group-hover:text-slate-900"
+              >
+                <path
+                  d="M5 7l5 5 5-5"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+            <div
+              className={`absolute left-0 top-full pt-3 z-[100] rounded-2xl border border-slate-200 bg-white shadow-[0_12px_34px_rgba(2,6,23,.10)] p-6 ${
+                hoveredDropdown === "others"
+                  ? "opacity-100 pointer-events-auto"
+                  : "opacity-0 pointer-events-none"
+              }`}
+              onClick={(e) => {
+                const target = e.target as HTMLElement;
+                if (target.closest("a")) setHoveredDropdown(null);
+              }}
+            >
+              <div className="w-[300px]">
+                <ul className="space-y-3">
+                  <li>
+                    <Link
+                      href="/multipersona"
+                      className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
+                    >
+                      <span className="size-8 flex items-center justify-center rounded-lg bg-violet-50 text-violet-600">
+                        👥
+                      </span>
+                      <div>
+                        <div className="font-semibold text-slate-900">
+                          Multipersona
+                        </div>
+                        <div className="text-sm text-slate-600">
+                          Build assistants for multiple roles.
+                        </div>
+                      </div>
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/bant-based-qualification"
+                      className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
+                    >
+                      <span className="size-8 flex items-center justify-center rounded-lg bg-amber-50 text-amber-600">
+                        ✅
+                      </span>
+                      <div>
+                        <div className="font-semibold text-slate-900">
+                          BANT‑Based Qualification
+                        </div>
+                        <div className="text-sm text-slate-600">
+                          Qualify leads by Budget, Authority, Need, Timeline.
+                        </div>
+                      </div>
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/behavioral-trigger"
+                      className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
+                    >
+                      <span className="size-8 flex items-center justify-center rounded-lg bg-lime-50 text-lime-600">
+                        🔔
+                      </span>
+                      <div>
+                        <div className="font-semibold text-slate-900">
+                          Behavioral Trigger
+                        </div>
+                        <div className="text-sm text-slate-600">
+                          Automations based on real user behavior.
+                        </div>
+                      </div>
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/crm-and-analytics-sync"
+                      className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
+                    >
+                      <span className="size-8 flex items-center justify-center rounded-lg bg-sky-50 text-sky-600">
+                        🔄
+                      </span>
+                      <div>
+                        <div className="font-semibold text-slate-900">
+                          CRM & Analytics Sync
+                        </div>
+                        <div className="text-sm text-slate-600">
+                          Keep CRM and analytics data in lockstep.
+                        </div>
+                      </div>
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/pricing"
+                      className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
+                    >
+                      <span className="size-8 flex items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+                        💵
+                      </span>
+                      <div>
+                        <div className="font-semibold text-slate-900">
+                          Pricing
+                        </div>
+                        <div className="text-sm text-slate-600">
+                          Plans for startups to enterprises.
+                        </div>
+                      </div>
+                    </Link>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
         </nav>
 
         {/* Desktop CTAs */}
@@ -528,6 +675,7 @@ export default function GlobalHeader() {
                   if (productsRef.current?.open) {
                     if (solutionsRef.current) solutionsRef.current.open = false;
                     if (platformsRef.current) platformsRef.current.open = false;
+                    if (othersRef.current) othersRef.current.open = false;
                   }
                 }}
               >
@@ -585,6 +733,7 @@ export default function GlobalHeader() {
                   if (solutionsRef.current?.open) {
                     if (productsRef.current) productsRef.current.open = false;
                     if (platformsRef.current) platformsRef.current.open = false;
+                    if (othersRef.current) othersRef.current.open = false;
                   }
                 }}
               >
@@ -648,6 +797,7 @@ export default function GlobalHeader() {
                   if (platformsRef.current?.open) {
                     if (productsRef.current) productsRef.current.open = false;
                     if (solutionsRef.current) solutionsRef.current.open = false;
+                    if (othersRef.current) othersRef.current.open = false;
                   }
                 }}
               >
@@ -712,7 +862,70 @@ export default function GlobalHeader() {
                   })}
                 </div>
               </details>
+              {/* Mobile Others dropdown */}
+              <details
+                ref={othersRef}
+                className="group border border-slate-200 rounded-lg"
+                onToggle={() => {
+                  if (othersRef.current?.open) {
+                    if (productsRef.current) productsRef.current.open = false;
+                    if (solutionsRef.current) solutionsRef.current.open = false;
+                    if (platformsRef.current) platformsRef.current.open = false;
+                  }
+                }}
+              >
+                <summary className="flex items-center justify-between px-3 py-2 cursor-pointer">
+                  <span>Others</span>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 20 20"
+                    fill="none"
+                    className="text-slate-500 transition-transform group-open:rotate-180"
+                  >
+                    <path
+                      d="M5 7l5 5 5-5"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </summary>
+                <div className="px-3 pb-2 grid gap-2 text-slate-800">
+                  <Link
+                    href="/multipersona"
+                    className="block px-2 py-1 rounded hover:bg-slate-50"
+                  >
+                    Multipersona
+                  </Link>
+                  <Link
+                    href="/bant-based-qualification"
+                    className="block px-2 py-1 rounded hover:bg-slate-50"
+                  >
+                    BANT‑Based Qualification
+                  </Link>
+                  <Link
+                    href="/behavioral-trigger"
+                    className="block px-2 py-1 rounded hover:bg-slate-50"
+                  >
+                    Behavioral Trigger
+                  </Link>
+                  <Link
+                    href="/crm-and-analytics-sync"
+                    className="block px-2 py-1 rounded hover:bg-slate-50"
+                  >
+                    CRM & Analytics Sync
+                  </Link>
 
+                  <Link
+                    href="/pricing"
+                    className="block px-2 py-1 rounded hover:bg-slate-50"
+                  >
+                    Pricing
+                  </Link>
+                </div>
+              </details>
               <div className="flex-row space-y-2 pt-2 border-t border-slate-200 gap-3">
                 <Link
                   href="/demo"

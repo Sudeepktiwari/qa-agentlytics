@@ -516,36 +516,7 @@ const SNIPPET_SRC = "https://cdn.agentlytics.dev/intent.min.js";
 export default function BehavioralTriggersPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-slate-50 text-slate-900">
-      {/* NAV */}
-      <header className="sticky top-0 z-40 backdrop-blur supports-[backdrop-filter]:bg-white/70 border-b border-slate-200/70">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div
-              className="size-8 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 shadow-sm"
-              aria-hidden="true"
-            />
-            <span className="font-semibold tracking-tight">Agentlytics</span>
-            <span className="text-slate-400">/</span>
-            <span className="font-medium text-slate-600">
-              Behavioral Triggers
-            </span>
-          </div>
-          <div className="hidden sm:flex items-center gap-3">
-            <a
-              className="px-4 py-2 rounded-xl text-sm font-medium border border-slate-200 hover:bg-slate-50"
-              href="#learn"
-            >
-              Learn
-            </a>
-            <a
-              className="px-4 py-2 rounded-xl text-sm font-medium bg-blue-600 text-white shadow hover:bg-blue-700"
-              href="#cta"
-            >
-              Start free trial — no credit card
-            </a>
-          </div>
-        </div>
-      </header>
+      {/* Page-specific NAV removed to avoid double headers; relies on GlobalHeader */}
 
       {/* HERO */}
       <section className="relative overflow-hidden">
@@ -559,7 +530,7 @@ export default function BehavioralTriggersPage() {
           aria-hidden="true"
         />
 
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-16 md:pt-24 pb-10">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-12 md:pt-20 pb-10">
           <div className="grid lg:grid-cols-2 gap-10 items-center">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/70 px-3 py-1 text-xs text-slate-600 shadow-sm">
@@ -1125,7 +1096,7 @@ export default function BehavioralTriggersPage() {
       {/* CTA */}
       <section
         id="cta"
-        className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white"
+        className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white overflow-hidden"
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
           <div className="grid lg:grid-cols-2 gap-8 items-center">
@@ -1137,15 +1108,15 @@ export default function BehavioralTriggersPage() {
                 Install the lightweight snippet and go live in minutes. No
                 redesign. No cookies needed for core signals.
               </p>
-              <div className="mt-6 flex gap-3">
+              <div className="mt-6 flex flex-col sm:flex-row sm:flex-wrap gap-3 sm:gap-4">
                 <a
-                  className="px-5 py-3 rounded-2xl bg-white text-slate-900 font-medium shadow hover:bg-blue-50"
+                  className="w-full sm:w-auto text-center break-words px-5 py-3 rounded-2xl bg-white text-slate-900 font-medium shadow hover:bg-blue-50"
                   href="#"
                 >
                   Start free trial — no credit card
                 </a>
                 <a
-                  className="px-5 py-3 rounded-2xl border border-white/30 font-medium hover:bg-white/10"
+                  className="w-full sm:w-auto text-center break-words px-5 py-3 rounded-2xl border border-white/30 font-medium hover:bg-white/10"
                   href="#demo"
                 >
                   Book a demo
@@ -1158,7 +1129,7 @@ export default function BehavioralTriggersPage() {
               viewport={{ once: true }}
               className="rounded-3xl bg-white/10 p-6"
             >
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <MiniStat
                   icon={<AlarmClock className="size-4" aria-hidden="true" />}
                   title="Dwell > 25s"
