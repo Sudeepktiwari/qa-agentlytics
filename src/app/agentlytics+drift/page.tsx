@@ -80,29 +80,59 @@ export default function DriftComparisonPage() {
 
       {/* Intercom-style dual headers: sticky below global, floating at top */}
       <header
-        className={`${scrolled ? "top-0" : "top-16"} fixed left-0 right-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top,opacity,transform] duration-300 ease-out ${floating ? "opacity-0 -translate-y-1 pointer-events-none" : "opacity-100 translate-y-0"}`}
+        className={`${
+          scrolled ? "top-0" : "top-16"
+        } fixed left-0 right-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top,opacity,transform] duration-300 ease-out ${
+          floating
+            ? "opacity-0 -translate-y-1 pointer-events-none"
+            : "opacity-100 translate-y-0"
+        }`}
         ref={headerRef}
       >
         <div className="w-full h-auto min-h-[56px] sm:h-16 sm:min-h-0 py-3 sm:py-0 flex items-center justify-center relative md:right-[84px] px-3">
           <nav className="flex flex-wrap sm:flex-nowrap items-center justify-center gap-x-3 gap-y-2 sm:gap-6 text-slate-600 text-sm">
-            <a href="#overview" className="hover:text-slate-900">Overview</a>
-            <a href="#switch" className="hover:text-slate-900">Why Switch</a>
-            <a href="#brain" className="hover:text-slate-900">Proactive Brain</a>
-            <a href="#outcomes" className="hover:text-slate-900">Outcomes</a>
-            <a href="#integrations" className="hover:text-slate-900">Integrations</a>
+            <a href="#overview" className="hover:text-slate-900">
+              Overview
+            </a>
+            <a href="#switch" className="hover:text-slate-900">
+              Why Switch
+            </a>
+            <a href="#brain" className="hover:text-slate-900">
+              Proactive Brain
+            </a>
+            <a href="#outcomes" className="hover:text-slate-900">
+              Outcomes
+            </a>
+            <a href="#integrations" className="hover:text-slate-900">
+              Integrations
+            </a>
           </nav>
         </div>
       </header>
       <header
-        className={`fixed left-0 right-0 top-0 z-50 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top,opacity,transform] duration-300 ease-out ${floating ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-1 pointer-events-none"}`}
+        className={`fixed left-0 right-0 top-0 z-50 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top,opacity,transform] duration-300 ease-out ${
+          floating
+            ? "opacity-100 translate-y-0"
+            : "opacity-0 -translate-y-1 pointer-events-none"
+        }`}
       >
         <div className="w-full h-auto min-h-[56px] sm:h-16 sm:min-h-0 py-3 sm:py-0 flex items-center justify-center px-3">
           <nav className="flex flex-wrap sm:flex-nowrap items-center justify-center gap-x-3 gap-y-2 sm:gap-6 text-slate-600 text-sm">
-            <a href="#overview" className="hover:text-slate-900">Overview</a>
-            <a href="#switch" className="hover:text-slate-900">Why Switch</a>
-            <a href="#brain" className="hover:text-slate-900">Proactive Brain</a>
-            <a href="#outcomes" className="hover:text-slate-900">Outcomes</a>
-            <a href="#integrations" className="hover:text-slate-900">Integrations</a>
+            <a href="#overview" className="hover:text-slate-900">
+              Overview
+            </a>
+            <a href="#switch" className="hover:text-slate-900">
+              Why Switch
+            </a>
+            <a href="#brain" className="hover:text-slate-900">
+              Proactive Brain
+            </a>
+            <a href="#outcomes" className="hover:text-slate-900">
+              Outcomes
+            </a>
+            <a href="#integrations" className="hover:text-slate-900">
+              Integrations
+            </a>
           </nav>
         </div>
       </header>
@@ -197,15 +227,33 @@ export default function DriftComparisonPage() {
               </p>
             </div>
 
-            {/* Visual Suggestion (split view mock) */}
+            {/* Visual Comparison — modern, borderless, responsive */}
             <div className="relative">
-              <div className="space-y-4 md:grid grid-cols-2 gap-4 ">
-                <div className="rounded-2xl border bg-white p-4 shadow-sm">
-                  <div className="text-xs font-semibold text-slate-500 mb-3">
-                    Drift — Static Chat Flow
+              <div className="grid gap-6 md:grid-cols-2">
+                {/* Drift card */}
+                <div className="rounded-3xl bg-white/95 p-5 shadow-lg ring-0">
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs font-semibold text-slate-500">
+                      Drift — Static Chat Flow
+                    </div>
+                    <span className="inline-flex items-center gap-1 text-[10px] text-slate-500">
+                      <span
+                        className="size-1.5 rounded-full"
+                        style={{ background: BRAND_BLUE }}
+                      />
+                      Reactive
+                    </span>
                   </div>
-                  <div className="aspect-[4/3] rounded-lg bg-gradient-to-br from-slate-50 to-slate-100 border flex items-center justify-center">
-                    <div className="text-center text-slate-500">
+                  <div className="mt-3 aspect-[4/3] rounded-2xl bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center relative overflow-hidden">
+                    {/* subtle nodes */}
+                    <div className="absolute inset-0 opacity-60">
+                      <div className="absolute left-6 top-6 h-3 w-3 rounded-full bg-slate-200" />
+                      <div className="absolute left-24 top-16 h-3 w-3 rounded-full bg-slate-200" />
+                      <div className="absolute left-40 top-28 h-3 w-3 rounded-full bg-slate-200" />
+                      <div className="absolute left-6 top-6 w-32 h-px bg-slate-200" />
+                      <div className="absolute left-24 top-16 w-32 h-px bg-slate-200" />
+                    </div>
+                    <div className="text-center text-slate-600">
                       <div className="mb-2 text-sm">
                         Rule tree • if/then arrows
                       </div>
@@ -215,30 +263,87 @@ export default function DriftComparisonPage() {
                       />
                     </div>
                   </div>
+                  <ul className="mt-4 grid grid-cols-2 gap-2 text-xs text-slate-600">
+                    <li className="rounded-xl bg-slate-50 px-3 py-2">
+                      Waits for clicks
+                    </li>
+                    <li className="rounded-xl bg-slate-50 px-3 py-2">
+                      Static playbooks
+                    </li>
+                    <li className="rounded-xl bg-slate-50 px-3 py-2">
+                      Limited personalization
+                    </li>
+                    <li className="rounded-xl bg-slate-50 px-3 py-2">
+                      Redirects for scheduling
+                    </li>
+                  </ul>
                 </div>
-                <div className="rounded-2xl border bg-white p-4 shadow-sm">
-                  <div className="text-xs font-semibold text-slate-500 mb-3">
-                    Agentlytics — Proactive Detection
+
+                {/* Agentlytics card */}
+                <div className="rounded-3xl bg-white/95 p-5 shadow-lg ring-0">
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs font-semibold text-slate-500">
+                      Agentlytics — Proactive Detection
+                    </div>
+                    <span className="inline-flex items-center gap-1 text-[10px] text-slate-500">
+                      <span
+                        className="size-1.5 rounded-full"
+                        style={{ background: BRAND_BLUE }}
+                      />
+                      Proactive
+                    </span>
                   </div>
-                  <div className="aspect-[4/3] rounded-lg border bg-white relative overflow-hidden">
+                  {/* Use normal document flow to prevent overlap; ensure chips are fully visible */}
+                  <div className="rounded-2xl bg-white flex flex-col gap-4 p-4 relative min-h-[240px] md:min_h-[260px]">
                     {/* Scroll tracking bar */}
                     <div
-                      className="absolute left-0 top-0 h-1 w-0 animate-[grow_3s_ease-in-out_infinite]"
+                      className="h-1 w-0 animate-[grow_3s_ease-in-out_infinite]"
                       style={{ background: BRAND_BLUE }}
                     />
-                    {/* Live bubble */}
-                    <div className="absolute bottom-4 right-4 max-w-[220px] rounded-2xl border bg-white px-4 py-3 shadow-md">
-                      <p className="text-sm">
+                    {/* Glow accents (behind content) */}
+                    <div
+                      className="pointer-events-none absolute -right-10 -bottom-10 size-40 rounded-full blur-2xl opacity-20 -z-10"
+                      style={{ background: BRAND_BLUE }}
+                    />
+                    {/* Live bubble (glassmorphism) */}
+                    <div className="max-w-[260px] rounded-2xl bg-white/80 backdrop-blur px-4 py-3 shadow-xl">
+                      <p className="text-sm text-slate-800">
                         Need help choosing the right plan?
                       </p>
                       <button
-                        className="mt-2 text-sm font-semibold"
+                        className="mt-2 inline-flex items-center gap-1 text-sm font-semibold"
                         style={{ color: BRAND_BLUE }}
                       >
-                        Compare plans →
+                        Compare plans
+                        <span>→</span>
                       </button>
                     </div>
+                    {/* Signal chips */}
+                    <div className="flex flex-wrap gap-2 mt-1">
+                      {["Scroll", "Idle", "Exit", "Pricing View"].map((s) => (
+                        <span
+                          key={s}
+                          className="rounded-full bg-slate-100 px-3 py-1.5 text-xs text-slate-700 shadow-sm"
+                        >
+                          {s}
+                        </span>
+                      ))}
+                    </div>
                   </div>
+                  <ul className="mt-4 grid grid-cols-2 gap-2 text-xs text-slate-600">
+                    <li className="rounded-xl bg-slate-50 px-3 py-2">
+                      Detects behavior signals
+                    </li>
+                    <li className="rounded-xl bg-slate-50 px-3 py-2">
+                      Engages before drop-off
+                    </li>
+                    <li className="rounded-xl bg-slate-50 px-3 py-2">
+                      Inline scheduling
+                    </li>
+                    <li className="rounded-xl bg-slate-50 px-3 py-2">
+                      Adaptive messaging
+                    </li>
+                  </ul>
                 </div>
               </div>
 
@@ -259,66 +364,90 @@ export default function DriftComparisonPage() {
         >
           🔍 Quick Overview
         </h2>
-        <div className="mt-6 overflow-hidden rounded-2xl border">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50">
-              <tr>
-                <th className="p-4">Feature</th>
-                <th className="p-4">Agentlytics</th>
-                <th className="p-4">Drift</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {[
-                [
-                  "Core Approach",
-                  "Behavior-triggered, proactive AI conversations",
-                  "Rule-based playbooks and chat flows",
-                ],
-                [
-                  "Qualification",
-                  "BANT-based (Budget, Authority, Need, Timeline) auto-qualification",
-                  "Manual question sequence",
-                ],
-                [
-                  "Engagement Style",
-                  "Lifecycle-aware (Lead → Onboarding → Support)",
-                  "Marketing-focused",
-                ],
-                [
-                  "Personalization",
-                  "Context memory + persona switching",
-                  "Static responses",
-                ],
-                [
-                  "Analytics",
-                  "Intent heatmaps, journey scoring, drop-off analysis",
-                  "Chat volume metrics",
-                ],
-                [
-                  "Routing",
-                  "Smart SDR routing based on lead score",
-                  "Basic rep assignment",
-                ],
-                [
-                  "Setup Time",
-                  "Go live in 10 minutes",
-                  "Complex playbook setup",
-                ],
-                [
-                  "Integration",
-                  "Works with HubSpot, Salesforce, Intercom, Calendly",
-                  "Primarily CRM-centric",
-                ],
-              ].map((row, i) => (
-                <tr key={i} className="hover:bg-slate-50/60">
-                  <td className="p-4 font-medium text-slate-900">{row[0]}</td>
-                  <td className="p-4">{row[1]}</td>
-                  <td className="p-4">{row[2]}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        {/* Modern comparison grid */}
+        <div className="mt-6 rounded-2xl bg-white/90 shadow-lg ring-1 ring-slate-200 p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span
+                className="h-1 w-16 rounded-full"
+                style={{ background: BRAND_BLUE }}
+              />
+              <span className="text-sm font-semibold text-slate-800">
+                Agentlytics vs Drift
+              </span>
+            </div>
+            <div className="hidden sm:flex items-center gap-2 text-xs">
+              <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">
+                Agentlytics
+              </span>
+              <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">
+                Drift
+              </span>
+            </div>
+          </div>
+          <div className="mt-4 grid gap-4">
+            {[
+              [
+                "Core Approach",
+                "Behavior-triggered, proactive AI conversations",
+                "Rule-based playbooks and chat flows",
+              ],
+              [
+                "Qualification",
+                "BANT-based (Budget, Authority, Need, Timeline) auto-qualification",
+                "Manual question sequence",
+              ],
+              [
+                "Engagement Style",
+                "Lifecycle-aware (Lead → Onboarding → Support)",
+                "Marketing-focused",
+              ],
+              [
+                "Personalization",
+                "Context memory + persona switching",
+                "Static responses",
+              ],
+              [
+                "Analytics",
+                "Intent heatmaps, journey scoring, drop-off analysis",
+                "Chat volume metrics",
+              ],
+              [
+                "Routing",
+                "Smart SDR routing based on lead score",
+                "Basic rep assignment",
+              ],
+              ["Setup Time", "Go live in 10 minutes", "Complex playbook setup"],
+              [
+                "Integration",
+                "Works with HubSpot, Salesforce, Intercom, Calendly",
+                "Primarily CRM-centric",
+              ],
+            ].map((row, i) => (
+              <div
+                key={i}
+                className="rounded-xl bg-white shadow-sm ring-1 ring-slate-100 p-4"
+              >
+                <div className="text-sm font-semibold text-slate-900">
+                  {row[0]}
+                </div>
+                <div className="mt-3 grid sm:grid-cols-2 gap-3">
+                  <div className="rounded-lg bg-slate-50 p-3">
+                    <div className="text-[11px] font-medium text-slate-600">
+                      Agentlytics
+                    </div>
+                    <p className="mt-1 text-sm text-slate-800">{row[1]}</p>
+                  </div>
+                  <div className="rounded-lg bg-slate-50 p-3">
+                    <div className="text-[11px] font-medium text-slate-600">
+                      Drift
+                    </div>
+                    <p className="mt-1 text-sm text-slate-800">{row[2]}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -330,7 +459,7 @@ export default function DriftComparisonPage() {
         >
           💡 Why Teams Switch from Drift to Agentlytics
         </h2>
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="mt-8 grid gap-6 sm:grid-cols-2">
           {[
             {
               title: "Static Playbooks vs Real-Time Behavior",
@@ -349,14 +478,30 @@ export default function DriftComparisonPage() {
               body: "Track conversation intent, AI qualification score, and pipeline influence — all in one dashboard designed for Sales + Success alignment.",
             },
           ].map((c, i) => (
-            <div key={i} className="rounded-2xl border p-6 shadow-sm bg-white">
-              <h3
-                className="text-lg font-semibold"
-                style={{ color: BRAND_DARK }}
-              >
-                {c.title}
-              </h3>
-              <p className="mt-2 text-slate-700">{c.body}</p>
+            <div
+              key={i}
+              className="group rounded-2xl bg-white/95 p-6 shadow-lg ring-1 ring-slate-200 transition duration-200 hover:shadow-xl hover:-translate-y-[2px]"
+            >
+              <div className="flex items-center justify-between">
+                <h3
+                  className="text-lg font-semibold"
+                  style={{ color: BRAND_DARK }}
+                >
+                  {c.title}
+                </h3>
+                <span className="hidden sm:inline-flex items-center gap-1 text-[11px] text-slate-600">
+                  <span
+                    className="size-1.5 rounded-full"
+                    style={{ background: BRAND_BLUE }}
+                  />
+                  Switch reason
+                </span>
+              </div>
+              <div
+                className="mt-3 h-1 w-16 rounded-full"
+                style={{ background: BRAND_BLUE }}
+              />
+              <p className="mt-3 text-slate-700 leading-relaxed">{c.body}</p>
             </div>
           ))}
         </div>
@@ -370,46 +515,54 @@ export default function DriftComparisonPage() {
         >
           🧠 Inside the Proactive Brain
         </h2>
-        <div className="mt-6 overflow-hidden rounded-2xl border">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50">
-              <tr>
-                <th className="p-4">Layer</th>
-                <th className="p-4">Function</th>
-                <th className="p-4">Example</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {[
-                [
-                  "Intent Detection",
-                  "Reads user scroll, click hesitation, or form abandonment",
-                  "“Looks like you’re exploring pricing — want help comparing plans?”",
-                ],
-                [
-                  "Smart Prompts",
-                  "Suggests next steps automatically",
-                  "“Want to see ROI for your use case?”",
-                ],
-                [
-                  "Context Memory",
-                  "Remembers answers for future steps",
-                  "“I recall you mentioned a 20‑member team last visit.”",
-                ],
-                [
-                  "Lifecycle Awareness",
-                  "Adapts tone & goals per stage",
-                  "Trial → Onboarding → Renewal",
-                ],
-              ].map((row, i) => (
-                <tr key={i} className="hover:bg-slate-50/60">
-                  <td className="p-4 font-medium">{row[0]}</td>
-                  <td className="p-4">{row[1]}</td>
-                  <td className="p-4">{row[2]}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        {/* Layered cards with accent bands */}
+        <div className="mt-6 grid gap-4 md:grid-cols-2">
+          {[
+            [
+              "Intent Detection",
+              "Reads user scroll, click hesitation, or form abandonment",
+              "“Looks like you’re exploring pricing — want help comparing plans?”",
+            ],
+            [
+              "Smart Prompts",
+              "Suggests next steps automatically",
+              "“Want to see ROI for your use case?”",
+            ],
+            [
+              "Context Memory",
+              "Remembers answers for future steps",
+              "“I recall you mentioned a 20‑member team last visit.”",
+            ],
+            [
+              "Lifecycle Awareness",
+              "Adapts tone & goals per stage",
+              "Trial → Onboarding → Renewal",
+            ],
+          ].map((row, i) => (
+            <div
+              key={i}
+              className="rounded-2xl bg-white/95 p-5 shadow-lg ring-1 ring-slate-200"
+            >
+              <div className="flex items-center justify-between">
+                <div className="text-sm font-semibold text-slate-900">
+                  {row[0]}
+                </div>
+                <span className="inline-flex items-center gap-1 text-[11px] text-slate-600">
+                  <span
+                    className="size-1.5 rounded-full"
+                    style={{ background: BRAND_BLUE }}
+                  />
+                  Layer
+                </span>
+              </div>
+              <div
+                className="mt-3 h-1 w-14 rounded-full"
+                style={{ background: BRAND_BLUE }}
+              />
+              <p className="mt-3 text-sm text-slate-800">{row[1]}</p>
+              <p className="mt-2 text-sm text-slate-600">{row[2]}</p>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -440,7 +593,7 @@ export default function DriftComparisonPage() {
           ].map((m, i) => (
             <div
               key={i}
-              className="rounded-2xl border p-6 text-center bg-white"
+              className="rounded-2xl bg-white/95 p-6 text-center shadow-lg ring-1 ring-slate-200"
             >
               <div
                 className="text-3xl font-extrabold"
@@ -458,7 +611,7 @@ export default function DriftComparisonPage() {
           <div className="text-sm font-semibold text-slate-500">
             🌟 Trusted by 100+ SaaS Growth Teams
           </div>
-          <div className="mt-4 grid grid-cols-2 sm:grid-cols-5 gap-4 items-center opacity-80">
+          <div className="mt-4 flex flex-wrap gap-3 items-center">
             {[
               "CloudScale",
               "FinServe",
@@ -466,12 +619,12 @@ export default function DriftComparisonPage() {
               "BrightEdge",
               "SalesPilot",
             ].map((l, i) => (
-              <div
+              <span
                 key={i}
-                className="rounded-xl border p-4 text-center text-slate-600 bg-white"
+                className="rounded-full bg-slate-50 px-4 py-2 text-sm text-slate-700 ring-1 ring-slate-200 shadow-sm"
               >
                 {l}
-              </div>
+              </span>
             ))}
           </div>
         </div>
@@ -499,7 +652,7 @@ export default function DriftComparisonPage() {
           ].map((x, i) => (
             <div
               key={i}
-              className="rounded-xl border bg-white px-4 py-3 text-center text-sm"
+              className="rounded-xl bg-white/95 px-4 py-3 text-center text-sm ring-1 ring-slate-200 shadow-sm hover:shadow-md transition"
             >
               {x}
             </div>
@@ -512,11 +665,18 @@ export default function DriftComparisonPage() {
             ["SDR Routing Intelligence", "Routes by score & availability"],
             ["Conversion Funnel Analyzer", "Finds drop‑offs & friction"],
           ].map((a, i) => (
-            <div key={i} className="rounded-2xl border bg-white p-6 shadow-sm">
+            <div
+              key={i}
+              className="rounded-2xl bg-white/95 p-6 shadow-lg ring-1 ring-slate-200"
+            >
               <h3 className="font-semibold" style={{ color: BRAND_DARK }}>
                 {a[0]}
               </h3>
-              <p className="mt-2 text-slate-700">{a[1]}</p>
+              <div
+                className="mt-3 h-1 w-12 rounded-full"
+                style={{ background: BRAND_BLUE }}
+              />
+              <p className="mt-3 text-slate-700">{a[1]}</p>
             </div>
           ))}
         </div>
@@ -560,7 +720,7 @@ export default function DriftComparisonPage() {
         </div>
       </section>
 
-      <footer className="border-t">
+      <footer className="footer">
         <div className="mx-auto max-w-7xl px-6 py-10 text-sm text-slate-500 flex flex-wrap items-center justify-between gap-4">
           <div>© {new Date().getFullYear()} Agentlytics</div>
           <div className="flex items-center gap-4">
@@ -642,7 +802,7 @@ function Carousel() {
   return (
     <div className="mt-10">
       <div
-        className="group relative overflow-x-auto sm:overflow-hidden rounded-2xl border bg-white"
+        className="group relative overflow-x-auto sm:overflow-hidden rounded-2xl bg-white/95 ring-1 ring-slate-200 shadow-lg"
         ref={containerRef}
       >
         <div className="flex gap-0 snap-x snap-mandatory sm:snap-none sm:animate-[slide_16s_linear_infinite] sm:group-hover:[animation-play-state:paused]">
@@ -651,7 +811,7 @@ function Carousel() {
               key={idx}
               className="w-[60vw] sm:w-1/3 shrink-0 p-6 snap-center"
             >
-              <div className="h-full rounded-xl border p-6 shadow-sm bg-white">
+              <div className="h-full rounded-xl bg-white/95 p-6 shadow-lg ring-1 ring-slate-200">
                 <div className="text-xs font-semibold text-slate-500">
                   {item.logo}
                 </div>
