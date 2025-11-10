@@ -228,72 +228,92 @@ export default function ZohoComparisonPage() {
       {/* Spacer to prevent content overlap when floating header is visible */}
       <div style={{ height: floating ? headerHeight : 0 }} />
 
-      {/* QUICK OVERVIEW TABLE */}
+      {/* QUICK OVERVIEW — modern comparison cards */}
       <section id="overview" className="bg-[#FDF3EF] py-16">
         <div className="max-w-6xl mx-auto px-6">
           <h2 className="text-3xl font-bold text-center text-[#E94F2E] mb-10">
             🔍 Quick Overview
           </h2>
-          <div className="overflow-x-auto rounded-xl shadow">
-            <table className="w-full border-collapse text-left">
-              <thead className="bg-[#FBE2DA] text-[#7A271A]">
-                <tr>
-                  <th className="p-4 font-semibold">Feature</th>
-                  <th className="p-4 font-semibold">Agentlytics</th>
-                  <th className="p-4 font-semibold">Zoho SalesIQ</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 text-gray-800 bg-white">
-                {[
-                  [
-                    "Core Approach",
-                    "Behavior + Intent AI across lifecycle",
-                    "CRM-linked visitor tracking",
-                  ],
-                  [
-                    "Trigger Logic",
-                    "Predictive behavior signals",
-                    "Rule-based conditions",
-                  ],
-                  [
-                    "Context Source",
-                    "Real-time actions + conversation memory",
-                    "CRM fields and lead score",
-                  ],
-                  [
-                    "Lifecycle Coverage",
-                    "Lead → Onboard → Support → Renew",
-                    "Marketing & Support",
-                  ],
-                  [
-                    "Personalization",
-                    "Dynamic tone + journey-aware messaging",
-                    "Predefined chat scripts",
-                  ],
-                  [
-                    "Integration Flexibility",
-                    "Works with HubSpot, Salesforce, Zoho CRM, Calendly",
-                    "Limited to Zoho ecosystem",
-                  ],
-                  [
-                    "AI Learning",
-                    "Self-optimizing conversation engine",
-                    "Manual workflow tuning",
-                  ],
-                  [
-                    "Analytics",
-                    "Intent heatmaps + drop-off reasons",
-                    "Visitor tracking + chat volume",
-                  ],
-                ].map(([feature, a, z]) => (
-                  <tr key={feature} className="hover:bg-[#FFF6F3] transition">
-                    <td className="p-4 font-medium">{feature}</td>
-                    <td className="p-4">{a}</td>
-                    <td className="p-4">{z}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="grid gap-6 sm:grid-cols-2">
+            {[
+              [
+                "Core Approach",
+                "Behavior + Intent AI across lifecycle",
+                "CRM-linked visitor tracking",
+              ],
+              [
+                "Trigger Logic",
+                "Predictive behavior signals",
+                "Rule-based conditions",
+              ],
+              [
+                "Context Source",
+                "Real-time actions + conversation memory",
+                "CRM fields and lead score",
+              ],
+              [
+                "Lifecycle Coverage",
+                "Lead → Onboard → Support → Renew",
+                "Marketing & Support",
+              ],
+              [
+                "Personalization",
+                "Dynamic tone + journey-aware messaging",
+                "Predefined chat scripts",
+              ],
+              [
+                "Integration Flexibility",
+                "Works with HubSpot, Salesforce, Zoho CRM, Calendly",
+                "Limited to Zoho ecosystem",
+              ],
+              [
+                "AI Learning",
+                "Self-optimizing conversation engine",
+                "Manual workflow tuning",
+              ],
+              [
+                "Analytics",
+                "Intent heatmaps + drop-off reasons",
+                "Visitor tracking + chat volume",
+              ],
+            ].map(([feature, a, z]) => (
+              <div
+                key={feature}
+                className="rounded-2xl bg-white/95 shadow-lg ring-1 ring-[#FBE2DA] overflow-hidden"
+              >
+                <div className="h-1 bg-gradient-to-r from-[#E94F2E]/20 via-[#E94F2E]/10 to-transparent" />
+                <div className="p-6 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-[#C53E20]">
+                      {feature}
+                    </h3>
+                    <span className="text-xs px-2 py-1 rounded-full bg-[#FDF3EF] text-[#C53E20] ring-1 ring-[#FBE2DA]">
+                      Comparison
+                    </span>
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="rounded-xl bg-white/80 ring-1 ring-[#FBE2DA] p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="inline-block h-2 w-2 rounded-full bg-[#E94F2E]" />
+                        <span className="text-xs font-medium text-[#C53E20]">
+                          Agentlytics
+                        </span>
+                      </div>
+                      <p className="text-gray-800 text-sm">{a}</p>
+                    </div>
+                    <div className="rounded-xl bg-white/80 ring-1 ring-[#FBE2DA] p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="inline-block h-2 w-2 rounded-full bg-[#C53E20]" />
+                        <span className="text-xs font-medium text-[#C53E20]">
+                          Zoho SalesIQ
+                        </span>
+                      </div>
+                      <p className="text-gray-800 text-sm">{z}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -341,52 +361,54 @@ export default function ZohoComparisonPage() {
         </div>
       </section>
 
-      {/* INSIDE INTENT ENGINE */}
+      {/* INSIDE INTENT ENGINE — modern cards */}
       <section id="engine" className="bg-[#FDF3EF] py-20">
         <div className="max-w-6xl mx-auto px-6">
           <h2 className="text-3xl font-bold text-center text-[#E94F2E] mb-10">
             🧠 Inside the Intent Engine
           </h2>
-          <div className="overflow-x-auto rounded-xl shadow">
-            <table className="w-full border-collapse text-left">
-              <thead className="bg-[#FBE2DA] text-[#7A271A]">
-                <tr>
-                  <th className="p-4 font-semibold">Layer</th>
-                  <th className="p-4 font-semibold">Function</th>
-                  <th className="p-4 font-semibold">Example</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200 text-gray-800 bg-white">
-                {[
-                  [
-                    "Intent Signals",
-                    "Detects focus time, scroll depth, exit intent",
-                    "“Looks like you’re comparing Enterprise vs Pro — need help?”",
-                  ],
-                  [
-                    "Behavioral Memory",
-                    "Remembers returning users and last interactions",
-                    "“Welcome back! Ready to finalize your demo?”",
-                  ],
-                  [
-                    "Smart Qualification",
-                    "Applies BANT logic automatically",
-                    "“Do you handle purchasing for your team?”",
-                  ],
-                  [
-                    "Adaptive Routing",
-                    "Routes based on intent score and journey stage",
-                    "High intent → SDR chat; Low intent → nurture sequence",
-                  ],
-                ].map(([layer, func, ex]) => (
-                  <tr key={layer} className="hover:bg-[#FFF6F3]">
-                    <td className="p-4 font-medium">{layer}</td>
-                    <td className="p-4">{func}</td>
-                    <td className="p-4 italic text-gray-700">{ex}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="grid gap-6 md:grid-cols-2">
+            {[
+              [
+                "Intent Signals",
+                "Detects focus time, scroll depth, exit intent",
+                "“Looks like you’re comparing Enterprise vs Pro — need help?”",
+              ],
+              [
+                "Behavioral Memory",
+                "Remembers returning users and last interactions",
+                "“Welcome back! Ready to finalize your demo?”",
+              ],
+              [
+                "Smart Qualification",
+                "Applies BANT logic automatically",
+                "“Do you handle purchasing for your team?”",
+              ],
+              [
+                "Adaptive Routing",
+                "Routes based on intent score and journey stage",
+                "High intent → SDR chat; Low intent → nurture sequence",
+              ],
+            ].map(([layer, func, ex]) => (
+              <div
+                key={layer}
+                className="rounded-2xl bg-white/95 shadow-lg ring-1 ring-[#FBE2DA] overflow-hidden"
+              >
+                <div className="h-1 bg-gradient-to-r from-[#E94F2E]/25 via-[#E94F2E]/10 to-transparent" />
+                <div className="p-6 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-[#C53E20]">
+                      {layer}
+                    </h3>
+                    <span className="text-xs px-2 py-1 rounded-full bg-[#FDF3EF] text-[#C53E20] ring-1 ring-[#FBE2DA]">
+                      Layer
+                    </span>
+                  </div>
+                  <p className="text-gray-800 text-sm">{func}</p>
+                  <p className="text-gray-700 italic text-sm">{ex}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -455,7 +477,7 @@ export default function ZohoComparisonPage() {
           Add-Ons: AI Intent Heatmap Module • CRM Sync Optimizer • SDR Routing
           Automation
         </p>
-        <div className="flex justify-center gap-4">
+        <div className="flex flex-col md:flex-row justify-center gap-4">
           <Button className="bg-[#E94F2E] hover:bg-[#C53E20] text-white rounded-md px-6 py-3 text-lg shadow-lg transition">
             Start Free — Engage Visitors Automatically
           </Button>
