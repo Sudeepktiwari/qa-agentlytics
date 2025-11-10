@@ -60,8 +60,12 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const onboardingUpdates: Partial<OnboardingSettings> = body.onboarding || body;
 
-    // Allow minimal updates: if curlCommand is provided, auto-enable onboarding
-    const hasCurl = typeof onboardingUpdates.curlCommand === "string" && onboardingUpdates.curlCommand.trim().length > 0;
+    // Allow minimal updates: if any cURL is provided, auto-enable onboarding
+    const hasCurl = (
+      (typeof onboardingUpdates.curlCommand === "string" && onboardingUpdates.curlCommand.trim().length > 0) ||
+      (typeof (onboardingUpdates as any).authCurlCommand === "string" && (onboardingUpdates as any).authCurlCommand.trim().length > 0) ||
+      (typeof onboardingUpdates.initialSetupCurlCommand === "string" && onboardingUpdates.initialSetupCurlCommand.trim().length > 0)
+    );
     const shouldEnable = hasCurl || typeof onboardingUpdates.enabled === "boolean" ? onboardingUpdates.enabled ?? true : undefined;
 
     // Merge with existing settings to preserve defaults

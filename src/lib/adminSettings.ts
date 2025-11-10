@@ -30,6 +30,9 @@ export interface OnboardingSettings {
   docsUrl?: string;
   // New: canonical cURL registration command for auto-configuration
   curlCommand?: string;
+  // Authentication: docs and canonical cURL
+  authDocsUrl?: string;
+  authCurlCommand?: string;
   // Post-registration initial setup: docs and canonical cURL
   initialSetupDocsUrl?: string;
   initialSetupCurlCommand?: string;
@@ -113,6 +116,8 @@ export const DEFAULT_ADMIN_SETTINGS: Omit<AdminSettings, "_id" | "adminId" | "em
     authHeaderKey: "Authorization",
     docsUrl: undefined,
     curlCommand: undefined,
+    authDocsUrl: undefined,
+    authCurlCommand: undefined,
     initialSetupDocsUrl: undefined,
     initialSetupCurlCommand: undefined,
     fields: [
