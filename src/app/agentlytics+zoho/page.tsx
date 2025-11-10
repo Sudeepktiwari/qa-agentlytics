@@ -114,7 +114,7 @@ export default function ZohoComparisonPage() {
           <p className="text-gray-900 font-medium">
             💡 Turn every CRM record into a live conversation.
           </p>
-          <div className="flex justify-center gap-4 mt-4">
+          <div className="flex flex-col md:flex-row justify-center gap-4 mt-4">
             <Button className="bg-[#E94F2E] hover:bg-[#C53E20] text-white rounded-md px-6 py-3 text-lg shadow-lg transition">
               Start Free Trial
             </Button>
@@ -462,7 +462,10 @@ export default function ZohoComparisonPage() {
       </section>
 
       {/* INTEGRATION SECTION */}
-      <section id="integrations" className="bg-[#FDF3EF] py-20 text-center">
+      <section
+        id="integrations"
+        className="bg-[#FDF3EF] py-20 text-center px-4"
+      >
         <h2 className="text-3xl font-bold text-[#E94F2E] mb-10">
           🧩 Works with Your Stack
         </h2>
