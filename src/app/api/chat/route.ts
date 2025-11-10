@@ -686,7 +686,7 @@ async function detectBookingConflicts(
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, x-api-key, Authorization",
+  "Access-Control-Allow-Headers": "Content-Type, x-api-key, x-widget-mode, Authorization",
   "Access-Control-Max-Age": "86400",
   "Access-Control-Allow-Credentials": "true",
 };
@@ -2370,8 +2370,12 @@ Keep the response conversational and helpful, focusing on providing value before
   const sessionsCollection = db.collection("onboardingSessions");
   const existingOnboarding = await sessionsCollection.findOne({ sessionId });
   const isOnboardingAction = question && /\bcancel onboarding\b/i.test(question || "");
+  // Respect widget mode header to gate onboarding in the chat API
+  const widgetMode = req.headers.get("x-widget-mode") || "";
+  const isOnboardingOnly = widgetMode === "onboarding_only";
   const isOnboardingIntent =
     onboardingEnabled &&
+    isOnboardingOnly &&
     (detectOnboardingIntent(question) ||
       ["in_progress", "ready_to_submit", "error"].includes(existingOnboarding?.status || "") ||
       isOnboardingAction);

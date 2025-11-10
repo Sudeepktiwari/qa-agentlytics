@@ -84,6 +84,18 @@ export async function GET(request: Request) {
     mirrorMode: getBoolAttr('data-mirror-mode', true), // Enable live page mirror
     mirrorScale: getAttr('data-mirror-scale', 'auto') // 'auto', 'fit', or custom scale like '0.3'
   };
+
+  // Onboarding-only mode flag from embed code
+  const ONBOARDING_ONLY = getBoolAttr('data-onboarding-only', false);
+
+  // If onboarding-only mode, adjust defaults and behavior
+  if (ONBOARDING_ONLY) {
+    // Distinct look and behavior for onboarding-only usage
+    config.theme = 'green';
+    config.chatTitle = getAttr('data-chat-title', 'Onboarding Assistant');
+    config.autoOpenProactive = false; // suppress proactive auto-open
+    config.mirrorMode = false; // disable mirror
+  }
   
   // Theme configurations
   const themes = {
@@ -1436,6 +1448,11 @@ export async function GET(request: Request) {
     if (!indicator) return;
     
     console.log('[Widget] Updating bot mode indicator:', { botMode, userEmail });
+    if (ONBOARDING_ONLY) {
+      indicator.style.backgroundColor = '#10b981';
+      indicator.title = 'Onboarding Mode';
+      return;
+    }
     
     if (botMode === 'sales') {
       indicator.style.backgroundColor = '#4caf50'; // Green for sales
@@ -3067,6 +3084,7 @@ export async function GET(request: Request) {
         <div style="background: \${currentTheme.primary}; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 10; backdrop-filter: blur(10px); background: rgba(\${hexToRgb(currentTheme.primary)}, 0.95);">
           <div style="display: flex; align-items: center; gap: 12px;">
             <h3 style="margin: 0; font-size: 16px; font-weight: 600;">\${config.chatTitle}</h3>
+            \${ONBOARDING_ONLY ? '<span id="appointy-onboarding-badge" style="padding: 2px 8px; font-size: 11px; font-weight: 600; border-radius: 10px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: #fff; letter-spacing: 0.3px;">ONBOARDING</span>' : ''}
             <div id="appointy-bot-mode-indicator" style="width: 12px; height: 12px; border-radius: 50%; background-color: #7b1fa2; flex-shrink: 0;" title="Lead Mode">
             </div>
           </div>
@@ -3234,6 +3252,10 @@ export async function GET(request: Request) {
   
   // Start followup timer
   function startFollowupTimer() {
+    if (ONBOARDING_ONLY) {
+      console.log('[Widget] Followup timer suppressed in onboarding-only mode');
+      return;
+    }
     console.log('[Widget] Starting followup timer - count:', followupCount, 'userIsActive:', userIsActive, 'speechSynthesis.speaking:', speechSynthesis.speaking);
     console.log('[Widget] Timer starts independently of speech playback status');
     clearFollowupTimer();
@@ -3286,7 +3308,8 @@ export async function GET(request: Request) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-API-Key': API_KEY
+          'X-API-Key': API_KEY,
+          'X-Widget-Mode': ONBOARDING_ONLY ? 'onboarding_only' : 'standard'
         },
         body: JSON.stringify(requestData)
       });

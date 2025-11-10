@@ -49,6 +49,7 @@ const OnboardingSettingsSection: React.FC = () => {
   const [registrationOpen, setRegistrationOpen] = useState<boolean>(false);
   const [authenticationOpen, setAuthenticationOpen] = useState<boolean>(false);
   const [initialSetupOpen, setInitialSetupOpen] = useState<boolean>(false);
+  const [embedOpen, setEmbedOpen] = useState<boolean>(false);
 
   // Completion indicators for headings
   const registrationComplete = (((docUrl && docUrl.trim()) || !!docFile) && !!(generatedCurl && generatedCurl.trim()));
@@ -664,6 +665,94 @@ const OnboardingSettingsSection: React.FC = () => {
             </div>
           </div>
 
+          </div>
+
+          {/* Onboarding Widget Embed */}
+          <div
+            role="button"
+            tabIndex={0}
+            aria-expanded={embedOpen}
+            onClick={() => setEmbedOpen(!embedOpen)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setEmbedOpen(!embedOpen);
+              }
+            }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginTop: 24,
+              padding: "12px 14px",
+              border: "1px solid #e2e8f0",
+              borderRadius: 12,
+              background: "#f7fafc",
+              cursor: "pointer",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontWeight: 600, color: "#2d3748" }}>
+                {embedOpen ? "▼" : "▶"} Onboarding Widget Embed
+              </span>
+            </div>
+            <div style={{ color: "#718096", fontSize: 12 }}>
+              {embedOpen ? "Collapse" : "Expand"}
+            </div>
+          </div>
+          <div style={{ display: embedOpen ? "block" : "none" }}>
+            <div style={{ marginTop: 12 }}>
+              <label
+                style={{
+                  display: "block",
+                  color: "#4a5568",
+                  fontSize: 13,
+                  marginBottom: 6,
+                }}
+              >
+                Embed snippet
+              </label>
+              {(() => {
+                const origin = typeof window !== 'undefined' ? window.location.origin : '';
+                const apiKey = settings.apiKey || '<YOUR_API_KEY>';
+                const snippet = `<script src="${origin}/api/widget" data-api-key="${apiKey}" data-theme="green" data-onboarding-only="true"></script>`;
+                return (
+                  <div>
+                    <textarea
+                      value={snippet}
+                      readOnly
+                      rows={2}
+                      style={{
+                        width: "100%",
+                        padding: 12,
+                        border: "1px solid #d1d5db",
+                        borderRadius: 8,
+                        fontSize: 13,
+                        fontFamily: "monospace",
+                      }}
+                    />
+                    <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 6 }}>
+                      <button
+                        onClick={() => navigator.clipboard.writeText(snippet)}
+                        style={{
+                          padding: "8px 12px",
+                          background: "#2d3748",
+                          color: "white",
+                          border: "none",
+                          borderRadius: 8,
+                          fontSize: 13,
+                        }}
+                      >
+                        Copy embed
+                      </button>
+                      <span style={{ color: "#718096", fontSize: 12 }}>
+                        Paste into your site to enable onboarding-only widget.
+                      </span>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
           </div>
 
           {/* Authentication */}
