@@ -177,6 +177,13 @@ export async function GET(request: Request) {
       padding: 20px;
     \`;
   }
+  // Remove overlay padding on mobile to allow full-width widget
+  if (ONBOARDING_ONLY) {
+    const isMobileOverlay = (window.matchMedia && window.matchMedia('(max-width: 480px)').matches) || (window.innerWidth <= 480);
+    if (isMobileOverlay) {
+      widgetMainContainer.style.padding = '0';
+    }
+  }
   
   // Create widget container (chat window)
   const widgetContainer = document.createElement('div');
@@ -193,9 +200,18 @@ export async function GET(request: Request) {
     flex-direction: column;
   \`;
   
-  // In onboarding-only mode, use a wider modal width
+  // In onboarding-only mode, use responsive modal width/height
   if (ONBOARDING_ONLY) {
-    widgetContainer.style.width = '70vw';
+    const isMobile = (window.matchMedia && window.matchMedia('(max-width: 480px)').matches) || (window.innerWidth <= 480);
+    if (isMobile) {
+      widgetContainer.style.width = '100vw';
+      // Per request: set mobile height to 100vw
+      widgetContainer.style.height = '100vh';
+      // Ensure no margins so width truly spans edge-to-edge
+      widgetContainer.style.margin = '0';
+    } else {
+      widgetContainer.style.width = '70vw';
+    }
   }
   
   // Create toggle button
