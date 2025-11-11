@@ -7,6 +7,7 @@ const OnboardingSettingsSection: React.FC = () => {
   const [settings, setSettings] = useState<OnboardingSettings>({
     enabled: false,
   });
+  const [globalApiKey, setGlobalApiKey] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -73,6 +74,21 @@ const OnboardingSettingsSection: React.FC = () => {
           if (ob.initialSetupDocsUrl) setInitialDocUrl(ob.initialSetupDocsUrl);
         } else {
           setError(data.error || "Failed to load onboarding settings");
+        }
+
+        // Prefill API key for embed snippet using the admin API key
+        try {
+          const keyRes = await fetch("/api/auth/api-key", {
+            credentials: "include",
+          });
+          if (keyRes.ok) {
+            const keyData = await keyRes.json();
+            if (keyData.apiKey) {
+              setGlobalApiKey(keyData.apiKey);
+            }
+          }
+        } catch (e) {
+          // Non-fatal: embed will show placeholder if not available
         }
       } catch (e) {
         setError("Failed to load onboarding settings");
@@ -714,7 +730,7 @@ const OnboardingSettingsSection: React.FC = () => {
               </label>
               {(() => {
                 const origin = typeof window !== 'undefined' ? window.location.origin : '';
-                const apiKey = settings.apiKey || '<YOUR_API_KEY>';
+                const apiKey = settings.apiKey || globalApiKey || '<YOUR_API_KEY>';
                 const snippet = `<script src="${origin}/api/widget" data-api-key="${apiKey}" data-theme="green" data-onboarding-only="true"></script>`;
                 return (
                   <div>
