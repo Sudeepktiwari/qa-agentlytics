@@ -2478,7 +2478,10 @@ Keep the response conversational and helpful, focusing on providing value before
           const payload = { ...(sessionDoc.collectedData || {}) };
           const result = adminId
             ? (sessionDoc?.phase === "initial_setup"
-                ? await onboardingService.initialSetup(payload, adminId)
+                ? await onboardingService.initialSetup(
+                    { ...payload, __authToken: sessionDoc?.externalAuthToken },
+                    adminId
+                  )
                 : await onboardingService.register(payload, adminId))
             : { success: false, error: "Missing adminId" };
           // Log registration outcome with sensitive field redaction
@@ -2556,6 +2559,32 @@ Keep the response conversational and helpful, focusing on providing value before
           }
 
           if (result.success && onboardingConfig?.initialSetupCurlCommand) {
+            // Attempt authentication using admin-provided auth cURL and collected registration data
+            if ((onboardingConfig as any).authCurlCommand) {
+              try {
+                const authRes = await onboardingService.authenticate({ ...(sessionDoc.collectedData || {}) }, adminId!);
+                if (authRes.success && authRes.token) {
+                  await sessionsCollection.updateOne(
+                    { sessionId },
+                    { $set: { externalAuthToken: authRes.token, updatedAt: now } }
+                  );
+                } else {
+                  console.warn(`[Chat API ${requestId}] ⚠️ Auth step failed or no token`, {
+                    adminId,
+                    sessionId,
+                    status: authRes.status,
+                    error: authRes.error,
+                  });
+                }
+              } catch (e: any) {
+                console.warn(`[Chat API ${requestId}] ⚠️ Auth step error`, {
+                  adminId,
+                  sessionId,
+                  message: e?.message || String(e),
+                });
+              }
+            }
+
             // Kick off initial setup phase using admin-provided cURL
             const setupFields = deriveOnboardingFieldsFromCurl(onboardingConfig.initialSetupCurlCommand);
             await sessionsCollection.updateOne(
@@ -2661,7 +2690,10 @@ Keep the response conversational and helpful, focusing on providing value before
           const payload = { ...(sessionDoc.collectedData || {}) };
           const result = adminId
             ? (sessionDoc?.phase === "initial_setup"
-                ? await onboardingService.initialSetup(payload, adminId)
+                ? await onboardingService.initialSetup(
+                    { ...payload, __authToken: sessionDoc?.externalAuthToken },
+                    adminId
+                  )
                 : await onboardingService.register(payload, adminId))
             : { success: false, error: "Missing adminId" };
           // Log registration outcome with sensitive field redaction

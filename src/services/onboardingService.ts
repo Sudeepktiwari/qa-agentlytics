@@ -12,6 +12,14 @@ export interface RegistrationResult {
   responseBody?: any;
 }
 
+export interface AuthResult {
+  success: boolean;
+  token?: string;
+  error?: string;
+  status?: number;
+  responseBody?: any;
+}
+
 function buildAuthHeader(settings: OnboardingSettings): Record<string, string> {
   const headers: Record<string, string> = {};
   if (settings.apiKey) {
@@ -145,6 +153,130 @@ function applyFieldMappings(data: Record<string, any>, mappings: Record<string, 
 }
 
 export const onboardingService = {
+  async authenticate(data: Record<string, any>, adminId: string): Promise<AuthResult> {
+    const settings = await getAdminSettings(adminId);
+    const onboarding = settings.onboarding || { enabled: false };
+
+    if (!onboarding.enabled) {
+      return { success: false, error: "Onboarding is disabled", status: 400 };
+    }
+
+    // Require an authentication cURL command to be configured
+    const authCurl = (onboarding as any).authCurlCommand as string | undefined;
+    if (!authCurl || authCurl.trim().length === 0) {
+      return { success: false, error: "Authentication cURL not configured", status: 400 };
+    }
+
+    const redactKeys = ["password", "pass", "secret", "token", "apikey", "api_key", "key"];
+
+    try {
+      const parsed = parseCurlRegistrationSpec(authCurl);
+      const url = parsed.url;
+      const method = (parsed.method as any) || "POST";
+      const contentType = (parsed.contentType as any) || "application/json";
+
+      if (!url) {
+        console.error("[Onboarding] ❌ cURL parsing failed for authentication: no URL found", {
+          adminId,
+          curlSnippet: (authCurl || "").slice(0, 200),
+        });
+        return { success: false, error: "Auth URL not found in cURL command", status: 400 };
+      }
+
+      const headers: Record<string, string> = {
+        ...parsed.headers,
+        "Content-Type": contentType,
+      };
+
+      const { body, keysUsed } = buildBodyFromCurl(parsed, { ...data });
+
+      const safePayloadForLog = Object.fromEntries(
+        Object.entries(data).map(([k, v]) => {
+          const kl = k.toLowerCase();
+          const isSensitive = redactKeys.some((rk) => kl.includes(rk));
+          return [k, isSensitive ? "***" : v];
+        })
+      );
+
+      console.log("[Onboarding] Calling external auth API via cURL:", {
+        url,
+        method,
+        contentType,
+        headerKeys: Object.keys(headers),
+        headers: redactHeadersForLog(headers),
+        payloadKeys: keysUsed,
+      });
+
+      const res = await fetch(url as string, { method, headers, body });
+      const bodyText = await res.text();
+      let parsedResp: any = null;
+      try {
+        parsedResp = JSON.parse(bodyText);
+      } catch {
+        parsedResp = bodyText;
+      }
+
+      if (!res.ok) {
+        const errorMessage = (() => {
+          if (typeof parsedResp === "string") return parsedResp;
+          if (!parsedResp || typeof parsedResp !== "object") return "Authentication failed";
+          const topLevel = (parsedResp as any).error || (parsedResp as any).message;
+          const nestedData = (parsedResp as any)?.data?.error || (parsedResp as any)?.data?.message;
+          const arrayErrors = Array.isArray((parsedResp as any)?.errors)
+            ? (parsedResp as any).errors.map((e: any) => e?.message || e).filter(Boolean).join("; ")
+            : undefined;
+          return topLevel || nestedData || arrayErrors || "Authentication failed";
+        })();
+
+        console.error("[Onboarding] ❌ External authentication failed", {
+          status: res.status,
+          adminId,
+          url,
+          responseBody: parsedResp,
+          payload: safePayloadForLog,
+          errorMessage,
+        });
+        return { success: false, error: errorMessage, status: res.status, responseBody: parsedResp };
+      }
+
+      // Try common token field names
+      const token = (() => {
+        if (parsedResp && typeof parsedResp === "object") {
+          const candidates = [
+            (parsedResp as any).token,
+            (parsedResp as any).access_token,
+            (parsedResp as any).authToken,
+            (parsedResp as any)?.data?.token,
+            (parsedResp as any)?.data?.access_token,
+          ];
+          return candidates.find((t: any) => typeof t === "string" && t.length > 0);
+        }
+        return undefined;
+      })();
+
+      if (!token) {
+        console.warn("[Onboarding] ⚠️ Auth response did not include a token field", {
+          adminId,
+          url,
+          responseBodyType: typeof parsedResp,
+        });
+      }
+
+      console.log("[Onboarding] ✅ External authentication succeeded", {
+        status: res.status,
+        adminId,
+        tokenPresent: !!token,
+      });
+      return { success: true, status: res.status, token, responseBody: parsedResp };
+    } catch (error: any) {
+      console.error("[Onboarding] ❌ External authentication error", {
+        adminId,
+        message: error?.message || String(error),
+        stack: error?.stack,
+      });
+      return { success: false, error: error?.message || String(error), status: 500 };
+    }
+  },
   async initialSetup(data: Record<string, any>, adminId: string): Promise<RegistrationResult> {
     const settings = await getAdminSettings(adminId);
     const onboarding = settings.onboarding || { enabled: false };
@@ -171,6 +303,13 @@ export const onboardingService = {
         ...parsed.headers,
         "Content-Type": contentType,
       };
+
+      // If auth token was attached to data by the chat flow, set header
+      const tokenFromFlow = (data as any).__authToken as string | undefined;
+      const headerKey = onboarding.authHeaderKey || "Authorization";
+      if (tokenFromFlow) {
+        headers[headerKey] = headerKey.toLowerCase() === "authorization" ? `Bearer ${tokenFromFlow}` : tokenFromFlow;
+      }
 
       if (!url) {
         console.error("[Onboarding] ❌ cURL parsing failed for initial setup: no URL found", {
@@ -290,6 +429,12 @@ export const onboardingService = {
       "Content-Type": contentType,
       ...buildAuthHeader(onboarding),
     };
+    // Apply dynamic token for non-cURL setup if present
+    const tokenFromFlow2 = (data as any).__authToken as string | undefined;
+    if (tokenFromFlow2) {
+      const headerKey2 = onboarding.authHeaderKey || "Authorization";
+      headers[headerKey2] = headerKey2.toLowerCase() === "authorization" ? `Bearer ${tokenFromFlow2}` : tokenFromFlow2;
+    }
 
     if (onboarding.idempotencyKeyField && data[onboarding.idempotencyKeyField]) {
       headers["Idempotency-Key"] = String(data[onboarding.idempotencyKeyField]);
