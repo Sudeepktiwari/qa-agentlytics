@@ -38,7 +38,8 @@ const OnboardingSettingsSection: React.FC = () => {
   // Doc-to-cURL UI state (Initial Setup)
   const [initialDocUrl, setInitialDocUrl] = useState<string>("");
   const [initialDocFile, setInitialDocFile] = useState<File | null>(null);
-  const [initialNamespace, setInitialNamespace] = useState<string>("initial-setup");
+  const [initialNamespace, setInitialNamespace] =
+    useState<string>("initial-setup");
   const [initialPrompt, setInitialPrompt] = useState<string>("");
   const [initialIndexing, setInitialIndexing] = useState<boolean>(false);
   const [initialGenerating, setInitialGenerating] = useState<boolean>(false);
@@ -53,9 +54,15 @@ const OnboardingSettingsSection: React.FC = () => {
   const [embedOpen, setEmbedOpen] = useState<boolean>(false);
 
   // Completion indicators for headings
-  const registrationComplete = (((docUrl && docUrl.trim()) || !!docFile) && !!(generatedCurl && generatedCurl.trim()));
-  const authenticationComplete = (((authDocUrl && authDocUrl.trim()) || !!authDocFile) && !!(authGeneratedCurl && authGeneratedCurl.trim()));
-  const initialSetupComplete = (((initialDocUrl && initialDocUrl.trim()) || !!initialDocFile) && !!(initialGeneratedCurl && initialGeneratedCurl.trim()));
+  const registrationComplete =
+    ((docUrl && docUrl.trim()) || !!docFile) &&
+    !!(generatedCurl && generatedCurl.trim());
+  const authenticationComplete =
+    ((authDocUrl && authDocUrl.trim()) || !!authDocFile) &&
+    !!(authGeneratedCurl && authGeneratedCurl.trim());
+  const initialSetupComplete =
+    ((initialDocUrl && initialDocUrl.trim()) || !!initialDocFile) &&
+    !!(initialGeneratedCurl && initialGeneratedCurl.trim());
 
   useEffect(() => {
     const load = async () => {
@@ -243,7 +250,8 @@ const OnboardingSettingsSection: React.FC = () => {
       setInitialIndexing(true);
 
       const form = new FormData();
-      if (initialDocUrl && initialDocUrl.trim()) form.append("url", initialDocUrl.trim());
+      if (initialDocUrl && initialDocUrl.trim())
+        form.append("url", initialDocUrl.trim());
       if (initialDocFile) form.append("file", initialDocFile);
       form.append("namespace", initialNamespace || "initial-setup");
 
@@ -254,7 +262,9 @@ const OnboardingSettingsSection: React.FC = () => {
       });
       const indexJson = await indexRes.json();
       if (!indexRes.ok || !indexJson.ok) {
-        throw new Error(indexJson.error || "Failed to index initial setup docs");
+        throw new Error(
+          indexJson.error || "Failed to index initial setup docs"
+        );
       }
       setInitialIndexStatus(
         `Indexed ${indexJson.count} chunks from ${indexJson.source}`
@@ -280,14 +290,17 @@ const OnboardingSettingsSection: React.FC = () => {
       });
       const genJson = await genRes.json();
       if (!genRes.ok || !genJson.success) {
-        throw new Error(genJson.error || "Failed to generate initial setup cURL");
+        throw new Error(
+          genJson.error || "Failed to generate initial setup cURL"
+        );
       }
       setInitialGeneratedCurl(genJson.curl || "");
       setInitialHits(genJson.hits || 0);
       // Auto-populate the initial setup cURL field for saving
       setSettings((prev) => ({
         ...prev,
-        initialSetupCurlCommand: (genJson.curl || (prev as any).initialSetupCurlCommand) as any,
+        initialSetupCurlCommand: (genJson.curl ||
+          (prev as any).initialSetupCurlCommand) as any,
       }));
       setSuccess("Generated initial setup cURL from docs. Review and save it.");
       setTimeout(() => setSuccess(null), 3000);
@@ -308,7 +321,8 @@ const OnboardingSettingsSection: React.FC = () => {
       setAuthIndexing(true);
 
       const form = new FormData();
-      if (authDocUrl && authDocUrl.trim()) form.append("url", authDocUrl.trim());
+      if (authDocUrl && authDocUrl.trim())
+        form.append("url", authDocUrl.trim());
       if (authDocFile) form.append("file", authDocFile);
       form.append("namespace", authNamespace || "auth");
 
@@ -319,9 +333,13 @@ const OnboardingSettingsSection: React.FC = () => {
       });
       const indexJson = await indexRes.json();
       if (!indexRes.ok || !indexJson.ok) {
-        throw new Error(indexJson.error || "Failed to index authentication docs");
+        throw new Error(
+          indexJson.error || "Failed to index authentication docs"
+        );
       }
-      setAuthIndexStatus(`Indexed ${indexJson.count} chunks from ${indexJson.source}`);
+      setAuthIndexStatus(
+        `Indexed ${indexJson.count} chunks from ${indexJson.source}`
+      );
     } catch (e: any) {
       setError(e?.message || "Failed to index authentication docs");
     } finally {
@@ -343,7 +361,9 @@ const OnboardingSettingsSection: React.FC = () => {
       });
       const genJson = await genRes.json();
       if (!genRes.ok || !genJson.success) {
-        throw new Error(genJson.error || "Failed to generate authentication cURL");
+        throw new Error(
+          genJson.error || "Failed to generate authentication cURL"
+        );
       }
       setAuthGeneratedCurl(genJson.curl || "");
       setAuthHits(genJson.hits || 0);
@@ -352,7 +372,9 @@ const OnboardingSettingsSection: React.FC = () => {
         ...prev,
         authCurlCommand: (genJson.curl || (prev as any).authCurlCommand) as any,
       }));
-      setSuccess("Generated authentication cURL from docs. Review and save it.");
+      setSuccess(
+        "Generated authentication cURL from docs. Review and save it."
+      );
       setTimeout(() => setSuccess(null), 3000);
     } catch (e: any) {
       setError(e?.message || "Failed to generate authentication cURL");
@@ -451,7 +473,13 @@ const OnboardingSettingsSection: React.FC = () => {
                 {registrationOpen ? "▼" : "▶"} Registration
               </span>
               {registrationComplete && (
-                <span aria-label="complete" title="Docs indexed and cURL generated" style={{ color: "#38a169" }}>✅</span>
+                <span
+                  aria-label="complete"
+                  title="Docs indexed and cURL generated"
+                  style={{ color: "#38a169" }}
+                >
+                  ✅
+                </span>
               )}
             </div>
             <div style={{ color: "#718096", fontSize: 12 }}>
@@ -460,31 +488,6 @@ const OnboardingSettingsSection: React.FC = () => {
           </div>
           <div style={{ display: registrationOpen ? "block" : "none" }}>
             <div style={{ marginBottom: 16 }}>
-            <label
-              style={{
-                display: "block",
-                color: "#4a5568",
-                fontSize: 13,
-                marginBottom: 6,
-              }}
-            >
-              Registration API Document URL (Google Docs or any public page)
-            </label>
-            <input
-              type="url"
-              placeholder="https://docs.google.com/document/d/<DOC_ID>/edit?usp=sharing or https://yourdocs.page"
-              value={docUrl}
-              onChange={(e) => setDocUrl(e.target.value)}
-              style={{
-                width: "100%",
-                padding: 10,
-                border: "1px solid #d1d5db",
-                borderRadius: 8,
-                fontSize: 14,
-              }}
-            />
-
-            <div style={{ marginTop: 10 }}>
               <label
                 style={{
                   display: "block",
@@ -493,105 +496,23 @@ const OnboardingSettingsSection: React.FC = () => {
                   marginBottom: 6,
                 }}
               >
-                Or upload a plain text file (.txt or .md)
+                Registration API Document URL (Google Docs or any public page)
               </label>
               <input
-                type="file"
-                accept=".txt,.md"
-                onChange={handleFileChange}
-              />
-            </div>
-
-            <div style={{ marginTop: 10, display: "flex", gap: 12 }}>
-              <div style={{ flex: 1 }}>
-                <label
-                  style={{
-                    display: "block",
-                    color: "#4a5568",
-                    fontSize: 13,
-                    marginBottom: 6,
-                  }}
-                >
-                  Namespace
-                </label>
-                <input
-                  type="text"
-                  placeholder="docs"
-                  value={namespace}
-                  onChange={(e) => setNamespace(e.target.value)}
-                  style={{
-                    width: "100%",
-                    padding: 10,
-                    border: "1px solid #d1d5db",
-                    borderRadius: 8,
-                    fontSize: 14,
-                  }}
-                />
-              </div>
-            </div>
-
-            <div style={{ marginTop: 10 }}>
-              <label
-                style={{
-                  display: "block",
-                  color: "#4a5568",
-                  fontSize: 13,
-                  marginBottom: 6,
-                }}
-              >
-                Optional prompt
-              </label>
-              <textarea
-                placeholder={
-                  "POST /users/register with JSON {email, password}; include Content-Type header"
-                }
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                rows={3}
+                type="url"
+                placeholder="https://docs.google.com/document/d/<DOC_ID>/edit?usp=sharing or https://yourdocs.page"
+                value={docUrl}
+                onChange={(e) => setDocUrl(e.target.value)}
                 style={{
                   width: "100%",
                   padding: 10,
                   border: "1px solid #d1d5db",
                   borderRadius: 8,
                   fontSize: 14,
-                  fontFamily: "monospace",
                 }}
               />
-            </div>
 
-            <div style={{ marginTop: 10 }}>
-              <button
-                onClick={indexDocs}
-                disabled={indexing || generating}
-                style={{
-                  padding: "10px 14px",
-                  background:
-                    indexing || generating
-                      ? "#a0aec0"
-                      : "linear-gradient(135deg, #4299e1, #3182ce)",
-                  color: "white",
-                  border: "none",
-                  borderRadius: 12,
-                  fontSize: 14,
-                  fontWeight: 600,
-                  cursor: indexing || generating ? "not-allowed" : "pointer",
-                }}
-              >
-                {indexing
-                  ? "Indexing…"
-                  : generating
-                  ? "Generating cURL…"
-                  : "Index docs"}
-              </button>
-            </div>
-
-            {indexStatus && (
-              <div style={{ color: "#4a5568", fontSize: 12, marginTop: 6 }}>
-                {indexStatus}
-              </div>
-            )}
-            {generatedCurl && (
-              <div style={{ marginTop: 12 }}>
+              <div style={{ marginTop: 10 }}>
                 <label
                   style={{
                     display: "block",
@@ -600,87 +521,196 @@ const OnboardingSettingsSection: React.FC = () => {
                     marginBottom: 6,
                   }}
                 >
-                  Generated cURL
+                  Or upload a plain text file (.txt or .md)
+                </label>
+                <input
+                  type="file"
+                  accept=".txt,.md"
+                  onChange={handleFileChange}
+                />
+              </div>
+
+              <div style={{ marginTop: 10, display: "flex", gap: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <label
+                    style={{
+                      display: "block",
+                      color: "#4a5568",
+                      fontSize: 13,
+                      marginBottom: 6,
+                    }}
+                  >
+                    Namespace
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="docs"
+                    value={namespace}
+                    onChange={(e) => setNamespace(e.target.value)}
+                    style={{
+                      width: "100%",
+                      padding: 10,
+                      border: "1px solid #d1d5db",
+                      borderRadius: 8,
+                      fontSize: 14,
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginTop: 10 }}>
+                <label
+                  style={{
+                    display: "block",
+                    color: "#4a5568",
+                    fontSize: 13,
+                    marginBottom: 6,
+                  }}
+                >
+                  Optional prompt
                 </label>
                 <textarea
-                  value={generatedCurl}
-                  readOnly
-                  rows={5}
+                  placeholder={
+                    "POST /users/register with JSON {email, password}; include Content-Type header"
+                  }
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  rows={3}
                   style={{
                     width: "100%",
-                    padding: 12,
+                    padding: 10,
                     border: "1px solid #d1d5db",
                     borderRadius: 8,
                     fontSize: 14,
                     fontFamily: "monospace",
                   }}
                 />
-                <div
+              </div>
+
+              <div style={{ marginTop: 10 }}>
+                <button
+                  onClick={indexDocs}
+                  disabled={indexing || generating}
                   style={{
-                    display: "flex",
-                    gap: 8,
-                    alignItems: "center",
-                    marginTop: 6,
+                    padding: "10px 14px",
+                    background:
+                      indexing || generating
+                        ? "#a0aec0"
+                        : "linear-gradient(135deg, #4299e1, #3182ce)",
+                    color: "white",
+                    border: "none",
+                    borderRadius: 12,
+                    fontSize: 14,
+                    fontWeight: 600,
+                    cursor: indexing || generating ? "not-allowed" : "pointer",
                   }}
                 >
-                  <button
-                    onClick={() => navigator.clipboard.writeText(generatedCurl)}
+                  {indexing
+                    ? "Indexing…"
+                    : generating
+                    ? "Generating cURL…"
+                    : "Index docs"}
+                </button>
+              </div>
+
+              {indexStatus && (
+                <div style={{ color: "#4a5568", fontSize: 12, marginTop: 6 }}>
+                  {indexStatus}
+                </div>
+              )}
+              {generatedCurl && (
+                <div style={{ marginTop: 12 }}>
+                  <label
                     style={{
-                      padding: "8px 12px",
-                      background: "#2d3748",
-                      color: "white",
-                      border: "none",
-                      borderRadius: 8,
+                      display: "block",
+                      color: "#4a5568",
                       fontSize: 13,
+                      marginBottom: 6,
                     }}
                   >
-                    Copy cURL
-                  </button>
-                  <span style={{ color: "#718096", fontSize: 12 }}>
-                    Context hits: {hits}
-                  </span>
+                    Generated cURL
+                  </label>
+                  <textarea
+                    value={generatedCurl}
+                    readOnly
+                    rows={5}
+                    style={{
+                      width: "100%",
+                      padding: 12,
+                      border: "1px solid #d1d5db",
+                      borderRadius: 8,
+                      fontSize: 14,
+                      fontFamily: "monospace",
+                    }}
+                  />
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 8,
+                      alignItems: "center",
+                      marginTop: 6,
+                    }}
+                  >
+                    <button
+                      onClick={() =>
+                        navigator.clipboard.writeText(generatedCurl)
+                      }
+                      style={{
+                        padding: "8px 12px",
+                        background: "#2d3748",
+                        color: "white",
+                        border: "none",
+                        borderRadius: 8,
+                        fontSize: 13,
+                      }}
+                    >
+                      Copy cURL
+                    </button>
+                    <span style={{ color: "#718096", fontSize: 12 }}>
+                      Context hits: {hits}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-
-          {/* Canonical registration cURL command */}
-          <div>
-            <label
-              style={{
-                display: "block",
-                color: "#4a5568",
-                fontSize: 13,
-                marginBottom: 6,
-              }}
-            >
-              Canonical registration cURL
-            </label>
-            <textarea
-              placeholder={
-                'curl -X POST https://api.your-service.com/register \\\n+  -H \'Content-Type: application/json\' \\\n+  -H \'Authorization: Bearer <token>\' \\\n+  -d \'{"email":"user@example.com","firstName":"Jane","lastName":"Doe"}\''
-              }
-              value={settings.curlCommand || ""}
-              onChange={(e) =>
-                setSettings({ ...settings, curlCommand: e.target.value })
-              }
-              rows={6}
-              style={{
-                width: "100%",
-                padding: 12,
-                border: "1px solid #d1d5db",
-                borderRadius: 8,
-                fontSize: 14,
-                fontFamily: "monospace",
-                whiteSpace: "pre-wrap",
-              }}
-            />
-            <div style={{ color: "#718096", fontSize: 12, marginTop: 6 }}>
-              Paste the exact cURL used to register a user. We will auto-derive
-              method, URL, headers, content type, and required fields from it.
+              )}
             </div>
-          </div>
 
+            {/* Canonical registration cURL command */}
+            <div>
+              <label
+                style={{
+                  display: "block",
+                  color: "#4a5568",
+                  fontSize: 13,
+                  marginBottom: 6,
+                }}
+              >
+                Canonical registration cURL
+              </label>
+              <textarea
+                placeholder={
+                  'curl -X POST https://api.your-service.com/register \\\n+  -H \'Content-Type: application/json\' \\\n+  -H \'Authorization: Bearer <token>\' \\\n+  -d \'{"email":"user@example.com","firstName":"Jane","lastName":"Doe"}\''
+                }
+                value={settings.curlCommand || ""}
+                onChange={(e) =>
+                  setSettings({ ...settings, curlCommand: e.target.value })
+                }
+                rows={6}
+                style={{
+                  width: "100%",
+                  padding: 12,
+                  border: "1px solid #d1d5db",
+                  borderRadius: 8,
+                  fontSize: 14,
+                  fontFamily: "monospace",
+                  whiteSpace: "pre-wrap",
+                }}
+              />
+              <div style={{ color: "#718096", fontSize: 12, marginTop: 6 }}>
+                Paste the exact cURL used to register a user. We will
+                auto-derive method, URL, headers, content type, and required
+                fields from it.
+              </div>
+            </div>
           </div>
 
           {/* Onboarding Widget Embed */}
@@ -729,8 +759,9 @@ const OnboardingSettingsSection: React.FC = () => {
                 Embed snippet
               </label>
               {(() => {
-                const origin = typeof window !== 'undefined' ? window.location.origin : '';
-                const apiKey = settings.apiKey || globalApiKey || '<YOUR_API_KEY>';
+                const origin =
+                  typeof window !== "undefined" ? window.location.origin : "";
+                const apiKey = settings.apiKey || "<YOUR_API_KEY>";
                 const snippet = `<script src="${origin}/api/widget" data-api-key="${apiKey}" data-theme="green" data-onboarding-only="true"></script>`;
                 return (
                   <div>
@@ -747,7 +778,14 @@ const OnboardingSettingsSection: React.FC = () => {
                         fontFamily: "monospace",
                       }}
                     />
-                    <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 6 }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: 8,
+                        alignItems: "center",
+                        marginTop: 6,
+                      }}
+                    >
                       <button
                         onClick={() => navigator.clipboard.writeText(snippet)}
                         style={{
@@ -800,7 +838,13 @@ const OnboardingSettingsSection: React.FC = () => {
                 {authenticationOpen ? "▼" : "▶"} Authentication
               </span>
               {authenticationComplete && (
-                <span aria-label="complete" title="Docs indexed and cURL generated" style={{ color: "#38a169" }}>✅</span>
+                <span
+                  aria-label="complete"
+                  title="Docs indexed and cURL generated"
+                  style={{ color: "#38a169" }}
+                >
+                  ✅
+                </span>
               )}
             </div>
             <div style={{ color: "#718096", fontSize: 12 }}>
@@ -808,32 +852,7 @@ const OnboardingSettingsSection: React.FC = () => {
             </div>
           </div>
           <div style={{ display: authenticationOpen ? "block" : "none" }}>
-          <div style={{ marginTop: 12, marginBottom: 16 }}>
-            <label
-              style={{
-                display: "block",
-                color: "#4a5568",
-                fontSize: 13,
-                marginBottom: 6,
-              }}
-            >
-              Authentication API Document URL (Google Docs or any public page)
-            </label>
-            <input
-              type="url"
-              placeholder="https://docs.google.com/document/d/<DOC_ID>/edit?usp=sharing or https://yourdocs.page"
-              value={authDocUrl}
-              onChange={(e) => setAuthDocUrl(e.target.value)}
-              style={{
-                width: "100%",
-                padding: 10,
-                border: "1px solid #d1d5db",
-                borderRadius: 8,
-                fontSize: 14,
-              }}
-            />
-
-            <div style={{ marginTop: 10 }}>
+            <div style={{ marginTop: 12, marginBottom: 16 }}>
               <label
                 style={{
                   display: "block",
@@ -842,95 +861,23 @@ const OnboardingSettingsSection: React.FC = () => {
                   marginBottom: 6,
                 }}
               >
-                Or upload a plain text file (.txt or .md)
+                Authentication API Document URL (Google Docs or any public page)
               </label>
-              <input type="file" accept=".txt,.md" onChange={handleAuthFileChange} />
-            </div>
-
-            <div style={{ marginTop: 10, display: "flex", gap: 12 }}>
-              <div style={{ flex: 1 }}>
-                <label
-                  style={{
-                    display: "block",
-                    color: "#4a5568",
-                    fontSize: 13,
-                    marginBottom: 6,
-                  }}
-                >
-                  Namespace
-                </label>
-                <input
-                  type="text"
-                  placeholder="auth"
-                  value={authNamespace}
-                  onChange={(e) => setAuthNamespace(e.target.value)}
-                  style={{
-                    width: "100%",
-                    padding: 10,
-                    border: "1px solid #d1d5db",
-                    borderRadius: 8,
-                    fontSize: 14,
-                  }}
-                />
-              </div>
-            </div>
-
-            <div style={{ marginTop: 10 }}>
-              <label
-                style={{
-                  display: "block",
-                  color: "#4a5568",
-                  fontSize: 13,
-                  marginBottom: 6,
-                }}
-              >
-                Optional prompt
-              </label>
-              <textarea
-                placeholder={
-                  "POST /auth/login with JSON {email, password}; include Content-Type header"
-                }
-                value={authPrompt}
-                onChange={(e) => setAuthPrompt(e.target.value)}
-                rows={3}
+              <input
+                type="url"
+                placeholder="https://docs.google.com/document/d/<DOC_ID>/edit?usp=sharing or https://yourdocs.page"
+                value={authDocUrl}
+                onChange={(e) => setAuthDocUrl(e.target.value)}
                 style={{
                   width: "100%",
                   padding: 10,
                   border: "1px solid #d1d5db",
                   borderRadius: 8,
                   fontSize: 14,
-                  fontFamily: "monospace",
                 }}
               />
-            </div>
 
-            <div style={{ marginTop: 10 }}>
-              <button
-                onClick={indexAuthDocs}
-                disabled={authIndexing || authGenerating}
-                style={{
-                  padding: "10px 14px",
-                  background:
-                    authIndexing || authGenerating
-                      ? "#a0aec0"
-                      : "linear-gradient(135deg, #ed8936, #dd6b20)",
-                  color: "white",
-                  border: "none",
-                  borderRadius: 12,
-                  fontSize: 14,
-                  fontWeight: 600,
-                  cursor: authIndexing || authGenerating ? "not-allowed" : "pointer",
-                }}
-              >
-                {authIndexing ? "Indexing…" : authGenerating ? "Generating cURL…" : "Index docs"}
-              </button>
-            </div>
-
-            {authIndexStatus && (
-              <div style={{ color: "#4a5568", fontSize: 12, marginTop: 6 }}>{authIndexStatus}</div>
-            )}
-            {authGeneratedCurl && (
-              <div style={{ marginTop: 12 }}>
+              <div style={{ marginTop: 10 }}>
                 <label
                   style={{
                     display: "block",
@@ -939,75 +886,201 @@ const OnboardingSettingsSection: React.FC = () => {
                     marginBottom: 6,
                   }}
                 >
-                  Generated authentication cURL
+                  Or upload a plain text file (.txt or .md)
+                </label>
+                <input
+                  type="file"
+                  accept=".txt,.md"
+                  onChange={handleAuthFileChange}
+                />
+              </div>
+
+              <div style={{ marginTop: 10, display: "flex", gap: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <label
+                    style={{
+                      display: "block",
+                      color: "#4a5568",
+                      fontSize: 13,
+                      marginBottom: 6,
+                    }}
+                  >
+                    Namespace
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="auth"
+                    value={authNamespace}
+                    onChange={(e) => setAuthNamespace(e.target.value)}
+                    style={{
+                      width: "100%",
+                      padding: 10,
+                      border: "1px solid #d1d5db",
+                      borderRadius: 8,
+                      fontSize: 14,
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginTop: 10 }}>
+                <label
+                  style={{
+                    display: "block",
+                    color: "#4a5568",
+                    fontSize: 13,
+                    marginBottom: 6,
+                  }}
+                >
+                  Optional prompt
                 </label>
                 <textarea
-                  value={authGeneratedCurl}
-                  readOnly
-                  rows={5}
+                  placeholder={
+                    "POST /auth/login with JSON {email, password}; include Content-Type header"
+                  }
+                  value={authPrompt}
+                  onChange={(e) => setAuthPrompt(e.target.value)}
+                  rows={3}
                   style={{
                     width: "100%",
-                    padding: 12,
+                    padding: 10,
                     border: "1px solid #d1d5db",
                     borderRadius: 8,
                     fontSize: 14,
                     fontFamily: "monospace",
                   }}
                 />
-                <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 6 }}>
-                  <button
-                    onClick={() => navigator.clipboard.writeText(authGeneratedCurl)}
+              </div>
+
+              <div style={{ marginTop: 10 }}>
+                <button
+                  onClick={indexAuthDocs}
+                  disabled={authIndexing || authGenerating}
+                  style={{
+                    padding: "10px 14px",
+                    background:
+                      authIndexing || authGenerating
+                        ? "#a0aec0"
+                        : "linear-gradient(135deg, #ed8936, #dd6b20)",
+                    color: "white",
+                    border: "none",
+                    borderRadius: 12,
+                    fontSize: 14,
+                    fontWeight: 600,
+                    cursor:
+                      authIndexing || authGenerating
+                        ? "not-allowed"
+                        : "pointer",
+                  }}
+                >
+                  {authIndexing
+                    ? "Indexing…"
+                    : authGenerating
+                    ? "Generating cURL…"
+                    : "Index docs"}
+                </button>
+              </div>
+
+              {authIndexStatus && (
+                <div style={{ color: "#4a5568", fontSize: 12, marginTop: 6 }}>
+                  {authIndexStatus}
+                </div>
+              )}
+              {authGeneratedCurl && (
+                <div style={{ marginTop: 12 }}>
+                  <label
                     style={{
-                      padding: "8px 12px",
-                      background: "#2d3748",
-                      color: "white",
-                      border: "none",
-                      borderRadius: 8,
+                      display: "block",
+                      color: "#4a5568",
                       fontSize: 13,
+                      marginBottom: 6,
                     }}
                   >
-                    Copy cURL
-                  </button>
-                  <span style={{ color: "#718096", fontSize: 12 }}>Context hits: {authHits}</span>
+                    Generated authentication cURL
+                  </label>
+                  <textarea
+                    value={authGeneratedCurl}
+                    readOnly
+                    rows={5}
+                    style={{
+                      width: "100%",
+                      padding: 12,
+                      border: "1px solid #d1d5db",
+                      borderRadius: 8,
+                      fontSize: 14,
+                      fontFamily: "monospace",
+                    }}
+                  />
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 8,
+                      alignItems: "center",
+                      marginTop: 6,
+                    }}
+                  >
+                    <button
+                      onClick={() =>
+                        navigator.clipboard.writeText(authGeneratedCurl)
+                      }
+                      style={{
+                        padding: "8px 12px",
+                        background: "#2d3748",
+                        color: "white",
+                        border: "none",
+                        borderRadius: 8,
+                        fontSize: 13,
+                      }}
+                    >
+                      Copy cURL
+                    </button>
+                    <span style={{ color: "#718096", fontSize: 12 }}>
+                      Context hits: {authHits}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-
-          {/* Canonical authentication cURL command */}
-          <div>
-            <label
-              style={{
-                display: "block",
-                color: "#4a5568",
-                fontSize: 13,
-                marginBottom: 6,
-              }}
-            >
-              Canonical authentication cURL
-            </label>
-            <textarea
-              placeholder={
-                'curl -X POST https://api.your-service.com/auth/login \\\n++  -H \"Content-Type: application/json\" \\\n++  -d \"{" + "email":"user@example.com","password":"hunter2"}"\"'
-              }
-              value={(settings as any).authCurlCommand || ""}
-              onChange={(e) => setSettings({ ...settings, authCurlCommand: e.target.value } as any)}
-              rows={6}
-              style={{
-                width: "100%",
-                padding: 12,
-                border: "1px solid #d1d5db",
-                borderRadius: 8,
-                fontSize: 14,
-                fontFamily: "monospace",
-                whiteSpace: "pre-wrap",
-              }}
-            />
-            <div style={{ color: "#718096", fontSize: 12, marginTop: 6 }}>
-              Paste the exact cURL used to authenticate (e.g., login/token exchange). Method, URL, and headers are derived.
+              )}
             </div>
-          </div>
 
+            {/* Canonical authentication cURL command */}
+            <div>
+              <label
+                style={{
+                  display: "block",
+                  color: "#4a5568",
+                  fontSize: 13,
+                  marginBottom: 6,
+                }}
+              >
+                Canonical authentication cURL
+              </label>
+              <textarea
+                placeholder={
+                  'curl -X POST https://api.your-service.com/auth/login \\\n++  -H "Content-Type: application/json" \\\n++  -d "{" + "email":"user@example.com","password":"hunter2"}""'
+                }
+                value={(settings as any).authCurlCommand || ""}
+                onChange={(e) =>
+                  setSettings({
+                    ...settings,
+                    authCurlCommand: e.target.value,
+                  } as any)
+                }
+                rows={6}
+                style={{
+                  width: "100%",
+                  padding: 12,
+                  border: "1px solid #d1d5db",
+                  borderRadius: 8,
+                  fontSize: 14,
+                  fontFamily: "monospace",
+                  whiteSpace: "pre-wrap",
+                }}
+              />
+              <div style={{ color: "#718096", fontSize: 12, marginTop: 6 }}>
+                Paste the exact cURL used to authenticate (e.g., login/token
+                exchange). Method, URL, and headers are derived.
+              </div>
+            </div>
           </div>
 
           {/* Initial Setup */}
@@ -1039,7 +1112,13 @@ const OnboardingSettingsSection: React.FC = () => {
                 {initialSetupOpen ? "▼" : "▶"} Initial Setup
               </span>
               {initialSetupComplete && (
-                <span aria-label="complete" title="Docs indexed and cURL generated" style={{ color: "#38a169" }}>✅</span>
+                <span
+                  aria-label="complete"
+                  title="Docs indexed and cURL generated"
+                  style={{ color: "#38a169" }}
+                >
+                  ✅
+                </span>
               )}
             </div>
             <div style={{ color: "#718096", fontSize: 12 }}>
@@ -1047,32 +1126,7 @@ const OnboardingSettingsSection: React.FC = () => {
             </div>
           </div>
           <div style={{ display: initialSetupOpen ? "block" : "none" }}>
-          <div style={{ marginTop: 12, marginBottom: 16 }}>
-            <label
-              style={{
-                display: "block",
-                color: "#4a5568",
-                fontSize: 13,
-                marginBottom: 6,
-              }}
-            >
-              Initial Setup API Document URL (Google Docs or any public page)
-            </label>
-            <input
-              type="url"
-              placeholder="https://docs.google.com/document/d/<DOC_ID>/edit?usp=sharing or https://yourdocs.page"
-              value={initialDocUrl}
-              onChange={(e) => setInitialDocUrl(e.target.value)}
-              style={{
-                width: "100%",
-                padding: 10,
-                border: "1px solid #d1d5db",
-                borderRadius: 8,
-                fontSize: 14,
-              }}
-            />
-
-            <div style={{ marginTop: 10 }}>
+            <div style={{ marginTop: 12, marginBottom: 16 }}>
               <label
                 style={{
                   display: "block",
@@ -1081,105 +1135,23 @@ const OnboardingSettingsSection: React.FC = () => {
                   marginBottom: 6,
                 }}
               >
-                Or upload a plain text file (.txt or .md)
+                Initial Setup API Document URL (Google Docs or any public page)
               </label>
               <input
-                type="file"
-                accept=".txt,.md"
-                onChange={handleInitialFileChange}
-              />
-            </div>
-
-            <div style={{ marginTop: 10, display: "flex", gap: 12 }}>
-              <div style={{ flex: 1 }}>
-                <label
-                  style={{
-                    display: "block",
-                    color: "#4a5568",
-                    fontSize: 13,
-                    marginBottom: 6,
-                  }}
-                >
-                  Namespace
-                </label>
-                <input
-                  type="text"
-                  placeholder="initial-setup"
-                  value={initialNamespace}
-                  onChange={(e) => setInitialNamespace(e.target.value)}
-                  style={{
-                    width: "100%",
-                    padding: 10,
-                    border: "1px solid #d1d5db",
-                    borderRadius: 8,
-                    fontSize: 14,
-                  }}
-                />
-              </div>
-            </div>
-
-            <div style={{ marginTop: 10 }}>
-              <label
-                style={{
-                  display: "block",
-                  color: "#4a5568",
-                  fontSize: 13,
-                  marginBottom: 6,
-                }}
-              >
-                Optional prompt
-              </label>
-              <textarea
-                placeholder={
-                  "POST /account/setup with JSON {companyName, timezone, preferences}; include Content-Type header"
-                }
-                value={initialPrompt}
-                onChange={(e) => setInitialPrompt(e.target.value)}
-                rows={3}
+                type="url"
+                placeholder="https://docs.google.com/document/d/<DOC_ID>/edit?usp=sharing or https://yourdocs.page"
+                value={initialDocUrl}
+                onChange={(e) => setInitialDocUrl(e.target.value)}
                 style={{
                   width: "100%",
                   padding: 10,
                   border: "1px solid #d1d5db",
                   borderRadius: 8,
                   fontSize: 14,
-                  fontFamily: "monospace",
                 }}
               />
-            </div>
 
-            <div style={{ marginTop: 10 }}>
-              <button
-                onClick={indexInitialDocs}
-                disabled={initialIndexing || initialGenerating}
-                style={{
-                  padding: "10px 14px",
-                  background:
-                    initialIndexing || initialGenerating
-                      ? "#a0aec0"
-                      : "linear-gradient(135deg, #805ad5, #6b46c1)",
-                  color: "white",
-                  border: "none",
-                  borderRadius: 12,
-                  fontSize: 14,
-                  fontWeight: 600,
-                  cursor: initialIndexing || initialGenerating ? "not-allowed" : "pointer",
-                }}
-              >
-                {initialIndexing
-                  ? "Indexing…"
-                  : initialGenerating
-                  ? "Generating cURL…"
-                  : "Index docs"}
-              </button>
-            </div>
-
-            {initialIndexStatus && (
-              <div style={{ color: "#4a5568", fontSize: 12, marginTop: 6 }}>
-                {initialIndexStatus}
-              </div>
-            )}
-            {initialGeneratedCurl && (
-              <div style={{ marginTop: 12 }}>
+              <div style={{ marginTop: 10 }}>
                 <label
                   style={{
                     display: "block",
@@ -1188,86 +1160,201 @@ const OnboardingSettingsSection: React.FC = () => {
                     marginBottom: 6,
                   }}
                 >
-                  Generated initial setup cURL
+                  Or upload a plain text file (.txt or .md)
+                </label>
+                <input
+                  type="file"
+                  accept=".txt,.md"
+                  onChange={handleInitialFileChange}
+                />
+              </div>
+
+              <div style={{ marginTop: 10, display: "flex", gap: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <label
+                    style={{
+                      display: "block",
+                      color: "#4a5568",
+                      fontSize: 13,
+                      marginBottom: 6,
+                    }}
+                  >
+                    Namespace
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="initial-setup"
+                    value={initialNamespace}
+                    onChange={(e) => setInitialNamespace(e.target.value)}
+                    style={{
+                      width: "100%",
+                      padding: 10,
+                      border: "1px solid #d1d5db",
+                      borderRadius: 8,
+                      fontSize: 14,
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginTop: 10 }}>
+                <label
+                  style={{
+                    display: "block",
+                    color: "#4a5568",
+                    fontSize: 13,
+                    marginBottom: 6,
+                  }}
+                >
+                  Optional prompt
                 </label>
                 <textarea
-                  value={initialGeneratedCurl}
-                  readOnly
-                  rows={5}
+                  placeholder={
+                    "POST /account/setup with JSON {companyName, timezone, preferences}; include Content-Type header"
+                  }
+                  value={initialPrompt}
+                  onChange={(e) => setInitialPrompt(e.target.value)}
+                  rows={3}
                   style={{
                     width: "100%",
-                    padding: 12,
+                    padding: 10,
                     border: "1px solid #d1d5db",
                     borderRadius: 8,
                     fontSize: 14,
                     fontFamily: "monospace",
                   }}
                 />
-                <div
+              </div>
+
+              <div style={{ marginTop: 10 }}>
+                <button
+                  onClick={indexInitialDocs}
+                  disabled={initialIndexing || initialGenerating}
                   style={{
-                    display: "flex",
-                    gap: 8,
-                    alignItems: "center",
-                    marginTop: 6,
+                    padding: "10px 14px",
+                    background:
+                      initialIndexing || initialGenerating
+                        ? "#a0aec0"
+                        : "linear-gradient(135deg, #805ad5, #6b46c1)",
+                    color: "white",
+                    border: "none",
+                    borderRadius: 12,
+                    fontSize: 14,
+                    fontWeight: 600,
+                    cursor:
+                      initialIndexing || initialGenerating
+                        ? "not-allowed"
+                        : "pointer",
                   }}
                 >
-                  <button
-                    onClick={() => navigator.clipboard.writeText(initialGeneratedCurl)}
+                  {initialIndexing
+                    ? "Indexing…"
+                    : initialGenerating
+                    ? "Generating cURL…"
+                    : "Index docs"}
+                </button>
+              </div>
+
+              {initialIndexStatus && (
+                <div style={{ color: "#4a5568", fontSize: 12, marginTop: 6 }}>
+                  {initialIndexStatus}
+                </div>
+              )}
+              {initialGeneratedCurl && (
+                <div style={{ marginTop: 12 }}>
+                  <label
                     style={{
-                      padding: "8px 12px",
-                      background: "#2d3748",
-                      color: "white",
-                      border: "none",
-                      borderRadius: 8,
+                      display: "block",
+                      color: "#4a5568",
                       fontSize: 13,
+                      marginBottom: 6,
                     }}
                   >
-                    Copy cURL
-                  </button>
-                  <span style={{ color: "#718096", fontSize: 12 }}>
-                    Context hits: {initialHits}
-                  </span>
+                    Generated initial setup cURL
+                  </label>
+                  <textarea
+                    value={initialGeneratedCurl}
+                    readOnly
+                    rows={5}
+                    style={{
+                      width: "100%",
+                      padding: 12,
+                      border: "1px solid #d1d5db",
+                      borderRadius: 8,
+                      fontSize: 14,
+                      fontFamily: "monospace",
+                    }}
+                  />
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 8,
+                      alignItems: "center",
+                      marginTop: 6,
+                    }}
+                  >
+                    <button
+                      onClick={() =>
+                        navigator.clipboard.writeText(initialGeneratedCurl)
+                      }
+                      style={{
+                        padding: "8px 12px",
+                        background: "#2d3748",
+                        color: "white",
+                        border: "none",
+                        borderRadius: 8,
+                        fontSize: 13,
+                      }}
+                    >
+                      Copy cURL
+                    </button>
+                    <span style={{ color: "#718096", fontSize: 12 }}>
+                      Context hits: {initialHits}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-
-          {/* Canonical initial setup cURL command */}
-          <div>
-            <label
-              style={{
-                display: "block",
-                color: "#4a5568",
-                fontSize: 13,
-                marginBottom: 6,
-              }}
-            >
-              Canonical initial setup cURL
-            </label>
-            <textarea
-              placeholder={
-                'curl -X POST https://api.your-service.com/setup \\n+  -H \'Content-Type: application/json\' \\n+  -H \'Authorization: Bearer <token>\' \\n+  -d \'{"companyName":"ACME","timezone":"America/New_York"}\''
-              }
-              value={(settings as any).initialSetupCurlCommand || ""}
-              onChange={(e) =>
-                setSettings({ ...settings, initialSetupCurlCommand: e.target.value } as any)
-              }
-              rows={6}
-              style={{
-                width: "100%",
-                padding: 12,
-                border: "1px solid #d1d5db",
-                borderRadius: 8,
-                fontSize: 14,
-                fontFamily: "monospace",
-                whiteSpace: "pre-wrap",
-              }}
-            />
-            <div style={{ color: "#718096", fontSize: 12, marginTop: 6 }}>
-              Paste the exact cURL used for initial setup. We derive method, URL, headers, and fields.
+              )}
             </div>
-          </div>
 
+            {/* Canonical initial setup cURL command */}
+            <div>
+              <label
+                style={{
+                  display: "block",
+                  color: "#4a5568",
+                  fontSize: 13,
+                  marginBottom: 6,
+                }}
+              >
+                Canonical initial setup cURL
+              </label>
+              <textarea
+                placeholder={
+                  'curl -X POST https://api.your-service.com/setup \\n+  -H \'Content-Type: application/json\' \\n+  -H \'Authorization: Bearer <token>\' \\n+  -d \'{"companyName":"ACME","timezone":"America/New_York"}\''
+                }
+                value={(settings as any).initialSetupCurlCommand || ""}
+                onChange={(e) =>
+                  setSettings({
+                    ...settings,
+                    initialSetupCurlCommand: e.target.value,
+                  } as any)
+                }
+                rows={6}
+                style={{
+                  width: "100%",
+                  padding: 12,
+                  border: "1px solid #d1d5db",
+                  borderRadius: 8,
+                  fontSize: 14,
+                  fontFamily: "monospace",
+                  whiteSpace: "pre-wrap",
+                }}
+              />
+              <div style={{ color: "#718096", fontSize: 12, marginTop: 6 }}>
+                Paste the exact cURL used for initial setup. We derive method,
+                URL, headers, and fields.
+              </div>
+            </div>
           </div>
 
           <div style={{ marginTop: 8 }}>

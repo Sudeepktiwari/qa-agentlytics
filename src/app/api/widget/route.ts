@@ -132,6 +132,16 @@ export async function GET(request: Request) {
   const currentPosition = positions[config.position] || positions['bottom-right'];
   
   // Create main widget container (column layout)
+  // Prevent duplicate IDs by removing any existing widget instance
+  const existingMainContainer = document.getElementById('appointy-chatbot-main');
+  if (existingMainContainer) {
+    try {
+      existingMainContainer.remove();
+      console.log('🧹 [WIDGET INIT] Removed existing widget container to avoid duplicate IDs');
+    } catch (e) {
+      console.warn('⚠️ [WIDGET INIT] Failed to remove existing widget container:', e);
+    }
+  }
   const widgetMainContainer = document.createElement('div');
   widgetMainContainer.id = 'appointy-chatbot-main';
   
@@ -151,6 +161,22 @@ export async function GET(request: Request) {
     z-index: 10000;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   \`;
+
+  // In onboarding-only mode, present the widget as a centered modal popup
+  if (ONBOARDING_ONLY) {
+    widgetMainContainer.style.cssText = \`
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: transparent;
+      pointer-events: none;
+      padding: 20px;
+    \`;
+  }
   
   // Create widget container (chat window)
   const widgetContainer = document.createElement('div');
@@ -166,6 +192,11 @@ export async function GET(request: Request) {
     display: none;
     flex-direction: column;
   \`;
+  
+  // In onboarding-only mode, use a wider modal width
+  if (ONBOARDING_ONLY) {
+    widgetContainer.style.width = '70vw';
+  }
   
   // Create toggle button
   const toggleButton = document.createElement('button');
@@ -248,6 +279,7 @@ export async function GET(request: Request) {
   let currentBookingData = null;
   let bookingInProgress = false;
   let isPageContextLoaded = false;
+  let isPageContextLoading = false;
   let pageChangeCheckInterval = null;
 
   // Mirror iframe variables
@@ -1319,11 +1351,59 @@ export async function GET(request: Request) {
       localStorage.setItem('appointy_visited_pages', JSON.stringify(visitedPages));
     }
     
+    // Enrich onboarding messages with greeting and auto-generated rationale for requested details
+    // Generic rationale generator
+    function getDetailRationale(detail) {
+      switch (detail) {
+        case 'email': return 'To set you up and send onboarding resources, I need your email.';
+        case 'name': return 'To personalize setup and documentation, your name helps.';
+        case 'company': return 'To tailor configuration and examples, your company name helps.';
+        case 'phone': return 'If you prefer a quick call for setup, a phone number helps.';
+        case 'demo_time': return 'To schedule your demo at a convenient time, I need a preferred time.';
+        default: return '';
+      }
+    }
+
+    // Detect requested details from API response and message content
+    function detectRequestedDetails(dataObj, textContent, buttonsArr) {
+      const lower = (textContent || '').toLowerCase();
+      const details = new Set();
+      if (dataObj && dataObj.emailPrompt) details.add('email');
+      if (/email/.test(lower)) details.add('email');
+      if (/name/.test(lower)) details.add('name');
+      if (/company|organization/.test(lower)) details.add('company');
+      if (/phone|call|number/.test(lower)) details.add('phone');
+      if (/demo|schedule|time/.test(lower)) details.add('demo_time');
+      if (Array.isArray(buttonsArr) && buttonsArr.length > 0) {
+        const btn = buttonsArr.join(' ').toLowerCase();
+        if (/demo|schedule|meeting|book/.test(btn)) details.add('demo_time');
+      }
+      return Array.from(details);
+    }
+
+    let finalText = text;
+    let finalEmailPrompt = emailPrompt || '';
+    if (ONBOARDING_ONLY) {
+      // Avoid redundant greeting on the very first onboarding message
+      const needsGreeting = (messages.length === 0) && (messageType !== 'ONBOARDING');
+      const greeting = 'Welcome! I’ll help you get set up.';
+      const requestedDetails = detectRequestedDetails({ emailPrompt: finalEmailPrompt }, text, buttons);
+      if (requestedDetails.length > 0) {
+        const rationaleCombined = requestedDetails.map(getDetailRationale).filter(Boolean).join(' ');
+        finalText = (needsGreeting ? greeting + '\\n\\n' : '') + text + (rationaleCombined ? ' ' + rationaleCombined : '');
+        if (!finalEmailPrompt && requestedDetails.includes('email')) {
+          finalEmailPrompt = 'Please enter your email to continue.';
+        }
+      } else if (needsGreeting) {
+        finalText = greeting + '\\n\\n' + text;
+      }
+    }
+
     const proactiveMessage = {
       role: 'assistant',
-      content: text,
+      content: finalText,
       buttons: buttons || [],
-      emailPrompt: emailPrompt || '',
+      emailPrompt: finalEmailPrompt,
       isProactive: true
     };
     
@@ -1390,12 +1470,13 @@ export async function GET(request: Request) {
   
   // Load page-specific context
   async function loadPageContext() {
-    if (isPageContextLoaded) {
+    if (isPageContextLoaded || isPageContextLoading) {
       console.log('📋 [WIDGET CONTEXT] Page context already loaded, skipping');
       return;
     }
     
     try {
+      isPageContextLoading = true;
       console.log('🔍 [WIDGET CONTEXT] Loading context for page:', currentPageUrl);
       
       // Extract page summary
@@ -1423,12 +1504,15 @@ export async function GET(request: Request) {
       
       if (data.mainText) {
         console.log('✉️ [WIDGET CONTEXT] Received proactive message from API:', data.mainText.substring(0, 100) + '...');
-        // Send proactive message if auto-open is enabled
-        if (config.autoOpenProactive) {
-          console.log('🎯 [WIDGET CONTEXT] Auto-open enabled, sending proactive message');
+        // In onboarding-only mode, suppress generic proactive message so initializeChat can lead with detail-first prompt
+        if (ONBOARDING_ONLY) {
+          console.log('🛑 [WIDGET CONTEXT] Onboarding-only mode: suppressing generic proactive message');
+        } else if (config.autoOpenProactive || isOpen) {
+          const reason = isOpen ? '💬 [WIDGET CONTEXT] Chat is open, rendering proactive message' : '🎯 [WIDGET CONTEXT] Auto-open enabled, sending proactive message';
+          console.log(reason);
           sendProactiveMessage(data.mainText, data.buttons || [], data.emailPrompt || '', 'PROACTIVE');
         } else {
-          console.log('🔒 [WIDGET CONTEXT] Auto-open disabled, not sending proactive message');
+          console.log('🔒 [WIDGET CONTEXT] Auto-open disabled and chat closed, not sending proactive message');
         }
         isPageContextLoaded = true;
         console.log('✅ [WIDGET CONTEXT] Page context loaded successfully');
@@ -1439,6 +1523,8 @@ export async function GET(request: Request) {
       }
     } catch (error) {
       console.error('❌ [WIDGET CONTEXT] Failed to load page context:', error);
+    } finally {
+      isPageContextLoading = false;
     }
   }
   
@@ -3315,6 +3401,18 @@ export async function GET(request: Request) {
       });
       
       console.log("📥 [WIDGET API] Response status:", response.status);
+      // Explicit 401 handling to avoid stuck loading state
+      if (response.status === 401) {
+        console.warn('🔒 [WIDGET API] Unauthorized: Invalid or missing API key');
+        return {
+          mainText: 'Authentication failed: Invalid or missing API key. Paste a valid API key and click "Load Widget".',
+          buttons: [],
+          emailPrompt: '',
+          botMode: 'error',
+          showBookingCalendar: false,
+          bookingType: null
+        };
+      }
       
       const responseData = await response.json();
       
@@ -3343,7 +3441,14 @@ export async function GET(request: Request) {
       return normalizedResponse;
     } catch (error) {
       console.error('❌ [WIDGET API] Error:', error);
-      return { error: 'Connection failed' };
+      return {
+        mainText: 'Connection failed. Please check your network and try again.',
+        buttons: [],
+        emailPrompt: '',
+        botMode: 'error',
+        showBookingCalendar: false,
+        bookingType: null
+      };
     }
   }
   
@@ -3864,6 +3969,21 @@ export async function GET(request: Request) {
           promptText.textContent = msg.emailPrompt;
           promptText.style.cssText = 'margin-bottom: 8px; color: white; font-size: 13px;';
           emailDiv.appendChild(promptText);
+
+          // Add rationale explaining why the detail is needed
+          const rationaleText = document.createElement('div');
+          const lowerPrompt = msg.emailPrompt.toLowerCase();
+          let rationale = 'We use your email to set you up and send onboarding resources.';
+          if (lowerPrompt.includes('support')) {
+            rationale = 'We use your email to contact you and share support follow-ups.';
+          } else if (lowerPrompt.includes('setup')) {
+            rationale = 'We use your email to send setup guides and account details.';
+          } else if (lowerPrompt.includes('demo')) {
+            rationale = 'We use your email to confirm your demo and send reminders.';
+          }
+          rationaleText.textContent = rationale;
+          rationaleText.style.cssText = 'margin-bottom: 8px; color: rgba(255,255,255,0.85); font-size: 12px;';
+          emailDiv.appendChild(rationaleText);
           
           const emailForm = document.createElement('form');
           emailForm.style.cssText = 'display: flex; gap: 8px;';
@@ -3960,6 +4080,30 @@ export async function GET(request: Request) {
     if (!isPageContextLoaded) {
       await loadPageContext();
     }
+
+    // For onboarding-only mode, proactively start by asking for details on the FIRST message
+    if (ONBOARDING_ONLY && messages.length === 0) {
+      console.log('[ChatWidget] Onboarding-only mode detected, starting onboarding flow with detail-first prompt');
+      const data = await sendApiRequest('chat', {
+        sessionId,
+        pageUrl: currentPageUrl,
+        proactive: true,
+        question: 'get started'
+      });
+
+      // Force an email-first prompt when backend does not provide a specific detail
+      const initialEmailPrompt = (data && data.emailPrompt) ? data.emailPrompt : 'Please enter your email to continue.';
+      const initialText = (data && data.mainText) ? data.mainText : 'To get you onboarded, I need a few details.';
+
+      sendProactiveMessage(
+        initialText,
+        (data && data.buttons) ? data.buttons : [],
+        initialEmailPrompt,
+        'ONBOARDING'
+      );
+      console.log('[ChatWidget] Onboarding init message sent with detail-first prompt');
+      return;
+    }
     
     // If page context loading didn't provide a proactive message, send default
     if (messages.length === 0) {
@@ -3984,6 +4128,17 @@ export async function GET(request: Request) {
     isOpen = !isOpen;
     console.log('[Widget] Toggling widget, now open:', isOpen);
     widgetContainer.style.display = isOpen ? 'flex' : 'none';
+    
+    // In onboarding-only mode, control backdrop and interactivity
+    if (ONBOARDING_ONLY) {
+      if (isOpen) {
+        widgetMainContainer.style.background = 'rgba(0,0,0,0.35)';
+        widgetMainContainer.style.pointerEvents = 'auto';
+      } else {
+        widgetMainContainer.style.background = 'transparent';
+        widgetMainContainer.style.pointerEvents = 'none';
+      }
+    }
     
     // Update button appearance
     toggleButton.innerHTML = isOpen ? '×' : config.buttonText;
@@ -4332,6 +4487,14 @@ export async function GET(request: Request) {
     
     // Add cleanup function for page monitoring
     window.addEventListener('beforeunload', cleanupPageMonitoring);
+
+    // In onboarding-only mode, hide the floating toggle button and only open when page explicitly triggers it
+    if (ONBOARDING_ONLY) {
+      try {
+        toggleButton.style.display = 'none';
+      } catch (e) {}
+      // Do NOT auto-open; rely on host page’s “Load Widget” button
+    }
   }
   
   // Setup message listener for mirror iframe

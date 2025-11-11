@@ -2449,7 +2449,7 @@ Keep the response conversational and helpful, focusing on providing value before
       await sessionsCollection.updateOne({ sessionId }, { $set: doc }, { upsert: true });
       sessionDoc = doc as any;
 
-      const intro = `I’ll help create your account. I’ll ask a few quick details.`;
+      const intro = `Hello! I’ll help create your account. I’ll ask a few quick details.`;
 
       const prompt = promptForField(fieldsToAsk[0]);
       const docContext = await buildOnboardingDocContext(

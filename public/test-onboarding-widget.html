@@ -1,68 +1,122 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Onboarding Widget Test</title>
     <style>
-      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 24px; background: #f8fafc; color: #0f172a; }
-      .container { max-width: 860px; margin: 0 auto; }
-      h1 { font-size: 24px; margin: 0 0 12px; }
-      .card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; box-shadow: 0 1px 2px rgba(2, 6, 23, 0.05); }
-      .hint { margin-top: 8px; font-size: 14px; color: #334155; }
-      .badge { display: inline-block; background: #10b981; color: white; border-radius: 999px; padding: 2px 8px; font-size: 12px; margin-left: 8px; }
-      .section { margin-top: 20px; }
-      .loader { display: flex; gap: 8px; align-items: center; margin-top: 12px; }
-      .loader input { flex: 1; padding: 8px 10px; border: 1px solid #e2e8f0; border-radius: 8px; }
-      .loader button { padding: 8px 12px; border: none; border-radius: 8px; background: #10b981; color: white; cursor: pointer; }
-      .actions { display: flex; gap: 8px; margin-top: 12px; }
-      .actions button { padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 8px; background: white; cursor: pointer; }
-      code { background: #f1f5f9; padding: 2px 6px; border-radius: 6px; }
+      body {
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica,
+          Arial, sans-serif;
+        margin: 0;
+        padding: 24px;
+        background: #f8fafc;
+        color: #0f172a;
+      }
+      .container {
+        max-width: 860px;
+        margin: 0 auto;
+      }
+      h1 {
+        font-size: 24px;
+        margin: 0 0 12px;
+      }
+      .card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 16px;
+        box-shadow: 0 1px 2px rgba(2, 6, 23, 0.05);
+      }
+      .hint {
+        margin-top: 8px;
+        font-size: 14px;
+        color: #334155;
+      }
+      .badge {
+        display: inline-block;
+        background: #10b981;
+        color: white;
+        border-radius: 999px;
+        padding: 2px 8px;
+        font-size: 12px;
+        margin-left: 8px;
+      }
+      .section {
+        margin-top: 20px;
+      }
+      .loader {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin-top: 12px;
+      }
+      .loader input {
+        flex: 1;
+        padding: 8px 10px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+      }
+      .loader button {
+        padding: 8px 12px;
+        border: none;
+        border-radius: 8px;
+        background: #10b981;
+        color: white;
+        cursor: pointer;
+      }
+      .actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+      }
+      .actions button {
+        padding: 8px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        background: white;
+        cursor: pointer;
+      }
+      code {
+        background: #f1f5f9;
+        padding: 2px 6px;
+        border-radius: 6px;
+      }
     </style>
   </head>
   <body>
     <div class="container">
       <div class="card">
-        <h1>
-          Onboarding Widget Test <span class="badge">ONBOARDING</span>
-        </h1>
+        <h1>Onboarding Widget Test <span class="badge">ONBOARDING</span></h1>
         <p class="hint">
-          Replace <code>data-api-key</code> with your actual widget API key (same
-          key you use elsewhere, starting with <code>ak_</code>).
+          Replace <code>data-api-key</code> with your actual widget API key
+          (same key you use elsewhere, starting with <code>ak_</code>).
         </p>
         <div class="section">
           <p>Try messages like “Sign me up” to trigger onboarding.</p>
-          <p>If you see the green header and ONBOARDING badge, the mode is active.</p>
+          <p>
+            If you see the green header and ONBOARDING badge, the mode is
+            active.
+          </p>
         </div>
         <div class="loader" id="loader">
           <input id="apiKeyInput" placeholder="ak_... (paste your API key)" />
           <button id="loadBtn">Load Widget</button>
         </div>
-        <div class="actions">
-          <button id="openBtn">Open Chat</button>
-          <button id="closeBtn">Close Chat</button>
-        </div>
       </div>
     </div>
-
-    <!-- Widget embed (uses local Next.js origin) -->
-    <script
-      id="appointy-embed"
-      src="/api/widget"
-      data-api-key="ak_REPLACE_WITH_YOUR_KEY"
-      data-onboarding-only="true"
-      data-theme="green"
-      data-chat-title="Onboarding Assistant"
-      data-widget="appointy"
-    ></script>
-
     <script>
-      // Auto-open the chat when the widget initializes
+      // After loading the script (on button click), open the chat when ready
       function autoOpenWhenReady(timeoutMs = 6000) {
         const start = Date.now();
         const tick = () => {
-          if (window.appointyChatbot && typeof window.appointyChatbot.openChat === 'function') {
-            try { window.appointyChatbot.openChat(); } catch (e) {}
+          if (
+            window.appointyChatbot &&
+            typeof window.appointyChatbot.openChat === "function"
+          ) {
+            try {
+              window.appointyChatbot.openChat();
+            } catch (e) {}
             return;
           }
           if (Date.now() - start < timeoutMs) setTimeout(tick, 200);
@@ -70,42 +124,58 @@
         tick();
       }
 
-      // Manual controls
-      document.getElementById('openBtn').addEventListener('click', () => {
-        if (window.appointyChatbot?.openChat) window.appointyChatbot.openChat();
-      });
-      document.getElementById('closeBtn').addEventListener('click', () => {
-        if (window.appointyChatbot?.closeChat) window.appointyChatbot.closeChat();
-      });
-
       // Loader: inject the widget with a pasted API key
-      document.getElementById('loadBtn').addEventListener('click', () => {
-        const key = (document.getElementById('apiKeyInput').value || '').trim();
-        if (!key) { alert('Please enter your API key'); return; }
-        const existing = document.getElementById('appointy-embed');
+      document.getElementById("loadBtn").addEventListener("click", () => {
+        const key = (document.getElementById("apiKeyInput").value || "").trim();
+        if (!key) {
+          alert("Please enter your API key");
+          return;
+        }
+        const existing = document.getElementById("appointy-embed");
         if (existing) existing.remove();
-        const s = document.createElement('script');
-        s.id = 'appointy-embed';
-        s.src = '/api/widget';
-        s.setAttribute('data-api-key', key);
-        s.setAttribute('data-onboarding-only', 'true');
-        s.setAttribute('data-theme', 'green');
-        s.setAttribute('data-chat-title', 'Onboarding Assistant');
-        s.setAttribute('data-widget', 'appointy');
-        s.onload = () => autoOpenWhenReady();
+        const s = document.createElement("script");
+        s.id = "appointy-embed";
+        // Add a cache-buster to ensure the latest widget script loads
+        s.src = "/api/widget?cb=" + Date.now();
+        s.setAttribute("data-api-key", key);
+        s.setAttribute("data-onboarding-only", "true");
+        s.setAttribute("data-voice-enabled", "false");
+        s.setAttribute("data-theme", "green");
+        s.setAttribute("data-chat-title", "Onboarding Assistant");
+        s.setAttribute("data-widget", "appointy");
+        // Provide diagnostics if script fails to load
+        s.onerror = (e) => {
+          console.error("[Onboarding Test] Failed to load widget script", e);
+          alert("Failed to load widget script. Check console for details.");
+        };
+        // After load (explicit button click), open the chat so it’s visible
+        s.onload = () => {
+          console.log(
+            "[Onboarding Test] Widget script loaded after button click. Opening chat…"
+          );
+          autoOpenWhenReady();
+        };
         document.body.appendChild(s);
+        console.log(
+          "[Onboarding Test] Injected widget script with API key:",
+          key.slice(0, 6) + "…"
+        );
       });
 
       // If the embed already has a real key, auto-open when it loads
       (function init() {
-        const embed = document.getElementById('appointy-embed');
-        const key = embed?.getAttribute('data-api-key') || '';
-        const loader = document.getElementById('loader');
-        if (key && !key.includes('REPLACE')) {
-          loader.style.display = 'none';
-          embed.addEventListener('load', () => autoOpenWhenReady());
+        const embed = document.getElementById("appointy-embed");
+        const loader = document.getElementById("loader");
+        // Always show the loader so users can paste a different API key
+        // Visibility is gated by the button; no auto-open on page load
+        if (embed) {
+          embed.addEventListener("load", () => {
+            console.log(
+              "[Onboarding Test] Widget script loaded (no auto-open)."
+            );
+          });
         }
       })();
     </script>
   </body>
-  </html>
+</html>
