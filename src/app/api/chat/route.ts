@@ -1702,6 +1702,69 @@ export async function POST(req: NextRequest) {
     timestamp: new Date().toISOString(),
   });
 
+  // Parse a combined registration reply for name, email, and password
+  function parseRegistrationBundle(ans: string): {
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    password?: string;
+    name?: string;
+  } {
+    const text = (ans || "").trim();
+    if (!text) return {};
+
+    // Normalize helpers
+    const stripQuotes = (s: string) => s.replace(/^\s*["']|["']\s*$/g, "").trim();
+    const lower = text.toLowerCase();
+
+    // Robust label-based extraction first
+    const nameLabelMatch = text.match(/(?:^|[;,])\s*(?:name|your name)\s*:\s*([^,;]+)/i);
+    const passwordLabelMatch = text.match(/(?:^|[;,])\s*(?:password)\s*:\s*([^,;]+)/i);
+    const emailMatch = text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+
+    const rawName = nameLabelMatch ? stripQuotes(nameLabelMatch[1]) : undefined;
+    const email = emailMatch ? emailMatch[0] : undefined;
+    const rawPassword = passwordLabelMatch ? stripQuotes(passwordLabelMatch[1]) : undefined;
+
+    // Derive name tokens: prefer labeled name; otherwise infer from text before email
+    let firstName: string | undefined;
+    let lastName: string | undefined;
+    const nameSource = rawName && rawName.length > 0
+      ? rawName
+      : email
+        ? text.slice(0, text.indexOf(email)).split(",")[0].replace(/^(?:name|your name)\s*:\s*/i, "").trim()
+        : undefined;
+
+    if (nameSource) {
+      const tokens = nameSource.split(/\s+/).filter(Boolean);
+      if (tokens.length >= 1) {
+        firstName = tokens[0];
+        if (tokens.length > 1) {
+          lastName = tokens.slice(1).join(" ");
+        }
+      }
+    }
+
+    // Password: prefer labeled value; fallback to last non-email segment of min length
+    let password: string | undefined = rawPassword && rawPassword.length > 0 ? rawPassword : undefined;
+    if (!password) {
+      const segments = text.split(/[;,]/).map((s) => s.trim());
+      for (let i = segments.length - 1; i >= 0; i--) {
+        const seg = segments[i];
+        if (!seg || (email && seg.includes(email))) continue;
+        // Remove any lingering labels
+        const cleaned = seg.replace(/^(?:password|pwd)\s*:\s*/i, "").trim();
+        if (cleaned.length >= 8 && !/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i.test(cleaned)) {
+          password = stripQuotes(cleaned);
+          break;
+        }
+      }
+    }
+
+    const name = nameSource || (firstName ? (lastName ? `${firstName} ${lastName}` : firstName) : undefined);
+    return { firstName, lastName, email, password, name };
+  }
+
   if (
     (!question &&
       !proactive &&
@@ -1847,7 +1910,7 @@ export async function POST(req: NextRequest) {
             const summary = buildSafeSummary(existingOnboarding?.collectedData || {});
             const resp = {
               mainText: `We’re finishing your onboarding. Please review:\n${summary}\n\nReply "Confirm" to submit, or "Edit" to change any detail.`,
-              buttons: ["Confirm and Submit", "Edit Details", "Cancel Onboarding"],
+              buttons: (existingOnboarding?.phase === "change_email_only") ? ["Confirm and Submit"] : ["Confirm and Submit", "Edit Details"],
               emailPrompt: "",
               showBookingCalendar: false,
               onboardingAction: "confirm",
@@ -1856,12 +1919,13 @@ export async function POST(req: NextRequest) {
           } else if (existingOnboarding?.status === "error") {
             const lastError = existingOnboarding?.lastError || "Registration failed";
             const summary = buildSafeSummary(existingOnboarding?.collectedData || {});
+            const isExistingUser = /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists|409/i.test(lastError || "");
             const resp = {
-              mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\nReply "Try Again" to resubmit, or "Edit" to change any detail.\n\nCurrent details:\n${summary}`,
-              buttons: ["Try Again", "Edit Details", "Cancel Onboarding"],
+              mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\n${isExistingUser ? "Please update your email to continue." : "Reply \"Try Again\" to resubmit, or \"Edit\" to change any detail."}\n\nCurrent details:\n${summary}`,
+              buttons: isExistingUser ? ["Change Email"] : ["Try Again", "Edit Details"],
               emailPrompt: "",
               showBookingCalendar: false,
-              onboardingAction: "error",
+              onboardingAction: isExistingUser ? "error_change_email" : "error",
             };
             return NextResponse.json(resp, { headers: corsHeaders });
           } else if (field) {
@@ -1875,7 +1939,7 @@ export async function POST(req: NextRequest) {
             );
             const resp = {
               mainText: `${docContext ? `${docContext}\n\n` : ""}${prompt}`,
-              buttons: ["Cancel Onboarding"],
+              buttons: [],
               emailPrompt: "",
               showBookingCalendar: false,
               onboardingAction: "ask_next",
@@ -2105,7 +2169,7 @@ Based on the page context, create an intelligent contextual question that demons
         const summary = buildSafeSummary(existingOnboarding?.collectedData || {});
             const resp = {
               mainText: `We’re finishing your onboarding. Please review:\n${summary}\n\nReply "Confirm" to submit, or "Edit" to change any detail.`,
-              buttons: ["Confirm and Submit", "Edit Details", "Cancel Onboarding"],
+              buttons: (existingOnboarding?.phase === "change_email_only") ? ["Confirm and Submit"] : ["Confirm and Submit", "Edit Details"],
               emailPrompt: "",
               showBookingCalendar: false,
               onboardingAction: "confirm",
@@ -2114,12 +2178,13 @@ Based on the page context, create an intelligent contextual question that demons
           } else if (existingOnboarding?.status === "error") {
             const lastError = existingOnboarding?.lastError || "Registration failed";
             const summary = buildSafeSummary(existingOnboarding?.collectedData || {});
+            const isExistingUser = /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists|409/i.test(lastError || "");
             const resp = {
-              mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\nReply "Try Again" to resubmit, or "Edit" to change any detail.\n\nCurrent details:\n${summary}`,
-              buttons: ["Try Again", "Edit Details", "Cancel Onboarding"],
+              mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\n${isExistingUser ? "Please update your email to continue." : "Reply \"Try Again\" to resubmit, or \"Edit\" to change any detail."}\n\nCurrent details:\n${summary}`,
+              buttons: isExistingUser ? ["Change Email"] : ["Try Again", "Edit Details"],
               emailPrompt: "",
               showBookingCalendar: false,
-              onboardingAction: "error",
+              onboardingAction: isExistingUser ? "error_change_email" : "error",
             };
             return NextResponse.json(resp, { headers: corsHeaders });
           } else if (field) {
@@ -2131,7 +2196,7 @@ Based on the page context, create an intelligent contextual question that demons
             );
             const resp = {
               mainText: `${docContext ? `${docContext}\n\n` : ""}${prompt}`,
-              buttons: ["Cancel Onboarding"],
+              buttons: [],
               emailPrompt: "",
               showBookingCalendar: false,
               onboardingAction: "ask_next",
@@ -2445,25 +2510,26 @@ Keep the response conversational and helpful, focusing on providing value before
         fields: fieldsToAsk,
         createdAt: now,
         updatedAt: now,
+        bundleMode: true,
       };
       await sessionsCollection.updateOne({ sessionId }, { $set: doc }, { upsert: true });
       sessionDoc = doc as any;
 
-      const intro = `Hello! I’ll help create your account. I’ll ask a few quick details.`;
+      const intro = `Welcome! To start your registration, please share your name, email, and a password (min 8 chars).`;
+     const combinedPrompt = `Example: "Jane Doe, jane@company.com, MyStrongPass123"`;
 
-      const prompt = promptForField(fieldsToAsk[0]);
-      const docContext = await buildOnboardingDocContext(
-        fieldsToAsk[0],
-        adminId || undefined,
-        onboardingConfig?.docsUrl
-      );
-      const resp = {
-        mainText: `${docContext ? `${docContext}\n\n` : ""}${intro}\n\n${prompt}`,
-        buttons: ["Cancel Onboarding"],
-        emailPrompt: "",
-        showBookingCalendar: false,
-        onboardingAction: "start",
-      };
+     const docContext = await buildOnboardingDocContext(
+       fieldsToAsk[0],
+       adminId || undefined,
+       onboardingConfig?.docsUrl
+     );
+     const resp = {
+        mainText: `${docContext ? `${docContext}\n\n` : ""}${intro}`,
+       buttons: ["Cancel Onboarding"],
+       emailPrompt: "",
+       showBookingCalendar: false,
+       onboardingAction: "start",
+     };
       return NextResponse.json(resp, { headers: corsHeaders });
     }
 
@@ -2601,7 +2667,7 @@ Keep the response conversational and helpful, focusing on providing value before
             const prompt = promptForField(firstField);
             const resp = {
               mainText: `${docContext ? `${docContext}\n\n` : ""}${intro}\n\n${prompt}`,
-              buttons: ["Cancel Onboarding"],
+              buttons: [],
               emailPrompt: "",
               showBookingCalendar: false,
               onboardingAction: "ask_next",
@@ -2619,11 +2685,20 @@ Keep the response conversational and helpful, focusing on providing value before
               }
             : {
                 mainText: `⚠️ We couldn’t complete registration: ${result.error || "Unknown error"}.${detailsText}`,
-                buttons: ["Try Again", "Edit Details", "Cancel Onboarding"],
+                buttons: ["Try Again", "Edit Details"],
                 emailPrompt: "",
                 showBookingCalendar: false,
                 onboardingAction: "error",
               };
+          // Special-case: existing user/email registered → only allow changing email
+          if (!result.success) {
+            const errTxt = (result.error || "") + (detailsText || "");
+            const isExistingUser = /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists|409/i.test(errTxt);
+            if (isExistingUser) {
+              (resp as any).buttons = ["Change Email"];
+              (resp as any).onboardingAction = "error_change_email";
+            }
+          }
           return NextResponse.json(resp, { headers: corsHeaders });
         } else if (/\b(edit|change|update)\b/.test(lower)) {
           await sessionsCollection.updateOne(
@@ -2638,7 +2713,7 @@ Keep the response conversational and helpful, focusing on providing value before
           );
           const resp = {
             mainText: `${docContext ? `${docContext}\n\n` : ""}${prompt}`,
-            buttons: ["Cancel Onboarding"],
+            buttons: [],
             emailPrompt: "",
             showBookingCalendar: false,
             onboardingAction: "ask_next",
@@ -2661,12 +2736,13 @@ Keep the response conversational and helpful, focusing on providing value before
         } else {
           const lastError = sessionDoc.lastError || "Registration failed";
           const summary = buildSafeSummary(sessionDoc.collectedData || {});
+          const isExistingUser = /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists|409/i.test(lastError || "");
           const resp = {
-            mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\nReply "Try Again" to resubmit, or "Edit" to change any detail.\n\nCurrent details:\n${summary}`,
-            buttons: ["Try Again", "Edit Details", "Cancel Onboarding"],
+            mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\n${isExistingUser ? "Please update your email to continue." : "Reply \"Try Again\" to resubmit, or \"Edit\" to change any detail."}\n\nCurrent details:\n${summary}`,
+            buttons: isExistingUser ? ["Change Email"] : ["Try Again", "Edit Details"],
             emailPrompt: "",
             showBookingCalendar: false,
-            onboardingAction: "error",
+            onboardingAction: isExistingUser ? "error_change_email" : "error",
           };
           return NextResponse.json(resp, { headers: corsHeaders });
         }
@@ -2678,7 +2754,7 @@ Keep the response conversational and helpful, focusing on providing value before
         );
         const resp = {
           mainText: `Please review your details:\n${summary}\n\nReply "Confirm" to submit, or say "Edit" to change any detail.`,
-          buttons: ["Confirm and Submit", "Edit Details", "Cancel Onboarding"],
+          buttons: ["Confirm and Submit", "Edit Details"],
           emailPrompt: "",
           showBookingCalendar: false,
           onboardingAction: "confirm",
@@ -2787,7 +2863,7 @@ Keep the response conversational and helpful, focusing on providing value before
             const prompt = promptForField(firstField);
             const resp = {
               mainText: `${docContext ? `${docContext}\n\n` : ""}${intro}\n\n${prompt}`,
-              buttons: ["Cancel Onboarding"],
+              buttons: [],
               emailPrompt: "",
               showBookingCalendar: false,
               onboardingAction: "ask_next",
@@ -2805,11 +2881,20 @@ Keep the response conversational and helpful, focusing on providing value before
               }
             : {
                 mainText: `⚠️ We couldn’t complete registration: ${result.error || "Unknown error"}.${detailsText2}`,
-                buttons: ["Try Again", "Edit Details", "Cancel Onboarding"],
+                buttons: ["Try Again", "Edit Details"],
                 emailPrompt: "",
                 showBookingCalendar: false,
                 onboardingAction: "error",
               };
+          // Special-case: existing user/email registered → only allow changing email
+          if (!result.success) {
+            const errTxt = (result.error || "") + (detailsText2 || "");
+            const isExistingUser = /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists|409/i.test(errTxt);
+            if (isExistingUser) {
+              (resp as any).buttons = ["Change Email"];
+              (resp as any).onboardingAction = "error_change_email";
+            }
+          }
           return NextResponse.json(resp, { headers: corsHeaders });
         } else if (/\b(edit|change|update)\b/.test(lower)) {
           await sessionsCollection.updateOne(
@@ -2824,7 +2909,29 @@ Keep the response conversational and helpful, focusing on providing value before
           );
           const resp = {
             mainText: `${docContext ? `${docContext}\n\n` : ""}${prompt}`,
-            buttons: ["Cancel Onboarding"],
+            buttons: [],
+            emailPrompt: "",
+            showBookingCalendar: false,
+            onboardingAction: "ask_next",
+          };
+          return NextResponse.json(resp, { headers: corsHeaders });
+        } else if (/\bchange\s+email\b/.test(lower)) {
+          // Prompt only for email, do not allow changing other fields
+          const emailIdx = (sessionDoc.fields || []).findIndex((f: any) => f.key === "email" || f.type === "email");
+          const emailField = emailIdx >= 0 ? sessionDoc.fields[emailIdx] : { key: "email", label: "Email", type: "email", required: true };
+          await sessionsCollection.updateOne(
+            { sessionId },
+            { $set: { status: "in_progress", stageIndex: 0, requiredKeys: ["email"], fields: [emailField], phase: "change_email_only", updatedAt: now } }
+          );
+          const docContext = await buildOnboardingDocContext(
+            emailField,
+            adminId || undefined,
+            onboardingConfig?.docsUrl
+          );
+          const prompt = promptForField(emailField);
+          const resp = {
+            mainText: `${docContext ? `${docContext}\n\n` : ""}${prompt}`,
+            buttons: [],
             emailPrompt: "",
             showBookingCalendar: false,
             onboardingAction: "ask_next",
@@ -2860,6 +2967,80 @@ Keep the response conversational and helpful, focusing on providing value before
 
     // Validate and store answer
     const ans = (question || "").trim();
+
+    // If we are at the first step and bundle mode is enabled, parse a combined reply
+    if (sessionDoc?.bundleMode && (sessionDoc.stageIndex || 0) === 0) {
+      const parsed = parseRegistrationBundle(ans);
+      let consumed = 0;
+      const updatedData = { ...(sessionDoc.collectedData || {}) };
+
+      // Try to consume fields in order from the current index if present in parsed bundle
+      for (let i = (sessionDoc.stageIndex || 0); i < sessionDoc.fields.length; i++) {
+        const f = sessionDoc.fields[i];
+        const k = f.key;
+        if (k === "email" && parsed.email) {
+          updatedData[k] = parsed.email;
+          consumed++;
+        } else if (k === "firstName" && parsed.firstName) {
+          updatedData[k] = parsed.firstName;
+          consumed++;
+        } else if (k === "lastName" && parsed.lastName) {
+          // lastName is optional, consume if present
+          updatedData[k] = parsed.lastName;
+          // do not count towards required consumed unless lastName is required
+          if (f.required) consumed++;
+        } else if (k === "name" && parsed.name) {
+          updatedData[k] = parsed.name;
+          consumed++;
+        } else if ((k === "password" || k === "pwd") && parsed.password && (!f.validations?.minLength || parsed.password.length >= f.validations.minLength)) {
+          updatedData[k] = parsed.password;
+          consumed++;
+        }
+      }
+
+      if (consumed > 0) {
+        const nextIndex = (sessionDoc.stageIndex || 0) + consumed;
+        await sessionsCollection.updateOne(
+          { sessionId },
+          { $set: { collectedData: updatedData, stageIndex: nextIndex, updatedAt: now } }
+        );
+
+        const nextField = sessionDoc.fields[nextIndex];
+        if (!nextField) {
+          // Move to confirmation step after last field
+          await sessionsCollection.updateOne(
+            { sessionId },
+            { $set: { status: "ready_to_submit", updatedAt: now } }
+          );
+          const summary = buildSafeSummary(updatedData || {});
+          const resp = {
+            mainText: `Great, I’ve got everything. Please review:\n${summary}\n\nReply "Confirm" to submit, or say "Edit" to change any detail.`,
+            buttons: (sessionDoc.phase === "change_email_only") ? ["Confirm and Submit"] : ["Confirm and Submit", "Edit Details"],
+            emailPrompt: "",
+            showBookingCalendar: false,
+            onboardingAction: "confirm",
+          };
+          return NextResponse.json(resp, { headers: corsHeaders });
+        }
+
+        const prompt = promptForField(nextField);
+        const docContext = await buildOnboardingDocContext(
+          nextField,
+          adminId || undefined,
+          onboardingConfig?.docsUrl
+        );
+        const resp = {
+          mainText: `${docContext ? `${docContext}\n\n` : ""}${prompt}`,
+          buttons: [],
+          emailPrompt: "",
+          showBookingCalendar: false,
+          onboardingAction: "ask_next",
+        };
+        return NextResponse.json(resp, { headers: corsHeaders });
+      }
+      // If bundle parsing failed, fall through to single-field validation
+    }
+
     const check = validateAnswer(currentField, ans);
     if (!check.valid) {
       const docContext = await buildOnboardingDocContext(
@@ -2869,7 +3050,7 @@ Keep the response conversational and helpful, focusing on providing value before
       );
       const resp = {
         mainText: `${docContext ? `${docContext}\n\n` : ""}${check.message || `Please provide your ${currentField.label || currentField.key}.`}`,
-        buttons: ["Cancel Onboarding"],
+        buttons: [],
         emailPrompt: "",
         showBookingCalendar: false,
         onboardingAction: "ask_again",
@@ -2897,7 +3078,7 @@ Keep the response conversational and helpful, focusing on providing value before
       const summary = buildSafeSummary(updated || {});
       const resp = {
         mainText: `Great, I’ve got everything. Please review:\n${summary}\n\nReply "Confirm" to submit, or say "Edit" to change any detail.`,
-        buttons: ["Confirm and Submit", "Edit Details", "Cancel Onboarding"],
+        buttons: (sessionDoc.phase === "change_email_only") ? ["Confirm and Submit"] : ["Confirm and Submit", "Edit Details"],
         emailPrompt: "",
         showBookingCalendar: false,
         onboardingAction: "confirm",
@@ -2913,7 +3094,7 @@ Keep the response conversational and helpful, focusing on providing value before
     );
     const resp = {
       mainText: `${docContext ? `${docContext}\n\n` : ""}${prompt}`,
-      buttons: ["Cancel Onboarding"],
+      buttons: [],
       emailPrompt: "",
       showBookingCalendar: false,
       onboardingAction: "ask_next",
@@ -3571,7 +3752,7 @@ Extract key requirements (2-3 bullet points max, be concise):`;
               return NextResponse.json(
                 {
                   mainText: `We’re finishing your onboarding. Please review:\n${summary}\n\nReply "Confirm" to submit, or "Edit" to change any detail.`,
-                  buttons: ["Confirm and Submit", "Edit Details", "Cancel Onboarding"],
+                  buttons: (existingOnboarding?.phase === "change_email_only") ? ["Confirm and Submit"] : ["Confirm and Submit", "Edit Details"],
                   emailPrompt: "",
                   onboardingAction: "confirm",
                 },
@@ -3582,10 +3763,10 @@ Extract key requirements (2-3 bullet points max, be concise):`;
             const summary = buildSafeSummary(existingOnboarding?.collectedData || {});
               return NextResponse.json(
                 {
-                  mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\nReply "Try Again" to resubmit, or "Edit" to change any detail.\n\nCurrent details:\n${summary}`,
-                  buttons: ["Try Again", "Edit Details", "Cancel Onboarding"],
+                  mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\n${/already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists|409/i.test(lastError || "") ? "Please update your email to continue." : "Reply \"Try Again\" to resubmit, or \"Edit\" to change any detail."}\n\nCurrent details:\n${summary}`,
+                  buttons: (/already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists|409/i.test(lastError || "")) ? ["Change Email"] : ["Try Again", "Edit Details"],
                   emailPrompt: "",
-                  onboardingAction: "error",
+                  onboardingAction: (/already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists|409/i.test(lastError || "")) ? "error_change_email" : "error",
                 },
                 { headers: corsHeaders }
               );
@@ -3599,7 +3780,7 @@ Extract key requirements (2-3 bullet points max, be concise):`;
               return NextResponse.json(
                 {
                   mainText: `${docContext ? `${docContext}\n\n` : ""}${prompt}`,
-                  buttons: ["Cancel Onboarding"],
+                  buttons: [],
                   emailPrompt: "",
                   onboardingAction: "ask_next",
                 },
@@ -5165,7 +5346,7 @@ What specific information are you looking for? I'm here to help guide you throug
             return NextResponse.json(
               {
                 mainText: `We’re finishing your onboarding. Please review:\n${summary}\n\nReply "Confirm" to submit, or "Edit" to change any detail.`,
-                buttons: ["Confirm and Submit", "Edit Details", "Cancel Onboarding"],
+                buttons: (existingOnboarding?.phase === "change_email_only") ? ["Confirm and Submit"] : ["Confirm and Submit", "Edit Details"],
                 emailPrompt: "",
                 onboardingAction: "confirm",
               },
@@ -5176,10 +5357,10 @@ What specific information are you looking for? I'm here to help guide you throug
             const summary = buildSafeSummary(existingOnboarding?.collectedData || {});
             return NextResponse.json(
               {
-                mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\nReply "Try Again" to resubmit, or "Edit" to change any detail.\n\nCurrent details:\n${summary}`,
-                buttons: ["Try Again", "Edit Details", "Cancel Onboarding"],
+                mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\n${/already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists|409/i.test(lastError || "") ? "Please update your email to continue." : "Reply \"Try Again\" to resubmit, or \"Edit\" to change any detail."}\n\nCurrent details:\n${summary}`,
+                buttons: (/already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists|409/i.test(lastError || "")) ? ["Change Email"] : ["Try Again", "Edit Details"],
                 emailPrompt: "",
-                onboardingAction: "error",
+                onboardingAction: (/already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists|409/i.test(lastError || "")) ? "error_change_email" : "error",
               },
               { headers: corsHeaders }
             );
@@ -5193,7 +5374,7 @@ What specific information are you looking for? I'm here to help guide you throug
             return NextResponse.json(
               {
                 mainText: `${docContext ? `${docContext}\n\n` : ""}${prompt}`,
-                buttons: ["Cancel Onboarding"],
+                buttons: [],
                 emailPrompt: "",
                 onboardingAction: "ask_next",
               },
@@ -5273,15 +5454,15 @@ What specific information are you looking for? I'm here to help guide you throug
               existingOnboarding?.adminId || undefined,
               (await getAdminSettings(existingOnboarding?.adminId || "")).onboarding?.docsUrl
             );
-            return NextResponse.json(
-              {
-                mainText: `${docContext ? `${docContext}\n\n` : ""}${prompt}`,
-                buttons: ["Cancel Onboarding"],
-                emailPrompt: "",
-                onboardingAction: "ask_next",
-              },
-              { headers: corsHeaders }
-            );
+              return NextResponse.json(
+                {
+                  mainText: `${docContext ? `${docContext}\n\n` : ""}${prompt}`,
+                  buttons: [],
+                  emailPrompt: "",
+                  onboardingAction: "ask_next",
+                },
+                { headers: corsHeaders }
+              );
           }
         }
       } catch (e) {

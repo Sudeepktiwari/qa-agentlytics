@@ -1328,7 +1328,7 @@ export async function GET(request: Request) {
   }
   
   // Send proactive message with voice and auto-opening
-  function sendProactiveMessage(text, buttons = [], emailPrompt = '', messageType = 'PROACTIVE') {
+  function sendProactiveMessage(text, buttons = [], emailPrompt = '', messageType = 'PROACTIVE', inputFields = null) {
     if (!text) {
       console.log('[ChatWidget] No proactive message text provided');
       return;
@@ -1399,19 +1399,30 @@ export async function GET(request: Request) {
 
     let finalText = text;
     let finalEmailPrompt = emailPrompt || '';
+    let finalInputFields = inputFields || null;
     if (ONBOARDING_ONLY) {
       // Avoid redundant greeting on the very first onboarding message
       const needsGreeting = (messages.length === 0) && (messageType !== 'ONBOARDING');
       const greeting = 'Welcome! I’ll help you get set up.';
       const requestedDetails = detectRequestedDetails({ emailPrompt: finalEmailPrompt }, text, buttons);
-      if (requestedDetails.length > 0) {
-        const rationaleCombined = requestedDetails.map(getDetailRationale).filter(Boolean).join(' ');
-        finalText = (needsGreeting ? greeting + '\\n\\n' : '') + text + (rationaleCombined ? ' ' + rationaleCombined : '');
-        if (!finalEmailPrompt && requestedDetails.includes('email')) {
-          finalEmailPrompt = 'Please enter your email to continue.';
-        }
+     if (requestedDetails.length > 0) {
+       const rationaleCombined = requestedDetails.map(getDetailRationale).filter(Boolean).join(' ');
+        finalText = (needsGreeting ? greeting + '\\n\\n' : '') + text;
+       if (!finalEmailPrompt && requestedDetails.includes('email')) {
+         finalEmailPrompt = 'Please enter your email to continue.';
+       }
       } else if (needsGreeting) {
         finalText = greeting + '\\n\\n' + text;
+      }
+      // If onboarding asks for registration bundle, prefer explicit multi-field inputs
+      if (!finalInputFields && /name.*email.*password/i.test(text)) {
+        finalInputFields = [
+          { name: 'fullName', label: 'Your Name', type: 'text', placeholder: 'Jane Doe', rationale: 'We use your name to personalize setup and documentation.', required: true },
+          { name: 'email', label: 'Email', type: 'email', placeholder: 'jane@company.com', rationale: 'We use your email to set you up and send onboarding resources.', required: true },
+          { name: 'password', label: 'Password', type: 'password', placeholder: 'Min 8 characters', rationale: 'We need a password to secure your account.', required: true, minLength: 8 }
+        ];
+        // Avoid duplicate single email prompt when multi-field inputs are present
+        finalEmailPrompt = '';
       }
     }
 
@@ -1420,6 +1431,7 @@ export async function GET(request: Request) {
       content: finalText,
       buttons: buttons || [],
       emailPrompt: finalEmailPrompt,
+      inputFields: finalInputFields,
       isProactive: true
     };
     
@@ -3491,7 +3503,9 @@ export async function GET(request: Request) {
       userEmail: responseData.userEmail || null,
       // 🎯 BOOKING CALENDAR FIELDS - ESSENTIAL FOR CALENDAR FUNCTIONALITY
       showBookingCalendar: responseData.showBookingCalendar || false,
-      bookingType: responseData.bookingType || null
+      bookingType: responseData.bookingType || null,
+      // New: support multi-field inputs from backend (or future extensions)
+      inputFields: responseData.inputFields || responseData.registrationFields || null
     };
     
     console.log("✅ [WIDGET API] Response normalized to consistent format");
@@ -3610,7 +3624,9 @@ export async function GET(request: Request) {
           buttons: data.buttons || [],
           emailPrompt: data.emailPrompt || '',
           showBookingCalendar: data.showBookingCalendar || false,
-          bookingType: data.bookingType || null
+          bookingType: data.bookingType || null,
+          // Carry multi-field inputs if provided
+          inputFields: data.inputFields || null
         };
         messages.push(botMessage);
         renderMessages();
@@ -3702,7 +3718,8 @@ export async function GET(request: Request) {
         buttons: data.buttons || [],
         emailPrompt: data.emailPrompt || '',
         showBookingCalendar: data.showBookingCalendar || false,
-        bookingType: data.bookingType || null
+        bookingType: data.bookingType || null,
+        inputFields: data.inputFields || null
       };
       messages.push(botMessage);
       botResponse = botMessage.content;
@@ -3841,18 +3858,25 @@ export async function GET(request: Request) {
         botAvatar.style.marginRight = '8px';
         
         const bubbleDiv = document.createElement('div');
-        bubbleDiv.style.cssText = \`
-          background: \${currentTheme.primary};
-          color: white;
-          padding: 12px 16px;
-          border-radius: 18px;
-          min-width: 0;
-          word-wrap: break-word;
-          word-break: break-word;
-          font-size: \${currentSize.fontSize};
-          line-height: 1.4;
-          flex: 1;
-        \`;
+       bubbleDiv.style.cssText = \`
+         background: \${currentTheme.primary};
+         color: white;
+         padding: 12px 16px;
+         border-radius: 18px;
+         min-width: 0;
+         word-wrap: break-word;
+         word-break: break-word;
+         font-size: \${currentSize.fontSize};
+         line-height: 1.4;
+         flex: 1;
+         box-sizing: border-box;
+       \`;
+        
+        // For onboarding-only mode, limit bubble width and fix right padding
+        if (ONBOARDING_ONLY) {
+          bubbleDiv.style.maxWidth = '70%';
+          bubbleDiv.style.paddingRight = '16px';
+        }
         
         contentWrapper.appendChild(botAvatar);
         contentWrapper.appendChild(bubbleDiv);
@@ -3975,8 +3999,108 @@ export async function GET(request: Request) {
           console.log("🚫 [WIDGET RENDER] Skipping", msg.buttons.length, "buttons - calendar is shown");
         }
         
-        // Add email prompt if present (skip if calendar is shown)
-        if (msg.emailPrompt && msg.emailPrompt.trim() && !hideInteractiveElements) {
+        // New: render multi-field inputs (name, email, password) with reasons if provided
+        if (!hideInteractiveElements && msg.inputFields && Array.isArray(msg.inputFields) && msg.inputFields.length > 0) {
+          console.log("✅ [WIDGET RENDER] Rendering multi-field registration form");
+          const formWrap = document.createElement('div');
+          formWrap.style.cssText = 'margin-top: 8px;';
+          
+          const form = document.createElement('form');
+          form.style.cssText = 'display: flex; flex-direction: column; gap: 8px;';
+          
+          // Use plain object; avoid TS types in emitted client script
+          const fieldInputs = {};
+          msg.inputFields.forEach(field => {
+            const fieldDiv = document.createElement('div');
+            
+            const label = document.createElement('div');
+            label.textContent = field.label || field.name;
+            label.style.cssText = 'color: white; font-size: 13px; margin-bottom: 4px;';
+            fieldDiv.appendChild(label);
+            
+            const rationale = document.createElement('div');
+            rationale.textContent = field.rationale || (
+              field.name === 'fullName' ? 'We use your name to personalize setup and documentation.' :
+              field.name === 'email' ? 'We use your email to set you up and send onboarding resources.' :
+              field.name === 'password' ? 'We need a password to secure your account.' :
+              ''
+            );
+            if (rationale.textContent) {
+              rationale.style.cssText = 'color: rgba(255,255,255,0.85); font-size: 12px; margin-bottom: 6px;';
+              fieldDiv.appendChild(rationale);
+            }
+            
+            const input = document.createElement('input');
+            input.type = field.type || 'text';
+            input.placeholder = field.placeholder || '';
+            input.required = !!field.required;
+            if (field.minLength) input.minLength = field.minLength;
+            input.style.cssText = \`
+              width: 100%;
+              padding: 8px;
+              border: 1px solid #ddd;
+              border-radius: 8px;
+              font-size: 13px;
+              outline: none;
+              background: white;
+              color: black;
+              box-sizing: border-box;
+            \`;
+            input.addEventListener('input', () => {
+              if (input.value.length > 0) {
+                setUserActive();
+              }
+            });
+            
+            fieldInputs[field.name] = input;
+            fieldDiv.appendChild(input);
+            form.appendChild(fieldDiv);
+          });
+          
+          const submit = document.createElement('button');
+          submit.type = 'submit';
+          submit.textContent = 'Submit';
+          submit.style.cssText = \`
+            background: #f1f1f1;
+            color: #333;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            align-self: flex-start;
+          \`;
+          
+          form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            // Collect provided values only; let backend ask for missing ones
+            const fullName = (fieldInputs.fullName && fieldInputs.fullName.value.trim()) || '';
+            const email = (fieldInputs.email && fieldInputs.email.value.trim()) || '';
+            const password = (fieldInputs.password && fieldInputs.password.value.trim()) || '';
+
+            // Validate provided password if present
+            if (password && password.length < 8) {
+              fieldInputs.password.focus();
+              return;
+            }
+
+            // Build combined message with only provided fields (plain JS)
+            const parts = [];
+            if (fullName) parts.push('Name: ' + fullName);
+            if (email) parts.push('Email: ' + email);
+            if (password) parts.push('Password: ' + password);
+
+            if (parts.length === 0) return; // nothing to submit
+
+            resetUserActivity();
+            const combined = parts.join(', ');
+            sendMessage(combined);
+          });
+          
+          form.appendChild(submit);
+          formWrap.appendChild(form);
+          bubbleDiv.appendChild(formWrap);
+        } else if (msg.emailPrompt && msg.emailPrompt.trim() && !hideInteractiveElements) {
           console.log("✅ [WIDGET RENDER] Rendering email prompt");
           const emailDiv = document.createElement('div');
           emailDiv.style.cssText = 'margin-top: 8px;';
@@ -4017,6 +4141,7 @@ export async function GET(request: Request) {
             outline: none;
             background: white;
             color: black;
+            box-sizing: border-box;
           \`;
           
           emailInput.addEventListener('input', () => {
@@ -4107,15 +4232,19 @@ export async function GET(request: Request) {
         question: 'get started'
       });
 
-      // Force an email-first prompt when backend does not provide a specific detail
-      const initialEmailPrompt = (data && data.emailPrompt) ? data.emailPrompt : 'Please enter your email to continue.';
-      const initialText = (data && data.mainText) ? data.mainText : 'To get you onboarded, I need a few details.';
+      const initialText = (data && data.mainText) ? data.mainText : 'Welcome! To start your registration, please share your name, email, and a password (min 8 chars).';
+      const registrationFields = [
+        { name: 'fullName', label: 'Your Name', type: 'text', placeholder: 'Jane Doe', rationale: 'We use your name to personalize setup and documentation.', required: true },
+        { name: 'email', label: 'Email', type: 'email', placeholder: 'jane@company.com', rationale: 'We use your email to set you up and send onboarding resources.', required: true },
+        { name: 'password', label: 'Password', type: 'password', placeholder: 'Min 8 characters', rationale: 'We need a password to secure your account.', required: true, minLength: 8 }
+      ];
 
       sendProactiveMessage(
         initialText,
         (data && data.buttons) ? data.buttons : [],
-        initialEmailPrompt,
-        'ONBOARDING'
+        '',
+        'ONBOARDING',
+        registrationFields
       );
       console.log('[ChatWidget] Onboarding init message sent with detail-first prompt');
       return;
