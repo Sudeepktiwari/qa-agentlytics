@@ -2816,7 +2816,26 @@ Keep the response conversational and helpful, focusing on providing value before
           return NextResponse.json(resp, { headers: corsHeaders });
         }
       } else if (sessionDoc.status !== "ready_to_submit") {
-        const summary = buildSafeSummary(sessionDoc.collectedData || {});
+        let summary = buildSafeSummary(sessionDoc.collectedData || {});
+        if (sessionDoc?.phase === "initial_setup" && onboardingConfig?.initialSetupCurlCommand) {
+          const setupFields = deriveOnboardingFieldsFromCurl(onboardingConfig.initialSetupCurlCommand);
+          if (!setupFields || setupFields.length === 0) {
+            const resp = {
+              mainText: "Initial setup cURL has no body keys. Please configure the cURL with required fields.",
+              buttons: ["Contact Admin"],
+              emailPrompt: "",
+              showBookingCalendar: false,
+              onboardingAction: "error",
+            };
+            return NextResponse.json(resp, { headers: corsHeaders });
+          }
+          const setupKeys = (setupFields || []).map((f: any) => f.key);
+          const data = sessionDoc.collectedData || {};
+          const limited = Object.fromEntries(
+            Object.entries(data).filter(([k]) => setupKeys.includes(k))
+          );
+          summary = buildSafeSummary(limited);
+        }
         await sessionsCollection.updateOne(
           { sessionId },
           { $set: { status: "ready_to_submit", updatedAt: now } }
@@ -2839,7 +2858,26 @@ Keep the response conversational and helpful, focusing on providing value before
                 { sessionId },
                 { $set: { externalAuthToken: authRes.token, updatedAt: now } }
               );
-              const summary = buildSafeSummary(sessionDoc.collectedData || {});
+              let summary = buildSafeSummary(sessionDoc.collectedData || {});
+              if (sessionDoc?.phase === "initial_setup" && onboardingConfig?.initialSetupCurlCommand) {
+                const setupFields = deriveOnboardingFieldsFromCurl(onboardingConfig.initialSetupCurlCommand);
+                if (!setupFields || setupFields.length === 0) {
+                  const resp = {
+                    mainText: "Initial setup cURL has no body keys. Please configure the cURL with required fields.",
+                    buttons: ["Contact Admin"],
+                    emailPrompt: "",
+                    showBookingCalendar: false,
+                    onboardingAction: "error",
+                  };
+                  return NextResponse.json(resp, { headers: corsHeaders });
+                }
+                const setupKeys = (setupFields || []).map((f: any) => f.key);
+                const data = sessionDoc.collectedData || {};
+                const limited = Object.fromEntries(
+                  Object.entries(data).filter(([k]) => setupKeys.includes(k))
+                );
+                summary = buildSafeSummary(limited);
+              }
               const resp = {
                 mainText: `✅ Logged in successfully.\n\nPlease review your details:\n${summary}\n\nReply "Confirm" to submit initial setup, or say "Edit" to change any detail.`,
                 buttons: ["Confirm and Submit", "Edit Details"],
