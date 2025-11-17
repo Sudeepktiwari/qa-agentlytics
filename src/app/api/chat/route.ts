@@ -2544,8 +2544,7 @@ Keep the response conversational and helpful, focusing on providing value before
           const payload = { ...(sessionDoc.collectedData || {}) };
           const requiresAuth = !!(onboardingConfig as any)?.authCurlCommand;
           const hasAuthToken = !!sessionDoc?.externalAuthToken;
-          const isRegistered = !!sessionDoc?.registeredUserId;
-          const shouldRunInitialSetup = sessionDoc?.phase === "initial_setup" && isRegistered && (hasAuthToken || !requiresAuth);
+          const shouldRunInitialSetup = sessionDoc?.phase === "initial_setup" && (hasAuthToken || !requiresAuth);
           const result = adminId
             ? (shouldRunInitialSetup
                 ? await onboardingService.initialSetup(
@@ -2701,6 +2700,14 @@ Keep the response conversational and helpful, focusing on providing value before
             return NextResponse.json(resp, { headers: corsHeaders });
           }
 
+          if (result.success) {
+            try {
+              await sessionsCollection.updateOne(
+                { sessionId },
+                { $set: { registeredUserId: result.userId || null, updatedAt: now } }
+              );
+            } catch {}
+          }
           const resp = result.success
             ? {
                 mainText: "✅ You’re all set! Your account has been created.",
@@ -2792,8 +2799,7 @@ Keep the response conversational and helpful, focusing on providing value before
           const payload = { ...(sessionDoc.collectedData || {}) };
           const requiresAuth2 = !!(onboardingConfig as any)?.authCurlCommand;
           const hasAuthToken2 = !!sessionDoc?.externalAuthToken;
-          const isRegistered2 = !!sessionDoc?.registeredUserId;
-          const shouldRunInitialSetup2 = sessionDoc?.phase === "initial_setup" && isRegistered2 && (hasAuthToken2 || !requiresAuth2);
+          const shouldRunInitialSetup2 = sessionDoc?.phase === "initial_setup" && (hasAuthToken2 || !requiresAuth2);
           const result = adminId
             ? (shouldRunInitialSetup2
                 ? await onboardingService.initialSetup(
@@ -2923,6 +2929,14 @@ Keep the response conversational and helpful, focusing on providing value before
             return NextResponse.json(resp, { headers: corsHeaders });
           }
 
+          if (result.success) {
+            try {
+              await sessionsCollection.updateOne(
+                { sessionId },
+                { $set: { registeredUserId: result.userId || null, updatedAt: now } }
+              );
+            } catch {}
+          }
           const resp = result.success
             ? {
                 mainText: "✅ You’re all set! Your account has been created.",
