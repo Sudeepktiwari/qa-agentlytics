@@ -2434,7 +2434,7 @@ Keep the response conversational and helpful, focusing on providing value before
   const onboardingEnabled = !!onboardingConfig?.enabled;
   const sessionsCollection = db.collection("onboardingSessions");
   const existingOnboarding = await sessionsCollection.findOne({ sessionId });
-  const isOnboardingAction = question && /\bcancel onboarding\b/i.test(question || "");
+  const isOnboardingAction = !!question && (/(?:\b(cancel|quit)\s+onboarding\b)/i.test(question || "") || (/\b(cancel|quit)\b/i.test(question || "") && ["in_progress", "ready_to_submit", "error"].includes(existingOnboarding?.status || "")));
   // Respect widget mode header to gate onboarding in the chat API
   const widgetMode = req.headers.get("x-widget-mode") || "";
   const isOnboardingOnly = widgetMode === "onboarding_only";
