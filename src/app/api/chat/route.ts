@@ -2546,7 +2546,7 @@ Keep the response conversational and helpful, focusing on providing value before
           const hasAuthToken = !!sessionDoc?.externalAuthToken;
           let result: any = { success: false, error: "Missing adminId" };
           if (adminId) {
-            if (sessionDoc?.phase === "initial_setup") {
+            if (sessionDoc?.phase === "initial_setup" && !!sessionDoc?.registeredUserId) {
               if (requiresAuth && !hasAuthToken) {
                 const resp = {
                   mainText: "Authentication required to submit initial setup. Please log in or provide credentials.",
@@ -2876,7 +2876,7 @@ Keep the response conversational and helpful, focusing on providing value before
           const hasAuthToken2 = !!sessionDoc?.externalAuthToken;
           let result2: any = { success: false, error: "Missing adminId" };
           if (adminId) {
-            if (sessionDoc?.phase === "initial_setup") {
+            if (sessionDoc?.phase === "initial_setup" && !!sessionDoc?.registeredUserId) {
               if (requiresAuth2 && !hasAuthToken2) {
                 const resp = {
                   mainText: "Authentication required to submit initial setup. Please log in or provide credentials.",

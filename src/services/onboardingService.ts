@@ -246,8 +246,14 @@ export const onboardingService = {
             (parsedResp as any).token,
             (parsedResp as any).access_token,
             (parsedResp as any).authToken,
+            (parsedResp as any).apiKey,
+            (parsedResp as any).api_key,
+            (parsedResp as any).key,
             (parsedResp as any)?.data?.token,
             (parsedResp as any)?.data?.access_token,
+            (parsedResp as any)?.data?.apiKey,
+            (parsedResp as any)?.data?.api_key,
+            (parsedResp as any)?.data?.key,
           ];
           return candidates.find((t: any) => typeof t === "string" && t.length > 0);
         }
