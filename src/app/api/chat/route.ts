@@ -2655,7 +2655,11 @@ Keep the response conversational and helpful, focusing on providing value before
             }
 
             // Kick off initial setup phase using admin-provided cURL
-            const setupFields = deriveOnboardingFieldsFromCurl(onboardingConfig.initialSetupCurlCommand);
+            let setupFields = deriveOnboardingFieldsFromCurl(onboardingConfig.initialSetupCurlCommand);
+            if (!setupFields || setupFields.length === 0) {
+              const docDerived = await inferFieldsFromDocs(adminId || undefined, onboardingConfig?.initialSetupDocsUrl);
+              setupFields = docDerived;
+            }
             const collectedKeys = Object.keys(sessionDoc.collectedData || {});
             const filteredFields = setupFields.filter((f: any) => {
               const k = (f.key || "").toString();
@@ -2884,7 +2888,11 @@ Keep the response conversational and helpful, focusing on providing value before
           }
 
           if (result.success && onboardingConfig?.initialSetupCurlCommand) {
-            const setupFields = deriveOnboardingFieldsFromCurl(onboardingConfig.initialSetupCurlCommand);
+            let setupFields = deriveOnboardingFieldsFromCurl(onboardingConfig.initialSetupCurlCommand);
+            if (!setupFields || setupFields.length === 0) {
+              const docDerived = await inferFieldsFromDocs(adminId || undefined, onboardingConfig?.initialSetupDocsUrl);
+              setupFields = docDerived;
+            }
             const collectedKeys = Object.keys(sessionDoc.collectedData || {});
             const filteredFields = setupFields.filter((f: any) => {
               const k = (f.key || "").toString();

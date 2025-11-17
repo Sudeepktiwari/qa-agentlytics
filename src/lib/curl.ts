@@ -213,17 +213,12 @@ export function deriveOnboardingFieldsFromCurl(curlCommand: string): DerivedFiel
     return "text";
   };
 
-  const fields: DerivedField[] = [];
-  for (const key of keys) {
-    fields.push({ key, label: toLabel(key), required: true, type: toType(key) });
-  }
-
-  // If no keys found, provide a minimal sensible set
-  if (fields.length === 0) {
-    fields.push({ key: "email", label: "Email", required: true, type: "email" });
-    fields.push({ key: "name", label: "Name", required: true, type: "text" });
-    fields.push({ key: "password", label: "Password", required: true, type: "text" });
-  }
+  const fields: DerivedField[] = keys.map((key) => ({
+    key,
+    label: toLabel(key),
+    required: true,
+    type: toType(key),
+  }));
 
   return fields;
 }
