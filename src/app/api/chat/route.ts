@@ -2831,6 +2831,45 @@ Keep the response conversational and helpful, focusing on providing value before
         return NextResponse.json(resp, { headers: corsHeaders });
       } else {
         const lower = (question || "").toLowerCase();
+        if (/\b(log\s*in|login|sign\s*in)\b/.test(lower)) {
+          try {
+            const authRes = await onboardingService.authenticate({ ...(sessionDoc.collectedData || {}) }, adminId!);
+            if (authRes.success && authRes.token) {
+              await sessionsCollection.updateOne(
+                { sessionId },
+                { $set: { externalAuthToken: authRes.token, updatedAt: now } }
+              );
+              const summary = buildSafeSummary(sessionDoc.collectedData || {});
+              const resp = {
+                mainText: `✅ Logged in successfully.\n\nPlease review your details:\n${summary}\n\nReply "Confirm" to submit initial setup, or say "Edit" to change any detail.`,
+                buttons: ["Confirm and Submit", "Edit Details"],
+                emailPrompt: "",
+                showBookingCalendar: false,
+                onboardingAction: "confirm",
+              };
+              return NextResponse.json(resp, { headers: corsHeaders });
+            } else {
+              const msg = authRes.error || "Authentication failed";
+              const resp = {
+                mainText: `⚠️ ${msg}.`,
+                buttons: ["Try Again", "Edit Details"],
+                emailPrompt: "",
+                showBookingCalendar: false,
+                onboardingAction: "auth_required",
+              };
+              return NextResponse.json(resp, { headers: corsHeaders });
+            }
+          } catch (e: any) {
+            const resp = {
+              mainText: `⚠️ Authentication error: ${e?.message || String(e)}.`,
+              buttons: ["Try Again", "Edit Details"],
+              emailPrompt: "",
+              showBookingCalendar: false,
+              onboardingAction: "auth_required",
+            };
+            return NextResponse.json(resp, { headers: corsHeaders });
+          }
+        }
         if (/\b(confirm|submit|looks good|yes|try again|retry|resubmit)\b/.test(lower)) {
           const payload = { ...(sessionDoc.collectedData || {}) };
           const requiresAuth2 = !!(onboardingConfig as any)?.authCurlCommand;
