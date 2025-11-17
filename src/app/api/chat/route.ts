@@ -2544,15 +2544,27 @@ Keep the response conversational and helpful, focusing on providing value before
           const payload = { ...(sessionDoc.collectedData || {}) };
           const requiresAuth = !!(onboardingConfig as any)?.authCurlCommand;
           const hasAuthToken = !!sessionDoc?.externalAuthToken;
-          const shouldRunInitialSetup = sessionDoc?.phase === "initial_setup" && (hasAuthToken || !requiresAuth);
-          const result = adminId
-            ? (shouldRunInitialSetup
-                ? await onboardingService.initialSetup(
-                    { ...payload, __authToken: sessionDoc?.externalAuthToken },
-                    adminId
-                  )
-                : await onboardingService.register(payload, adminId))
-            : { success: false, error: "Missing adminId" };
+          let result: any = { success: false, error: "Missing adminId" };
+          if (adminId) {
+            if (sessionDoc?.phase === "initial_setup") {
+              if (requiresAuth && !hasAuthToken) {
+                const resp = {
+                  mainText: "Authentication required to submit initial setup. Please log in or provide credentials.",
+                  buttons: ["Log In", "Edit Details"],
+                  emailPrompt: "",
+                  showBookingCalendar: false,
+                  onboardingAction: "auth_required",
+                };
+                return NextResponse.json(resp, { headers: corsHeaders });
+              }
+              result = await onboardingService.initialSetup(
+                { ...payload, __authToken: sessionDoc?.externalAuthToken },
+                adminId
+              );
+            } else {
+              result = await onboardingService.register(payload, adminId);
+            }
+          }
           // Log registration outcome with sensitive field redaction
           try {
             const redactKeys = ["password", "pass", "secret", "token", "apikey", "api_key", "key"];
@@ -2655,10 +2667,16 @@ Keep the response conversational and helpful, focusing on providing value before
             }
 
             // Kick off initial setup phase using admin-provided cURL
-            let setupFields = deriveOnboardingFieldsFromCurl(onboardingConfig.initialSetupCurlCommand);
+            const setupFields = deriveOnboardingFieldsFromCurl(onboardingConfig.initialSetupCurlCommand);
             if (!setupFields || setupFields.length === 0) {
-              const docDerived = await inferFieldsFromDocs(adminId || undefined, onboardingConfig?.initialSetupDocsUrl);
-              setupFields = docDerived;
+              const resp = {
+                mainText: "Initial setup cURL has no body keys. Please configure the cURL with required fields.",
+                buttons: ["Contact Admin"],
+                emailPrompt: "",
+                showBookingCalendar: false,
+                onboardingAction: "error",
+              };
+              return NextResponse.json(resp, { headers: corsHeaders });
             }
             const collectedKeys = Object.keys(sessionDoc.collectedData || {});
             const filteredFields = setupFields.filter((f: any) => {
@@ -2672,9 +2690,14 @@ Keep the response conversational and helpful, focusing on providing value before
                 { sessionId },
                 { $set: { status: "ready_to_submit", stageIndex: 0, fields: [], phase: "initial_setup", updatedAt: now } }
               );
-              const summary = buildSafeSummary(sessionDoc.collectedData || {});
+              const setupKeys = (setupFields || []).map((f: any) => f.key);
+              const data = sessionDoc.collectedData || {};
+              const limited = Object.fromEntries(
+                Object.entries(data).filter(([k]) => setupKeys.includes(k))
+              );
+              const summary = buildSafeSummary(limited);
               const resp = {
-                mainText: `✅ Registration complete. Initial setup is ready to submit with your existing details.\n\nDetails:\n${summary}\n\nReply "Confirm" to submit initial setup, or "Edit" to change any detail.`,
+                mainText: `✅ Registration complete. Initial setup is ready to submit with your setup details.\n\nDetails:\n${summary}\n\nReply "Confirm" to submit initial setup, or "Edit" to change any detail.`,
                 buttons: ["Confirm and Submit", "Edit Details"],
                 emailPrompt: "",
                 showBookingCalendar: false,
@@ -2700,6 +2723,15 @@ Keep the response conversational and helpful, focusing on providing value before
               emailPrompt: "",
               showBookingCalendar: false,
               onboardingAction: "ask_next",
+            };
+            return NextResponse.json(resp, { headers: corsHeaders });
+          } else if (result.success && !onboardingConfig?.initialSetupCurlCommand) {
+            const resp = {
+              mainText: "Initial setup cURL not configured. Please configure it to proceed.",
+              buttons: ["Contact Admin"],
+              emailPrompt: "",
+              showBookingCalendar: false,
+              onboardingAction: "error",
             };
             return NextResponse.json(resp, { headers: corsHeaders });
           }
@@ -2803,15 +2835,27 @@ Keep the response conversational and helpful, focusing on providing value before
           const payload = { ...(sessionDoc.collectedData || {}) };
           const requiresAuth2 = !!(onboardingConfig as any)?.authCurlCommand;
           const hasAuthToken2 = !!sessionDoc?.externalAuthToken;
-          const shouldRunInitialSetup2 = sessionDoc?.phase === "initial_setup" && (hasAuthToken2 || !requiresAuth2);
-          const result = adminId
-            ? (shouldRunInitialSetup2
-                ? await onboardingService.initialSetup(
-                    { ...payload, __authToken: sessionDoc?.externalAuthToken },
-                    adminId
-                  )
-                : await onboardingService.register(payload, adminId))
-            : { success: false, error: "Missing adminId" };
+          let result2: any = { success: false, error: "Missing adminId" };
+          if (adminId) {
+            if (sessionDoc?.phase === "initial_setup") {
+              if (requiresAuth2 && !hasAuthToken2) {
+                const resp = {
+                  mainText: "Authentication required to submit initial setup. Please log in or provide credentials.",
+                  buttons: ["Log In", "Edit Details"],
+                  emailPrompt: "",
+                  showBookingCalendar: false,
+                  onboardingAction: "auth_required",
+                };
+                return NextResponse.json(resp, { headers: corsHeaders });
+              }
+              result2 = await onboardingService.initialSetup(
+                { ...payload, __authToken: sessionDoc?.externalAuthToken },
+                adminId
+              );
+            } else {
+              result2 = await onboardingService.register(payload, adminId);
+            }
+          }
           // Log registration outcome with sensitive field redaction
           try {
             const redactKeys = ["password", "pass", "secret", "token", "apikey", "api_key", "key"];
@@ -2823,34 +2867,34 @@ Keep the response conversational and helpful, focusing on providing value before
                 
               })
             );
-            if (!result.success) {
+            if (!result2.success) {
               console.error(`[Chat API ${requestId}] ❌ Onboarding registration failed`, {
                 adminId,
                 sessionId,
-                status: result.status,
-                error: result.error,
+                status: result2.status,
+                error: result2.error,
                 payload: safePayload,
               });
             } else {
               console.log(`[Chat API ${requestId}] ✅ Onboarding registration succeeded`, {
                 adminId,
                 sessionId,
-                userId: result.userId,
-                status: result.status,
+                userId: result2.userId,
+                status: result2.status,
               });
             }
           } catch {}
 
-          const newStatus = result.success ? "completed" : "error";
+          const newStatus = result2.success ? "completed" : "error";
           await sessionsCollection.updateOne(
             { sessionId },
-            { $set: { status: newStatus, updatedAt: now, registeredUserId: result.userId || null, lastError: result.error || null } }
+            { $set: { status: newStatus, updatedAt: now, registeredUserId: result2.userId || null, lastError: result2.error || null } }
           );
 
           // If registration failed, try to surface specific error details from the external API response
           let detailsText2 = "";
-          if (!result.success && result.responseBody) {
-            const rb2: any = result.responseBody;
+          if (!result2.success && result2.responseBody) {
+            const rb2: any = result2.responseBody;
             const collectErrors2 = (errs: any[]): string[] => {
               return errs
                 .map((e) => {
@@ -2887,11 +2931,17 @@ Keep the response conversational and helpful, focusing on providing value before
             } catch {}
           }
 
-          if (result.success && onboardingConfig?.initialSetupCurlCommand) {
-            let setupFields = deriveOnboardingFieldsFromCurl(onboardingConfig.initialSetupCurlCommand);
+          if (result2.success && onboardingConfig?.initialSetupCurlCommand) {
+            const setupFields = deriveOnboardingFieldsFromCurl(onboardingConfig.initialSetupCurlCommand);
             if (!setupFields || setupFields.length === 0) {
-              const docDerived = await inferFieldsFromDocs(adminId || undefined, onboardingConfig?.initialSetupDocsUrl);
-              setupFields = docDerived;
+              const resp = {
+                mainText: "Initial setup cURL has no body keys. Please configure the cURL with required fields.",
+                buttons: ["Contact Admin"],
+                emailPrompt: "",
+                showBookingCalendar: false,
+                onboardingAction: "error",
+              };
+              return NextResponse.json(resp, { headers: corsHeaders });
             }
             const collectedKeys = Object.keys(sessionDoc.collectedData || {});
             const filteredFields = setupFields.filter((f: any) => {
@@ -2905,9 +2955,14 @@ Keep the response conversational and helpful, focusing on providing value before
                 { sessionId },
                 { $set: { status: "ready_to_submit", stageIndex: 0, fields: [], phase: "initial_setup", updatedAt: now } }
               );
-              const summary = buildSafeSummary(sessionDoc.collectedData || {});
+              const setupKeys = (setupFields || []).map((f: any) => f.key);
+              const data = sessionDoc.collectedData || {};
+              const limited = Object.fromEntries(
+                Object.entries(data).filter(([k]) => setupKeys.includes(k))
+              );
+              const summary = buildSafeSummary(limited);
               const resp = {
-                mainText: `✅ Registration complete. Initial setup is ready to submit with your existing details.\n\nDetails:\n${summary}\n\nReply "Confirm" to submit initial setup, or "Edit" to change any detail.`,
+                mainText: `✅ Registration complete. Initial setup is ready to submit with your setup details.\n\nDetails:\n${summary}\n\nReply "Confirm" to submit initial setup, or "Edit" to change any detail.`,
                 buttons: ["Confirm and Submit", "Edit Details"],
                 emailPrompt: "",
                 showBookingCalendar: false,
@@ -2935,17 +2990,26 @@ Keep the response conversational and helpful, focusing on providing value before
               onboardingAction: "ask_next",
             };
             return NextResponse.json(resp, { headers: corsHeaders });
+          } else if (result2.success && !onboardingConfig?.initialSetupCurlCommand) {
+            const resp = {
+              mainText: "Initial setup cURL not configured. Please configure it to proceed.",
+              buttons: ["Contact Admin"],
+              emailPrompt: "",
+              showBookingCalendar: false,
+              onboardingAction: "error",
+            };
+            return NextResponse.json(resp, { headers: corsHeaders });
           }
 
-          if (result.success) {
+          if (result2.success) {
             try {
               await sessionsCollection.updateOne(
                 { sessionId },
-                { $set: { registeredUserId: result.userId || null, updatedAt: now } }
+                { $set: { registeredUserId: result2.userId || null, updatedAt: now } }
               );
             } catch {}
           }
-          const resp = result.success
+          const resp = result2.success
             ? {
                 mainText: "✅ You’re all set! Your account has been created.",
                 buttons: ["Log In", "Talk to Sales"],
@@ -2954,15 +3018,15 @@ Keep the response conversational and helpful, focusing on providing value before
                 onboardingAction: "completed",
               }
             : {
-                mainText: `⚠️ We couldn’t complete registration: ${result.error || "Unknown error"}.${detailsText2}`,
+                mainText: `⚠️ We couldn’t complete registration: ${result2.error || "Unknown error"}.${detailsText2}`,
                 buttons: ["Try Again", "Edit Details"],
                 emailPrompt: "",
                 showBookingCalendar: false,
                 onboardingAction: "error",
               };
           // Special-case: existing user/email registered → only allow changing email
-          if (!result.success) {
-            const errTxt = (result.error || "") + (detailsText2 || "");
+          if (!result2.success) {
+            const errTxt = (result2.error || "") + (detailsText2 || "");
             const isExistingUser = /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists|409/i.test(errTxt);
             if (isExistingUser) {
               (resp as any).buttons = ["Change Email"];
