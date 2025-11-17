@@ -2542,8 +2542,12 @@ Keep the response conversational and helpful, focusing on providing value before
         const lower = (question || "").toLowerCase();
         if (/\b(try again|retry|resubmit|confirm|submit)\b/.test(lower)) {
           const payload = { ...(sessionDoc.collectedData || {}) };
+          const requiresAuth = !!(onboardingConfig as any)?.authCurlCommand;
+          const hasAuthToken = !!sessionDoc?.externalAuthToken;
+          const isRegistered = !!sessionDoc?.registeredUserId;
+          const shouldRunInitialSetup = sessionDoc?.phase === "initial_setup" && isRegistered && (hasAuthToken || !requiresAuth);
           const result = adminId
-            ? (sessionDoc?.phase === "initial_setup"
+            ? (shouldRunInitialSetup
                 ? await onboardingService.initialSetup(
                     { ...payload, __authToken: sessionDoc?.externalAuthToken },
                     adminId
@@ -2661,28 +2665,18 @@ Keep the response conversational and helpful, focusing on providing value before
               return !collectedKeys.includes(k);
             });
             if (filteredFields.length === 0) {
-              const payload = { ...(sessionDoc.collectedData || {}), __authToken: sessionDoc?.externalAuthToken };
-              const initResult = await onboardingService.initialSetup(payload, adminId!);
-              const newStatus = initResult.success ? "completed" : "error";
               await sessionsCollection.updateOne(
                 { sessionId },
-                { $set: { status: newStatus, updatedAt: now, phase: "initial_setup" } }
+                { $set: { status: "ready_to_submit", stageIndex: 0, fields: [], phase: "initial_setup", updatedAt: now } }
               );
-              const resp = initResult.success
-                ? {
-                    mainText: "✅ You’re all set! Registration and initial setup are complete.",
-                    buttons: ["Log In", "Talk to Sales"],
-                    emailPrompt: "",
-                    showBookingCalendar: false,
-                    onboardingAction: "completed",
-                  }
-                : {
-                    mainText: `⚠️ We couldn’t complete initial setup: ${initResult.error || "Unknown error"}.`,
-                    buttons: ["Try Again"],
-                    emailPrompt: "",
-                    showBookingCalendar: false,
-                    onboardingAction: "error",
-                  };
+              const summary = buildSafeSummary(sessionDoc.collectedData || {});
+              const resp = {
+                mainText: `✅ Registration complete. Initial setup is ready to submit with your existing details.\n\nDetails:\n${summary}\n\nReply "Confirm" to submit initial setup, or "Edit" to change any detail.`,
+                buttons: ["Confirm and Submit", "Edit Details"],
+                emailPrompt: "",
+                showBookingCalendar: false,
+                onboardingAction: "confirm",
+              };
               return NextResponse.json(resp, { headers: corsHeaders });
             }
             await sessionsCollection.updateOne(
@@ -2796,8 +2790,12 @@ Keep the response conversational and helpful, focusing on providing value before
         const lower = (question || "").toLowerCase();
         if (/\b(confirm|submit|looks good|yes|try again|retry|resubmit)\b/.test(lower)) {
           const payload = { ...(sessionDoc.collectedData || {}) };
+          const requiresAuth2 = !!(onboardingConfig as any)?.authCurlCommand;
+          const hasAuthToken2 = !!sessionDoc?.externalAuthToken;
+          const isRegistered2 = !!sessionDoc?.registeredUserId;
+          const shouldRunInitialSetup2 = sessionDoc?.phase === "initial_setup" && isRegistered2 && (hasAuthToken2 || !requiresAuth2);
           const result = adminId
-            ? (sessionDoc?.phase === "initial_setup"
+            ? (shouldRunInitialSetup2
                 ? await onboardingService.initialSetup(
                     { ...payload, __authToken: sessionDoc?.externalAuthToken },
                     adminId
@@ -2889,28 +2887,18 @@ Keep the response conversational and helpful, focusing on providing value before
               return !collectedKeys.includes(k);
             });
             if (filteredFields.length === 0) {
-              const payload = { ...(sessionDoc.collectedData || {}), __authToken: sessionDoc?.externalAuthToken };
-              const initResult = await onboardingService.initialSetup(payload, adminId!);
-              const newStatus = initResult.success ? "completed" : "error";
               await sessionsCollection.updateOne(
                 { sessionId },
-                { $set: { status: newStatus, updatedAt: now, phase: "initial_setup" } }
+                { $set: { status: "ready_to_submit", stageIndex: 0, fields: [], phase: "initial_setup", updatedAt: now } }
               );
-              const resp = initResult.success
-                ? {
-                    mainText: "✅ You’re all set! Registration and initial setup are complete.",
-                    buttons: ["Log In", "Talk to Sales"],
-                    emailPrompt: "",
-                    showBookingCalendar: false,
-                    onboardingAction: "completed",
-                  }
-                : {
-                    mainText: `⚠️ We couldn’t complete initial setup: ${initResult.error || "Unknown error"}.`,
-                    buttons: ["Try Again"],
-                    emailPrompt: "",
-                    showBookingCalendar: false,
-                    onboardingAction: "error",
-                  };
+              const summary = buildSafeSummary(sessionDoc.collectedData || {});
+              const resp = {
+                mainText: `✅ Registration complete. Initial setup is ready to submit with your existing details.\n\nDetails:\n${summary}\n\nReply "Confirm" to submit initial setup, or "Edit" to change any detail.`,
+                buttons: ["Confirm and Submit", "Edit Details"],
+                emailPrompt: "",
+                showBookingCalendar: false,
+                onboardingAction: "confirm",
+              };
               return NextResponse.json(resp, { headers: corsHeaders });
             }
             await sessionsCollection.updateOne(
