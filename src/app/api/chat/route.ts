@@ -2653,11 +2653,43 @@ Keep the response conversational and helpful, focusing on providing value before
 
             // Kick off initial setup phase using admin-provided cURL
             const setupFields = deriveOnboardingFieldsFromCurl(onboardingConfig.initialSetupCurlCommand);
+            const collectedKeys = Object.keys(sessionDoc.collectedData || {});
+            const filteredFields = setupFields.filter((f: any) => {
+              const k = (f.key || "").toString();
+              const kl = k.toLowerCase();
+              if (kl === "password" || kl === "pass") return false;
+              return !collectedKeys.includes(k);
+            });
+            if (filteredFields.length === 0) {
+              const payload = { ...(sessionDoc.collectedData || {}), __authToken: sessionDoc?.externalAuthToken };
+              const initResult = await onboardingService.initialSetup(payload, adminId!);
+              const newStatus = initResult.success ? "completed" : "error";
+              await sessionsCollection.updateOne(
+                { sessionId },
+                { $set: { status: newStatus, updatedAt: now, phase: "initial_setup" } }
+              );
+              const resp = initResult.success
+                ? {
+                    mainText: "✅ You’re all set! Registration and initial setup are complete.",
+                    buttons: ["Log In", "Talk to Sales"],
+                    emailPrompt: "",
+                    showBookingCalendar: false,
+                    onboardingAction: "completed",
+                  }
+                : {
+                    mainText: `⚠️ We couldn’t complete initial setup: ${initResult.error || "Unknown error"}.`,
+                    buttons: ["Try Again"],
+                    emailPrompt: "",
+                    showBookingCalendar: false,
+                    onboardingAction: "error",
+                  };
+              return NextResponse.json(resp, { headers: corsHeaders });
+            }
             await sessionsCollection.updateOne(
               { sessionId },
-              { $set: { status: "in_progress", stageIndex: 0, fields: setupFields, phase: "initial_setup", updatedAt: now } }
+              { $set: { status: "in_progress", stageIndex: 0, fields: filteredFields, phase: "initial_setup", updatedAt: now } }
             );
-            const firstField = setupFields[0];
+            const firstField = filteredFields[0];
             const docContext = await buildOnboardingDocContext(
               firstField,
               adminId || undefined,
@@ -2849,11 +2881,43 @@ Keep the response conversational and helpful, focusing on providing value before
 
           if (result.success && onboardingConfig?.initialSetupCurlCommand) {
             const setupFields = deriveOnboardingFieldsFromCurl(onboardingConfig.initialSetupCurlCommand);
+            const collectedKeys = Object.keys(sessionDoc.collectedData || {});
+            const filteredFields = setupFields.filter((f: any) => {
+              const k = (f.key || "").toString();
+              const kl = k.toLowerCase();
+              if (kl === "password" || kl === "pass") return false;
+              return !collectedKeys.includes(k);
+            });
+            if (filteredFields.length === 0) {
+              const payload = { ...(sessionDoc.collectedData || {}), __authToken: sessionDoc?.externalAuthToken };
+              const initResult = await onboardingService.initialSetup(payload, adminId!);
+              const newStatus = initResult.success ? "completed" : "error";
+              await sessionsCollection.updateOne(
+                { sessionId },
+                { $set: { status: newStatus, updatedAt: now, phase: "initial_setup" } }
+              );
+              const resp = initResult.success
+                ? {
+                    mainText: "✅ You’re all set! Registration and initial setup are complete.",
+                    buttons: ["Log In", "Talk to Sales"],
+                    emailPrompt: "",
+                    showBookingCalendar: false,
+                    onboardingAction: "completed",
+                  }
+                : {
+                    mainText: `⚠️ We couldn’t complete initial setup: ${initResult.error || "Unknown error"}.`,
+                    buttons: ["Try Again"],
+                    emailPrompt: "",
+                    showBookingCalendar: false,
+                    onboardingAction: "error",
+                  };
+              return NextResponse.json(resp, { headers: corsHeaders });
+            }
             await sessionsCollection.updateOne(
               { sessionId },
-              { $set: { status: "in_progress", stageIndex: 0, fields: setupFields, phase: "initial_setup", updatedAt: now } }
+              { $set: { status: "in_progress", stageIndex: 0, fields: filteredFields, phase: "initial_setup", updatedAt: now } }
             );
-            const firstField = setupFields[0];
+            const firstField = filteredFields[0];
             const docContext = await buildOnboardingDocContext(
               firstField,
               adminId || undefined,
