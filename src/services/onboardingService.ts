@@ -288,11 +288,14 @@ export const onboardingService = {
     const redactKeys = ["password", "pass", "secret", "token", "apikey", "api_key", "key"];
 
     const hasCurl = !!onboarding.initialSetupCurlCommand;
+    if (!hasCurl) {
+      return { success: false, error: "Initial setup cURL not configured", status: 400 };
+    }
     let url: string | null = null;
     let method = onboarding.method || "POST";
     let headers: Record<string, string> = {};
     let contentType: "application/json" | "application/x-www-form-urlencoded" = "application/json";
-    let payload: Record<string, any> = { ...data };
+    const payload: Record<string, any> = { ...data };
 
     if (hasCurl) {
       const parsed = parseCurlRegistrationSpec(onboarding.initialSetupCurlCommand as string);
@@ -412,128 +415,11 @@ export const onboardingService = {
               return [k, isSensitive ? "***" : v];
             })
           ),
-        });
-        return { success: false, error: error?.message || String(error), status: 500 };
-      }
-    }
-
-    const baseUrl = resolveUrl(onboarding);
-    url = baseUrl;
-    if (!url) {
-      return { success: false, error: "Initial setup URL not configured", status: 400 };
-    }
-
-    const { contentType: inferredContentType, fieldMappings } = await inferRequestFormatFromDocs(adminId, onboarding.initialSetupDocsUrl);
-    contentType = inferredContentType;
-    headers = {
-      "Content-Type": contentType,
-      ...buildAuthHeader(onboarding),
-    };
-    // Apply dynamic token for non-cURL setup if present
-    const tokenFromFlow2 = (data as any).__authToken as string | undefined;
-    if (tokenFromFlow2) {
-      const headerKey2 = onboarding.authHeaderKey || "Authorization";
-      headers[headerKey2] = headerKey2.toLowerCase() === "authorization" ? `Bearer ${tokenFromFlow2}` : tokenFromFlow2;
-    }
-
-    if (onboarding.idempotencyKeyField && data[onboarding.idempotencyKeyField]) {
-      headers["Idempotency-Key"] = String(data[onboarding.idempotencyKeyField]);
-    }
-
-    payload = applyFieldMappings(data, fieldMappings);
-
-    const safePayloadForLog = Object.fromEntries(
-      Object.entries(payload).map(([k, v]) => {
-        const kl = k.toLowerCase();
-        const isSensitive = redactKeys.some((rk) => kl.includes(rk));
-        return [k, isSensitive ? "***" : v];
-      })
-    );
-
-    try {
-      console.log("[Onboarding] Calling external initial setup API:", {
-        url,
-        method,
-        headerKeyUsed: onboarding.authHeaderKey || "Authorization",
-        apiKeyPresent: !!onboarding.apiKey,
-        contentType,
-        payloadKeys: Object.keys(payload),
-      });
-      const body = contentType === "application/x-www-form-urlencoded"
-        ? new URLSearchParams(Object.entries(payload).reduce((acc, [k, v]) => {
-            acc[k] = typeof v === "string" ? v : JSON.stringify(v);
-            return acc;
-          }, {} as Record<string, string>)).toString()
-        : JSON.stringify(payload);
-
-      const res = await fetch(url as string, {
-        method,
-        headers,
-        body,
-      });
-
-      const bodyText = await res.text();
-      let parsedResp: any = null;
-      try {
-        parsedResp = JSON.parse(bodyText);
-      } catch {
-        parsedResp = bodyText;
-      }
-
-      if (!res.ok) {
-        const errorMessage = (() => {
-          if (typeof parsedResp === "string") return parsedResp;
-          if (!parsedResp || typeof parsedResp !== "object") return "Initial setup failed";
-          const topLevel = (parsedResp as any).error || (parsedResp as any).message;
-          const nestedData = (parsedResp as any)?.data?.error || (parsedResp as any)?.data?.message;
-          const arrayErrors = Array.isArray((parsedResp as any)?.errors)
-            ? (parsedResp as any).errors.map((e: any) => e?.message || e).filter(Boolean).join("; ")
-            : undefined;
-          return topLevel || nestedData || arrayErrors || "Initial setup failed";
-        })();
-
-        console.error("[Onboarding] ❌ External initial setup failed", {
-          status: res.status,
-          adminId,
-          url,
-          responseBody: parsedResp,
-          payload: safePayloadForLog,
-          errorMessage,
-        });
-        return {
-          success: false,
-          error: errorMessage,
-          status: res.status,
-          responseBody: parsedResp,
-        };
-      }
-
-      console.log("[Onboarding] ✅ External initial setup succeeded", {
-        status: res.status,
-        adminId,
-      });
-      return {
-        success: true,
-        status: res.status,
-        responseBody: parsedResp,
-      };
-    } catch (error: any) {
-      console.error("[Onboarding] ❌ External initial setup error", {
-        adminId,
-        url,
-        method,
-        message: error?.message || String(error),
-        stack: error?.stack,
-        payload: Object.fromEntries(
-          Object.entries(payload).map(([k, v]) => {
-            const kl = k.toLowerCase();
-            const isSensitive = redactKeys.some((rk) => kl.includes(rk));
-            return [k, isSensitive ? "***" : v];
-          })
-        ),
       });
       return { success: false, error: error?.message || String(error), status: 500 };
+      }
     }
+    return { success: false, error: "Initial setup failed", status: 500 };
   },
   async register(data: Record<string, any>, adminId: string): Promise<RegistrationResult> {
     const settings = await getAdminSettings(adminId);
