@@ -439,6 +439,11 @@ export const onboardingService = {
     let headers: Record<string, string> = {};
     let contentType: "application/json" | "application/x-www-form-urlencoded" = "application/json";
     let payload: Record<string, any> = { ...data };
+    const fn1 = payload.firstName || payload.firstname || payload.given_name || payload.fname || payload.name;
+    const ln1 = payload.lastName || payload.lastname || payload.surname || payload.lname;
+    if (!payload.name && fn1) {
+      payload.name = ln1 ? `${fn1} ${ln1}` : fn1;
+    }
 
     if (hasCurl) {
       const parsed = parseCurlRegistrationSpec(onboarding.curlCommand as string);
@@ -574,6 +579,11 @@ export const onboardingService = {
     }
 
     payload = applyFieldMappings(data, fieldMappings);
+    const fn2 = payload.firstName || payload.firstname || payload.given_name || payload.fname || payload.name;
+    const ln2 = payload.lastName || payload.lastname || payload.surname || payload.lname;
+    if (!payload.name && fn2) {
+      payload.name = ln2 ? `${fn2} ${ln2}` : fn2;
+    }
 
     const safePayloadForLog = Object.fromEntries(
       Object.entries(payload).map(([k, v]) => {
