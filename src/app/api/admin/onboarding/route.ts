@@ -73,6 +73,12 @@ export async function GET(request: NextRequest) {
           if (needBody) withParsed.registrationFields = spec.body;
           if (needHeaders) (withParsed as any).registrationHeaders = spec.headers;
           if (needResp) (withParsed as any).registrationResponseFields = spec.response;
+          if (withParsed.registrationParsed && (!withParsed.registrationParsed.bodyKeys || withParsed.registrationParsed.bodyKeys.length === 0)) {
+            withParsed.registrationParsed = {
+              ...withParsed.registrationParsed,
+              bodyKeys: spec.body.map((f) => f.key),
+            };
+          }
         }
       }
       if ((withParsed as any).authCurlCommand) {
@@ -99,6 +105,12 @@ export async function GET(request: NextRequest) {
           if (needBody) withParsed.authFields = spec.body;
           if (needHeaders) (withParsed as any).authHeaders = spec.headers;
           if (needResp) (withParsed as any).authResponseFields = spec.response;
+          if (withParsed.authParsed && (!withParsed.authParsed.bodyKeys || withParsed.authParsed.bodyKeys.length === 0)) {
+            withParsed.authParsed = {
+              ...withParsed.authParsed,
+              bodyKeys: spec.body.map((f) => f.key),
+            };
+          }
         }
       }
       if (withParsed.initialSetupCurlCommand) {
@@ -123,6 +135,12 @@ export async function GET(request: NextRequest) {
           if (needBody) withParsed.initialFields = spec.body;
           if (needHeaders) (withParsed as any).initialHeaders = spec.headers;
           if (needResp) (withParsed as any).initialResponseFields = spec.response;
+          if (withParsed.initialParsed && (!withParsed.initialParsed.bodyKeys || withParsed.initialParsed.bodyKeys.length === 0)) {
+            withParsed.initialParsed = {
+              ...withParsed.initialParsed,
+              bodyKeys: spec.body.map((f) => f.key),
+            };
+          }
         }
       }
     } catch {}
@@ -237,6 +255,12 @@ export async function PUT(request: NextRequest) {
             if (needBody) merged.registrationFields = spec.body;
             if (needHeaders) (merged as any).registrationHeaders = spec.headers;
             if (needResp) (merged as any).registrationResponseFields = spec.response;
+            if (merged.registrationParsed && (!merged.registrationParsed.bodyKeys || merged.registrationParsed.bodyKeys.length === 0)) {
+              merged.registrationParsed = {
+                ...merged.registrationParsed,
+                bodyKeys: spec.body.map((f) => f.key),
+              };
+            }
           } catch {}
         }
       }
@@ -250,6 +274,12 @@ export async function PUT(request: NextRequest) {
             if (needBody) merged.authFields = spec.body;
             if (needHeaders) (merged as any).authHeaders = spec.headers;
             if (needResp) (merged as any).authResponseFields = spec.response;
+            if (merged.authParsed && (!merged.authParsed.bodyKeys || merged.authParsed.bodyKeys.length === 0)) {
+              merged.authParsed = {
+                ...merged.authParsed,
+                bodyKeys: spec.body.map((f) => f.key),
+              };
+            }
           } catch {}
         }
       }
@@ -263,6 +293,12 @@ export async function PUT(request: NextRequest) {
             if (needBody) merged.initialFields = spec.body;
             if (needHeaders) (merged as any).initialHeaders = spec.headers;
             if (needResp) (merged as any).initialResponseFields = spec.response;
+            if (merged.initialParsed && (!merged.initialParsed.bodyKeys || merged.initialParsed.bodyKeys.length === 0)) {
+              merged.initialParsed = {
+                ...merged.initialParsed,
+                bodyKeys: spec.body.map((f) => f.key),
+              };
+            }
           } catch {}
         }
       }
