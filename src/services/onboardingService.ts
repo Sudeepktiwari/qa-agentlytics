@@ -836,6 +836,18 @@ export async function deriveSpecFromDocsForAdmin(
     .map((x) => x.t)
     .slice(0, Math.min(texts.length, 5));
 
+  let endpointHint = "";
+  try {
+    if (curlCommand && curlCommand.trim().length > 0) {
+      const p = parseCurlRegistrationSpec(curlCommand);
+      endpointHint = `${p.method || "POST"} ${p.url || ""}`;
+    } else if (docsUrl) {
+      const urlObj = new URL(docsUrl);
+      const path = urlObj.pathname;
+      endpointHint = `UNKNOWN ${path}`;
+    }
+  } catch {}
+
   const headersSet = new Set<string>();
   for (const t of ranked) {
     const colonHeaders = [...t.matchAll(/\b([A-Za-z-]{2,}):\s*[^\n]+/g)].map((m) => m[1]);
@@ -847,8 +859,13 @@ export async function deriveSpecFromDocsForAdmin(
   const respSet = new Set<string>();
   try {
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    const system = "Read the provided API documentation and return ONLY the request specification in strict JSON with keys: headers[], body[{key,label,required,type}], response[]. Derive body fields from the documented request body. Derive headers from documented header lists and examples. Derive response keys from example responses. Do not invent fields beyond what is documented.";
-    const user = ranked.join("\n\n").slice(0, 12000);
+    const system = mode === "auth"
+      ? "From the documentation chunks provided, extract ONLY the login/authentication request spec in strict JSON: headers[], body[{key,label,required,type}], response[]. Use only the given chunks; do not invent fields."
+      : mode === "registration"
+      ? "From the documentation chunks provided, extract ONLY the registration request spec in strict JSON: headers[], body[{key,label,required,type}], response[]. Use only the given chunks; do not invent fields."
+      : "From the documentation chunks provided, extract ONLY the initial setup request spec in strict JSON: headers[], body[{key,label,required,type}], response[]. Prefer nested keys (e.g., crisp.websiteId). Use only the given chunks; do not invent fields.";
+    const promptHeader = `Endpoint hint: ${endpointHint}\nDocs URL: ${docsUrl || ""}\n\nChunks:\n`;
+    const user = (promptHeader + ranked.join("\n\n")).slice(0, 12000);
     const chat = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
@@ -897,7 +914,9 @@ export async function deriveSpecFromDocsForAdmin(
         .map((f) => ({ key: String(f.key || f.name || "").trim(), label: String(f.label || toLabel(String(f.key || f.name || ""))).trim(), required: Boolean(f.required ?? true), type: (/email|mail/i.test(String(f.type || f.key)) ? "email" : /phone/i.test(String(f.type || f.key)) ? "phone" : (f.type === "select" || f.type === "checkbox") ? f.type : toType(String(f.key || ""))) }))
         .filter((f) => f.key);
       if (llmFields.length > 0) {
-        bodyFields = llmFields;
+        const baseSet = new Set(bodyFields.map((f) => String(f.key).toLowerCase()));
+        const inter = llmFields.filter((f) => baseSet.has(String(f.key).toLowerCase()));
+        bodyFields = inter.length > 0 ? inter : llmFields;
       }
       const hdrs: string[] = Array.isArray(parsed?.headers) ? parsed.headers.map((h: any) => String(h)) : [];
       if (hdrs.length > 0) {
