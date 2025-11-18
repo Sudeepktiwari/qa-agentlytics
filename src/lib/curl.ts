@@ -142,6 +142,17 @@ export function parseCurlRegistrationSpec(curlCommand: string): ParsedCurl {
     }
   }
 
+  // Fallback: if no explicit -d/--data found, try to extract a JSON object literal
+  if (!dataRaw) {
+    const jsonCandidate = (() => {
+      const match = cmd.match(/\{[\s\S]*\}/m);
+      return match ? match[0] : undefined;
+    })();
+    if (jsonCandidate && jsonCandidate.trim().startsWith("{")) {
+      dataRaw = jsonCandidate;
+    }
+  }
+
   // Determine content type
   let contentType = headers["Content-Type"] || headers["content-type"] || "";
   if (!contentType) {
