@@ -24,6 +24,7 @@ const OnboardingSettingsSection: React.FC = () => {
   const [indexStatus, setIndexStatus] = useState<string>("");
   const [generatedCurl, setGeneratedCurl] = useState<string>("");
   const [hits, setHits] = useState<number>(0);
+  const [regenRegistration, setRegenRegistration] = useState<boolean>(false);
 
   // Doc-to-cURL UI state (Authentication)
   const [authDocUrl, setAuthDocUrl] = useState<string>("");
@@ -35,6 +36,7 @@ const OnboardingSettingsSection: React.FC = () => {
   const [authIndexStatus, setAuthIndexStatus] = useState<string>("");
   const [authGeneratedCurl, setAuthGeneratedCurl] = useState<string>("");
   const [authHits, setAuthHits] = useState<number>(0);
+  const [regenAuth, setRegenAuth] = useState<boolean>(false);
 
   // Doc-to-cURL UI state (Initial Setup)
   const [initialDocUrl, setInitialDocUrl] = useState<string>("");
@@ -47,6 +49,7 @@ const OnboardingSettingsSection: React.FC = () => {
   const [initialIndexStatus, setInitialIndexStatus] = useState<string>("");
   const [initialGeneratedCurl, setInitialGeneratedCurl] = useState<string>("");
   const [initialHits, setInitialHits] = useState<number>(0);
+  const [regenInitial, setRegenInitial] = useState<boolean>(false);
 
   // Collapsible sections state
   const [registrationOpen, setRegistrationOpen] = useState<boolean>(false);
@@ -113,7 +116,7 @@ const OnboardingSettingsSection: React.FC = () => {
     setSuccess(null);
     try {
       // Save initial setup fields alongside canonical cURL
-      const settingsToSave = {
+      const settingsToSave: any = {
         curlCommand: settings.curlCommand,
         authCurlCommand: (settings as any).authCurlCommand,
         initialSetupCurlCommand: (settings as any).initialSetupCurlCommand,
@@ -127,10 +130,13 @@ const OnboardingSettingsSection: React.FC = () => {
         authHeaderKey: settings.authHeaderKey,
         idempotencyKeyField: settings.idempotencyKeyField,
         rateLimit: settings.rateLimit,
-        registrationFields: (settings as any).registrationFields || [],
-        authFields: (settings as any).authFields || [],
-        initialFields: (settings as any).initialFields || [],
+        registrationFields: (settings as any).registrationFields,
+        authFields: (settings as any).authFields,
+        initialFields: (settings as any).initialFields,
       };
+      if (regenRegistration) delete settingsToSave.registrationFields;
+      if (regenAuth) delete settingsToSave.authFields;
+      if (regenInitial) delete settingsToSave.initialFields;
       const res = await fetch("/api/admin/onboarding", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -141,6 +147,9 @@ const OnboardingSettingsSection: React.FC = () => {
       if (res.ok && data.success) {
         setSettings(data.onboarding);
         setSuccess("Onboarding settings saved successfully");
+        setRegenRegistration(false);
+        setRegenAuth(false);
+        setRegenInitial(false);
         setTimeout(() => setSuccess(null), 2500);
       } else {
         setError(data.error || "Failed to save onboarding settings");
@@ -541,11 +550,13 @@ const OnboardingSettingsSection: React.FC = () => {
             {settings.curlCommand && (
               <button
                 onClick={() => {
-                  // Clear fields to let server regenerate from docs on save
-                  setSettings({ ...settings, registrationFields: [] } as any);
+                  setRegenRegistration(true);
+                  const next: any = { ...settings };
+                  delete next.registrationFields;
+                  setSettings(next as any);
                 }}
                 style={{ padding: "6px 10px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}
-              >Replace with parsed fields</button>
+              >Regenerate from docs</button>
             )}
               </div>
               <div style={{ display: "grid", gap: 8 }}>
@@ -1200,10 +1211,13 @@ const OnboardingSettingsSection: React.FC = () => {
                 {(settings as any).authCurlCommand && (
                   <button
                     onClick={() => {
-                      setSettings({ ...settings, authFields: [] } as any);
+                      setRegenAuth(true);
+                      const next: any = { ...settings };
+                      delete next.authFields;
+                      setSettings(next as any);
                     }}
                     style={{ padding: "6px 10px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}
-                  >Replace with parsed fields</button>
+                  >Regenerate from docs</button>
                 )}
               </div>
               <div style={{ display: "grid", gap: 8 }}>
@@ -1570,10 +1584,13 @@ const OnboardingSettingsSection: React.FC = () => {
                 {(settings as any).initialSetupCurlCommand && (
                   <button
                     onClick={() => {
-                      setSettings({ ...settings, initialFields: [] } as any);
+                      setRegenInitial(true);
+                      const next: any = { ...settings };
+                      delete next.initialFields;
+                      setSettings(next as any);
                     }}
                     style={{ padding: "6px 10px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}
-                  >Replace with parsed fields</button>
+                  >Regenerate from docs</button>
                 )}
               </div>
               <div style={{ display: "grid", gap: 8 }}>

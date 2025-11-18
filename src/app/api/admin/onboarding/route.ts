@@ -63,8 +63,8 @@ export async function GET(request: NextRequest) {
           bodyKeys,
         };
       }
-      // Derive registration fields from docs when empty (do not rely on cURL)
-      if (!withParsed.registrationFields || withParsed.registrationFields.length === 0) {
+      // Derive registration fields only when undefined (first-run)
+      if (typeof withParsed.registrationFields === "undefined") {
         withParsed.registrationFields = await deriveFieldsFromDocsForAdmin(
           adminId,
           withParsed.docsUrl
@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
           bodyKeys,
         };
       }
-      if (!withParsed.authFields || withParsed.authFields.length === 0) {
+      if (typeof withParsed.authFields === "undefined") {
         withParsed.authFields = await deriveFieldsFromDocsForAdmin(
           adminId,
           (withParsed as any).authDocsUrl
@@ -104,7 +104,7 @@ export async function GET(request: NextRequest) {
           bodyKeys,
         };
       }
-      if (!withParsed.initialFields || withParsed.initialFields.length === 0) {
+      if (typeof withParsed.initialFields === "undefined") {
         withParsed.initialFields = await deriveFieldsFromDocsForAdmin(
           adminId,
           withParsed.initialSetupDocsUrl
@@ -211,8 +211,8 @@ export async function PUT(request: NextRequest) {
         };
       }
 
-      // Fill fields from docs when empty (no defaults, no cURL-derived fields)
-      if (!merged.registrationFields || merged.registrationFields.length === 0) {
+      // Fill fields from docs only when undefined (first-run)
+      if (typeof merged.registrationFields === "undefined") {
         try {
           merged.registrationFields = await deriveFieldsFromDocsForAdmin(
             adminId,
@@ -220,7 +220,7 @@ export async function PUT(request: NextRequest) {
           );
         } catch {}
       }
-      if (!merged.authFields || merged.authFields.length === 0) {
+      if (typeof merged.authFields === "undefined") {
         try {
           merged.authFields = await deriveFieldsFromDocsForAdmin(
             adminId,
@@ -228,7 +228,7 @@ export async function PUT(request: NextRequest) {
           );
         } catch {}
       }
-      if (!merged.initialFields || merged.initialFields.length === 0) {
+      if (typeof merged.initialFields === "undefined") {
         try {
           merged.initialFields = await deriveFieldsFromDocsForAdmin(
             adminId,
