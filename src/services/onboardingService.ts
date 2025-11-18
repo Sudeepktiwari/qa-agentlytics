@@ -686,7 +686,7 @@ export const onboardingService = {
   },
 };
 
-export async function deriveFieldsFromDocsForAdmin(adminId: string, docsUrl?: string): Promise<OnboardingField[]> {
+export async function deriveFieldsFromDocsForAdmin(adminId: string, docsUrl?: string, mode?: "registration" | "auth" | "initial"): Promise<OnboardingField[]> {
   let chunks: string[] = [];
   try {
     if (docsUrl) {
@@ -710,8 +710,16 @@ export async function deriveFieldsFromDocsForAdmin(adminId: string, docsUrl?: st
   }
   const scoreChunk = (t: string): number => {
     let s = 0;
-    if (/register|signup|sign\s*up|create\s*account/i.test(t)) s += 3;
-    if (/users?\s*\/register|\bPOST\b[^\n]*\/register/i.test(t)) s += 3;
+    const m = mode || "registration";
+    if (m === "auth") {
+      if (/login|authenticate|auth\s*\/login|users\s*\/login/i.test(t)) s += 4;
+    } else if (m === "initial") {
+      if (/setup|initial/i.test(t)) s += 3;
+    } else {
+      if (/register|signup|sign\s*up|create\s*account/i.test(t)) s += 3;
+      if (/users?\s*\/register|\bPOST\b[^\n]*\/register/i.test(t)) s += 3;
+    }
+    if (/\bPOST\b|request\s*details|request\s*body|body\b/i.test(t)) s += 2;
     if (/email/i.test(t)) s += 2;
     if (/password/i.test(t)) s += 2;
     if (/Content-Type|application\/json|x-www-form-urlencoded/i.test(t)) s += 1;
@@ -725,6 +733,13 @@ export async function deriveFieldsFromDocsForAdmin(adminId: string, docsUrl?: st
   const keys = new Set<string>();
   const addKeysFromText = (text: string) => {
     const t = (text || "").slice(0, 4000);
+    const hasRequestHint = /\bcurl\b|request\s*details|request\s*body|^\s*body\b/i.test(t);
+    const bodyHeaderIdx = t.toLowerCase().indexOf("body");
+    if (bodyHeaderIdx >= 0) {
+      const near = t.slice(bodyHeaderIdx, Math.min(t.length, bodyHeaderIdx + 600));
+      const listMatches = [...near.matchAll(/\b([A-Za-z][A-Za-z0-9_\-]*)\s*\((?:string|number|boolean)[^\)]*\)/gi)].map((m) => m[1]);
+      for (const k of listMatches) keys.add(k);
+    }
     const jsonObj = (() => {
       const i = t.indexOf("{");
       if (i === -1) return undefined;
@@ -746,7 +761,7 @@ export async function deriveFieldsFromDocsForAdmin(adminId: string, docsUrl?: st
       }
       return undefined;
     })();
-    if (jsonObj) {
+    if (jsonObj && hasRequestHint) {
       try {
         const obj = JSON.parse(jsonObj);
         const walk = (o: any, p: string = "") => {
@@ -764,13 +779,13 @@ export async function deriveFieldsFromDocsForAdmin(adminId: string, docsUrl?: st
         walk(obj);
       } catch {}
     }
-    const jsonKeyMatches = [...t.matchAll(/\b["']([a-zA-Z_][a-zA-Z0-9_\-]*)["']\s*:/g)];
+    const jsonKeyMatches = hasRequestHint ? [...t.matchAll(/\b["']([a-zA-Z_][a-zA-Z0-9_\-]*)["']\s*:/g)] : [];
     for (const m of jsonKeyMatches) keys.add(m[1]);
-    const paramMatches = [...t.matchAll(/\b([a-zA-Z_][a-zA-Z0-9_\-]*)\s*=/g)];
+    const paramMatches = hasRequestHint ? [...t.matchAll(/\b([a-zA-Z_][a-zA-Z0-9_\-]*)\s*=/g)] : [];
     for (const m of paramMatches) keys.add(m[1]);
   };
   for (const chunk of pick) addKeysFromText(chunk || "");
-  const filtered = Array.from(keys).filter((k) => !/(^|[-_])(token|session|rounds?|csrf)($|[-_])/i.test(k));
+  const filtered = Array.from(keys).filter((k) => !/(^|[-_])(token|session|rounds?|csrf|apikey|api\s*key|message|user|id|name|isfirstlogin|sub)($|[-_])/i.test(k));
   const toType = (k: string): OnboardingField["type"] => (/email/i.test(k) ? "email" : /phone/i.test(k) ? "phone" : "text");
   const toLabel = (k: string) => k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
   return filtered
@@ -780,7 +795,8 @@ export async function deriveFieldsFromDocsForAdmin(adminId: string, docsUrl?: st
 
 export async function deriveSpecFromDocsForAdmin(
   adminId: string,
-  docsUrl?: string
+  docsUrl?: string,
+  mode?: "registration" | "auth" | "initial"
 ): Promise<{ headers: string[]; body: OnboardingField[]; response: string[] }> {
   let chunks: string[] = [];
   try {
@@ -835,7 +851,7 @@ export async function deriveSpecFromDocsForAdmin(
     for (const h of colonHeaders) headersSet.add(h);
   }
 
-  const bodyFields = await deriveFieldsFromDocsForAdmin(adminId, docsUrl);
+  const bodyFields = await deriveFieldsFromDocsForAdmin(adminId, docsUrl, mode);
 
   const respSet = new Set<string>();
   const addRespFromText = (t: string) => {
