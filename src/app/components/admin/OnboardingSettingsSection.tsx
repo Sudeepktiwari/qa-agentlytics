@@ -553,10 +553,9 @@ const OnboardingSettingsSection: React.FC = () => {
             <div style={{ marginTop: 12 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <label style={{ display: "block", color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Registration Fields</label>
-            {settings.curlCommand && (!((settings as any).registrationFields) || ((settings as any).registrationFields || []).length === 0) && (
+            {settings.curlCommand && (
               <button
                 onClick={() => {
-                  if ((settings as any).registrationFields && (settings as any).registrationFields.length > 0) return;
                   const fields = deriveOnboardingFieldsFromCurl(settings.curlCommand || "").map((f) => ({
                     key: f.key,
                     label: f.label,
@@ -565,9 +564,9 @@ const OnboardingSettingsSection: React.FC = () => {
                   }));
                   setSettings({ ...settings, registrationFields: fields } as any);
                 }}
-                    style={{ padding: "6px 10px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}
-                  >Use parsed fields</button>
-                )}
+                style={{ padding: "6px 10px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}
+              >Replace with parsed fields</button>
+            )}
               </div>
               <div style={{ display: "grid", gap: 8 }}>
                 {(((settings as any).registrationFields) || []).map((f: any, idx: number) => (
@@ -1228,10 +1227,9 @@ const OnboardingSettingsSection: React.FC = () => {
             <div style={{ marginTop: 12 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <label style={{ display: "block", color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Authentication Fields</label>
-                {(settings as any).authCurlCommand && (!((settings as any).authFields) || ((settings as any).authFields || []).length === 0) && (
+                {(settings as any).authCurlCommand && (
                   <button
                     onClick={() => {
-                      if ((settings as any).authFields && (settings as any).authFields.length > 0) return;
                       const fields = deriveOnboardingFieldsFromCurl((settings as any).authCurlCommand || "").map((f) => ({
                         key: f.key,
                         label: f.label,
@@ -1241,7 +1239,7 @@ const OnboardingSettingsSection: React.FC = () => {
                       setSettings({ ...settings, authFields: fields } as any);
                     }}
                     style={{ padding: "6px 10px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}
-                  >Use parsed fields</button>
+                  >Replace with parsed fields</button>
                 )}
               </div>
               <div style={{ display: "grid", gap: 8 }}>
@@ -1615,10 +1613,9 @@ const OnboardingSettingsSection: React.FC = () => {
             <div style={{ marginTop: 12 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <label style={{ display: "block", color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Initial Setup Fields</label>
-                {(settings as any).initialSetupCurlCommand && (!((settings as any).initialFields) || ((settings as any).initialFields || []).length === 0) && (
+                {(settings as any).initialSetupCurlCommand && (
                   <button
                     onClick={() => {
-                      if ((settings as any).initialFields && (settings as any).initialFields.length > 0) return;
                       const fields = deriveOnboardingFieldsFromCurl((settings as any).initialSetupCurlCommand || "").map((f) => ({
                         key: f.key,
                         label: f.label,
@@ -1628,7 +1625,7 @@ const OnboardingSettingsSection: React.FC = () => {
                       setSettings({ ...settings, initialFields: fields } as any);
                     }}
                     style={{ padding: "6px 10px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}
-                  >Use parsed fields</button>
+                  >Replace with parsed fields</button>
                 )}
               </div>
               <div style={{ display: "grid", gap: 8 }}>
