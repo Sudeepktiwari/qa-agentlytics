@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { OnboardingSettings } from "@/lib/adminSettings";
-import { parseCurlRegistrationSpec, redactHeadersForLog, deriveOnboardingFieldsFromCurl } from "@/lib/curl";
+import { parseCurlRegistrationSpec, redactHeadersForLog, deriveOnboardingFieldsFromCurl, extractBodyKeysFromCurl } from "@/lib/curl";
 
 const OnboardingSettingsSection: React.FC = () => {
   const [settings, setSettings] = useState<OnboardingSettings>({
@@ -830,11 +830,7 @@ const OnboardingSettingsSection: React.FC = () => {
                   let parsed: any = undefined;
                   try {
                     const p = parseCurlRegistrationSpec(curl);
-                    const bodyKeys = p.dataJson
-                      ? Object.keys(p.dataJson)
-                      : p.dataForm
-                      ? Object.keys(p.dataForm)
-                      : [];
+                    const bodyKeys = extractBodyKeysFromCurl(curl);
                     parsed = {
                       method: p.method,
                       url: p.url,
@@ -1318,11 +1314,7 @@ const OnboardingSettingsSection: React.FC = () => {
                   let parsed: any = undefined;
                   try {
                     const p = parseCurlRegistrationSpec(curl);
-                    const bodyKeys = p.dataJson
-                      ? Object.keys(p.dataJson)
-                      : p.dataForm
-                      ? Object.keys(p.dataForm)
-                      : [];
+                    const bodyKeys = extractBodyKeysFromCurl(curl);
                     parsed = {
                       method: p.method,
                       url: p.url,
@@ -1709,11 +1701,7 @@ const OnboardingSettingsSection: React.FC = () => {
                   let parsed: any = undefined;
                   try {
                     const p = parseCurlRegistrationSpec(curl);
-                    const bodyKeys = p.dataJson
-                      ? Object.keys(p.dataJson)
-                      : p.dataForm
-                      ? Object.keys(p.dataForm)
-                      : [];
+                    const bodyKeys = extractBodyKeysFromCurl(curl);
                     parsed = {
                       method: p.method,
                       url: p.url,

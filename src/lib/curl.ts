@@ -25,7 +25,7 @@ function normalizeQuotes(input: string): string {
  * Supports common flags: -X, -H, -d/--data/--data-raw and --url forms.
  */
 export function parseCurlRegistrationSpec(curlCommand: string): ParsedCurl {
-  const cmd = normalizeQuotes(curlCommand);
+  const cmd = normalizeQuotes(curlCommand).replace(/\\\r?\n\s*/g, " ");
 
   const methodMatch = cmd.match(/-X\s+(GET|POST|PUT|PATCH|DELETE)/i);
   const method = (methodMatch?.[1] || "POST").toUpperCase();
@@ -127,9 +127,9 @@ export function parseCurlRegistrationSpec(curlCommand: string): ParsedCurl {
 
   // Data flags: -d, --data, --data-raw (support quotes/backticks)
   const dataRegexes = [
-    /-d\s+['"`]([\s\S]*?)['"`]/i,
-    /--data\s+['"`]([\s\S]*?)['"`]/i,
-    /--data-raw\s+['"`]([\s\S]*?)['"`]/i,
+    /-d\s+\$?['"`]([\s\S]*?)['"`]/i,
+    /--data\s+\$?['"`]([\s\S]*?)['"`]/i,
+    /--data-raw\s+\$?['"`]([\s\S]*?)['"`]/i,
     /--data=(['"`]?)([\s\S]*?)\1/i,
     /--data-raw=(['"`]?)([\s\S]*?)\1/i,
   ];
