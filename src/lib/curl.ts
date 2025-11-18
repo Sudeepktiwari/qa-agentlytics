@@ -25,7 +25,9 @@ function normalizeQuotes(input: string): string {
  * Supports common flags: -X, -H, -d/--data/--data-raw and --url forms.
  */
 export function parseCurlRegistrationSpec(curlCommand: string): ParsedCurl {
-  const cmd = normalizeQuotes(curlCommand).replace(/\\\r?\n\s*/g, " ");
+  const cmd = normalizeQuotes(curlCommand)
+    .replace(/\\[ \t]*\r?\n/g, " ")
+    .replace(/\s{2,}/g, " ");
 
   const methodMatch = cmd.match(/-X\s+(GET|POST|PUT|PATCH|DELETE)/i);
   const method = (methodMatch?.[1] || "POST").toUpperCase();
@@ -127,6 +129,9 @@ export function parseCurlRegistrationSpec(curlCommand: string): ParsedCurl {
 
   // Data flags: -d, --data, --data-raw (support quotes/backticks)
   const dataRegexes = [
+    /-d\s+({[\s\S]*?})/i,
+    /--data\s+({[\s\S]*?})/i,
+    /--data-raw\s+({[\s\S]*?})/i,
     /-d\s+\$?['"`]([\s\S]*?)['"`]/i,
     /--data\s+\$?['"`]([\s\S]*?)['"`]/i,
     /--data-raw\s+\$?['"`]([\s\S]*?)['"`]/i,
@@ -263,6 +268,9 @@ export function deriveOnboardingFieldsFromCurl(curlCommand: string): DerivedFiel
     leaves = flattenJsonLeaves(parsed.dataJson);
   } else if (parsed.dataForm) {
     leaves = Object.keys(parsed.dataForm).map((k) => ({ key: k, value: parsed.dataForm![k] }));
+  } else if (parsed.dataRaw) {
+    const keys = extractBodyKeysFromCurl(curlCommand);
+    leaves = keys.map((k) => ({ key: k, value: undefined }));
   }
   const seen = new Set<string>();
   const fields: DerivedField[] = [];
@@ -287,6 +295,21 @@ export function extractBodyKeysFromCurl(curlCommand: string): string[] {
   }
   if (parsed.dataForm) {
     return Object.keys(parsed.dataForm);
+  }
+  if (parsed.dataRaw) {
+    const s = String(parsed.dataRaw);
+    const keys = new Set<string>();
+    const jsonKeyRx = /["']?([A-Za-z0-9_][A-Za-z0-9_\.\-]*)["']?\s*:/g;
+    let jm: RegExpExecArray | null;
+    while ((jm = jsonKeyRx.exec(s)) !== null) {
+      keys.add(jm[1]);
+    }
+    const formKeyRx = /(?:^|&)\s*([^=&\s]+)=/g;
+    let fm: RegExpExecArray | null;
+    while ((fm = formKeyRx.exec(s)) !== null) {
+      keys.add(fm[1]);
+    }
+    return Array.from(keys);
   }
   return [];
 }
