@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { OnboardingSettings } from "@/lib/adminSettings";
+import { parseCurlRegistrationSpec, redactHeadersForLog } from "@/lib/curl";
 
 const OnboardingSettingsSection: React.FC = () => {
   const [settings, setSettings] = useState<OnboardingSettings>({
@@ -498,9 +499,9 @@ const OnboardingSettingsSection: React.FC = () => {
                   <div style={{ gridColumn: "1 / -1" }}>URL: {settings.registrationParsed.url || ""}</div>
                   <div style={{ gridColumn: "1 / -1" }}>Headers:
                     <div style={{ marginTop: 6, display: "flex", flexWrap: "wrap", gap: 6 }}>
-                      {Object.entries(settings.registrationParsed.headersRedacted || {}).map(([k, v]) => (
-                        <span key={k} style={{ background: "#edf2f7", padding: "4px 8px", borderRadius: 6, fontSize: 12 }}>{k}: {v}</span>
-                      ))}
+                  {(Object.entries(settings.registrationParsed.headersRedacted || {}) as [string, string][]).map(([k, v]) => (
+                    <span key={k} style={{ background: "#edf2f7", padding: "4px 8px", borderRadius: 6, fontSize: 12 }}>{k}: {v}</span>
+                  ))}
                     </div>
                   </div>
                   <div style={{ gridColumn: "1 / -1" }}>Body Fields:
@@ -790,9 +791,26 @@ const OnboardingSettingsSection: React.FC = () => {
                   'curl -X POST https://api.your-service.com/register \\\n+  -H \'Content-Type: application/json\' \\\n+  -H \'Authorization: Bearer <token>\' \\\n+  -d \'{"email":"user@example.com","firstName":"Jane","lastName":"Doe"}\''
                 }
                 value={settings.curlCommand || ""}
-                onChange={(e) =>
-                  setSettings({ ...settings, curlCommand: e.target.value })
-                }
+                onChange={(e) => {
+                  const curl = e.target.value;
+                  let parsed: any = undefined;
+                  try {
+                    const p = parseCurlRegistrationSpec(curl);
+                    const bodyKeys = p.dataJson
+                      ? Object.keys(p.dataJson)
+                      : p.dataForm
+                      ? Object.keys(p.dataForm)
+                      : [];
+                    parsed = {
+                      method: p.method,
+                      url: p.url,
+                      contentType: p.contentType,
+                      headersRedacted: redactHeadersForLog(p.headers),
+                      bodyKeys,
+                    };
+                  } catch {}
+                  setSettings({ ...(settings as any), curlCommand: curl, registrationParsed: parsed } as any);
+                }}
                 rows={6}
                 style={{
                   width: "100%",
@@ -1150,7 +1168,7 @@ const OnboardingSettingsSection: React.FC = () => {
                   <div style={{ gridColumn: "1 / -1" }}>URL: {(settings as any).authParsed?.url || ""}</div>
                   <div style={{ gridColumn: "1 / -1" }}>Headers:
                     <div style={{ marginTop: 6, display: "flex", flexWrap: "wrap", gap: 6 }}>
-                      {Object.entries(((settings as any).authParsed?.headersRedacted || {})).map(([k, v]) => (
+                      {(Object.entries(((settings as any).authParsed?.headersRedacted || {})) as [string, string][]).map(([k, v]) => (
                         <span key={k} style={{ background: "#edf2f7", padding: "4px 8px", borderRadius: 6, fontSize: 12 }}>{k}: {v}</span>
                       ))}
                     </div>
@@ -1251,12 +1269,26 @@ const OnboardingSettingsSection: React.FC = () => {
                   'curl -X POST https://api.your-service.com/auth/login \\\n++  -H "Content-Type: application/json" \\\n++  -d "{" + "email":"user@example.com","password":"hunter2"}""'
                 }
                 value={(settings as any).authCurlCommand || ""}
-                onChange={(e) =>
-                  setSettings({
-                    ...settings,
-                    authCurlCommand: e.target.value,
-                  } as any)
-                }
+                onChange={(e) => {
+                  const curl = e.target.value;
+                  let parsed: any = undefined;
+                  try {
+                    const p = parseCurlRegistrationSpec(curl);
+                    const bodyKeys = p.dataJson
+                      ? Object.keys(p.dataJson)
+                      : p.dataForm
+                      ? Object.keys(p.dataForm)
+                      : [];
+                    parsed = {
+                      method: p.method,
+                      url: p.url,
+                      contentType: p.contentType,
+                      headersRedacted: redactHeadersForLog(p.headers),
+                      bodyKeys,
+                    };
+                  } catch {}
+                  setSettings({ ...(settings as any), authCurlCommand: curl, authParsed: parsed } as any);
+                }}
                 rows={6}
                 style={{
                   width: "100%",
@@ -1517,7 +1549,7 @@ const OnboardingSettingsSection: React.FC = () => {
                   <div style={{ gridColumn: "1 / -1" }}>URL: {settings.initialParsed.url || ""}</div>
                   <div style={{ gridColumn: "1 / -1" }}>Headers:
                     <div style={{ marginTop: 6, display: "flex", flexWrap: "wrap", gap: 6 }}>
-                      {Object.entries(settings.initialParsed.headersRedacted || {}).map(([k, v]) => (
+                      {(Object.entries(settings.initialParsed.headersRedacted || {}) as [string, string][]).map(([k, v]) => (
                         <span key={k} style={{ background: "#edf2f7", padding: "4px 8px", borderRadius: 6, fontSize: 12 }}>{k}: {v}</span>
                       ))}
                     </div>
@@ -1618,12 +1650,26 @@ const OnboardingSettingsSection: React.FC = () => {
                   'curl -X POST https://api.your-service.com/setup \\n+  -H \'Content-Type: application/json\' \\n+  -H \'Authorization: Bearer <token>\' \\n+  -d \'{"companyName":"ACME","timezone":"America/New_York"}\''
                 }
                 value={(settings as any).initialSetupCurlCommand || ""}
-                onChange={(e) =>
-                  setSettings({
-                    ...settings,
-                    initialSetupCurlCommand: e.target.value,
-                  } as any)
-                }
+                onChange={(e) => {
+                  const curl = e.target.value;
+                  let parsed: any = undefined;
+                  try {
+                    const p = parseCurlRegistrationSpec(curl);
+                    const bodyKeys = p.dataJson
+                      ? Object.keys(p.dataJson)
+                      : p.dataForm
+                      ? Object.keys(p.dataForm)
+                      : [];
+                    parsed = {
+                      method: p.method,
+                      url: p.url,
+                      contentType: p.contentType,
+                      headersRedacted: redactHeadersForLog(p.headers),
+                      bodyKeys,
+                    };
+                  } catch {}
+                  setSettings({ ...(settings as any), initialSetupCurlCommand: curl, initialParsed: parsed } as any);
+                }}
                 rows={6}
                 style={{
                   width: "100%",
