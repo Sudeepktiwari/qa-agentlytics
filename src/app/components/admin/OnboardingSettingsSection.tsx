@@ -139,6 +139,9 @@ const OnboardingSettingsSection: React.FC = () => {
         initialFields: (settings as any).initialFields,
         initialHeaders: (settings as any).initialHeaders,
         initialResponseFields: (settings as any).initialResponseFields,
+        regenRegistration,
+        regenAuth,
+        regenInitial,
       };
       if (regenRegistration) delete settingsToSave.registrationFields;
       if (regenAuth) delete settingsToSave.authFields;
@@ -553,17 +556,17 @@ const OnboardingSettingsSection: React.FC = () => {
             <div style={{ marginTop: 12 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <label style={{ display: "block", color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Registration Body Fields</label>
-            {settings.curlCommand && (
-              <button
-                onClick={() => {
-                  setRegenRegistration(true);
-                  const next: any = { ...settings };
-                  delete next.registrationFields;
-                  setSettings(next as any);
-                }}
-                style={{ padding: "6px 10px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}
-              >Regenerate from docs</button>
-            )}
+                {
+                  <button
+                    onClick={() => {
+                      setRegenRegistration(true);
+                      const next: any = { ...settings };
+                      delete next.registrationFields;
+                      setSettings(next as any);
+                    }}
+                    style={{ padding: "6px 10px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}
+                  >Regenerate from docs</button>
+                }
               </div>
             <div style={{ display: "grid", gap: 8 }}>
               {(((settings as any).registrationFields) || []).map((f: any, idx: number) => (
@@ -1230,7 +1233,7 @@ const OnboardingSettingsSection: React.FC = () => {
             <div style={{ marginTop: 12 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <label style={{ display: "block", color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Authentication Body Fields</label>
-                {(settings as any).authCurlCommand && (
+                {
                   <button
                     onClick={() => {
                       setRegenAuth(true);
@@ -1240,7 +1243,7 @@ const OnboardingSettingsSection: React.FC = () => {
                     }}
                     style={{ padding: "6px 10px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}
                   >Regenerate from docs</button>
-                )}
+                }
               </div>
                 <div style={{ display: "grid", gap: 8 }}>
                   {(((settings as any).authFields) || []).map((f: any, idx: number) => (
@@ -1619,7 +1622,7 @@ const OnboardingSettingsSection: React.FC = () => {
             <div style={{ marginTop: 12 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <label style={{ display: "block", color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Initial Setup Body Fields</label>
-                {(settings as any).initialSetupCurlCommand && (
+                {
                   <button
                     onClick={() => {
                       setRegenInitial(true);
@@ -1629,7 +1632,7 @@ const OnboardingSettingsSection: React.FC = () => {
                     }}
                     style={{ padding: "6px 10px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}
                   >Regenerate from docs</button>
-                )}
+                }
               </div>
                 <div style={{ display: "grid", gap: 8 }}>
                   {(((settings as any).initialFields) || []).map((f: any, idx: number) => (

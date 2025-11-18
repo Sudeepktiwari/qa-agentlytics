@@ -341,23 +341,24 @@ export async function updateAdminSettings(
       { returnDocument: "after", upsert: true }
     );
 
-    if (!result) {
+    const doc = (result as any)?.value ?? result;
+    if (!doc) {
       throw new Error("Failed to update admin settings");
     }
 
     // Convert MongoDB document to AdminSettings
     const adminSettings: AdminSettings = {
-      _id: result._id?.toString(),
-      adminId: result.adminId,
-      email: result.email,
-      features: result.features,
-      preferences: result.preferences,
-      limits: result.limits,
-      onboarding: result.onboarding, // include onboarding settings
-      createdAt: result.createdAt,
-      updatedAt: result.updatedAt,
-      updatedBy: result.updatedBy,
-      version: result.version,
+      _id: doc._id?.toString(),
+      adminId: doc.adminId,
+      email: doc.email,
+      features: doc.features,
+      preferences: doc.preferences,
+      limits: doc.limits,
+      onboarding: doc.onboarding, // include onboarding settings
+      createdAt: doc.createdAt,
+      updatedAt: doc.updatedAt,
+      updatedBy: doc.updatedBy,
+      version: doc.version,
     };
 
     // Invalidate cache

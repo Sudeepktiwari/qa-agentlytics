@@ -237,6 +237,20 @@ export async function PUT(request: NextRequest) {
       ...(shouldEnable === undefined ? {} : { enabled: shouldEnable }),
     } as OnboardingSettings;
 
+    // Explicit regeneration flags: force re-derivation of body fields
+    try {
+      const flags = onboardingUpdates as any;
+      if (flags?.regenRegistration === true) {
+        (merged as any).registrationFields = undefined;
+      }
+      if (flags?.regenAuth === true) {
+        (merged as any).authFields = undefined;
+      }
+      if (flags?.regenInitial === true) {
+        (merged as any).initialFields = undefined;
+      }
+    } catch {}
+
     try {
       if (merged.curlCommand) {
         const p = parseCurlRegistrationSpec(merged.curlCommand);
@@ -294,7 +308,13 @@ export async function PUT(request: NextRequest) {
             if (needBody) merged.registrationFields = spec.body;
             if (needHeaders) (merged as any).registrationHeaders = spec.headers;
             if (needResp) (merged as any).registrationResponseFields = spec.response;
-            if (merged.registrationParsed && (!merged.registrationParsed.bodyKeys || merged.registrationParsed.bodyKeys.length === 0)) {
+            const flags = onboardingUpdates as any;
+            if (flags?.regenRegistration === true) {
+              merged.registrationParsed = {
+                ...(merged.registrationParsed || { method: "POST" }),
+                bodyKeys: spec.body.map((f) => f.key),
+              };
+            } else if (merged.registrationParsed && (!merged.registrationParsed.bodyKeys || merged.registrationParsed.bodyKeys.length === 0)) {
               merged.registrationParsed = {
                 ...merged.registrationParsed,
                 bodyKeys: spec.body.map((f) => f.key),
@@ -313,11 +333,17 @@ export async function PUT(request: NextRequest) {
             if (needBody) merged.authFields = spec.body;
             if (needHeaders) (merged as any).authHeaders = spec.headers;
             if (needResp) (merged as any).authResponseFields = spec.response;
-            if (merged.authParsed && (!merged.authParsed.bodyKeys || merged.authParsed.bodyKeys.length === 0)) {
+            const flags2 = onboardingUpdates as any;
+            if (flags2?.regenAuth === true) {
+              merged.authParsed = {
+                ...(merged.authParsed || { method: "POST" }),
+                bodyKeys: spec.body.map((f) => f.key),
+              } as any;
+            } else if (merged.authParsed && (!merged.authParsed.bodyKeys || merged.authParsed.bodyKeys.length === 0)) {
               merged.authParsed = {
                 ...merged.authParsed,
                 bodyKeys: spec.body.map((f) => f.key),
-              };
+              } as any;
             }
           } catch {}
         }
@@ -332,7 +358,13 @@ export async function PUT(request: NextRequest) {
             if (needBody) merged.initialFields = spec.body;
             if (needHeaders) (merged as any).initialHeaders = spec.headers;
             if (needResp) (merged as any).initialResponseFields = spec.response;
-            if (merged.initialParsed && (!merged.initialParsed.bodyKeys || merged.initialParsed.bodyKeys.length === 0)) {
+            const flags3 = onboardingUpdates as any;
+            if (flags3?.regenInitial === true) {
+              merged.initialParsed = {
+                ...(merged.initialParsed || { method: "POST" }),
+                bodyKeys: spec.body.map((f) => f.key),
+              };
+            } else if (merged.initialParsed && (!merged.initialParsed.bodyKeys || merged.initialParsed.bodyKeys.length === 0)) {
               merged.initialParsed = {
                 ...merged.initialParsed,
                 bodyKeys: spec.body.map((f) => f.key),
