@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { querySimilarChunks } from "@/lib/chroma";
-import { parseCurlRegistrationSpec, redactHeadersForLog } from "@/lib/curl";
+import { parseCurlRegistrationSpec, redactHeadersForLog, extractBodyKeysFromCurl } from "@/lib/curl";
 import { verifyAdminAccessFromCookie } from "@/lib/auth";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -70,11 +70,7 @@ export async function POST(request: NextRequest) {
 
     try {
       const p = parseCurlRegistrationSpec(curl);
-      const bodyKeys = p.dataJson
-        ? Object.keys(p.dataJson)
-        : p.dataForm
-        ? Object.keys(p.dataForm)
-        : [];
+      const bodyKeys = extractBodyKeysFromCurl(curl);
       const parsed = {
         method: p.method,
         url: p.url,

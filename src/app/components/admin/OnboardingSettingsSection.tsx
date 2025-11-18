@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { OnboardingSettings } from "@/lib/adminSettings";
-import { parseCurlRegistrationSpec, redactHeadersForLog } from "@/lib/curl";
+import { parseCurlRegistrationSpec, redactHeadersForLog, deriveOnboardingFieldsFromCurl } from "@/lib/curl";
 
 const OnboardingSettingsSection: React.FC = () => {
   const [settings, setSettings] = useState<OnboardingSettings>({
@@ -518,19 +518,18 @@ const OnboardingSettingsSection: React.FC = () => {
             <div style={{ marginTop: 12 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <label style={{ display: "block", color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Registration Fields</label>
-                {settings.registrationParsed && (!((settings as any).registrationFields) || ((settings as any).registrationFields || []).length === 0) && (settings.registrationParsed.bodyKeys || []).length > 0 && (
-                  <button
-                    onClick={() => {
-                      if ((settings as any).registrationFields && (settings as any).registrationFields.length > 0) return;
-                      const keys = settings.registrationParsed?.bodyKeys || [];
-                      const fields = keys.map((k) => ({
-                        key: k,
-                        label: k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
-                        required: true,
-                        type: /email/i.test(k) ? "email" : /phone/i.test(k) ? "phone" : "text",
-                      }));
-                      setSettings({ ...settings, registrationFields: fields } as any);
-                    }}
+            {settings.curlCommand && (!((settings as any).registrationFields) || ((settings as any).registrationFields || []).length === 0) && (
+              <button
+                onClick={() => {
+                  if ((settings as any).registrationFields && (settings as any).registrationFields.length > 0) return;
+                  const fields = deriveOnboardingFieldsFromCurl(settings.curlCommand || "").map((f) => ({
+                    key: f.key,
+                    label: f.label,
+                    required: f.required,
+                    type: f.type,
+                  }));
+                  setSettings({ ...settings, registrationFields: fields } as any);
+                }}
                     style={{ padding: "6px 10px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}
                   >Use parsed fields</button>
                 )}
@@ -1187,16 +1186,15 @@ const OnboardingSettingsSection: React.FC = () => {
             <div style={{ marginTop: 12 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <label style={{ display: "block", color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Authentication Fields</label>
-                {((settings as any).authParsed) && (!((settings as any).authFields) || ((settings as any).authFields || []).length === 0) && (((settings as any).authParsed?.bodyKeys || []).length > 0) && (
+                {(settings as any).authCurlCommand && (!((settings as any).authFields) || ((settings as any).authFields || []).length === 0) && (
                   <button
                     onClick={() => {
                       if ((settings as any).authFields && (settings as any).authFields.length > 0) return;
-                      const keys = (settings as any).authParsed?.bodyKeys || [];
-                      const fields = keys.map((k: string) => ({
-                        key: k,
-                        label: k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
-                        required: true,
-                        type: /email/i.test(k) ? "email" : /phone/i.test(k) ? "phone" : "text",
+                      const fields = deriveOnboardingFieldsFromCurl((settings as any).authCurlCommand || "").map((f) => ({
+                        key: f.key,
+                        label: f.label,
+                        required: f.required,
+                        type: f.type,
                       }));
                       setSettings({ ...settings, authFields: fields } as any);
                     }}
@@ -1568,16 +1566,15 @@ const OnboardingSettingsSection: React.FC = () => {
             <div style={{ marginTop: 12 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <label style={{ display: "block", color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Initial Setup Fields</label>
-                {settings.initialParsed && (!((settings as any).initialFields) || ((settings as any).initialFields || []).length === 0) && (settings.initialParsed.bodyKeys || []).length > 0 && (
+                {(settings as any).initialSetupCurlCommand && (!((settings as any).initialFields) || ((settings as any).initialFields || []).length === 0) && (
                   <button
                     onClick={() => {
                       if ((settings as any).initialFields && (settings as any).initialFields.length > 0) return;
-                      const keys = settings.initialParsed?.bodyKeys || [];
-                      const fields = keys.map((k) => ({
-                        key: k,
-                        label: k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
-                        required: true,
-                        type: /email/i.test(k) ? "email" : /phone/i.test(k) ? "phone" : "text",
+                      const fields = deriveOnboardingFieldsFromCurl((settings as any).initialSetupCurlCommand || "").map((f) => ({
+                        key: f.key,
+                        label: f.label,
+                        required: f.required,
+                        type: f.type,
                       }));
                       setSettings({ ...settings, initialFields: fields } as any);
                     }}

@@ -8,6 +8,7 @@ import {
 import {
   parseCurlRegistrationSpec,
   deriveOnboardingFieldsFromCurl,
+  extractBodyKeysFromCurl,
   redactHeadersForLog,
 } from "@/lib/curl";
 import { verifyAdminAccessFromCookie } from "@/lib/auth";
@@ -43,11 +44,7 @@ export async function GET(request: NextRequest) {
     try {
       if (withParsed.curlCommand && !withParsed.registrationParsed) {
         const p = parseCurlRegistrationSpec(withParsed.curlCommand);
-        const bodyKeys = p.dataJson
-          ? Object.keys(p.dataJson)
-          : p.dataForm
-          ? Object.keys(p.dataForm)
-          : [];
+        const bodyKeys = extractBodyKeysFromCurl(withParsed.curlCommand);
         withParsed.registrationParsed = {
           method: p.method,
           url: p.url,
@@ -58,11 +55,7 @@ export async function GET(request: NextRequest) {
       }
       if ((withParsed as any).authCurlCommand && !withParsed.authParsed) {
         const p = parseCurlRegistrationSpec((withParsed as any).authCurlCommand as string);
-        const bodyKeys = p.dataJson
-          ? Object.keys(p.dataJson)
-          : p.dataForm
-          ? Object.keys(p.dataForm)
-          : [];
+        const bodyKeys = extractBodyKeysFromCurl((withParsed as any).authCurlCommand as string);
         withParsed.authParsed = {
           method: p.method,
           url: p.url,
@@ -73,11 +66,7 @@ export async function GET(request: NextRequest) {
       }
       if (withParsed.initialSetupCurlCommand && !withParsed.initialParsed) {
         const p = parseCurlRegistrationSpec(withParsed.initialSetupCurlCommand);
-        const bodyKeys = p.dataJson
-          ? Object.keys(p.dataJson)
-          : p.dataForm
-          ? Object.keys(p.dataForm)
-          : [];
+        const bodyKeys = extractBodyKeysFromCurl(withParsed.initialSetupCurlCommand);
         withParsed.initialParsed = {
           method: p.method,
           url: p.url,
@@ -135,11 +124,7 @@ export async function PUT(request: NextRequest) {
     try {
       if (merged.curlCommand) {
         const p = parseCurlRegistrationSpec(merged.curlCommand);
-        const bodyKeys = p.dataJson
-          ? Object.keys(p.dataJson)
-          : p.dataForm
-          ? Object.keys(p.dataForm)
-          : [];
+        const bodyKeys = extractBodyKeysFromCurl(merged.curlCommand);
         merged = {
           ...merged,
           registrationParsed: {
@@ -165,11 +150,7 @@ export async function PUT(request: NextRequest) {
       if ((merged as any).authCurlCommand) {
         const ac = (merged as any).authCurlCommand as string;
         const p = parseCurlRegistrationSpec(ac);
-        const bodyKeys = p.dataJson
-          ? Object.keys(p.dataJson)
-          : p.dataForm
-          ? Object.keys(p.dataForm)
-          : [];
+        const bodyKeys = extractBodyKeysFromCurl(ac);
         const defaultAuthFields: OnboardingField[] = bodyKeys.map((k) => ({
           key: k,
           label: k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
@@ -196,11 +177,7 @@ export async function PUT(request: NextRequest) {
       if (merged.initialSetupCurlCommand) {
         const ic = merged.initialSetupCurlCommand;
         const p = parseCurlRegistrationSpec(ic);
-        const bodyKeys = p.dataJson
-          ? Object.keys(p.dataJson)
-          : p.dataForm
-          ? Object.keys(p.dataForm)
-          : [];
+        const bodyKeys = extractBodyKeysFromCurl(ic);
         const defaultInitialFields: OnboardingField[] = bodyKeys.map((k) => ({
           key: k,
           label: k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),

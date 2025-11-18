@@ -197,30 +197,87 @@ export interface DerivedField {
   type: "text" | "email" | "phone" | "select" | "checkbox";
 }
 
+function flattenJsonLeaves(obj: any, prefix = ""): { key: string; value: any }[] {
+  const out: { key: string; value: any }[] = [];
+  if (obj === null || obj === undefined) return out;
+  const isPrimitive = (v: any) => typeof v !== "object" || v === null;
+  if (isPrimitive(obj)) {
+    out.push({ key: prefix || "value", value: obj });
+    return out;
+  }
+  if (Array.isArray(obj)) {
+    // If array of primitives, treat as select options for this key
+    const primitives = obj.filter((v) => isPrimitive(v));
+    if (primitives.length === obj.length && prefix) {
+      out.push({ key: prefix, value: obj });
+      return out;
+    }
+    // Otherwise flatten each item without indices for field derivation
+    for (const item of obj) {
+      out.push(...flattenJsonLeaves(item, prefix));
+    }
+    return out;
+  }
+  for (const [k, v] of Object.entries(obj)) {
+    const next = prefix ? `${prefix}.${k}` : k;
+    if (isPrimitive(v)) {
+      out.push({ key: next, value: v });
+    } else {
+      out.push(...flattenJsonLeaves(v, next));
+    }
+  }
+  return out;
+}
+
+function toLabel(key: string): string {
+  return key
+    .replace(/\./g, " ")
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function inferType(key: string, value: any): DerivedField["type"] {
+  const kl = key.toLowerCase();
+  if (kl.includes("email")) return "email";
+  if (kl.includes("phone")) return "phone";
+  if (typeof value === "boolean") return "checkbox";
+  if (Array.isArray(value) && value.every((v) => typeof v === "string")) return "select";
+  return "text";
+}
+
 export function deriveOnboardingFieldsFromCurl(curlCommand: string): DerivedField[] {
   const parsed = parseCurlRegistrationSpec(curlCommand);
-  const keys: string[] = parsed.dataJson
-    ? Object.keys(parsed.dataJson)
-    : parsed.dataForm
-    ? Object.keys(parsed.dataForm)
-    : [];
-
-  const toLabel = (k: string) => k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-  const toType = (k: string): DerivedField["type"] => {
-    const kl = k.toLowerCase();
-    if (kl.includes("email")) return "email";
-    if (kl.includes("phone")) return "phone";
-    return "text";
-  };
-
-  const fields: DerivedField[] = keys.map((key) => ({
-    key,
-    label: toLabel(key),
-    required: true,
-    type: toType(key),
-  }));
-
+  let leaves: { key: string; value: any }[] = [];
+  if (parsed.dataJson) {
+    leaves = flattenJsonLeaves(parsed.dataJson);
+  } else if (parsed.dataForm) {
+    leaves = Object.keys(parsed.dataForm).map((k) => ({ key: k, value: parsed.dataForm![k] }));
+  }
+  const seen = new Set<string>();
+  const fields: DerivedField[] = [];
+  for (const { key, value } of leaves) {
+    const simpleKey = key.replace(/\[(\d+)\]/g, "");
+    if (seen.has(simpleKey)) continue;
+    seen.add(simpleKey);
+    fields.push({
+      key: simpleKey,
+      label: toLabel(simpleKey),
+      required: true,
+      type: inferType(simpleKey, value),
+    });
+  }
   return fields;
+}
+
+export function extractBodyKeysFromCurl(curlCommand: string): string[] {
+  const parsed = parseCurlRegistrationSpec(curlCommand);
+  if (parsed.dataJson) {
+    return Array.from(new Set(flattenJsonLeaves(parsed.dataJson).map(({ key }) => key.replace(/\[(\d+)\]/g, ""))));
+  }
+  if (parsed.dataForm) {
+    return Object.keys(parsed.dataForm);
+  }
+  return [];
 }
 
 // Build final request body from parsed cURL and collected user payload
