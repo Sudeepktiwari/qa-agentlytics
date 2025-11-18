@@ -63,6 +63,19 @@ export async function GET(request: NextRequest) {
           bodyKeys,
         };
       }
+      if (!withParsed.registrationParsed?.bodyKeys || withParsed.registrationParsed.bodyKeys.length === 0) {
+        let keysFromDocs: string[] = [];
+        if ((withParsed.registrationFields || []).length > 0) {
+          keysFromDocs = (withParsed.registrationFields || []).map((f) => f.key);
+        } else {
+          const spec = await deriveSpecFromDocsForAdmin(adminId, withParsed.docsUrl);
+          keysFromDocs = spec.body.map((f) => f.key);
+        }
+        withParsed.registrationParsed = {
+          ...(withParsed.registrationParsed || { method: "POST" }),
+          bodyKeys: keysFromDocs,
+        };
+      }
       // Derive registration fields only when undefined (first-run)
       {
         const needBody = typeof withParsed.registrationFields === "undefined";
@@ -96,6 +109,19 @@ export async function GET(request: NextRequest) {
           bodyKeys,
         };
       }
+      if (!withParsed.authParsed?.bodyKeys || withParsed.authParsed.bodyKeys.length === 0) {
+        let keysFromDocs: string[] = [];
+        if ((withParsed.authFields || []).length > 0) {
+          keysFromDocs = (withParsed.authFields || []).map((f) => f.key);
+        } else {
+          const spec = await deriveSpecFromDocsForAdmin(adminId, (withParsed as any).authDocsUrl);
+          keysFromDocs = spec.body.map((f) => f.key);
+        }
+        withParsed.authParsed = {
+          ...(withParsed.authParsed || { method: "POST" }),
+          bodyKeys: keysFromDocs,
+        } as any;
+      }
       {
         const needBody = typeof withParsed.authFields === "undefined";
         const needHeaders = typeof (withParsed as any).authHeaders === "undefined";
@@ -124,6 +150,19 @@ export async function GET(request: NextRequest) {
           contentType: p.contentType,
           headersRedacted: redactHeadersForLog(p.headers),
           bodyKeys,
+        };
+      }
+      if (!withParsed.initialParsed?.bodyKeys || withParsed.initialParsed.bodyKeys.length === 0) {
+        let keysFromDocs: string[] = [];
+        if ((withParsed.initialFields || []).length > 0) {
+          keysFromDocs = (withParsed.initialFields || []).map((f) => f.key);
+        } else {
+          const spec = await deriveSpecFromDocsForAdmin(adminId, withParsed.initialSetupDocsUrl);
+          keysFromDocs = spec.body.map((f) => f.key);
+        }
+        withParsed.initialParsed = {
+          ...(withParsed.initialParsed || { method: "POST" }),
+          bodyKeys: keysFromDocs,
         };
       }
       {

@@ -552,7 +552,7 @@ const OnboardingSettingsSection: React.FC = () => {
 
             <div style={{ marginTop: 12 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <label style={{ display: "block", color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Registration Fields</label>
+                <label style={{ display: "block", color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Registration Body Fields</label>
             {settings.curlCommand && (
               <button
                 onClick={() => {
@@ -1229,7 +1229,7 @@ const OnboardingSettingsSection: React.FC = () => {
 
             <div style={{ marginTop: 12 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <label style={{ display: "block", color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Authentication Fields</label>
+                <label style={{ display: "block", color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Authentication Body Fields</label>
                 {(settings as any).authCurlCommand && (
                   <button
                     onClick={() => {
@@ -1618,7 +1618,7 @@ const OnboardingSettingsSection: React.FC = () => {
 
             <div style={{ marginTop: 12 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <label style={{ display: "block", color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Initial Setup Fields</label>
+                <label style={{ display: "block", color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Initial Setup Body Fields</label>
                 {(settings as any).initialSetupCurlCommand && (
                   <button
                     onClick={() => {
