@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { OnboardingSettings } from "@/lib/adminSettings";
-import { parseCurlRegistrationSpec, redactHeadersForLog, deriveOnboardingFieldsFromCurl, extractBodyKeysFromCurl } from "@/lib/curl";
+import { parseCurlRegistrationSpec, redactHeadersForLog, extractBodyKeysFromCurl } from "@/lib/curl";
 
 const OnboardingSettingsSection: React.FC = () => {
   const [settings, setSettings] = useState<OnboardingSettings>({
@@ -239,12 +239,7 @@ const OnboardingSettingsSection: React.FC = () => {
         };
         const hasNoFields = !((prev as any).registrationFields) || ((prev as any).registrationFields || []).length === 0;
         if (hasNoFields && (genJson.curl || "").length > 0) {
-          next.registrationFields = deriveOnboardingFieldsFromCurl(genJson.curl).map((f) => ({
-            key: f.key,
-            label: f.label,
-            required: f.required,
-            type: f.type,
-          }));
+          // Do not derive fields from cURL; fields come from docs via API
         }
         return next;
       });
@@ -322,12 +317,7 @@ const OnboardingSettingsSection: React.FC = () => {
         };
         const hasNoFields = !((prev as any).initialFields) || ((prev as any).initialFields || []).length === 0;
         if (hasNoFields && (genJson.curl || "").length > 0) {
-          next.initialFields = deriveOnboardingFieldsFromCurl(genJson.curl).map((f) => ({
-            key: f.key,
-            label: f.label,
-            required: f.required,
-            type: f.type,
-          }));
+          // Do not derive fields from cURL; fields come from docs via API
         }
         return next;
       });
@@ -405,12 +395,7 @@ const OnboardingSettingsSection: React.FC = () => {
         };
         const hasNoFields = !((prev as any).authFields) || ((prev as any).authFields || []).length === 0;
         if (hasNoFields && (genJson.curl || "").length > 0) {
-          next.authFields = deriveOnboardingFieldsFromCurl(genJson.curl).map((f) => ({
-            key: f.key,
-            label: f.label,
-            required: f.required,
-            type: f.type,
-          }));
+          // Do not derive fields from cURL; fields come from docs via API
         }
         return next;
       });
@@ -556,13 +541,8 @@ const OnboardingSettingsSection: React.FC = () => {
             {settings.curlCommand && (
               <button
                 onClick={() => {
-                  const fields = deriveOnboardingFieldsFromCurl(settings.curlCommand || "").map((f) => ({
-                    key: f.key,
-                    label: f.label,
-                    required: f.required,
-                    type: f.type,
-                  }));
-                  setSettings({ ...settings, registrationFields: fields } as any);
+                  // Clear fields to let server regenerate from docs on save
+                  setSettings({ ...settings, registrationFields: [] } as any);
                 }}
                 style={{ padding: "6px 10px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}
               >Replace with parsed fields</button>
@@ -838,17 +818,7 @@ const OnboardingSettingsSection: React.FC = () => {
                       bodyKeys,
                     };
                   } catch {}
-                  const derived = deriveOnboardingFieldsFromCurl(curl).map((f) => ({
-                    key: f.key,
-                    label: f.label,
-                    required: f.required,
-                    type: f.type,
-                  }));
                   const next: any = { ...(settings as any), curlCommand: curl, registrationParsed: parsed };
-                  const hasNoFields = !((settings as any).registrationFields) || ((settings as any).registrationFields || []).length === 0;
-                  if (hasNoFields && derived.length > 0) {
-                    next.registrationFields = derived;
-                  }
                   setSettings(next as any);
                 }}
                 rows={6}
@@ -1230,13 +1200,7 @@ const OnboardingSettingsSection: React.FC = () => {
                 {(settings as any).authCurlCommand && (
                   <button
                     onClick={() => {
-                      const fields = deriveOnboardingFieldsFromCurl((settings as any).authCurlCommand || "").map((f) => ({
-                        key: f.key,
-                        label: f.label,
-                        required: f.required,
-                        type: f.type,
-                      }));
-                      setSettings({ ...settings, authFields: fields } as any);
+                      setSettings({ ...settings, authFields: [] } as any);
                     }}
                     style={{ padding: "6px 10px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}
                   >Replace with parsed fields</button>
@@ -1321,17 +1285,7 @@ const OnboardingSettingsSection: React.FC = () => {
                       bodyKeys,
                     };
                   } catch {}
-                  const derived = deriveOnboardingFieldsFromCurl(curl).map((f) => ({
-                    key: f.key,
-                    label: f.label,
-                    required: f.required,
-                    type: f.type,
-                  }));
                   const next: any = { ...(settings as any), authCurlCommand: curl, authParsed: parsed };
-                  const hasNoFields = !((settings as any).authFields) || ((settings as any).authFields || []).length === 0;
-                  if (hasNoFields && derived.length > 0) {
-                    next.authFields = derived;
-                  }
                   setSettings(next as any);
                 }}
                 rows={6}
@@ -1616,13 +1570,7 @@ const OnboardingSettingsSection: React.FC = () => {
                 {(settings as any).initialSetupCurlCommand && (
                   <button
                     onClick={() => {
-                      const fields = deriveOnboardingFieldsFromCurl((settings as any).initialSetupCurlCommand || "").map((f) => ({
-                        key: f.key,
-                        label: f.label,
-                        required: f.required,
-                        type: f.type,
-                      }));
-                      setSettings({ ...settings, initialFields: fields } as any);
+                      setSettings({ ...settings, initialFields: [] } as any);
                     }}
                     style={{ padding: "6px 10px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}
                   >Replace with parsed fields</button>
@@ -1707,17 +1655,7 @@ const OnboardingSettingsSection: React.FC = () => {
                       bodyKeys,
                     };
                   } catch {}
-                  const derived = deriveOnboardingFieldsFromCurl(curl).map((f) => ({
-                    key: f.key,
-                    label: f.label,
-                    required: f.required,
-                    type: f.type,
-                  }));
                   const next: any = { ...(settings as any), initialSetupCurlCommand: curl, initialParsed: parsed };
-                  const hasNoFields = !((settings as any).initialFields) || ((settings as any).initialFields || []).length === 0;
-                  if (hasNoFields && derived.length > 0) {
-                    next.initialFields = derived;
-                  }
                   setSettings(next as any);
                 }}
                 rows={6}

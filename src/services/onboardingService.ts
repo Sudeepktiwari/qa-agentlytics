@@ -708,17 +708,72 @@ export async function deriveFieldsFromDocsForAdmin(adminId: string, docsUrl?: st
       chunks = similar as string[];
     } catch {}
   }
+  const scoreChunk = (t: string): number => {
+    let s = 0;
+    if (/register|signup|sign\s*up|create\s*account/i.test(t)) s += 3;
+    if (/users?\s*\/register|\bPOST\b[^\n]*\/register/i.test(t)) s += 3;
+    if (/email/i.test(t)) s += 2;
+    if (/password/i.test(t)) s += 2;
+    if (/Content-Type|application\/json|x-www-form-urlencoded/i.test(t)) s += 1;
+    return s;
+  };
+  const sorted = [...chunks]
+    .map((c) => ({ c, s: scoreChunk((c || "").slice(0, 2000)) }))
+    .sort((a, b) => b.s - a.s)
+    .map((x) => x.c);
+  const pick = sorted.length > 0 ? sorted.slice(0, Math.min(sorted.length, 3)) : chunks;
   const keys = new Set<string>();
-  for (const chunk of chunks) {
-    const text = (chunk || "").slice(0, 2000);
-    const jsonKeyMatches = [...text.matchAll(/\b["']([a-zA-Z_][a-zA-Z0-9_\-]*)["']\s*:/g)];
+  const addKeysFromText = (text: string) => {
+    const t = (text || "").slice(0, 4000);
+    const jsonObj = (() => {
+      const i = t.indexOf("{");
+      if (i === -1) return undefined;
+      let depth = 0;
+      let inS = false;
+      let inD = false;
+      let inB = false;
+      for (let j = i; j < t.length; j++) {
+        const ch = t[j];
+        if (ch === "'" && !inD && !inB) inS = !inS;
+        else if (ch === '"' && !inS && !inB) inD = !inD;
+        else if (ch === "`" && !inS && !inD) inB = !inB;
+        if (inS || inD || inB) continue;
+        if (ch === "{") depth++;
+        else if (ch === "}") {
+          depth--;
+          if (depth === 0) return t.slice(i, j + 1);
+        }
+      }
+      return undefined;
+    })();
+    if (jsonObj) {
+      try {
+        const obj = JSON.parse(jsonObj);
+        const walk = (o: any, p: string = "") => {
+          if (!o || typeof o !== "object") return;
+          if (Array.isArray(o)) {
+            for (const it of o) walk(it, p);
+            return;
+          }
+          for (const [k, v] of Object.entries(o)) {
+            const kk = p ? `${p}.${k}` : k;
+            keys.add(kk);
+            if (v && typeof v === "object") walk(v as any, kk);
+          }
+        };
+        walk(obj);
+      } catch {}
+    }
+    const jsonKeyMatches = [...t.matchAll(/\b["']([a-zA-Z_][a-zA-Z0-9_\-]*)["']\s*:/g)];
     for (const m of jsonKeyMatches) keys.add(m[1]);
-    const paramMatches = [...text.matchAll(/\b([a-zA-Z_][a-zA-Z0-9_\-]*)\s*=/g)];
+    const paramMatches = [...t.matchAll(/\b([a-zA-Z_][a-zA-Z0-9_\-]*)\s*=/g)];
     for (const m of paramMatches) keys.add(m[1]);
-  }
+  };
+  for (const chunk of pick) addKeysFromText(chunk || "");
+  const filtered = Array.from(keys).filter((k) => !/(^|[-_])(token|session|rounds?|csrf)($|[-_])/i.test(k));
   const toType = (k: string): OnboardingField["type"] => (/email/i.test(k) ? "email" : /phone/i.test(k) ? "phone" : "text");
   const toLabel = (k: string) => k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-  return Array.from(keys)
+  return filtered
     .slice(0, 50)
     .map((k) => ({ key: k, label: toLabel(k), required: true, type: toType(k) }));
 }
