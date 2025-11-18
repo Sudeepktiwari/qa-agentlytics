@@ -12,6 +12,8 @@ import {
   redactHeadersForLog,
 } from "@/lib/curl";
 import { verifyAdminAccessFromCookie } from "@/lib/auth";
+import OpenAI from "openai";
+import { getChunksByPageUrl, querySimilarChunks } from "@/lib/chroma";
 
 // CORS headers for admin onboarding config
 const corsHeaders = {
@@ -23,6 +25,41 @@ const corsHeaders = {
 
 export async function OPTIONS() {
   return NextResponse.json({ success: true }, { status: 200, headers: corsHeaders });
+}
+
+async function deriveFieldsFromDocs(adminId: string, docsUrl?: string): Promise<OnboardingField[]> {
+  let chunks: string[] = [];
+  try {
+    if (docsUrl) {
+      const pageChunks = await getChunksByPageUrl(adminId, docsUrl);
+      if (Array.isArray(pageChunks) && pageChunks.length > 0) chunks = pageChunks as string[];
+    }
+  } catch {}
+  if (!chunks || chunks.length === 0) {
+    try {
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      const embedResp = await openai.embeddings.create({
+        input: ["registration required fields and content-type"],
+        model: "text-embedding-3-small",
+      });
+      const embedding = embedResp.data[0].embedding as number[];
+      const similar = await querySimilarChunks(embedding, 5, adminId);
+      chunks = similar as string[];
+    } catch {}
+  }
+  const keys = new Set<string>();
+  for (const chunk of chunks) {
+    const text = (chunk || "").slice(0, 2000);
+    const jsonKeyMatches = [...text.matchAll(/\b["']([a-zA-Z_][a-zA-Z0-9_\-]*)["']\s*:/g)];
+    for (const m of jsonKeyMatches) keys.add(m[1]);
+    const paramMatches = [...text.matchAll(/\b([a-zA-Z_][a-zA-Z0-9_\-]*)\s*=/g)];
+    for (const m of paramMatches) keys.add(m[1]);
+  }
+  const toType = (k: string): OnboardingField["type"] => (/email/i.test(k) ? "email" : /phone/i.test(k) ? "phone" : "text");
+  const toLabel = (k: string) => k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  return Array.from(keys)
+    .slice(0, 50)
+    .map((k) => ({ key: k, label: toLabel(k), required: true, type: toType(k) } as OnboardingField));
 }
 
 // GET /api/admin/onboarding
@@ -41,6 +78,7 @@ export async function GET(request: NextRequest) {
     const onboarding = settings.onboarding || { enabled: false };
 
     const withParsed = { ...onboarding } as OnboardingSettings;
+
     try {
       if (withParsed.curlCommand && !withParsed.registrationParsed) {
         const p = parseCurlRegistrationSpec(withParsed.curlCommand);
@@ -53,6 +91,13 @@ export async function GET(request: NextRequest) {
           bodyKeys,
         };
       }
+      // Fallback: derive registration fields from docs if empty and no body keys
+      if ((!withParsed.registrationFields || withParsed.registrationFields.length === 0)) {
+        const keys = withParsed.registrationParsed?.bodyKeys || [];
+        if (!keys || keys.length === 0) {
+          withParsed.registrationFields = await deriveFieldsFromDocs(adminId, withParsed.docsUrl);
+        }
+      }
       if ((withParsed as any).authCurlCommand && !withParsed.authParsed) {
         const p = parseCurlRegistrationSpec((withParsed as any).authCurlCommand as string);
         const bodyKeys = extractBodyKeysFromCurl((withParsed as any).authCurlCommand as string);
@@ -64,6 +109,12 @@ export async function GET(request: NextRequest) {
           bodyKeys,
         };
       }
+      if ((!withParsed.authFields || withParsed.authFields.length === 0)) {
+        const keys = withParsed.authParsed?.bodyKeys || [];
+        if (!keys || keys.length === 0) {
+          withParsed.authFields = await deriveFieldsFromDocs(adminId, (withParsed as any).authDocsUrl);
+        }
+      }
       if (withParsed.initialSetupCurlCommand && !withParsed.initialParsed) {
         const p = parseCurlRegistrationSpec(withParsed.initialSetupCurlCommand);
         const bodyKeys = extractBodyKeysFromCurl(withParsed.initialSetupCurlCommand);
@@ -74,6 +125,12 @@ export async function GET(request: NextRequest) {
           headersRedacted: redactHeadersForLog(p.headers),
           bodyKeys,
         };
+      }
+      if ((!withParsed.initialFields || withParsed.initialFields.length === 0)) {
+        const keys = withParsed.initialParsed?.bodyKeys || [];
+        if (!keys || keys.length === 0) {
+          withParsed.initialFields = await deriveFieldsFromDocs(adminId, withParsed.initialSetupDocsUrl);
+        }
       }
     } catch {}
 
@@ -146,6 +203,15 @@ export async function PUT(request: NextRequest) {
                 })) as OnboardingField[])
               : merged.registrationFields || [],
         };
+        if ((!merged.registrationFields || merged.registrationFields.length === 0) && bodyKeys.length === 0) {
+          merged.registrationFields = await (async () => {
+            let docsFields: OnboardingField[] = [];
+            try {
+              docsFields = await deriveFieldsFromDocs(adminId, merged.docsUrl);
+            } catch {}
+            return docsFields;
+          })();
+        }
       }
       if ((merged as any).authCurlCommand) {
         const ac = (merged as any).authCurlCommand as string;
@@ -173,6 +239,11 @@ export async function PUT(request: NextRequest) {
               ? defaultAuthFields
               : merged.authFields || [],
         };
+        if ((!merged.authFields || merged.authFields.length === 0) && bodyKeys.length === 0) {
+          try {
+            merged.authFields = await deriveFieldsFromDocs(adminId, (merged as any).authDocsUrl);
+          } catch {}
+        }
       }
       if (merged.initialSetupCurlCommand) {
         const ic = merged.initialSetupCurlCommand;
@@ -200,6 +271,11 @@ export async function PUT(request: NextRequest) {
               ? defaultInitialFields
               : merged.initialFields || [],
         };
+        if ((!merged.initialFields || merged.initialFields.length === 0) && bodyKeys.length === 0) {
+          try {
+            merged.initialFields = await deriveFieldsFromDocs(adminId, merged.initialSetupDocsUrl);
+          } catch {}
+        }
       }
     } catch {}
 
