@@ -230,12 +230,24 @@ const OnboardingSettingsSection: React.FC = () => {
       }
       setGeneratedCurl(genJson.curl || "");
       setHits(genJson.hits || 0);
-      // Auto-populate the cURL field for saving
-      setSettings((prev) => ({
-        ...prev,
-        curlCommand: genJson.curl || prev.curlCommand,
-        registrationParsed: (genJson.parsed || (prev as any).registrationParsed) as any,
-      }));
+      // Auto-populate the cURL field for saving and generate fields if empty
+      setSettings((prev) => {
+        const next: any = {
+          ...prev,
+          curlCommand: genJson.curl || prev.curlCommand,
+          registrationParsed: (genJson.parsed || (prev as any).registrationParsed) as any,
+        };
+        const hasNoFields = !((prev as any).registrationFields) || ((prev as any).registrationFields || []).length === 0;
+        if (hasNoFields && (genJson.curl || "").length > 0) {
+          next.registrationFields = deriveOnboardingFieldsFromCurl(genJson.curl).map((f) => ({
+            key: f.key,
+            label: f.label,
+            required: f.required,
+            type: f.type,
+          }));
+        }
+        return next;
+      });
       setSuccess("Generated cURL from docs. You can review and save it.");
       setTimeout(() => setSuccess(null), 3000);
     } catch (e: any) {
@@ -301,13 +313,24 @@ const OnboardingSettingsSection: React.FC = () => {
       }
       setInitialGeneratedCurl(genJson.curl || "");
       setInitialHits(genJson.hits || 0);
-      // Auto-populate the initial setup cURL field for saving
-      setSettings((prev) => ({
-        ...prev,
-        initialSetupCurlCommand: (genJson.curl ||
-          (prev as any).initialSetupCurlCommand) as any,
-        initialParsed: (genJson.parsed || (prev as any).initialParsed) as any,
-      }));
+      // Auto-populate the initial setup cURL field and generate fields if empty
+      setSettings((prev) => {
+        const next: any = {
+          ...prev,
+          initialSetupCurlCommand: (genJson.curl || (prev as any).initialSetupCurlCommand) as any,
+          initialParsed: (genJson.parsed || (prev as any).initialParsed) as any,
+        };
+        const hasNoFields = !((prev as any).initialFields) || ((prev as any).initialFields || []).length === 0;
+        if (hasNoFields && (genJson.curl || "").length > 0) {
+          next.initialFields = deriveOnboardingFieldsFromCurl(genJson.curl).map((f) => ({
+            key: f.key,
+            label: f.label,
+            required: f.required,
+            type: f.type,
+          }));
+        }
+        return next;
+      });
       setSuccess("Generated initial setup cURL from docs. Review and save it.");
       setTimeout(() => setSuccess(null), 3000);
     } catch (e: any) {
@@ -373,12 +396,24 @@ const OnboardingSettingsSection: React.FC = () => {
       }
       setAuthGeneratedCurl(genJson.curl || "");
       setAuthHits(genJson.hits || 0);
-      // Auto-populate the authentication cURL field for saving
-      setSettings((prev) => ({
-        ...prev,
-        authCurlCommand: (genJson.curl || (prev as any).authCurlCommand) as any,
-        authParsed: (genJson.parsed || (prev as any).authParsed) as any,
-      }));
+      // Auto-populate the authentication cURL field and generate fields if empty
+      setSettings((prev) => {
+        const next: any = {
+          ...prev,
+          authCurlCommand: (genJson.curl || (prev as any).authCurlCommand) as any,
+          authParsed: (genJson.parsed || (prev as any).authParsed) as any,
+        };
+        const hasNoFields = !((prev as any).authFields) || ((prev as any).authFields || []).length === 0;
+        if (hasNoFields && (genJson.curl || "").length > 0) {
+          next.authFields = deriveOnboardingFieldsFromCurl(genJson.curl).map((f) => ({
+            key: f.key,
+            label: f.label,
+            required: f.required,
+            type: f.type,
+          }));
+        }
+        return next;
+      });
       setSuccess(
         "Generated authentication cURL from docs. Review and save it."
       );
