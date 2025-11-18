@@ -46,8 +46,14 @@ export interface OnboardingSettings {
   initialSetupCurlCommand?: string;
   fields?: OnboardingField[];
   registrationFields?: OnboardingField[];
+  registrationHeaders?: string[];
+  registrationResponseFields?: string[];
   authFields?: OnboardingField[];
+  authHeaders?: string[];
+  authResponseFields?: string[];
   initialFields?: OnboardingField[];
+  initialHeaders?: string[];
+  initialResponseFields?: string[];
   registrationParsed?: ParsedCurlSummary;
   authParsed?: ParsedCurlSummary;
   initialParsed?: ParsedCurlSummary;
@@ -142,8 +148,14 @@ export const DEFAULT_ADMIN_SETTINGS: Omit<AdminSettings, "_id" | "adminId" | "em
       { key: "company", label: "Company", required: false, type: "text" },
     ],
     registrationFields: [],
+    registrationHeaders: [],
+    registrationResponseFields: [],
     authFields: [],
+    authHeaders: [],
+    authResponseFields: [],
     initialFields: [],
+    initialHeaders: [],
+    initialResponseFields: [],
     registrationParsed: undefined,
     authParsed: undefined,
     initialParsed: undefined,

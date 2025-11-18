@@ -131,8 +131,14 @@ const OnboardingSettingsSection: React.FC = () => {
         idempotencyKeyField: settings.idempotencyKeyField,
         rateLimit: settings.rateLimit,
         registrationFields: (settings as any).registrationFields,
+        registrationHeaders: (settings as any).registrationHeaders,
+        registrationResponseFields: (settings as any).registrationResponseFields,
         authFields: (settings as any).authFields,
+        authHeaders: (settings as any).authHeaders,
+        authResponseFields: (settings as any).authResponseFields,
         initialFields: (settings as any).initialFields,
+        initialHeaders: (settings as any).initialHeaders,
+        initialResponseFields: (settings as any).initialResponseFields,
       };
       if (regenRegistration) delete settingsToSave.registrationFields;
       if (regenAuth) delete settingsToSave.authFields;
@@ -559,8 +565,8 @@ const OnboardingSettingsSection: React.FC = () => {
               >Regenerate from docs</button>
             )}
               </div>
-              <div style={{ display: "grid", gap: 8 }}>
-                {(((settings as any).registrationFields) || []).map((f: any, idx: number) => (
+            <div style={{ display: "grid", gap: 8 }}>
+              {(((settings as any).registrationFields) || []).map((f: any, idx: number) => (
                   <div key={idx} style={{ display: "grid", gridTemplateColumns: "2fr 2fr 1fr 1fr auto", gap: 8, alignItems: "center" }}>
                     <input value={f.key} onChange={(e) => {
                       const arr = [ ...((settings as any).registrationFields || []) ];
@@ -603,6 +609,22 @@ const OnboardingSettingsSection: React.FC = () => {
                     arr.push({ key: "", label: "", required: true, type: "text" });
                     setSettings({ ...settings, registrationFields: arr } as any);
                   }} style={{ padding: "8px 12px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 13 }}>Add field</button>
+                </div>
+              </div>
+              <div style={{ marginTop: 10 }}>
+                <div style={{ color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Registration Headers</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {(((settings as any).registrationHeaders) || []).map((h: string, i: number) => (
+                    <span key={h + i} style={{ background: "#edf2f7", padding: "4px 8px", borderRadius: 6, fontSize: 12 }}>{h}</span>
+                  ))}
+                </div>
+              </div>
+              <div style={{ marginTop: 10 }}>
+                <div style={{ color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Registration Response Fields</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {(((settings as any).registrationResponseFields) || []).map((k: string, i: number) => (
+                    <span key={k + i} style={{ background: "#eef2ff", padding: "4px 8px", borderRadius: 6, fontSize: 12 }}>{k}</span>
+                  ))}
                 </div>
               </div>
             </div>
@@ -1220,8 +1242,8 @@ const OnboardingSettingsSection: React.FC = () => {
                   >Regenerate from docs</button>
                 )}
               </div>
-              <div style={{ display: "grid", gap: 8 }}>
-                {(((settings as any).authFields) || []).map((f: any, idx: number) => (
+                <div style={{ display: "grid", gap: 8 }}>
+                  {(((settings as any).authFields) || []).map((f: any, idx: number) => (
                   <div key={idx} style={{ display: "grid", gridTemplateColumns: "2fr 2fr 1fr 1fr auto", gap: 8, alignItems: "center" }}>
                     <input value={f.key} onChange={(e) => {
                       const arr = [ ...((settings as any).authFields || []) ];
@@ -1264,6 +1286,22 @@ const OnboardingSettingsSection: React.FC = () => {
                     arr.push({ key: "", label: "", required: true, type: "text" });
                     setSettings({ ...settings, authFields: arr } as any);
                   }} style={{ padding: "8px 12px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 13 }}>Add field</button>
+                </div>
+                <div style={{ marginTop: 10 }}>
+                  <div style={{ color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Auth Headers</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {(((settings as any).authHeaders) || []).map((h: string, i: number) => (
+                      <span key={h + i} style={{ background: "#edf2f7", padding: "4px 8px", borderRadius: 6, fontSize: 12 }}>{h}</span>
+                    ))}
+                  </div>
+                </div>
+                <div style={{ marginTop: 10 }}>
+                  <div style={{ color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Auth Response Fields</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {(((settings as any).authResponseFields) || []).map((k: string, i: number) => (
+                      <span key={k + i} style={{ background: "#eef2ff", padding: "4px 8px", borderRadius: 6, fontSize: 12 }}>{k}</span>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -1593,8 +1631,8 @@ const OnboardingSettingsSection: React.FC = () => {
                   >Regenerate from docs</button>
                 )}
               </div>
-              <div style={{ display: "grid", gap: 8 }}>
-                {(((settings as any).initialFields) || []).map((f: any, idx: number) => (
+                <div style={{ display: "grid", gap: 8 }}>
+                  {(((settings as any).initialFields) || []).map((f: any, idx: number) => (
                   <div key={idx} style={{ display: "grid", gridTemplateColumns: "2fr 2fr 1fr 1fr auto", gap: 8, alignItems: "center" }}>
                     <input value={f.key} onChange={(e) => {
                       const arr = [ ...((settings as any).initialFields || []) ];
@@ -1637,6 +1675,22 @@ const OnboardingSettingsSection: React.FC = () => {
                     arr.push({ key: "", label: "", required: true, type: "text" });
                     setSettings({ ...settings, initialFields: arr } as any);
                   }} style={{ padding: "8px 12px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 13 }}>Add field</button>
+                </div>
+                <div style={{ marginTop: 10 }}>
+                  <div style={{ color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Initial Setup Headers</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {(((settings as any).initialHeaders) || []).map((h: string, i: number) => (
+                      <span key={h + i} style={{ background: "#edf2f7", padding: "4px 8px", borderRadius: 6, fontSize: 12 }}>{h}</span>
+                    ))}
+                  </div>
+                </div>
+                <div style={{ marginTop: 10 }}>
+                  <div style={{ color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Initial Setup Response Fields</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {(((settings as any).initialResponseFields) || []).map((k: string, i: number) => (
+                      <span key={k + i} style={{ background: "#eef2ff", padding: "4px 8px", borderRadius: 6, fontSize: 12 }}>{k}</span>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>

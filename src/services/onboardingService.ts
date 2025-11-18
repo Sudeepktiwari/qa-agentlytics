@@ -777,3 +777,106 @@ export async function deriveFieldsFromDocsForAdmin(adminId: string, docsUrl?: st
     .slice(0, 50)
     .map((k) => ({ key: k, label: toLabel(k), required: true, type: toType(k) }));
 }
+
+export async function deriveSpecFromDocsForAdmin(
+  adminId: string,
+  docsUrl?: string
+): Promise<{ headers: string[]; body: OnboardingField[]; response: string[] }> {
+  let chunks: string[] = [];
+  try {
+    if (docsUrl) {
+      const pageChunks = await getChunksByPageUrl(adminId, docsUrl);
+      if (Array.isArray(pageChunks) && pageChunks.length > 0) {
+        chunks = pageChunks as string[];
+      }
+    }
+  } catch {}
+  if (!chunks || chunks.length === 0) {
+    try {
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      const embedResp = await openai.embeddings.create({
+        input: ["registration required fields and content-type"],
+        model: "text-embedding-3-small",
+      });
+      const embedding = embedResp.data[0].embedding as number[];
+      const similar = await querySimilarChunks(embedding, 5, adminId);
+      chunks = similar as string[];
+    } catch {}
+  }
+  const score = (t: string): number => {
+    let s = 0;
+    if (/register|signup|create\s*account|login|authenticate|setup/i.test(t)) s += 3;
+    if (/\bPOST\b|\bPUT\b|\bPATCH\b/i.test(t)) s += 2;
+    if (/response|returns|sample\s*response|200\s*OK/i.test(t)) s += 2;
+    if (/headers?|Content-Type|Authorization|X-API-Key/i.test(t)) s += 2;
+    if (/email|password|token/i.test(t)) s += 1;
+    return s;
+  };
+  const texts = [...chunks].map((c) => (c || "").slice(0, 4000));
+  const ranked = texts
+    .map((t) => ({ t, s: score(t) }))
+    .sort((a, b) => b.s - a.s)
+    .map((x) => x.t)
+    .slice(0, Math.min(texts.length, 5));
+
+  const headersSet = new Set<string>();
+  const headerCandidates = [
+    "Content-Type",
+    "Authorization",
+    "X-API-Key",
+    "X-Auth-Token",
+    "Accept",
+  ];
+  for (const t of ranked) {
+    for (const h of headerCandidates) {
+      if (new RegExp(h, "i").test(t)) headersSet.add(h);
+    }
+    const colonHeaders = [...t.matchAll(/\b([A-Za-z-]{2,}):\s*[^\n]+/g)].map((m) => m[1]);
+    for (const h of colonHeaders) headersSet.add(h);
+  }
+
+  const bodyFields = await deriveFieldsFromDocsForAdmin(adminId, docsUrl);
+
+  const respSet = new Set<string>();
+  const addRespFromText = (t: string) => {
+    const hint = /response|returns|200\s*OK|example\s*response/i.test(t);
+    const jsonCandidate = (() => {
+      const i = t.indexOf("{");
+      if (i === -1) return undefined;
+      let d = 0;
+      let s1 = false, s2 = false, s3 = false;
+      for (let j = i; j < t.length; j++) {
+        const ch = t[j];
+        if (ch === "'" && !s2 && !s3) s1 = !s1;
+        else if (ch === '"' && !s1 && !s3) s2 = !s2;
+        else if (ch === "`" && !s1 && !s2) s3 = !s3;
+        if (s1 || s2 || s3) continue;
+        if (ch === "{") d++;
+        else if (ch === "}") { d--; if (d === 0) return t.slice(i, j + 1); }
+      }
+      return undefined;
+    })();
+    if (!jsonCandidate) return;
+    if (!hint) return;
+    try {
+      const obj = JSON.parse(jsonCandidate);
+      const walk = (o: any) => {
+        if (!o || typeof o !== "object") return;
+        if (Array.isArray(o)) { for (const it of o) walk(it); return; }
+        for (const [k, v] of Object.entries(o)) {
+          respSet.add(String(k));
+          if (v && typeof v === "object") walk(v as any);
+        }
+      };
+      walk(obj);
+    } catch {}
+  };
+  for (const t of ranked) addRespFromText(t);
+
+  const filteredBody = bodyFields.filter((f) => !/(^|[-_])(token|session|rounds?)($|[-_])/i.test(f.key));
+  return {
+    headers: Array.from(headersSet).slice(0, 20),
+    body: filteredBody,
+    response: Array.from(respSet).slice(0, 50),
+  };
+}

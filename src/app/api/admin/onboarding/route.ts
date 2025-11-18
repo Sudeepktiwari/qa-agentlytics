@@ -11,7 +11,7 @@ import {
   redactHeadersForLog,
 } from "@/lib/curl";
 import { verifyAdminAccessFromCookie } from "@/lib/auth";
-import { deriveFieldsFromDocsForAdmin } from "@/services/onboardingService";
+import { deriveFieldsFromDocsForAdmin, deriveSpecFromDocsForAdmin } from "@/services/onboardingService";
 
 // CORS headers for admin onboarding config
 const corsHeaders = {
@@ -65,10 +65,10 @@ export async function GET(request: NextRequest) {
       }
       // Derive registration fields only when undefined (first-run)
       if (typeof withParsed.registrationFields === "undefined") {
-        withParsed.registrationFields = await deriveFieldsFromDocsForAdmin(
-          adminId,
-          withParsed.docsUrl
-        );
+        const spec = await deriveSpecFromDocsForAdmin(adminId, withParsed.docsUrl);
+        withParsed.registrationFields = spec.body;
+        (withParsed as any).registrationHeaders = spec.headers;
+        (withParsed as any).registrationResponseFields = spec.response;
       }
       if ((withParsed as any).authCurlCommand) {
         const p = parseCurlRegistrationSpec(
@@ -86,10 +86,10 @@ export async function GET(request: NextRequest) {
         };
       }
       if (typeof withParsed.authFields === "undefined") {
-        withParsed.authFields = await deriveFieldsFromDocsForAdmin(
-          adminId,
-          (withParsed as any).authDocsUrl
-        );
+        const spec = await deriveSpecFromDocsForAdmin(adminId, (withParsed as any).authDocsUrl);
+        withParsed.authFields = spec.body;
+        (withParsed as any).authHeaders = spec.headers;
+        (withParsed as any).authResponseFields = spec.response;
       }
       if (withParsed.initialSetupCurlCommand) {
         const p = parseCurlRegistrationSpec(withParsed.initialSetupCurlCommand);
@@ -105,10 +105,10 @@ export async function GET(request: NextRequest) {
         };
       }
       if (typeof withParsed.initialFields === "undefined") {
-        withParsed.initialFields = await deriveFieldsFromDocsForAdmin(
-          adminId,
-          withParsed.initialSetupDocsUrl
-        );
+        const spec = await deriveSpecFromDocsForAdmin(adminId, withParsed.initialSetupDocsUrl);
+        withParsed.initialFields = spec.body;
+        (withParsed as any).initialHeaders = spec.headers;
+        (withParsed as any).initialResponseFields = spec.response;
       }
     } catch {}
 
@@ -214,26 +214,26 @@ export async function PUT(request: NextRequest) {
       // Fill fields from docs only when undefined (first-run)
       if (typeof merged.registrationFields === "undefined") {
         try {
-          merged.registrationFields = await deriveFieldsFromDocsForAdmin(
-            adminId,
-            merged.docsUrl
-          );
+          const spec = await deriveSpecFromDocsForAdmin(adminId, merged.docsUrl);
+          merged.registrationFields = spec.body;
+          (merged as any).registrationHeaders = spec.headers;
+          (merged as any).registrationResponseFields = spec.response;
         } catch {}
       }
       if (typeof merged.authFields === "undefined") {
         try {
-          merged.authFields = await deriveFieldsFromDocsForAdmin(
-            adminId,
-            (merged as any).authDocsUrl
-          );
+          const spec = await deriveSpecFromDocsForAdmin(adminId, (merged as any).authDocsUrl);
+          merged.authFields = spec.body;
+          (merged as any).authHeaders = spec.headers;
+          (merged as any).authResponseFields = spec.response;
         } catch {}
       }
       if (typeof merged.initialFields === "undefined") {
         try {
-          merged.initialFields = await deriveFieldsFromDocsForAdmin(
-            adminId,
-            merged.initialSetupDocsUrl
-          );
+          const spec = await deriveSpecFromDocsForAdmin(adminId, merged.initialSetupDocsUrl);
+          merged.initialFields = spec.body;
+          (merged as any).initialHeaders = spec.headers;
+          (merged as any).initialResponseFields = spec.response;
         } catch {}
       }
     } catch {}
