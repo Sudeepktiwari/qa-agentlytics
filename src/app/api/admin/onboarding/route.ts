@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
         if ((withParsed.registrationFields || []).length > 0) {
           keysFromDocs = (withParsed.registrationFields || []).map((f) => f.key);
         } else {
-          const spec = await deriveSpecFromDocsForAdmin(adminId, withParsed.docsUrl, "registration");
+          const spec = await deriveSpecFromDocsForAdmin(adminId, withParsed.docsUrl, "registration", withParsed.curlCommand);
           keysFromDocs = spec.body.map((f) => f.key);
         }
         withParsed.registrationParsed = {
@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
         const needHeaders = typeof (withParsed as any).registrationHeaders === "undefined";
         const needResp = typeof (withParsed as any).registrationResponseFields === "undefined";
         if (needBody || needHeaders || needResp) {
-          const spec = await deriveSpecFromDocsForAdmin(adminId, withParsed.docsUrl);
+          const spec = await deriveSpecFromDocsForAdmin(adminId, withParsed.docsUrl, "registration", withParsed.curlCommand);
           if (needBody) withParsed.registrationFields = spec.body;
           if (needHeaders) (withParsed as any).registrationHeaders = spec.headers;
           if (needResp) (withParsed as any).registrationResponseFields = spec.response;
@@ -114,7 +114,7 @@ export async function GET(request: NextRequest) {
         if ((withParsed.authFields || []).length > 0) {
           keysFromDocs = (withParsed.authFields || []).map((f) => f.key);
         } else {
-          const spec = await deriveSpecFromDocsForAdmin(adminId, (withParsed as any).authDocsUrl, "auth");
+          const spec = await deriveSpecFromDocsForAdmin(adminId, (withParsed as any).authDocsUrl, "auth", (withParsed as any).authCurlCommand as string);
           keysFromDocs = spec.body.map((f) => f.key);
         }
         withParsed.authParsed = {
@@ -127,7 +127,7 @@ export async function GET(request: NextRequest) {
         const needHeaders = typeof (withParsed as any).authHeaders === "undefined";
         const needResp = typeof (withParsed as any).authResponseFields === "undefined";
         if (needBody || needHeaders || needResp) {
-          const spec = await deriveSpecFromDocsForAdmin(adminId, (withParsed as any).authDocsUrl);
+          const spec = await deriveSpecFromDocsForAdmin(adminId, (withParsed as any).authDocsUrl, "auth", (withParsed as any).authCurlCommand as string);
           if (needBody) withParsed.authFields = spec.body;
           if (needHeaders) (withParsed as any).authHeaders = spec.headers;
           if (needResp) (withParsed as any).authResponseFields = spec.response;
@@ -157,7 +157,7 @@ export async function GET(request: NextRequest) {
         if ((withParsed.initialFields || []).length > 0) {
           keysFromDocs = (withParsed.initialFields || []).map((f) => f.key);
         } else {
-          const spec = await deriveSpecFromDocsForAdmin(adminId, withParsed.initialSetupDocsUrl, "initial");
+          const spec = await deriveSpecFromDocsForAdmin(adminId, withParsed.initialSetupDocsUrl, "initial", withParsed.initialSetupCurlCommand);
           keysFromDocs = spec.body.map((f) => f.key);
         }
         withParsed.initialParsed = {
@@ -170,7 +170,7 @@ export async function GET(request: NextRequest) {
         const needHeaders = typeof (withParsed as any).initialHeaders === "undefined";
         const needResp = typeof (withParsed as any).initialResponseFields === "undefined";
         if (needBody || needHeaders || needResp) {
-          const spec = await deriveSpecFromDocsForAdmin(adminId, withParsed.initialSetupDocsUrl);
+          const spec = await deriveSpecFromDocsForAdmin(adminId, withParsed.initialSetupDocsUrl, "initial", withParsed.initialSetupCurlCommand);
           if (needBody) withParsed.initialFields = spec.body;
           if (needHeaders) (withParsed as any).initialHeaders = spec.headers;
           if (needResp) (withParsed as any).initialResponseFields = spec.response;
@@ -242,12 +242,18 @@ export async function PUT(request: NextRequest) {
       const flags = onboardingUpdates as any;
       if (flags?.regenRegistration === true) {
         (merged as any).registrationFields = undefined;
+        (merged as any).registrationHeaders = undefined;
+        (merged as any).registrationResponseFields = undefined;
       }
       if (flags?.regenAuth === true) {
         (merged as any).authFields = undefined;
+        (merged as any).authHeaders = undefined;
+        (merged as any).authResponseFields = undefined;
       }
       if (flags?.regenInitial === true) {
         (merged as any).initialFields = undefined;
+        (merged as any).initialHeaders = undefined;
+        (merged as any).initialResponseFields = undefined;
       }
     } catch {}
 
@@ -304,7 +310,7 @@ export async function PUT(request: NextRequest) {
         const needResp = typeof (merged as any).registrationResponseFields === "undefined";
         if (needBody || needHeaders || needResp) {
           try {
-            const spec = await deriveSpecFromDocsForAdmin(adminId, merged.docsUrl, "registration");
+            const spec = await deriveSpecFromDocsForAdmin(adminId, merged.docsUrl, "registration", merged.curlCommand);
             if (needBody) merged.registrationFields = spec.body;
             if (needHeaders) (merged as any).registrationHeaders = spec.headers;
             if (needResp) (merged as any).registrationResponseFields = spec.response;
@@ -329,7 +335,7 @@ export async function PUT(request: NextRequest) {
         const needResp = typeof (merged as any).authResponseFields === "undefined";
         if (needBody || needHeaders || needResp) {
           try {
-            const spec = await deriveSpecFromDocsForAdmin(adminId, (merged as any).authDocsUrl, "auth");
+            const spec = await deriveSpecFromDocsForAdmin(adminId, (merged as any).authDocsUrl, "auth", (merged as any).authCurlCommand as string);
             if (needBody) merged.authFields = spec.body;
             if (needHeaders) (merged as any).authHeaders = spec.headers;
             if (needResp) (merged as any).authResponseFields = spec.response;
@@ -354,7 +360,7 @@ export async function PUT(request: NextRequest) {
         const needResp = typeof (merged as any).initialResponseFields === "undefined";
         if (needBody || needHeaders || needResp) {
           try {
-            const spec = await deriveSpecFromDocsForAdmin(adminId, merged.initialSetupDocsUrl, "initial");
+            const spec = await deriveSpecFromDocsForAdmin(adminId, merged.initialSetupDocsUrl, "initial", merged.initialSetupCurlCommand);
             if (needBody) merged.initialFields = spec.body;
             if (needHeaders) (merged as any).initialHeaders = spec.headers;
             if (needResp) (merged as any).initialResponseFields = spec.response;

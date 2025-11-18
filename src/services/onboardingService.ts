@@ -1,5 +1,5 @@
 import { getAdminSettings, OnboardingSettings, OnboardingField } from "@/lib/adminSettings";
-import { parseCurlRegistrationSpec, buildBodyFromCurl, redactHeadersForLog } from "@/lib/curl";
+import { parseCurlRegistrationSpec, buildBodyFromCurl, redactHeadersForLog, extractBodyKeysFromCurl } from "@/lib/curl";
 import { createOrUpdateLead } from "@/lib/leads";
 import { getChunksByPageUrl, querySimilarChunks } from "@/lib/chroma";
 import OpenAI from "openai";
@@ -796,7 +796,8 @@ export async function deriveFieldsFromDocsForAdmin(adminId: string, docsUrl?: st
 export async function deriveSpecFromDocsForAdmin(
   adminId: string,
   docsUrl?: string,
-  mode?: "registration" | "auth" | "initial"
+  mode?: "registration" | "auth" | "initial",
+  curlCommand?: string
 ): Promise<{ headers: string[]; body: OnboardingField[]; response: string[] }> {
   let chunks: string[] = [];
   try {
@@ -851,9 +852,76 @@ export async function deriveSpecFromDocsForAdmin(
     for (const h of colonHeaders) headersSet.add(h);
   }
 
-  const bodyFields = await deriveFieldsFromDocsForAdmin(adminId, docsUrl, mode);
+  let bodyFields = await deriveFieldsFromDocsForAdmin(adminId, docsUrl, mode);
 
   const respSet = new Set<string>();
+  try {
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const system = mode === "auth"
+      ? "Extract only authentication request body keys from the provided documentation. Return strict JSON with keys: headers[], body[{key,label,required,type}], response[]. Do not include response-only keys."
+      : mode === "registration"
+      ? "Extract only registration request body keys from the provided documentation. Return strict JSON with keys: headers[], body[{key,label,required,type}], response[]. Do not include response-only keys."
+      : "Extract only initial setup request body keys from the provided documentation. Return strict JSON with keys: headers[], body[{key,label,required,type}], response[]. Do not include response-only keys.";
+    const user = ranked.join("\n\n").slice(0, 12000);
+    const chat = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: user },
+      ],
+      temperature: 0,
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: "ApiSpec",
+          strict: true,
+          schema: {
+            type: "object",
+            properties: {
+              headers: { type: "array", items: { type: "string" } },
+              body: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    key: { type: "string" },
+                    label: { type: "string" },
+                    required: { type: "boolean" },
+                    type: { type: "string", enum: ["text", "email", "phone", "select", "checkbox"] },
+                  },
+                  required: ["key"],
+                  additionalProperties: false,
+                },
+              },
+              response: { type: "array", items: { type: "string" } },
+            },
+            required: ["headers", "body", "response"],
+            additionalProperties: false,
+          },
+        },
+      } as any,
+    });
+    const text = chat.choices?.[0]?.message?.content || "";
+    if (text) {
+      const parsed = JSON.parse(text);
+      const bodyArr: any[] = Array.isArray(parsed?.body) ? parsed.body : [];
+      const toType = (k: string): OnboardingField["type"] => (/email/i.test(k) ? "email" : /phone/i.test(k) ? "phone" : "text");
+      const toLabel = (k: string) => String(k).replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+      const llmFields: OnboardingField[] = bodyArr
+        .map((f) => ({ key: String(f.key || f.name || "").trim(), label: String(f.label || toLabel(String(f.key || f.name || ""))).trim(), required: Boolean(f.required ?? true), type: (/email|mail/i.test(String(f.type || f.key)) ? "email" : /phone/i.test(String(f.type || f.key)) ? "phone" : (f.type === "select" || f.type === "checkbox") ? f.type : toType(String(f.key || ""))) }))
+        .filter((f) => f.key);
+      if (llmFields.length > 0) bodyFields = llmFields;
+      const hdrs: string[] = Array.isArray(parsed?.headers) ? parsed.headers.map((h: any) => String(h)) : [];
+      if (hdrs.length > 0) {
+        for (const h of hdrs) headersSet.add(h);
+      }
+      const resps: string[] = Array.isArray(parsed?.response) ? parsed.response.map((k: any) => String(k)) : [];
+      if (resps.length > 0) {
+        for (const k of resps) respSet.add(k);
+      }
+    }
+  } catch {}
+
   const addRespFromText = (t: string) => {
     const hint = /response|returns|200\s*OK|example\s*response/i.test(t);
     const jsonCandidate = (() => {
@@ -888,11 +956,19 @@ export async function deriveSpecFromDocsForAdmin(
     } catch {}
   };
   for (const t of ranked) addRespFromText(t);
-
-  const filteredBody = bodyFields.filter((f) => !/(^|[-_])(token|session|rounds?)($|[-_])/i.test(f.key));
+  let filteredBody = bodyFields.filter((f) => !/(^|[-_])(token|session|rounds?|password\s*hash)($|[-_])/i.test(f.key));
+  if (curlCommand && typeof curlCommand === "string" && curlCommand.trim().length > 0) {
+    try {
+      const ck = extractBodyKeysFromCurl(curlCommand);
+      const set = new Set(ck.map((k) => String(k).toLowerCase()));
+      const inter = filteredBody.filter((f) => set.has(String(f.key).toLowerCase()));
+      if (inter.length > 0) filteredBody = inter;
+    } catch {}
+  }
+  const filteredResp = Array.from(respSet).filter((k) => !/(^|[-_])(password|token|secret|apikey)($|[-_])/i.test(k));
   return {
     headers: Array.from(headersSet).slice(0, 20),
     body: filteredBody,
-    response: Array.from(respSet).slice(0, 50),
+    response: filteredResp.slice(0, 50),
   };
 }
