@@ -808,7 +808,18 @@ const OnboardingSettingsSection: React.FC = () => {
                       bodyKeys,
                     };
                   } catch {}
-                  setSettings({ ...(settings as any), curlCommand: curl, registrationParsed: parsed } as any);
+                  const derived = deriveOnboardingFieldsFromCurl(curl).map((f) => ({
+                    key: f.key,
+                    label: f.label,
+                    required: f.required,
+                    type: f.type,
+                  }));
+                  const next: any = { ...(settings as any), curlCommand: curl, registrationParsed: parsed };
+                  const hasNoFields = !((settings as any).registrationFields) || ((settings as any).registrationFields || []).length === 0;
+                  if (hasNoFields && derived.length > 0) {
+                    next.registrationFields = derived;
+                  }
+                  setSettings(next as any);
                 }}
                 rows={6}
                 style={{
@@ -1285,7 +1296,18 @@ const OnboardingSettingsSection: React.FC = () => {
                       bodyKeys,
                     };
                   } catch {}
-                  setSettings({ ...(settings as any), authCurlCommand: curl, authParsed: parsed } as any);
+                  const derived = deriveOnboardingFieldsFromCurl(curl).map((f) => ({
+                    key: f.key,
+                    label: f.label,
+                    required: f.required,
+                    type: f.type,
+                  }));
+                  const next: any = { ...(settings as any), authCurlCommand: curl, authParsed: parsed };
+                  const hasNoFields = !((settings as any).authFields) || ((settings as any).authFields || []).length === 0;
+                  if (hasNoFields && derived.length > 0) {
+                    next.authFields = derived;
+                  }
+                  setSettings(next as any);
                 }}
                 rows={6}
                 style={{
@@ -1665,7 +1687,18 @@ const OnboardingSettingsSection: React.FC = () => {
                       bodyKeys,
                     };
                   } catch {}
-                  setSettings({ ...(settings as any), initialSetupCurlCommand: curl, initialParsed: parsed } as any);
+                  const derived = deriveOnboardingFieldsFromCurl(curl).map((f) => ({
+                    key: f.key,
+                    label: f.label,
+                    required: f.required,
+                    type: f.type,
+                  }));
+                  const next: any = { ...(settings as any), initialSetupCurlCommand: curl, initialParsed: parsed };
+                  const hasNoFields = !((settings as any).initialFields) || ((settings as any).initialFields || []).length === 0;
+                  if (hasNoFields && derived.length > 0) {
+                    next.initialFields = derived;
+                  }
+                  setSettings(next as any);
                 }}
                 rows={6}
                 style={{
