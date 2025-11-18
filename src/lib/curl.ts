@@ -149,11 +149,43 @@ export function parseCurlRegistrationSpec(curlCommand: string): ParsedCurl {
 
   // Fallback: if no explicit -d/--data found, try to extract a JSON object literal
   if (!dataRaw) {
-    const jsonCandidate = (() => {
+    // Try to find a JSON object after -d/--data flags by scanning braces
+    const findJsonAfterDataFlag = (s: string): string | undefined => {
+      const flagIdx = (() => {
+        const m1 = s.match(/-d\b/iu);
+        if (m1) return s.indexOf(m1[0], 0);
+        const m2 = s.match(/--data(?:-raw)?\b/iu);
+        if (m2) return s.indexOf(m2[0], 0);
+        return -1;
+      })();
+      const startSearch = flagIdx >= 0 ? flagIdx : 0;
+      const braceStart = s.indexOf("{", startSearch);
+      if (braceStart === -1) return undefined;
+      let depth = 0;
+      let inSingle = false;
+      let inDouble = false;
+      let inBacktick = false;
+      for (let i = braceStart; i < s.length; i++) {
+        const ch = s[i];
+        if (ch === "'" && !inDouble && !inBacktick) { inSingle = !inSingle; }
+        else if (ch === '"' && !inSingle && !inBacktick) { inDouble = !inDouble; }
+        else if (ch === "`" && !inSingle && !inDouble) { inBacktick = !inBacktick; }
+        if (inSingle || inDouble || inBacktick) continue;
+        if (ch === "{") depth++;
+        else if (ch === "}") {
+          depth--;
+          if (depth === 0) {
+            return s.slice(braceStart, i + 1);
+          }
+        }
+      }
+      return undefined;
+    };
+    const jsonCandidate = findJsonAfterDataFlag(cmd);
+    if (!jsonCandidate) {
       const match = cmd.match(/\{[\s\S]*\}/m);
-      return match ? match[0] : undefined;
-    })();
-    if (jsonCandidate && jsonCandidate.trim().startsWith("{")) {
+      if (match) dataRaw = match[0];
+    } else {
       dataRaw = jsonCandidate;
     }
   }
@@ -311,7 +343,20 @@ export function extractBodyKeysFromCurl(curlCommand: string): string[] {
     }
     return Array.from(keys);
   }
-  return [];
+  // Final fallback: scan entire cURL for JSON-like keys or form keys
+  const scan = curlCommand;
+  const keys2 = new Set<string>();
+  const jsonKeyRx2 = /["']?([A-Za-z0-9_][A-Za-z0-9_\.\-]*)["']?\s*:/g;
+  let jm2: RegExpExecArray | null;
+  while ((jm2 = jsonKeyRx2.exec(scan)) !== null) {
+    keys2.add(jm2[1]);
+  }
+  const formKeyRx2 = /(?:^|&)\s*([^=&\s]+)=/g;
+  let fm2: RegExpExecArray | null;
+  while ((fm2 = formKeyRx2.exec(scan)) !== null) {
+    keys2.add(fm2[1]);
+  }
+  return Array.from(keys2);
 }
 
 // Build final request body from parsed cURL and collected user payload
