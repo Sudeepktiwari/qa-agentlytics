@@ -64,11 +64,16 @@ export async function GET(request: NextRequest) {
         };
       }
       // Derive registration fields only when undefined (first-run)
-      if (typeof withParsed.registrationFields === "undefined") {
-        const spec = await deriveSpecFromDocsForAdmin(adminId, withParsed.docsUrl);
-        withParsed.registrationFields = spec.body;
-        (withParsed as any).registrationHeaders = spec.headers;
-        (withParsed as any).registrationResponseFields = spec.response;
+      {
+        const needBody = typeof withParsed.registrationFields === "undefined";
+        const needHeaders = typeof (withParsed as any).registrationHeaders === "undefined";
+        const needResp = typeof (withParsed as any).registrationResponseFields === "undefined";
+        if (needBody || needHeaders || needResp) {
+          const spec = await deriveSpecFromDocsForAdmin(adminId, withParsed.docsUrl);
+          if (needBody) withParsed.registrationFields = spec.body;
+          if (needHeaders) (withParsed as any).registrationHeaders = spec.headers;
+          if (needResp) (withParsed as any).registrationResponseFields = spec.response;
+        }
       }
       if ((withParsed as any).authCurlCommand) {
         const p = parseCurlRegistrationSpec(
@@ -85,11 +90,16 @@ export async function GET(request: NextRequest) {
           bodyKeys,
         };
       }
-      if (typeof withParsed.authFields === "undefined") {
-        const spec = await deriveSpecFromDocsForAdmin(adminId, (withParsed as any).authDocsUrl);
-        withParsed.authFields = spec.body;
-        (withParsed as any).authHeaders = spec.headers;
-        (withParsed as any).authResponseFields = spec.response;
+      {
+        const needBody = typeof withParsed.authFields === "undefined";
+        const needHeaders = typeof (withParsed as any).authHeaders === "undefined";
+        const needResp = typeof (withParsed as any).authResponseFields === "undefined";
+        if (needBody || needHeaders || needResp) {
+          const spec = await deriveSpecFromDocsForAdmin(adminId, (withParsed as any).authDocsUrl);
+          if (needBody) withParsed.authFields = spec.body;
+          if (needHeaders) (withParsed as any).authHeaders = spec.headers;
+          if (needResp) (withParsed as any).authResponseFields = spec.response;
+        }
       }
       if (withParsed.initialSetupCurlCommand) {
         const p = parseCurlRegistrationSpec(withParsed.initialSetupCurlCommand);
@@ -104,11 +114,16 @@ export async function GET(request: NextRequest) {
           bodyKeys,
         };
       }
-      if (typeof withParsed.initialFields === "undefined") {
-        const spec = await deriveSpecFromDocsForAdmin(adminId, withParsed.initialSetupDocsUrl);
-        withParsed.initialFields = spec.body;
-        (withParsed as any).initialHeaders = spec.headers;
-        (withParsed as any).initialResponseFields = spec.response;
+      {
+        const needBody = typeof withParsed.initialFields === "undefined";
+        const needHeaders = typeof (withParsed as any).initialHeaders === "undefined";
+        const needResp = typeof (withParsed as any).initialResponseFields === "undefined";
+        if (needBody || needHeaders || needResp) {
+          const spec = await deriveSpecFromDocsForAdmin(adminId, withParsed.initialSetupDocsUrl);
+          if (needBody) withParsed.initialFields = spec.body;
+          if (needHeaders) (withParsed as any).initialHeaders = spec.headers;
+          if (needResp) (withParsed as any).initialResponseFields = spec.response;
+        }
       }
     } catch {}
 
@@ -212,29 +227,44 @@ export async function PUT(request: NextRequest) {
       }
 
       // Fill fields from docs only when undefined (first-run)
-      if (typeof merged.registrationFields === "undefined") {
-        try {
-          const spec = await deriveSpecFromDocsForAdmin(adminId, merged.docsUrl);
-          merged.registrationFields = spec.body;
-          (merged as any).registrationHeaders = spec.headers;
-          (merged as any).registrationResponseFields = spec.response;
-        } catch {}
+      {
+        const needBody = typeof merged.registrationFields === "undefined";
+        const needHeaders = typeof (merged as any).registrationHeaders === "undefined";
+        const needResp = typeof (merged as any).registrationResponseFields === "undefined";
+        if (needBody || needHeaders || needResp) {
+          try {
+            const spec = await deriveSpecFromDocsForAdmin(adminId, merged.docsUrl);
+            if (needBody) merged.registrationFields = spec.body;
+            if (needHeaders) (merged as any).registrationHeaders = spec.headers;
+            if (needResp) (merged as any).registrationResponseFields = spec.response;
+          } catch {}
+        }
       }
-      if (typeof merged.authFields === "undefined") {
-        try {
-          const spec = await deriveSpecFromDocsForAdmin(adminId, (merged as any).authDocsUrl);
-          merged.authFields = spec.body;
-          (merged as any).authHeaders = spec.headers;
-          (merged as any).authResponseFields = spec.response;
-        } catch {}
+      {
+        const needBody = typeof merged.authFields === "undefined";
+        const needHeaders = typeof (merged as any).authHeaders === "undefined";
+        const needResp = typeof (merged as any).authResponseFields === "undefined";
+        if (needBody || needHeaders || needResp) {
+          try {
+            const spec = await deriveSpecFromDocsForAdmin(adminId, (merged as any).authDocsUrl);
+            if (needBody) merged.authFields = spec.body;
+            if (needHeaders) (merged as any).authHeaders = spec.headers;
+            if (needResp) (merged as any).authResponseFields = spec.response;
+          } catch {}
+        }
       }
-      if (typeof merged.initialFields === "undefined") {
-        try {
-          const spec = await deriveSpecFromDocsForAdmin(adminId, merged.initialSetupDocsUrl);
-          merged.initialFields = spec.body;
-          (merged as any).initialHeaders = spec.headers;
-          (merged as any).initialResponseFields = spec.response;
-        } catch {}
+      {
+        const needBody = typeof merged.initialFields === "undefined";
+        const needHeaders = typeof (merged as any).initialHeaders === "undefined";
+        const needResp = typeof (merged as any).initialResponseFields === "undefined";
+        if (needBody || needHeaders || needResp) {
+          try {
+            const spec = await deriveSpecFromDocsForAdmin(adminId, merged.initialSetupDocsUrl);
+            if (needBody) merged.initialFields = spec.body;
+            if (needHeaders) (merged as any).initialHeaders = spec.headers;
+            if (needResp) (merged as any).initialResponseFields = spec.response;
+          } catch {}
+        }
       }
     } catch {}
 
