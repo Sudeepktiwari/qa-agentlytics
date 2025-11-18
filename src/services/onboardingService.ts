@@ -785,7 +785,7 @@ export async function deriveFieldsFromDocsForAdmin(adminId: string, docsUrl?: st
     for (const m of paramMatches) keys.add(m[1]);
   };
   for (const chunk of pick) addKeysFromText(chunk || "");
-  const filtered = Array.from(keys).filter((k) => !/(^|[-_])(token|session|rounds?|csrf|apikey|api\s*key|message|user|id|name|isfirstlogin|sub)($|[-_])/i.test(k));
+  const filtered = Array.from(keys).filter((k) => !/(^|[-_])(token|session|rounds?|csrf|apikey|api\s*key|message|user|id|name|isfirstlogin|sub|body|bodyname|content\s*type|contenttype|overviewpath|endpoint)($|[-_])/i.test(k));
   const toType = (k: string): OnboardingField["type"] => (/email/i.test(k) ? "email" : /phone/i.test(k) ? "phone" : "text");
   const toLabel = (k: string) => k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
   return filtered
