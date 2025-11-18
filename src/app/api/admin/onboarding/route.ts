@@ -3,7 +3,13 @@ import {
   getAdminSettings,
   updateAdminSettings,
   OnboardingSettings,
+  OnboardingField,
 } from "@/lib/adminSettings";
+import {
+  parseCurlRegistrationSpec,
+  deriveOnboardingFieldsFromCurl,
+  redactHeadersForLog,
+} from "@/lib/curl";
 import { verifyAdminAccessFromCookie } from "@/lib/auth";
 
 // CORS headers for admin onboarding config
@@ -31,9 +37,59 @@ export async function GET(request: NextRequest) {
 
     const adminId = adminVerification.adminId;
     const settings = await getAdminSettings(adminId);
+    const onboarding = settings.onboarding || { enabled: false };
+
+    const withParsed = { ...onboarding } as OnboardingSettings;
+    try {
+      if (withParsed.curlCommand && !withParsed.registrationParsed) {
+        const p = parseCurlRegistrationSpec(withParsed.curlCommand);
+        const bodyKeys = p.dataJson
+          ? Object.keys(p.dataJson)
+          : p.dataForm
+          ? Object.keys(p.dataForm)
+          : [];
+        withParsed.registrationParsed = {
+          method: p.method,
+          url: p.url,
+          contentType: p.contentType,
+          headersRedacted: redactHeadersForLog(p.headers),
+          bodyKeys,
+        };
+      }
+      if ((withParsed as any).authCurlCommand && !withParsed.authParsed) {
+        const p = parseCurlRegistrationSpec((withParsed as any).authCurlCommand as string);
+        const bodyKeys = p.dataJson
+          ? Object.keys(p.dataJson)
+          : p.dataForm
+          ? Object.keys(p.dataForm)
+          : [];
+        withParsed.authParsed = {
+          method: p.method,
+          url: p.url,
+          contentType: p.contentType,
+          headersRedacted: redactHeadersForLog(p.headers),
+          bodyKeys,
+        };
+      }
+      if (withParsed.initialSetupCurlCommand && !withParsed.initialParsed) {
+        const p = parseCurlRegistrationSpec(withParsed.initialSetupCurlCommand);
+        const bodyKeys = p.dataJson
+          ? Object.keys(p.dataJson)
+          : p.dataForm
+          ? Object.keys(p.dataForm)
+          : [];
+        withParsed.initialParsed = {
+          method: p.method,
+          url: p.url,
+          contentType: p.contentType,
+          headersRedacted: redactHeadersForLog(p.headers),
+          bodyKeys,
+        };
+      }
+    } catch {}
 
     return NextResponse.json(
-      { success: true, onboarding: settings.onboarding || { enabled: false } },
+      { success: true, onboarding: withParsed },
       { status: 200, headers: corsHeaders }
     );
   } catch (error) {
@@ -70,11 +126,105 @@ export async function PUT(request: NextRequest) {
 
     // Merge with existing settings to preserve defaults
     const current = await getAdminSettings(adminId);
-    const merged: OnboardingSettings = {
+    let merged: OnboardingSettings = {
       ...(current.onboarding || { enabled: false }),
       ...onboardingUpdates,
       ...(shouldEnable === undefined ? {} : { enabled: shouldEnable }),
     } as OnboardingSettings;
+
+    try {
+      if (merged.curlCommand) {
+        const p = parseCurlRegistrationSpec(merged.curlCommand);
+        const bodyKeys = p.dataJson
+          ? Object.keys(p.dataJson)
+          : p.dataForm
+          ? Object.keys(p.dataForm)
+          : [];
+        merged = {
+          ...merged,
+          registrationParsed: {
+            method: p.method,
+            url: p.url,
+            contentType: p.contentType,
+            headersRedacted: redactHeadersForLog(p.headers),
+            bodyKeys,
+          },
+          registrationFields:
+            merged.registrationFields && merged.registrationFields.length > 0
+              ? merged.registrationFields
+              : bodyKeys.length > 0
+              ? (deriveOnboardingFieldsFromCurl(merged.curlCommand).map((f) => ({
+                  key: f.key,
+                  label: f.label,
+                  required: f.required,
+                  type: f.type,
+                })) as OnboardingField[])
+              : merged.registrationFields || [],
+        };
+      }
+      if ((merged as any).authCurlCommand) {
+        const ac = (merged as any).authCurlCommand as string;
+        const p = parseCurlRegistrationSpec(ac);
+        const bodyKeys = p.dataJson
+          ? Object.keys(p.dataJson)
+          : p.dataForm
+          ? Object.keys(p.dataForm)
+          : [];
+        const defaultAuthFields: OnboardingField[] = bodyKeys.map((k) => ({
+          key: k,
+          label: k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+          required: true,
+          type: (/email/i.test(k) ? "email" : /phone/i.test(k) ? "phone" : "text") as OnboardingField["type"],
+        }));
+        merged = {
+          ...merged,
+          authParsed: {
+            method: p.method,
+            url: p.url,
+            contentType: p.contentType,
+            headersRedacted: redactHeadersForLog(p.headers),
+            bodyKeys,
+          },
+          authFields:
+            merged.authFields && merged.authFields.length > 0
+              ? merged.authFields
+              : bodyKeys.length > 0
+              ? defaultAuthFields
+              : merged.authFields || [],
+        };
+      }
+      if (merged.initialSetupCurlCommand) {
+        const ic = merged.initialSetupCurlCommand;
+        const p = parseCurlRegistrationSpec(ic);
+        const bodyKeys = p.dataJson
+          ? Object.keys(p.dataJson)
+          : p.dataForm
+          ? Object.keys(p.dataForm)
+          : [];
+        const defaultInitialFields: OnboardingField[] = bodyKeys.map((k) => ({
+          key: k,
+          label: k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+          required: true,
+          type: (/email/i.test(k) ? "email" : /phone/i.test(k) ? "phone" : "text") as OnboardingField["type"],
+        }));
+        merged = {
+          ...merged,
+          initialParsed: {
+            method: p.method,
+            url: p.url,
+            contentType: p.contentType,
+            headersRedacted: redactHeadersForLog(p.headers),
+            bodyKeys,
+          },
+          initialFields:
+            merged.initialFields && merged.initialFields.length > 0
+              ? merged.initialFields
+              : bodyKeys.length > 0
+              ? defaultInitialFields
+              : merged.initialFields || [],
+        };
+      }
+    } catch {}
 
     const updated = await updateAdminSettings(adminId, { onboarding: merged }, adminId);
 

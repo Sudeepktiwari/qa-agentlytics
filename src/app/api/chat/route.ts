@@ -2446,7 +2446,9 @@ Keep the response conversational and helpful, focusing on providing value before
       isOnboardingAction);
 
   if (isOnboardingIntent) {
-    const configuredFields = (onboardingConfig?.fields && onboardingConfig.fields.length > 0)
+    const configuredFields = ((onboardingConfig as any)?.registrationFields && (onboardingConfig as any).registrationFields.length > 0)
+      ? (onboardingConfig as any).registrationFields
+      : (onboardingConfig?.fields && onboardingConfig.fields.length > 0)
       ? onboardingConfig.fields
       : [
           { key: "email", label: "Email", required: true, type: "email" },
@@ -2465,10 +2467,11 @@ Keep the response conversational and helpful, focusing on providing value before
         }))
       : [];
 
-    // Derive extra fields from admin docs and merge
+    // Prefer admin-edited registrationFields; else fallback to cURL-derived; else docs merge
     let fields: any[] = [];
-    if (curlDerived.length > 0) {
-      // When cURL is provided, rely solely on its body keys
+    if ((onboardingConfig as any)?.registrationFields && (onboardingConfig as any).registrationFields.length > 0) {
+      fields = (onboardingConfig as any).registrationFields as any[];
+    } else if (curlDerived.length > 0) {
       fields = curlDerived;
     } else {
       const docDerived = await inferFieldsFromDocs(adminId || undefined, onboardingConfig?.docsUrl);

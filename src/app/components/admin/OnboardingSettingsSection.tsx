@@ -126,6 +126,9 @@ const OnboardingSettingsSection: React.FC = () => {
         authHeaderKey: settings.authHeaderKey,
         idempotencyKeyField: settings.idempotencyKeyField,
         rateLimit: settings.rateLimit,
+        registrationFields: (settings as any).registrationFields || [],
+        authFields: (settings as any).authFields || [],
+        initialFields: (settings as any).initialFields || [],
       };
       const res = await fetch("/api/admin/onboarding", {
         method: "PUT",
@@ -230,6 +233,7 @@ const OnboardingSettingsSection: React.FC = () => {
       setSettings((prev) => ({
         ...prev,
         curlCommand: genJson.curl || prev.curlCommand,
+        registrationParsed: (genJson.parsed || (prev as any).registrationParsed) as any,
       }));
       setSuccess("Generated cURL from docs. You can review and save it.");
       setTimeout(() => setSuccess(null), 3000);
@@ -301,6 +305,7 @@ const OnboardingSettingsSection: React.FC = () => {
         ...prev,
         initialSetupCurlCommand: (genJson.curl ||
           (prev as any).initialSetupCurlCommand) as any,
+        initialParsed: (genJson.parsed || (prev as any).initialParsed) as any,
       }));
       setSuccess("Generated initial setup cURL from docs. Review and save it.");
       setTimeout(() => setSuccess(null), 3000);
@@ -371,6 +376,7 @@ const OnboardingSettingsSection: React.FC = () => {
       setSettings((prev) => ({
         ...prev,
         authCurlCommand: (genJson.curl || (prev as any).authCurlCommand) as any,
+        authParsed: (genJson.parsed || (prev as any).authParsed) as any,
       }));
       setSuccess(
         "Generated authentication cURL from docs. Review and save it."
@@ -481,6 +487,99 @@ const OnboardingSettingsSection: React.FC = () => {
                   ✅
                 </span>
               )}
+            </div>
+
+            {settings.registrationParsed && (
+              <div style={{ marginTop: 12, padding: 12, border: "1px solid #e2e8f0", borderRadius: 8 }}>
+                <div style={{ fontWeight: 600, color: "#2d3748", marginBottom: 8 }}>Parsed Summary</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  <div>Method: {settings.registrationParsed.method}</div>
+                  <div>Content-Type: {settings.registrationParsed.contentType}</div>
+                  <div style={{ gridColumn: "1 / -1" }}>URL: {settings.registrationParsed.url || ""}</div>
+                  <div style={{ gridColumn: "1 / -1" }}>Headers:
+                    <div style={{ marginTop: 6, display: "flex", flexWrap: "wrap", gap: 6 }}>
+                      {Object.entries(settings.registrationParsed.headersRedacted || {}).map(([k, v]) => (
+                        <span key={k} style={{ background: "#edf2f7", padding: "4px 8px", borderRadius: 6, fontSize: 12 }}>{k}: {v}</span>
+                      ))}
+                    </div>
+                  </div>
+                  <div style={{ gridColumn: "1 / -1" }}>Body Fields:
+                    <div style={{ marginTop: 6, display: "flex", flexWrap: "wrap", gap: 6 }}>
+                      {(settings.registrationParsed.bodyKeys || []).map((k) => (
+                        <span key={k} style={{ background: "#eef2ff", padding: "4px 8px", borderRadius: 6, fontSize: 12 }}>{k}</span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div style={{ marginTop: 12 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <label style={{ display: "block", color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Registration Fields</label>
+                {settings.registrationParsed && (!((settings as any).registrationFields) || ((settings as any).registrationFields || []).length === 0) && (settings.registrationParsed.bodyKeys || []).length > 0 && (
+                  <button
+                    onClick={() => {
+                      if ((settings as any).registrationFields && (settings as any).registrationFields.length > 0) return;
+                      const keys = settings.registrationParsed?.bodyKeys || [];
+                      const fields = keys.map((k) => ({
+                        key: k,
+                        label: k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+                        required: true,
+                        type: /email/i.test(k) ? "email" : /phone/i.test(k) ? "phone" : "text",
+                      }));
+                      setSettings({ ...settings, registrationFields: fields } as any);
+                    }}
+                    style={{ padding: "6px 10px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}
+                  >Use parsed fields</button>
+                )}
+              </div>
+              <div style={{ display: "grid", gap: 8 }}>
+                {(((settings as any).registrationFields) || []).map((f: any, idx: number) => (
+                  <div key={idx} style={{ display: "grid", gridTemplateColumns: "2fr 2fr 1fr 1fr auto", gap: 8, alignItems: "center" }}>
+                    <input value={f.key} onChange={(e) => {
+                      const arr = [ ...((settings as any).registrationFields || []) ];
+                      arr[idx] = { ...arr[idx], key: e.target.value };
+                      setSettings({ ...settings, registrationFields: arr } as any);
+                    }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="key" />
+                    <input value={f.label} onChange={(e) => {
+                      const arr = [ ...((settings as any).registrationFields || []) ];
+                      arr[idx] = { ...arr[idx], label: e.target.value };
+                      setSettings({ ...settings, registrationFields: arr } as any);
+                    }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="label" />
+                    <select value={f.type} onChange={(e) => {
+                      const arr = [ ...((settings as any).registrationFields || []) ];
+                      arr[idx] = { ...arr[idx], type: e.target.value };
+                      setSettings({ ...settings, registrationFields: arr } as any);
+                    }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }}>
+                      <option value="text">text</option>
+                      <option value="email">email</option>
+                      <option value="phone">phone</option>
+                      <option value="select">select</option>
+                      <option value="checkbox">checkbox</option>
+                    </select>
+                    <label style={{ display: "flex", alignItems: "center", gap: 6, color: "#4a5568", fontSize: 13 }}>
+                      <input type="checkbox" checked={!!f.required} onChange={(e) => {
+                        const arr = [ ...((settings as any).registrationFields || []) ];
+                        arr[idx] = { ...arr[idx], required: e.target.checked };
+                        setSettings({ ...settings, registrationFields: arr } as any);
+                      }} /> required
+                    </label>
+                    <button onClick={() => {
+                      const arr = [ ...((settings as any).registrationFields || []) ];
+                      arr.splice(idx, 1);
+                      setSettings({ ...settings, registrationFields: arr } as any);
+                    }} style={{ padding: "6px 10px", background: "#ef4444", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}>Remove</button>
+                  </div>
+                ))}
+                <div>
+                  <button onClick={() => {
+                    const arr = [ ...((settings as any).registrationFields || []) ];
+                    arr.push({ key: "", label: "", required: true, type: "text" });
+                    setSettings({ ...settings, registrationFields: arr } as any);
+                  }} style={{ padding: "8px 12px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 13 }}>Add field</button>
+                </div>
+              </div>
             </div>
             <div style={{ color: "#718096", fontSize: 12 }}>
               {registrationOpen ? "Collapse" : "Expand"}
@@ -674,7 +773,7 @@ const OnboardingSettingsSection: React.FC = () => {
               )}
             </div>
 
-            {/* Canonical registration cURL command */}
+          {/* Canonical registration cURL command */}
             <div>
               <label
                 style={{
@@ -1042,6 +1141,99 @@ const OnboardingSettingsSection: React.FC = () => {
               )}
             </div>
 
+            {((settings as any).authParsed) && (
+              <div style={{ marginTop: 12, padding: 12, border: "1px solid #e2e8f0", borderRadius: 8 }}>
+                <div style={{ fontWeight: 600, color: "#2d3748", marginBottom: 8 }}>Parsed Summary</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  <div>Method: {(settings as any).authParsed?.method}</div>
+                  <div>Content-Type: {(settings as any).authParsed?.contentType}</div>
+                  <div style={{ gridColumn: "1 / -1" }}>URL: {(settings as any).authParsed?.url || ""}</div>
+                  <div style={{ gridColumn: "1 / -1" }}>Headers:
+                    <div style={{ marginTop: 6, display: "flex", flexWrap: "wrap", gap: 6 }}>
+                      {Object.entries(((settings as any).authParsed?.headersRedacted || {})).map(([k, v]) => (
+                        <span key={k} style={{ background: "#edf2f7", padding: "4px 8px", borderRadius: 6, fontSize: 12 }}>{k}: {v}</span>
+                      ))}
+                    </div>
+                  </div>
+                  <div style={{ gridColumn: "1 / -1" }}>Body Fields:
+                    <div style={{ marginTop: 6, display: "flex", flexWrap: "wrap", gap: 6 }}>
+                      {(((settings as any).authParsed?.bodyKeys || [])).map((k: string) => (
+                        <span key={k} style={{ background: "#eef2ff", padding: "4px 8px", borderRadius: 6, fontSize: 12 }}>{k}</span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div style={{ marginTop: 12 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <label style={{ display: "block", color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Authentication Fields</label>
+                {((settings as any).authParsed) && (!((settings as any).authFields) || ((settings as any).authFields || []).length === 0) && (((settings as any).authParsed?.bodyKeys || []).length > 0) && (
+                  <button
+                    onClick={() => {
+                      if ((settings as any).authFields && (settings as any).authFields.length > 0) return;
+                      const keys = (settings as any).authParsed?.bodyKeys || [];
+                      const fields = keys.map((k: string) => ({
+                        key: k,
+                        label: k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+                        required: true,
+                        type: /email/i.test(k) ? "email" : /phone/i.test(k) ? "phone" : "text",
+                      }));
+                      setSettings({ ...settings, authFields: fields } as any);
+                    }}
+                    style={{ padding: "6px 10px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}
+                  >Use parsed fields</button>
+                )}
+              </div>
+              <div style={{ display: "grid", gap: 8 }}>
+                {(((settings as any).authFields) || []).map((f: any, idx: number) => (
+                  <div key={idx} style={{ display: "grid", gridTemplateColumns: "2fr 2fr 1fr 1fr auto", gap: 8, alignItems: "center" }}>
+                    <input value={f.key} onChange={(e) => {
+                      const arr = [ ...((settings as any).authFields || []) ];
+                      arr[idx] = { ...arr[idx], key: e.target.value };
+                      setSettings({ ...settings, authFields: arr } as any);
+                    }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="key" />
+                    <input value={f.label} onChange={(e) => {
+                      const arr = [ ...((settings as any).authFields || []) ];
+                      arr[idx] = { ...arr[idx], label: e.target.value };
+                      setSettings({ ...settings, authFields: arr } as any);
+                    }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="label" />
+                    <select value={f.type} onChange={(e) => {
+                      const arr = [ ...((settings as any).authFields || []) ];
+                      arr[idx] = { ...arr[idx], type: e.target.value };
+                      setSettings({ ...settings, authFields: arr } as any);
+                    }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }}>
+                      <option value="text">text</option>
+                      <option value="email">email</option>
+                      <option value="phone">phone</option>
+                      <option value="select">select</option>
+                      <option value="checkbox">checkbox</option>
+                    </select>
+                    <label style={{ display: "flex", alignItems: "center", gap: 6, color: "#4a5568", fontSize: 13 }}>
+                      <input type="checkbox" checked={!!f.required} onChange={(e) => {
+                        const arr = [ ...((settings as any).authFields || []) ];
+                        arr[idx] = { ...arr[idx], required: e.target.checked };
+                        setSettings({ ...settings, authFields: arr } as any);
+                      }} /> required
+                    </label>
+                    <button onClick={() => {
+                      const arr = [ ...((settings as any).authFields || []) ];
+                      arr.splice(idx, 1);
+                      setSettings({ ...settings, authFields: arr } as any);
+                    }} style={{ padding: "6px 10px", background: "#ef4444", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}>Remove</button>
+                  </div>
+                ))}
+                <div>
+                  <button onClick={() => {
+                    const arr = [ ...((settings as any).authFields || []) ];
+                    arr.push({ key: "", label: "", required: true, type: "text" });
+                    setSettings({ ...settings, authFields: arr } as any);
+                  }} style={{ padding: "8px 12px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 13 }}>Add field</button>
+                </div>
+              </div>
+            </div>
+
             {/* Canonical authentication cURL command */}
             <div>
               <label
@@ -1314,6 +1506,99 @@ const OnboardingSettingsSection: React.FC = () => {
                   </div>
                 </div>
               )}
+            </div>
+
+            {settings.initialParsed && (
+              <div style={{ marginTop: 12, padding: 12, border: "1px solid #e2e8f0", borderRadius: 8 }}>
+                <div style={{ fontWeight: 600, color: "#2d3748", marginBottom: 8 }}>Parsed Summary</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                  <div>Method: {settings.initialParsed.method}</div>
+                  <div>Content-Type: {settings.initialParsed.contentType}</div>
+                  <div style={{ gridColumn: "1 / -1" }}>URL: {settings.initialParsed.url || ""}</div>
+                  <div style={{ gridColumn: "1 / -1" }}>Headers:
+                    <div style={{ marginTop: 6, display: "flex", flexWrap: "wrap", gap: 6 }}>
+                      {Object.entries(settings.initialParsed.headersRedacted || {}).map(([k, v]) => (
+                        <span key={k} style={{ background: "#edf2f7", padding: "4px 8px", borderRadius: 6, fontSize: 12 }}>{k}: {v}</span>
+                      ))}
+                    </div>
+                  </div>
+                  <div style={{ gridColumn: "1 / -1" }}>Body Fields:
+                    <div style={{ marginTop: 6, display: "flex", flexWrap: "wrap", gap: 6 }}>
+                      {(settings.initialParsed.bodyKeys || []).map((k) => (
+                        <span key={k} style={{ background: "#eef2ff", padding: "4px 8px", borderRadius: 6, fontSize: 12 }}>{k}</span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div style={{ marginTop: 12 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <label style={{ display: "block", color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Initial Setup Fields</label>
+                {settings.initialParsed && (!((settings as any).initialFields) || ((settings as any).initialFields || []).length === 0) && (settings.initialParsed.bodyKeys || []).length > 0 && (
+                  <button
+                    onClick={() => {
+                      if ((settings as any).initialFields && (settings as any).initialFields.length > 0) return;
+                      const keys = settings.initialParsed?.bodyKeys || [];
+                      const fields = keys.map((k) => ({
+                        key: k,
+                        label: k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+                        required: true,
+                        type: /email/i.test(k) ? "email" : /phone/i.test(k) ? "phone" : "text",
+                      }));
+                      setSettings({ ...settings, initialFields: fields } as any);
+                    }}
+                    style={{ padding: "6px 10px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}
+                  >Use parsed fields</button>
+                )}
+              </div>
+              <div style={{ display: "grid", gap: 8 }}>
+                {(((settings as any).initialFields) || []).map((f: any, idx: number) => (
+                  <div key={idx} style={{ display: "grid", gridTemplateColumns: "2fr 2fr 1fr 1fr auto", gap: 8, alignItems: "center" }}>
+                    <input value={f.key} onChange={(e) => {
+                      const arr = [ ...((settings as any).initialFields || []) ];
+                      arr[idx] = { ...arr[idx], key: e.target.value };
+                      setSettings({ ...settings, initialFields: arr } as any);
+                    }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="key" />
+                    <input value={f.label} onChange={(e) => {
+                      const arr = [ ...((settings as any).initialFields || []) ];
+                      arr[idx] = { ...arr[idx], label: e.target.value };
+                      setSettings({ ...settings, initialFields: arr } as any);
+                    }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="label" />
+                    <select value={f.type} onChange={(e) => {
+                      const arr = [ ...((settings as any).initialFields || []) ];
+                      arr[idx] = { ...arr[idx], type: e.target.value };
+                      setSettings({ ...settings, initialFields: arr } as any);
+                    }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }}>
+                      <option value="text">text</option>
+                      <option value="email">email</option>
+                      <option value="phone">phone</option>
+                      <option value="select">select</option>
+                      <option value="checkbox">checkbox</option>
+                    </select>
+                    <label style={{ display: "flex", alignItems: "center", gap: 6, color: "#4a5568", fontSize: 13 }}>
+                      <input type="checkbox" checked={!!f.required} onChange={(e) => {
+                        const arr = [ ...((settings as any).initialFields || []) ];
+                        arr[idx] = { ...arr[idx], required: e.target.checked };
+                        setSettings({ ...settings, initialFields: arr } as any);
+                      }} /> required
+                    </label>
+                    <button onClick={() => {
+                      const arr = [ ...((settings as any).initialFields || []) ];
+                      arr.splice(idx, 1);
+                      setSettings({ ...settings, initialFields: arr } as any);
+                    }} style={{ padding: "6px 10px", background: "#ef4444", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}>Remove</button>
+                  </div>
+                ))}
+                <div>
+                  <button onClick={() => {
+                    const arr = [ ...((settings as any).initialFields || []) ];
+                    arr.push({ key: "", label: "", required: true, type: "text" });
+                    setSettings({ ...settings, initialFields: arr } as any);
+                  }} style={{ padding: "8px 12px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 13 }}>Add field</button>
+                </div>
+              </div>
             </div>
 
             {/* Canonical initial setup cURL command */}

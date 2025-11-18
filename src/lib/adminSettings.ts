@@ -20,6 +20,14 @@ export interface OnboardingField {
   options?: string[];
 }
 
+export interface ParsedCurlSummary {
+  method: string;
+  url?: string | null;
+  contentType?: string;
+  headersRedacted?: Record<string, string>;
+  bodyKeys?: string[];
+}
+
 export interface OnboardingSettings {
   enabled: boolean;
   apiBaseUrl?: string;
@@ -37,6 +45,12 @@ export interface OnboardingSettings {
   initialSetupDocsUrl?: string;
   initialSetupCurlCommand?: string;
   fields?: OnboardingField[];
+  registrationFields?: OnboardingField[];
+  authFields?: OnboardingField[];
+  initialFields?: OnboardingField[];
+  registrationParsed?: ParsedCurlSummary;
+  authParsed?: ParsedCurlSummary;
+  initialParsed?: ParsedCurlSummary;
   rateLimit?: { perMinute: number };
   idempotencyKeyField?: string;
 }
@@ -127,6 +141,12 @@ export const DEFAULT_ADMIN_SETTINGS: Omit<AdminSettings, "_id" | "adminId" | "em
       { key: "lastName", label: "Last Name", required: true, type: "text" },
       { key: "company", label: "Company", required: false, type: "text" },
     ],
+    registrationFields: [],
+    authFields: [],
+    initialFields: [],
+    registrationParsed: undefined,
+    authParsed: undefined,
+    initialParsed: undefined,
     rateLimit: { perMinute: 30 },
     idempotencyKeyField: "email",
   },

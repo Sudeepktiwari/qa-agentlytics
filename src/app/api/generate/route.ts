@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import { querySimilarChunks } from "@/lib/chroma";
+import { parseCurlRegistrationSpec, redactHeadersForLog } from "@/lib/curl";
 import { verifyAdminAccessFromCookie } from "@/lib/auth";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -67,10 +68,30 @@ export async function POST(request: NextRequest) {
     const curlMatch = raw.match(/\bcurl\b[\s\S]*$/);
     const curl = (curlMatch ? curlMatch[0] : raw).trim();
 
-    return NextResponse.json(
-      { curl, hits: chunks.length, success: true },
-      { status: 200, headers: corsHeaders }
-    );
+    try {
+      const p = parseCurlRegistrationSpec(curl);
+      const bodyKeys = p.dataJson
+        ? Object.keys(p.dataJson)
+        : p.dataForm
+        ? Object.keys(p.dataForm)
+        : [];
+      const parsed = {
+        method: p.method,
+        url: p.url,
+        contentType: p.contentType,
+        headersRedacted: redactHeadersForLog(p.headers),
+        bodyKeys,
+      };
+      return NextResponse.json(
+        { curl, hits: chunks.length, success: true, parsed },
+        { status: 200, headers: corsHeaders }
+      );
+    } catch {
+      return NextResponse.json(
+        { curl, hits: chunks.length, success: true },
+        { status: 200, headers: corsHeaders }
+      );
+    }
   } catch (error: any) {
     console.error("❌ /api/generate error:", error);
     return NextResponse.json(
