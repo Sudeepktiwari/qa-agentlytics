@@ -1,4 +1,4 @@
-import { getAdminSettings, OnboardingSettings } from "@/lib/adminSettings";
+import { getAdminSettings, OnboardingSettings, OnboardingField } from "@/lib/adminSettings";
 import { parseCurlRegistrationSpec, buildBodyFromCurl, redactHeadersForLog } from "@/lib/curl";
 import { createOrUpdateLead } from "@/lib/leads";
 import { getChunksByPageUrl, querySimilarChunks } from "@/lib/chroma";
@@ -685,3 +685,40 @@ export const onboardingService = {
     }
   },
 };
+
+export async function deriveFieldsFromDocsForAdmin(adminId: string, docsUrl?: string): Promise<OnboardingField[]> {
+  let chunks: string[] = [];
+  try {
+    if (docsUrl) {
+      const pageChunks = await getChunksByPageUrl(adminId, docsUrl);
+      if (Array.isArray(pageChunks) && pageChunks.length > 0) {
+        chunks = pageChunks as string[];
+      }
+    }
+  } catch {}
+  if (!chunks || chunks.length === 0) {
+    try {
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      const embedResp = await openai.embeddings.create({
+        input: ["registration required fields and content-type"],
+        model: "text-embedding-3-small",
+      });
+      const embedding = embedResp.data[0].embedding as number[];
+      const similar = await querySimilarChunks(embedding, 5, adminId);
+      chunks = similar as string[];
+    } catch {}
+  }
+  const keys = new Set<string>();
+  for (const chunk of chunks) {
+    const text = (chunk || "").slice(0, 2000);
+    const jsonKeyMatches = [...text.matchAll(/\b["']([a-zA-Z_][a-zA-Z0-9_\-]*)["']\s*:/g)];
+    for (const m of jsonKeyMatches) keys.add(m[1]);
+    const paramMatches = [...text.matchAll(/\b([a-zA-Z_][a-zA-Z0-9_\-]*)\s*=/g)];
+    for (const m of paramMatches) keys.add(m[1]);
+  }
+  const toType = (k: string): OnboardingField["type"] => (/email/i.test(k) ? "email" : /phone/i.test(k) ? "phone" : "text");
+  const toLabel = (k: string) => k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  return Array.from(keys)
+    .slice(0, 50)
+    .map((k) => ({ key: k, label: toLabel(k), required: true, type: toType(k) }));
+}
