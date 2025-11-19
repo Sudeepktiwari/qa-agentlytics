@@ -305,9 +305,9 @@ export async function PUT(request: NextRequest) {
 
       // Fill fields from docs only when undefined (first-run)
       {
-        const needBody = typeof merged.registrationFields === "undefined";
-        const needHeaders = typeof (merged as any).registrationHeaders === "undefined";
-        const needResp = typeof (merged as any).registrationResponseFields === "undefined";
+        const needBody = !Array.isArray(merged.registrationFields) || (merged.registrationFields || []).length === 0;
+        const needHeaders = !Array.isArray((merged as any).registrationHeaders) || (((merged as any).registrationHeaders || []).length === 0);
+        const needResp = !Array.isArray((merged as any).registrationResponseFields) || (((merged as any).registrationResponseFields || []).length === 0);
         if (needBody || needHeaders || needResp) {
           try {
             const spec = await deriveSpecFromDocsForAdmin(adminId, merged.docsUrl, "registration", merged.curlCommand);
@@ -330,9 +330,9 @@ export async function PUT(request: NextRequest) {
         }
       }
       {
-        const needBody = typeof merged.authFields === "undefined";
-        const needHeaders = typeof (merged as any).authHeaders === "undefined";
-        const needResp = typeof (merged as any).authResponseFields === "undefined";
+        const needBody = !Array.isArray(merged.authFields) || ((merged.authFields || []).length === 0);
+        const needHeaders = !Array.isArray((merged as any).authHeaders) || (((merged as any).authHeaders || []).length === 0);
+        const needResp = !Array.isArray((merged as any).authResponseFields) || (((merged as any).authResponseFields || []).length === 0);
         if (needBody || needHeaders || needResp) {
           try {
             const spec = await deriveSpecFromDocsForAdmin(adminId, (merged as any).authDocsUrl, "auth", (merged as any).authCurlCommand as string);
@@ -355,9 +355,9 @@ export async function PUT(request: NextRequest) {
         }
       }
       {
-        const needBody = typeof merged.initialFields === "undefined";
-        const needHeaders = typeof (merged as any).initialHeaders === "undefined";
-        const needResp = typeof (merged as any).initialResponseFields === "undefined";
+        const needBody = !Array.isArray(merged.initialFields) || ((merged.initialFields || []).length === 0);
+        const needHeaders = !Array.isArray((merged as any).initialHeaders) || (((merged as any).initialHeaders || []).length === 0);
+        const needResp = !Array.isArray((merged as any).initialResponseFields) || (((merged as any).initialResponseFields || []).length === 0);
         if (needBody || needHeaders || needResp) {
           try {
             const spec = await deriveSpecFromDocsForAdmin(adminId, merged.initialSetupDocsUrl, "initial", merged.initialSetupCurlCommand);
