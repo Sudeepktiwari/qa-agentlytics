@@ -83,6 +83,39 @@ const OnboardingSettingsSection: React.FC = () => {
           if (ob.docsUrl) setDocUrl(ob.docsUrl);
           if ((ob as any).authDocsUrl) setAuthDocUrl((ob as any).authDocsUrl);
           if (ob.initialSetupDocsUrl) setInitialDocUrl(ob.initialSetupDocsUrl);
+          try {
+            console.groupCollapsed("[Onboarding] AI-derived registration spec (load)");
+            console.log({
+              docsUrl: ob.docsUrl || "",
+              headers: (ob as any).registrationHeaders || [],
+              body: (ob as any).registrationFields || [],
+              response: (ob as any).registrationResponseFields || [],
+              parsedBodyKeys: (ob as any).registrationParsed?.bodyKeys || [],
+            });
+            console.groupEnd();
+          } catch {}
+          try {
+            console.groupCollapsed("[Onboarding] AI-derived auth spec (load)");
+            console.log({
+              docsUrl: (ob as any).authDocsUrl || "",
+              headers: (ob as any).authHeaders || [],
+              body: (ob as any).authFields || [],
+              response: (ob as any).authResponseFields || [],
+              parsedBodyKeys: (ob as any).authParsed?.bodyKeys || [],
+            });
+            console.groupEnd();
+          } catch {}
+          try {
+            console.groupCollapsed("[Onboarding] AI-derived initial setup spec (load)");
+            console.log({
+              docsUrl: ob.initialSetupDocsUrl || "",
+              headers: (ob as any).initialHeaders || [],
+              body: (ob as any).initialFields || [],
+              response: (ob as any).initialResponseFields || [],
+              parsedBodyKeys: (ob as any).initialParsed?.bodyKeys || [],
+            });
+            console.groupEnd();
+          } catch {}
         } else {
           setError(data.error || "Failed to load onboarding settings");
         }
@@ -159,6 +192,34 @@ const OnboardingSettingsSection: React.FC = () => {
         setRegenRegistration(false);
         setRegenAuth(false);
         setRegenInitial(false);
+        try {
+          const ob = data.onboarding || {};
+          console.groupCollapsed("[Onboarding] AI-derived specs (save)");
+          console.log({
+            registration: {
+              docsUrl: ob.docsUrl || "",
+              headers: (ob as any).registrationHeaders || [],
+              body: (ob as any).registrationFields || [],
+              response: (ob as any).registrationResponseFields || [],
+              parsedBodyKeys: (ob as any).registrationParsed?.bodyKeys || [],
+            },
+            auth: {
+              docsUrl: (ob as any).authDocsUrl || "",
+              headers: (ob as any).authHeaders || [],
+              body: (ob as any).authFields || [],
+              response: (ob as any).authResponseFields || [],
+              parsedBodyKeys: (ob as any).authParsed?.bodyKeys || [],
+            },
+            initial: {
+              docsUrl: ob.initialSetupDocsUrl || "",
+              headers: (ob as any).initialHeaders || [],
+              body: (ob as any).initialFields || [],
+              response: (ob as any).initialResponseFields || [],
+              parsedBodyKeys: (ob as any).initialParsed?.bodyKeys || [],
+            },
+          });
+          console.groupEnd();
+        } catch {}
         setTimeout(() => setSuccess(null), 2500);
       } else {
         setError(data.error || "Failed to save onboarding settings");
@@ -563,6 +624,11 @@ const OnboardingSettingsSection: React.FC = () => {
                       const next: any = { ...settings };
                       delete next.registrationFields;
                       setSettings(next as any);
+                      try {
+                        console.groupCollapsed("[Onboarding] Regenerate registration spec");
+                        console.log({ docsUrl: docUrl, curlCommand: settings.curlCommand || "" });
+                        console.groupEnd();
+                      } catch {}
                     }}
                     style={{ padding: "6px 10px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}
                   >Regenerate from docs</button>
@@ -1240,6 +1306,11 @@ const OnboardingSettingsSection: React.FC = () => {
                       const next: any = { ...settings };
                       delete next.authFields;
                       setSettings(next as any);
+                      try {
+                        console.groupCollapsed("[Onboarding] Regenerate auth spec");
+                        console.log({ docsUrl: authDocUrl, curlCommand: (settings as any).authCurlCommand || "" });
+                        console.groupEnd();
+                      } catch {}
                     }}
                     style={{ padding: "6px 10px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}
                   >Regenerate from docs</button>
@@ -1629,6 +1700,11 @@ const OnboardingSettingsSection: React.FC = () => {
                       const next: any = { ...settings };
                       delete next.initialFields;
                       setSettings(next as any);
+                      try {
+                        console.groupCollapsed("[Onboarding] Regenerate initial setup spec");
+                        console.log({ docsUrl: initialDocUrl, curlCommand: settings.initialSetupCurlCommand || "" });
+                        console.groupEnd();
+                      } catch {}
                     }}
                     style={{ padding: "6px 10px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}
                   >Regenerate from docs</button>
