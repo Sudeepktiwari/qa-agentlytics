@@ -722,18 +722,54 @@ const OnboardingSettingsSection: React.FC = () => {
               </div>
               <div style={{ marginTop: 10 }}>
                 <div style={{ color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Registration Headers</div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                <div style={{ display: "grid", gap: 8 }}>
                   {(((settings as any).registrationHeaders) || []).map((h: string, i: number) => (
-                    <span key={h + i} style={{ background: "#edf2f7", padding: "4px 8px", borderRadius: 6, fontSize: 12 }}>{h}</span>
+                    <div key={h + i} style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <input value={h} onChange={(e) => {
+                        const arr = [ ...(((settings as any).registrationHeaders) || []) ];
+                        arr[i] = e.target.value;
+                        setSettings({ ...settings, registrationHeaders: arr } as any);
+                      }} style={{ flex: 1, padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="Header name (e.g., x-apikey)" />
+                      <button onClick={() => {
+                        const arr = [ ...(((settings as any).registrationHeaders) || []) ];
+                        arr.splice(i, 1);
+                        setSettings({ ...settings, registrationHeaders: arr } as any);
+                      }} style={{ padding: "6px 10px", background: "#ef4444", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}>Remove</button>
+                    </div>
                   ))}
+                  <div>
+                    <button onClick={() => {
+                      const arr = [ ...(((settings as any).registrationHeaders) || []) ];
+                      arr.push("");
+                      setSettings({ ...settings, registrationHeaders: arr } as any);
+                    }} style={{ padding: "8px 12px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 13 }}>Add header</button>
+                  </div>
                 </div>
               </div>
               <div style={{ marginTop: 10 }}>
                 <div style={{ color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Registration Response Fields</div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                <div style={{ display: "grid", gap: 8 }}>
                   {(((settings as any).registrationResponseFields) || []).map((k: string, i: number) => (
-                    <span key={k + i} style={{ background: "#eef2ff", padding: "4px 8px", borderRadius: 6, fontSize: 12 }}>{k}</span>
+                    <div key={k + i} style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <input value={k} onChange={(e) => {
+                        const arr = [ ...(((settings as any).registrationResponseFields) || []) ];
+                        arr[i] = e.target.value;
+                        setSettings({ ...settings, registrationResponseFields: arr } as any);
+                      }} style={{ flex: 1, padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="Response key (e.g., user.id)" />
+                      <button onClick={() => {
+                        const arr = [ ...(((settings as any).registrationResponseFields) || []) ];
+                        arr.splice(i, 1);
+                        setSettings({ ...settings, registrationResponseFields: arr } as any);
+                      }} style={{ padding: "6px 10px", background: "#ef4444", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}>Remove</button>
+                    </div>
                   ))}
+                  <div>
+                    <button onClick={() => {
+                      const arr = [ ...(((settings as any).registrationResponseFields) || []) ];
+                      arr.push("");
+                      setSettings({ ...settings, registrationResponseFields: arr } as any);
+                    }} style={{ padding: "8px 12px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 13 }}>Add response key</button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1429,18 +1465,54 @@ const OnboardingSettingsSection: React.FC = () => {
                 </div>
                 <div style={{ marginTop: 10 }}>
                   <div style={{ color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Auth Headers</div>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  <div style={{ display: "grid", gap: 8 }}>
                     {(((settings as any).authHeaders) || []).map((h: string, i: number) => (
-                      <span key={h + i} style={{ background: "#edf2f7", padding: "4px 8px", borderRadius: 6, fontSize: 12 }}>{h}</span>
+                      <div key={h + i} style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                        <input value={h} onChange={(e) => {
+                          const arr = [ ...(((settings as any).authHeaders) || []) ];
+                          arr[i] = e.target.value;
+                          setSettings({ ...settings, authHeaders: arr } as any);
+                        }} style={{ flex: 1, padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="Header name (e.g., authorization)" />
+                        <button onClick={() => {
+                          const arr = [ ...(((settings as any).authHeaders) || []) ];
+                          arr.splice(i, 1);
+                          setSettings({ ...settings, authHeaders: arr } as any);
+                        }} style={{ padding: "6px 10px", background: "#ef4444", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}>Remove</button>
+                      </div>
                     ))}
+                    <div>
+                      <button onClick={() => {
+                        const arr = [ ...(((settings as any).authHeaders) || []) ];
+                        arr.push("");
+                        setSettings({ ...settings, authHeaders: arr } as any);
+                      }} style={{ padding: "8px 12px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 13 }}>Add header</button>
+                    </div>
                   </div>
                 </div>
                 <div style={{ marginTop: 10 }}>
                   <div style={{ color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Auth Response Fields</div>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  <div style={{ display: "grid", gap: 8 }}>
                     {(((settings as any).authResponseFields) || []).map((k: string, i: number) => (
-                      <span key={k + i} style={{ background: "#eef2ff", padding: "4px 8px", borderRadius: 6, fontSize: 12 }}>{k}</span>
+                      <div key={k + i} style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                        <input value={k} onChange={(e) => {
+                          const arr = [ ...(((settings as any).authResponseFields) || []) ];
+                          arr[i] = e.target.value;
+                          setSettings({ ...settings, authResponseFields: arr } as any);
+                        }} style={{ flex: 1, padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="Response key (e.g., token)" />
+                        <button onClick={() => {
+                          const arr = [ ...(((settings as any).authResponseFields) || []) ];
+                          arr.splice(i, 1);
+                          setSettings({ ...settings, authResponseFields: arr } as any);
+                        }} style={{ padding: "6px 10px", background: "#ef4444", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}>Remove</button>
+                      </div>
                     ))}
+                    <div>
+                      <button onClick={() => {
+                        const arr = [ ...(((settings as any).authResponseFields) || []) ];
+                        arr.push("");
+                        setSettings({ ...settings, authResponseFields: arr } as any);
+                      }} style={{ padding: "8px 12px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 13 }}>Add response key</button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1849,18 +1921,54 @@ const OnboardingSettingsSection: React.FC = () => {
                 </div>
                 <div style={{ marginTop: 10 }}>
                   <div style={{ color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Initial Setup Headers</div>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  <div style={{ display: "grid", gap: 8 }}>
                     {(((settings as any).initialHeaders) || []).map((h: string, i: number) => (
-                      <span key={h + i} style={{ background: "#edf2f7", padding: "4px 8px", borderRadius: 6, fontSize: 12 }}>{h}</span>
+                      <div key={h + i} style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                        <input value={h} onChange={(e) => {
+                          const arr = [ ...(((settings as any).initialHeaders) || []) ];
+                          arr[i] = e.target.value;
+                          setSettings({ ...settings, initialHeaders: arr } as any);
+                        }} style={{ flex: 1, padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="Header name (e.g., x-apikey)" />
+                        <button onClick={() => {
+                          const arr = [ ...(((settings as any).initialHeaders) || []) ];
+                          arr.splice(i, 1);
+                          setSettings({ ...settings, initialHeaders: arr } as any);
+                        }} style={{ padding: "6px 10px", background: "#ef4444", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}>Remove</button>
+                      </div>
                     ))}
+                    <div>
+                      <button onClick={() => {
+                        const arr = [ ...(((settings as any).initialHeaders) || []) ];
+                        arr.push("");
+                        setSettings({ ...settings, initialHeaders: arr } as any);
+                      }} style={{ padding: "8px 12px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 13 }}>Add header</button>
+                    </div>
                   </div>
                 </div>
                 <div style={{ marginTop: 10 }}>
                   <div style={{ color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Initial Setup Response Fields</div>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  <div style={{ display: "grid", gap: 8 }}>
                     {(((settings as any).initialResponseFields) || []).map((k: string, i: number) => (
-                      <span key={k + i} style={{ background: "#eef2ff", padding: "4px 8px", borderRadius: 6, fontSize: 12 }}>{k}</span>
+                      <div key={k + i} style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                        <input value={k} onChange={(e) => {
+                          const arr = [ ...(((settings as any).initialResponseFields) || []) ];
+                          arr[i] = e.target.value;
+                          setSettings({ ...settings, initialResponseFields: arr } as any);
+                        }} style={{ flex: 1, padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="Response key (e.g., setup.id)" />
+                        <button onClick={() => {
+                          const arr = [ ...(((settings as any).initialResponseFields) || []) ];
+                          arr.splice(i, 1);
+                          setSettings({ ...settings, initialResponseFields: arr } as any);
+                        }} style={{ padding: "6px 10px", background: "#ef4444", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}>Remove</button>
+                      </div>
                     ))}
+                    <div>
+                      <button onClick={() => {
+                        const arr = [ ...(((settings as any).initialResponseFields) || []) ];
+                        arr.push("");
+                        setSettings({ ...settings, initialResponseFields: arr } as any);
+                      }} style={{ padding: "8px 12px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 13 }}>Add response key</button>
+                    </div>
                   </div>
                 </div>
               </div>
