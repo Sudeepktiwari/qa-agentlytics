@@ -57,6 +57,8 @@ export async function GET(request: NextRequest) {
       const t = s.trim();
       return t.replace(/^`+|`+$/g, "").replace(/^"+|"+$/g, "").replace(/^'+|'+$/g, "");
     };
+    const docsUrlQ = sanitize(urlObj.searchParams.get("docsUrl") || undefined);
+    const curlQ = sanitize(urlObj.searchParams.get("curl") || undefined);
     const docsUrlSan = sanitize(onboarding.docsUrl);
     const authDocsUrlSan = sanitize((onboarding as any).authDocsUrl);
     const initialDocsUrlSan = sanitize(onboarding.initialSetupDocsUrl);
@@ -72,12 +74,12 @@ export async function GET(request: NextRequest) {
       try {
         const spec = await deriveSpecFromDocsForAdmin(
           adminId,
-          derive === "registration" ? docsUrlSan : derive === "auth" ? authDocsUrlSan : initialDocsUrlSan,
+          derive === "registration" ? (docsUrlQ || docsUrlSan) : derive === "auth" ? (docsUrlQ || authDocsUrlSan) : (docsUrlQ || initialDocsUrlSan),
           derive as any,
-          derive === "registration" ? curlSan : derive === "auth" ? (authCurlSan as any) : initialCurlSan
+          derive === "registration" ? (curlQ || curlSan) : derive === "auth" ? (curlQ || (authCurlSan as any)) : (curlQ || initialCurlSan)
         );
         if (debug) {
-          debugTrace.push({ step: `derive_${derive}`, docsUrl: derive === "registration" ? docsUrlSan : derive === "auth" ? authDocsUrlSan : initialDocsUrlSan, bodyCount: spec.body.length, headersCount: spec.headers.length, responseCount: spec.response.length, previewBody: spec.body.slice(0, 5) });
+          debugTrace.push({ step: `derive_${derive}`, docsUrl: derive === "registration" ? (docsUrlQ || docsUrlSan) : derive === "auth" ? (docsUrlQ || authDocsUrlSan) : (docsUrlQ || initialDocsUrlSan), bodyCount: spec.body.length, headersCount: spec.headers.length, responseCount: spec.response.length, previewBody: spec.body.slice(0, 5) });
         }
         return NextResponse.json(
           { success: true, spec, ...(debug ? { debug: debugTrace } : {}) },

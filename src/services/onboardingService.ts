@@ -700,7 +700,13 @@ export async function deriveFieldsFromDocsForAdmin(adminId: string, docsUrl?: st
     try {
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
       const embedResp = await openai.embeddings.create({
-        input: ["registration required fields and content-type"],
+        input: [
+          mode === "auth"
+            ? "login authentication request body required fields and content-type"
+            : mode === "initial"
+            ? "initial setup request body required fields including nested keys and headers"
+            : "registration request body required fields and content-type",
+        ],
         model: "text-embedding-3-small",
       });
       const embedding = embedResp.data[0].embedding as number[];

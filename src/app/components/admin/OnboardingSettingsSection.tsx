@@ -640,7 +640,7 @@ const OnboardingSettingsSection: React.FC = () => {
                         console.groupEnd();
                       } catch {}
                       try {
-                        const res = await fetch("/api/admin/onboarding?derive=registration&debug=true", { credentials: "include" });
+                        const res = await fetch(`/api/admin/onboarding?derive=registration&debug=true&docsUrl=${encodeURIComponent(docUrl || "")}&curl=${encodeURIComponent(settings.curlCommand || "")}` , { credentials: "include" });
                         const data = await res.json();
                         if (res.ok && data.success) {
                           const spec = data.spec || { headers: [], body: [], response: [] };
@@ -1348,7 +1348,7 @@ const OnboardingSettingsSection: React.FC = () => {
                         console.groupEnd();
                       } catch {}
                       try {
-                        const res = await fetch("/api/admin/onboarding?derive=auth&debug=true", { credentials: "include" });
+                        const res = await fetch(`/api/admin/onboarding?derive=auth&debug=true&docsUrl=${encodeURIComponent(authDocUrl || "")}&curl=${encodeURIComponent((settings as any).authCurlCommand || "")}` , { credentials: "include" });
                         const data = await res.json();
                         if (res.ok && data.success) {
                           const spec = data.spec || { headers: [], body: [], response: [] };
@@ -1768,7 +1768,7 @@ const OnboardingSettingsSection: React.FC = () => {
                         console.groupEnd();
                       } catch {}
                       try {
-                        const res = await fetch("/api/admin/onboarding?derive=initial&debug=true", { credentials: "include" });
+                        const res = await fetch(`/api/admin/onboarding?derive=initial&debug=true&docsUrl=${encodeURIComponent(initialDocUrl || "")}&curl=${encodeURIComponent(settings.initialSetupCurlCommand || "")}` , { credentials: "include" });
                         const data = await res.json();
                         if (res.ok && data.success) {
                           const spec = data.spec || { headers: [], body: [], response: [] };
