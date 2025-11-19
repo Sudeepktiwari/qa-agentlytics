@@ -354,12 +354,15 @@ export async function PUT(request: NextRequest) {
         };
       }
 
-      // Fill fields from docs only when undefined (first-run)
+      // Fill fields from docs only when undefined (first-run) or when explicitly requested via regen flags
       {
         const needBody = !Array.isArray(merged.registrationFields) || (merged.registrationFields || []).length === 0;
         const needHeaders = !Array.isArray((merged as any).registrationHeaders) || (((merged as any).registrationHeaders || []).length === 0);
         const needResp = !Array.isArray((merged as any).registrationResponseFields) || (((merged as any).registrationResponseFields || []).length === 0);
-        if (needBody || needHeaders || needResp) {
+        const flags = onboardingUpdates as any;
+        const explicit = flags?.regenRegistration === true || flags?.regenAuth === true || flags?.regenInitial === true;
+        const shouldDerive = explicit ? flags?.regenRegistration === true : (needBody || needHeaders || needResp);
+        if (shouldDerive) {
           try {
             const spec = await deriveSpecFromDocsForAdmin(adminId, merged.docsUrl, "registration", merged.curlCommand);
             if (needBody) merged.registrationFields = spec.body;
@@ -368,7 +371,6 @@ export async function PUT(request: NextRequest) {
             if (debugFlag) {
               debugTrace.push({ step: "derive_registration", docsUrl: merged.docsUrl, curlCommand: merged.curlCommand, bodyCount: spec.body.length, headersCount: spec.headers.length, responseCount: spec.response.length, previewBody: spec.body.slice(0, 5) });
             }
-            const flags = onboardingUpdates as any;
             if (flags?.regenRegistration === true) {
               merged.registrationParsed = {
                 ...(merged.registrationParsed || { method: "POST" }),
@@ -381,13 +383,18 @@ export async function PUT(request: NextRequest) {
               };
             }
           } catch {}
+        } else if (debugFlag) {
+          debugTrace.push({ step: "skip_registration", reason: explicit ? "explicit_regen_other_section" : "not_needed" });
         }
       }
       {
         const needBody = !Array.isArray(merged.authFields) || ((merged.authFields || []).length === 0);
         const needHeaders = !Array.isArray((merged as any).authHeaders) || (((merged as any).authHeaders || []).length === 0);
         const needResp = !Array.isArray((merged as any).authResponseFields) || (((merged as any).authResponseFields || []).length === 0);
-        if (needBody || needHeaders || needResp) {
+        const flags2 = onboardingUpdates as any;
+        const explicit2 = flags2?.regenRegistration === true || flags2?.regenAuth === true || flags2?.regenInitial === true;
+        const shouldDerive2 = explicit2 ? flags2?.regenAuth === true : (needBody || needHeaders || needResp);
+        if (shouldDerive2) {
           try {
             const spec = await deriveSpecFromDocsForAdmin(adminId, (merged as any).authDocsUrl, "auth", (merged as any).authCurlCommand as string);
             if (needBody) merged.authFields = spec.body;
@@ -396,7 +403,6 @@ export async function PUT(request: NextRequest) {
             if (debugFlag) {
               debugTrace.push({ step: "derive_auth", docsUrl: (merged as any).authDocsUrl, curlCommand: (merged as any).authCurlCommand, bodyCount: spec.body.length, headersCount: spec.headers.length, responseCount: spec.response.length, previewBody: spec.body.slice(0, 5) });
             }
-            const flags2 = onboardingUpdates as any;
             if (flags2?.regenAuth === true) {
               merged.authParsed = {
                 ...(merged.authParsed || { method: "POST" }),
@@ -409,13 +415,18 @@ export async function PUT(request: NextRequest) {
               } as any;
             }
           } catch {}
+        } else if (debugFlag) {
+          debugTrace.push({ step: "skip_auth", reason: explicit2 ? "explicit_regen_other_section" : "not_needed" });
         }
       }
       {
         const needBody = !Array.isArray(merged.initialFields) || ((merged.initialFields || []).length === 0);
         const needHeaders = !Array.isArray((merged as any).initialHeaders) || (((merged as any).initialHeaders || []).length === 0);
         const needResp = !Array.isArray((merged as any).initialResponseFields) || (((merged as any).initialResponseFields || []).length === 0);
-        if (needBody || needHeaders || needResp) {
+        const flags3 = onboardingUpdates as any;
+        const explicit3 = flags3?.regenRegistration === true || flags3?.regenAuth === true || flags3?.regenInitial === true;
+        const shouldDerive3 = explicit3 ? flags3?.regenInitial === true : (needBody || needHeaders || needResp);
+        if (shouldDerive3) {
           try {
             const spec = await deriveSpecFromDocsForAdmin(adminId, merged.initialSetupDocsUrl, "initial", merged.initialSetupCurlCommand);
             if (needBody) merged.initialFields = spec.body;
@@ -424,7 +435,6 @@ export async function PUT(request: NextRequest) {
             if (debugFlag) {
               debugTrace.push({ step: "derive_initial", docsUrl: merged.initialSetupDocsUrl, curlCommand: merged.initialSetupCurlCommand, bodyCount: spec.body.length, headersCount: spec.headers.length, responseCount: spec.response.length, previewBody: spec.body.slice(0, 5) });
             }
-            const flags3 = onboardingUpdates as any;
             if (flags3?.regenInitial === true) {
               merged.initialParsed = {
                 ...(merged.initialParsed || { method: "POST" }),
@@ -437,6 +447,8 @@ export async function PUT(request: NextRequest) {
               };
             }
           } catch {}
+        } else if (debugFlag) {
+          debugTrace.push({ step: "skip_initial", reason: explicit3 ? "explicit_regen_other_section" : "not_needed" });
         }
       }
     } catch {}
