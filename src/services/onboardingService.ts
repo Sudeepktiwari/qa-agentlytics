@@ -948,8 +948,7 @@ export async function deriveFieldsFromDocsForAdmin(
     .map((c) => ({ c, s: scoreChunk((c || "").slice(0, 2000)) }))
     .sort((a, b) => b.s - a.s)
     .map((x) => x.c);
-  const pick =
-    sorted.length > 0 ? sorted.slice(0, Math.min(sorted.length, 3)) : chunks;
+  const pick = sorted.length > 0 ? sorted : chunks;
   const keys = new Set<string>();
   const addKeysFromText = (text: string) => {
     const t = (text || "").slice(0, 4000);
@@ -1054,8 +1053,7 @@ export async function deriveSpecFromDocsForAdmin(
   const ranked = texts
     .map((t) => ({ t, s: score(t) }))
     .sort((a, b) => b.s - a.s)
-    .map((x) => x.t)
-    .slice(0, Math.min(texts.length, 5));
+    .map((x) => x.t);
 
   let endpointHint = "";
   try {
