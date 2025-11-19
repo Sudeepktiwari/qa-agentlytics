@@ -1057,6 +1057,41 @@ export async function deriveSpecFromDocsForAdmin(
     .sort((a, b) => b.s - a.s)
     .map((x) => x.t);
 
+  // Seed response keys from docs (allow-list for LLM)
+  const respAllowedSeed = new Set<string>();
+  const seedRespFromText = (t: string) => {
+    const hint = /response|returns|200\s*OK|example\s*response/i.test(t);
+    const i = t.indexOf("{");
+    if (i === -1 || !hint) return;
+    try {
+      let d = 0;
+      let s1 = false, s2 = false, s3 = false;
+      let end = -1;
+      for (let j = i; j < t.length; j++) {
+        const ch = t[j];
+        if (ch === "'" && !s2 && !s3) s1 = !s1;
+        else if (ch === '"' && !s1 && !s3) s2 = !s2;
+        else if (ch === "`" && !s1 && !s2) s3 = !s3;
+        if (s1 || s2 || s3) continue;
+        if (ch === "{") d++;
+        else if (ch === "}") { d--; if (d === 0) { end = j; break; } }
+      }
+      if (end === -1) return;
+      const jsonCandidate = t.slice(i, end + 1);
+      const obj = JSON.parse(jsonCandidate);
+      const walk = (o: any) => {
+        if (!o || typeof o !== "object") return;
+        if (Array.isArray(o)) { for (const it of o) walk(it); return; }
+        for (const [k, v] of Object.entries(o)) {
+          respAllowedSeed.add(String(k));
+          if (v && typeof v === "object") walk(v as any);
+        }
+      };
+      walk(obj);
+    } catch {}
+  };
+  for (const t of ranked) seedRespFromText(t);
+
   let endpointHint = "";
   try {
     if (curlCommand && curlCommand.trim().length > 0) {
@@ -1076,6 +1111,18 @@ export async function deriveSpecFromDocsForAdmin(
     );
     for (const h of colonHeaders) headersSet.add(h);
   }
+
+  // Include header keys from cURL
+  const curlHeaderKeys: string[] = (() => {
+    try {
+      if (curlCommand && curlCommand.trim().length > 0) {
+        const p = parseCurlRegistrationSpec(curlCommand);
+        return Object.keys(p.headers || {});
+      }
+    } catch {}
+    return [];
+  })();
+  for (const h of curlHeaderKeys) headersSet.add(h);
 
   let bodyFields = await deriveFieldsFromDocsForAdmin(adminId, docsUrl, mode);
   const toType = (k: string): OnboardingField["type"] =>
@@ -1102,12 +1149,13 @@ export async function deriveSpecFromDocsForAdmin(
       ...(curlKeys || []),
     ])
   );
+  const allowedHeaders = Array.from(headersSet);
   const system =
     mode === "auth"
-      ? `From the documentation chunks provided, extract ONLY the login/authentication request spec in strict JSON: headers[], body[{key,label,required,type}], response[]. Use only the given chunks; do not invent fields. Only use keys from ALLOWED_KEYS. ALLOWED_KEYS: ${allowedKeys.join(",")}`
-      : mode === "registration"
-      ? `From the documentation chunks provided, extract ONLY the registration request spec in strict JSON: headers[], body[{key,label,required,type}], response[]. Use only the given chunks; do not invent fields. Only use keys from ALLOWED_KEYS. ALLOWED_KEYS: ${allowedKeys.join(",")}`
-      : `From the documentation chunks provided, extract ONLY the initial setup request spec in strict JSON: headers[], body[{key,label,required,type}], response[]. Prefer nested keys (e.g., crisp.websiteId). Use only the given chunks; do not invent fields. Only use keys from ALLOWED_KEYS. ALLOWED_KEYS: ${allowedKeys.join(",")}`;
+      ? `From the documentation chunks provided, extract ONLY the login/authentication request spec in strict JSON: headers[], body[{key,label,required,type}], response[]. Use only the given chunks; do not invent fields. Only use keys from ALLOWED_KEYS. Only use headers from ALLOWED_HEADERS. Only use response keys from ALLOWED_RESPONSE_KEYS. ALLOWED_KEYS: ${allowedKeys.join(",")}\nALLOWED_HEADERS: ${allowedHeaders.join(",")}\nALLOWED_RESPONSE_KEYS: ${Array.from(respAllowedSeed).join(",")}`
+    : mode === "registration"
+      ? `From the documentation chunks provided, extract ONLY the registration request spec in strict JSON: headers[], body[{key,label,required,type}], response[]. Use only the given chunks; do not invent fields. Only use keys from ALLOWED_KEYS. Only use headers from ALLOWED_HEADERS. Only use response keys from ALLOWED_RESPONSE_KEYS. ALLOWED_KEYS: ${allowedKeys.join(",")}\nALLOWED_HEADERS: ${allowedHeaders.join(",")}\nALLOWED_RESPONSE_KEYS: ${Array.from(respAllowedSeed).join(",")}`
+      : `From the documentation chunks provided, extract ONLY the initial setup request spec in strict JSON: headers[], body[{key,label,required,type}], response[]. Prefer nested keys (e.g., crisp.websiteId). Use only the given chunks; do not invent fields. Only use keys from ALLOWED_KEYS. Only use headers from ALLOWED_HEADERS. Only use response keys from ALLOWED_RESPONSE_KEYS. ALLOWED_KEYS: ${allowedKeys.join(",")}\nALLOWED_HEADERS: ${allowedHeaders.join(",")}\nALLOWED_RESPONSE_KEYS: ${Array.from(respAllowedSeed).join(",")}`;
     const promptHeader = `Endpoint hint: ${endpointHint}\nDocs URL: ${
       docsUrl || ""
     }\n\nChunks:\n`;
@@ -1195,15 +1243,13 @@ export async function deriveSpecFromDocsForAdmin(
       const hdrs: string[] = Array.isArray(parsed?.headers)
         ? parsed.headers.map((h: any) => String(h))
         : [];
-      if (hdrs.length > 0) {
-        for (const h of hdrs) headersSet.add(h);
-      }
+      const hdrsFiltered = hdrs.filter((h) => headersSet.has(h));
+      for (const h of hdrsFiltered) headersSet.add(h);
       const resps: string[] = Array.isArray(parsed?.response)
         ? parsed.response.map((k: any) => String(k))
         : [];
-      if (resps.length > 0) {
-        for (const k of resps) respSet.add(k);
-      }
+      const respsFiltered = resps.filter((k) => respAllowedSeed.has(k));
+      for (const k of respsFiltered) respSet.add(k);
     }
   } catch {}
 
