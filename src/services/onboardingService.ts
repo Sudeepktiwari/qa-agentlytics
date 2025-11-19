@@ -1,5 +1,14 @@
-import { getAdminSettings, OnboardingSettings, OnboardingField } from "@/lib/adminSettings";
-import { parseCurlRegistrationSpec, buildBodyFromCurl, redactHeadersForLog, extractBodyKeysFromCurl } from "@/lib/curl";
+import {
+  getAdminSettings,
+  OnboardingSettings,
+  OnboardingField,
+} from "@/lib/adminSettings";
+import {
+  parseCurlRegistrationSpec,
+  buildBodyFromCurl,
+  redactHeadersForLog,
+  extractBodyKeysFromCurl,
+} from "@/lib/curl";
 import { createOrUpdateLead } from "@/lib/leads";
 import { getChunksByPageUrl, querySimilarChunks } from "@/lib/chroma";
 import OpenAI from "openai";
@@ -64,12 +73,16 @@ function extractDocKeys(chunks: string[]): string[] {
   const keys = new Set<string>();
   for (const chunk of chunks) {
     const text = (chunk || "").slice(0, 2000);
-    const jsonKeyMatches = [...text.matchAll(/\b["']([a-zA-Z_][a-zA-Z0-9_\-]*)["']\s*:/g)];
+    const jsonKeyMatches = [
+      ...text.matchAll(/\b["']([a-zA-Z_][a-zA-Z0-9_\-]*)["']\s*:/g),
+    ];
     for (const m of jsonKeyMatches) {
       const k = m[1];
       if (k && k.length <= 50) keys.add(k);
     }
-    const paramMatches = [...text.matchAll(/\b([a-zA-Z_][a-zA-Z0-9_\-]*)\s*=/g)];
+    const paramMatches = [
+      ...text.matchAll(/\b([a-zA-Z_][a-zA-Z0-9_\-]*)\s*=/g),
+    ];
     for (const m of paramMatches) {
       const k = m[1];
       if (k && k.length <= 50) keys.add(k);
@@ -78,9 +91,14 @@ function extractDocKeys(chunks: string[]): string[] {
   return Array.from(keys).slice(0, 50);
 }
 
-function inferContentType(chunks: string[]): "application/json" | "application/x-www-form-urlencoded" {
+function inferContentType(
+  chunks: string[]
+): "application/json" | "application/x-www-form-urlencoded" {
   const hint = chunks.join("\n").toLowerCase();
-  if (hint.includes("application/x-www-form-urlencoded") || hint.includes("form-urlencoded")) {
+  if (
+    hint.includes("application/x-www-form-urlencoded") ||
+    hint.includes("form-urlencoded")
+  ) {
     return "application/x-www-form-urlencoded";
   }
   return "application/json";
@@ -95,12 +113,30 @@ function buildFieldMappings(docKeys: string[]): Record<string, string> {
     return fallback;
   };
   const mappings: Record<string, string> = {};
-  const emailKey = pick(["email", "user_email", "email_address", "mail"], "email");
-  const firstNameKey = pick(["first_name", "firstName", "given_name", "fname"], "firstName");
-  const lastNameKey = pick(["last_name", "lastName", "surname", "lname"], "lastName");
-  const phoneKey = pick(["phone", "phone_number", "mobile", "contact_number"], "phone");
-  const companyKey = pick(["company", "organization", "org", "business"], "company");
-  const consentKey = pick(["consent", "gdpr_consent", "agree_terms", "accept"], "consent");
+  const emailKey = pick(
+    ["email", "user_email", "email_address", "mail"],
+    "email"
+  );
+  const firstNameKey = pick(
+    ["first_name", "firstName", "given_name", "fname"],
+    "firstName"
+  );
+  const lastNameKey = pick(
+    ["last_name", "lastName", "surname", "lname"],
+    "lastName"
+  );
+  const phoneKey = pick(
+    ["phone", "phone_number", "mobile", "contact_number"],
+    "phone"
+  );
+  const companyKey = pick(
+    ["company", "organization", "org", "business"],
+    "company"
+  );
+  const consentKey = pick(
+    ["consent", "gdpr_consent", "agree_terms", "accept"],
+    "consent"
+  );
 
   mappings["email"] = emailKey;
   mappings["firstName"] = firstNameKey;
@@ -143,7 +179,10 @@ async function inferRequestFormatFromDocs(adminId: string, docsUrl?: string) {
   return { contentType, fieldMappings };
 }
 
-function applyFieldMappings(data: Record<string, any>, mappings: Record<string, string>) {
+function applyFieldMappings(
+  data: Record<string, any>,
+  mappings: Record<string, string>
+) {
   const out: Record<string, any> = {};
   for (const [key, value] of Object.entries(data)) {
     const targetKey = mappings[key] || key;
@@ -153,7 +192,10 @@ function applyFieldMappings(data: Record<string, any>, mappings: Record<string, 
 }
 
 export const onboardingService = {
-  async authenticate(data: Record<string, any>, adminId: string): Promise<AuthResult> {
+  async authenticate(
+    data: Record<string, any>,
+    adminId: string
+  ): Promise<AuthResult> {
     const settings = await getAdminSettings(adminId);
     const onboarding = settings.onboarding || { enabled: false };
 
@@ -164,10 +206,22 @@ export const onboardingService = {
     // Require an authentication cURL command to be configured
     const authCurl = (onboarding as any).authCurlCommand as string | undefined;
     if (!authCurl || authCurl.trim().length === 0) {
-      return { success: false, error: "Authentication cURL not configured", status: 400 };
+      return {
+        success: false,
+        error: "Authentication cURL not configured",
+        status: 400,
+      };
     }
 
-    const redactKeys = ["password", "pass", "secret", "token", "apikey", "api_key", "key"];
+    const redactKeys = [
+      "password",
+      "pass",
+      "secret",
+      "token",
+      "apikey",
+      "api_key",
+      "key",
+    ];
 
     try {
       const parsed = parseCurlRegistrationSpec(authCurl);
@@ -176,11 +230,18 @@ export const onboardingService = {
       const contentType = (parsed.contentType as any) || "application/json";
 
       if (!url) {
-        console.error("[Onboarding] ❌ cURL parsing failed for authentication: no URL found", {
-          adminId,
-          curlSnippet: (authCurl || "").slice(0, 200),
-        });
-        return { success: false, error: "Auth URL not found in cURL command", status: 400 };
+        console.error(
+          "[Onboarding] ❌ cURL parsing failed for authentication: no URL found",
+          {
+            adminId,
+            curlSnippet: (authCurl || "").slice(0, 200),
+          }
+        );
+        return {
+          success: false,
+          error: "Auth URL not found in cURL command",
+          status: 400,
+        };
       }
 
       const headers: Record<string, string> = {
@@ -219,13 +280,22 @@ export const onboardingService = {
       if (!res.ok) {
         const errorMessage = (() => {
           if (typeof parsedResp === "string") return parsedResp;
-          if (!parsedResp || typeof parsedResp !== "object") return "Authentication failed";
-          const topLevel = (parsedResp as any).error || (parsedResp as any).message;
-          const nestedData = (parsedResp as any)?.data?.error || (parsedResp as any)?.data?.message;
+          if (!parsedResp || typeof parsedResp !== "object")
+            return "Authentication failed";
+          const topLevel =
+            (parsedResp as any).error || (parsedResp as any).message;
+          const nestedData =
+            (parsedResp as any)?.data?.error ||
+            (parsedResp as any)?.data?.message;
           const arrayErrors = Array.isArray((parsedResp as any)?.errors)
-            ? (parsedResp as any).errors.map((e: any) => e?.message || e).filter(Boolean).join("; ")
+            ? (parsedResp as any).errors
+                .map((e: any) => e?.message || e)
+                .filter(Boolean)
+                .join("; ")
             : undefined;
-          return topLevel || nestedData || arrayErrors || "Authentication failed";
+          return (
+            topLevel || nestedData || arrayErrors || "Authentication failed"
+          );
         })();
 
         console.error("[Onboarding] ❌ External authentication failed", {
@@ -236,7 +306,12 @@ export const onboardingService = {
           payload: safePayloadForLog,
           errorMessage,
         });
-        return { success: false, error: errorMessage, status: res.status, responseBody: parsedResp };
+        return {
+          success: false,
+          error: errorMessage,
+          status: res.status,
+          responseBody: parsedResp,
+        };
       }
 
       // Try common token field names
@@ -255,17 +330,22 @@ export const onboardingService = {
             (parsedResp as any)?.data?.api_key,
             (parsedResp as any)?.data?.key,
           ];
-          return candidates.find((t: any) => typeof t === "string" && t.length > 0);
+          return candidates.find(
+            (t: any) => typeof t === "string" && t.length > 0
+          );
         }
         return undefined;
       })();
 
       if (!token) {
-        console.warn("[Onboarding] ⚠️ Auth response did not include a token field", {
-          adminId,
-          url,
-          responseBodyType: typeof parsedResp,
-        });
+        console.warn(
+          "[Onboarding] ⚠️ Auth response did not include a token field",
+          {
+            adminId,
+            url,
+            responseBodyType: typeof parsedResp,
+          }
+        );
       }
 
       console.log("[Onboarding] ✅ External authentication succeeded", {
@@ -273,17 +353,29 @@ export const onboardingService = {
         adminId,
         tokenPresent: !!token,
       });
-      return { success: true, status: res.status, token, responseBody: parsedResp };
+      return {
+        success: true,
+        status: res.status,
+        token,
+        responseBody: parsedResp,
+      };
     } catch (error: any) {
       console.error("[Onboarding] ❌ External authentication error", {
         adminId,
         message: error?.message || String(error),
         stack: error?.stack,
       });
-      return { success: false, error: error?.message || String(error), status: 500 };
+      return {
+        success: false,
+        error: error?.message || String(error),
+        status: 500,
+      };
     }
   },
-  async initialSetup(data: Record<string, any>, adminId: string): Promise<RegistrationResult> {
+  async initialSetup(
+    data: Record<string, any>,
+    adminId: string
+  ): Promise<RegistrationResult> {
     const settings = await getAdminSettings(adminId);
     const onboarding = settings.onboarding || { enabled: false };
 
@@ -291,20 +383,35 @@ export const onboardingService = {
       return { success: false, error: "Onboarding is disabled", status: 400 };
     }
 
-    const redactKeys = ["password", "pass", "secret", "token", "apikey", "api_key", "key"];
+    const redactKeys = [
+      "password",
+      "pass",
+      "secret",
+      "token",
+      "apikey",
+      "api_key",
+      "key",
+    ];
 
     const hasCurl = !!onboarding.initialSetupCurlCommand;
     if (!hasCurl) {
-      return { success: false, error: "Initial setup cURL not configured", status: 400 };
+      return {
+        success: false,
+        error: "Initial setup cURL not configured",
+        status: 400,
+      };
     }
     let url: string | null = null;
     let method = onboarding.method || "POST";
     let headers: Record<string, string> = {};
-    let contentType: "application/json" | "application/x-www-form-urlencoded" = "application/json";
+    let contentType: "application/json" | "application/x-www-form-urlencoded" =
+      "application/json";
     const payload: Record<string, any> = { ...data };
 
     if (hasCurl) {
-      const parsed = parseCurlRegistrationSpec(onboarding.initialSetupCurlCommand as string);
+      const parsed = parseCurlRegistrationSpec(
+        onboarding.initialSetupCurlCommand as string
+      );
       url = parsed.url;
       method = (parsed.method as any) || method;
       contentType = (parsed.contentType as any) || contentType;
@@ -317,14 +424,23 @@ export const onboardingService = {
       const tokenFromFlow = (data as any).__authToken as string | undefined;
       const headerKey = onboarding.authHeaderKey || "Authorization";
       if (tokenFromFlow) {
-        headers[headerKey] = headerKey.toLowerCase() === "authorization" ? `Bearer ${tokenFromFlow}` : tokenFromFlow;
+        headers[headerKey] =
+          headerKey.toLowerCase() === "authorization"
+            ? `Bearer ${tokenFromFlow}`
+            : tokenFromFlow;
       }
 
       if (!url) {
-        console.error("[Onboarding] ❌ cURL parsing failed for initial setup: no URL found", {
-          adminId,
-          curlSnippet: (onboarding.initialSetupCurlCommand || "").slice(0, 200),
-        });
+        console.error(
+          "[Onboarding] ❌ cURL parsing failed for initial setup: no URL found",
+          {
+            adminId,
+            curlSnippet: (onboarding.initialSetupCurlCommand || "").slice(
+              0,
+              200
+            ),
+          }
+        );
         return {
           success: false,
           error: "Initial setup URL not found in cURL command",
@@ -332,8 +448,13 @@ export const onboardingService = {
         };
       }
 
-      if (onboarding.idempotencyKeyField && data[onboarding.idempotencyKeyField]) {
-        headers["Idempotency-Key"] = String(data[onboarding.idempotencyKeyField]);
+      if (
+        onboarding.idempotencyKeyField &&
+        data[onboarding.idempotencyKeyField]
+      ) {
+        headers["Idempotency-Key"] = String(
+          data[onboarding.idempotencyKeyField]
+        );
       }
 
       const { body, keysUsed } = buildBodyFromCurl(parsed, payload);
@@ -347,14 +468,17 @@ export const onboardingService = {
       );
 
       try {
-        console.log("[Onboarding] Calling external initial setup API via cURL:", {
-          url,
-          method,
-          contentType,
-          headerKeys: Object.keys(headers),
-          headers: redactHeadersForLog(headers),
-          payloadKeys: keysUsed,
-        });
+        console.log(
+          "[Onboarding] Calling external initial setup API via cURL:",
+          {
+            url,
+            method,
+            contentType,
+            headerKeys: Object.keys(headers),
+            headers: redactHeadersForLog(headers),
+            payloadKeys: keysUsed,
+          }
+        );
 
         const res = await fetch(url as string, {
           method,
@@ -373,13 +497,22 @@ export const onboardingService = {
         if (!res.ok) {
           const errorMessage = (() => {
             if (typeof parsedResp === "string") return parsedResp;
-            if (!parsedResp || typeof parsedResp !== "object") return "Initial setup failed";
-            const topLevel = (parsedResp as any).error || (parsedResp as any).message;
-            const nestedData = (parsedResp as any)?.data?.error || (parsedResp as any)?.data?.message;
+            if (!parsedResp || typeof parsedResp !== "object")
+              return "Initial setup failed";
+            const topLevel =
+              (parsedResp as any).error || (parsedResp as any).message;
+            const nestedData =
+              (parsedResp as any)?.data?.error ||
+              (parsedResp as any)?.data?.message;
             const arrayErrors = Array.isArray((parsedResp as any)?.errors)
-              ? (parsedResp as any).errors.map((e: any) => e?.message || e).filter(Boolean).join("; ")
+              ? (parsedResp as any).errors
+                  .map((e: any) => e?.message || e)
+                  .filter(Boolean)
+                  .join("; ")
               : undefined;
-            return topLevel || nestedData || arrayErrors || "Initial setup failed";
+            return (
+              topLevel || nestedData || arrayErrors || "Initial setup failed"
+            );
           })();
 
           console.error("[Onboarding] ❌ External initial setup failed", {
@@ -421,13 +554,20 @@ export const onboardingService = {
               return [k, isSensitive ? "***" : v];
             })
           ),
-      });
-      return { success: false, error: error?.message || String(error), status: 500 };
+        });
+        return {
+          success: false,
+          error: error?.message || String(error),
+          status: 500,
+        };
       }
     }
     return { success: false, error: "Initial setup failed", status: 500 };
   },
-  async register(data: Record<string, any>, adminId: string): Promise<RegistrationResult> {
+  async register(
+    data: Record<string, any>,
+    adminId: string
+  ): Promise<RegistrationResult> {
     const settings = await getAdminSettings(adminId);
     const onboarding = settings.onboarding || { enabled: false };
 
@@ -436,23 +576,40 @@ export const onboardingService = {
     }
 
     // Sensitive keys we should redact in logs
-    const redactKeys = ["password", "pass", "secret", "token", "apikey", "api_key", "key"];
+    const redactKeys = [
+      "password",
+      "pass",
+      "secret",
+      "token",
+      "apikey",
+      "api_key",
+      "key",
+    ];
 
     // Prefer cURL configuration if provided by admin
     const hasCurl = !!onboarding.curlCommand;
     let url: string | null = null;
     let method = onboarding.method || "POST";
     let headers: Record<string, string> = {};
-    let contentType: "application/json" | "application/x-www-form-urlencoded" = "application/json";
+    let contentType: "application/json" | "application/x-www-form-urlencoded" =
+      "application/json";
     let payload: Record<string, any> = { ...data };
-    const fn1 = payload.firstName || payload.firstname || payload.given_name || payload.fname || payload.name;
-    const ln1 = payload.lastName || payload.lastname || payload.surname || payload.lname;
+    const fn1 =
+      payload.firstName ||
+      payload.firstname ||
+      payload.given_name ||
+      payload.fname ||
+      payload.name;
+    const ln1 =
+      payload.lastName || payload.lastname || payload.surname || payload.lname;
     if (!payload.name && fn1) {
       payload.name = ln1 ? `${fn1} ${ln1}` : fn1;
     }
 
     if (hasCurl) {
-      const parsed = parseCurlRegistrationSpec(onboarding.curlCommand as string);
+      const parsed = parseCurlRegistrationSpec(
+        onboarding.curlCommand as string
+      );
       url = parsed.url;
       method = (parsed.method as any) || method;
       contentType = (parsed.contentType as any) || contentType;
@@ -462,10 +619,13 @@ export const onboardingService = {
       };
 
       if (!url) {
-        console.error("[Onboarding] ❌ cURL parsing failed for registration: no URL found", {
-          adminId,
-          curlSnippet: (onboarding.curlCommand || "").slice(0, 200),
-        });
+        console.error(
+          "[Onboarding] ❌ cURL parsing failed for registration: no URL found",
+          {
+            adminId,
+            curlSnippet: (onboarding.curlCommand || "").slice(0, 200),
+          }
+        );
         return {
           success: false,
           error: "Registration URL not found in cURL command",
@@ -473,8 +633,13 @@ export const onboardingService = {
         };
       }
 
-      if (onboarding.idempotencyKeyField && data[onboarding.idempotencyKeyField]) {
-        headers["Idempotency-Key"] = String(data[onboarding.idempotencyKeyField]);
+      if (
+        onboarding.idempotencyKeyField &&
+        data[onboarding.idempotencyKeyField]
+      ) {
+        headers["Idempotency-Key"] = String(
+          data[onboarding.idempotencyKeyField]
+        );
       }
 
       const { body, keysUsed } = buildBodyFromCurl(parsed, payload);
@@ -488,14 +653,17 @@ export const onboardingService = {
       );
 
       try {
-        console.log("[Onboarding] Calling external registration API via cURL:", {
-          url,
-          method,
-          contentType,
-          headerKeys: Object.keys(headers),
-          headers: redactHeadersForLog(headers),
-          payloadKeys: keysUsed,
-        });
+        console.log(
+          "[Onboarding] Calling external registration API via cURL:",
+          {
+            url,
+            method,
+            contentType,
+            headerKeys: Object.keys(headers),
+            headers: redactHeadersForLog(headers),
+            payloadKeys: keysUsed,
+          }
+        );
 
         const res = await fetch(url as string, {
           method,
@@ -514,13 +682,22 @@ export const onboardingService = {
         if (!res.ok) {
           const errorMessage = (() => {
             if (typeof parsedResp === "string") return parsedResp;
-            if (!parsedResp || typeof parsedResp !== "object") return "Registration failed";
-            const topLevel = (parsedResp as any).error || (parsedResp as any).message;
-            const nestedData = (parsedResp as any)?.data?.error || (parsedResp as any)?.data?.message;
+            if (!parsedResp || typeof parsedResp !== "object")
+              return "Registration failed";
+            const topLevel =
+              (parsedResp as any).error || (parsedResp as any).message;
+            const nestedData =
+              (parsedResp as any)?.data?.error ||
+              (parsedResp as any)?.data?.message;
             const arrayErrors = Array.isArray((parsedResp as any)?.errors)
-              ? (parsedResp as any).errors.map((e: any) => e?.message || e).filter(Boolean).join("; ")
+              ? (parsedResp as any).errors
+                  .map((e: any) => e?.message || e)
+                  .filter(Boolean)
+                  .join("; ")
               : undefined;
-            return topLevel || nestedData || arrayErrors || "Registration failed";
+            return (
+              topLevel || nestedData || arrayErrors || "Registration failed"
+            );
           })();
 
           console.error("[Onboarding] ❌ External registration failed", {
@@ -563,30 +740,48 @@ export const onboardingService = {
             })
           ),
         });
-        return { success: false, error: error?.message || String(error), status: 500 };
+        return {
+          success: false,
+          error: error?.message || String(error),
+          status: 500,
+        };
       }
     }
 
     const baseUrl = resolveUrl(onboarding);
     url = baseUrl;
     if (!url) {
-      return { success: false, error: "Registration URL not configured", status: 400 };
+      return {
+        success: false,
+        error: "Registration URL not configured",
+        status: 400,
+      };
     }
 
-    const { contentType: inferredContentType, fieldMappings } = await inferRequestFormatFromDocs(adminId, onboarding.docsUrl);
+    const { contentType: inferredContentType, fieldMappings } =
+      await inferRequestFormatFromDocs(adminId, onboarding.docsUrl);
     contentType = inferredContentType;
     headers = {
       "Content-Type": contentType,
       ...buildAuthHeader(onboarding),
     };
 
-    if (onboarding.idempotencyKeyField && data[onboarding.idempotencyKeyField]) {
+    if (
+      onboarding.idempotencyKeyField &&
+      data[onboarding.idempotencyKeyField]
+    ) {
       headers["Idempotency-Key"] = String(data[onboarding.idempotencyKeyField]);
     }
 
     payload = applyFieldMappings(data, fieldMappings);
-    const fn2 = payload.firstName || payload.firstname || payload.given_name || payload.fname || payload.name;
-    const ln2 = payload.lastName || payload.lastname || payload.surname || payload.lname;
+    const fn2 =
+      payload.firstName ||
+      payload.firstname ||
+      payload.given_name ||
+      payload.fname ||
+      payload.name;
+    const ln2 =
+      payload.lastName || payload.lastname || payload.surname || payload.lname;
     if (!payload.name && fn2) {
       payload.name = ln2 ? `${fn2} ${ln2}` : fn2;
     }
@@ -608,12 +803,15 @@ export const onboardingService = {
         contentType,
         payloadKeys: Object.keys(payload),
       });
-      const body = contentType === "application/x-www-form-urlencoded"
-        ? new URLSearchParams(Object.entries(payload).reduce((acc, [k, v]) => {
-            acc[k] = typeof v === "string" ? v : JSON.stringify(v);
-            return acc;
-          }, {} as Record<string, string>)).toString()
-        : JSON.stringify(payload);
+      const body =
+        contentType === "application/x-www-form-urlencoded"
+          ? new URLSearchParams(
+              Object.entries(payload).reduce((acc, [k, v]) => {
+                acc[k] = typeof v === "string" ? v : JSON.stringify(v);
+                return acc;
+              }, {} as Record<string, string>)
+            ).toString()
+          : JSON.stringify(payload);
 
       const res = await fetch(url as string, {
         method,
@@ -632,11 +830,18 @@ export const onboardingService = {
       if (!res.ok) {
         const errorMessage = (() => {
           if (typeof parsedResp === "string") return parsedResp;
-          if (!parsedResp || typeof parsedResp !== "object") return "Registration failed";
-          const topLevel = (parsedResp as any).error || (parsedResp as any).message;
-          const nestedData = (parsedResp as any)?.data?.error || (parsedResp as any)?.data?.message;
+          if (!parsedResp || typeof parsedResp !== "object")
+            return "Registration failed";
+          const topLevel =
+            (parsedResp as any).error || (parsedResp as any).message;
+          const nestedData =
+            (parsedResp as any)?.data?.error ||
+            (parsedResp as any)?.data?.message;
           const arrayErrors = Array.isArray((parsedResp as any)?.errors)
-            ? (parsedResp as any).errors.map((e: any) => e?.message || e).filter(Boolean).join("; ")
+            ? (parsedResp as any).errors
+                .map((e: any) => e?.message || e)
+                .filter(Boolean)
+                .join("; ")
             : undefined;
           return topLevel || nestedData || arrayErrors || "Registration failed";
         })();
@@ -681,12 +886,20 @@ export const onboardingService = {
           })
         ),
       });
-      return { success: false, error: error?.message || String(error), status: 500 };
+      return {
+        success: false,
+        error: error?.message || String(error),
+        status: 500,
+      };
     }
   },
 };
 
-export async function deriveFieldsFromDocsForAdmin(adminId: string, docsUrl?: string, mode?: "registration" | "auth" | "initial"): Promise<OnboardingField[]> {
+export async function deriveFieldsFromDocsForAdmin(
+  adminId: string,
+  docsUrl?: string,
+  mode?: "registration" | "auth" | "initial"
+): Promise<OnboardingField[]> {
   let chunks: string[] = [];
   try {
     if (docsUrl) {
@@ -735,17 +948,14 @@ export async function deriveFieldsFromDocsForAdmin(adminId: string, docsUrl?: st
     .map((c) => ({ c, s: scoreChunk((c || "").slice(0, 2000)) }))
     .sort((a, b) => b.s - a.s)
     .map((x) => x.c);
-  const pick = sorted.length > 0 ? sorted.slice(0, Math.min(sorted.length, 3)) : chunks;
+  const pick =
+    sorted.length > 0 ? sorted.slice(0, Math.min(sorted.length, 3)) : chunks;
   const keys = new Set<string>();
   const addKeysFromText = (text: string) => {
     const t = (text || "").slice(0, 4000);
-    const hasRequestHint = /\bcurl\b|request\s*details|request\s*body|^\s*body\b/i.test(t);
-    const bodyHeaderIdx = t.toLowerCase().indexOf("body");
-    if (bodyHeaderIdx >= 0) {
-      const near = t.slice(bodyHeaderIdx, Math.min(t.length, bodyHeaderIdx + 600));
-      const listMatches = [...near.matchAll(/\b([A-Za-z][A-Za-z0-9_\-]*)\s*\((?:string|number|boolean)[^\)]*\)/gi)].map((m) => m[1]);
-      for (const k of listMatches) keys.add(k);
-    }
+    const hasRequestHint =
+      /\bcurl\b|request\s*details|request\s*body|^\s*body\b/i.test(t);
+    // Only trust structured JSON near request body hints; avoid free-text lists
     const jsonObj = (() => {
       const i = t.indexOf("{");
       if (i === -1) return undefined;
@@ -785,18 +995,22 @@ export async function deriveFieldsFromDocsForAdmin(adminId: string, docsUrl?: st
         walk(obj);
       } catch {}
     }
-    const jsonKeyMatches = hasRequestHint ? [...t.matchAll(/\b["']([a-zA-Z_][a-zA-Z0-9_\-]*)["']\s*:/g)] : [];
-    for (const m of jsonKeyMatches) keys.add(m[1]);
-    const paramMatches = hasRequestHint ? [...t.matchAll(/\b([a-zA-Z_][a-zA-Z0-9_\-]*)\s*=/g)] : [];
-    for (const m of paramMatches) keys.add(m[1]);
+    // Do not scrape bare assignments or parameter lists; reduces false positives
   };
   for (const chunk of pick) addKeysFromText(chunk || "");
   const filtered = Array.from(keys);
-  const toType = (k: string): OnboardingField["type"] => (/email/i.test(k) ? "email" : /phone/i.test(k) ? "phone" : "text");
-  const toLabel = (k: string) => k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  const toType = (k: string): OnboardingField["type"] =>
+    /email/i.test(k) ? "email" : /phone/i.test(k) ? "phone" : "text";
+  const toLabel = (k: string) =>
+    k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
   return filtered
     .slice(0, 50)
-    .map((k) => ({ key: k, label: toLabel(k), required: true, type: toType(k) }));
+    .map((k) => ({
+      key: k,
+      label: toLabel(k),
+      required: true,
+      type: toType(k),
+    }));
 }
 
 export async function deriveSpecFromDocsForAdmin(
@@ -828,7 +1042,8 @@ export async function deriveSpecFromDocsForAdmin(
   }
   const score = (t: string): number => {
     let s = 0;
-    if (/register|signup|create\s*account|login|authenticate|setup/i.test(t)) s += 3;
+    if (/register|signup|create\s*account|login|authenticate|setup/i.test(t))
+      s += 3;
     if (/\bPOST\b|\bPUT\b|\bPATCH\b/i.test(t)) s += 2;
     if (/response|returns|sample\s*response|200\s*OK/i.test(t)) s += 2;
     if (/headers?|Content-Type|Authorization|X-API-Key/i.test(t)) s += 2;
@@ -856,7 +1071,9 @@ export async function deriveSpecFromDocsForAdmin(
 
   const headersSet = new Set<string>();
   for (const t of ranked) {
-    const colonHeaders = [...t.matchAll(/\b([A-Za-z-]{2,}):\s*[^\n]+/g)].map((m) => m[1]);
+    const colonHeaders = [...t.matchAll(/\b([A-Za-z-]{2,}):\s*[^\n]+/g)].map(
+      (m) => m[1]
+    );
     for (const h of colonHeaders) headersSet.add(h);
   }
 
@@ -865,12 +1082,15 @@ export async function deriveSpecFromDocsForAdmin(
   const respSet = new Set<string>();
   try {
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    const system = mode === "auth"
-      ? "From the documentation chunks provided, extract ONLY the login/authentication request spec in strict JSON: headers[], body[{key,label,required,type}], response[]. Use only the given chunks; do not invent fields."
-      : mode === "registration"
-      ? "From the documentation chunks provided, extract ONLY the registration request spec in strict JSON: headers[], body[{key,label,required,type}], response[]. Use only the given chunks; do not invent fields."
-      : "From the documentation chunks provided, extract ONLY the initial setup request spec in strict JSON: headers[], body[{key,label,required,type}], response[]. Prefer nested keys (e.g., crisp.websiteId). Use only the given chunks; do not invent fields.";
-    const promptHeader = `Endpoint hint: ${endpointHint}\nDocs URL: ${docsUrl || ""}\n\nChunks:\n`;
+    const system =
+      mode === "auth"
+        ? "From the documentation chunks provided, extract ONLY the login/authentication request spec in strict JSON: headers[], body[{key,label,required,type}], response[]. Use only the given chunks; do not invent fields."
+        : mode === "registration"
+        ? "From the documentation chunks provided, extract ONLY the registration request spec in strict JSON: headers[], body[{key,label,required,type}], response[]. Use only the given chunks; do not invent fields."
+        : "From the documentation chunks provided, extract ONLY the initial setup request spec in strict JSON: headers[], body[{key,label,required,type}], response[]. Prefer nested keys (e.g., crisp.websiteId). Use only the given chunks; do not invent fields.";
+    const promptHeader = `Endpoint hint: ${endpointHint}\nDocs URL: ${
+      docsUrl || ""
+    }\n\nChunks:\n`;
     const user = (promptHeader + ranked.join("\n\n")).slice(0, 12000);
     const chat = await openai.chat.completions.create({
       model: "gpt-4o-mini",
@@ -896,7 +1116,10 @@ export async function deriveSpecFromDocsForAdmin(
                     key: { type: "string" },
                     label: { type: "string" },
                     required: { type: "boolean" },
-                    type: { type: "string", enum: ["text", "email", "phone", "select", "checkbox"] },
+                    type: {
+                      type: "string",
+                      enum: ["text", "email", "phone", "select", "checkbox"],
+                    },
                   },
                   required: ["key"],
                   additionalProperties: false,
@@ -914,21 +1137,46 @@ export async function deriveSpecFromDocsForAdmin(
     if (text) {
       const parsed = JSON.parse(text);
       const bodyArr: any[] = Array.isArray(parsed?.body) ? parsed.body : [];
-      const toType = (k: string): OnboardingField["type"] => (/email/i.test(k) ? "email" : /phone/i.test(k) ? "phone" : "text");
-      const toLabel = (k: string) => String(k).replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+      const toType = (k: string): OnboardingField["type"] =>
+        /email/i.test(k) ? "email" : /phone/i.test(k) ? "phone" : "text";
+      const toLabel = (k: string) =>
+        String(k)
+          .replace(/_/g, " ")
+          .replace(/\b\w/g, (c) => c.toUpperCase());
       const llmFields: OnboardingField[] = bodyArr
-        .map((f) => ({ key: String(f.key || f.name || "").trim(), label: String(f.label || toLabel(String(f.key || f.name || ""))).trim(), required: Boolean(f.required ?? true), type: (/email|mail/i.test(String(f.type || f.key)) ? "email" : /phone/i.test(String(f.type || f.key)) ? "phone" : (f.type === "select" || f.type === "checkbox") ? f.type : toType(String(f.key || ""))) }))
+        .map((f) => ({
+          key: String(f.key || f.name || "").trim(),
+          label: String(
+            f.label || toLabel(String(f.key || f.name || ""))
+          ).trim(),
+          required: Boolean(f.required ?? true),
+          type: /email|mail/i.test(String(f.type || f.key))
+            ? "email"
+            : /phone/i.test(String(f.type || f.key))
+            ? "phone"
+            : f.type === "select" || f.type === "checkbox"
+            ? f.type
+            : toType(String(f.key || "")),
+        }))
         .filter((f) => f.key);
       if (llmFields.length > 0) {
-        const baseSet = new Set(bodyFields.map((f) => String(f.key).toLowerCase()));
-        const inter = llmFields.filter((f) => baseSet.has(String(f.key).toLowerCase()));
+        const baseSet = new Set(
+          bodyFields.map((f) => String(f.key).toLowerCase())
+        );
+        const inter = llmFields.filter((f) =>
+          baseSet.has(String(f.key).toLowerCase())
+        );
         bodyFields = inter.length > 0 ? inter : llmFields;
       }
-      const hdrs: string[] = Array.isArray(parsed?.headers) ? parsed.headers.map((h: any) => String(h)) : [];
+      const hdrs: string[] = Array.isArray(parsed?.headers)
+        ? parsed.headers.map((h: any) => String(h))
+        : [];
       if (hdrs.length > 0) {
         for (const h of hdrs) headersSet.add(h);
       }
-      const resps: string[] = Array.isArray(parsed?.response) ? parsed.response.map((k: any) => String(k)) : [];
+      const resps: string[] = Array.isArray(parsed?.response)
+        ? parsed.response.map((k: any) => String(k))
+        : [];
       if (resps.length > 0) {
         for (const k of resps) respSet.add(k);
       }
@@ -941,7 +1189,9 @@ export async function deriveSpecFromDocsForAdmin(
       const i = t.indexOf("{");
       if (i === -1) return undefined;
       let d = 0;
-      let s1 = false, s2 = false, s3 = false;
+      let s1 = false,
+        s2 = false,
+        s3 = false;
       for (let j = i; j < t.length; j++) {
         const ch = t[j];
         if (ch === "'" && !s2 && !s3) s1 = !s1;
@@ -949,7 +1199,10 @@ export async function deriveSpecFromDocsForAdmin(
         else if (ch === "`" && !s1 && !s2) s3 = !s3;
         if (s1 || s2 || s3) continue;
         if (ch === "{") d++;
-        else if (ch === "}") { d--; if (d === 0) return t.slice(i, j + 1); }
+        else if (ch === "}") {
+          d--;
+          if (d === 0) return t.slice(i, j + 1);
+        }
       }
       return undefined;
     })();
@@ -959,7 +1212,10 @@ export async function deriveSpecFromDocsForAdmin(
       const obj = JSON.parse(jsonCandidate);
       const walk = (o: any) => {
         if (!o || typeof o !== "object") return;
-        if (Array.isArray(o)) { for (const it of o) walk(it); return; }
+        if (Array.isArray(o)) {
+          for (const it of o) walk(it);
+          return;
+        }
         for (const [k, v] of Object.entries(o)) {
           respSet.add(String(k));
           if (v && typeof v === "object") walk(v as any);
@@ -970,69 +1226,27 @@ export async function deriveSpecFromDocsForAdmin(
   };
   for (const t of ranked) addRespFromText(t);
   let filteredBody = bodyFields;
-  const canonicalKeys = (() => {
-    const s = new Set<string>();
-    const add = (k: string) => { const kk = String(k || "").trim().toLowerCase(); if (kk) s.add(kk); };
-    for (const t of ranked) {
-      const lower = (t || "").toLowerCase();
-      const i = lower.indexOf("request details");
-      if (i >= 0) {
-        const near = t.slice(i, Math.min(t.length, i + 800));
-        const m1 = [...near.matchAll(/\b([A-Za-z][A-Za-z0-9_\-\.]+)\s*\((?:string|number|boolean)[^\)]*\)/g)].map((m) => m[1]);
-        for (const k of m1) add(k);
-      }
-      const j = t.indexOf("{");
-      if (j >= 0) {
-        let d = 0; let s1=false, s2=false, s3=false;
-        for (let k = j; k < t.length; k++) {
-          const ch = t[k];
-          if (ch === "'" && !s2 && !s3) s1 = !s1; else if (ch === '"' && !s1 && !s3) s2 = !s2; else if (ch === "`" && !s1 && !s2) s3 = !s3;
-          if (s1 || s2 || s3) continue;
-          if (ch === "{") d++; else if (ch === "}") { d--; if (d === 0) {
-            const jsonStr = t.slice(j, k + 1);
-            try {
-              const obj = JSON.parse(jsonStr);
-              const walk = (o: any) => {
-                if (!o || typeof o !== "object") return;
-                if (Array.isArray(o)) { for (const it of o) walk(it); return; }
-                for (const [kk, vv] of Object.entries(o)) { add(kk as string); if (vv && typeof vv === "object") walk(vv as any); }
-              };
-              walk(obj);
-            } catch {}
-            break;
-          } }
-        }
-      }
-    }
-    return Array.from(s);
-  })();
-  if (Array.isArray(canonicalKeys) && canonicalKeys.length > 0) {
-    const set = new Set(canonicalKeys.map((k) => String(k).toLowerCase()));
-    const inter = filteredBody.filter((f) => set.has(String(f.key).toLowerCase()));
-    if (inter.length > 0) filteredBody = inter;
-  }
-  if (curlCommand && typeof curlCommand === "string" && curlCommand.trim().length > 0) {
+  if (
+    curlCommand &&
+    typeof curlCommand === "string" &&
+    curlCommand.trim().length > 0
+  ) {
     try {
       const ck = extractBodyKeysFromCurl(curlCommand);
-      const set = new Set(ck.map((k) => String(k).toLowerCase()));
-      const inter = filteredBody.filter((f) => set.has(String(f.key).toLowerCase()));
-      if (inter.length > 0) filteredBody = inter;
+      if (ck.length > 0) {
+        const toType = (k: string): OnboardingField["type"] =>
+          /email/i.test(k) ? "email" : /phone/i.test(k) ? "phone" : "text";
+        const toLabel = (k: string) =>
+          String(k).replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+        filteredBody = ck.map((k) => ({
+          key: String(k),
+          label: toLabel(String(k)),
+          required: true,
+          type: toType(String(k)),
+        }));
+      }
     } catch {}
   }
-  const deny = new Set(["bodyname", "rounds", "sub", "iat", "exp", "aud"]);
-  filteredBody = filteredBody.filter((f) => {
-    const k = String(f.key).toLowerCase();
-    if (!deny.has(k)) return true;
-    if (curlCommand && curlCommand.trim().length > 0) {
-      try {
-        const ck = extractBodyKeysFromCurl(curlCommand);
-        const cset = new Set(ck.map((x) => String(x).toLowerCase()));
-        if (cset.has(k)) return true;
-      } catch {}
-    }
-    if (Array.isArray(canonicalKeys) && canonicalKeys.includes(k)) return true;
-    return false;
-  });
   const filteredResp = Array.from(respSet);
   return {
     headers: Array.from(headersSet).slice(0, 20),
