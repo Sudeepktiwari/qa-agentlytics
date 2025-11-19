@@ -939,8 +939,10 @@ export async function deriveFieldsFromDocsForAdmin(
       if (/users?\s*\/register|\bPOST\b[^\n]*\/register/i.test(t)) s += 3;
     }
     if (/\bPOST\b|request\s*details|request\s*body|body\b/i.test(t)) s += 2;
-    if (/email/i.test(t)) s += 2;
-    if (/password/i.test(t)) s += 2;
+    if (m === "registration") {
+      if (/email/i.test(t)) s += 2;
+      if (/password/i.test(t)) s += 2;
+    }
     if (/Content-Type|application\/json|x-www-form-urlencoded/i.test(t)) s += 1;
     return s;
   };
@@ -1094,12 +1096,18 @@ export async function deriveSpecFromDocsForAdmin(
   const respSet = new Set<string>();
   try {
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    const system =
-      mode === "auth"
-        ? "From the documentation chunks provided, extract ONLY the login/authentication request spec in strict JSON: headers[], body[{key,label,required,type}], response[]. Use only the given chunks; do not invent fields."
-        : mode === "registration"
-        ? "From the documentation chunks provided, extract ONLY the registration request spec in strict JSON: headers[], body[{key,label,required,type}], response[]. Use only the given chunks; do not invent fields."
-        : "From the documentation chunks provided, extract ONLY the initial setup request spec in strict JSON: headers[], body[{key,label,required,type}], response[]. Prefer nested keys (e.g., crisp.websiteId). Use only the given chunks; do not invent fields.";
+  const allowedKeys = Array.from(
+    new Set([
+      ...bodyFields.map((f) => String(f.key)),
+      ...(curlKeys || []),
+    ])
+  );
+  const system =
+    mode === "auth"
+      ? `From the documentation chunks provided, extract ONLY the login/authentication request spec in strict JSON: headers[], body[{key,label,required,type}], response[]. Use only the given chunks; do not invent fields. Only use keys from ALLOWED_KEYS. ALLOWED_KEYS: ${allowedKeys.join(",")}`
+      : mode === "registration"
+      ? `From the documentation chunks provided, extract ONLY the registration request spec in strict JSON: headers[], body[{key,label,required,type}], response[]. Use only the given chunks; do not invent fields. Only use keys from ALLOWED_KEYS. ALLOWED_KEYS: ${allowedKeys.join(",")}`
+      : `From the documentation chunks provided, extract ONLY the initial setup request spec in strict JSON: headers[], body[{key,label,required,type}], response[]. Prefer nested keys (e.g., crisp.websiteId). Use only the given chunks; do not invent fields. Only use keys from ALLOWED_KEYS. ALLOWED_KEYS: ${allowedKeys.join(",")}`;
     const promptHeader = `Endpoint hint: ${endpointHint}\nDocs URL: ${
       docsUrl || ""
     }\n\nChunks:\n`;
@@ -1173,7 +1181,16 @@ export async function deriveSpecFromDocsForAdmin(
         const inter = llmFields.filter((f) =>
           baseSet.has(String(f.key).toLowerCase())
         );
-        bodyFields = inter.length > 0 ? inter : llmFields;
+        if (inter.length > 0) {
+          bodyFields = inter;
+        } else if ((curlKeys || []).length > 0) {
+          bodyFields = (curlKeys || []).map((k) => ({
+            key: k,
+            label: String(k).replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+            required: true,
+            type: /email/i.test(String(k)) ? "email" : /phone/i.test(String(k)) ? "phone" : "text",
+          }));
+        }
       }
       const hdrs: string[] = Array.isArray(parsed?.headers)
         ? parsed.headers.map((h: any) => String(h))
