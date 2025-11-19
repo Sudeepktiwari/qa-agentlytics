@@ -970,6 +970,47 @@ export async function deriveSpecFromDocsForAdmin(
   };
   for (const t of ranked) addRespFromText(t);
   let filteredBody = bodyFields;
+  const canonicalKeys = (() => {
+    const s = new Set<string>();
+    const add = (k: string) => { const kk = String(k || "").trim().toLowerCase(); if (kk) s.add(kk); };
+    for (const t of ranked) {
+      const lower = (t || "").toLowerCase();
+      const i = lower.indexOf("request details");
+      if (i >= 0) {
+        const near = t.slice(i, Math.min(t.length, i + 800));
+        const m1 = [...near.matchAll(/\b([A-Za-z][A-Za-z0-9_\-\.]+)\s*\((?:string|number|boolean)[^\)]*\)/g)].map((m) => m[1]);
+        for (const k of m1) add(k);
+      }
+      const j = t.indexOf("{");
+      if (j >= 0) {
+        let d = 0; let s1=false, s2=false, s3=false;
+        for (let k = j; k < t.length; k++) {
+          const ch = t[k];
+          if (ch === "'" && !s2 && !s3) s1 = !s1; else if (ch === '"' && !s1 && !s3) s2 = !s2; else if (ch === "`" && !s1 && !s2) s3 = !s3;
+          if (s1 || s2 || s3) continue;
+          if (ch === "{") d++; else if (ch === "}") { d--; if (d === 0) {
+            const jsonStr = t.slice(j, k + 1);
+            try {
+              const obj = JSON.parse(jsonStr);
+              const walk = (o: any) => {
+                if (!o || typeof o !== "object") return;
+                if (Array.isArray(o)) { for (const it of o) walk(it); return; }
+                for (const [kk, vv] of Object.entries(o)) { add(kk as string); if (vv && typeof vv === "object") walk(vv as any); }
+              };
+              walk(obj);
+            } catch {}
+            break;
+          } }
+        }
+      }
+    }
+    return Array.from(s);
+  })();
+  if (Array.isArray(canonicalKeys) && canonicalKeys.length > 0) {
+    const set = new Set(canonicalKeys.map((k) => String(k).toLowerCase()));
+    const inter = filteredBody.filter((f) => set.has(String(f.key).toLowerCase()));
+    if (inter.length > 0) filteredBody = inter;
+  }
   if (curlCommand && typeof curlCommand === "string" && curlCommand.trim().length > 0) {
     try {
       const ck = extractBodyKeysFromCurl(curlCommand);
@@ -978,6 +1019,20 @@ export async function deriveSpecFromDocsForAdmin(
       if (inter.length > 0) filteredBody = inter;
     } catch {}
   }
+  const deny = new Set(["bodyname", "rounds", "sub", "iat", "exp", "aud"]);
+  filteredBody = filteredBody.filter((f) => {
+    const k = String(f.key).toLowerCase();
+    if (!deny.has(k)) return true;
+    if (curlCommand && curlCommand.trim().length > 0) {
+      try {
+        const ck = extractBodyKeysFromCurl(curlCommand);
+        const cset = new Set(ck.map((x) => String(x).toLowerCase()));
+        if (cset.has(k)) return true;
+      } catch {}
+    }
+    if (Array.isArray(canonicalKeys) && canonicalKeys.includes(k)) return true;
+    return false;
+  });
   const filteredResp = Array.from(respSet);
   return {
     headers: Array.from(headersSet).slice(0, 20),
