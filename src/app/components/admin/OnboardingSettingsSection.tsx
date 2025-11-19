@@ -633,18 +633,44 @@ const OnboardingSettingsSection: React.FC = () => {
                 <label style={{ display: "block", color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Registration Body Fields</label>
                 {
                   <button
-                    onClick={() => {
-                      setRegenRegistration(true);
-                      const next: any = { ...settings };
-                      delete next.registrationFields;
-                      setSettings(next as any);
+                    onClick={async () => {
                       try {
                         console.groupCollapsed("[Onboarding] Regenerate registration spec");
                         console.log({ docsUrl: docUrl, curlCommand: settings.curlCommand || "" });
                         console.groupEnd();
                       } catch {}
+                      try {
+                        const res = await fetch("/api/admin/onboarding?derive=registration&debug=true", { credentials: "include" });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                          const spec = data.spec || { headers: [], body: [], response: [] };
+                          const parsed = {
+                            ...(settings.registrationParsed || { method: "POST" }),
+                            bodyKeys: (spec.body || []).map((f: any) => f.key),
+                          } as any;
+                          setSettings({
+                            ...(settings as any),
+                            registrationFields: spec.body,
+                            registrationHeaders: spec.headers,
+                            registrationResponseFields: spec.response,
+                            registrationParsed: parsed,
+                          } as any);
+                          try {
+                            console.groupCollapsed("[Onboarding] Derived registration spec (ui)");
+                            console.log(spec);
+                            if (Array.isArray((data as any).debug)) {
+                              for (const entry of (data as any).debug) console.log(entry);
+                            }
+                            console.groupEnd();
+                          } catch {}
+                        } else {
+                          alert(data.error || "Failed to derive registration spec");
+                        }
+                      } catch (e: any) {
+                        alert(e?.message || "Failed to derive registration spec");
+                      }
                     }}
-                    style={{ padding: "6px 10px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}
+                  style={{ padding: "6px 10px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}
                   >Regenerate from docs</button>
                 }
               </div>
@@ -1315,16 +1341,42 @@ const OnboardingSettingsSection: React.FC = () => {
                 <label style={{ display: "block", color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Authentication Body Fields</label>
                 {
                   <button
-                    onClick={() => {
-                      setRegenAuth(true);
-                      const next: any = { ...settings };
-                      delete next.authFields;
-                      setSettings(next as any);
+                    onClick={async () => {
                       try {
                         console.groupCollapsed("[Onboarding] Regenerate auth spec");
                         console.log({ docsUrl: authDocUrl, curlCommand: (settings as any).authCurlCommand || "" });
                         console.groupEnd();
                       } catch {}
+                      try {
+                        const res = await fetch("/api/admin/onboarding?derive=auth&debug=true", { credentials: "include" });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                          const spec = data.spec || { headers: [], body: [], response: [] };
+                          const parsed = {
+                            ...(settings.authParsed || { method: "POST" }),
+                            bodyKeys: (spec.body || []).map((f: any) => f.key),
+                          } as any;
+                          setSettings({
+                            ...(settings as any),
+                            authFields: spec.body,
+                            authHeaders: spec.headers,
+                            authResponseFields: spec.response,
+                            authParsed: parsed,
+                          } as any);
+                          try {
+                            console.groupCollapsed("[Onboarding] Derived auth spec (ui)");
+                            console.log(spec);
+                            if (Array.isArray((data as any).debug)) {
+                              for (const entry of (data as any).debug) console.log(entry);
+                            }
+                            console.groupEnd();
+                          } catch {}
+                        } else {
+                          alert(data.error || "Failed to derive auth spec");
+                        }
+                      } catch (e: any) {
+                        alert(e?.message || "Failed to derive auth spec");
+                      }
                     }}
                     style={{ padding: "6px 10px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}
                   >Regenerate from docs</button>
@@ -1709,16 +1761,42 @@ const OnboardingSettingsSection: React.FC = () => {
                 <label style={{ display: "block", color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Initial Setup Body Fields</label>
                 {
                   <button
-                    onClick={() => {
-                      setRegenInitial(true);
-                      const next: any = { ...settings };
-                      delete next.initialFields;
-                      setSettings(next as any);
+                    onClick={async () => {
                       try {
                         console.groupCollapsed("[Onboarding] Regenerate initial setup spec");
                         console.log({ docsUrl: initialDocUrl, curlCommand: settings.initialSetupCurlCommand || "" });
                         console.groupEnd();
                       } catch {}
+                      try {
+                        const res = await fetch("/api/admin/onboarding?derive=initial&debug=true", { credentials: "include" });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                          const spec = data.spec || { headers: [], body: [], response: [] };
+                          const parsed = {
+                            ...(settings.initialParsed || { method: "POST" }),
+                            bodyKeys: (spec.body || []).map((f: any) => f.key),
+                          } as any;
+                          setSettings({
+                            ...(settings as any),
+                            initialFields: spec.body,
+                            initialHeaders: spec.headers,
+                            initialResponseFields: spec.response,
+                            initialParsed: parsed,
+                          } as any);
+                          try {
+                            console.groupCollapsed("[Onboarding] Derived initial setup spec (ui)");
+                            console.log(spec);
+                            if (Array.isArray((data as any).debug)) {
+                              for (const entry of (data as any).debug) console.log(entry);
+                            }
+                            console.groupEnd();
+                          } catch {}
+                        } else {
+                          alert(data.error || "Failed to derive initial spec");
+                        }
+                      } catch (e: any) {
+                        alert(e?.message || "Failed to derive initial spec");
+                      }
                     }}
                     style={{ padding: "6px 10px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}
                   >Regenerate from docs</button>

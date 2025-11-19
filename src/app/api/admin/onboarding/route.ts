@@ -36,6 +36,7 @@ export async function GET(request: NextRequest) {
   try {
     const urlObj = new URL(request.url);
     const debug = urlObj.searchParams.get("debug") === "true";
+    const derive = (urlObj.searchParams.get("derive") || "").toLowerCase();
     const debugTrace: any[] = [];
     const adminVerification = await verifyAdminAccessFromCookie(request);
     if (!adminVerification.isValid || !adminVerification.adminId) {
@@ -59,11 +60,41 @@ export async function GET(request: NextRequest) {
     const docsUrlSan = sanitize(onboarding.docsUrl);
     const authDocsUrlSan = sanitize((onboarding as any).authDocsUrl);
     const initialDocsUrlSan = sanitize(onboarding.initialSetupDocsUrl);
+    const curlSan = sanitize(onboarding.curlCommand);
+    const authCurlSan = sanitize((onboarding as any).authCurlCommand);
+    const initialCurlSan = sanitize(onboarding.initialSetupCurlCommand);
     if (debug) {
       debugTrace.push({ step: "inputs", registration: { docsUrl: docsUrlSan }, auth: { docsUrl: authDocsUrlSan }, initial: { docsUrl: initialDocsUrlSan } });
     }
 
+    // Derive-only mode: return spec for requested section without persisting
+    if (derive === "registration" || derive === "auth" || derive === "initial") {
+      try {
+        const spec = await deriveSpecFromDocsForAdmin(
+          adminId,
+          derive === "registration" ? docsUrlSan : derive === "auth" ? authDocsUrlSan : initialDocsUrlSan,
+          derive as any,
+          derive === "registration" ? curlSan : derive === "auth" ? (authCurlSan as any) : initialCurlSan
+        );
+        if (debug) {
+          debugTrace.push({ step: `derive_${derive}`, docsUrl: derive === "registration" ? docsUrlSan : derive === "auth" ? authDocsUrlSan : initialDocsUrlSan, bodyCount: spec.body.length, headersCount: spec.headers.length, responseCount: spec.response.length, previewBody: spec.body.slice(0, 5) });
+        }
+        return NextResponse.json(
+          { success: true, spec, ...(debug ? { debug: debugTrace } : {}) },
+          { status: 200, headers: corsHeaders }
+        );
+      } catch (e) {
+        return NextResponse.json(
+          { success: false, error: "Failed to derive spec", ...(debug ? { debug: debugTrace } : {}) },
+          { status: 500, headers: corsHeaders }
+        );
+      }
+    }
+
     const withParsed = { ...onboarding } as OnboardingSettings;
+    withParsed.docsUrl = docsUrlSan;
+    (withParsed as any).authDocsUrl = authDocsUrlSan;
+    withParsed.initialSetupDocsUrl = initialDocsUrlSan;
 
     try {
       if (withParsed.curlCommand) {
