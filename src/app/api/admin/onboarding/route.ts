@@ -34,6 +34,9 @@ export async function OPTIONS() {
 // GET /api/admin/onboarding
 export async function GET(request: NextRequest) {
   try {
+    const urlObj = new URL(request.url);
+    const debug = urlObj.searchParams.get("debug") === "true";
+    const debugTrace: any[] = [];
     const adminVerification = await verifyAdminAccessFromCookie(request);
     if (!adminVerification.isValid || !adminVerification.adminId) {
       return NextResponse.json(
@@ -48,6 +51,17 @@ export async function GET(request: NextRequest) {
     const adminId = adminVerification.adminId;
     const settings = await getAdminSettings(adminId);
     const onboarding = settings.onboarding || { enabled: false };
+    const sanitize = (s?: string) => {
+      if (!s || typeof s !== "string") return s;
+      const t = s.trim();
+      return t.replace(/^`+|`+$/g, "").replace(/^"+|"+$/g, "").replace(/^'+|'+$/g, "");
+    };
+    const docsUrlSan = sanitize(onboarding.docsUrl);
+    const authDocsUrlSan = sanitize((onboarding as any).authDocsUrl);
+    const initialDocsUrlSan = sanitize(onboarding.initialSetupDocsUrl);
+    if (debug) {
+      debugTrace.push({ step: "inputs", registration: { docsUrl: docsUrlSan }, auth: { docsUrl: authDocsUrlSan }, initial: { docsUrl: initialDocsUrlSan } });
+    }
 
     const withParsed = { ...onboarding } as OnboardingSettings;
 
@@ -68,7 +82,10 @@ export async function GET(request: NextRequest) {
         if ((withParsed.registrationFields || []).length > 0) {
           keysFromDocs = (withParsed.registrationFields || []).map((f) => f.key);
         } else {
-          const spec = await deriveSpecFromDocsForAdmin(adminId, withParsed.docsUrl, "registration", withParsed.curlCommand);
+          const spec = await deriveSpecFromDocsForAdmin(adminId, docsUrlSan, "registration", withParsed.curlCommand);
+          if (debug) {
+            debugTrace.push({ step: "derive_registration", docsUrl: docsUrlSan, bodyCount: spec.body.length, headersCount: spec.headers.length, responseCount: spec.response.length, previewBody: spec.body.slice(0, 5) });
+          }
           keysFromDocs = spec.body.map((f) => f.key);
         }
         withParsed.registrationParsed = {
@@ -82,10 +99,13 @@ export async function GET(request: NextRequest) {
         const needHeaders = typeof (withParsed as any).registrationHeaders === "undefined";
         const needResp = typeof (withParsed as any).registrationResponseFields === "undefined";
         if (needBody || needHeaders || needResp) {
-          const spec = await deriveSpecFromDocsForAdmin(adminId, withParsed.docsUrl, "registration", withParsed.curlCommand);
+          const spec = await deriveSpecFromDocsForAdmin(adminId, docsUrlSan, "registration", withParsed.curlCommand);
           if (needBody) withParsed.registrationFields = spec.body;
           if (needHeaders) (withParsed as any).registrationHeaders = spec.headers;
           if (needResp) (withParsed as any).registrationResponseFields = spec.response;
+          if (debug) {
+            debugTrace.push({ step: "fill_registration_first_run", docsUrl: docsUrlSan, bodyCount: spec.body.length, headersCount: spec.headers.length, responseCount: spec.response.length });
+          }
           if (withParsed.registrationParsed && (!withParsed.registrationParsed.bodyKeys || withParsed.registrationParsed.bodyKeys.length === 0)) {
             withParsed.registrationParsed = {
               ...withParsed.registrationParsed,
@@ -114,7 +134,10 @@ export async function GET(request: NextRequest) {
         if ((withParsed.authFields || []).length > 0) {
           keysFromDocs = (withParsed.authFields || []).map((f) => f.key);
         } else {
-          const spec = await deriveSpecFromDocsForAdmin(adminId, (withParsed as any).authDocsUrl, "auth", (withParsed as any).authCurlCommand as string);
+          const spec = await deriveSpecFromDocsForAdmin(adminId, authDocsUrlSan, "auth", (withParsed as any).authCurlCommand as string);
+          if (debug) {
+            debugTrace.push({ step: "derive_auth", docsUrl: authDocsUrlSan, bodyCount: spec.body.length, headersCount: spec.headers.length, responseCount: spec.response.length, previewBody: spec.body.slice(0, 5) });
+          }
           keysFromDocs = spec.body.map((f) => f.key);
         }
         withParsed.authParsed = {
@@ -127,10 +150,13 @@ export async function GET(request: NextRequest) {
         const needHeaders = typeof (withParsed as any).authHeaders === "undefined";
         const needResp = typeof (withParsed as any).authResponseFields === "undefined";
         if (needBody || needHeaders || needResp) {
-          const spec = await deriveSpecFromDocsForAdmin(adminId, (withParsed as any).authDocsUrl, "auth", (withParsed as any).authCurlCommand as string);
+          const spec = await deriveSpecFromDocsForAdmin(adminId, authDocsUrlSan, "auth", (withParsed as any).authCurlCommand as string);
           if (needBody) withParsed.authFields = spec.body;
           if (needHeaders) (withParsed as any).authHeaders = spec.headers;
           if (needResp) (withParsed as any).authResponseFields = spec.response;
+          if (debug) {
+            debugTrace.push({ step: "fill_auth_first_run", docsUrl: authDocsUrlSan, bodyCount: spec.body.length, headersCount: spec.headers.length, responseCount: spec.response.length });
+          }
           if (withParsed.authParsed && (!withParsed.authParsed.bodyKeys || withParsed.authParsed.bodyKeys.length === 0)) {
             withParsed.authParsed = {
               ...withParsed.authParsed,
@@ -157,7 +183,10 @@ export async function GET(request: NextRequest) {
         if ((withParsed.initialFields || []).length > 0) {
           keysFromDocs = (withParsed.initialFields || []).map((f) => f.key);
         } else {
-          const spec = await deriveSpecFromDocsForAdmin(adminId, withParsed.initialSetupDocsUrl, "initial", withParsed.initialSetupCurlCommand);
+          const spec = await deriveSpecFromDocsForAdmin(adminId, initialDocsUrlSan, "initial", withParsed.initialSetupCurlCommand);
+          if (debug) {
+            debugTrace.push({ step: "derive_initial", docsUrl: initialDocsUrlSan, bodyCount: spec.body.length, headersCount: spec.headers.length, responseCount: spec.response.length, previewBody: spec.body.slice(0, 5) });
+          }
           keysFromDocs = spec.body.map((f) => f.key);
         }
         withParsed.initialParsed = {
@@ -170,10 +199,13 @@ export async function GET(request: NextRequest) {
         const needHeaders = typeof (withParsed as any).initialHeaders === "undefined";
         const needResp = typeof (withParsed as any).initialResponseFields === "undefined";
         if (needBody || needHeaders || needResp) {
-          const spec = await deriveSpecFromDocsForAdmin(adminId, withParsed.initialSetupDocsUrl, "initial", withParsed.initialSetupCurlCommand);
+          const spec = await deriveSpecFromDocsForAdmin(adminId, initialDocsUrlSan, "initial", withParsed.initialSetupCurlCommand);
           if (needBody) withParsed.initialFields = spec.body;
           if (needHeaders) (withParsed as any).initialHeaders = spec.headers;
           if (needResp) (withParsed as any).initialResponseFields = spec.response;
+          if (debug) {
+            debugTrace.push({ step: "fill_initial_first_run", docsUrl: initialDocsUrlSan, bodyCount: spec.body.length, headersCount: spec.headers.length, responseCount: spec.response.length });
+          }
           if (withParsed.initialParsed && (!withParsed.initialParsed.bodyKeys || withParsed.initialParsed.bodyKeys.length === 0)) {
             withParsed.initialParsed = {
               ...withParsed.initialParsed,
@@ -185,7 +217,7 @@ export async function GET(request: NextRequest) {
     } catch {}
 
     return NextResponse.json(
-      { success: true, onboarding: withParsed },
+      { success: true, onboarding: withParsed, ...(debug ? { debug: debugTrace } : {}) },
       { status: 200, headers: corsHeaders }
     );
   } catch (error) {
@@ -200,6 +232,8 @@ export async function GET(request: NextRequest) {
 // PUT /api/admin/onboarding
 export async function PUT(request: NextRequest) {
   try {
+    const urlObj = new URL(request.url);
+    const debugQuery = urlObj.searchParams.get("debug") === "true";
     const adminVerification = await verifyAdminAccessFromCookie(request);
     if (!adminVerification.isValid || !adminVerification.adminId) {
       return NextResponse.json(
@@ -215,6 +249,13 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const onboardingUpdates: Partial<OnboardingSettings> =
       body.onboarding || body;
+    const debugFlag = Boolean((body && body.debug) || (onboardingUpdates as any).debug || debugQuery);
+    const debugTrace: any[] = [];
+    const sanitize = (s?: string) => {
+      if (!s || typeof s !== "string") return s;
+      const t = s.trim();
+      return t.replace(/^`+|`+$/g, "").replace(/^"+|"+$/g, "").replace(/^'+|'+$/g, "");
+    };
 
     // Allow minimal updates: if any cURL is provided, auto-enable onboarding
     const hasCurl =
@@ -236,6 +277,16 @@ export async function PUT(request: NextRequest) {
       ...onboardingUpdates,
       ...(shouldEnable === undefined ? {} : { enabled: shouldEnable }),
     } as OnboardingSettings;
+
+    merged.docsUrl = sanitize(merged.docsUrl);
+    (merged as any).authDocsUrl = sanitize((merged as any).authDocsUrl);
+    merged.initialSetupDocsUrl = sanitize(merged.initialSetupDocsUrl);
+    merged.curlCommand = sanitize(merged.curlCommand);
+    (merged as any).authCurlCommand = sanitize((merged as any).authCurlCommand);
+    merged.initialSetupCurlCommand = sanitize(merged.initialSetupCurlCommand);
+    if (debugFlag) {
+      debugTrace.push({ step: "inputs", registration: { docsUrl: merged.docsUrl, curlCommand: merged.curlCommand }, auth: { docsUrl: (merged as any).authDocsUrl, curlCommand: (merged as any).authCurlCommand }, initial: { docsUrl: merged.initialSetupDocsUrl, curlCommand: merged.initialSetupCurlCommand }, flags: { regenRegistration: (onboardingUpdates as any).regenRegistration, regenAuth: (onboardingUpdates as any).regenAuth, regenInitial: (onboardingUpdates as any).regenInitial } });
+    }
 
     // Explicit regeneration flags: force re-derivation of body fields
     try {
@@ -314,6 +365,9 @@ export async function PUT(request: NextRequest) {
             if (needBody) merged.registrationFields = spec.body;
             if (needHeaders) (merged as any).registrationHeaders = spec.headers;
             if (needResp) (merged as any).registrationResponseFields = spec.response;
+            if (debugFlag) {
+              debugTrace.push({ step: "derive_registration", docsUrl: merged.docsUrl, curlCommand: merged.curlCommand, bodyCount: spec.body.length, headersCount: spec.headers.length, responseCount: spec.response.length, previewBody: spec.body.slice(0, 5) });
+            }
             const flags = onboardingUpdates as any;
             if (flags?.regenRegistration === true) {
               merged.registrationParsed = {
@@ -339,6 +393,9 @@ export async function PUT(request: NextRequest) {
             if (needBody) merged.authFields = spec.body;
             if (needHeaders) (merged as any).authHeaders = spec.headers;
             if (needResp) (merged as any).authResponseFields = spec.response;
+            if (debugFlag) {
+              debugTrace.push({ step: "derive_auth", docsUrl: (merged as any).authDocsUrl, curlCommand: (merged as any).authCurlCommand, bodyCount: spec.body.length, headersCount: spec.headers.length, responseCount: spec.response.length, previewBody: spec.body.slice(0, 5) });
+            }
             const flags2 = onboardingUpdates as any;
             if (flags2?.regenAuth === true) {
               merged.authParsed = {
@@ -364,6 +421,9 @@ export async function PUT(request: NextRequest) {
             if (needBody) merged.initialFields = spec.body;
             if (needHeaders) (merged as any).initialHeaders = spec.headers;
             if (needResp) (merged as any).initialResponseFields = spec.response;
+            if (debugFlag) {
+              debugTrace.push({ step: "derive_initial", docsUrl: merged.initialSetupDocsUrl, curlCommand: merged.initialSetupCurlCommand, bodyCount: spec.body.length, headersCount: spec.headers.length, responseCount: spec.response.length, previewBody: spec.body.slice(0, 5) });
+            }
             const flags3 = onboardingUpdates as any;
             if (flags3?.regenInitial === true) {
               merged.initialParsed = {
@@ -387,8 +447,11 @@ export async function PUT(request: NextRequest) {
       adminId
     );
 
+    if (debugFlag) {
+      debugTrace.push({ step: "final_put_state", registration: { body: (updated.onboarding as any).registrationFields || [], headers: (updated.onboarding as any).registrationHeaders || [], response: (updated.onboarding as any).registrationResponseFields || [] }, auth: { body: (updated.onboarding as any).authFields || [], headers: (updated.onboarding as any).authHeaders || [], response: (updated.onboarding as any).authResponseFields || [] }, initial: { body: (updated.onboarding as any).initialFields || [], headers: (updated.onboarding as any).initialHeaders || [], response: (updated.onboarding as any).initialResponseFields || [] } });
+    }
     return NextResponse.json(
-      { success: true, onboarding: updated.onboarding },
+      { success: true, onboarding: updated.onboarding, ...(debugFlag ? { debug: debugTrace } : {}) },
       { status: 200, headers: corsHeaders }
     );
   } catch (error) {

@@ -73,7 +73,7 @@ const OnboardingSettingsSection: React.FC = () => {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch("/api/admin/onboarding", {
+        const res = await fetch("/api/admin/onboarding?debug=true", {
           credentials: "include",
         });
         const data = await res.json();
@@ -93,6 +93,13 @@ const OnboardingSettingsSection: React.FC = () => {
               parsedBodyKeys: (ob as any).registrationParsed?.bodyKeys || [],
             });
             console.groupEnd();
+          } catch {}
+          try {
+            if (Array.isArray((data as any).debug)) {
+              console.groupCollapsed("[Onboarding] Derivation trace (load)");
+              for (const entry of (data as any).debug) console.log(entry);
+              console.groupEnd();
+            }
           } catch {}
           try {
             console.groupCollapsed("[Onboarding] AI-derived auth spec (load)");
@@ -179,11 +186,11 @@ const OnboardingSettingsSection: React.FC = () => {
       if (regenRegistration) delete settingsToSave.registrationFields;
       if (regenAuth) delete settingsToSave.authFields;
       if (regenInitial) delete settingsToSave.initialFields;
-      const res = await fetch("/api/admin/onboarding", {
+      const res = await fetch("/api/admin/onboarding?debug=true", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ onboarding: settingsToSave }),
+        body: JSON.stringify({ onboarding: settingsToSave, debug: true }),
       });
       const data = await res.json();
       if (res.ok && data.success) {
@@ -219,6 +226,13 @@ const OnboardingSettingsSection: React.FC = () => {
             },
           });
           console.groupEnd();
+        } catch {}
+        try {
+          if (Array.isArray((data as any).debug)) {
+            console.groupCollapsed("[Onboarding] Derivation trace (save)");
+            for (const entry of (data as any).debug) console.log(entry);
+            console.groupEnd();
+          }
         } catch {}
         setTimeout(() => setSuccess(null), 2500);
       } else {
