@@ -1076,6 +1076,20 @@ export async function deriveSpecFromDocsForAdmin(
   }
 
   let bodyFields = await deriveFieldsFromDocsForAdmin(adminId, docsUrl, mode);
+  const toType = (k: string): OnboardingField["type"] =>
+    /email/i.test(String(k)) ? "email" : /phone/i.test(String(k)) ? "phone" : "text";
+  const toLabel = (k: string) =>
+    String(k).replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+
+  let curlKeys: string[] = [];
+  try {
+    if (curlCommand && curlCommand.trim().length > 0) {
+      curlKeys = extractBodyKeysFromCurl(curlCommand) || [];
+    }
+  } catch {}
+  if ((bodyFields || []).length === 0 && (curlKeys || []).length > 0) {
+    bodyFields = curlKeys.map((k) => ({ key: k, label: toLabel(k), required: true, type: toType(k) }));
+  }
 
   const respSet = new Set<string>();
   try {
@@ -1135,12 +1149,6 @@ export async function deriveSpecFromDocsForAdmin(
     if (text) {
       const parsed = JSON.parse(text);
       const bodyArr: any[] = Array.isArray(parsed?.body) ? parsed.body : [];
-      const toType = (k: string): OnboardingField["type"] =>
-        /email/i.test(k) ? "email" : /phone/i.test(k) ? "phone" : "text";
-      const toLabel = (k: string) =>
-        String(k)
-          .replace(/_/g, " ")
-          .replace(/\b\w/g, (c) => c.toUpperCase());
       const llmFields: OnboardingField[] = bodyArr
         .map((f) => ({
           key: String(f.key || f.name || "").trim(),
@@ -1158,9 +1166,10 @@ export async function deriveSpecFromDocsForAdmin(
         }))
         .filter((f) => f.key);
       if (llmFields.length > 0) {
-        const baseSet = new Set(
-          bodyFields.map((f) => String(f.key).toLowerCase())
-        );
+        const baseSet = new Set([
+          ...bodyFields.map((f) => String(f.key).toLowerCase()),
+          ...(curlKeys || []).map((k) => String(k).toLowerCase()),
+        ]);
         const inter = llmFields.filter((f) =>
           baseSet.has(String(f.key).toLowerCase())
         );
