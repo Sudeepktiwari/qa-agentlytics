@@ -1487,27 +1487,27 @@ const OnboardingSettingsSection: React.FC = () => {
               </div>
                 <div style={{ display: "grid", gap: 8 }}>
                   {(((settings as any).authFields) || []).map((f: any, idx: number) => (
-                    <div key={idx} style={{ display: "grid", gridTemplateColumns: "2fr 2fr 1fr 1fr auto", gap: 8, alignItems: "center" }}>
+                    <div key={idx} style={{ display: "grid", gridTemplateColumns: "minmax(0,1.2fr) minmax(0,1.2fr) minmax(0,1fr) 110px 90px 80px", gap: 8, alignItems: "center" }}>
                       <input value={f.key} onChange={(e) => {
                         const arr = [ ...((settings as any).authFields || []) ];
                         arr[idx] = { ...arr[idx], key: e.target.value };
                         setSettings({ ...settings, authFields: arr } as any);
-                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="key" />
+                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, minWidth: 0 }} placeholder="key" />
                       <input value={f.label} onChange={(e) => {
                         const arr = [ ...((settings as any).authFields || []) ];
                         arr[idx] = { ...arr[idx], label: e.target.value };
                         setSettings({ ...settings, authFields: arr } as any);
-                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="label" />
+                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, minWidth: 0 }} placeholder="label" />
                       <input value={(f as any).defaultValue || ""} onChange={(e) => {
                         const arr = [ ...((settings as any).authFields || []) ];
                         arr[idx] = { ...arr[idx], defaultValue: e.target.value } as any;
                         setSettings({ ...settings, authFields: arr } as any);
-                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="default value" />
+                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, minWidth: 0 }} placeholder="default value" />
                       <select value={f.type} onChange={(e) => {
                         const arr = [ ...((settings as any).authFields || []) ];
                         arr[idx] = { ...arr[idx], type: e.target.value };
                         setSettings({ ...settings, authFields: arr } as any);
-                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }}>
+                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, minWidth: 0 }}>
                         <option value="text">text</option>
                         <option value="email">email</option>
                         <option value="phone">phone</option>
@@ -1525,7 +1525,7 @@ const OnboardingSettingsSection: React.FC = () => {
                       const arr = [ ...((settings as any).authFields || []) ];
                       arr.splice(idx, 1);
                       setSettings({ ...settings, authFields: arr } as any);
-                    }} style={{ padding: "6px 10px", background: "#ef4444", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}>Remove</button>
+                    }} style={{ padding: "6px 10px", background: "#ef4444", color: "white", border: "none", borderRadius: 8, fontSize: 12, justifySelf: "start" }}>Remove</button>
                   </div>
                 ))}
                 <div>
@@ -2006,27 +2006,27 @@ const OnboardingSettingsSection: React.FC = () => {
               </div>
                 <div style={{ display: "grid", gap: 8 }}>
                   {(((settings as any).initialFields) || []).map((f: any, idx: number) => (
-                    <div key={idx} style={{ display: "grid", gridTemplateColumns: "2fr 2fr 1fr 1fr auto", gap: 8, alignItems: "center" }}>
+                    <div key={idx} style={{ display: "grid", gridTemplateColumns: "minmax(0,1.2fr) minmax(0,1.2fr) minmax(0,1fr) 110px 90px 80px", gap: 8, alignItems: "center" }}>
                       <input value={f.key} onChange={(e) => {
                         const arr = [ ...((settings as any).initialFields || []) ];
                         arr[idx] = { ...arr[idx], key: e.target.value };
                         setSettings({ ...settings, initialFields: arr } as any);
-                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="key" />
+                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, minWidth: 0 }} placeholder="key" />
                       <input value={f.label} onChange={(e) => {
                         const arr = [ ...((settings as any).initialFields || []) ];
                         arr[idx] = { ...arr[idx], label: e.target.value };
                         setSettings({ ...settings, initialFields: arr } as any);
-                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="label" />
+                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, minWidth: 0 }} placeholder="label" />
                       <input value={(f as any).defaultValue || ""} onChange={(e) => {
                         const arr = [ ...((settings as any).initialFields || []) ];
                         arr[idx] = { ...arr[idx], defaultValue: e.target.value } as any;
                         setSettings({ ...settings, initialFields: arr } as any);
-                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="default value" />
+                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, minWidth: 0 }} placeholder="default value" />
                       <select value={f.type} onChange={(e) => {
                         const arr = [ ...((settings as any).initialFields || []) ];
                         arr[idx] = { ...arr[idx], type: e.target.value };
                         setSettings({ ...settings, initialFields: arr } as any);
-                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }}>
+                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, minWidth: 0 }}>
                         <option value="text">text</option>
                         <option value="email">email</option>
                         <option value="phone">phone</option>
@@ -2044,7 +2044,7 @@ const OnboardingSettingsSection: React.FC = () => {
                       const arr = [ ...((settings as any).initialFields || []) ];
                       arr.splice(idx, 1);
                       setSettings({ ...settings, initialFields: arr } as any);
-                    }} style={{ padding: "6px 10px", background: "#ef4444", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}>Remove</button>
+                    }} style={{ padding: "6px 10px", background: "#ef4444", color: "white", border: "none", borderRadius: 8, fontSize: 12, justifySelf: "start" }}>Remove</button>
                   </div>
                 ))}
                 <div>
