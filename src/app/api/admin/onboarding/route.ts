@@ -135,12 +135,14 @@ export async function GET(request: NextRequest) {
           const spec = await deriveSpecFromDocsForAdmin(adminId, docsUrlSan, "registration", withParsed.curlCommand);
           if (needBody) withParsed.registrationFields = spec.body;
           if (needHeaders) (withParsed as any).registrationHeaders = spec.headers;
-          if (needResp) (withParsed as any).registrationResponseFields = spec.response;
+          const regBodyKeys = (spec.body || []).map((f: any) => f.key);
+          const regRespKeys = (spec.response || []).filter((k: string) => !regBodyKeys.includes(k));
+          if (needResp) (withParsed as any).registrationResponseFields = regRespKeys;
           if (!(withParsed as any).registrationHeaderFields) {
             (withParsed as any).registrationHeaderFields = (spec.headers || []).map((h: string) => ({ key: h, label: h.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), required: true, type: "text" }));
           }
           if (!(withParsed as any).registrationResponseFieldDefs) {
-            (withParsed as any).registrationResponseFieldDefs = (spec.response || []).map((k: string) => ({ key: k, label: k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), required: false, type: "text" }));
+            (withParsed as any).registrationResponseFieldDefs = regRespKeys.map((k: string) => ({ key: k, label: k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), required: false, type: "text" }));
           }
           if (debug) {
             debugTrace.push({ step: "fill_registration_first_run", docsUrl: docsUrlSan, bodyCount: spec.body.length, headersCount: spec.headers.length, responseCount: spec.response.length });
@@ -192,12 +194,14 @@ export async function GET(request: NextRequest) {
           const spec = await deriveSpecFromDocsForAdmin(adminId, authDocsUrlSan, "auth", (withParsed as any).authCurlCommand as string);
           if (needBody) withParsed.authFields = spec.body;
           if (needHeaders) (withParsed as any).authHeaders = spec.headers;
-          if (needResp) (withParsed as any).authResponseFields = spec.response;
+          const authBodyKeys = (spec.body || []).map((f: any) => f.key);
+          const authRespKeys = (spec.response || []).filter((k: string) => !authBodyKeys.includes(k));
+          if (needResp) (withParsed as any).authResponseFields = authRespKeys;
           if (!(withParsed as any).authHeaderFields) {
             (withParsed as any).authHeaderFields = (spec.headers || []).map((h: string) => ({ key: h, label: h.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), required: true, type: "text" }));
           }
           if (!(withParsed as any).authResponseFieldDefs) {
-            (withParsed as any).authResponseFieldDefs = (spec.response || []).map((k: string) => ({ key: k, label: k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), required: false, type: "text" }));
+            (withParsed as any).authResponseFieldDefs = authRespKeys.map((k: string) => ({ key: k, label: k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), required: false, type: "text" }));
           }
           if (debug) {
             debugTrace.push({ step: "fill_auth_first_run", docsUrl: authDocsUrlSan, bodyCount: spec.body.length, headersCount: spec.headers.length, responseCount: spec.response.length });
@@ -247,12 +251,14 @@ export async function GET(request: NextRequest) {
           const spec = await deriveSpecFromDocsForAdmin(adminId, initialDocsUrlSan, "initial", withParsed.initialSetupCurlCommand);
           if (needBody) withParsed.initialFields = spec.body;
           if (needHeaders) (withParsed as any).initialHeaders = spec.headers;
-          if (needResp) (withParsed as any).initialResponseFields = spec.response;
+          const initBodyKeys = (spec.body || []).map((f: any) => f.key);
+          const initRespKeys = (spec.response || []).filter((k: string) => !initBodyKeys.includes(k));
+          if (needResp) (withParsed as any).initialResponseFields = initRespKeys;
           if (!(withParsed as any).initialHeaderFields) {
             (withParsed as any).initialHeaderFields = (spec.headers || []).map((h: string) => ({ key: h, label: h.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), required: true, type: "text" }));
           }
           if (!(withParsed as any).initialResponseFieldDefs) {
-            (withParsed as any).initialResponseFieldDefs = (spec.response || []).map((k: string) => ({ key: k, label: k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), required: false, type: "text" }));
+            (withParsed as any).initialResponseFieldDefs = initRespKeys.map((k: string) => ({ key: k, label: k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), required: false, type: "text" }));
           }
           if (debug) {
             debugTrace.push({ step: "fill_initial_first_run", docsUrl: initialDocsUrlSan, bodyCount: spec.body.length, headersCount: spec.headers.length, responseCount: spec.response.length });
@@ -424,7 +430,9 @@ export async function PUT(request: NextRequest) {
             const spec = await deriveSpecFromDocsForAdmin(adminId, merged.docsUrl, "registration", merged.curlCommand);
             if (needBody) merged.registrationFields = spec.body;
             if (needHeaders) (merged as any).registrationHeaders = spec.headers;
-            if (needResp) (merged as any).registrationResponseFields = spec.response;
+            const regBodyKeys2 = (spec.body || []).map((f: any) => f.key);
+            const regRespKeys2 = (spec.response || []).filter((k: string) => !regBodyKeys2.includes(k));
+            if (needResp) (merged as any).registrationResponseFields = regRespKeys2;
             if (!(merged as any).registrationHeaderFields) {
               (merged as any).registrationHeaderFields = (spec.headers || []).map((h: string) => ({ key: h, label: h.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), required: true, type: "text" }));
             }
@@ -462,7 +470,9 @@ export async function PUT(request: NextRequest) {
             const spec = await deriveSpecFromDocsForAdmin(adminId, (merged as any).authDocsUrl, "auth", (merged as any).authCurlCommand as string);
             if (needBody) merged.authFields = spec.body;
             if (needHeaders) (merged as any).authHeaders = spec.headers;
-            if (needResp) (merged as any).authResponseFields = spec.response;
+            const authBodyKeys2 = (spec.body || []).map((f: any) => f.key);
+            const authRespKeys2 = (spec.response || []).filter((k: string) => !authBodyKeys2.includes(k));
+            if (needResp) (merged as any).authResponseFields = authRespKeys2;
             if (!(merged as any).authHeaderFields) {
               (merged as any).authHeaderFields = (spec.headers || []).map((h: string) => ({ key: h, label: h.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), required: true, type: "text" }));
             }
@@ -500,7 +510,9 @@ export async function PUT(request: NextRequest) {
             const spec = await deriveSpecFromDocsForAdmin(adminId, merged.initialSetupDocsUrl, "initial", merged.initialSetupCurlCommand);
             if (needBody) merged.initialFields = spec.body;
             if (needHeaders) (merged as any).initialHeaders = spec.headers;
-            if (needResp) (merged as any).initialResponseFields = spec.response;
+            const initBodyKeys2 = (spec.body || []).map((f: any) => f.key);
+            const initRespKeys2 = (spec.response || []).filter((k: string) => !initBodyKeys2.includes(k));
+            if (needResp) (merged as any).initialResponseFields = initRespKeys2;
             if (!(merged as any).initialHeaderFields) {
               (merged as any).initialHeaderFields = (spec.headers || []).map((h: string) => ({ key: h, label: h.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), required: true, type: "text" }));
             }

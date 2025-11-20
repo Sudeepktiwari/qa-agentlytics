@@ -654,13 +654,15 @@ const OnboardingSettingsSection: React.FC = () => {
                             ...(settings.registrationParsed || { method: "POST" }),
                             bodyKeys: (spec.body || []).map((f: any) => f.key),
                           } as any;
+                          const regBodyKeys = (spec.body || []).map((f: any) => f.key);
+                          const regRespKeys = (spec.response || []).filter((k: string) => !regBodyKeys.includes(k));
                           setSettings({
                             ...(settings as any),
                             registrationFields: spec.body,
                             registrationHeaders: spec.headers,
                             registrationHeaderFields: (spec.headers || []).map((h: string) => ({ key: h, label: h, required: true, type: "text" })),
-                            registrationResponseFields: spec.response,
-                            registrationResponseFieldDefs: (spec.response || []).map((k: string) => ({ key: k, label: k, required: false, type: "text" })),
+                            registrationResponseFields: regRespKeys,
+                            registrationResponseFieldDefs: regRespKeys.map((k: string) => ({ key: k, label: k, required: false, type: "text" })),
                             registrationParsed: parsed,
                           } as any);
                           try {
@@ -779,7 +781,7 @@ const OnboardingSettingsSection: React.FC = () => {
               <div style={{ marginTop: 10 }}>
                 <div style={{ color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Registration Response Fields</div>
                 <div style={{ display: "grid", gap: 8 }}>
-                  {(((settings as any).registrationResponseFieldDefs) || []).map((f: any, i: number) => (
+                  {(((settings as any).registrationResponseFieldDefs || []).filter((f: any) => !(((settings as any).registrationFields || []).some((bf: any) => bf.key === f.key)))).map((f: any, i: number) => (
                     <div key={(f.key || "") + i} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 120px 140px auto", gap: 8, alignItems: "center" }}>
                       <input value={f.key} onChange={(e) => {
                         const arr = [ ...(((settings as any).registrationResponseFieldDefs) || []) ];
@@ -1444,13 +1446,15 @@ const OnboardingSettingsSection: React.FC = () => {
                             ...(settings.authParsed || { method: "POST" }),
                             bodyKeys: (spec.body || []).map((f: any) => f.key),
                           } as any;
+                          const authBodyKeys = (spec.body || []).map((f: any) => f.key);
+                          const authRespKeys = (spec.response || []).filter((k: string) => !authBodyKeys.includes(k));
                           setSettings({
                             ...(settings as any),
                             authFields: spec.body,
                             authHeaders: spec.headers,
                             authHeaderFields: (spec.headers || []).map((h: string) => ({ key: h, label: h, required: true, type: "text" })),
-                            authResponseFields: spec.response,
-                            authResponseFieldDefs: (spec.response || []).map((k: string) => ({ key: k, label: k, required: false, type: "text" })),
+                            authResponseFields: authRespKeys,
+                            authResponseFieldDefs: authRespKeys.map((k: string) => ({ key: k, label: k, required: false, type: "text" })),
                             authParsed: parsed,
                           } as any);
                           try {
@@ -1568,7 +1572,7 @@ const OnboardingSettingsSection: React.FC = () => {
                 <div style={{ marginTop: 10 }}>
                   <div style={{ color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Auth Response Fields</div>
                   <div style={{ display: "grid", gap: 8 }}>
-                    {(((settings as any).authResponseFieldDefs) || []).map((f: any, i: number) => (
+                    {(((settings as any).authResponseFieldDefs || []).filter((f: any) => !(((settings as any).authFields || []).some((bf: any) => bf.key === f.key)))).map((f: any, i: number) => (
                       <div key={(f.key || "") + i} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 120px 140px auto", gap: 8, alignItems: "center" }}>
                         <input value={f.key} onChange={(e) => {
                           const arr = [ ...(((settings as any).authResponseFieldDefs) || []) ];
@@ -1946,13 +1950,15 @@ const OnboardingSettingsSection: React.FC = () => {
                             ...(settings.initialParsed || { method: "POST" }),
                             bodyKeys: (spec.body || []).map((f: any) => f.key),
                           } as any;
+                          const initBodyKeys = (spec.body || []).map((f: any) => f.key);
+                          const initRespKeys = (spec.response || []).filter((k: string) => !initBodyKeys.includes(k));
                           setSettings({
                             ...(settings as any),
                             initialFields: spec.body,
                             initialHeaders: spec.headers,
                             initialHeaderFields: (spec.headers || []).map((h: string) => ({ key: h, label: h, required: true, type: "text" })),
-                            initialResponseFields: spec.response,
-                            initialResponseFieldDefs: (spec.response || []).map((k: string) => ({ key: k, label: k, required: false, type: "text" })),
+                            initialResponseFields: initRespKeys,
+                            initialResponseFieldDefs: initRespKeys.map((k: string) => ({ key: k, label: k, required: false, type: "text" })),
                             initialParsed: parsed,
                           } as any);
                           try {
@@ -2070,7 +2076,7 @@ const OnboardingSettingsSection: React.FC = () => {
                 <div style={{ marginTop: 10 }}>
                   <div style={{ color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Initial Setup Response Fields</div>
                   <div style={{ display: "grid", gap: 8 }}>
-                    {(((settings as any).initialResponseFieldDefs) || []).map((f: any, i: number) => (
+                    {(((settings as any).initialResponseFieldDefs || []).filter((f: any) => !(((settings as any).initialFields || []).some((bf: any) => bf.key === f.key)))).map((f: any, i: number) => (
                       <div key={(f.key || "") + i} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 120px 140px auto", gap: 8, alignItems: "center" }}>
                         <input value={f.key} onChange={(e) => {
                           const arr = [ ...(((settings as any).initialResponseFieldDefs) || []) ];
