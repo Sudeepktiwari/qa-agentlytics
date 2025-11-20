@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 import * as cheerio from "cheerio";
 import { chunkText } from "@/lib/chunkText";
-import { addChunks } from "@/lib/chroma";
+import { addChunks, deleteDocument } from "@/lib/chroma";
 import { verifyAdminAccessFromCookie } from "@/lib/auth";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -106,6 +106,10 @@ export async function POST(request: NextRequest) {
 
     // Upsert to Pinecone via chroma.ts helper; include namespace via filename prefix
     const filename = `${namespace}:${source}`;
+    // Ensure idempotent re-indexing: delete existing vectors for this filename/admin
+    try {
+      await deleteDocument(filename, adminId);
+    } catch {}
     const metadata = chunks.map((_, i) => ({ filename, chunkIndex: i, adminId }));
     await addChunks(chunks, embeddings, metadata);
 
