@@ -756,7 +756,7 @@ async function detectBookingConflicts(
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, x-api-key, x-widget-mode, Authorization",
+  "Access-Control-Allow-Headers": "Content-Type, x-api-key, X-API-Key, x-widget-mode, X-Widget-Mode, Authorization",
   "Access-Control-Max-Age": "86400",
   "Access-Control-Allow-Credentials": "true",
 };
@@ -1852,7 +1852,7 @@ export async function POST(req: NextRequest) {
     );
 
   // Check for API key authentication (for external widget usage)
-  const apiKey = req.headers.get("x-api-key");
+  const apiKey = req.headers.get("x-api-key") || req.headers.get("X-API-Key");
   let apiAuth = null;
   if (apiKey) {
     apiAuth = await verifyApiKey(apiKey);
@@ -2506,7 +2506,7 @@ Keep the response conversational and helpful, focusing on providing value before
   const existingOnboarding = await sessionsCollection.findOne({ sessionId });
   const isOnboardingAction = !!question && (/(?:\b(cancel|quit)\s+onboarding\b)/i.test(question || "") || (/\b(cancel|quit)\b/i.test(question || "") && ["in_progress", "ready_to_submit", "error"].includes(existingOnboarding?.status || "")));
   // Respect widget mode header to gate onboarding in the chat API
-  const widgetMode = req.headers.get("x-widget-mode") || "";
+  const widgetMode = req.headers.get("x-widget-mode") || req.headers.get("X-Widget-Mode") || "";
   const isOnboardingOnly = widgetMode === "onboarding_only";
   const isOnboardingIntent =
     onboardingEnabled &&

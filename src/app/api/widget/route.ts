@@ -3442,7 +3442,20 @@ export async function GET(request: Request) {
         };
       }
       
-      const responseData = await response.json();
+      const contentType = response.headers.get('content-type') || '';
+      let responseData;
+      try {
+        if (contentType.includes('application/json')) {
+          responseData = await response.json();
+        } else {
+          const text = await response.text();
+          responseData = { mainText: text || '' };
+        }
+      } catch (parseErr) {
+        console.warn('⚠️ [WIDGET API] Failed to parse JSON, falling back to text:', parseErr);
+        const text = await response.text().catch(() => '');
+        responseData = { mainText: text || '' };
+      }
       
       // 🔍 DEBUG: Log the raw response data BEFORE normalization
       console.log("🔍 [WIDGET API] RAW RESPONSE DATA (before normalization):", responseData);
