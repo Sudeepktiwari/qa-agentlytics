@@ -47,13 +47,19 @@ export interface OnboardingSettings {
   fields?: OnboardingField[];
   registrationFields?: OnboardingField[];
   registrationHeaders?: string[];
+  registrationHeaderFields?: OnboardingField[];
   registrationResponseFields?: string[];
+  registrationResponseFieldDefs?: OnboardingField[];
   authFields?: OnboardingField[];
   authHeaders?: string[];
+  authHeaderFields?: OnboardingField[];
   authResponseFields?: string[];
+  authResponseFieldDefs?: OnboardingField[];
   initialFields?: OnboardingField[];
   initialHeaders?: string[];
+  initialHeaderFields?: OnboardingField[];
   initialResponseFields?: string[];
+  initialResponseFieldDefs?: OnboardingField[];
   registrationParsed?: ParsedCurlSummary;
   authParsed?: ParsedCurlSummary;
   initialParsed?: ParsedCurlSummary;
@@ -143,13 +149,19 @@ export const DEFAULT_ADMIN_SETTINGS: Omit<AdminSettings, "_id" | "adminId" | "em
     fields: undefined,
     registrationFields: undefined,
     registrationHeaders: undefined,
+    registrationHeaderFields: undefined,
     registrationResponseFields: undefined,
+    registrationResponseFieldDefs: undefined,
     authFields: undefined,
     authHeaders: undefined,
+    authHeaderFields: undefined,
     authResponseFields: undefined,
+    authResponseFieldDefs: undefined,
     initialFields: undefined,
     initialHeaders: undefined,
+    initialHeaderFields: undefined,
     initialResponseFields: undefined,
+    initialResponseFieldDefs: undefined,
     registrationParsed: undefined,
     authParsed: undefined,
     initialParsed: undefined,

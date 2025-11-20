@@ -136,6 +136,12 @@ export async function GET(request: NextRequest) {
           if (needBody) withParsed.registrationFields = spec.body;
           if (needHeaders) (withParsed as any).registrationHeaders = spec.headers;
           if (needResp) (withParsed as any).registrationResponseFields = spec.response;
+          if (!(withParsed as any).registrationHeaderFields) {
+            (withParsed as any).registrationHeaderFields = (spec.headers || []).map((h: string) => ({ key: h, label: h.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), required: true, type: "text" }));
+          }
+          if (!(withParsed as any).registrationResponseFieldDefs) {
+            (withParsed as any).registrationResponseFieldDefs = (spec.response || []).map((k: string) => ({ key: k, label: k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), required: false, type: "text" }));
+          }
           if (debug) {
             debugTrace.push({ step: "fill_registration_first_run", docsUrl: docsUrlSan, bodyCount: spec.body.length, headersCount: spec.headers.length, responseCount: spec.response.length });
           }
@@ -187,6 +193,12 @@ export async function GET(request: NextRequest) {
           if (needBody) withParsed.authFields = spec.body;
           if (needHeaders) (withParsed as any).authHeaders = spec.headers;
           if (needResp) (withParsed as any).authResponseFields = spec.response;
+          if (!(withParsed as any).authHeaderFields) {
+            (withParsed as any).authHeaderFields = (spec.headers || []).map((h: string) => ({ key: h, label: h.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), required: true, type: "text" }));
+          }
+          if (!(withParsed as any).authResponseFieldDefs) {
+            (withParsed as any).authResponseFieldDefs = (spec.response || []).map((k: string) => ({ key: k, label: k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), required: false, type: "text" }));
+          }
           if (debug) {
             debugTrace.push({ step: "fill_auth_first_run", docsUrl: authDocsUrlSan, bodyCount: spec.body.length, headersCount: spec.headers.length, responseCount: spec.response.length });
           }
@@ -236,6 +248,12 @@ export async function GET(request: NextRequest) {
           if (needBody) withParsed.initialFields = spec.body;
           if (needHeaders) (withParsed as any).initialHeaders = spec.headers;
           if (needResp) (withParsed as any).initialResponseFields = spec.response;
+          if (!(withParsed as any).initialHeaderFields) {
+            (withParsed as any).initialHeaderFields = (spec.headers || []).map((h: string) => ({ key: h, label: h.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), required: true, type: "text" }));
+          }
+          if (!(withParsed as any).initialResponseFieldDefs) {
+            (withParsed as any).initialResponseFieldDefs = (spec.response || []).map((k: string) => ({ key: k, label: k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), required: false, type: "text" }));
+          }
           if (debug) {
             debugTrace.push({ step: "fill_initial_first_run", docsUrl: initialDocsUrlSan, bodyCount: spec.body.length, headersCount: spec.headers.length, responseCount: spec.response.length });
           }
@@ -328,16 +346,22 @@ export async function PUT(request: NextRequest) {
         (merged as any).registrationFields = undefined;
         (merged as any).registrationHeaders = undefined;
         (merged as any).registrationResponseFields = undefined;
+        (merged as any).registrationHeaderFields = undefined;
+        (merged as any).registrationResponseFieldDefs = undefined;
       }
       if (flags?.regenAuth === true) {
         (merged as any).authFields = undefined;
         (merged as any).authHeaders = undefined;
         (merged as any).authResponseFields = undefined;
+        (merged as any).authHeaderFields = undefined;
+        (merged as any).authResponseFieldDefs = undefined;
       }
       if (flags?.regenInitial === true) {
         (merged as any).initialFields = undefined;
         (merged as any).initialHeaders = undefined;
         (merged as any).initialResponseFields = undefined;
+        (merged as any).initialHeaderFields = undefined;
+        (merged as any).initialResponseFieldDefs = undefined;
       }
     } catch {}
 
@@ -401,6 +425,12 @@ export async function PUT(request: NextRequest) {
             if (needBody) merged.registrationFields = spec.body;
             if (needHeaders) (merged as any).registrationHeaders = spec.headers;
             if (needResp) (merged as any).registrationResponseFields = spec.response;
+            if (!(merged as any).registrationHeaderFields) {
+              (merged as any).registrationHeaderFields = (spec.headers || []).map((h: string) => ({ key: h, label: h.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), required: true, type: "text" }));
+            }
+            if (!(merged as any).registrationResponseFieldDefs) {
+              (merged as any).registrationResponseFieldDefs = (spec.response || []).map((k: string) => ({ key: k, label: k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), required: false, type: "text" }));
+            }
             if (debugFlag) {
               debugTrace.push({ step: "derive_registration", docsUrl: merged.docsUrl, curlCommand: merged.curlCommand, bodyCount: spec.body.length, headersCount: spec.headers.length, responseCount: spec.response.length, previewBody: spec.body.slice(0, 5) });
             }
@@ -433,6 +463,12 @@ export async function PUT(request: NextRequest) {
             if (needBody) merged.authFields = spec.body;
             if (needHeaders) (merged as any).authHeaders = spec.headers;
             if (needResp) (merged as any).authResponseFields = spec.response;
+            if (!(merged as any).authHeaderFields) {
+              (merged as any).authHeaderFields = (spec.headers || []).map((h: string) => ({ key: h, label: h.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), required: true, type: "text" }));
+            }
+            if (!(merged as any).authResponseFieldDefs) {
+              (merged as any).authResponseFieldDefs = (spec.response || []).map((k: string) => ({ key: k, label: k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), required: false, type: "text" }));
+            }
             if (debugFlag) {
               debugTrace.push({ step: "derive_auth", docsUrl: (merged as any).authDocsUrl, curlCommand: (merged as any).authCurlCommand, bodyCount: spec.body.length, headersCount: spec.headers.length, responseCount: spec.response.length, previewBody: spec.body.slice(0, 5) });
             }
@@ -465,6 +501,12 @@ export async function PUT(request: NextRequest) {
             if (needBody) merged.initialFields = spec.body;
             if (needHeaders) (merged as any).initialHeaders = spec.headers;
             if (needResp) (merged as any).initialResponseFields = spec.response;
+            if (!(merged as any).initialHeaderFields) {
+              (merged as any).initialHeaderFields = (spec.headers || []).map((h: string) => ({ key: h, label: h.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), required: true, type: "text" }));
+            }
+            if (!(merged as any).initialResponseFieldDefs) {
+              (merged as any).initialResponseFieldDefs = (spec.response || []).map((k: string) => ({ key: k, label: k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), required: false, type: "text" }));
+            }
             if (debugFlag) {
               debugTrace.push({ step: "derive_initial", docsUrl: merged.initialSetupDocsUrl, curlCommand: merged.initialSetupCurlCommand, bodyCount: spec.body.length, headersCount: spec.headers.length, responseCount: spec.response.length, previewBody: spec.body.slice(0, 5) });
             }

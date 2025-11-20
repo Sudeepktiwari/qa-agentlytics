@@ -171,14 +171,20 @@ const OnboardingSettingsSection: React.FC = () => {
         idempotencyKeyField: settings.idempotencyKeyField,
         rateLimit: settings.rateLimit,
         registrationFields: (settings as any).registrationFields,
+        registrationHeaderFields: (settings as any).registrationHeaderFields,
         registrationHeaders: (settings as any).registrationHeaders,
         registrationResponseFields: (settings as any).registrationResponseFields,
+        registrationResponseFieldDefs: (settings as any).registrationResponseFieldDefs,
         authFields: (settings as any).authFields,
+        authHeaderFields: (settings as any).authHeaderFields,
         authHeaders: (settings as any).authHeaders,
         authResponseFields: (settings as any).authResponseFields,
+        authResponseFieldDefs: (settings as any).authResponseFieldDefs,
         initialFields: (settings as any).initialFields,
+        initialHeaderFields: (settings as any).initialHeaderFields,
         initialHeaders: (settings as any).initialHeaders,
         initialResponseFields: (settings as any).initialResponseFields,
+        initialResponseFieldDefs: (settings as any).initialResponseFieldDefs,
         regenRegistration,
         regenAuth,
         regenInitial,
@@ -652,7 +658,9 @@ const OnboardingSettingsSection: React.FC = () => {
                             ...(settings as any),
                             registrationFields: spec.body,
                             registrationHeaders: spec.headers,
+                            registrationHeaderFields: (spec.headers || []).map((h: string) => ({ key: h, label: h, required: true, type: "text" })),
                             registrationResponseFields: spec.response,
+                            registrationResponseFieldDefs: (spec.response || []).map((k: string) => ({ key: k, label: k, required: false, type: "text" })),
                             registrationParsed: parsed,
                           } as any);
                           try {
@@ -723,25 +731,47 @@ const OnboardingSettingsSection: React.FC = () => {
               <div style={{ marginTop: 10 }}>
                 <div style={{ color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Registration Headers</div>
                 <div style={{ display: "grid", gap: 8 }}>
-                  {(((settings as any).registrationHeaders) || []).map((h: string, i: number) => (
-                    <div key={h + i} style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                      <input value={h} onChange={(e) => {
-                        const arr = [ ...(((settings as any).registrationHeaders) || []) ];
-                        arr[i] = e.target.value;
-                        setSettings({ ...settings, registrationHeaders: arr } as any);
-                      }} style={{ flex: 1, padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="Header name (e.g., x-apikey)" />
+                  {(((settings as any).registrationHeaderFields) || []).map((f: any, i: number) => (
+                    <div key={(f.key || "") + i} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 120px 140px auto", gap: 8, alignItems: "center" }}>
+                      <input value={f.key} onChange={(e) => {
+                        const arr = [ ...(((settings as any).registrationHeaderFields) || []) ];
+                        arr[i] = { ...arr[i], key: e.target.value };
+                        const keys = arr.map((x: any) => x.key);
+                        setSettings({ ...settings, registrationHeaderFields: arr, registrationHeaders: keys } as any);
+                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="header key (e.g., authorization)" />
+                      <input value={f.label || ""} onChange={(e) => {
+                        const arr = [ ...(((settings as any).registrationHeaderFields) || []) ];
+                        arr[i] = { ...arr[i], label: e.target.value };
+                        setSettings({ ...settings, registrationHeaderFields: arr } as any);
+                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="label" />
+                      <select value={f.type || "text"} onChange={(e) => {
+                        const arr = [ ...(((settings as any).registrationHeaderFields) || []) ];
+                        arr[i] = { ...arr[i], type: e.target.value };
+                        setSettings({ ...settings, registrationHeaderFields: arr } as any);
+                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }}>
+                        <option value="text">text</option>
+                      </select>
+                      <label style={{ display: "flex", alignItems: "center", gap: 6, color: "#4a5568", fontSize: 13 }}>
+                        <input type="checkbox" checked={!!f.required} onChange={(e) => {
+                          const arr = [ ...(((settings as any).registrationHeaderFields) || []) ];
+                          arr[i] = { ...arr[i], required: e.target.checked };
+                          setSettings({ ...settings, registrationHeaderFields: arr } as any);
+                        }} /> required
+                      </label>
                       <button onClick={() => {
-                        const arr = [ ...(((settings as any).registrationHeaders) || []) ];
+                        const arr = [ ...(((settings as any).registrationHeaderFields) || []) ];
                         arr.splice(i, 1);
-                        setSettings({ ...settings, registrationHeaders: arr } as any);
+                        const keys = arr.map((x: any) => x.key);
+                        setSettings({ ...settings, registrationHeaderFields: arr, registrationHeaders: keys } as any);
                       }} style={{ padding: "6px 10px", background: "#ef4444", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}>Remove</button>
                     </div>
                   ))}
                   <div>
                     <button onClick={() => {
-                      const arr = [ ...(((settings as any).registrationHeaders) || []) ];
-                      arr.push("");
-                      setSettings({ ...settings, registrationHeaders: arr } as any);
+                      const arr = [ ...(((settings as any).registrationHeaderFields) || []) ];
+                      arr.push({ key: "", label: "", required: true, type: "text" });
+                      const keys = arr.map((x: any) => x.key);
+                      setSettings({ ...settings, registrationHeaderFields: arr, registrationHeaders: keys } as any);
                     }} style={{ padding: "8px 12px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 13 }}>Add header</button>
                   </div>
                 </div>
@@ -749,26 +779,48 @@ const OnboardingSettingsSection: React.FC = () => {
               <div style={{ marginTop: 10 }}>
                 <div style={{ color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Registration Response Fields</div>
                 <div style={{ display: "grid", gap: 8 }}>
-                  {(((settings as any).registrationResponseFields) || []).map((k: string, i: number) => (
-                    <div key={k + i} style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                      <input value={k} onChange={(e) => {
-                        const arr = [ ...(((settings as any).registrationResponseFields) || []) ];
-                        arr[i] = e.target.value;
-                        setSettings({ ...settings, registrationResponseFields: arr } as any);
-                      }} style={{ flex: 1, padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="Response key (e.g., user.id)" />
+                  {(((settings as any).registrationResponseFieldDefs) || []).map((f: any, i: number) => (
+                    <div key={(f.key || "") + i} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 120px 140px auto", gap: 8, alignItems: "center" }}>
+                      <input value={f.key} onChange={(e) => {
+                        const arr = [ ...(((settings as any).registrationResponseFieldDefs) || []) ];
+                        arr[i] = { ...arr[i], key: e.target.value };
+                        const keys = arr.map((x: any) => x.key);
+                        setSettings({ ...settings, registrationResponseFieldDefs: arr, registrationResponseFields: keys } as any);
+                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="response key (e.g., user.id)" />
+                      <input value={f.label || ""} onChange={(e) => {
+                        const arr = [ ...(((settings as any).registrationResponseFieldDefs) || []) ];
+                        arr[i] = { ...arr[i], label: e.target.value };
+                        setSettings({ ...settings, registrationResponseFieldDefs: arr } as any);
+                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="label" />
+                      <select value={f.type || "text"} onChange={(e) => {
+                        const arr = [ ...(((settings as any).registrationResponseFieldDefs) || []) ];
+                        arr[i] = { ...arr[i], type: e.target.value };
+                        setSettings({ ...settings, registrationResponseFieldDefs: arr } as any);
+                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }}>
+                        <option value="text">text</option>
+                      </select>
+                      <label style={{ display: "flex", alignItems: "center", gap: 6, color: "#4a5568", fontSize: 13 }}>
+                        <input type="checkbox" checked={!!f.required} onChange={(e) => {
+                          const arr = [ ...(((settings as any).registrationResponseFieldDefs) || []) ];
+                          arr[i] = { ...arr[i], required: e.target.checked };
+                          setSettings({ ...settings, registrationResponseFieldDefs: arr } as any);
+                        }} /> required
+                      </label>
                       <button onClick={() => {
-                        const arr = [ ...(((settings as any).registrationResponseFields) || []) ];
+                        const arr = [ ...(((settings as any).registrationResponseFieldDefs) || []) ];
                         arr.splice(i, 1);
-                        setSettings({ ...settings, registrationResponseFields: arr } as any);
+                        const keys = arr.map((x: any) => x.key);
+                        setSettings({ ...settings, registrationResponseFieldDefs: arr, registrationResponseFields: keys } as any);
                       }} style={{ padding: "6px 10px", background: "#ef4444", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}>Remove</button>
                     </div>
                   ))}
                   <div>
                     <button onClick={() => {
-                      const arr = [ ...(((settings as any).registrationResponseFields) || []) ];
-                      arr.push("");
-                      setSettings({ ...settings, registrationResponseFields: arr } as any);
-                    }} style={{ padding: "8px 12px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 13 }}>Add response key</button>
+                      const arr = [ ...(((settings as any).registrationResponseFieldDefs) || []) ];
+                      arr.push({ key: "", label: "", required: false, type: "text" });
+                      const keys = arr.map((x: any) => x.key);
+                      setSettings({ ...settings, registrationResponseFieldDefs: arr, registrationResponseFields: keys } as any);
+                    }} style={{ padding: "8px 12px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 13 }}>Add response field</button>
                   </div>
                 </div>
               </div>
@@ -1396,7 +1448,9 @@ const OnboardingSettingsSection: React.FC = () => {
                             ...(settings as any),
                             authFields: spec.body,
                             authHeaders: spec.headers,
+                            authHeaderFields: (spec.headers || []).map((h: string) => ({ key: h, label: h, required: true, type: "text" })),
                             authResponseFields: spec.response,
+                            authResponseFieldDefs: (spec.response || []).map((k: string) => ({ key: k, label: k, required: false, type: "text" })),
                             authParsed: parsed,
                           } as any);
                           try {
@@ -1466,25 +1520,47 @@ const OnboardingSettingsSection: React.FC = () => {
                 <div style={{ marginTop: 10 }}>
                   <div style={{ color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Auth Headers</div>
                   <div style={{ display: "grid", gap: 8 }}>
-                    {(((settings as any).authHeaders) || []).map((h: string, i: number) => (
-                      <div key={h + i} style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                        <input value={h} onChange={(e) => {
-                          const arr = [ ...(((settings as any).authHeaders) || []) ];
-                          arr[i] = e.target.value;
-                          setSettings({ ...settings, authHeaders: arr } as any);
-                        }} style={{ flex: 1, padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="Header name (e.g., authorization)" />
+                    {(((settings as any).authHeaderFields) || []).map((f: any, i: number) => (
+                      <div key={(f.key || "") + i} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 120px 140px auto", gap: 8, alignItems: "center" }}>
+                        <input value={f.key} onChange={(e) => {
+                          const arr = [ ...(((settings as any).authHeaderFields) || []) ];
+                          arr[i] = { ...arr[i], key: e.target.value };
+                          const keys = arr.map((x: any) => x.key);
+                          setSettings({ ...settings, authHeaderFields: arr, authHeaders: keys } as any);
+                        }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="header key (e.g., authorization)" />
+                        <input value={f.label || ""} onChange={(e) => {
+                          const arr = [ ...(((settings as any).authHeaderFields) || []) ];
+                          arr[i] = { ...arr[i], label: e.target.value };
+                          setSettings({ ...settings, authHeaderFields: arr } as any);
+                        }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="label" />
+                        <select value={f.type || "text"} onChange={(e) => {
+                          const arr = [ ...(((settings as any).authHeaderFields) || []) ];
+                          arr[i] = { ...arr[i], type: e.target.value };
+                          setSettings({ ...settings, authHeaderFields: arr } as any);
+                        }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }}>
+                          <option value="text">text</option>
+                        </select>
+                        <label style={{ display: "flex", alignItems: "center", gap: 6, color: "#4a5568", fontSize: 13 }}>
+                          <input type="checkbox" checked={!!f.required} onChange={(e) => {
+                            const arr = [ ...(((settings as any).authHeaderFields) || []) ];
+                            arr[i] = { ...arr[i], required: e.target.checked };
+                            setSettings({ ...settings, authHeaderFields: arr } as any);
+                          }} /> required
+                        </label>
                         <button onClick={() => {
-                          const arr = [ ...(((settings as any).authHeaders) || []) ];
+                          const arr = [ ...(((settings as any).authHeaderFields) || []) ];
                           arr.splice(i, 1);
-                          setSettings({ ...settings, authHeaders: arr } as any);
+                          const keys = arr.map((x: any) => x.key);
+                          setSettings({ ...settings, authHeaderFields: arr, authHeaders: keys } as any);
                         }} style={{ padding: "6px 10px", background: "#ef4444", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}>Remove</button>
                       </div>
                     ))}
                     <div>
                       <button onClick={() => {
-                        const arr = [ ...(((settings as any).authHeaders) || []) ];
-                        arr.push("");
-                        setSettings({ ...settings, authHeaders: arr } as any);
+                        const arr = [ ...(((settings as any).authHeaderFields) || []) ];
+                        arr.push({ key: "", label: "", required: true, type: "text" });
+                        const keys = arr.map((x: any) => x.key);
+                        setSettings({ ...settings, authHeaderFields: arr, authHeaders: keys } as any);
                       }} style={{ padding: "8px 12px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 13 }}>Add header</button>
                     </div>
                   </div>
@@ -1492,26 +1568,48 @@ const OnboardingSettingsSection: React.FC = () => {
                 <div style={{ marginTop: 10 }}>
                   <div style={{ color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Auth Response Fields</div>
                   <div style={{ display: "grid", gap: 8 }}>
-                    {(((settings as any).authResponseFields) || []).map((k: string, i: number) => (
-                      <div key={k + i} style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                        <input value={k} onChange={(e) => {
-                          const arr = [ ...(((settings as any).authResponseFields) || []) ];
-                          arr[i] = e.target.value;
-                          setSettings({ ...settings, authResponseFields: arr } as any);
-                        }} style={{ flex: 1, padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="Response key (e.g., token)" />
+                    {(((settings as any).authResponseFieldDefs) || []).map((f: any, i: number) => (
+                      <div key={(f.key || "") + i} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 120px 140px auto", gap: 8, alignItems: "center" }}>
+                        <input value={f.key} onChange={(e) => {
+                          const arr = [ ...(((settings as any).authResponseFieldDefs) || []) ];
+                          arr[i] = { ...arr[i], key: e.target.value };
+                          const keys = arr.map((x: any) => x.key);
+                          setSettings({ ...settings, authResponseFieldDefs: arr, authResponseFields: keys } as any);
+                        }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="response key (e.g., token)" />
+                        <input value={f.label || ""} onChange={(e) => {
+                          const arr = [ ...(((settings as any).authResponseFieldDefs) || []) ];
+                          arr[i] = { ...arr[i], label: e.target.value };
+                          setSettings({ ...settings, authResponseFieldDefs: arr } as any);
+                        }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="label" />
+                        <select value={f.type || "text"} onChange={(e) => {
+                          const arr = [ ...(((settings as any).authResponseFieldDefs) || []) ];
+                          arr[i] = { ...arr[i], type: e.target.value };
+                          setSettings({ ...settings, authResponseFieldDefs: arr } as any);
+                        }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }}>
+                          <option value="text">text</option>
+                        </select>
+                        <label style={{ display: "flex", alignItems: "center", gap: 6, color: "#4a5568", fontSize: 13 }}>
+                          <input type="checkbox" checked={!!f.required} onChange={(e) => {
+                            const arr = [ ...(((settings as any).authResponseFieldDefs) || []) ];
+                            arr[i] = { ...arr[i], required: e.target.checked };
+                            setSettings({ ...settings, authResponseFieldDefs: arr } as any);
+                          }} /> required
+                        </label>
                         <button onClick={() => {
-                          const arr = [ ...(((settings as any).authResponseFields) || []) ];
+                          const arr = [ ...(((settings as any).authResponseFieldDefs) || []) ];
                           arr.splice(i, 1);
-                          setSettings({ ...settings, authResponseFields: arr } as any);
+                          const keys = arr.map((x: any) => x.key);
+                          setSettings({ ...settings, authResponseFieldDefs: arr, authResponseFields: keys } as any);
                         }} style={{ padding: "6px 10px", background: "#ef4444", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}>Remove</button>
                       </div>
                     ))}
                     <div>
                       <button onClick={() => {
-                        const arr = [ ...(((settings as any).authResponseFields) || []) ];
-                        arr.push("");
-                        setSettings({ ...settings, authResponseFields: arr } as any);
-                      }} style={{ padding: "8px 12px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 13 }}>Add response key</button>
+                        const arr = [ ...(((settings as any).authResponseFieldDefs) || []) ];
+                        arr.push({ key: "", label: "", required: false, type: "text" });
+                        const keys = arr.map((x: any) => x.key);
+                        setSettings({ ...settings, authResponseFieldDefs: arr, authResponseFields: keys } as any);
+                      }} style={{ padding: "8px 12px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 13 }}>Add response field</button>
                     </div>
                   </div>
                 </div>
@@ -1852,7 +1950,9 @@ const OnboardingSettingsSection: React.FC = () => {
                             ...(settings as any),
                             initialFields: spec.body,
                             initialHeaders: spec.headers,
+                            initialHeaderFields: (spec.headers || []).map((h: string) => ({ key: h, label: h, required: true, type: "text" })),
                             initialResponseFields: spec.response,
+                            initialResponseFieldDefs: (spec.response || []).map((k: string) => ({ key: k, label: k, required: false, type: "text" })),
                             initialParsed: parsed,
                           } as any);
                           try {
@@ -1922,25 +2022,47 @@ const OnboardingSettingsSection: React.FC = () => {
                 <div style={{ marginTop: 10 }}>
                   <div style={{ color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Initial Setup Headers</div>
                   <div style={{ display: "grid", gap: 8 }}>
-                    {(((settings as any).initialHeaders) || []).map((h: string, i: number) => (
-                      <div key={h + i} style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                        <input value={h} onChange={(e) => {
-                          const arr = [ ...(((settings as any).initialHeaders) || []) ];
-                          arr[i] = e.target.value;
-                          setSettings({ ...settings, initialHeaders: arr } as any);
-                        }} style={{ flex: 1, padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="Header name (e.g., x-apikey)" />
+                    {(((settings as any).initialHeaderFields) || []).map((f: any, i: number) => (
+                      <div key={(f.key || "") + i} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 120px 140px auto", gap: 8, alignItems: "center" }}>
+                        <input value={f.key} onChange={(e) => {
+                          const arr = [ ...(((settings as any).initialHeaderFields) || []) ];
+                          arr[i] = { ...arr[i], key: e.target.value };
+                          const keys = arr.map((x: any) => x.key);
+                          setSettings({ ...settings, initialHeaderFields: arr, initialHeaders: keys } as any);
+                        }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="header key (e.g., x-apikey)" />
+                        <input value={f.label || ""} onChange={(e) => {
+                          const arr = [ ...(((settings as any).initialHeaderFields) || []) ];
+                          arr[i] = { ...arr[i], label: e.target.value };
+                          setSettings({ ...settings, initialHeaderFields: arr } as any);
+                        }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="label" />
+                        <select value={f.type || "text"} onChange={(e) => {
+                          const arr = [ ...(((settings as any).initialHeaderFields) || []) ];
+                          arr[i] = { ...arr[i], type: e.target.value };
+                          setSettings({ ...settings, initialHeaderFields: arr } as any);
+                        }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }}>
+                          <option value="text">text</option>
+                        </select>
+                        <label style={{ display: "flex", alignItems: "center", gap: 6, color: "#4a5568", fontSize: 13 }}>
+                          <input type="checkbox" checked={!!f.required} onChange={(e) => {
+                            const arr = [ ...(((settings as any).initialHeaderFields) || []) ];
+                            arr[i] = { ...arr[i], required: e.target.checked };
+                            setSettings({ ...settings, initialHeaderFields: arr } as any);
+                          }} /> required
+                        </label>
                         <button onClick={() => {
-                          const arr = [ ...(((settings as any).initialHeaders) || []) ];
+                          const arr = [ ...(((settings as any).initialHeaderFields) || []) ];
                           arr.splice(i, 1);
-                          setSettings({ ...settings, initialHeaders: arr } as any);
+                          const keys = arr.map((x: any) => x.key);
+                          setSettings({ ...settings, initialHeaderFields: arr, initialHeaders: keys } as any);
                         }} style={{ padding: "6px 10px", background: "#ef4444", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}>Remove</button>
                       </div>
                     ))}
                     <div>
                       <button onClick={() => {
-                        const arr = [ ...(((settings as any).initialHeaders) || []) ];
-                        arr.push("");
-                        setSettings({ ...settings, initialHeaders: arr } as any);
+                        const arr = [ ...(((settings as any).initialHeaderFields) || []) ];
+                        arr.push({ key: "", label: "", required: true, type: "text" });
+                        const keys = arr.map((x: any) => x.key);
+                        setSettings({ ...settings, initialHeaderFields: arr, initialHeaders: keys } as any);
                       }} style={{ padding: "8px 12px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 13 }}>Add header</button>
                     </div>
                   </div>
@@ -1948,26 +2070,48 @@ const OnboardingSettingsSection: React.FC = () => {
                 <div style={{ marginTop: 10 }}>
                   <div style={{ color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Initial Setup Response Fields</div>
                   <div style={{ display: "grid", gap: 8 }}>
-                    {(((settings as any).initialResponseFields) || []).map((k: string, i: number) => (
-                      <div key={k + i} style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                        <input value={k} onChange={(e) => {
-                          const arr = [ ...(((settings as any).initialResponseFields) || []) ];
-                          arr[i] = e.target.value;
-                          setSettings({ ...settings, initialResponseFields: arr } as any);
-                        }} style={{ flex: 1, padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="Response key (e.g., setup.id)" />
+                    {(((settings as any).initialResponseFieldDefs) || []).map((f: any, i: number) => (
+                      <div key={(f.key || "") + i} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 120px 140px auto", gap: 8, alignItems: "center" }}>
+                        <input value={f.key} onChange={(e) => {
+                          const arr = [ ...(((settings as any).initialResponseFieldDefs) || []) ];
+                          arr[i] = { ...arr[i], key: e.target.value };
+                          const keys = arr.map((x: any) => x.key);
+                          setSettings({ ...settings, initialResponseFieldDefs: arr, initialResponseFields: keys } as any);
+                        }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="response key (e.g., setup.id)" />
+                        <input value={f.label || ""} onChange={(e) => {
+                          const arr = [ ...(((settings as any).initialResponseFieldDefs) || []) ];
+                          arr[i] = { ...arr[i], label: e.target.value };
+                          setSettings({ ...settings, initialResponseFieldDefs: arr } as any);
+                        }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="label" />
+                        <select value={f.type || "text"} onChange={(e) => {
+                          const arr = [ ...(((settings as any).initialResponseFieldDefs) || []) ];
+                          arr[i] = { ...arr[i], type: e.target.value };
+                          setSettings({ ...settings, initialResponseFieldDefs: arr } as any);
+                        }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }}>
+                          <option value="text">text</option>
+                        </select>
+                        <label style={{ display: "flex", alignItems: "center", gap: 6, color: "#4a5568", fontSize: 13 }}>
+                          <input type="checkbox" checked={!!f.required} onChange={(e) => {
+                            const arr = [ ...(((settings as any).initialResponseFieldDefs) || []) ];
+                            arr[i] = { ...arr[i], required: e.target.checked };
+                            setSettings({ ...settings, initialResponseFieldDefs: arr } as any);
+                          }} /> required
+                        </label>
                         <button onClick={() => {
-                          const arr = [ ...(((settings as any).initialResponseFields) || []) ];
+                          const arr = [ ...(((settings as any).initialResponseFieldDefs) || []) ];
                           arr.splice(i, 1);
-                          setSettings({ ...settings, initialResponseFields: arr } as any);
+                          const keys = arr.map((x: any) => x.key);
+                          setSettings({ ...settings, initialResponseFieldDefs: arr, initialResponseFields: keys } as any);
                         }} style={{ padding: "6px 10px", background: "#ef4444", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}>Remove</button>
                       </div>
                     ))}
                     <div>
                       <button onClick={() => {
-                        const arr = [ ...(((settings as any).initialResponseFields) || []) ];
-                        arr.push("");
-                        setSettings({ ...settings, initialResponseFields: arr } as any);
-                      }} style={{ padding: "8px 12px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 13 }}>Add response key</button>
+                        const arr = [ ...(((settings as any).initialResponseFieldDefs) || []) ];
+                        arr.push({ key: "", label: "", required: false, type: "text" });
+                        const keys = arr.map((x: any) => x.key);
+                        setSettings({ ...settings, initialResponseFieldDefs: arr, initialResponseFields: keys } as any);
+                      }} style={{ padding: "8px 12px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 13 }}>Add response field</button>
                     </div>
                   </div>
                 </div>
