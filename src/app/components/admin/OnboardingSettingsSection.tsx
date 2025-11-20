@@ -608,9 +608,10 @@ const OnboardingSettingsSection: React.FC = () => {
                 </span>
               )}
             </div>
-
+          </div>
+          <div style={{ display: registrationOpen ? "block" : "none" }}>
             {settings.registrationParsed && (
-              <div style={{ marginTop: 12, padding: 12, border: "1px solid #e2e8f0", borderRadius: 8 }}>
+              <div style={{ marginBottom: 12, padding: 12, border: "1px solid #e2e8f0", borderRadius: 8 }}>
                 <div style={{ fontWeight: 600, color: "#2d3748", marginBottom: 8 }}>Parsed Summary</div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                   <div>Method: {settings.registrationParsed.method}</div>
@@ -618,9 +619,9 @@ const OnboardingSettingsSection: React.FC = () => {
                   <div style={{ gridColumn: "1 / -1" }}>URL: {settings.registrationParsed.url || ""}</div>
                   <div style={{ gridColumn: "1 / -1" }}>Headers:
                     <div style={{ marginTop: 6, display: "flex", flexWrap: "wrap", gap: 6 }}>
-                  {(Object.entries(settings.registrationParsed.headersRedacted || {}) as [string, string][]).map(([k, v]) => (
-                    <span key={k} style={{ background: "#edf2f7", padding: "4px 8px", borderRadius: 6, fontSize: 12 }}>{k}: {v}</span>
-                  ))}
+                      {(Object.entries(settings.registrationParsed.headersRedacted || {}) as [string, string][]).map(([k, v]) => (
+                        <span key={k} style={{ background: "#edf2f7", padding: "4px 8px", borderRadius: 6, fontSize: 12 }}>{k}: {v}</span>
+                      ))}
                     </div>
                   </div>
                   <div style={{ gridColumn: "1 / -1" }}>Body Fields:
@@ -634,58 +635,56 @@ const OnboardingSettingsSection: React.FC = () => {
               </div>
             )}
 
-            <div style={{ marginTop: 12 }}>
+            <div style={{ marginTop: 4 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <label style={{ display: "block", color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Registration Body Fields</label>
-                {
-                  <button
-                    onClick={async () => {
-                      try {
-                        console.groupCollapsed("[Onboarding] Regenerate registration spec");
-                        console.log({ docsUrl: docUrl, curlCommand: settings.curlCommand || "" });
-                        console.groupEnd();
-                      } catch {}
-                      try {
-                        const res = await fetch(`/api/admin/onboarding?derive=registration&debug=true&docsUrl=${encodeURIComponent(docUrl || "")}&curl=${encodeURIComponent(settings.curlCommand || "")}` , { credentials: "include" });
-                        const data = await res.json();
-                        if (res.ok && data.success) {
-                          const spec = data.spec || { headers: [], body: [], response: [] };
-                          const parsed = {
-                            ...(settings.registrationParsed || { method: "POST" }),
-                            bodyKeys: (spec.body || []).map((f: any) => f.key),
-                          } as any;
-                          const regBodyKeys = (spec.body || []).map((f: any) => f.key);
-                          const regRespKeys = (spec.response || []).filter((k: string) => !regBodyKeys.includes(k));
-                          setSettings({
-                            ...(settings as any),
-                            registrationFields: spec.body,
-                            registrationHeaders: spec.headers,
-                            registrationHeaderFields: (spec.headers || []).map((h: string) => ({ key: h, label: h, required: true, type: "text" })),
-                            registrationResponseFields: regRespKeys,
-                            registrationResponseFieldDefs: regRespKeys.map((k: string) => ({ key: k, label: k, required: false, type: "text" })),
-                            registrationParsed: parsed,
-                          } as any);
-                          try {
-                            console.groupCollapsed("[Onboarding] Derived registration spec (ui)");
-                            console.log(spec);
-                            if (Array.isArray((data as any).debug)) {
-                              for (const entry of (data as any).debug) console.log(entry);
-                            }
-                            console.groupEnd();
-                          } catch {}
-                        } else {
-                          alert(data.error || "Failed to derive registration spec");
-                        }
-                      } catch (e: any) {
-                        alert(e?.message || "Failed to derive registration spec");
+                <button
+                  onClick={async () => {
+                    try {
+                      console.groupCollapsed("[Onboarding] Regenerate registration spec");
+                      console.log({ docsUrl: docUrl, curlCommand: settings.curlCommand || "" });
+                      console.groupEnd();
+                    } catch {}
+                    try {
+                      const res = await fetch(`/api/admin/onboarding?derive=registration&debug=true&docsUrl=${encodeURIComponent(docUrl || "")}&curl=${encodeURIComponent(settings.curlCommand || "")}` , { credentials: "include" });
+                      const data = await res.json();
+                      if (res.ok && data.success) {
+                        const spec = data.spec || { headers: [], body: [], response: [] };
+                        const parsed = {
+                          ...(settings.registrationParsed || { method: "POST" }),
+                          bodyKeys: (spec.body || []).map((f: any) => f.key),
+                        } as any;
+                        const regBodyKeys = (spec.body || []).map((f: any) => f.key);
+                        const regRespKeys = (spec.response || []).filter((k: string) => !regBodyKeys.includes(k));
+                        setSettings({
+                          ...(settings as any),
+                          registrationFields: spec.body,
+                          registrationHeaders: spec.headers,
+                          registrationHeaderFields: (spec.headers || []).map((h: string) => ({ key: h, label: h, required: true, type: "text" })),
+                          registrationResponseFields: regRespKeys,
+                          registrationResponseFieldDefs: regRespKeys.map((k: string) => ({ key: k, label: k, required: false, type: "text" })),
+                          registrationParsed: parsed,
+                        } as any);
+                        try {
+                          console.groupCollapsed("[Onboarding] Derived registration spec (ui)");
+                          console.log(spec);
+                          if (Array.isArray((data as any).debug)) {
+                            for (const entry of (data as any).debug) console.log(entry);
+                          }
+                          console.groupEnd();
+                        } catch {}
+                      } else {
+                        alert(data.error || "Failed to derive registration spec");
                       }
-                    }}
+                    } catch (e: any) {
+                      alert(e?.message || "Failed to derive registration spec");
+                    }
+                  }}
                   style={{ padding: "6px 10px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}
-                  >Regenerate from docs</button>
-                }
+                >Regenerate from docs</button>
               </div>
-            <div style={{ display: "grid", gap: 8 }}>
-              {(((settings as any).registrationFields) || []).map((f: any, idx: number) => (
+              <div style={{ display: "grid", gap: 8 }}>
+                {(((settings as any).registrationFields) || []).map((f: any, idx: number) => (
                   <div key={idx} style={{ display: "grid", gridTemplateColumns: "minmax(0,1.2fr) minmax(0,1.2fr) minmax(0,1fr) 110px 90px 80px", gap: 8, alignItems: "center" }}>
                     <input value={f.key} onChange={(e) => {
                       const arr = [ ...((settings as any).registrationFields || []) ];
@@ -842,11 +841,6 @@ const OnboardingSettingsSection: React.FC = () => {
                 </div>
               </div>
             </div>
-            <div style={{ color: "#718096", fontSize: 12 }}>
-              {registrationOpen ? "Collapse" : "Expand"}
-            </div>
-          </div>
-          <div style={{ display: registrationOpen ? "block" : "none" }}>
             <div style={{ marginBottom: 16 }}>
               <label
                 style={{
