@@ -686,27 +686,27 @@ const OnboardingSettingsSection: React.FC = () => {
               </div>
             <div style={{ display: "grid", gap: 8 }}>
               {(((settings as any).registrationFields) || []).map((f: any, idx: number) => (
-                  <div key={idx} style={{ display: "grid", gridTemplateColumns: "2fr 2fr 1fr 1fr auto", gap: 8, alignItems: "center" }}>
+                  <div key={idx} style={{ display: "grid", gridTemplateColumns: "minmax(0,1.2fr) minmax(0,1.2fr) minmax(0,1fr) 110px 90px 80px", gap: 8, alignItems: "center" }}>
                     <input value={f.key} onChange={(e) => {
                       const arr = [ ...((settings as any).registrationFields || []) ];
                       arr[idx] = { ...arr[idx], key: e.target.value };
                       setSettings({ ...settings, registrationFields: arr } as any);
-                    }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="key" />
+                    }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, minWidth: 0 }} placeholder="key" />
                     <input value={f.label} onChange={(e) => {
                       const arr = [ ...((settings as any).registrationFields || []) ];
                       arr[idx] = { ...arr[idx], label: e.target.value };
                       setSettings({ ...settings, registrationFields: arr } as any);
-                    }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="label" />
+                    }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, minWidth: 0 }} placeholder="label" />
                     <input value={(f as any).defaultValue || ""} onChange={(e) => {
                       const arr = [ ...((settings as any).registrationFields || []) ];
                       arr[idx] = { ...arr[idx], defaultValue: e.target.value } as any;
                       setSettings({ ...settings, registrationFields: arr } as any);
-                    }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="default value" />
+                    }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, minWidth: 0 }} placeholder="default value" />
                     <select value={f.type} onChange={(e) => {
                       const arr = [ ...((settings as any).registrationFields || []) ];
                       arr[idx] = { ...arr[idx], type: e.target.value };
                       setSettings({ ...settings, registrationFields: arr } as any);
-                    }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }}>
+                    }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, minWidth: 0 }}>
                       <option value="text">text</option>
                       <option value="email">email</option>
                       <option value="phone">phone</option>
@@ -724,7 +724,7 @@ const OnboardingSettingsSection: React.FC = () => {
                       const arr = [ ...((settings as any).registrationFields || []) ];
                       arr.splice(idx, 1);
                       setSettings({ ...settings, registrationFields: arr } as any);
-                    }} style={{ padding: "6px 10px", background: "#ef4444", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}>Remove</button>
+                    }} style={{ padding: "6px 8px", background: "#ef4444", color: "white", border: "none", borderRadius: 8, fontSize: 12, justifySelf: "start" }}>Remove</button>
                   </div>
                 ))}
                 <div>
@@ -739,28 +739,28 @@ const OnboardingSettingsSection: React.FC = () => {
                 <div style={{ color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Registration Headers</div>
                 <div style={{ display: "grid", gap: 8 }}>
                   {(((settings as any).registrationHeaderFields) || []).map((f: any, i: number) => (
-                    <div key={(f.key || "") + i} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 120px 140px auto", gap: 8, alignItems: "center" }}>
+                    <div key={(f.key || "") + i} style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) 100px 90px 80px", gap: 8, alignItems: "center" }}>
                       <input value={f.key} onChange={(e) => {
                         const arr = [ ...(((settings as any).registrationHeaderFields) || []) ];
                         arr[i] = { ...arr[i], key: e.target.value };
                         const keys = arr.map((x: any) => x.key);
                         setSettings({ ...settings, registrationHeaderFields: arr, registrationHeaders: keys } as any);
-                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="header key (e.g., authorization)" />
+                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, minWidth: 0 }} placeholder="header key (e.g., authorization)" />
                       <input value={f.label || ""} onChange={(e) => {
                         const arr = [ ...(((settings as any).registrationHeaderFields) || []) ];
                         arr[i] = { ...arr[i], label: e.target.value };
                         setSettings({ ...settings, registrationHeaderFields: arr } as any);
-                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="label" />
+                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, minWidth: 0 }} placeholder="label" />
                       <input value={(f as any).defaultValue || ""} onChange={(e) => {
                         const arr = [ ...(((settings as any).registrationHeaderFields) || []) ];
                         arr[i] = { ...arr[i], defaultValue: e.target.value } as any;
                         setSettings({ ...settings, registrationHeaderFields: arr } as any);
-                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="default value" />
+                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, minWidth: 0 }} placeholder="default value" />
                       <select value={f.type || "text"} onChange={(e) => {
                         const arr = [ ...(((settings as any).registrationHeaderFields) || []) ];
                         arr[i] = { ...arr[i], type: e.target.value };
                         setSettings({ ...settings, registrationHeaderFields: arr } as any);
-                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }}>
+                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, minWidth: 0 }}>
                         <option value="text">text</option>
                       </select>
                       <label style={{ display: "flex", alignItems: "center", gap: 6, color: "#4a5568", fontSize: 13 }}>
@@ -775,7 +775,7 @@ const OnboardingSettingsSection: React.FC = () => {
                         arr.splice(i, 1);
                         const keys = arr.map((x: any) => x.key);
                         setSettings({ ...settings, registrationHeaderFields: arr, registrationHeaders: keys } as any);
-                      }} style={{ padding: "6px 10px", background: "#ef4444", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}>Remove</button>
+                      }} style={{ padding: "6px 8px", background: "#ef4444", color: "white", border: "none", borderRadius: 8, fontSize: 12, justifySelf: "start" }}>Remove</button>
                     </div>
                   ))}
                   <div>
@@ -792,28 +792,28 @@ const OnboardingSettingsSection: React.FC = () => {
                 <div style={{ color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Registration Response Fields</div>
                 <div style={{ display: "grid", gap: 8 }}>
                   {(((settings as any).registrationResponseFieldDefs || []).filter((f: any) => !(((settings as any).registrationFields || []).some((bf: any) => bf.key === f.key)))).map((f: any, i: number) => (
-                    <div key={(f.key || "") + i} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 120px 140px auto", gap: 8, alignItems: "center" }}>
+                    <div key={(f.key || "") + i} style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) 100px 90px 80px", gap: 8, alignItems: "center" }}>
                       <input value={f.key} onChange={(e) => {
                         const arr = [ ...(((settings as any).registrationResponseFieldDefs) || []) ];
                         arr[i] = { ...arr[i], key: e.target.value };
                         const keys = arr.map((x: any) => x.key);
                         setSettings({ ...settings, registrationResponseFieldDefs: arr, registrationResponseFields: keys } as any);
-                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="response key (e.g., user.id)" />
+                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, minWidth: 0 }} placeholder="response key (e.g., user.id)" />
                       <input value={f.label || ""} onChange={(e) => {
                         const arr = [ ...(((settings as any).registrationResponseFieldDefs) || []) ];
                         arr[i] = { ...arr[i], label: e.target.value };
                         setSettings({ ...settings, registrationResponseFieldDefs: arr } as any);
-                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="label" />
+                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, minWidth: 0 }} placeholder="label" />
                       <input value={(f as any).defaultValue || ""} onChange={(e) => {
                         const arr = [ ...(((settings as any).registrationResponseFieldDefs) || []) ];
                         arr[i] = { ...arr[i], defaultValue: e.target.value } as any;
                         setSettings({ ...settings, registrationResponseFieldDefs: arr } as any);
-                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="default value" />
+                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, minWidth: 0 }} placeholder="default value" />
                       <select value={f.type || "text"} onChange={(e) => {
                         const arr = [ ...(((settings as any).registrationResponseFieldDefs) || []) ];
                         arr[i] = { ...arr[i], type: e.target.value };
                         setSettings({ ...settings, registrationResponseFieldDefs: arr } as any);
-                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }}>
+                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, minWidth: 0 }}>
                         <option value="text">text</option>
                       </select>
                       <label style={{ display: "flex", alignItems: "center", gap: 6, color: "#4a5568", fontSize: 13 }}>
@@ -828,7 +828,7 @@ const OnboardingSettingsSection: React.FC = () => {
                         arr.splice(i, 1);
                         const keys = arr.map((x: any) => x.key);
                         setSettings({ ...settings, registrationResponseFieldDefs: arr, registrationResponseFields: keys } as any);
-                      }} style={{ padding: "6px 10px", background: "#ef4444", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}>Remove</button>
+                      }} style={{ padding: "6px 8px", background: "#ef4444", color: "white", border: "none", borderRadius: 8, fontSize: 12, justifySelf: "start" }}>Remove</button>
                     </div>
                   ))}
                   <div>
