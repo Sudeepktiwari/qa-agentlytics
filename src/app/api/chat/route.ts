@@ -2803,11 +2803,11 @@ Keep the response conversational and helpful, focusing on providing value before
             return NextResponse.json(resp, { headers: corsHeaders });
           } else if (result.success && !(((onboardingConfig as any)?.initialSetupCurlCommand) || (((onboardingConfig as any)?.initialFields || []).length > 0))) {
             const resp = {
-              mainText: "Initial setup is not configured. Please configure required fields or cURL to proceed.",
-              buttons: ["Contact Admin"],
+              mainText: "✅ You’re all set! Your account has been created.",
+              buttons: ["Log In", "Talk to Sales"],
               emailPrompt: "",
               showBookingCalendar: false,
-              onboardingAction: "error",
+              onboardingAction: "completed",
             };
             return NextResponse.json(resp, { headers: corsHeaders });
           }
@@ -3160,13 +3160,13 @@ Keep the response conversational and helpful, focusing on providing value before
               onboardingAction: "ask_next",
             };
             return NextResponse.json(resp, { headers: corsHeaders });
-          } else if (result2.success && !onboardingConfig?.initialSetupCurlCommand) {
+          } else if (result2.success && !(((onboardingConfig as any)?.initialSetupCurlCommand) || (((onboardingConfig as any)?.initialFields || []).length > 0))) {
             const resp = {
-              mainText: "Initial setup cURL not configured. Please configure it to proceed.",
-              buttons: ["Contact Admin"],
+              mainText: "✅ You’re all set! Your account has been created.",
+              buttons: ["Log In", "Talk to Sales"],
               emailPrompt: "",
               showBookingCalendar: false,
-              onboardingAction: "error",
+              onboardingAction: "completed",
             };
             return NextResponse.json(resp, { headers: corsHeaders });
           }
