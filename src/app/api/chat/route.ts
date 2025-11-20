@@ -5359,7 +5359,13 @@ ${previousQnA}
           console.log(
             `[Followup] No more followups after count 4 for session ${sessionId}`
           );
-          return NextResponse.json({}, { headers: corsHeaders });
+          return NextResponse.json({
+            mainText: "You're already active! Please continue your conversation.",
+            buttons: [],
+            emailPrompt: "",
+            showBookingCalendar: false,
+            onboardingAction: "noop"
+          }, { headers: corsHeaders });
         }
 
         // Check if user has been recently active based on recent message timestamps
@@ -5829,14 +5835,24 @@ What specific information are you looking for? I'm here to help guide you throug
         console.log(
           `[Followup] No more generic followups for session ${sessionId}`
         );
-        return NextResponse.json({}, { headers: corsHeaders });
+        return NextResponse.json({
+          mainText: "I’m here if you need me. How can I help next?",
+          buttons: ["Keep Browsing", "Get Help"],
+          emailPrompt: "",
+          showBookingCalendar: false
+        }, { headers: corsHeaders });
       }
     } catch (error) {
       console.error(
         `[Followup] Error in generic followup for session ${sessionId}:`,
         error
       );
-      return NextResponse.json({}, { headers: corsHeaders });
+      return NextResponse.json({
+        mainText: "I’m here if you need me. How can I help next?",
+        buttons: ["Keep Browsing", "Get Help"],
+        emailPrompt: "",
+        showBookingCalendar: false
+      }, { headers: corsHeaders });
     }
   }
 
