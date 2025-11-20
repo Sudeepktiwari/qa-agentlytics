@@ -1248,20 +1248,23 @@ export async function deriveSpecFromDocsForAdmin(
       const resps: string[] = Array.isArray(parsed?.response)
         ? parsed.response.map((k: any) => String(k))
         : [];
-      const respsFiltered = resps.filter((k) => respAllowedSeed.has(k));
+      const respsFiltered = respAllowedSeed.size > 0
+        ? resps.filter((k) => respAllowedSeed.has(k))
+        : resps;
       for (const k of respsFiltered) respSet.add(k);
     }
   } catch {}
 
   const addRespFromText = (t: string) => {
-    const hint = /response|returns|200\s*OK|example\s*response/i.test(t);
-    const jsonCandidate = (() => {
-      const i = t.indexOf("{");
-      if (i === -1) return undefined;
+    const hint = /(response|responses|returns|example\s*response|200\b|Login\s+successful)/i.test(t);
+    if (!hint) return;
+    let pos = 0;
+    while (pos < t.length) {
+      const i = t.indexOf("{", pos);
+      if (i === -1) break;
       let d = 0;
-      let s1 = false,
-        s2 = false,
-        s3 = false;
+      let s1 = false, s2 = false, s3 = false;
+      let end = -1;
       for (let j = i; j < t.length; j++) {
         const ch = t[j];
         if (ch === "'" && !s2 && !s3) s1 = !s1;
@@ -1269,30 +1272,24 @@ export async function deriveSpecFromDocsForAdmin(
         else if (ch === "`" && !s1 && !s2) s3 = !s3;
         if (s1 || s2 || s3) continue;
         if (ch === "{") d++;
-        else if (ch === "}") {
-          d--;
-          if (d === 0) return t.slice(i, j + 1);
-        }
+        else if (ch === "}") { d--; if (d === 0) { end = j; break; } }
       }
-      return undefined;
-    })();
-    if (!jsonCandidate) return;
-    if (!hint) return;
-    try {
-      const obj = JSON.parse(jsonCandidate);
-      const walk = (o: any) => {
-        if (!o || typeof o !== "object") return;
-        if (Array.isArray(o)) {
-          for (const it of o) walk(it);
-          return;
-        }
-        for (const [k, v] of Object.entries(o)) {
-          respSet.add(String(k));
-          if (v && typeof v === "object") walk(v as any);
-        }
-      };
-      walk(obj);
-    } catch {}
+      if (end === -1) break;
+      const jsonCandidate = t.slice(i, end + 1);
+      pos = end + 1;
+      try {
+        const obj = JSON.parse(jsonCandidate);
+        const walk = (o: any) => {
+          if (!o || typeof o !== "object") return;
+          if (Array.isArray(o)) { for (const it of o) walk(it); return; }
+          for (const [k, v] of Object.entries(o)) {
+            respSet.add(String(k));
+            if (v && typeof v === "object") walk(v as any);
+          }
+        };
+        walk(obj);
+      } catch {}
+    }
   };
   for (const t of ranked) addRespFromText(t);
   let filteredBody = bodyFields;
