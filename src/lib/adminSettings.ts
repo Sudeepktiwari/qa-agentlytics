@@ -11,6 +11,7 @@ export interface OnboardingField {
   label: string;
   required: boolean;
   type: "text" | "email" | "phone" | "select" | "checkbox";
+  defaultValue?: string;
   validations?: {
     regex?: string;
     minLength?: number;
