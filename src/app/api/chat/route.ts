@@ -684,6 +684,30 @@ function extractApiKeyFromResponse(resp: any, onboarding?: OnboardingSettings): 
   return undefined;
 }
 
+function isApiKeyFieldKey(key: string, onboarding?: OnboardingSettings): boolean {
+  const k = String(key || "").toLowerCase();
+  const candidates = new Set<string>([
+    "token",
+    "access_token",
+    "authToken",
+    "apiKey",
+    "api_key",
+    "key",
+    "sessionToken",
+    "session_key",
+    "x_api_key",
+  ]);
+  const addKeys = (arr?: any[]) => { if (Array.isArray(arr)) for (const x of arr) if (x && typeof x === "string") candidates.add(x); };
+  addKeys((onboarding as any)?.initialResponseFields);
+  addKeys(((onboarding as any)?.initialResponseFieldDefs || []).map((f: any) => f?.key));
+  addKeys((onboarding as any)?.registrationResponseFields);
+  addKeys(((onboarding as any)?.registrationResponseFieldDefs || []).map((f: any) => f?.key));
+  addKeys((onboarding as any)?.authResponseFields);
+  addKeys(((onboarding as any)?.authResponseFieldDefs || []).map((f: any) => f?.key));
+  for (const c of candidates) { const cl = String(c).toLowerCase(); if (k === cl || k.includes(cl)) return true; }
+  return false;
+}
+
 // Advanced booking conflict detection
 async function detectBookingConflicts(
   sessionId: string,
@@ -2761,11 +2785,17 @@ Keep the response conversational and helpful, focusing on providing value before
               };
               return NextResponse.json(resp, { headers: corsHeaders });
             }
+            const tokenAuto = tokenFromReg || sessionDoc?.externalAuthToken;
+            const autoFilled: Record<string, any> = {};
+            const fieldsNoToken = (filteredFields || []).filter((f: any) => {
+              if (tokenAuto && isApiKeyFieldKey(f.key, onboardingConfig)) { autoFilled[f.key] = tokenAuto; return false; }
+              return true;
+            });
             await sessionsCollection.updateOne(
               { sessionId },
-              { $set: { status: "in_progress", stageIndex: 0, fields: filteredFields, phase: "initial_setup", updatedAt: now } }
+              { $set: { status: "in_progress", stageIndex: 0, fields: fieldsNoToken, phase: "initial_setup", updatedAt: now, collectedData: { ...(sessionDoc?.collectedData || {}), ...autoFilled } } }
             );
-            const firstField = filteredFields[0];
+            const firstField = fieldsNoToken[0];
             const docContext = await buildOnboardingDocContext(
               firstField,
               adminId || undefined,
@@ -3110,11 +3140,17 @@ Keep the response conversational and helpful, focusing on providing value before
               };
               return NextResponse.json(resp, { headers: corsHeaders });
             }
+            const tokenAuto2 = tokenFromReg2 || sessionDoc?.externalAuthToken;
+            const autoFilled2: Record<string, any> = {};
+            const fieldsNoToken2 = (filteredFields || []).filter((f: any) => {
+              if (tokenAuto2 && isApiKeyFieldKey(f.key, onboardingConfig)) { autoFilled2[f.key] = tokenAuto2; return false; }
+              return true;
+            });
             await sessionsCollection.updateOne(
               { sessionId },
-              { $set: { status: "in_progress", stageIndex: 0, fields: filteredFields, phase: "initial_setup", updatedAt: now } }
+              { $set: { status: "in_progress", stageIndex: 0, fields: fieldsNoToken2, phase: "initial_setup", updatedAt: now, collectedData: { ...(sessionDoc?.collectedData || {}), ...autoFilled2 } } }
             );
-            const firstField = filteredFields[0];
+            const firstField = fieldsNoToken2[0];
             const docContext = await buildOnboardingDocContext(
               firstField,
               adminId || undefined,
