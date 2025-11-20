@@ -2656,7 +2656,8 @@ Keep the response conversational and helpful, focusing on providing value before
             }
           } catch {}
 
-          const newStatus = result.success ? "completed" : "error";
+          const isSuccess = !!result?.success || (typeof result?.status === "number" && result.status >= 200 && result.status < 300) || result?.ok === true;
+          const newStatus = isSuccess ? "completed" : "error";
           await sessionsCollection.updateOne(
             { sessionId },
             { $set: { status: newStatus, updatedAt: now, registeredUserId: result.userId || null, lastError: result.error || null } }
@@ -2664,7 +2665,7 @@ Keep the response conversational and helpful, focusing on providing value before
 
           // If registration failed, try to surface specific error details from the external API response
           let detailsText = "";
-          if (!result.success && result.responseBody) {
+          if (!isSuccess && result.responseBody) {
             const rb: any = result.responseBody;
             const collectErrors = (errs: any[]): string[] => {
               return errs
@@ -2702,7 +2703,7 @@ Keep the response conversational and helpful, focusing on providing value before
             } catch {}
           }
 
-          if (result.success && (((onboardingConfig as any)?.initialSetupCurlCommand) || (((onboardingConfig as any)?.initialFields || []).length > 0))) {
+          if (isSuccess && (((onboardingConfig as any)?.initialSetupCurlCommand) || (((onboardingConfig as any)?.initialFields || []).length > 0))) {
             const tokenFromReg = extractApiKeyFromResponse(result.responseBody, onboardingConfig);
             if (tokenFromReg) {
               await sessionsCollection.updateOne(
@@ -2803,7 +2804,7 @@ Keep the response conversational and helpful, focusing on providing value before
               onboardingAction: "ask_next",
             };
             return NextResponse.json(resp, { headers: corsHeaders });
-          } else if (result.success && !(((onboardingConfig as any)?.initialSetupCurlCommand) || (((onboardingConfig as any)?.initialFields || []).length > 0))) {
+          } else if (isSuccess && !(((onboardingConfig as any)?.initialSetupCurlCommand) || (((onboardingConfig as any)?.initialFields || []).length > 0))) {
             const resp = {
               mainText: "✅ You’re all set! Your account has been created.",
               buttons: ["Log In", "Talk to Sales"],
@@ -2814,7 +2815,7 @@ Keep the response conversational and helpful, focusing on providing value before
             return NextResponse.json(resp, { headers: corsHeaders });
           }
 
-          if (result.success) {
+          if (isSuccess) {
             try {
               await sessionsCollection.updateOne(
                 { sessionId },
@@ -2822,9 +2823,10 @@ Keep the response conversational and helpful, focusing on providing value before
               );
             } catch {}
           }
-          const resp = result.success
+          const externalMsg = (() => { try { const keys = ["message","msg","detail","status","description","info"]; const stack: any[] = []; const pushObj = (o: any) => { if (o && typeof o === "object") stack.push(o); }; pushObj(result.responseBody); while (stack.length) { const cur = stack.pop(); for (const [k, v] of Object.entries(cur)) { if (v && typeof v === "object") pushObj(v); if (typeof v === "string" && keys.includes(String(k))) return v as string; } } } catch {} return undefined; })() || result?.message || result?.statusText;
+          const resp = isSuccess
             ? {
-                mainText: "✅ You’re all set! Your account has been created.",
+                mainText: externalMsg ? `✅ ${externalMsg}` : "✅ You’re all set! Your account has been created.",
                 buttons: ["Log In", "Talk to Sales"],
                 emailPrompt: "",
                 showBookingCalendar: false,
@@ -3044,7 +3046,8 @@ Keep the response conversational and helpful, focusing on providing value before
             }
           } catch {}
 
-          const newStatus = result2.success ? "completed" : "error";
+          const isSuccess2 = !!result2?.success || (typeof result2?.status === "number" && result2.status >= 200 && result2.status < 300) || result2?.ok === true;
+          const newStatus = isSuccess2 ? "completed" : "error";
           await sessionsCollection.updateOne(
             { sessionId },
             { $set: { status: newStatus, updatedAt: now, registeredUserId: result2.userId || null, lastError: result2.error || null } }
@@ -3052,7 +3055,7 @@ Keep the response conversational and helpful, focusing on providing value before
 
           // If registration failed, try to surface specific error details from the external API response
           let detailsText2 = "";
-          if (!result2.success && result2.responseBody) {
+          if (!isSuccess2 && result2.responseBody) {
             const rb2: any = result2.responseBody;
             const collectErrors2 = (errs: any[]): string[] => {
               return errs
@@ -3090,7 +3093,7 @@ Keep the response conversational and helpful, focusing on providing value before
             } catch {}
           }
 
-          if (result2.success && (((onboardingConfig as any)?.initialSetupCurlCommand) || (((onboardingConfig as any)?.initialFields || []).length > 0))) {
+          if (isSuccess2 && (((onboardingConfig as any)?.initialSetupCurlCommand) || (((onboardingConfig as any)?.initialFields || []).length > 0))) {
             const tokenFromReg2 = extractApiKeyFromResponse(result2.responseBody, onboardingConfig);
             if (tokenFromReg2) {
               await sessionsCollection.updateOne(
@@ -3164,7 +3167,7 @@ Keep the response conversational and helpful, focusing on providing value before
               onboardingAction: "ask_next",
             };
             return NextResponse.json(resp, { headers: corsHeaders });
-          } else if (result2.success && !(((onboardingConfig as any)?.initialSetupCurlCommand) || (((onboardingConfig as any)?.initialFields || []).length > 0))) {
+          } else if (isSuccess2 && !(((onboardingConfig as any)?.initialSetupCurlCommand) || (((onboardingConfig as any)?.initialFields || []).length > 0))) {
             const externalMsg2 = (() => { try { const keys = ["message","msg","detail","status","description","info"]; const stack: any[] = []; const pushObj = (o: any) => { if (o && typeof o === "object") stack.push(o); }; pushObj(result2.responseBody); while (stack.length) { const cur = stack.pop(); for (const [k, v] of Object.entries(cur)) { if (v && typeof v === "object") pushObj(v); if (typeof v === "string" && keys.includes(String(k))) return v as string; } } } catch {} return undefined; })() || result2?.message || result2?.statusText;
             const resp = {
               mainText: externalMsg2 ? `✅ ${externalMsg2}` : "✅ You’re all set! Your account has been created.",
@@ -3176,7 +3179,7 @@ Keep the response conversational and helpful, focusing on providing value before
             return NextResponse.json(resp, { headers: corsHeaders });
           }
 
-          if (result2.success) {
+          if (isSuccess2) {
             try {
               await sessionsCollection.updateOne(
                 { sessionId },
@@ -3185,7 +3188,7 @@ Keep the response conversational and helpful, focusing on providing value before
             } catch {}
           }
           const externalMsg3 = (() => { try { const keys = ["message","msg","detail","status","description","info"]; const stack: any[] = []; const pushObj = (o: any) => { if (o && typeof o === "object") stack.push(o); }; pushObj(result2.responseBody); while (stack.length) { const cur = stack.pop(); for (const [k, v] of Object.entries(cur)) { if (v && typeof v === "object") pushObj(v); if (typeof v === "string" && keys.includes(String(k))) return v as string; } } } catch {} return undefined; })() || result2?.message || result2?.statusText;
-          const resp = result2.success
+          const resp = isSuccess2
             ? {
                 mainText: externalMsg3 ? `✅ ${externalMsg3}` : "✅ You’re all set! Your account has been created.",
                 buttons: ["Log In", "Talk to Sales"],
@@ -3201,7 +3204,7 @@ Keep the response conversational and helpful, focusing on providing value before
                 onboardingAction: "error",
               };
           // Special-case: existing user/email registered → only allow changing email
-          if (!result2.success) {
+          if (!isSuccess2) {
             const errTxt = (result2.error || "") + (detailsText2 || "");
             const isExistingUser = /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists|409/i.test(errTxt);
             if (isExistingUser) {
