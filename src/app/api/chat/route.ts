@@ -3088,7 +3088,7 @@ Keep the response conversational and helpful, focusing on providing value before
             } catch {}
           }
 
-          if (result2.success && onboardingConfig?.initialSetupCurlCommand) {
+          if (result2.success && (((onboardingConfig as any)?.initialSetupCurlCommand) || (((onboardingConfig as any)?.initialFields || []).length > 0))) {
             const tokenFromReg2 = extractApiKeyFromResponse(result2.responseBody, onboardingConfig);
             if (tokenFromReg2) {
               await sessionsCollection.updateOne(
@@ -3096,7 +3096,9 @@ Keep the response conversational and helpful, focusing on providing value before
                 { $set: { externalAuthToken: tokenFromReg2, updatedAt: now } }
               );
             }
-            const setupFields = deriveOnboardingFieldsFromCurl(((onboardingConfig as any).initialSetupCurlCommand as string));
+            const setupFields = (((onboardingConfig as any)?.initialFields || []).length > 0)
+              ? ((onboardingConfig as any).initialFields as any[])
+              : deriveOnboardingFieldsFromCurl(((onboardingConfig as any).initialSetupCurlCommand as string));
             if (!setupFields || setupFields.length === 0) {
               const resp = {
                 mainText: "Initial setup fields are not configured. Please configure required fields or cURL body.",
