@@ -638,6 +638,52 @@ function validateAnswer(field: any, answer: string): { valid: boolean; message?:
   return { valid: true };
 }
 
+function extractApiKeyFromResponse(resp: any, onboarding?: OnboardingSettings): string | undefined {
+  try {
+    const candidates = new Set<string>([
+      "token",
+      "access_token",
+      "authToken",
+      "apiKey",
+      "api_key",
+      "key",
+      "sessionToken",
+      "session_key",
+      "x_api_key",
+    ]);
+    const addKeys = (arr?: any[]) => {
+      if (Array.isArray(arr)) for (const k of arr) if (k && typeof k === "string") candidates.add(k);
+    };
+    addKeys((onboarding as any)?.registrationResponseFields);
+    addKeys(((onboarding as any)?.registrationResponseFieldDefs || []).map((f: any) => f?.key));
+    addKeys((onboarding as any)?.authResponseFields);
+    addKeys(((onboarding as any)?.authResponseFieldDefs || []).map((f: any) => f?.key));
+    const isTokenLike = (v: any) =>
+      typeof v === "string" && v.length >= 8;
+    const matchKey = (k: string) => {
+      const kl = k.toLowerCase();
+      for (const c of candidates) {
+        const cl = String(c).toLowerCase();
+        if (kl === cl || kl.includes(cl)) return true;
+      }
+      return false;
+    };
+    const stack: any[] = [];
+    const pushObj = (o: any) => {
+      if (o && typeof o === "object") stack.push(o);
+    };
+    pushObj(resp);
+    while (stack.length) {
+      const cur = stack.pop();
+      for (const [k, v] of Object.entries(cur)) {
+        if (v && typeof v === "object") pushObj(v);
+        if (matchKey(k) && isTokenLike(v)) return String(v);
+      }
+    }
+  } catch {}
+  return undefined;
+}
+
 // Advanced booking conflict detection
 async function detectBookingConflicts(
   sessionId: string,
@@ -2643,6 +2689,13 @@ Keep the response conversational and helpful, focusing on providing value before
           }
 
           if (result.success && onboardingConfig?.initialSetupCurlCommand) {
+            const tokenFromReg = extractApiKeyFromResponse(result.responseBody, onboardingConfig);
+            if (tokenFromReg) {
+              await sessionsCollection.updateOne(
+                { sessionId },
+                { $set: { externalAuthToken: tokenFromReg, updatedAt: now } }
+              );
+            }
             // Attempt authentication using admin-provided auth cURL and collected registration data
             if ((onboardingConfig as any).authCurlCommand) {
               try {
@@ -3012,6 +3065,13 @@ Keep the response conversational and helpful, focusing on providing value before
           }
 
           if (result2.success && onboardingConfig?.initialSetupCurlCommand) {
+            const tokenFromReg2 = extractApiKeyFromResponse(result2.responseBody, onboardingConfig);
+            if (tokenFromReg2) {
+              await sessionsCollection.updateOne(
+                { sessionId },
+                { $set: { externalAuthToken: tokenFromReg2, updatedAt: now } }
+              );
+            }
             const setupFields = deriveOnboardingFieldsFromCurl(onboardingConfig.initialSetupCurlCommand);
             if (!setupFields || setupFields.length === 0) {
               const resp = {
