@@ -638,7 +638,7 @@ function validateAnswer(field: any, answer: string): { valid: boolean; message?:
   return { valid: true };
 }
 
-function extractApiKeyFromResponse(resp: any, onboarding?: OnboardingSettings): string | undefined {
+  function extractApiKeyFromResponse(resp: any, onboarding?: OnboardingSettings): string | undefined {
   try {
     const candidates = new Set<string>([
       "token",
@@ -750,6 +750,8 @@ async function detectBookingConflicts(
       suggestion: null,
     };
   }
+
+//
 }
 
 // CORS headers for cross-origin requests
@@ -3163,8 +3165,9 @@ Keep the response conversational and helpful, focusing on providing value before
             };
             return NextResponse.json(resp, { headers: corsHeaders });
           } else if (result2.success && !(((onboardingConfig as any)?.initialSetupCurlCommand) || (((onboardingConfig as any)?.initialFields || []).length > 0))) {
+            const externalMsg2 = (() => { try { const keys = ["message","msg","detail","status","description","info"]; const stack: any[] = []; const pushObj = (o: any) => { if (o && typeof o === "object") stack.push(o); }; pushObj(result2.responseBody); while (stack.length) { const cur = stack.pop(); for (const [k, v] of Object.entries(cur)) { if (v && typeof v === "object") pushObj(v); if (typeof v === "string" && keys.includes(String(k))) return v as string; } } } catch {} return undefined; })() || result2?.message || result2?.statusText;
             const resp = {
-              mainText: "✅ You’re all set! Your account has been created.",
+              mainText: externalMsg2 ? `✅ ${externalMsg2}` : "✅ You’re all set! Your account has been created.",
               buttons: ["Log In", "Talk to Sales"],
               emailPrompt: "",
               showBookingCalendar: false,
@@ -3181,9 +3184,10 @@ Keep the response conversational and helpful, focusing on providing value before
               );
             } catch {}
           }
+          const externalMsg3 = (() => { try { const keys = ["message","msg","detail","status","description","info"]; const stack: any[] = []; const pushObj = (o: any) => { if (o && typeof o === "object") stack.push(o); }; pushObj(result2.responseBody); while (stack.length) { const cur = stack.pop(); for (const [k, v] of Object.entries(cur)) { if (v && typeof v === "object") pushObj(v); if (typeof v === "string" && keys.includes(String(k))) return v as string; } } } catch {} return undefined; })() || result2?.message || result2?.statusText;
           const resp = result2.success
             ? {
-                mainText: "✅ You’re all set! Your account has been created.",
+                mainText: externalMsg3 ? `✅ ${externalMsg3}` : "✅ You’re all set! Your account has been created.",
                 buttons: ["Log In", "Talk to Sales"],
                 emailPrompt: "",
                 showBookingCalendar: false,
