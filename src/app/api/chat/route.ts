@@ -3099,7 +3099,7 @@ Keep the response conversational and helpful, focusing on providing value before
             const setupFields = deriveOnboardingFieldsFromCurl(((onboardingConfig as any).initialSetupCurlCommand as string));
             if (!setupFields || setupFields.length === 0) {
               const resp = {
-                mainText: "Initial setup cURL has no body keys. Please configure the cURL with required fields.",
+                mainText: "Initial setup fields are not configured. Please configure required fields or cURL body.",
                 buttons: ["Contact Admin"],
                 emailPrompt: "",
                 showBookingCalendar: false,
