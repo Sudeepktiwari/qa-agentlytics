@@ -2988,7 +2988,7 @@ Keep the response conversational and helpful, focusing on providing value before
             return NextResponse.json(resp, { headers: corsHeaders });
           }
         }
-        if (/\b(confirm|submit|looks good|yes|try again|retry|resubmit)\b/.test(lower)) {
+        if (/(\bconfirm\s+and\s+submit\b|\bconfirm\b|\bsubmit\b|\blooks\s+good\b|\byes\b|\btry\s+again\b|\bretry\b|\bresubmit\b)/.test(lower)) {
           const payload = { ...(sessionDoc.collectedData || {}) };
           const requiresAuth2 = !!(onboardingConfig as any)?.authCurlCommand;
           const hasAuthToken2 = !!sessionDoc?.externalAuthToken;
