@@ -2527,25 +2527,13 @@ Keep the response conversational and helpful, focusing on providing value before
           { key: "lastName", label: "Last Name", required: false, type: "text" },
         ];
 
-    // If admin provided a canonical cURL, derive fields dynamically from it
-    const curlDerived = onboardingConfig?.curlCommand
-      ? deriveOnboardingFieldsFromCurl(onboardingConfig.curlCommand).map((f) => ({
-          key: f.key,
-          label: f.label,
-          required: f.required,
-          type: f.type,
-        }))
-      : [];
-
-    // Prefer admin-edited registrationFields; else fallback to cURL-derived; else docs merge
+    // Prefer admin-edited registrationFields; else docs-derived; else defaults
     let fields: any[] = [];
     if ((onboardingConfig as any)?.registrationFields && (onboardingConfig as any).registrationFields.length > 0) {
       fields = (onboardingConfig as any).registrationFields as any[];
-    } else if (curlDerived.length > 0) {
-      fields = curlDerived;
     } else {
       const docDerived = await inferFieldsFromDocs(adminId || undefined, onboardingConfig?.docsUrl);
-      fields = mergeFields(configuredFields, docDerived);
+      fields = (docDerived && docDerived.length > 0) ? docDerived : configuredFields;
     }
 
     // Ask only relevant (required) questions by default
@@ -2712,7 +2700,7 @@ Keep the response conversational and helpful, focusing on providing value before
             } catch {}
           }
 
-          if (result.success && onboardingConfig?.initialSetupCurlCommand) {
+          if (result.success && (((onboardingConfig as any)?.initialSetupCurlCommand) || (((onboardingConfig as any)?.initialFields || []).length > 0))) {
             const tokenFromReg = extractApiKeyFromResponse(result.responseBody, onboardingConfig);
             if (tokenFromReg) {
               await sessionsCollection.updateOne(
@@ -2746,11 +2734,13 @@ Keep the response conversational and helpful, focusing on providing value before
               }
             }
 
-            // Kick off initial setup phase using admin-provided cURL
-            const setupFields = deriveOnboardingFieldsFromCurl(onboardingConfig.initialSetupCurlCommand);
+            // Kick off initial setup phase using required fields (prefer admin-configured); fallback to cURL
+            const setupFields = (((onboardingConfig as any)?.initialFields || []).length > 0)
+              ? ((onboardingConfig as any).initialFields as any[])
+              : deriveOnboardingFieldsFromCurl(((onboardingConfig as any).initialSetupCurlCommand as string));
             if (!setupFields || setupFields.length === 0) {
               const resp = {
-                mainText: "Initial setup cURL has no body keys. Please configure the cURL with required fields.",
+                mainText: "Initial setup fields are not configured. Please configure required fields or cURL body.",
                 buttons: ["Contact Admin"],
                 emailPrompt: "",
                 showBookingCalendar: false,
@@ -2811,9 +2801,9 @@ Keep the response conversational and helpful, focusing on providing value before
               onboardingAction: "ask_next",
             };
             return NextResponse.json(resp, { headers: corsHeaders });
-          } else if (result.success && !onboardingConfig?.initialSetupCurlCommand) {
+          } else if (result.success && !(((onboardingConfig as any)?.initialSetupCurlCommand) || (((onboardingConfig as any)?.initialFields || []).length > 0))) {
             const resp = {
-              mainText: "Initial setup cURL not configured. Please configure it to proceed.",
+              mainText: "Initial setup is not configured. Please configure required fields or cURL to proceed.",
               buttons: ["Contact Admin"],
               emailPrompt: "",
               showBookingCalendar: false,
@@ -2903,11 +2893,13 @@ Keep the response conversational and helpful, focusing on providing value before
         }
       } else if (sessionDoc.status !== "ready_to_submit") {
         let summary = buildSafeSummary(sessionDoc.collectedData || {});
-        if (sessionDoc?.phase === "initial_setup" && onboardingConfig?.initialSetupCurlCommand) {
-          const setupFields = deriveOnboardingFieldsFromCurl(onboardingConfig.initialSetupCurlCommand);
+        if (sessionDoc?.phase === "initial_setup" && (((onboardingConfig as any)?.initialSetupCurlCommand) || (((onboardingConfig as any)?.initialFields || []).length > 0))) {
+          const setupFields = (((onboardingConfig as any)?.initialFields || []).length > 0)
+            ? ((onboardingConfig as any).initialFields as any[])
+            : deriveOnboardingFieldsFromCurl(((onboardingConfig as any).initialSetupCurlCommand as string));
           if (!setupFields || setupFields.length === 0) {
             const resp = {
-              mainText: "Initial setup cURL has no body keys. Please configure the cURL with required fields.",
+              mainText: "Initial setup fields are not configured. Please configure required fields or cURL body.",
               buttons: ["Contact Admin"],
               emailPrompt: "",
               showBookingCalendar: false,
@@ -2945,11 +2937,13 @@ Keep the response conversational and helpful, focusing on providing value before
                 { $set: { externalAuthToken: authRes.token, updatedAt: now } }
               );
               let summary = buildSafeSummary(sessionDoc.collectedData || {});
-              if (sessionDoc?.phase === "initial_setup" && onboardingConfig?.initialSetupCurlCommand) {
-                const setupFields = deriveOnboardingFieldsFromCurl(onboardingConfig.initialSetupCurlCommand);
+              if (sessionDoc?.phase === "initial_setup" && (((onboardingConfig as any)?.initialSetupCurlCommand) || (((onboardingConfig as any)?.initialFields || []).length > 0))) {
+                const setupFields = (((onboardingConfig as any)?.initialFields || []).length > 0)
+                  ? ((onboardingConfig as any).initialFields as any[])
+                  : deriveOnboardingFieldsFromCurl(((onboardingConfig as any).initialSetupCurlCommand as string));
                 if (!setupFields || setupFields.length === 0) {
                   const resp = {
-                    mainText: "Initial setup cURL has no body keys. Please configure the cURL with required fields.",
+                    mainText: "Initial setup fields are not configured. Please configure required fields or cURL body.",
                     buttons: ["Contact Admin"],
                     emailPrompt: "",
                     showBookingCalendar: false,
@@ -3102,7 +3096,7 @@ Keep the response conversational and helpful, focusing on providing value before
                 { $set: { externalAuthToken: tokenFromReg2, updatedAt: now } }
               );
             }
-            const setupFields = deriveOnboardingFieldsFromCurl(onboardingConfig.initialSetupCurlCommand);
+            const setupFields = deriveOnboardingFieldsFromCurl(((onboardingConfig as any).initialSetupCurlCommand as string));
             if (!setupFields || setupFields.length === 0) {
               const resp = {
                 mainText: "Initial setup cURL has no body keys. Please configure the cURL with required fields.",
