@@ -3773,9 +3773,12 @@ export async function GET(request: Request) {
         if (ONBOARDING_ONLY && !data.mainText && isConfirmInput) return 'completed';
         return null;
       })();
+      const useFallbackForConfirm = ONBOARDING_ONLY && isConfirmInput && !data.error;
       const botMessage = {
         role: 'assistant',
-        content: (data.mainText && data.mainText.trim()) ? data.mainText : (data.answer || fallbackText),
+        content: useFallbackForConfirm
+          ? fallbackText
+          : ((data.mainText && data.mainText.trim()) ? data.mainText : (data.answer || fallbackText)),
         buttons: data.buttons || [],
         emailPrompt: data.emailPrompt || '',
         showBookingCalendar: data.showBookingCalendar || false,
