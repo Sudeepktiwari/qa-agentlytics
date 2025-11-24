@@ -3760,20 +3760,30 @@ export async function GET(request: Request) {
       console.log("Show Booking Calendar:", data.showBookingCalendar || false);
       console.log("Booking Type:", data.bookingType || 'none');
       
-      const isConfirmInput = /\b(confirm\s+and\s+submit|confirm|submit|looks\s+good|yes)\b/i.test(text);
+      const isConfirmInput = /\b(confirm\s+and\s+submit|confirm|submit|looks\s*good|look\s*good|yes)\b/i.test(text);
+      const lastAssistantWithConfirm = (() => {
+        for (let i = messages.length - 1; i >= 0; i--) {
+          const m = messages[i];
+          if (m && m.role === 'assistant') {
+            if (Array.isArray(m.buttons) && m.buttons.includes('Confirm and Submit')) return true;
+            break;
+          }
+        }
+        return false;
+      })();
       const fallbackText = (() => {
         if (data.onboardingAction === 'completed') return '✅ You’re all set! Your account has been created.';
         if (data.onboardingAction === 'confirm') return '✅ Registration complete. Please review and confirm your setup details.';
         if (data.onboardingAction === 'ask_next') return 'Let’s continue your setup. Please provide the next required detail.';
-        if (ONBOARDING_ONLY && isConfirmInput && !data.error) return '✅ You’re all set! Your account has been created.';
+        if (ONBOARDING_ONLY && (isConfirmInput || lastAssistantWithConfirm) && !data.error) return '✅ You’re all set! Your account has been created.';
         return ONBOARDING_ONLY ? 'Please try again.' : 'I received your message.';
       })();
       const inferredAction = (() => {
         if (data.onboardingAction) return data.onboardingAction;
-        if (ONBOARDING_ONLY && isConfirmInput && !data.error) return 'completed';
+        if (ONBOARDING_ONLY && (isConfirmInput || lastAssistantWithConfirm) && !data.error) return 'completed';
         return null;
       })();
-      const useFallbackForConfirm = ONBOARDING_ONLY && isConfirmInput && !data.error;
+      const useFallbackForConfirm = ONBOARDING_ONLY && (isConfirmInput || lastAssistantWithConfirm) && !data.error;
       const botMessage = {
         role: 'assistant',
         content: useFallbackForConfirm
