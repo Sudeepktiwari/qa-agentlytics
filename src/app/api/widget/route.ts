@@ -281,6 +281,7 @@ export async function GET(request: Request) {
   let contextualQuestionDisplayed = false;
   let lastContextualQuestion = null;
   let contextualMessageDelayActive = false; // Prevent multiple contextual messages during delay period
+  let onboardingProactiveSent = false; // Suppress non-onboarding proactive in onboarding-only mode
   
   // Enhanced page detection variables
   let currentPageUrl = window.location.href;
@@ -1330,6 +1331,10 @@ export async function GET(request: Request) {
   
   // Send proactive message with voice and auto-opening
   function sendProactiveMessage(text, buttons = [], emailPrompt = '', messageType = 'PROACTIVE', inputFields = null) {
+    if (ONBOARDING_ONLY) {
+      if (messageType !== 'PROACTIVE') return;
+      if (onboardingProactiveSent) return;
+    }
     if (!text) {
       console.log('[ChatWidget] No proactive message text provided');
       return;
@@ -1479,6 +1484,9 @@ export async function GET(request: Request) {
     // Start follow-up timer after proactive message (independent of speech)
     console.log('⏰ [WIDGET PROACTIVE] Starting follow-up timer after proactive message - runs independently of speech');
     startFollowupTimer();
+    if (ONBOARDING_ONLY) {
+      onboardingProactiveSent = true;
+    }
   }
   
   // Enhanced page detection and monitoring
@@ -1817,6 +1825,9 @@ export async function GET(request: Request) {
   // Generate contextual question specifically for scroll stop
   // AI-powered contextual question generation
   async function generateAiContextualQuestion(sectionName, visibleContent, scrollPercentage, sectionData) {
+    if (ONBOARDING_ONLY) {
+      return null;
+    }
     console.log('🔀 [WIDGET FLOW] ===== SCHEDULING AI CONTEXTUAL QUESTION GENERATION =====');
     try {
       console.log('🤖 [WIDGET AI] Scheduling contextual question generation for:', sectionName);
@@ -3403,8 +3414,25 @@ export async function GET(request: Request) {
     console.log("📤 [WIDGET API] Request data:", data);
     
     // Add explicit response format specification
+    const sanitized = { ...data };
+    if (ONBOARDING_ONLY) {
+      try {
+        delete sanitized.proactive;
+        delete sanitized.contextual;
+        delete sanitized.contextualQuestionGeneration;
+        delete sanitized.contextualResponse;
+        delete sanitized.sectionContext;
+        delete sanitized.contextualPageContext;
+        delete sanitized.sectionName;
+        delete sanitized.sectionAnalysis;
+        delete sanitized.requestType;
+        delete sanitized.followup;
+        delete sanitized.followupType;
+        delete sanitized.followupTopic;
+      } catch {}
+    }
     const requestData = {
-      ...data,
+      ...sanitized,
       responseFormat: {
         required: true,
         structure: {
