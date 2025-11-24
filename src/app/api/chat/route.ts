@@ -2928,7 +2928,15 @@ Keep the response conversational and helpful, focusing on providing value before
           return NextResponse.json(resp, { headers: corsHeaders });
         } else {
           const lastError = sessionDoc.lastError || "Registration failed";
-          const summary = buildSafeSummary(sessionDoc.collectedData || {});
+          const data = sessionDoc.collectedData || {};
+          const regName = (data as any).name || (((data as any).firstName ? (((data as any).lastName ? `${(data as any).firstName} ${(data as any).lastName}` : (data as any).firstName)) : undefined));
+          const regEmail = (data as any).email;
+          const hasPwd = ((data as any).password || (data as any).pass);
+          const lines: string[] = [];
+          if (regName) lines.push(`- name: ${regName}`);
+          if (regEmail) lines.push(`- email: ${regEmail}`);
+          if (hasPwd) lines.push(`- password: ***`);
+          const summary = lines.join("\n");
           const isExistingUser = /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists|409/i.test(lastError || "");
           const resp = {
             mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\n${isExistingUser ? "Please update your email to continue." : "Reply \"Try Again\" to resubmit, or \"Edit\" to change any detail."}\n\nCurrent details:\n${summary}`,
@@ -2940,7 +2948,38 @@ Keep the response conversational and helpful, focusing on providing value before
           return NextResponse.json(resp, { headers: corsHeaders });
         }
       } else if (sessionDoc.status !== "ready_to_submit") {
-        let summary = buildSafeSummary(sessionDoc.collectedData || {});
+        let summary = "";
+        if (sessionDoc?.phase === "initial_setup" && (((onboardingConfig as any)?.initialSetupCurlCommand) || (((onboardingConfig as any)?.initialFields || []).length > 0))) {
+          const setupFields = (((onboardingConfig as any)?.initialFields || []).length > 0)
+            ? ((onboardingConfig as any).initialFields as any[])
+            : deriveOnboardingFieldsFromCurl(((onboardingConfig as any).initialSetupCurlCommand as string));
+          if (!setupFields || setupFields.length === 0) {
+            const resp = {
+              mainText: "Initial setup fields are not configured. Please configure required fields or cURL body.",
+              buttons: ["Contact Admin"],
+              emailPrompt: "",
+              showBookingCalendar: false,
+              onboardingAction: "error",
+            };
+            return NextResponse.json(resp, { headers: corsHeaders });
+          }
+          const setupKeys = (setupFields || []).map((f: any) => f.key);
+          const data = sessionDoc.collectedData || {};
+          const limited = Object.fromEntries(
+            Object.entries(data).filter(([k]) => setupKeys.includes(k))
+          );
+          summary = buildSafeSummary(limited);
+        } else {
+          const data = sessionDoc.collectedData || {};
+          const regName = (data as any).name || (((data as any).firstName ? (((data as any).lastName ? `${(data as any).firstName} ${(data as any).lastName}` : (data as any).firstName)) : undefined));
+          const regEmail = (data as any).email;
+          const hasPwd = ((data as any).password || (data as any).pass);
+          const lines: string[] = [];
+          if (regName) lines.push(`- name: ${regName}`);
+          if (regEmail) lines.push(`- email: ${regEmail}`);
+          if (hasPwd) lines.push(`- password: ***`);
+          summary = lines.join("\n");
+        }
         if (sessionDoc?.phase === "initial_setup" && (((onboardingConfig as any)?.initialSetupCurlCommand) || (((onboardingConfig as any)?.initialFields || []).length > 0))) {
           const setupFields = (((onboardingConfig as any)?.initialFields || []).length > 0)
             ? ((onboardingConfig as any).initialFields as any[])
@@ -3416,7 +3455,14 @@ Keep the response conversational and helpful, focusing on providing value before
             { sessionId },
             { $set: { status: "ready_to_submit", updatedAt: now } }
           );
-          const summary = buildSafeSummary(updatedData || {});
+          const regName = (updatedData as any).name || (((updatedData as any).firstName ? (((updatedData as any).lastName ? `${(updatedData as any).firstName} ${(updatedData as any).lastName}` : (updatedData as any).firstName)) : undefined));
+          const regEmail = (updatedData as any).email;
+          const hasPwd = ((updatedData as any).password || (updatedData as any).pass);
+          const lines: string[] = [];
+          if (regName) lines.push(`- name: ${regName}`);
+          if (regEmail) lines.push(`- email: ${regEmail}`);
+          if (hasPwd) lines.push(`- password: ***`);
+          const summary = lines.join("\n");
           const resp = {
             mainText: `Great, I’ve got everything. Please review:\n${summary}\n\nReply "Confirm" to submit, or say "Edit" to change any detail.`,
             buttons: (sessionDoc.phase === "change_email_only") ? ["Confirm and Submit"] : ["Confirm and Submit", "Edit Details"],
