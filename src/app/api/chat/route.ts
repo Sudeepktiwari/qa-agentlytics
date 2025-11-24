@@ -2179,9 +2179,52 @@ export async function POST(req: NextRequest) {
           const idx = existingOnboarding?.stageIndex ?? 0;
           const field = existingOnboarding?.fields?.[idx];
           if (existingOnboarding?.status === "ready_to_submit") {
-            const summary = buildSafeSummary(
-              existingOnboarding?.collectedData || {}
-            );
+            // Build a minimal, relevant summary depending on phase
+            let summary = "";
+            try {
+              const adminOnboarding = (
+                await getAdminSettings(existingOnboarding?.adminId || "")
+              ).onboarding;
+              const setupConfigured =
+                !!(adminOnboarding as any)?.initialSetupCurlCommand ||
+                (((adminOnboarding as any)?.initialFields || []).length > 0);
+              const inSetupPhase = existingOnboarding?.phase === "initial_setup";
+              const hasRegisteredUser = !!existingOnboarding?.registeredUserId;
+              if (inSetupPhase && setupConfigured && hasRegisteredUser) {
+                const setupFields =
+                  ((adminOnboarding as any)?.initialFields || []).length > 0
+                    ? ((adminOnboarding as any).initialFields as any[])
+                    : deriveOnboardingFieldsFromCurl(
+                        (adminOnboarding as any)
+                          .initialSetupCurlCommand as string
+                      );
+                if (setupFields && setupFields.length > 0) {
+                  const setupKeys = (setupFields || []).map((f: any) => f.key);
+                  const data = existingOnboarding?.collectedData || {};
+                  const limited = Object.fromEntries(
+                    Object.entries(data).filter(([k]) => setupKeys.includes(k))
+                  );
+                  summary = buildSafeSummary(limited);
+                }
+              } else {
+                const data = existingOnboarding?.collectedData || {};
+                const regName =
+                  (data as any).name ||
+                  ((data as any).firstName
+                    ? (data as any).lastName
+                      ? `${(data as any).firstName} ${(data as any).lastName}`
+                      : (data as any).firstName
+                    : undefined);
+                const regEmail = (data as any).email;
+                const hasPwd = (data as any).password || (data as any).pass;
+                const lines: string[] = [];
+                if (regName) lines.push(`- name: ${regName}`);
+                if (regEmail) lines.push(`- email: ${regEmail}`);
+                if (hasPwd) lines.push(`- password: ***`);
+                summary = lines.join("\n");
+              }
+            } catch {}
+
             const resp = {
               mainText: `We’re finishing your onboarding. Please review:\n${summary}\n\nReply "Confirm" to submit, or "Edit" to change any detail.`,
               buttons:

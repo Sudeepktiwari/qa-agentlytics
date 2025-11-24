@@ -3447,7 +3447,7 @@ export async function GET(request: Request) {
     };
     
     try {
-      const effectiveEndpoint = (ONBOARDING_ONLY && endpoint === 'chat') ? 'onboarding-chat' : endpoint;
+      const effectiveEndpoint = endpoint;
       const response = await fetch(\`\${CHATBOT_API_BASE}/api/\${effectiveEndpoint}\`, {
         method: 'POST',
         headers: {
