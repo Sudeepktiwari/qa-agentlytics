@@ -3526,35 +3526,6 @@ Keep the response conversational and helpful, focusing on providing value before
           if (hasPwd) lines.push(`- password: ***`);
           summary = lines.join("\n");
         }
-        if (
-          sessionDoc?.phase === "initial_setup" &&
-          ((onboardingConfig as any)?.initialSetupCurlCommand ||
-            ((onboardingConfig as any)?.initialFields || []).length > 0)
-        ) {
-          const setupFields =
-            ((onboardingConfig as any)?.initialFields || []).length > 0
-              ? ((onboardingConfig as any).initialFields as any[])
-              : deriveOnboardingFieldsFromCurl(
-                  (onboardingConfig as any).initialSetupCurlCommand as string
-                );
-          if (!setupFields || setupFields.length === 0) {
-            const resp = {
-              mainText:
-                "Initial setup fields are not configured. Please configure required fields or cURL body.",
-              buttons: ["Contact Admin"],
-              emailPrompt: "",
-              showBookingCalendar: false,
-              onboardingAction: "error",
-            };
-            return NextResponse.json(resp, { headers: corsHeaders });
-          }
-          const setupKeys = (setupFields || []).map((f: any) => f.key);
-          const data = sessionDoc.collectedData || {};
-          const limited = Object.fromEntries(
-            Object.entries(data).filter(([k]) => setupKeys.includes(k))
-          );
-          summary = buildSafeSummary(limited);
-        }
         await sessionsCollection.updateOne(
           { sessionId },
           { $set: { status: "ready_to_submit", updatedAt: now } }
