@@ -3869,6 +3869,43 @@ Keep the response conversational and helpful, focusing on providing value before
               ((onboardingConfig as any)?.initialFields || []).length > 0
             )
           ) {
+            try {
+              const docDerived2 = await inferFieldsFromDocs(
+                adminId || undefined,
+                onboardingConfig?.docsUrl
+              );
+              if (Array.isArray(docDerived2) && docDerived2.length > 0) {
+                await sessionsCollection.updateOne(
+                  { sessionId },
+                  {
+                    $set: {
+                      status: "in_progress",
+                      stageIndex: 0,
+                      fields: docDerived2,
+                      phase: "initial_setup",
+                      updatedAt: now,
+                    },
+                  }
+                );
+                const firstField2 = docDerived2[0];
+                const docContext2 = await buildOnboardingDocContext(
+                  firstField2,
+                  adminId || undefined,
+                  onboardingConfig?.initialSetupDocsUrl
+                );
+                const intro2 =
+                  "✅ Registration complete. Now, let’s finish initial setup.";
+                const prompt2 = promptForField(firstField2);
+                const resp2 = {
+                  mainText: `${docContext2 ? `${docContext2}\n\n` : ""}${intro2}\n\n${prompt2}`,
+                  buttons: [],
+                  emailPrompt: "",
+                  showBookingCalendar: false,
+                  onboardingAction: "ask_next",
+                };
+                return NextResponse.json(resp2, { headers: corsHeaders });
+              }
+            } catch {}
             const externalMsg2 =
               (() => {
                 try {

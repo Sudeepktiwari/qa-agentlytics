@@ -3749,7 +3749,8 @@ export async function GET(request: Request) {
     let botResponse = '';
     if (data.error) {
       console.log("❌ [WIDGET MESSAGE] Error in API response:", data.error);
-      const errorMessage = { role: 'assistant', content: 'Sorry, something went wrong. Please try again.' };
+      const errorText = (data.mainText && data.mainText.trim()) ? data.mainText : 'Sorry, something went wrong. Please try again.';
+      const errorMessage = { role: 'assistant', content: errorText };
       messages.push(errorMessage);
       botResponse = errorMessage.content;
     } else {
@@ -3783,12 +3784,15 @@ export async function GET(request: Request) {
         if (ONBOARDING_ONLY && (isConfirmInput || lastAssistantWithConfirm) && !data.error) return 'completed';
         return null;
       })();
-      const useFallbackForConfirm = ONBOARDING_ONLY && (isConfirmInput || lastAssistantWithConfirm) && !data.error;
+      const hasServerMessage = !!(data.mainText && data.mainText.trim()) || !!(data.answer && String(data.answer).trim());
+      const useFallbackForConfirm = ONBOARDING_ONLY && (isConfirmInput || lastAssistantWithConfirm) && !data.error && !hasServerMessage;
       const botMessage = {
         role: 'assistant',
-        content: useFallbackForConfirm
-          ? fallbackText
-          : ((data.mainText && data.mainText.trim()) ? data.mainText : (data.answer || fallbackText)),
+        content: ((data.mainText && data.mainText.trim())
+          ? data.mainText
+          : ((data.answer && String(data.answer).trim())
+            ? String(data.answer)
+            : fallbackText)),
         buttons: data.buttons || [],
         emailPrompt: data.emailPrompt || '',
         showBookingCalendar: data.showBookingCalendar || false,
