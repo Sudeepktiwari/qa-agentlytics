@@ -3760,11 +3760,18 @@ export async function GET(request: Request) {
       console.log("Show Booking Calendar:", data.showBookingCalendar || false);
       console.log("Booking Type:", data.bookingType || 'none');
       
+      const isConfirmInput = /\b(confirm\s+and\s+submit|confirm|submit|looks\s+good|yes)\b/i.test(text);
       const fallbackText = (() => {
         if (data.onboardingAction === 'completed') return '✅ You’re all set! Your account has been created.';
         if (data.onboardingAction === 'confirm') return '✅ Registration complete. Please review and confirm your setup details.';
         if (data.onboardingAction === 'ask_next') return 'Let’s continue your setup. Please provide the next required detail.';
+        if (ONBOARDING_ONLY && !data.mainText && isConfirmInput) return '✅ You’re all set! Your account has been created.';
         return ONBOARDING_ONLY ? 'Please try again.' : 'I received your message.';
+      })();
+      const inferredAction = (() => {
+        if (data.onboardingAction) return data.onboardingAction;
+        if (ONBOARDING_ONLY && !data.mainText && isConfirmInput) return 'completed';
+        return null;
       })();
       const botMessage = {
         role: 'assistant',
@@ -3774,12 +3781,12 @@ export async function GET(request: Request) {
         showBookingCalendar: data.showBookingCalendar || false,
         bookingType: data.bookingType || null,
         inputFields: data.inputFields || null,
-        onboardingAction: data.onboardingAction || null
+        onboardingAction: inferredAction
       };
       messages.push(botMessage);
       botResponse = botMessage.content;
       console.log('[Widget] Bot response received, starting followup timer');
-      startFollowupTimer();
+      if (!ONBOARDING_ONLY) startFollowupTimer();
     }
     
     console.log("🎨 [WIDGET MESSAGE] Rendering messages to UI");
