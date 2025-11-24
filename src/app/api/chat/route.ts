@@ -43,9 +43,18 @@ async function getSessionBookingStatus(sessionId: string, adminId?: string) {
           month: "2-digit",
           day: "2-digit",
         }).formatToParts(d);
-        const year = parseInt(parts.find((p) => p.type === "year")?.value || "0", 10);
-        const month = parseInt(parts.find((p) => p.type === "month")?.value || "0", 10);
-        const day = parseInt(parts.find((p) => p.type === "day")?.value || "0", 10);
+        const year = parseInt(
+          parts.find((p) => p.type === "year")?.value || "0",
+          10
+        );
+        const month = parseInt(
+          parts.find((p) => p.type === "month")?.value || "0",
+          10
+        );
+        const day = parseInt(
+          parts.find((p) => p.type === "day")?.value || "0",
+          10
+        );
         return year * 10000 + month * 100 + day;
       };
 
@@ -62,14 +71,21 @@ async function getSessionBookingStatus(sessionId: string, adminId?: string) {
           minute: "2-digit",
           hour12: false,
         }).formatToParts(d);
-        const hour = parseInt(parts.find((p) => p.type === "hour")?.value || "0", 10);
-        const minute = parseInt(parts.find((p) => p.type === "minute")?.value || "0", 10);
+        const hour = parseInt(
+          parts.find((p) => p.type === "hour")?.value || "0",
+          10
+        );
+        const minute = parseInt(
+          parts.find((p) => p.type === "minute")?.value || "0",
+          10
+        );
         return hour * 60 + minute;
       };
 
       const nowHM = getTimeHM(now);
       const [hStr, mStr] = String(booking.preferredTime || "00:00").split(":");
-      const bookingHM = (parseInt(hStr || "0", 10) * 60) + parseInt(mStr || "0", 10);
+      const bookingHM =
+        parseInt(hStr || "0", 10) * 60 + parseInt(mStr || "0", 10);
 
       return bookingHM >= nowHM;
     }
@@ -159,7 +175,10 @@ async function getSessionBookingStatus(sessionId: string, adminId?: string) {
           }
         }
       } catch (fallbackErr) {
-        console.log("[Booking Status] Email fallback lookup failed:", fallbackErr);
+        console.log(
+          "[Booking Status] Email fallback lookup failed:",
+          fallbackErr
+        );
       }
 
       return {
@@ -286,26 +305,36 @@ function generateBookingAwareResponse(
   if (isBookingRequest) {
     // Show comprehensive booking details instead of calendar
     return {
-      mainText: `📅 <strong>You already have an appointment scheduled!</strong><br><br>` +
-                `📅 <strong>Date:</strong> ${bookingDate}<br>` +
-                `⏰ <strong>Time:</strong> ${bookingTime}<br>` +
-                `📋 <strong>Type:</strong> ${booking.requestType || 'Appointment'}<br>` +
-                `🎫 <strong>Confirmation:</strong> ${booking.confirmationNumber || 'N/A'}<br>` +
-                `📧 <strong>Contact:</strong> ${booking.email || 'N/A'}<br>` +
-                `📊 <strong>Status:</strong> ${booking.status || 'Confirmed'}<br><br>` +
-                `Would you like to manage this appointment or need something else?`,
-      buttons: ["View Full Details", "Reschedule", "Cancel Booking", "Add to Calendar"],
+      mainText:
+        `📅 <strong>You already have an appointment scheduled!</strong><br><br>` +
+        `📅 <strong>Date:</strong> ${bookingDate}<br>` +
+        `⏰ <strong>Time:</strong> ${bookingTime}<br>` +
+        `📋 <strong>Type:</strong> ${
+          booking.requestType || "Appointment"
+        }<br>` +
+        `🎫 <strong>Confirmation:</strong> ${
+          booking.confirmationNumber || "N/A"
+        }<br>` +
+        `📧 <strong>Contact:</strong> ${booking.email || "N/A"}<br>` +
+        `📊 <strong>Status:</strong> ${booking.status || "Confirmed"}<br><br>` +
+        `Would you like to manage this appointment or need something else?`,
+      buttons: [
+        "View Full Details",
+        "Reschedule",
+        "Cancel Booking",
+        "Add to Calendar",
+      ],
       emailPrompt: "",
       showBookingCalendar: false,
       existingBooking: true,
       bookingDetails: {
         date: bookingDate,
         time: bookingTime,
-        type: booking.requestType || 'Appointment',
-        confirmationNumber: booking.confirmationNumber || 'N/A',
-        email: booking.email || 'N/A',
-        status: booking.status || 'Confirmed',
-        fullBooking: booking
+        type: booking.requestType || "Appointment",
+        confirmationNumber: booking.confirmationNumber || "N/A",
+        email: booking.email || "N/A",
+        status: booking.status || "Confirmed",
+        fullBooking: booking,
       },
     };
   }
@@ -443,7 +472,10 @@ function detectOnboardingIntent(text?: string): boolean {
 }
 
 // Infer likely required fields from admin documentation (docsUrl first, then uploaded docs)
-async function inferFieldsFromDocs(adminId?: string, docsUrl?: string): Promise<any[]> {
+async function inferFieldsFromDocs(
+  adminId?: string,
+  docsUrl?: string
+): Promise<any[]> {
   try {
     let chunks: string[] = [];
     if (adminId && docsUrl) {
@@ -470,7 +502,8 @@ async function inferFieldsFromDocs(adminId?: string, docsUrl?: string): Promise<
     const hasEmail = /\b(email|user_email|email_address|mail)\b/.test(text);
     const hasFirst = /\b(first[_\s]?name|given[_\s]?name|fname)\b/.test(text);
     const hasLast = /\b(last[_\s]?name|surname|lname)\b/.test(text);
-    const hasPhone = /\b(phone|phone[_\s]?number|mobile|contact[_\s]?number)\b/.test(text);
+    const hasPhone =
+      /\b(phone|phone[_\s]?number|mobile|contact[_\s]?number)\b/.test(text);
     const hasPassword = /\b(password|passphrase|pwd)\b/.test(text);
     const hasCompany = /\b(company|organization|org|business)\b/.test(text);
     const hasConsent = /\b(consent|gdpr|agree[_\s]?terms|accept)\b/.test(text);
@@ -480,13 +513,56 @@ async function inferFieldsFromDocs(adminId?: string, docsUrl?: string): Promise<
       if (!arr.find((f) => f.key === field.key)) arr.push(field);
     };
 
-    if (hasEmail) pushUnique(out, { key: "email", label: "Email", required: true, type: "email" });
-    if (hasFirst) pushUnique(out, { key: "firstName", label: "First Name", required: true, type: "text" });
-    if (hasLast) pushUnique(out, { key: "lastName", label: "Last Name", required: false, type: "text" });
-    if (hasPhone) pushUnique(out, { key: "phone", label: "Phone", required: false, type: "phone" });
-    if (hasPassword) pushUnique(out, { key: "password", label: "Password", required: true, type: "text", validations: { minLength: 8 } });
-    if (hasCompany) pushUnique(out, { key: "company", label: "Company", required: false, type: "text" });
-    if (hasConsent) pushUnique(out, { key: "consent", label: "Consent", required: false, type: "checkbox" });
+    if (hasEmail)
+      pushUnique(out, {
+        key: "email",
+        label: "Email",
+        required: true,
+        type: "email",
+      });
+    if (hasFirst)
+      pushUnique(out, {
+        key: "firstName",
+        label: "First Name",
+        required: true,
+        type: "text",
+      });
+    if (hasLast)
+      pushUnique(out, {
+        key: "lastName",
+        label: "Last Name",
+        required: false,
+        type: "text",
+      });
+    if (hasPhone)
+      pushUnique(out, {
+        key: "phone",
+        label: "Phone",
+        required: false,
+        type: "phone",
+      });
+    if (hasPassword)
+      pushUnique(out, {
+        key: "password",
+        label: "Password",
+        required: true,
+        type: "text",
+        validations: { minLength: 8 },
+      });
+    if (hasCompany)
+      pushUnique(out, {
+        key: "company",
+        label: "Company",
+        required: false,
+        type: "text",
+      });
+    if (hasConsent)
+      pushUnique(out, {
+        key: "consent",
+        label: "Consent",
+        required: false,
+        type: "checkbox",
+      });
 
     return out;
   } catch {
@@ -494,12 +570,32 @@ async function inferFieldsFromDocs(adminId?: string, docsUrl?: string): Promise<
   }
 }
 
-function mergeFields(base: any[], extras: any[]): any[] {
-  const byKey = new Map<string, any>();
-  for (const f of base) byKey.set(f.key, f);
-  for (const f of extras) if (!byKey.has(f.key)) byKey.set(f.key, f);
-  return Array.from(byKey.values());
+function mergeFields(base: any[], extra: any[]): any[] {
+  const map = new Map<string, any>();
+  for (const f of base || []) {
+    const key = String(f?.key || "");
+    if (!key) continue;
+    map.set(key, { ...f });
+  }
+  for (const g of extra || []) {
+    const key = String(g?.key || "");
+    if (!key) continue;
+    if (!map.has(key)) {
+      map.set(key, { ...g });
+    } else {
+      const prev = map.get(key);
+      map.set(key, {
+        ...prev,
+        label: prev.label || g.label || key,
+        type: prev.type || g.type || "text",
+        required: !!(prev.required || g.required),
+        validations: { ...(prev.validations || {}), ...(g.validations || {}) },
+      });
+    }
+  }
+  return Array.from(map.values());
 }
+
 
 function promptForField(field: any): string {
   const base = field.label || field.key;
@@ -509,7 +605,9 @@ function promptForField(field: any): string {
     case "phone":
       return `Please share your ${base.toLowerCase()} (digits only).`;
     case "select":
-      return `Choose your ${base.toLowerCase()}${field.options ? `: ${field.options.join(", ")}` : ""}.`;
+      return `Choose your ${base.toLowerCase()}${
+        field.options ? `: ${field.options.join(", ")}` : ""
+      }.`;
     case "checkbox":
       return `Do you consent to ${base.toLowerCase()}? Reply yes or no.`;
     default:
@@ -519,7 +617,14 @@ function promptForField(field: any): string {
 
 // Build a user-facing summary of collected onboarding data with sensitive fields redacted
 function buildSafeSummary(data: Record<string, any>): string {
-  const redactKeys = ["password", "pass", "secret", "token", "apiKey", "api_key"];
+  const redactKeys = [
+    "password",
+    "pass",
+    "secret",
+    "token",
+    "apiKey",
+    "api_key",
+  ];
   return Object.entries(data || {})
     .map(([k, v]) => {
       const kl = k.toLowerCase();
@@ -531,7 +636,11 @@ function buildSafeSummary(data: Record<string, any>): string {
 }
 
 // Retrieve relevant documentation context. Prefer configured docsUrl; fall back to uploaded docs.
-async function buildOnboardingDocContext(field: any, adminId?: string, docsUrl?: string): Promise<string> {
+async function buildOnboardingDocContext(
+  field: any,
+  adminId?: string,
+  docsUrl?: string
+): Promise<string> {
   try {
     const label = (field.label || field.key || "information").toLowerCase();
     const labelTerms = [label, "email"]; // prioritize field-specific terms
@@ -606,39 +715,74 @@ async function buildOnboardingDocContext(field: any, adminId?: string, docsUrl?:
   }
 }
 
-function validateAnswer(field: any, answer: string): { valid: boolean; message?: string; normalized?: string } {
+function validateAnswer(
+  field: any,
+  answer: string
+): { valid: boolean; message?: string; normalized?: string } {
   const val = answer?.trim();
-  if (!val) return { valid: false, message: `Please provide your ${field.label || field.key}.` };
+  if (!val)
+    return {
+      valid: false,
+      message: `Please provide your ${field.label || field.key}.`,
+    };
   if (field.type === "email") {
     // Extract email from freeform text (e.g., "my email is foo@bar.com")
     const emailInText = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i;
     const match = val.match(emailInText);
-    if (!match) return { valid: false, message: "That doesn’t look like a valid email." };
+    if (!match)
+      return { valid: false, message: "That doesn’t look like a valid email." };
     return { valid: true, normalized: match[0] };
   }
-  if (field.validations?.minLength && val.length < field.validations.minLength) {
-    return { valid: false, message: `Please provide at least ${field.validations.minLength} characters.` };
+  if (
+    field.validations?.minLength &&
+    val.length < field.validations.minLength
+  ) {
+    return {
+      valid: false,
+      message: `Please provide at least ${field.validations.minLength} characters.`,
+    };
   }
-  if (field.validations?.maxLength && val.length > field.validations.maxLength) {
-    return { valid: false, message: `Please keep it under ${field.validations.maxLength} characters.` };
+  if (
+    field.validations?.maxLength &&
+    val.length > field.validations.maxLength
+  ) {
+    return {
+      valid: false,
+      message: `Please keep it under ${field.validations.maxLength} characters.`,
+    };
   }
   if (field.validations?.regex) {
     try {
       const re = new RegExp(field.validations.regex);
-      if (!re.test(val)) return { valid: false, message: `The format for ${field.label || field.key} is invalid.` };
+      if (!re.test(val))
+        return {
+          valid: false,
+          message: `The format for ${field.label || field.key} is invalid.`,
+        };
     } catch {}
   }
   if (field.type === "checkbox") {
     const yn = val.toLowerCase();
-    if (!["yes", "no"].includes(yn)) return { valid: false, message: "Please reply yes or no." };
+    if (!["yes", "no"].includes(yn))
+      return { valid: false, message: "Please reply yes or no." };
   }
-  if (field.type === "select" && field.options && !field.options.includes(val)) {
-    return { valid: false, message: `Please select one of: ${field.options.join(", ")}.` };
+  if (
+    field.type === "select" &&
+    field.options &&
+    !field.options.includes(val)
+  ) {
+    return {
+      valid: false,
+      message: `Please select one of: ${field.options.join(", ")}.`,
+    };
   }
   return { valid: true };
 }
 
-  function extractApiKeyFromResponse(resp: any, onboarding?: OnboardingSettings): string | undefined {
+function extractApiKeyFromResponse(
+  resp: any,
+  onboarding?: OnboardingSettings
+): string | undefined {
   try {
     const candidates = new Set<string>([
       "token",
@@ -652,14 +796,20 @@ function validateAnswer(field: any, answer: string): { valid: boolean; message?:
       "x_api_key",
     ]);
     const addKeys = (arr?: any[]) => {
-      if (Array.isArray(arr)) for (const k of arr) if (k && typeof k === "string") candidates.add(k);
+      if (Array.isArray(arr))
+        for (const k of arr) if (k && typeof k === "string") candidates.add(k);
     };
     addKeys((onboarding as any)?.registrationResponseFields);
-    addKeys(((onboarding as any)?.registrationResponseFieldDefs || []).map((f: any) => f?.key));
+    addKeys(
+      ((onboarding as any)?.registrationResponseFieldDefs || []).map(
+        (f: any) => f?.key
+      )
+    );
     addKeys((onboarding as any)?.authResponseFields);
-    addKeys(((onboarding as any)?.authResponseFieldDefs || []).map((f: any) => f?.key));
-    const isTokenLike = (v: any) =>
-      typeof v === "string" && v.length >= 8;
+    addKeys(
+      ((onboarding as any)?.authResponseFieldDefs || []).map((f: any) => f?.key)
+    );
+    const isTokenLike = (v: any) => typeof v === "string" && v.length >= 8;
     const matchKey = (k: string) => {
       const kl = k.toLowerCase();
       for (const c of candidates) {
@@ -684,7 +834,10 @@ function validateAnswer(field: any, answer: string): { valid: boolean; message?:
   return undefined;
 }
 
-function isApiKeyFieldKey(key: string, onboarding?: OnboardingSettings): boolean {
+function isApiKeyFieldKey(
+  key: string,
+  onboarding?: OnboardingSettings
+): boolean {
   const k = String(key || "").toLowerCase();
   const candidates = new Set<string>([
     "token",
@@ -697,14 +850,30 @@ function isApiKeyFieldKey(key: string, onboarding?: OnboardingSettings): boolean
     "session_key",
     "x_api_key",
   ]);
-  const addKeys = (arr?: any[]) => { if (Array.isArray(arr)) for (const x of arr) if (x && typeof x === "string") candidates.add(x); };
+  const addKeys = (arr?: any[]) => {
+    if (Array.isArray(arr))
+      for (const x of arr) if (x && typeof x === "string") candidates.add(x);
+  };
   addKeys((onboarding as any)?.initialResponseFields);
-  addKeys(((onboarding as any)?.initialResponseFieldDefs || []).map((f: any) => f?.key));
+  addKeys(
+    ((onboarding as any)?.initialResponseFieldDefs || []).map(
+      (f: any) => f?.key
+    )
+  );
   addKeys((onboarding as any)?.registrationResponseFields);
-  addKeys(((onboarding as any)?.registrationResponseFieldDefs || []).map((f: any) => f?.key));
+  addKeys(
+    ((onboarding as any)?.registrationResponseFieldDefs || []).map(
+      (f: any) => f?.key
+    )
+  );
   addKeys((onboarding as any)?.authResponseFields);
-  addKeys(((onboarding as any)?.authResponseFieldDefs || []).map((f: any) => f?.key));
-  for (const c of candidates) { const cl = String(c).toLowerCase(); if (k === cl || k.includes(cl)) return true; }
+  addKeys(
+    ((onboarding as any)?.authResponseFieldDefs || []).map((f: any) => f?.key)
+  );
+  for (const c of candidates) {
+    const cl = String(c).toLowerCase();
+    if (k === cl || k.includes(cl)) return true;
+  }
   return false;
 }
 
@@ -751,14 +920,15 @@ async function detectBookingConflicts(
     };
   }
 
-//
+  //
 }
 
 // CORS headers for cross-origin requests
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, x-api-key, X-API-Key, x-widget-mode, X-Widget-Mode, Authorization",
+  "Access-Control-Allow-Headers":
+    "Content-Type, x-api-key, X-API-Key, x-widget-mode, X-Widget-Mode, Authorization",
   "Access-Control-Max-Age": "86400",
   "Access-Control-Allow-Credentials": "true",
 };
@@ -1787,25 +1957,37 @@ export async function POST(req: NextRequest) {
     if (!text) return {};
 
     // Normalize helpers
-    const stripQuotes = (s: string) => s.replace(/^\s*["']|["']\s*$/g, "").trim();
+    const stripQuotes = (s: string) =>
+      s.replace(/^\s*["']|["']\s*$/g, "").trim();
     const lower = text.toLowerCase();
 
     // Robust label-based extraction first
-    const nameLabelMatch = text.match(/(?:^|[;,])\s*(?:name|your name)\s*:\s*([^,;]+)/i);
-    const passwordLabelMatch = text.match(/(?:^|[;,])\s*(?:password)\s*:\s*([^,;]+)/i);
+    const nameLabelMatch = text.match(
+      /(?:^|[;,])\s*(?:name|your name)\s*:\s*([^,;]+)/i
+    );
+    const passwordLabelMatch = text.match(
+      /(?:^|[;,])\s*(?:password)\s*:\s*([^,;]+)/i
+    );
     const emailMatch = text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
 
     const rawName = nameLabelMatch ? stripQuotes(nameLabelMatch[1]) : undefined;
     const email = emailMatch ? emailMatch[0] : undefined;
-    const rawPassword = passwordLabelMatch ? stripQuotes(passwordLabelMatch[1]) : undefined;
+    const rawPassword = passwordLabelMatch
+      ? stripQuotes(passwordLabelMatch[1])
+      : undefined;
 
     // Derive name tokens: prefer labeled name; otherwise infer from text before email
     let firstName: string | undefined;
     let lastName: string | undefined;
-    const nameSource = rawName && rawName.length > 0
-      ? rawName
-      : email
-        ? text.slice(0, text.indexOf(email)).split(",")[0].replace(/^(?:name|your name)\s*:\s*/i, "").trim()
+    const nameSource =
+      rawName && rawName.length > 0
+        ? rawName
+        : email
+        ? text
+            .slice(0, text.indexOf(email))
+            .split(",")[0]
+            .replace(/^(?:name|your name)\s*:\s*/i, "")
+            .trim()
         : undefined;
 
     if (nameSource) {
@@ -1819,7 +2001,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Password: prefer labeled value; fallback to last non-email segment of min length
-    let password: string | undefined = rawPassword && rawPassword.length > 0 ? rawPassword : undefined;
+    let password: string | undefined =
+      rawPassword && rawPassword.length > 0 ? rawPassword : undefined;
     if (!password) {
       const segments = text.split(/[;,]/).map((s) => s.trim());
       for (let i = segments.length - 1; i >= 0; i--) {
@@ -1827,14 +2010,23 @@ export async function POST(req: NextRequest) {
         if (!seg || (email && seg.includes(email))) continue;
         // Remove any lingering labels
         const cleaned = seg.replace(/^(?:password|pwd)\s*:\s*/i, "").trim();
-        if (cleaned.length >= 8 && !/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i.test(cleaned)) {
+        if (
+          cleaned.length >= 8 &&
+          !/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i.test(cleaned)
+        ) {
           password = stripQuotes(cleaned);
           break;
         }
       }
     }
 
-    const name = nameSource || (firstName ? (lastName ? `${firstName} ${lastName}` : firstName) : undefined);
+    const name =
+      nameSource ||
+      (firstName
+        ? lastName
+          ? `${firstName} ${lastName}`
+          : firstName
+        : undefined);
     const fullName = name;
     return { firstName, lastName, email, password, name, fullName };
   }
@@ -1976,27 +2168,50 @@ export async function POST(req: NextRequest) {
       try {
         const db = await getDb();
         const sessionsCollection = db.collection("onboardingSessions");
-        const existingOnboarding = await sessionsCollection.findOne({ sessionId });
-        if (["in_progress", "ready_to_submit", "error"].includes(existingOnboarding?.status || "")) {
+        const existingOnboarding = await sessionsCollection.findOne({
+          sessionId,
+        });
+        if (
+          ["in_progress", "ready_to_submit", "error"].includes(
+            existingOnboarding?.status || ""
+          )
+        ) {
           const idx = existingOnboarding?.stageIndex ?? 0;
           const field = existingOnboarding?.fields?.[idx];
           if (existingOnboarding?.status === "ready_to_submit") {
-            const summary = buildSafeSummary(existingOnboarding?.collectedData || {});
+            const summary = buildSafeSummary(
+              existingOnboarding?.collectedData || {}
+            );
             const resp = {
               mainText: `We’re finishing your onboarding. Please review:\n${summary}\n\nReply "Confirm" to submit, or "Edit" to change any detail.`,
-              buttons: (existingOnboarding?.phase === "change_email_only") ? ["Confirm and Submit"] : ["Confirm and Submit", "Edit Details"],
+              buttons:
+                existingOnboarding?.phase === "change_email_only"
+                  ? ["Confirm and Submit"]
+                  : ["Confirm and Submit", "Edit Details"],
               emailPrompt: "",
               showBookingCalendar: false,
               onboardingAction: "confirm",
             };
             return NextResponse.json(resp, { headers: corsHeaders });
           } else if (existingOnboarding?.status === "error") {
-            const lastError = existingOnboarding?.lastError || "Registration failed";
-            const summary = buildSafeSummary(existingOnboarding?.collectedData || {});
-            const isExistingUser = /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists|409/i.test(lastError || "");
+            const lastError =
+              existingOnboarding?.lastError || "Registration failed";
+            const summary = buildSafeSummary(
+              existingOnboarding?.collectedData || {}
+            );
+            const isExistingUser =
+              /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists|409/i.test(
+                lastError || ""
+              );
             const resp = {
-              mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\n${isExistingUser ? "Please update your email to continue." : "Reply \"Try Again\" to resubmit, or \"Edit\" to change any detail."}\n\nCurrent details:\n${summary}`,
-              buttons: isExistingUser ? ["Change Email"] : ["Try Again", "Edit Details"],
+              mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\n${
+                isExistingUser
+                  ? "Please update your email to continue."
+                  : 'Reply "Try Again" to resubmit, or "Edit" to change any detail.'
+              }\n\nCurrent details:\n${summary}`,
+              buttons: isExistingUser
+                ? ["Change Email"]
+                : ["Try Again", "Edit Details"],
               emailPrompt: "",
               showBookingCalendar: false,
               onboardingAction: isExistingUser ? "error_change_email" : "error",
@@ -2004,8 +2219,13 @@ export async function POST(req: NextRequest) {
             return NextResponse.json(resp, { headers: corsHeaders });
           } else if (field) {
             const prompt = promptForField(field);
-            const adminOnboarding = (await getAdminSettings(existingOnboarding?.adminId || "")).onboarding;
-            const docsUrl = existingOnboarding?.phase === "initial_setup" ? adminOnboarding?.initialSetupDocsUrl : adminOnboarding?.docsUrl;
+            const adminOnboarding = (
+              await getAdminSettings(existingOnboarding?.adminId || "")
+            ).onboarding;
+            const docsUrl =
+              existingOnboarding?.phase === "initial_setup"
+                ? adminOnboarding?.initialSetupDocsUrl
+                : adminOnboarding?.docsUrl;
             const docContext = await buildOnboardingDocContext(
               field,
               existingOnboarding?.adminId || undefined,
@@ -2178,7 +2398,8 @@ Based on the page context, create an intelligent contextual question that demons
           { sessionId, email: { $exists: true } },
           { sort: { createdAt: -1 } }
         );
-        if (lastEmailMsg && lastEmailMsg.email) sessionEmail = lastEmailMsg.email;
+        if (lastEmailMsg && lastEmailMsg.email)
+          sessionEmail = lastEmailMsg.email;
       } catch (e) {
         // If email detection fails, assume lead mode
         sessionEmail = null;
@@ -2235,27 +2456,50 @@ Based on the page context, create an intelligent contextual question that demons
       try {
         const db = await getDb();
         const sessionsCollection = db.collection("onboardingSessions");
-        const existingOnboarding = await sessionsCollection.findOne({ sessionId });
-        if (["in_progress", "ready_to_submit", "error"].includes(existingOnboarding?.status || "")) {
+        const existingOnboarding = await sessionsCollection.findOne({
+          sessionId,
+        });
+        if (
+          ["in_progress", "ready_to_submit", "error"].includes(
+            existingOnboarding?.status || ""
+          )
+        ) {
           const idx = existingOnboarding?.stageIndex ?? 0;
           const field = existingOnboarding?.fields?.[idx];
           if (existingOnboarding?.status === "ready_to_submit") {
-        const summary = buildSafeSummary(existingOnboarding?.collectedData || {});
+            const summary = buildSafeSummary(
+              existingOnboarding?.collectedData || {}
+            );
             const resp = {
               mainText: `We’re finishing your onboarding. Please review:\n${summary}\n\nReply "Confirm" to submit, or "Edit" to change any detail.`,
-              buttons: (existingOnboarding?.phase === "change_email_only") ? ["Confirm and Submit"] : ["Confirm and Submit", "Edit Details"],
+              buttons:
+                existingOnboarding?.phase === "change_email_only"
+                  ? ["Confirm and Submit"]
+                  : ["Confirm and Submit", "Edit Details"],
               emailPrompt: "",
               showBookingCalendar: false,
               onboardingAction: "confirm",
             };
             return NextResponse.json(resp, { headers: corsHeaders });
           } else if (existingOnboarding?.status === "error") {
-            const lastError = existingOnboarding?.lastError || "Registration failed";
-            const summary = buildSafeSummary(existingOnboarding?.collectedData || {});
-            const isExistingUser = /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists|409/i.test(lastError || "");
+            const lastError =
+              existingOnboarding?.lastError || "Registration failed";
+            const summary = buildSafeSummary(
+              existingOnboarding?.collectedData || {}
+            );
+            const isExistingUser =
+              /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists|409/i.test(
+                lastError || ""
+              );
             const resp = {
-              mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\n${isExistingUser ? "Please update your email to continue." : "Reply \"Try Again\" to resubmit, or \"Edit\" to change any detail."}\n\nCurrent details:\n${summary}`,
-              buttons: isExistingUser ? ["Change Email"] : ["Try Again", "Edit Details"],
+              mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\n${
+                isExistingUser
+                  ? "Please update your email to continue."
+                  : 'Reply "Try Again" to resubmit, or "Edit" to change any detail.'
+              }\n\nCurrent details:\n${summary}`,
+              buttons: isExistingUser
+                ? ["Change Email"]
+                : ["Try Again", "Edit Details"],
               emailPrompt: "",
               showBookingCalendar: false,
               onboardingAction: isExistingUser ? "error_change_email" : "error",
@@ -2266,7 +2510,9 @@ Based on the page context, create an intelligent contextual question that demons
             const docContext = await buildOnboardingDocContext(
               field,
               existingOnboarding?.adminId || undefined,
-              (await getAdminSettings(existingOnboarding?.adminId || "")).onboarding?.docsUrl
+              (
+                await getAdminSettings(existingOnboarding?.adminId || "")
+              ).onboarding?.docsUrl
             );
             const resp = {
               mainText: `${docContext ? `${docContext}\n\n` : ""}${prompt}`,
@@ -2384,7 +2630,8 @@ Keep the response conversational and helpful, focusing on providing value before
           { sessionId, email: { $exists: true } },
           { sort: { createdAt: -1 } }
         );
-        if (lastEmailMsg && lastEmailMsg.email) sessionEmailAR = lastEmailMsg.email;
+        if (lastEmailMsg && lastEmailMsg.email)
+          sessionEmailAR = lastEmailMsg.email;
       } catch (e) {
         sessionEmailAR = null;
       }
@@ -2399,7 +2646,10 @@ Keep the response conversational and helpful, focusing on providing value before
           botMode: "sales",
           userEmail: sessionEmailAR,
         };
-        console.log("[DEBUG] Returning sales-mode auto-response:", salesAutoResponse);
+        console.log(
+          "[DEBUG] Returning sales-mode auto-response:",
+          salesAutoResponse
+        );
         return NextResponse.json(salesAutoResponse, { headers: corsHeaders });
       }
 
@@ -2508,35 +2758,77 @@ Keep the response conversational and helpful, focusing on providing value before
   const onboardingEnabled = !!onboardingConfig?.enabled;
   const sessionsCollection = db.collection("onboardingSessions");
   const existingOnboarding = await sessionsCollection.findOne({ sessionId });
-  const isOnboardingAction = !!question && (/(?:\b(cancel|quit)\s+onboarding\b)/i.test(question || "") || (/\b(cancel|quit)\b/i.test(question || "") && ["in_progress", "ready_to_submit", "error"].includes(existingOnboarding?.status || "")));
+  const isOnboardingAction =
+    !!question &&
+    (/(?:\b(cancel|quit)\s+onboarding\b)/i.test(question || "") ||
+      (/\b(cancel|quit)\b/i.test(question || "") &&
+        ["in_progress", "ready_to_submit", "error"].includes(
+          existingOnboarding?.status || ""
+        )));
   // Respect widget mode header to gate onboarding in the chat API
-  const widgetMode = req.headers.get("x-widget-mode") || req.headers.get("X-Widget-Mode") || "";
+  const widgetMode =
+    req.headers.get("x-widget-mode") || req.headers.get("X-Widget-Mode") || "";
   const isOnboardingOnly = widgetMode === "onboarding_only";
+  const bundlePreview = parseRegistrationBundle(question || "");
+  const bundleCount = [
+    bundlePreview.email,
+    bundlePreview.password,
+    bundlePreview.firstName,
+    bundlePreview.name,
+  ].filter(Boolean).length;
+  const isBundleSignal = bundleCount >= 2;
   const isOnboardingIntent =
     onboardingEnabled &&
     isOnboardingOnly &&
     (detectOnboardingIntent(question) ||
-      ["in_progress", "ready_to_submit", "error"].includes(existingOnboarding?.status || "") ||
+      isBundleSignal ||
+      ["in_progress", "ready_to_submit", "error"].includes(
+        existingOnboarding?.status || ""
+      ) ||
       isOnboardingAction);
 
   if (isOnboardingIntent) {
-    const configuredFields = ((onboardingConfig as any)?.registrationFields && (onboardingConfig as any).registrationFields.length > 0)
-      ? (onboardingConfig as any).registrationFields
-      : (onboardingConfig?.fields && onboardingConfig.fields.length > 0)
-      ? onboardingConfig.fields
-      : [
-          { key: "email", label: "Email", required: true, type: "email" },
-          { key: "firstName", label: "First Name", required: true, type: "text" },
-          { key: "password", label: "Password", required: true, type: "text", validations: { minLength: 8 } },
-          { key: "lastName", label: "Last Name", required: false, type: "text" },
-        ];
+    const configuredFields =
+      (onboardingConfig as any)?.registrationFields &&
+      (onboardingConfig as any).registrationFields.length > 0
+        ? (onboardingConfig as any).registrationFields
+        : onboardingConfig?.fields && onboardingConfig.fields.length > 0
+        ? onboardingConfig.fields
+        : [
+            { key: "email", label: "Email", required: true, type: "email" },
+            {
+              key: "firstName",
+              label: "First Name",
+              required: true,
+              type: "text",
+            },
+            {
+              key: "password",
+              label: "Password",
+              required: true,
+              type: "text",
+              validations: { minLength: 8 },
+            },
+            {
+              key: "lastName",
+              label: "Last Name",
+              required: false,
+              type: "text",
+            },
+          ];
 
     // Prefer admin-edited registrationFields; else merge docs-derived with sensible defaults
     let fields: any[] = [];
-    if ((onboardingConfig as any)?.registrationFields && (onboardingConfig as any).registrationFields.length > 0) {
+    if (
+      (onboardingConfig as any)?.registrationFields &&
+      (onboardingConfig as any).registrationFields.length > 0
+    ) {
       fields = (onboardingConfig as any).registrationFields as any[];
     } else {
-      const docDerived = await inferFieldsFromDocs(adminId || undefined, onboardingConfig?.docsUrl);
+      const docDerived = await inferFieldsFromDocs(
+        adminId || undefined,
+        onboardingConfig?.docsUrl
+      );
       fields = mergeFields(configuredFields, docDerived || []);
     }
 
@@ -2553,7 +2845,8 @@ Keep the response conversational and helpful, focusing on providing value before
       );
 
       const resp = {
-        mainText: "Okay, I’ve cancelled onboarding. Would you like sales or support?",
+        mainText:
+          "Okay, I’ve cancelled onboarding. Would you like sales or support?",
         buttons: ["Talk to Sales", "Contact Support"],
         emailPrompt: "",
         showBookingCalendar: false,
@@ -2577,24 +2870,28 @@ Keep the response conversational and helpful, focusing on providing value before
         updatedAt: now,
         bundleMode: true,
       };
-      await sessionsCollection.updateOne({ sessionId }, { $set: doc }, { upsert: true });
+      await sessionsCollection.updateOne(
+        { sessionId },
+        { $set: doc },
+        { upsert: true }
+      );
       sessionDoc = doc as any;
 
       const intro = `Welcome! To start your registration, please share your name, email, and a password (min 8 chars).`;
-     const combinedPrompt = `Example: "Jane Doe, jane@company.com, MyStrongPass123"`;
+      const combinedPrompt = `Example: "Jane Doe, jane@company.com, MyStrongPass123"`;
 
-     const docContext = await buildOnboardingDocContext(
-       fieldsToAsk[0],
-       adminId || undefined,
-       onboardingConfig?.docsUrl
-     );
-     const resp = {
+      const docContext = await buildOnboardingDocContext(
+        fieldsToAsk[0],
+        adminId || undefined,
+        onboardingConfig?.docsUrl
+      );
+      const resp = {
         mainText: `${docContext ? `${docContext}\n\n` : ""}${intro}`,
-       buttons: ["Cancel Onboarding"],
-       emailPrompt: "",
-       showBookingCalendar: false,
-       onboardingAction: "start",
-     };
+        buttons: ["Cancel Onboarding"],
+        emailPrompt: "",
+        showBookingCalendar: false,
+        onboardingAction: "start",
+      };
       return NextResponse.json(resp, { headers: corsHeaders });
     }
 
@@ -2611,10 +2908,14 @@ Keep the response conversational and helpful, focusing on providing value before
           const hasAuthToken = !!sessionDoc?.externalAuthToken;
           let result: any = { success: false, error: "Missing adminId" };
           if (adminId) {
-            if (sessionDoc?.phase === "initial_setup" && !!sessionDoc?.registeredUserId) {
+            if (
+              sessionDoc?.phase === "initial_setup" &&
+              !!sessionDoc?.registeredUserId
+            ) {
               if (requiresAuth && !hasAuthToken) {
                 const resp = {
-                  mainText: "Authentication required to submit initial setup. Please log in or provide credentials.",
+                  mainText:
+                    "Authentication required to submit initial setup. Please log in or provide credentials.",
                   buttons: ["Log In", "Edit Details"],
                   emailPrompt: "",
                   showBookingCalendar: false,
@@ -2632,7 +2933,15 @@ Keep the response conversational and helpful, focusing on providing value before
           }
           // Log registration outcome with sensitive field redaction
           try {
-            const redactKeys = ["password", "pass", "secret", "token", "apikey", "api_key", "key"];
+            const redactKeys = [
+              "password",
+              "pass",
+              "secret",
+              "token",
+              "apikey",
+              "api_key",
+              "key",
+            ];
             const safePayload = Object.fromEntries(
               Object.entries(payload).map(([k, v]) => {
                 const kl = k.toLowerCase();
@@ -2641,28 +2950,46 @@ Keep the response conversational and helpful, focusing on providing value before
               })
             );
             if (!result.success) {
-              console.error(`[Chat API ${requestId}] ❌ Onboarding registration failed`, {
-                adminId,
-                sessionId,
-                status: result.status,
-                error: result.error,
-                payload: safePayload,
-              });
+              console.error(
+                `[Chat API ${requestId}] ❌ Onboarding registration failed`,
+                {
+                  adminId,
+                  sessionId,
+                  status: result.status,
+                  error: result.error,
+                  payload: safePayload,
+                }
+              );
             } else {
-              console.log(`[Chat API ${requestId}] ✅ Onboarding registration succeeded`, {
-                adminId,
-                sessionId,
-                userId: result.userId,
-                status: result.status,
-              });
+              console.log(
+                `[Chat API ${requestId}] ✅ Onboarding registration succeeded`,
+                {
+                  adminId,
+                  sessionId,
+                  userId: result.userId,
+                  status: result.status,
+                }
+              );
             }
           } catch {}
 
-          const isSuccess = !!result?.success || (typeof result?.status === "number" && result.status >= 200 && result.status < 300) || result?.ok === true;
+          const isSuccess =
+            !!result?.success ||
+            (typeof result?.status === "number" &&
+              result.status >= 200 &&
+              result.status < 300) ||
+            result?.ok === true;
           const newStatus = isSuccess ? "completed" : "error";
           await sessionsCollection.updateOne(
             { sessionId },
-            { $set: { status: newStatus, updatedAt: now, registeredUserId: result.userId || null, lastError: result.error || null } }
+            {
+              $set: {
+                status: newStatus,
+                updatedAt: now,
+                registeredUserId: result.userId || null,
+                lastError: result.error || null,
+              },
+            }
           );
 
           // If registration failed, try to surface specific error details from the external API response
@@ -2677,7 +3004,8 @@ Keep the response conversational and helpful, focusing on providing value before
                     if (typeof e === "string") return e;
                     if (typeof e === "object") {
                       const field = e.field || e.path || e.name || null;
-                      const msg = e.message || e.detail || e.error || e.reason || null;
+                      const msg =
+                        e.message || e.detail || e.error || e.reason || null;
                       if (field && msg) return `${field}: ${msg}`;
                       return msg || JSON.stringify(e).slice(0, 200);
                     }
@@ -2695,7 +3023,11 @@ Keep the response conversational and helpful, focusing on providing value before
                 errorItems = collectErrors(rb.errors);
               } else if (Array.isArray(rb?.data?.errors)) {
                 errorItems = collectErrors(rb.data.errors);
-              } else if (rb?.data && typeof rb.data === "object" && Array.isArray(rb.data)) {
+              } else if (
+                rb?.data &&
+                typeof rb.data === "object" &&
+                Array.isArray(rb.data)
+              ) {
                 errorItems = collectErrors(rb.data);
               }
 
@@ -2705,8 +3037,15 @@ Keep the response conversational and helpful, focusing on providing value before
             } catch {}
           }
 
-          if (isSuccess && (((onboardingConfig as any)?.initialSetupCurlCommand) || (((onboardingConfig as any)?.initialFields || []).length > 0))) {
-            const tokenFromReg = extractApiKeyFromResponse(result.responseBody, onboardingConfig);
+          if (
+            isSuccess &&
+            ((onboardingConfig as any)?.initialSetupCurlCommand ||
+              ((onboardingConfig as any)?.initialFields || []).length > 0)
+          ) {
+            const tokenFromReg = extractApiKeyFromResponse(
+              result.responseBody,
+              onboardingConfig
+            );
             if (tokenFromReg) {
               await sessionsCollection.updateOne(
                 { sessionId },
@@ -2716,19 +3055,30 @@ Keep the response conversational and helpful, focusing on providing value before
             // Attempt authentication using admin-provided auth cURL and collected registration data
             if ((onboardingConfig as any).authCurlCommand) {
               try {
-                const authRes = await onboardingService.authenticate({ ...(sessionDoc.collectedData || {}) }, adminId!);
+                const authRes = await onboardingService.authenticate(
+                  { ...(sessionDoc.collectedData || {}) },
+                  adminId!
+                );
                 if (authRes.success && authRes.token) {
                   await sessionsCollection.updateOne(
                     { sessionId },
-                    { $set: { externalAuthToken: authRes.token, updatedAt: now } }
+                    {
+                      $set: {
+                        externalAuthToken: authRes.token,
+                        updatedAt: now,
+                      },
+                    }
                   );
                 } else {
-                  console.warn(`[Chat API ${requestId}] ⚠️ Auth step failed or no token`, {
-                    adminId,
-                    sessionId,
-                    status: authRes.status,
-                    error: authRes.error,
-                  });
+                  console.warn(
+                    `[Chat API ${requestId}] ⚠️ Auth step failed or no token`,
+                    {
+                      adminId,
+                      sessionId,
+                      status: authRes.status,
+                      error: authRes.error,
+                    }
+                  );
                 }
               } catch (e: any) {
                 console.warn(`[Chat API ${requestId}] ⚠️ Auth step error`, {
@@ -2740,12 +3090,16 @@ Keep the response conversational and helpful, focusing on providing value before
             }
 
             // Kick off initial setup phase using required fields (prefer admin-configured); fallback to cURL
-            const setupFields = (((onboardingConfig as any)?.initialFields || []).length > 0)
-              ? ((onboardingConfig as any).initialFields as any[])
-              : deriveOnboardingFieldsFromCurl(((onboardingConfig as any).initialSetupCurlCommand as string));
+            const setupFields =
+              ((onboardingConfig as any)?.initialFields || []).length > 0
+                ? ((onboardingConfig as any).initialFields as any[])
+                : deriveOnboardingFieldsFromCurl(
+                    (onboardingConfig as any).initialSetupCurlCommand as string
+                  );
             if (!setupFields || setupFields.length === 0) {
               const resp = {
-                mainText: "Initial setup fields are not configured. Please configure required fields or cURL body.",
+                mainText:
+                  "Initial setup fields are not configured. Please configure required fields or cURL body.",
                 buttons: ["Contact Admin"],
                 emailPrompt: "",
                 showBookingCalendar: false,
@@ -2763,7 +3117,15 @@ Keep the response conversational and helpful, focusing on providing value before
             if (filteredFields.length === 0) {
               await sessionsCollection.updateOne(
                 { sessionId },
-                { $set: { status: "ready_to_submit", stageIndex: 0, fields: [], phase: "initial_setup", updatedAt: now } }
+                {
+                  $set: {
+                    status: "ready_to_submit",
+                    stageIndex: 0,
+                    fields: [],
+                    phase: "initial_setup",
+                    updatedAt: now,
+                  },
+                }
               );
               const setupKeys = (setupFields || []).map((f: any) => f.key);
               const data = sessionDoc.collectedData || {};
@@ -2783,12 +3145,27 @@ Keep the response conversational and helpful, focusing on providing value before
             const tokenAuto = tokenFromReg || sessionDoc?.externalAuthToken;
             const autoFilled: Record<string, any> = {};
             const fieldsNoToken = (filteredFields || []).filter((f: any) => {
-              if (tokenAuto && isApiKeyFieldKey(f.key, onboardingConfig)) { autoFilled[f.key] = tokenAuto; return false; }
+              if (tokenAuto && isApiKeyFieldKey(f.key, onboardingConfig)) {
+                autoFilled[f.key] = tokenAuto;
+                return false;
+              }
               return true;
             });
             await sessionsCollection.updateOne(
               { sessionId },
-              { $set: { status: "in_progress", stageIndex: 0, fields: fieldsNoToken, phase: "initial_setup", updatedAt: now, collectedData: { ...(sessionDoc?.collectedData || {}), ...autoFilled } } }
+              {
+                $set: {
+                  status: "in_progress",
+                  stageIndex: 0,
+                  fields: fieldsNoToken,
+                  phase: "initial_setup",
+                  updatedAt: now,
+                  collectedData: {
+                    ...(sessionDoc?.collectedData || {}),
+                    ...autoFilled,
+                  },
+                },
+              }
             );
             const firstField = fieldsNoToken[0];
             const docContext = await buildOnboardingDocContext(
@@ -2796,17 +3173,26 @@ Keep the response conversational and helpful, focusing on providing value before
               adminId || undefined,
               onboardingConfig?.initialSetupDocsUrl
             );
-            const intro = "✅ Registration complete. Now, let’s finish initial setup.";
+            const intro =
+              "✅ Registration complete. Now, let’s finish initial setup.";
             const prompt = promptForField(firstField);
             const resp = {
-              mainText: `${docContext ? `${docContext}\n\n` : ""}${intro}\n\n${prompt}`,
+              mainText: `${
+                docContext ? `${docContext}\n\n` : ""
+              }${intro}\n\n${prompt}`,
               buttons: [],
               emailPrompt: "",
               showBookingCalendar: false,
               onboardingAction: "ask_next",
             };
             return NextResponse.json(resp, { headers: corsHeaders });
-          } else if (isSuccess && !(((onboardingConfig as any)?.initialSetupCurlCommand) || (((onboardingConfig as any)?.initialFields || []).length > 0))) {
+          } else if (
+            isSuccess &&
+            !(
+              (onboardingConfig as any)?.initialSetupCurlCommand ||
+              ((onboardingConfig as any)?.initialFields || []).length > 0
+            )
+          ) {
             const resp = {
               mainText: "✅ You’re all set! Your account has been created.",
               buttons: ["Log In", "Talk to Sales"],
@@ -2821,15 +3207,50 @@ Keep the response conversational and helpful, focusing on providing value before
             try {
               await sessionsCollection.updateOne(
                 { sessionId },
-                { $set: { registeredUserId: result.userId || null, updatedAt: now } }
+                {
+                  $set: {
+                    registeredUserId: result.userId || null,
+                    updatedAt: now,
+                  },
+                }
               );
             } catch {}
           }
-          const externalMsg = (() => { try { const keys = ["message","msg","detail","status","description","info"]; const stack: any[] = []; const pushObj = (o: any) => { if (o && typeof o === "object") stack.push(o); }; pushObj(result.responseBody); while (stack.length) { const cur = stack.pop(); for (const [k, v] of Object.entries(cur)) { if (v && typeof v === "object") pushObj(v); if (typeof v === "string" && keys.includes(String(k))) return v as string; } } } catch {} return undefined; })() || result?.message || result?.statusText;
+          const externalMsg =
+            (() => {
+              try {
+                const keys = [
+                  "message",
+                  "msg",
+                  "detail",
+                  "status",
+                  "description",
+                  "info",
+                ];
+                const stack: any[] = [];
+                const pushObj = (o: any) => {
+                  if (o && typeof o === "object") stack.push(o);
+                };
+                pushObj(result.responseBody);
+                while (stack.length) {
+                  const cur = stack.pop();
+                  for (const [k, v] of Object.entries(cur)) {
+                    if (v && typeof v === "object") pushObj(v);
+                    if (typeof v === "string" && keys.includes(String(k)))
+                      return v as string;
+                  }
+                }
+              } catch {}
+              return undefined;
+            })() ||
+            result?.message ||
+            result?.statusText;
           let resp;
           if (isSuccess) {
             resp = {
-              mainText: externalMsg ? `✅ ${externalMsg}` : "✅ You’re all set! Your account has been created.",
+              mainText: externalMsg
+                ? `✅ ${externalMsg}`
+                : "✅ You’re all set! Your account has been created.",
               buttons: ["Log In", "Talk to Sales"],
               emailPrompt: "",
               showBookingCalendar: false,
@@ -2839,24 +3260,63 @@ Keep the response conversational and helpful, focusing on providing value before
             const lowerErr = String(result.error || "").toLowerCase();
             const missingGeneric = /missing\s+required\s+fields/.test(lowerErr);
             if (missingGeneric) {
-              const configuredFields = ((onboardingConfig as any)?.registrationFields && (onboardingConfig as any).registrationFields.length > 0)
-                ? (onboardingConfig as any).registrationFields as any[]
-                : [
-                    { key: "email", label: "Email", required: true, type: "email" },
-                    { key: "firstName", label: "First Name", required: true, type: "text" },
-                    { key: "password", label: "Password", required: true, type: "text", validations: { minLength: 8 } },
-                    { key: "lastName", label: "Last Name", required: false, type: "text" },
-                  ];
-              const docDerived = await inferFieldsFromDocs(adminId || undefined, onboardingConfig?.docsUrl);
+              const configuredFields =
+                (onboardingConfig as any)?.registrationFields &&
+                (onboardingConfig as any).registrationFields.length > 0
+                  ? ((onboardingConfig as any).registrationFields as any[])
+                  : [
+                      {
+                        key: "email",
+                        label: "Email",
+                        required: true,
+                        type: "email",
+                      },
+                      {
+                        key: "firstName",
+                        label: "First Name",
+                        required: true,
+                        type: "text",
+                      },
+                      {
+                        key: "password",
+                        label: "Password",
+                        required: true,
+                        type: "text",
+                        validations: { minLength: 8 },
+                      },
+                      {
+                        key: "lastName",
+                        label: "Last Name",
+                        required: false,
+                        type: "text",
+                      },
+                    ];
+              const docDerived = await inferFieldsFromDocs(
+                adminId || undefined,
+                onboardingConfig?.docsUrl
+              );
               const allFields = mergeFields(configuredFields, docDerived || []);
-              const requiredKeys = allFields.filter((f: any) => f.required).map((f: any) => String(f.key || ""));
+              const requiredKeys = allFields
+                .filter((f: any) => f.required)
+                .map((f: any) => String(f.key || ""));
               const presentKeys = Object.keys(sessionDoc.collectedData || {});
-              const missingKeys = requiredKeys.filter((k) => !presentKeys.includes(k));
+              const missingKeys = requiredKeys.filter(
+                (k) => !presentKeys.includes(k)
+              );
               if (missingKeys.length > 0) {
-                const missingFields = allFields.filter((f: any) => missingKeys.includes(String(f.key || "")));
+                const missingFields = allFields.filter((f: any) =>
+                  missingKeys.includes(String(f.key || ""))
+                );
                 await sessionsCollection.updateOne(
                   { sessionId },
-                  { $set: { status: "in_progress", stageIndex: 0, fields: missingFields, updatedAt: now } }
+                  {
+                    $set: {
+                      status: "in_progress",
+                      stageIndex: 0,
+                      fields: missingFields,
+                      updatedAt: now,
+                    },
+                  }
                 );
                 const firstField = missingFields[0];
                 const docContext = await buildOnboardingDocContext(
@@ -2865,7 +3325,11 @@ Keep the response conversational and helpful, focusing on providing value before
                   onboardingConfig?.docsUrl
                 );
                 resp = {
-                  mainText: `${docContext ? `${docContext}\n\n` : ""}We need a few more details to complete your registration. ${promptForField(firstField)}`,
+                  mainText: `${
+                    docContext ? `${docContext}\n\n` : ""
+                  }We need a few more details to complete your registration. ${promptForField(
+                    firstField
+                  )}`,
                   buttons: [],
                   emailPrompt: "",
                   showBookingCalendar: false,
@@ -2875,7 +3339,9 @@ Keep the response conversational and helpful, focusing on providing value before
             }
             if (!resp) {
               resp = {
-                mainText: `⚠️ We couldn’t complete registration: ${result.error || "Unknown error"}.${detailsText}`,
+                mainText: `⚠️ We couldn’t complete registration: ${
+                  result.error || "Unknown error"
+                }.${detailsText}`,
                 buttons: ["Try Again", "Edit Details"],
                 emailPrompt: "",
                 showBookingCalendar: false,
@@ -2886,7 +3352,10 @@ Keep the response conversational and helpful, focusing on providing value before
           // Special-case: existing user/email registered → only allow changing email
           if (!result.success) {
             const errTxt = (result.error || "") + (detailsText || "");
-            const isExistingUser = /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists|409/i.test(errTxt);
+            const isExistingUser =
+              /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists|409/i.test(
+                errTxt
+              );
             if (isExistingUser) {
               (resp as any).buttons = ["Change Email"];
               (resp as any).onboardingAction = "error_change_email";
@@ -2919,7 +3388,8 @@ Keep the response conversational and helpful, focusing on providing value before
             { upsert: true }
           );
           const resp = {
-            mainText: "Okay, I’ve cancelled onboarding. Would you like sales or support?",
+            mainText:
+              "Okay, I’ve cancelled onboarding. Would you like sales or support?",
             buttons: ["Talk to Sales", "Contact Support"],
             emailPrompt: "",
             showBookingCalendar: false,
@@ -2929,18 +3399,33 @@ Keep the response conversational and helpful, focusing on providing value before
         } else {
           const lastError = sessionDoc.lastError || "Registration failed";
           const data = sessionDoc.collectedData || {};
-          const regName = (data as any).name || (((data as any).firstName ? (((data as any).lastName ? `${(data as any).firstName} ${(data as any).lastName}` : (data as any).firstName)) : undefined));
+          const regName =
+            (data as any).name ||
+            ((data as any).firstName
+              ? (data as any).lastName
+                ? `${(data as any).firstName} ${(data as any).lastName}`
+                : (data as any).firstName
+              : undefined);
           const regEmail = (data as any).email;
-          const hasPwd = ((data as any).password || (data as any).pass);
+          const hasPwd = (data as any).password || (data as any).pass;
           const lines: string[] = [];
           if (regName) lines.push(`- name: ${regName}`);
           if (regEmail) lines.push(`- email: ${regEmail}`);
           if (hasPwd) lines.push(`- password: ***`);
           const summary = lines.join("\n");
-          const isExistingUser = /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists|409/i.test(lastError || "");
+          const isExistingUser =
+            /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists|409/i.test(
+              lastError || ""
+            );
           const resp = {
-            mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\n${isExistingUser ? "Please update your email to continue." : "Reply \"Try Again\" to resubmit, or \"Edit\" to change any detail."}\n\nCurrent details:\n${summary}`,
-            buttons: isExistingUser ? ["Change Email"] : ["Try Again", "Edit Details"],
+            mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\n${
+              isExistingUser
+                ? "Please update your email to continue."
+                : 'Reply "Try Again" to resubmit, or "Edit" to change any detail.'
+            }\n\nCurrent details:\n${summary}`,
+            buttons: isExistingUser
+              ? ["Change Email"]
+              : ["Try Again", "Edit Details"],
             emailPrompt: "",
             showBookingCalendar: false,
             onboardingAction: isExistingUser ? "error_change_email" : "error",
@@ -2949,13 +3434,21 @@ Keep the response conversational and helpful, focusing on providing value before
         }
       } else if (sessionDoc.status !== "ready_to_submit") {
         let summary = "";
-        if (sessionDoc?.phase === "initial_setup" && (((onboardingConfig as any)?.initialSetupCurlCommand) || (((onboardingConfig as any)?.initialFields || []).length > 0))) {
-          const setupFields = (((onboardingConfig as any)?.initialFields || []).length > 0)
-            ? ((onboardingConfig as any).initialFields as any[])
-            : deriveOnboardingFieldsFromCurl(((onboardingConfig as any).initialSetupCurlCommand as string));
+        if (
+          sessionDoc?.phase === "initial_setup" &&
+          ((onboardingConfig as any)?.initialSetupCurlCommand ||
+            ((onboardingConfig as any)?.initialFields || []).length > 0)
+        ) {
+          const setupFields =
+            ((onboardingConfig as any)?.initialFields || []).length > 0
+              ? ((onboardingConfig as any).initialFields as any[])
+              : deriveOnboardingFieldsFromCurl(
+                  (onboardingConfig as any).initialSetupCurlCommand as string
+                );
           if (!setupFields || setupFields.length === 0) {
             const resp = {
-              mainText: "Initial setup fields are not configured. Please configure required fields or cURL body.",
+              mainText:
+                "Initial setup fields are not configured. Please configure required fields or cURL body.",
               buttons: ["Contact Admin"],
               emailPrompt: "",
               showBookingCalendar: false,
@@ -2971,22 +3464,36 @@ Keep the response conversational and helpful, focusing on providing value before
           summary = buildSafeSummary(limited);
         } else {
           const data = sessionDoc.collectedData || {};
-          const regName = (data as any).name || (((data as any).firstName ? (((data as any).lastName ? `${(data as any).firstName} ${(data as any).lastName}` : (data as any).firstName)) : undefined));
+          const regName =
+            (data as any).name ||
+            ((data as any).firstName
+              ? (data as any).lastName
+                ? `${(data as any).firstName} ${(data as any).lastName}`
+                : (data as any).firstName
+              : undefined);
           const regEmail = (data as any).email;
-          const hasPwd = ((data as any).password || (data as any).pass);
+          const hasPwd = (data as any).password || (data as any).pass;
           const lines: string[] = [];
           if (regName) lines.push(`- name: ${regName}`);
           if (regEmail) lines.push(`- email: ${regEmail}`);
           if (hasPwd) lines.push(`- password: ***`);
           summary = lines.join("\n");
         }
-        if (sessionDoc?.phase === "initial_setup" && (((onboardingConfig as any)?.initialSetupCurlCommand) || (((onboardingConfig as any)?.initialFields || []).length > 0))) {
-          const setupFields = (((onboardingConfig as any)?.initialFields || []).length > 0)
-            ? ((onboardingConfig as any).initialFields as any[])
-            : deriveOnboardingFieldsFromCurl(((onboardingConfig as any).initialSetupCurlCommand as string));
+        if (
+          sessionDoc?.phase === "initial_setup" &&
+          ((onboardingConfig as any)?.initialSetupCurlCommand ||
+            ((onboardingConfig as any)?.initialFields || []).length > 0)
+        ) {
+          const setupFields =
+            ((onboardingConfig as any)?.initialFields || []).length > 0
+              ? ((onboardingConfig as any).initialFields as any[])
+              : deriveOnboardingFieldsFromCurl(
+                  (onboardingConfig as any).initialSetupCurlCommand as string
+                );
           if (!setupFields || setupFields.length === 0) {
             const resp = {
-              mainText: "Initial setup fields are not configured. Please configure required fields or cURL body.",
+              mainText:
+                "Initial setup fields are not configured. Please configure required fields or cURL body.",
               buttons: ["Contact Admin"],
               emailPrompt: "",
               showBookingCalendar: false,
@@ -3017,20 +3524,32 @@ Keep the response conversational and helpful, focusing on providing value before
         const lower = (question || "").toLowerCase();
         if (/\b(log\s*in|login|sign\s*in)\b/.test(lower)) {
           try {
-            const authRes = await onboardingService.authenticate({ ...(sessionDoc.collectedData || {}) }, adminId!);
+            const authRes = await onboardingService.authenticate(
+              { ...(sessionDoc.collectedData || {}) },
+              adminId!
+            );
             if (authRes.success && authRes.token) {
               await sessionsCollection.updateOne(
                 { sessionId },
                 { $set: { externalAuthToken: authRes.token, updatedAt: now } }
               );
               let summary = buildSafeSummary(sessionDoc.collectedData || {});
-              if (sessionDoc?.phase === "initial_setup" && (((onboardingConfig as any)?.initialSetupCurlCommand) || (((onboardingConfig as any)?.initialFields || []).length > 0))) {
-                const setupFields = (((onboardingConfig as any)?.initialFields || []).length > 0)
-                  ? ((onboardingConfig as any).initialFields as any[])
-                  : deriveOnboardingFieldsFromCurl(((onboardingConfig as any).initialSetupCurlCommand as string));
+              if (
+                sessionDoc?.phase === "initial_setup" &&
+                ((onboardingConfig as any)?.initialSetupCurlCommand ||
+                  ((onboardingConfig as any)?.initialFields || []).length > 0)
+              ) {
+                const setupFields =
+                  ((onboardingConfig as any)?.initialFields || []).length > 0
+                    ? ((onboardingConfig as any).initialFields as any[])
+                    : deriveOnboardingFieldsFromCurl(
+                        (onboardingConfig as any)
+                          .initialSetupCurlCommand as string
+                      );
                 if (!setupFields || setupFields.length === 0) {
                   const resp = {
-                    mainText: "Initial setup fields are not configured. Please configure required fields or cURL body.",
+                    mainText:
+                      "Initial setup fields are not configured. Please configure required fields or cURL body.",
                     buttons: ["Contact Admin"],
                     emailPrompt: "",
                     showBookingCalendar: false,
@@ -3075,16 +3594,24 @@ Keep the response conversational and helpful, focusing on providing value before
             return NextResponse.json(resp, { headers: corsHeaders });
           }
         }
-        if (/(\bconfirm\s+and\s+submit\b|\bconfirm\b|\bsubmit\b|\blooks\s+good\b|\byes\b|\btry\s+again\b|\bretry\b|\bresubmit\b)/.test(lower)) {
+        if (
+          /(\bconfirm\s+and\s+submit\b|\bconfirm\b|\bsubmit\b|\blooks\s+good\b|\byes\b|\btry\s+again\b|\bretry\b|\bresubmit\b)/.test(
+            lower
+          )
+        ) {
           const payload = { ...(sessionDoc.collectedData || {}) };
           const requiresAuth2 = !!(onboardingConfig as any)?.authCurlCommand;
           const hasAuthToken2 = !!sessionDoc?.externalAuthToken;
           let result2: any = { success: false, error: "Missing adminId" };
           if (adminId) {
-            if (sessionDoc?.phase === "initial_setup" && !!sessionDoc?.registeredUserId) {
+            if (
+              sessionDoc?.phase === "initial_setup" &&
+              !!sessionDoc?.registeredUserId
+            ) {
               if (requiresAuth2 && !hasAuthToken2) {
                 const resp = {
-                  mainText: "Authentication required to submit initial setup. Please log in or provide credentials.",
+                  mainText:
+                    "Authentication required to submit initial setup. Please log in or provide credentials.",
                   buttons: ["Log In", "Edit Details"],
                   emailPrompt: "",
                   showBookingCalendar: false,
@@ -3102,38 +3629,63 @@ Keep the response conversational and helpful, focusing on providing value before
           }
           // Log registration outcome with sensitive field redaction
           try {
-            const redactKeys = ["password", "pass", "secret", "token", "apikey", "api_key", "key"];
+            const redactKeys = [
+              "password",
+              "pass",
+              "secret",
+              "token",
+              "apikey",
+              "api_key",
+              "key",
+            ];
             const safePayload = Object.fromEntries(
               Object.entries(payload).map(([k, v]) => {
                 const kl = k.toLowerCase();
                 const isSensitive = redactKeys.some((rk) => kl.includes(rk));
                 return [k, isSensitive ? "***" : v];
-                
               })
             );
             if (!result2.success) {
-              console.error(`[Chat API ${requestId}] ❌ Onboarding registration failed`, {
-                adminId,
-                sessionId,
-                status: result2.status,
-                error: result2.error,
-                payload: safePayload,
-              });
+              console.error(
+                `[Chat API ${requestId}] ❌ Onboarding registration failed`,
+                {
+                  adminId,
+                  sessionId,
+                  status: result2.status,
+                  error: result2.error,
+                  payload: safePayload,
+                }
+              );
             } else {
-              console.log(`[Chat API ${requestId}] ✅ Onboarding registration succeeded`, {
-                adminId,
-                sessionId,
-                userId: result2.userId,
-                status: result2.status,
-              });
+              console.log(
+                `[Chat API ${requestId}] ✅ Onboarding registration succeeded`,
+                {
+                  adminId,
+                  sessionId,
+                  userId: result2.userId,
+                  status: result2.status,
+                }
+              );
             }
           } catch {}
 
-          const isSuccess2 = !!result2?.success || (typeof result2?.status === "number" && result2.status >= 200 && result2.status < 300) || result2?.ok === true;
+          const isSuccess2 =
+            !!result2?.success ||
+            (typeof result2?.status === "number" &&
+              result2.status >= 200 &&
+              result2.status < 300) ||
+            result2?.ok === true;
           const newStatus = isSuccess2 ? "completed" : "error";
           await sessionsCollection.updateOne(
             { sessionId },
-            { $set: { status: newStatus, updatedAt: now, registeredUserId: result2.userId || null, lastError: result2.error || null } }
+            {
+              $set: {
+                status: newStatus,
+                updatedAt: now,
+                registeredUserId: result2.userId || null,
+                lastError: result2.error || null,
+              },
+            }
           );
 
           // If registration failed, try to surface specific error details from the external API response
@@ -3148,7 +3700,8 @@ Keep the response conversational and helpful, focusing on providing value before
                     if (typeof e === "string") return e;
                     if (typeof e === "object") {
                       const field = e.field || e.path || e.name || null;
-                      const msg = e.message || e.detail || e.error || e.reason || null;
+                      const msg =
+                        e.message || e.detail || e.error || e.reason || null;
                       if (field && msg) return `${field}: ${msg}`;
                       return msg || JSON.stringify(e).slice(0, 200);
                     }
@@ -3166,7 +3719,11 @@ Keep the response conversational and helpful, focusing on providing value before
                 errorItems2 = collectErrors2(rb2.errors);
               } else if (Array.isArray(rb2?.data?.errors)) {
                 errorItems2 = collectErrors2(rb2.data.errors);
-              } else if (rb2?.data && typeof rb2.data === "object" && Array.isArray(rb2.data)) {
+              } else if (
+                rb2?.data &&
+                typeof rb2.data === "object" &&
+                Array.isArray(rb2.data)
+              ) {
                 errorItems2 = collectErrors2(rb2.data);
               }
 
@@ -3176,20 +3733,31 @@ Keep the response conversational and helpful, focusing on providing value before
             } catch {}
           }
 
-          if (isSuccess2 && (((onboardingConfig as any)?.initialSetupCurlCommand) || (((onboardingConfig as any)?.initialFields || []).length > 0))) {
-            const tokenFromReg2 = extractApiKeyFromResponse(result2.responseBody, onboardingConfig);
+          if (
+            isSuccess2 &&
+            ((onboardingConfig as any)?.initialSetupCurlCommand ||
+              ((onboardingConfig as any)?.initialFields || []).length > 0)
+          ) {
+            const tokenFromReg2 = extractApiKeyFromResponse(
+              result2.responseBody,
+              onboardingConfig
+            );
             if (tokenFromReg2) {
               await sessionsCollection.updateOne(
                 { sessionId },
                 { $set: { externalAuthToken: tokenFromReg2, updatedAt: now } }
               );
             }
-            const setupFields = (((onboardingConfig as any)?.initialFields || []).length > 0)
-              ? ((onboardingConfig as any).initialFields as any[])
-              : deriveOnboardingFieldsFromCurl(((onboardingConfig as any).initialSetupCurlCommand as string));
+            const setupFields =
+              ((onboardingConfig as any)?.initialFields || []).length > 0
+                ? ((onboardingConfig as any).initialFields as any[])
+                : deriveOnboardingFieldsFromCurl(
+                    (onboardingConfig as any).initialSetupCurlCommand as string
+                  );
             if (!setupFields || setupFields.length === 0) {
               const resp = {
-                mainText: "Initial setup fields are not configured. Please configure required fields or cURL body.",
+                mainText:
+                  "Initial setup fields are not configured. Please configure required fields or cURL body.",
                 buttons: ["Contact Admin"],
                 emailPrompt: "",
                 showBookingCalendar: false,
@@ -3207,7 +3775,15 @@ Keep the response conversational and helpful, focusing on providing value before
             if (filteredFields.length === 0) {
               await sessionsCollection.updateOne(
                 { sessionId },
-                { $set: { status: "ready_to_submit", stageIndex: 0, fields: [], phase: "initial_setup", updatedAt: now } }
+                {
+                  $set: {
+                    status: "ready_to_submit",
+                    stageIndex: 0,
+                    fields: [],
+                    phase: "initial_setup",
+                    updatedAt: now,
+                  },
+                }
               );
               const setupKeys = (setupFields || []).map((f: any) => f.key);
               const data = sessionDoc.collectedData || {};
@@ -3227,12 +3803,27 @@ Keep the response conversational and helpful, focusing on providing value before
             const tokenAuto2 = tokenFromReg2 || sessionDoc?.externalAuthToken;
             const autoFilled2: Record<string, any> = {};
             const fieldsNoToken2 = (filteredFields || []).filter((f: any) => {
-              if (tokenAuto2 && isApiKeyFieldKey(f.key, onboardingConfig)) { autoFilled2[f.key] = tokenAuto2; return false; }
+              if (tokenAuto2 && isApiKeyFieldKey(f.key, onboardingConfig)) {
+                autoFilled2[f.key] = tokenAuto2;
+                return false;
+              }
               return true;
             });
             await sessionsCollection.updateOne(
               { sessionId },
-              { $set: { status: "in_progress", stageIndex: 0, fields: fieldsNoToken2, phase: "initial_setup", updatedAt: now, collectedData: { ...(sessionDoc?.collectedData || {}), ...autoFilled2 } } }
+              {
+                $set: {
+                  status: "in_progress",
+                  stageIndex: 0,
+                  fields: fieldsNoToken2,
+                  phase: "initial_setup",
+                  updatedAt: now,
+                  collectedData: {
+                    ...(sessionDoc?.collectedData || {}),
+                    ...autoFilled2,
+                  },
+                },
+              }
             );
             const firstField = fieldsNoToken2[0];
             const docContext = await buildOnboardingDocContext(
@@ -3240,20 +3831,59 @@ Keep the response conversational and helpful, focusing on providing value before
               adminId || undefined,
               onboardingConfig?.initialSetupDocsUrl
             );
-            const intro = "✅ Registration complete. Now, let’s finish initial setup.";
+            const intro =
+              "✅ Registration complete. Now, let’s finish initial setup.";
             const prompt = promptForField(firstField);
             const resp = {
-              mainText: `${docContext ? `${docContext}\n\n` : ""}${intro}\n\n${prompt}`,
+              mainText: `${
+                docContext ? `${docContext}\n\n` : ""
+              }${intro}\n\n${prompt}`,
               buttons: [],
               emailPrompt: "",
               showBookingCalendar: false,
               onboardingAction: "ask_next",
             };
             return NextResponse.json(resp, { headers: corsHeaders });
-          } else if (isSuccess2 && !(((onboardingConfig as any)?.initialSetupCurlCommand) || (((onboardingConfig as any)?.initialFields || []).length > 0))) {
-            const externalMsg2 = (() => { try { const keys = ["message","msg","detail","status","description","info"]; const stack: any[] = []; const pushObj = (o: any) => { if (o && typeof o === "object") stack.push(o); }; pushObj(result2.responseBody); while (stack.length) { const cur = stack.pop(); for (const [k, v] of Object.entries(cur)) { if (v && typeof v === "object") pushObj(v); if (typeof v === "string" && keys.includes(String(k))) return v as string; } } } catch {} return undefined; })() || result2?.message || result2?.statusText;
+          } else if (
+            isSuccess2 &&
+            !(
+              (onboardingConfig as any)?.initialSetupCurlCommand ||
+              ((onboardingConfig as any)?.initialFields || []).length > 0
+            )
+          ) {
+            const externalMsg2 =
+              (() => {
+                try {
+                  const keys = [
+                    "message",
+                    "msg",
+                    "detail",
+                    "status",
+                    "description",
+                    "info",
+                  ];
+                  const stack: any[] = [];
+                  const pushObj = (o: any) => {
+                    if (o && typeof o === "object") stack.push(o);
+                  };
+                  pushObj(result2.responseBody);
+                  while (stack.length) {
+                    const cur = stack.pop();
+                    for (const [k, v] of Object.entries(cur)) {
+                      if (v && typeof v === "object") pushObj(v);
+                      if (typeof v === "string" && keys.includes(String(k)))
+                        return v as string;
+                    }
+                  }
+                } catch {}
+                return undefined;
+              })() ||
+              result2?.message ||
+              result2?.statusText;
             const resp = {
-              mainText: externalMsg2 ? `✅ ${externalMsg2}` : "✅ You’re all set! Your account has been created.",
+              mainText: externalMsg2
+                ? `✅ ${externalMsg2}`
+                : "✅ You’re all set! Your account has been created.",
               buttons: ["Log In", "Talk to Sales"],
               emailPrompt: "",
               showBookingCalendar: false,
@@ -3266,15 +3896,50 @@ Keep the response conversational and helpful, focusing on providing value before
             try {
               await sessionsCollection.updateOne(
                 { sessionId },
-                { $set: { registeredUserId: result2.userId || null, updatedAt: now } }
+                {
+                  $set: {
+                    registeredUserId: result2.userId || null,
+                    updatedAt: now,
+                  },
+                }
               );
             } catch {}
           }
-          const externalMsg3 = (() => { try { const keys = ["message","msg","detail","status","description","info"]; const stack: any[] = []; const pushObj = (o: any) => { if (o && typeof o === "object") stack.push(o); }; pushObj(result2.responseBody); while (stack.length) { const cur = stack.pop(); for (const [k, v] of Object.entries(cur)) { if (v && typeof v === "object") pushObj(v); if (typeof v === "string" && keys.includes(String(k))) return v as string; } } } catch {} return undefined; })() || result2?.message || result2?.statusText;
+          const externalMsg3 =
+            (() => {
+              try {
+                const keys = [
+                  "message",
+                  "msg",
+                  "detail",
+                  "status",
+                  "description",
+                  "info",
+                ];
+                const stack: any[] = [];
+                const pushObj = (o: any) => {
+                  if (o && typeof o === "object") stack.push(o);
+                };
+                pushObj(result2.responseBody);
+                while (stack.length) {
+                  const cur = stack.pop();
+                  for (const [k, v] of Object.entries(cur)) {
+                    if (v && typeof v === "object") pushObj(v);
+                    if (typeof v === "string" && keys.includes(String(k)))
+                      return v as string;
+                  }
+                }
+              } catch {}
+              return undefined;
+            })() ||
+            result2?.message ||
+            result2?.statusText;
           let resp;
           if (isSuccess2) {
             resp = {
-              mainText: externalMsg3 ? `✅ ${externalMsg3}` : "✅ You’re all set! Your account has been created.",
+              mainText: externalMsg3
+                ? `✅ ${externalMsg3}`
+                : "✅ You’re all set! Your account has been created.",
               buttons: ["Log In", "Talk to Sales"],
               emailPrompt: "",
               showBookingCalendar: false,
@@ -3282,26 +3947,70 @@ Keep the response conversational and helpful, focusing on providing value before
             };
           } else {
             const lowerErr2 = String(result2.error || "").toLowerCase();
-            const missingGeneric2 = /missing\s+required\s+fields/.test(lowerErr2);
+            const missingGeneric2 = /missing\s+required\s+fields/.test(
+              lowerErr2
+            );
             if (missingGeneric2) {
-              const configuredFields2 = ((onboardingConfig as any)?.registrationFields && (onboardingConfig as any).registrationFields.length > 0)
-                ? (onboardingConfig as any).registrationFields as any[]
-                : [
-                    { key: "email", label: "Email", required: true, type: "email" },
-                    { key: "firstName", label: "First Name", required: true, type: "text" },
-                    { key: "password", label: "Password", required: true, type: "text", validations: { minLength: 8 } },
-                    { key: "lastName", label: "Last Name", required: false, type: "text" },
-                  ];
-              const docDerived2 = await inferFieldsFromDocs(adminId || undefined, onboardingConfig?.docsUrl);
-              const allFields2 = mergeFields(configuredFields2, docDerived2 || []);
-              const requiredKeys2 = allFields2.filter((f: any) => f.required).map((f: any) => String(f.key || ""));
+              const configuredFields2 =
+                (onboardingConfig as any)?.registrationFields &&
+                (onboardingConfig as any).registrationFields.length > 0
+                  ? ((onboardingConfig as any).registrationFields as any[])
+                  : [
+                      {
+                        key: "email",
+                        label: "Email",
+                        required: true,
+                        type: "email",
+                      },
+                      {
+                        key: "firstName",
+                        label: "First Name",
+                        required: true,
+                        type: "text",
+                      },
+                      {
+                        key: "password",
+                        label: "Password",
+                        required: true,
+                        type: "text",
+                        validations: { minLength: 8 },
+                      },
+                      {
+                        key: "lastName",
+                        label: "Last Name",
+                        required: false,
+                        type: "text",
+                      },
+                    ];
+              const docDerived2 = await inferFieldsFromDocs(
+                adminId || undefined,
+                onboardingConfig?.docsUrl
+              );
+              const allFields2 = mergeFields(
+                configuredFields2,
+                docDerived2 || []
+              );
+              const requiredKeys2 = allFields2
+                .filter((f: any) => f.required)
+                .map((f: any) => String(f.key || ""));
               const presentKeys2 = Object.keys(sessionDoc.collectedData || {});
-              const missingKeys2 = requiredKeys2.filter((k) => !presentKeys2.includes(k));
+              const missingKeys2 = requiredKeys2.filter(
+                (k) => !presentKeys2.includes(k)
+              );
               if (missingKeys2.length > 0) {
-                const missingFields2 = allFields2.filter((f: any) => missingKeys2.includes(String(f.key || "")));
+                const missingFields2 = allFields2.filter((f: any) =>
+                  missingKeys2.includes(String(f.key || ""))
+                );
                 await sessionsCollection.updateOne(
                   { sessionId },
-                  { $set: { status: "in_progress", stageIndex: 0, fields: missingFields2, updatedAt: now } }
+                  {
+                    $set: {
+                      status: "in_progress",
+                      stageIndex: 0,
+                      fields: missingFields2,
+                      updatedAt: now,
+                    },
+                  }
                 );
                 const firstField2 = missingFields2[0];
                 const docContext2 = await buildOnboardingDocContext(
@@ -3310,7 +4019,11 @@ Keep the response conversational and helpful, focusing on providing value before
                   onboardingConfig?.docsUrl
                 );
                 resp = {
-                  mainText: `${docContext2 ? `${docContext2}\n\n` : ""}We need a few more details to complete your registration. ${promptForField(firstField2)}`,
+                  mainText: `${
+                    docContext2 ? `${docContext2}\n\n` : ""
+                  }We need a few more details to complete your registration. ${promptForField(
+                    firstField2
+                  )}`,
                   buttons: [],
                   emailPrompt: "",
                   showBookingCalendar: false,
@@ -3320,7 +4033,9 @@ Keep the response conversational and helpful, focusing on providing value before
             }
             if (!resp) {
               resp = {
-                mainText: `⚠️ We couldn’t complete registration: ${result2.error || "Unknown error"}.${detailsText2}`,
+                mainText: `⚠️ We couldn’t complete registration: ${
+                  result2.error || "Unknown error"
+                }.${detailsText2}`,
                 buttons: ["Try Again", "Edit Details"],
                 emailPrompt: "",
                 showBookingCalendar: false,
@@ -3331,7 +4046,10 @@ Keep the response conversational and helpful, focusing on providing value before
           // Special-case: existing user/email registered → only allow changing email
           if (!isSuccess2) {
             const errTxt = (result2.error || "") + (detailsText2 || "");
-            const isExistingUser = /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists|409/i.test(errTxt);
+            const isExistingUser =
+              /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists|409/i.test(
+                errTxt
+              );
             if (isExistingUser) {
               (resp as any).buttons = ["Change Email"];
               (resp as any).onboardingAction = "error_change_email";
@@ -3359,11 +4077,25 @@ Keep the response conversational and helpful, focusing on providing value before
           return NextResponse.json(resp, { headers: corsHeaders });
         } else if (/\bchange\s+email\b/.test(lower)) {
           // Prompt only for email, do not allow changing other fields
-          const emailIdx = (sessionDoc.fields || []).findIndex((f: any) => f.key === "email" || f.type === "email");
-          const emailField = emailIdx >= 0 ? sessionDoc.fields[emailIdx] : { key: "email", label: "Email", type: "email", required: true };
+          const emailIdx = (sessionDoc.fields || []).findIndex(
+            (f: any) => f.key === "email" || f.type === "email"
+          );
+          const emailField =
+            emailIdx >= 0
+              ? sessionDoc.fields[emailIdx]
+              : { key: "email", label: "Email", type: "email", required: true };
           await sessionsCollection.updateOne(
             { sessionId },
-            { $set: { status: "in_progress", stageIndex: 0, requiredKeys: ["email"], fields: [emailField], phase: "change_email_only", updatedAt: now } }
+            {
+              $set: {
+                status: "in_progress",
+                stageIndex: 0,
+                requiredKeys: ["email"],
+                fields: [emailField],
+                phase: "change_email_only",
+                updatedAt: now,
+              },
+            }
           );
           const docContext = await buildOnboardingDocContext(
             emailField,
@@ -3386,7 +4118,8 @@ Keep the response conversational and helpful, focusing on providing value before
             { upsert: true }
           );
           const resp = {
-            mainText: "Okay, I’ve cancelled onboarding. Would you like sales or support?",
+            mainText:
+              "Okay, I’ve cancelled onboarding. Would you like sales or support?",
             buttons: ["Talk to Sales", "Contact Support"],
             emailPrompt: "",
             showBookingCalendar: false,
@@ -3394,10 +4127,14 @@ Keep the response conversational and helpful, focusing on providing value before
           };
           return NextResponse.json(resp, { headers: corsHeaders });
         } else {
-        const summary = buildSafeSummary(sessionDoc.collectedData || {});
+          const summary = buildSafeSummary(sessionDoc.collectedData || {});
           const resp = {
             mainText: `Please reply "Confirm" to submit, or "Edit" to change.\n\nCurrent details:\n${summary}`,
-            buttons: ["Confirm and Submit", "Edit Details", "Cancel Onboarding"],
+            buttons: [
+              "Confirm and Submit",
+              "Edit Details",
+              "Cancel Onboarding",
+            ],
             emailPrompt: "",
             showBookingCalendar: false,
             onboardingAction: "confirm",
@@ -3417,25 +4154,52 @@ Keep the response conversational and helpful, focusing on providing value before
       const updatedData = { ...(sessionDoc.collectedData || {}) };
 
       // Try to consume fields in order from the current index if present in parsed bundle
-      for (let i = (sessionDoc.stageIndex || 0); i < sessionDoc.fields.length; i++) {
+      for (
+        let i = sessionDoc.stageIndex || 0;
+        i < sessionDoc.fields.length;
+        i++
+      ) {
         const f = sessionDoc.fields[i];
         const k = f.key;
-        const kl = String(k || '').toLowerCase();
+        const kl = String(k || "").toLowerCase();
         if ((kl === "email" || f.type === "email") && parsed.email) {
           updatedData[k] = parsed.email;
           consumed++;
-        } else if ((kl === "firstname" || kl === "first_name" || kl === "given_name" || kl === "fname") && parsed.firstName) {
+        } else if (
+          (kl === "firstname" ||
+            kl === "first_name" ||
+            kl === "given_name" ||
+            kl === "fname") &&
+          parsed.firstName
+        ) {
           updatedData[k] = parsed.firstName;
           consumed++;
-        } else if ((kl === "lastname" || kl === "last_name" || kl === "surname" || kl === "lname") && parsed.lastName) {
+        } else if (
+          (kl === "lastname" ||
+            kl === "last_name" ||
+            kl === "surname" ||
+            kl === "lname") &&
+          parsed.lastName
+        ) {
           // lastName is optional, consume if present
           updatedData[k] = parsed.lastName;
           // do not count towards required consumed unless lastName is required
           if (f.required) consumed++;
-        } else if ((kl === "name" || kl === "full_name" || kl === "fullname" || kl === "username") && parsed.name) {
+        } else if (
+          (kl === "name" ||
+            kl === "full_name" ||
+            kl === "fullname" ||
+            kl === "username") &&
+          parsed.name
+        ) {
           updatedData[k] = parsed.name;
           consumed++;
-        } else if ((kl === "password" || kl === "pwd") && parsed.password && (!f.validations?.minLength || parsed.password.length >= f.validations.minLength)) {
+        } else if (
+          (kl === "password" || kl === "pwd") &&
+          parsed.password &&
+          (!f.validations?.minLength ||
+            parsed.password.length >= f.validations.minLength)
+        ) {
           updatedData[k] = parsed.password;
           consumed++;
         }
@@ -3445,7 +4209,13 @@ Keep the response conversational and helpful, focusing on providing value before
         const nextIndex = (sessionDoc.stageIndex || 0) + consumed;
         await sessionsCollection.updateOne(
           { sessionId },
-          { $set: { collectedData: updatedData, stageIndex: nextIndex, updatedAt: now } }
+          {
+            $set: {
+              collectedData: updatedData,
+              stageIndex: nextIndex,
+              updatedAt: now,
+            },
+          }
         );
 
         const nextField = sessionDoc.fields[nextIndex];
@@ -3455,9 +4225,18 @@ Keep the response conversational and helpful, focusing on providing value before
             { sessionId },
             { $set: { status: "ready_to_submit", updatedAt: now } }
           );
-          const regName = (updatedData as any).name || (((updatedData as any).firstName ? (((updatedData as any).lastName ? `${(updatedData as any).firstName} ${(updatedData as any).lastName}` : (updatedData as any).firstName)) : undefined));
+          const regName =
+            (updatedData as any).name ||
+            ((updatedData as any).firstName
+              ? (updatedData as any).lastName
+                ? `${(updatedData as any).firstName} ${
+                    (updatedData as any).lastName
+                  }`
+                : (updatedData as any).firstName
+              : undefined);
           const regEmail = (updatedData as any).email;
-          const hasPwd = ((updatedData as any).password || (updatedData as any).pass);
+          const hasPwd =
+            (updatedData as any).password || (updatedData as any).pass;
           const lines: string[] = [];
           if (regName) lines.push(`- name: ${regName}`);
           if (regEmail) lines.push(`- email: ${regEmail}`);
@@ -3465,7 +4244,10 @@ Keep the response conversational and helpful, focusing on providing value before
           const summary = lines.join("\n");
           const resp = {
             mainText: `Great, I’ve got everything. Please review:\n${summary}\n\nReply "Confirm" to submit, or say "Edit" to change any detail.`,
-            buttons: (sessionDoc.phase === "change_email_only") ? ["Confirm and Submit"] : ["Confirm and Submit", "Edit Details"],
+            buttons:
+              sessionDoc.phase === "change_email_only"
+                ? ["Confirm and Submit"]
+                : ["Confirm and Submit", "Edit Details"],
             emailPrompt: "",
             showBookingCalendar: false,
             onboardingAction: "confirm",
@@ -3499,7 +4281,10 @@ Keep the response conversational and helpful, focusing on providing value before
         onboardingConfig?.docsUrl
       );
       const resp = {
-        mainText: `${docContext ? `${docContext}\n\n` : ""}${check.message || `Please provide your ${currentField.label || currentField.key}.`}`,
+        mainText: `${docContext ? `${docContext}\n\n` : ""}${
+          check.message ||
+          `Please provide your ${currentField.label || currentField.key}.`
+        }`,
         buttons: [],
         emailPrompt: "",
         showBookingCalendar: false,
@@ -3510,12 +4295,17 @@ Keep the response conversational and helpful, focusing on providing value before
 
     const updated = {
       ...sessionDoc.collectedData,
-      [currentField.key]: currentField.type === "email" && check.normalized ? check.normalized : ans,
+      [currentField.key]:
+        currentField.type === "email" && check.normalized
+          ? check.normalized
+          : ans,
     };
     const nextIndex = idx + 1;
     await sessionsCollection.updateOne(
       { sessionId },
-      { $set: { collectedData: updated, stageIndex: nextIndex, updatedAt: now } }
+      {
+        $set: { collectedData: updated, stageIndex: nextIndex, updatedAt: now },
+      }
     );
 
     const nextField = sessionDoc.fields[nextIndex];
@@ -3528,7 +4318,10 @@ Keep the response conversational and helpful, focusing on providing value before
       const summary = buildSafeSummary(updated || {});
       const resp = {
         mainText: `Great, I’ve got everything. Please review:\n${summary}\n\nReply "Confirm" to submit, or say "Edit" to change any detail.`,
-        buttons: (sessionDoc.phase === "change_email_only") ? ["Confirm and Submit"] : ["Confirm and Submit", "Edit Details"],
+        buttons:
+          sessionDoc.phase === "change_email_only"
+            ? ["Confirm and Submit"]
+            : ["Confirm and Submit", "Edit Details"],
         emailPrompt: "",
         showBookingCalendar: false,
         onboardingAction: "confirm",
@@ -3923,7 +4716,10 @@ Extract key requirements (2-3 bullet points max, be concise):`;
       }
 
       // Special handling: perform real cancellation
-      if (requestedAction === "cancel booking" && bookingStatus.currentBooking?._id) {
+      if (
+        requestedAction === "cancel booking" &&
+        bookingStatus.currentBooking?._id
+      ) {
         try {
           const cancelled = await bookingService.cancelBooking(
             bookingStatus.currentBooking._id.toString(),
@@ -4193,30 +4989,60 @@ Extract key requirements (2-3 bullet points max, be concise):`;
         try {
           const db = await getDb();
           const sessionsCollection = db.collection("onboardingSessions");
-          const existingOnboarding = await sessionsCollection.findOne({ sessionId });
-          if (["in_progress", "ready_to_submit", "error"].includes(existingOnboarding?.status || "")) {
+          const existingOnboarding = await sessionsCollection.findOne({
+            sessionId,
+          });
+          if (
+            ["in_progress", "ready_to_submit", "error"].includes(
+              existingOnboarding?.status || ""
+            )
+          ) {
             const idx = existingOnboarding?.stageIndex ?? 0;
             const field = existingOnboarding?.fields?.[idx];
             if (existingOnboarding?.status === "ready_to_submit") {
-            const summary = buildSafeSummary(existingOnboarding?.collectedData || {});
+              const summary = buildSafeSummary(
+                existingOnboarding?.collectedData || {}
+              );
               return NextResponse.json(
                 {
                   mainText: `We’re finishing your onboarding. Please review:\n${summary}\n\nReply "Confirm" to submit, or "Edit" to change any detail.`,
-                  buttons: (existingOnboarding?.phase === "change_email_only") ? ["Confirm and Submit"] : ["Confirm and Submit", "Edit Details"],
+                  buttons:
+                    existingOnboarding?.phase === "change_email_only"
+                      ? ["Confirm and Submit"]
+                      : ["Confirm and Submit", "Edit Details"],
                   emailPrompt: "",
                   onboardingAction: "confirm",
                 },
                 { headers: corsHeaders }
               );
             } else if (existingOnboarding?.status === "error") {
-              const lastError = existingOnboarding?.lastError || "Registration failed";
-            const summary = buildSafeSummary(existingOnboarding?.collectedData || {});
+              const lastError =
+                existingOnboarding?.lastError || "Registration failed";
+              const summary = buildSafeSummary(
+                existingOnboarding?.collectedData || {}
+              );
               return NextResponse.json(
                 {
-                  mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\n${/already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists|409/i.test(lastError || "") ? "Please update your email to continue." : "Reply \"Try Again\" to resubmit, or \"Edit\" to change any detail."}\n\nCurrent details:\n${summary}`,
-                  buttons: (/already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists|409/i.test(lastError || "")) ? ["Change Email"] : ["Try Again", "Edit Details"],
+                  mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\n${
+                    /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists|409/i.test(
+                      lastError || ""
+                    )
+                      ? "Please update your email to continue."
+                      : 'Reply "Try Again" to resubmit, or "Edit" to change any detail.'
+                  }\n\nCurrent details:\n${summary}`,
+                  buttons:
+                    /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists|409/i.test(
+                      lastError || ""
+                    )
+                      ? ["Change Email"]
+                      : ["Try Again", "Edit Details"],
                   emailPrompt: "",
-                  onboardingAction: (/already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists|409/i.test(lastError || "")) ? "error_change_email" : "error",
+                  onboardingAction:
+                    /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists|409/i.test(
+                      lastError || ""
+                    )
+                      ? "error_change_email"
+                      : "error",
                 },
                 { headers: corsHeaders }
               );
@@ -4225,7 +5051,9 @@ Extract key requirements (2-3 bullet points max, be concise):`;
               const docContext = await buildOnboardingDocContext(
                 field,
                 existingOnboarding?.adminId || undefined,
-                (await getAdminSettings(existingOnboarding?.adminId || "")).onboarding?.docsUrl
+                (
+                  await getAdminSettings(existingOnboarding?.adminId || "")
+                ).onboarding?.docsUrl
               );
               return NextResponse.json(
                 {
@@ -5499,13 +6327,17 @@ ${previousQnA}
           console.log(
             `[Followup] No more followups after count 4 for session ${sessionId}`
           );
-          return NextResponse.json({
-            mainText: "You're already active! Please continue your conversation.",
-            buttons: [],
-            emailPrompt: "",
-            showBookingCalendar: false,
-            onboardingAction: "noop"
-          }, { headers: corsHeaders });
+          return NextResponse.json(
+            {
+              mainText:
+                "You're already active! Please continue your conversation.",
+              buttons: [],
+              emailPrompt: "",
+              showBookingCalendar: false,
+              onboardingAction: "noop",
+            },
+            { headers: corsHeaders }
+          );
         }
 
         // Check if user has been recently active based on recent message timestamps
@@ -5793,30 +6625,60 @@ What specific information are you looking for? I'm here to help guide you throug
       try {
         const db = await getDb();
         const sessionsCollection = db.collection("onboardingSessions");
-        const existingOnboarding = await sessionsCollection.findOne({ sessionId });
-        if (["in_progress", "ready_to_submit", "error"].includes(existingOnboarding?.status || "")) {
+        const existingOnboarding = await sessionsCollection.findOne({
+          sessionId,
+        });
+        if (
+          ["in_progress", "ready_to_submit", "error"].includes(
+            existingOnboarding?.status || ""
+          )
+        ) {
           const idx = existingOnboarding?.stageIndex ?? 0;
           const field = existingOnboarding?.fields?.[idx];
           if (existingOnboarding?.status === "ready_to_submit") {
-        const summary = buildSafeSummary(existingOnboarding?.collectedData || {});
+            const summary = buildSafeSummary(
+              existingOnboarding?.collectedData || {}
+            );
             return NextResponse.json(
               {
                 mainText: `We’re finishing your onboarding. Please review:\n${summary}\n\nReply "Confirm" to submit, or "Edit" to change any detail.`,
-                buttons: (existingOnboarding?.phase === "change_email_only") ? ["Confirm and Submit"] : ["Confirm and Submit", "Edit Details"],
+                buttons:
+                  existingOnboarding?.phase === "change_email_only"
+                    ? ["Confirm and Submit"]
+                    : ["Confirm and Submit", "Edit Details"],
                 emailPrompt: "",
                 onboardingAction: "confirm",
               },
               { headers: corsHeaders }
             );
           } else if (existingOnboarding?.status === "error") {
-            const lastError = existingOnboarding?.lastError || "Registration failed";
-            const summary = buildSafeSummary(existingOnboarding?.collectedData || {});
+            const lastError =
+              existingOnboarding?.lastError || "Registration failed";
+            const summary = buildSafeSummary(
+              existingOnboarding?.collectedData || {}
+            );
             return NextResponse.json(
               {
-                mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\n${/already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists|409/i.test(lastError || "") ? "Please update your email to continue." : "Reply \"Try Again\" to resubmit, or \"Edit\" to change any detail."}\n\nCurrent details:\n${summary}`,
-                buttons: (/already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists|409/i.test(lastError || "")) ? ["Change Email"] : ["Try Again", "Edit Details"],
+                mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\n${
+                  /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists|409/i.test(
+                    lastError || ""
+                  )
+                    ? "Please update your email to continue."
+                    : 'Reply "Try Again" to resubmit, or "Edit" to change any detail.'
+                }\n\nCurrent details:\n${summary}`,
+                buttons:
+                  /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists|409/i.test(
+                    lastError || ""
+                  )
+                    ? ["Change Email"]
+                    : ["Try Again", "Edit Details"],
                 emailPrompt: "",
-                onboardingAction: (/already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists|409/i.test(lastError || "")) ? "error_change_email" : "error",
+                onboardingAction:
+                  /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists|409/i.test(
+                    lastError || ""
+                  )
+                    ? "error_change_email"
+                    : "error",
               },
               { headers: corsHeaders }
             );
@@ -5825,7 +6687,9 @@ What specific information are you looking for? I'm here to help guide you throug
             const docContext = await buildOnboardingDocContext(
               field,
               existingOnboarding?.adminId || undefined,
-              (await getAdminSettings(existingOnboarding?.adminId || "")).onboarding?.docsUrl
+              (
+                await getAdminSettings(existingOnboarding?.adminId || "")
+              ).onboarding?.docsUrl
             );
             return NextResponse.json(
               {
@@ -5876,24 +6740,39 @@ What specific information are you looking for? I'm here to help guide you throug
       try {
         const db = await getDb();
         const sessionsCollection = db.collection("onboardingSessions");
-        const existingOnboarding = await sessionsCollection.findOne({ sessionId });
-        if (["in_progress", "ready_to_submit", "error"].includes(existingOnboarding?.status || "")) {
+        const existingOnboarding = await sessionsCollection.findOne({
+          sessionId,
+        });
+        if (
+          ["in_progress", "ready_to_submit", "error"].includes(
+            existingOnboarding?.status || ""
+          )
+        ) {
           const idx = existingOnboarding?.stageIndex ?? 0;
           const field = existingOnboarding?.fields?.[idx];
           if (existingOnboarding?.status === "ready_to_submit") {
-            const summary = buildSafeSummary(existingOnboarding?.collectedData || {});
+            const summary = buildSafeSummary(
+              existingOnboarding?.collectedData || {}
+            );
             return NextResponse.json(
               {
                 mainText: `We’re finishing your onboarding. Please review:\n${summary}\n\nReply "Confirm" to submit, or "Edit" to change any detail.`,
-                buttons: ["Confirm and Submit", "Edit Details", "Cancel Onboarding"],
+                buttons: [
+                  "Confirm and Submit",
+                  "Edit Details",
+                  "Cancel Onboarding",
+                ],
                 emailPrompt: "",
                 onboardingAction: "confirm",
               },
               { headers: corsHeaders }
             );
           } else if (existingOnboarding?.status === "error") {
-            const lastError = existingOnboarding?.lastError || "Registration failed";
-            const summary = buildSafeSummary(existingOnboarding?.collectedData || {});
+            const lastError =
+              existingOnboarding?.lastError || "Registration failed";
+            const summary = buildSafeSummary(
+              existingOnboarding?.collectedData || {}
+            );
             return NextResponse.json(
               {
                 mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\nReply "Try Again" to resubmit, or "Edit" to change any detail.\n\nCurrent details:\n${summary}`,
@@ -5908,17 +6787,19 @@ What specific information are you looking for? I'm here to help guide you throug
             const docContext = await buildOnboardingDocContext(
               field,
               existingOnboarding?.adminId || undefined,
-              (await getAdminSettings(existingOnboarding?.adminId || "")).onboarding?.docsUrl
+              (
+                await getAdminSettings(existingOnboarding?.adminId || "")
+              ).onboarding?.docsUrl
             );
-              return NextResponse.json(
-                {
-                  mainText: `${docContext ? `${docContext}\n\n` : ""}${prompt}`,
-                  buttons: [],
-                  emailPrompt: "",
-                  onboardingAction: "ask_next",
-                },
-                { headers: corsHeaders }
-              );
+            return NextResponse.json(
+              {
+                mainText: `${docContext ? `${docContext}\n\n` : ""}${prompt}`,
+                buttons: [],
+                emailPrompt: "",
+                onboardingAction: "ask_next",
+              },
+              { headers: corsHeaders }
+            );
           }
         }
       } catch (e) {
@@ -5975,24 +6856,30 @@ What specific information are you looking for? I'm here to help guide you throug
         console.log(
           `[Followup] No more generic followups for session ${sessionId}`
         );
-        return NextResponse.json({
-          mainText: "I’m here if you need me. How can I help next?",
-          buttons: ["Keep Browsing", "Get Help"],
-          emailPrompt: "",
-          showBookingCalendar: false
-        }, { headers: corsHeaders });
+        return NextResponse.json(
+          {
+            mainText: "I’m here if you need me. How can I help next?",
+            buttons: ["Keep Browsing", "Get Help"],
+            emailPrompt: "",
+            showBookingCalendar: false,
+          },
+          { headers: corsHeaders }
+        );
       }
     } catch (error) {
       console.error(
         `[Followup] Error in generic followup for session ${sessionId}:`,
         error
       );
-      return NextResponse.json({
-        mainText: "I’m here if you need me. How can I help next?",
-        buttons: ["Keep Browsing", "Get Help"],
-        emailPrompt: "",
-        showBookingCalendar: false
-      }, { headers: corsHeaders });
+      return NextResponse.json(
+        {
+          mainText: "I’m here if you need me. How can I help next?",
+          buttons: ["Keep Browsing", "Get Help"],
+          emailPrompt: "",
+          showBookingCalendar: false,
+        },
+        { headers: corsHeaders }
+      );
     }
   }
 
