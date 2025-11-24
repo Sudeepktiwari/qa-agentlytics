@@ -95,6 +95,7 @@ export async function GET(request: Request) {
     config.chatTitle = getAttr('data-chat-title', 'Onboarding Assistant');
     config.autoOpenProactive = false; // suppress proactive auto-open
     config.mirrorMode = false; // disable mirror
+    config.enhancedDetection = false; // disable contextual detection for clean onboarding
   }
   
   // Theme configurations
@@ -173,7 +174,7 @@ export async function GET(request: Request) {
       z-index: 10000;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: transparent;
-      pointer-events: none;
+      pointer-events: auto;
       padding: 20px;
     \`;
   }
@@ -4652,12 +4653,15 @@ export async function GET(request: Request) {
     // Add cleanup function for page monitoring
     window.addEventListener('beforeunload', cleanupPageMonitoring);
 
-    // In onboarding-only mode, hide the floating toggle button and only open when page explicitly triggers it
+    // In onboarding-only mode, hide the floating toggle button and auto-open
     if (ONBOARDING_ONLY) {
       try {
         toggleButton.style.display = 'none';
       } catch (e) {}
-      // Do NOT auto-open; rely on host page’s “Load Widget” button
+      if (!isOpen) toggleWidget();
+      try {
+        sendProactiveMessage('Welcome! To start your registration, please share your name, email, and a password (min 8 chars).', [], '');
+      } catch (e) {}
     }
   }
   
