@@ -1781,6 +1781,7 @@ export async function POST(req: NextRequest) {
     email?: string;
     password?: string;
     name?: string;
+    fullName?: string;
   } {
     const text = (ans || "").trim();
     if (!text) return {};
@@ -1834,7 +1835,8 @@ export async function POST(req: NextRequest) {
     }
 
     const name = nameSource || (firstName ? (lastName ? `${firstName} ${lastName}` : firstName) : undefined);
-    return { firstName, lastName, email, password, name };
+    const fullName = name;
+    return { firstName, lastName, email, password, name, fullName };
   }
 
   if (
@@ -2529,13 +2531,13 @@ Keep the response conversational and helpful, focusing on providing value before
           { key: "lastName", label: "Last Name", required: false, type: "text" },
         ];
 
-    // Prefer admin-edited registrationFields; else docs-derived; else defaults
+    // Prefer admin-edited registrationFields; else merge docs-derived with sensible defaults
     let fields: any[] = [];
     if ((onboardingConfig as any)?.registrationFields && (onboardingConfig as any).registrationFields.length > 0) {
       fields = (onboardingConfig as any).registrationFields as any[];
     } else {
       const docDerived = await inferFieldsFromDocs(adminId || undefined, onboardingConfig?.docsUrl);
-      fields = (docDerived && docDerived.length > 0) ? docDerived : configuredFields;
+      fields = mergeFields(configuredFields, docDerived || []);
     }
 
     // Ask only relevant (required) questions by default
@@ -2824,21 +2826,63 @@ Keep the response conversational and helpful, focusing on providing value before
             } catch {}
           }
           const externalMsg = (() => { try { const keys = ["message","msg","detail","status","description","info"]; const stack: any[] = []; const pushObj = (o: any) => { if (o && typeof o === "object") stack.push(o); }; pushObj(result.responseBody); while (stack.length) { const cur = stack.pop(); for (const [k, v] of Object.entries(cur)) { if (v && typeof v === "object") pushObj(v); if (typeof v === "string" && keys.includes(String(k))) return v as string; } } } catch {} return undefined; })() || result?.message || result?.statusText;
-          const resp = isSuccess
-            ? {
-                mainText: externalMsg ? `✅ ${externalMsg}` : "✅ You’re all set! Your account has been created.",
-                buttons: ["Log In", "Talk to Sales"],
-                emailPrompt: "",
-                showBookingCalendar: false,
-                onboardingAction: "completed",
+          let resp;
+          if (isSuccess) {
+            resp = {
+              mainText: externalMsg ? `✅ ${externalMsg}` : "✅ You’re all set! Your account has been created.",
+              buttons: ["Log In", "Talk to Sales"],
+              emailPrompt: "",
+              showBookingCalendar: false,
+              onboardingAction: "completed",
+            };
+          } else {
+            const lowerErr = String(result.error || "").toLowerCase();
+            const missingGeneric = /missing\s+required\s+fields/.test(lowerErr);
+            if (missingGeneric) {
+              const configuredFields = ((onboardingConfig as any)?.registrationFields && (onboardingConfig as any).registrationFields.length > 0)
+                ? (onboardingConfig as any).registrationFields as any[]
+                : [
+                    { key: "email", label: "Email", required: true, type: "email" },
+                    { key: "firstName", label: "First Name", required: true, type: "text" },
+                    { key: "password", label: "Password", required: true, type: "text", validations: { minLength: 8 } },
+                    { key: "lastName", label: "Last Name", required: false, type: "text" },
+                  ];
+              const docDerived = await inferFieldsFromDocs(adminId || undefined, onboardingConfig?.docsUrl);
+              const allFields = mergeFields(configuredFields, docDerived || []);
+              const requiredKeys = allFields.filter((f: any) => f.required).map((f: any) => String(f.key || ""));
+              const presentKeys = Object.keys(sessionDoc.collectedData || {});
+              const missingKeys = requiredKeys.filter((k) => !presentKeys.includes(k));
+              if (missingKeys.length > 0) {
+                const missingFields = allFields.filter((f: any) => missingKeys.includes(String(f.key || "")));
+                await sessionsCollection.updateOne(
+                  { sessionId },
+                  { $set: { status: "in_progress", stageIndex: 0, fields: missingFields, updatedAt: now } }
+                );
+                const firstField = missingFields[0];
+                const docContext = await buildOnboardingDocContext(
+                  firstField,
+                  adminId || undefined,
+                  onboardingConfig?.docsUrl
+                );
+                resp = {
+                  mainText: `${docContext ? `${docContext}\n\n` : ""}We need a few more details to complete your registration. ${promptForField(firstField)}`,
+                  buttons: [],
+                  emailPrompt: "",
+                  showBookingCalendar: false,
+                  onboardingAction: "ask_next",
+                };
               }
-            : {
+            }
+            if (!resp) {
+              resp = {
                 mainText: `⚠️ We couldn’t complete registration: ${result.error || "Unknown error"}.${detailsText}`,
                 buttons: ["Try Again", "Edit Details"],
                 emailPrompt: "",
                 showBookingCalendar: false,
                 onboardingAction: "error",
               };
+            }
+          }
           // Special-case: existing user/email registered → only allow changing email
           if (!result.success) {
             const errTxt = (result.error || "") + (detailsText || "");
@@ -3188,21 +3232,63 @@ Keep the response conversational and helpful, focusing on providing value before
             } catch {}
           }
           const externalMsg3 = (() => { try { const keys = ["message","msg","detail","status","description","info"]; const stack: any[] = []; const pushObj = (o: any) => { if (o && typeof o === "object") stack.push(o); }; pushObj(result2.responseBody); while (stack.length) { const cur = stack.pop(); for (const [k, v] of Object.entries(cur)) { if (v && typeof v === "object") pushObj(v); if (typeof v === "string" && keys.includes(String(k))) return v as string; } } } catch {} return undefined; })() || result2?.message || result2?.statusText;
-          const resp = isSuccess2
-            ? {
-                mainText: externalMsg3 ? `✅ ${externalMsg3}` : "✅ You’re all set! Your account has been created.",
-                buttons: ["Log In", "Talk to Sales"],
-                emailPrompt: "",
-                showBookingCalendar: false,
-                onboardingAction: "completed",
+          let resp;
+          if (isSuccess2) {
+            resp = {
+              mainText: externalMsg3 ? `✅ ${externalMsg3}` : "✅ You’re all set! Your account has been created.",
+              buttons: ["Log In", "Talk to Sales"],
+              emailPrompt: "",
+              showBookingCalendar: false,
+              onboardingAction: "completed",
+            };
+          } else {
+            const lowerErr2 = String(result2.error || "").toLowerCase();
+            const missingGeneric2 = /missing\s+required\s+fields/.test(lowerErr2);
+            if (missingGeneric2) {
+              const configuredFields2 = ((onboardingConfig as any)?.registrationFields && (onboardingConfig as any).registrationFields.length > 0)
+                ? (onboardingConfig as any).registrationFields as any[]
+                : [
+                    { key: "email", label: "Email", required: true, type: "email" },
+                    { key: "firstName", label: "First Name", required: true, type: "text" },
+                    { key: "password", label: "Password", required: true, type: "text", validations: { minLength: 8 } },
+                    { key: "lastName", label: "Last Name", required: false, type: "text" },
+                  ];
+              const docDerived2 = await inferFieldsFromDocs(adminId || undefined, onboardingConfig?.docsUrl);
+              const allFields2 = mergeFields(configuredFields2, docDerived2 || []);
+              const requiredKeys2 = allFields2.filter((f: any) => f.required).map((f: any) => String(f.key || ""));
+              const presentKeys2 = Object.keys(sessionDoc.collectedData || {});
+              const missingKeys2 = requiredKeys2.filter((k) => !presentKeys2.includes(k));
+              if (missingKeys2.length > 0) {
+                const missingFields2 = allFields2.filter((f: any) => missingKeys2.includes(String(f.key || "")));
+                await sessionsCollection.updateOne(
+                  { sessionId },
+                  { $set: { status: "in_progress", stageIndex: 0, fields: missingFields2, updatedAt: now } }
+                );
+                const firstField2 = missingFields2[0];
+                const docContext2 = await buildOnboardingDocContext(
+                  firstField2,
+                  adminId || undefined,
+                  onboardingConfig?.docsUrl
+                );
+                resp = {
+                  mainText: `${docContext2 ? `${docContext2}\n\n` : ""}We need a few more details to complete your registration. ${promptForField(firstField2)}`,
+                  buttons: [],
+                  emailPrompt: "",
+                  showBookingCalendar: false,
+                  onboardingAction: "ask_next",
+                };
               }
-            : {
+            }
+            if (!resp) {
+              resp = {
                 mainText: `⚠️ We couldn’t complete registration: ${result2.error || "Unknown error"}.${detailsText2}`,
                 buttons: ["Try Again", "Edit Details"],
                 emailPrompt: "",
                 showBookingCalendar: false,
                 onboardingAction: "error",
               };
+            }
+          }
           // Special-case: existing user/email registered → only allow changing email
           if (!isSuccess2) {
             const errTxt = (result2.error || "") + (detailsText2 || "");
@@ -3295,21 +3381,22 @@ Keep the response conversational and helpful, focusing on providing value before
       for (let i = (sessionDoc.stageIndex || 0); i < sessionDoc.fields.length; i++) {
         const f = sessionDoc.fields[i];
         const k = f.key;
-        if (k === "email" && parsed.email) {
+        const kl = String(k || '').toLowerCase();
+        if ((kl === "email" || f.type === "email") && parsed.email) {
           updatedData[k] = parsed.email;
           consumed++;
-        } else if (k === "firstName" && parsed.firstName) {
+        } else if ((kl === "firstname" || kl === "first_name" || kl === "given_name" || kl === "fname") && parsed.firstName) {
           updatedData[k] = parsed.firstName;
           consumed++;
-        } else if (k === "lastName" && parsed.lastName) {
+        } else if ((kl === "lastname" || kl === "last_name" || kl === "surname" || kl === "lname") && parsed.lastName) {
           // lastName is optional, consume if present
           updatedData[k] = parsed.lastName;
           // do not count towards required consumed unless lastName is required
           if (f.required) consumed++;
-        } else if (k === "name" && parsed.name) {
+        } else if ((kl === "name" || kl === "full_name" || kl === "fullname" || kl === "username") && parsed.name) {
           updatedData[k] = parsed.name;
           consumed++;
-        } else if ((k === "password" || k === "pwd") && parsed.password && (!f.validations?.minLength || parsed.password.length >= f.validations.minLength)) {
+        } else if ((kl === "password" || kl === "pwd") && parsed.password && (!f.validations?.minLength || parsed.password.length >= f.validations.minLength)) {
           updatedData[k] = parsed.password;
           consumed++;
         }
