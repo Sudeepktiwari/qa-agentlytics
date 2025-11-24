@@ -3517,6 +3517,7 @@ export async function GET(request: Request) {
       // 🎯 BOOKING CALENDAR FIELDS - ESSENTIAL FOR CALENDAR FUNCTIONALITY
       showBookingCalendar: responseData.showBookingCalendar || false,
       bookingType: responseData.bookingType || null,
+      onboardingAction: responseData.onboardingAction || null,
       // New: support multi-field inputs from backend (or future extensions)
       inputFields: responseData.inputFields || responseData.registrationFields || null
     };
@@ -3706,6 +3707,10 @@ export async function GET(request: Request) {
     
     console.log("✅ [WIDGET MESSAGE] API response processed");
     
+    if (ONBOARDING_ONLY && data && data.onboardingAction === 'completed' && !isOpen) {
+      toggleWidget();
+    }
+
     // Update bot mode indicator
     if (data.botMode) {
       updateBotModeIndicator(data.botMode, data.userEmail);
@@ -3727,12 +3732,13 @@ export async function GET(request: Request) {
       
       const botMessage = {
         role: 'assistant',
-        content: data.mainText || data.answer || 'I received your message.',
+        content: (data.mainText && data.mainText.trim()) ? data.mainText : (data.onboardingAction === 'completed' ? '✅ You’re all set! Your account has been created.' : (data.answer || 'I received your message.')),
         buttons: data.buttons || [],
         emailPrompt: data.emailPrompt || '',
         showBookingCalendar: data.showBookingCalendar || false,
         bookingType: data.bookingType || null,
-        inputFields: data.inputFields || null
+        inputFields: data.inputFields || null,
+        onboardingAction: data.onboardingAction || null
       };
       messages.push(botMessage);
       botResponse = botMessage.content;
@@ -4216,7 +4222,6 @@ export async function GET(request: Request) {
           }
         }
 
-        messageDiv.appendChild(bubbleDiv);
       }
       
       messagesContainer.appendChild(messageDiv);
