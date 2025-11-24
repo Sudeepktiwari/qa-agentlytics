@@ -2856,8 +2856,9 @@ Keep the response conversational and helpful, focusing on providing value before
     }
 
     // Start if no session or completed/cancelled
-    let sessionDoc = existingOnboarding;
-    if (!sessionDoc || ["completed", "cancelled"].includes(sessionDoc.status)) {
+    let sessionDoc: any = existingOnboarding;
+    const isCompletedOrCancelled = sessionDoc ? ["completed", "cancelled"].includes(sessionDoc.status) : false;
+    if (!sessionDoc || isCompletedOrCancelled) {
       const doc = {
         sessionId,
         adminId: adminId || "",
@@ -2885,14 +2886,16 @@ Keep the response conversational and helpful, focusing on providing value before
         adminId || undefined,
         onboardingConfig?.docsUrl
       );
-      const resp = {
-        mainText: `${docContext ? `${docContext}\n\n` : ""}${intro}`,
-        buttons: ["Cancel Onboarding"],
-        emailPrompt: "",
-        showBookingCalendar: false,
-        onboardingAction: "start",
-      };
-      return NextResponse.json(resp, { headers: corsHeaders });
+      if (!isBundleSignal) {
+        const resp = {
+          mainText: `${docContext ? `${docContext}\n\n` : ""}${intro}`,
+          buttons: ["Cancel Onboarding"],
+          emailPrompt: "",
+          showBookingCalendar: false,
+          onboardingAction: "start",
+        };
+        return NextResponse.json(resp, { headers: corsHeaders });
+      }
     }
 
     // Continue: accept answer for current field
