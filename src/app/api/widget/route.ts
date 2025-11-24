@@ -3732,9 +3732,15 @@ export async function GET(request: Request) {
       console.log("Show Booking Calendar:", data.showBookingCalendar || false);
       console.log("Booking Type:", data.bookingType || 'none');
       
+      const fallbackText = (() => {
+        if (data.onboardingAction === 'completed') return '✅ You’re all set! Your account has been created.';
+        if (data.onboardingAction === 'confirm') return '✅ Registration complete. Please review and confirm your setup details.';
+        if (data.onboardingAction === 'ask_next') return 'Let’s continue your setup. Please provide the next required detail.';
+        return ONBOARDING_ONLY ? 'Please try again.' : 'I received your message.';
+      })();
       const botMessage = {
         role: 'assistant',
-        content: (data.mainText && data.mainText.trim()) ? data.mainText : (data.onboardingAction === 'completed' ? '✅ You’re all set! Your account has been created.' : (data.answer || 'I received your message.')),
+        content: (data.mainText && data.mainText.trim()) ? data.mainText : (data.answer || fallbackText),
         buttons: data.buttons || [],
         emailPrompt: data.emailPrompt || '',
         showBookingCalendar: data.showBookingCalendar || false,
