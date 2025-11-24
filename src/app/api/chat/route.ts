@@ -474,7 +474,8 @@ function detectOnboardingIntent(text?: string): boolean {
 // Infer likely required fields from admin documentation (docsUrl first, then uploaded docs)
 async function inferFieldsFromDocs(
   adminId?: string,
-  docsUrl?: string
+  docsUrl?: string,
+  queryPhrase?: string
 ): Promise<any[]> {
   try {
     let chunks: string[] = [];
@@ -488,7 +489,7 @@ async function inferFieldsFromDocs(
       const OpenAI = (await import("openai")).default;
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
       const embedResp = await openai.embeddings.create({
-        input: ["registration required fields"],
+        input: [queryPhrase || "registration required fields"],
         model: "text-embedding-3-small",
       });
       const embedding = embedResp.data[0].embedding as number[];
@@ -3870,24 +3871,47 @@ Keep the response conversational and helpful, focusing on providing value before
             )
           ) {
             try {
+              const preferredDocs =
+                onboardingConfig?.initialSetupDocsUrl || onboardingConfig?.docsUrl;
               const docDerived2 = await inferFieldsFromDocs(
                 adminId || undefined,
-                onboardingConfig?.docsUrl
+                preferredDocs,
+                "initial setup required fields"
               );
               if (Array.isArray(docDerived2) && docDerived2.length > 0) {
+                const tokenFromReg2 = extractApiKeyFromResponse(
+                  result2.responseBody,
+                  onboardingConfig
+                );
+                const collectedKeys2 = Object.keys(sessionDoc.collectedData || {});
+                const autoFilled2: Record<string, any> = {};
+                const fieldsNoToken2 = (docDerived2 || []).filter((f: any) => {
+                  const k = (f.key || "").toString();
+                  const kl = k.toLowerCase();
+                  if (kl === "password" || kl === "pass") return false;
+                  if (isApiKeyFieldKey(k, onboardingConfig)) {
+                    if (tokenFromReg2) autoFilled2[k] = tokenFromReg2;
+                    return false;
+                  }
+                  return !collectedKeys2.includes(k);
+                });
                 await sessionsCollection.updateOne(
                   { sessionId },
                   {
                     $set: {
                       status: "in_progress",
                       stageIndex: 0,
-                      fields: docDerived2,
+                      fields: fieldsNoToken2,
                       phase: "initial_setup",
                       updatedAt: now,
+                      collectedData: {
+                        ...(sessionDoc?.collectedData || {}),
+                        ...autoFilled2,
+                      },
                     },
                   }
                 );
-                const firstField2 = docDerived2[0];
+                const firstField2 = fieldsNoToken2[0];
                 const docContext2 = await buildOnboardingDocContext(
                   firstField2,
                   adminId || undefined,
