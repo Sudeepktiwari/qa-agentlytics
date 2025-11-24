@@ -2200,7 +2200,7 @@ export async function POST(req: NextRequest) {
               existingOnboarding?.collectedData || {}
             );
             const isExistingUser =
-              /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists|409/i.test(
+              /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists/i.test(
                 lastError || ""
               );
             const resp = {
@@ -2488,7 +2488,7 @@ Based on the page context, create an intelligent contextual question that demons
               existingOnboarding?.collectedData || {}
             );
             const isExistingUser =
-              /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists|409/i.test(
+              /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists/i.test(
                 lastError || ""
               );
             const resp = {
@@ -3356,7 +3356,7 @@ Keep the response conversational and helpful, focusing on providing value before
           if (!result.success) {
             const errTxt = (result.error || "") + (detailsText || "");
             const isExistingUser =
-              /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists|409/i.test(
+              /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists/i.test(
                 errTxt
               );
             if (isExistingUser) {
@@ -3417,7 +3417,7 @@ Keep the response conversational and helpful, focusing on providing value before
           if (hasPwd) lines.push(`- password: ***`);
           const summary = lines.join("\n");
           const isExistingUser =
-            /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists|409/i.test(
+            /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists/i.test(
               lastError || ""
             );
           const resp = {
@@ -4051,7 +4051,7 @@ Keep the response conversational and helpful, focusing on providing value before
           if (!isSuccess2) {
             const errTxt = (result2.error || "") + (detailsText2 || "");
             const isExistingUser =
-              /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists|409/i.test(
+              /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists/i.test(
                 errTxt
               );
             if (isExistingUser) {
@@ -5028,21 +5028,21 @@ Extract key requirements (2-3 bullet points max, be concise):`;
               return NextResponse.json(
                 {
                   mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\n${
-                    /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists|409/i.test(
+                    /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists/i.test(
                       lastError || ""
                     )
                       ? "Please update your email to continue."
                       : 'Reply "Try Again" to resubmit, or "Edit" to change any detail.'
                   }\n\nCurrent details:\n${summary}`,
                   buttons:
-                    /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists|409/i.test(
+                    /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists/i.test(
                       lastError || ""
                     )
                       ? ["Change Email"]
                       : ["Try Again", "Edit Details"],
                   emailPrompt: "",
                   onboardingAction:
-                    /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists|409/i.test(
+                    /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists/i.test(
                       lastError || ""
                     )
                       ? "error_change_email"
@@ -6664,21 +6664,21 @@ What specific information are you looking for? I'm here to help guide you throug
             return NextResponse.json(
               {
                 mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\n${
-                  /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists|409/i.test(
+                  /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists/i.test(
                     lastError || ""
                   )
                     ? "Please update your email to continue."
                     : 'Reply "Try Again" to resubmit, or "Edit" to change any detail.'
                 }\n\nCurrent details:\n${summary}`,
                 buttons:
-                  /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists|409/i.test(
+                  /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists/i.test(
                     lastError || ""
                   )
                     ? ["Change Email"]
                     : ["Try Again", "Edit Details"],
                 emailPrompt: "",
                 onboardingAction:
-                  /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists|409/i.test(
+                  /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists/i.test(
                     lastError || ""
                   )
                     ? "error_change_email"
