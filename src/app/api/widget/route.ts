@@ -3765,12 +3765,12 @@ export async function GET(request: Request) {
         if (data.onboardingAction === 'completed') return '✅ You’re all set! Your account has been created.';
         if (data.onboardingAction === 'confirm') return '✅ Registration complete. Please review and confirm your setup details.';
         if (data.onboardingAction === 'ask_next') return 'Let’s continue your setup. Please provide the next required detail.';
-        if (ONBOARDING_ONLY && !data.mainText && isConfirmInput) return '✅ You’re all set! Your account has been created.';
+        if (ONBOARDING_ONLY && isConfirmInput && !data.error) return '✅ You’re all set! Your account has been created.';
         return ONBOARDING_ONLY ? 'Please try again.' : 'I received your message.';
       })();
       const inferredAction = (() => {
         if (data.onboardingAction) return data.onboardingAction;
-        if (ONBOARDING_ONLY && !data.mainText && isConfirmInput) return 'completed';
+        if (ONBOARDING_ONLY && isConfirmInput && !data.error) return 'completed';
         return null;
       })();
       const useFallbackForConfirm = ONBOARDING_ONLY && isConfirmInput && !data.error;
