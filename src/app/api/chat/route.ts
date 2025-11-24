@@ -3437,11 +3437,12 @@ Keep the response conversational and helpful, focusing on providing value before
         }
       } else if (sessionDoc.status !== "ready_to_submit") {
         let summary = "";
-        if (
-          sessionDoc?.phase === "initial_setup" &&
-          ((onboardingConfig as any)?.initialSetupCurlCommand ||
-            ((onboardingConfig as any)?.initialFields || []).length > 0)
-        ) {
+        const setupConfigured =
+          !!(onboardingConfig as any)?.initialSetupCurlCommand ||
+          (((onboardingConfig as any)?.initialFields || []).length > 0);
+        const inSetupPhase = sessionDoc?.phase === "initial_setup";
+        const hasRegisteredUser = !!sessionDoc?.registeredUserId;
+        if (inSetupPhase && setupConfigured && hasRegisteredUser) {
           const setupFields =
             ((onboardingConfig as any)?.initialFields || []).length > 0
               ? ((onboardingConfig as any).initialFields as any[])
