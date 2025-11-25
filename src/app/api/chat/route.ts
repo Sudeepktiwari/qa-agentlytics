@@ -4210,80 +4210,85 @@ Keep the response conversational and helpful, focusing on providing value before
                 };
                 return NextResponse.json(resp2, { headers: corsHeaders });
               }
-              const defaultFields2 = [
-                {
-                  key: "company",
-                  label: "Company",
-                  required: false,
-                  type: "text",
-                },
-                {
-                  key: "phone",
-                  label: "Phone",
-                  required: false,
-                  type: "phone",
-                },
-                {
-                  key: "consent",
-                  label: "Consent",
-                  required: false,
-                  type: "checkbox",
-                },
-              ];
-              const collectedKeys3 = Object.keys(
-                sessionDoc.collectedData || {}
-              );
-              const tokenFromReg3 = extractApiKeyFromResponse(
-                result2.responseBody,
-                onboardingConfig
-              );
-              const autoFilled3: Record<string, any> = {};
-              const fieldsNoToken3 = defaultFields2.filter((f: any) => {
-                const k = (f.key || "").toString();
-                const kl = k.toLowerCase();
-                if (kl === "password" || kl === "pass") return false;
-                if (isApiKeyFieldKey(k, onboardingConfig)) {
-                  if (tokenFromReg3) autoFilled3[k] = tokenFromReg3;
-                  return false;
-                }
-                return !collectedKeys3.includes(k);
-              });
-              if (fieldsNoToken3.length > 0) {
-                await sessionsCollection.updateOne(
-                  { sessionId },
+              if (isOnboardingOnly) {
+                const fallbackFields = [
                   {
-                    $set: {
-                      status: "in_progress",
-                      stageIndex: 0,
-                      fields: fieldsNoToken3,
-                      phase: "initial_setup",
-                      updatedAt: now,
-                      collectedData: {
-                        ...(sessionDoc?.collectedData || {}),
-                        ...autoFilled3,
-                      },
-                    },
+                    key: "websiteId",
+                    label: "Website ID",
+                    required: true,
+                    type: "text",
+                  },
+                  {
+                    key: "workspaceId",
+                    label: "Workspace ID",
+                    required: false,
+                    type: "text",
+                  },
+                  {
+                    key: "api_key",
+                    label: "API Key",
+                    required: true,
+                    type: "text",
+                  },
+                ];
+                const collectedKeys3 = Object.keys(
+                  sessionDoc.collectedData || {}
+                );
+                const tokenFromReg3 = extractApiKeyFromResponse(
+                  result2.responseBody,
+                  onboardingConfig
+                );
+                const autoFilled3: Record<string, any> = {};
+                const fieldsNoToken3 = (fallbackFields || []).filter(
+                  (f: any) => {
+                    const k = (f.key || "").toString();
+                    const kl = k.toLowerCase();
+                    if (kl === "password" || kl === "pass") return false;
+                    if (isApiKeyFieldKey(k, onboardingConfig)) {
+                      if (tokenFromReg3) autoFilled3[k] = tokenFromReg3;
+                      return false;
+                    }
+                    return !collectedKeys3.includes(k);
                   }
                 );
-                const firstField3 = fieldsNoToken3[0];
-                const docContext3 = await buildOnboardingDocContext(
-                  firstField3,
-                  adminId || undefined,
-                  onboardingConfig?.initialSetupDocsUrl
-                );
-                const intro3 =
-                  "✅ Registration complete. Now, let’s finish initial setup.";
-                const prompt3 = promptForField(firstField3);
-                const resp3 = {
-                  mainText: `${
-                    docContext3 ? `${docContext3}\n\n` : ""
-                  }${intro3}\n\n${prompt3}`,
-                  buttons: [],
-                  emailPrompt: "",
-                  showBookingCalendar: false,
-                  onboardingAction: "ask_next",
-                };
-                return NextResponse.json(resp3, { headers: corsHeaders });
+                if (fieldsNoToken3.length > 0) {
+                  await sessionsCollection.updateOne(
+                    { sessionId },
+                    {
+                      $set: {
+                        status: "in_progress",
+                        stageIndex: 0,
+                        fields: fieldsNoToken3,
+                        phase: "initial_setup",
+                        updatedAt: now,
+                        collectedData: {
+                          ...(sessionDoc?.collectedData || {}),
+                          ...autoFilled3,
+                        },
+                      },
+                    }
+                  );
+                  const firstField3 = fieldsNoToken3[0];
+                  const docContext3 = await buildOnboardingDocContext(
+                    firstField3,
+                    adminId || undefined,
+                    onboardingConfig?.initialSetupDocsUrl ||
+                      onboardingConfig?.docsUrl
+                  );
+                  const intro3 =
+                    "✅ Registration complete. Now, let’s finish initial setup.";
+                  const prompt3 = promptForField(firstField3);
+                  const resp3 = {
+                    mainText: `${
+                      docContext3 ? `${docContext3}\n\n` : ""
+                    }${intro3}\n\n${prompt3}`,
+                    buttons: [],
+                    emailPrompt: "",
+                    showBookingCalendar: false,
+                    onboardingAction: "ask_next",
+                  };
+                  return NextResponse.json(resp3, { headers: corsHeaders });
+                }
               }
             } catch {}
             const externalMsg2 =
