@@ -2843,6 +2843,10 @@ Keep the response conversational and helpful, focusing on providing value before
   const widgetModeEarly =
     req.headers.get("x-widget-mode") || req.headers.get("X-Widget-Mode") || "";
   const isOnboardingOnlyEarly = widgetModeEarly === "onboarding_only";
+  if (!adminId && isOnboardingOnlyEarly) {
+    adminId = "default-admin";
+    console.log(`[DEBUG] Onboarding-only mode: using fallback adminId: ${adminId}`);
+  }
   const onboardingEnabled = !!onboardingConfig?.enabled || isOnboardingOnlyEarly;
   const sessionsCollection = db.collection("onboardingSessions");
   const existingOnboarding = await sessionsCollection.findOne({ sessionId });
