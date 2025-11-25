@@ -571,6 +571,38 @@ async function inferFieldsFromDocs(
   }
 }
 
+function labelFromKey(key: string): string {
+  return key
+    .replace(/\./g, " ")
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function typeFromKey(key: string): "text" | "email" | "phone" | "select" | "checkbox" {
+  const kl = key.toLowerCase();
+  if (kl.includes("email")) return "email";
+  if (kl.includes("phone")) return "phone";
+  if (kl.includes("consent") || kl.includes("agree") || kl.includes("terms")) return "checkbox";
+  return "text";
+}
+
+function fieldsFromBodyKeys(keys: string[]): any[] {
+  const seen = new Set<string>();
+  const out: any[] = [];
+  for (const k of keys || []) {
+    const simple = String(k).replace(/\[(\d+)\]/g, "");
+    if (seen.has(simple)) continue;
+    seen.add(simple);
+    out.push({
+      key: simple,
+      label: labelFromKey(simple),
+      required: true,
+      type: typeFromKey(simple),
+    });
+  }
+  return out;
+}
+
 function mergeFields(base: any[], extra: any[]): any[] {
   const map = new Map<string, any>();
   for (const f of base || []) {
@@ -2188,17 +2220,20 @@ export async function POST(req: NextRequest) {
               ).onboarding;
               const setupConfigured =
                 !!(adminOnboarding as any)?.initialSetupCurlCommand ||
-                (((adminOnboarding as any)?.initialFields || []).length > 0);
+                (((adminOnboarding as any)?.initialFields || []).length > 0) ||
+                ((((adminOnboarding as any)?.initialParsed?.bodyKeys) || []).length > 0);
               const inSetupPhase = existingOnboarding?.phase === "initial_setup";
               const hasRegisteredUser = !!existingOnboarding?.registeredUserId;
               if (inSetupPhase && setupConfigured && hasRegisteredUser) {
                 const setupFields =
                   ((adminOnboarding as any)?.initialFields || []).length > 0
                     ? ((adminOnboarding as any).initialFields as any[])
-                    : deriveOnboardingFieldsFromCurl(
-                        (adminOnboarding as any)
-                          .initialSetupCurlCommand as string
-                      );
+                    : ((((adminOnboarding as any)?.initialParsed?.bodyKeys) || []).length > 0
+                        ? fieldsFromBodyKeys(((adminOnboarding as any)?.initialParsed?.bodyKeys) as string[])
+                        : deriveOnboardingFieldsFromCurl(
+                            (adminOnboarding as any)
+                              .initialSetupCurlCommand as string
+                          ));
                 if (setupFields && setupFields.length > 0) {
                   const setupKeys = (setupFields || []).map((f: any) => f.key);
                   const data = existingOnboarding?.collectedData || {};
@@ -3483,16 +3518,19 @@ Keep the response conversational and helpful, focusing on providing value before
         let summary = "";
         const setupConfigured =
           !!(onboardingConfig as any)?.initialSetupCurlCommand ||
-          (((onboardingConfig as any)?.initialFields || []).length > 0);
+          (((onboardingConfig as any)?.initialFields || []).length > 0) ||
+          ((((onboardingConfig as any)?.initialParsed?.bodyKeys) || []).length > 0);
         const inSetupPhase = sessionDoc?.phase === "initial_setup";
         const hasRegisteredUser = !!sessionDoc?.registeredUserId;
         if (inSetupPhase && setupConfigured && hasRegisteredUser) {
           const setupFields =
             ((onboardingConfig as any)?.initialFields || []).length > 0
               ? ((onboardingConfig as any).initialFields as any[])
-              : deriveOnboardingFieldsFromCurl(
-                  (onboardingConfig as any).initialSetupCurlCommand as string
-                );
+              : ((((onboardingConfig as any)?.initialParsed?.bodyKeys) || []).length > 0
+                  ? fieldsFromBodyKeys(((onboardingConfig as any)?.initialParsed?.bodyKeys) as string[])
+                  : deriveOnboardingFieldsFromCurl(
+                      (onboardingConfig as any).initialSetupCurlCommand as string
+                    ));
           if (!setupFields || setupFields.length === 0) {
             const resp = {
               mainText:
@@ -3755,7 +3793,8 @@ Keep the response conversational and helpful, focusing on providing value before
           if (
             isSuccess2 &&
             ((onboardingConfig as any)?.initialSetupCurlCommand ||
-              ((onboardingConfig as any)?.initialFields || []).length > 0)
+              ((onboardingConfig as any)?.initialFields || []).length > 0 ||
+              ((((onboardingConfig as any)?.initialParsed?.bodyKeys) || []).length > 0))
           ) {
             const tokenFromReg2 = extractApiKeyFromResponse(
               result2.responseBody,
@@ -3770,9 +3809,11 @@ Keep the response conversational and helpful, focusing on providing value before
             const setupFields =
               ((onboardingConfig as any)?.initialFields || []).length > 0
                 ? ((onboardingConfig as any).initialFields as any[])
-                : deriveOnboardingFieldsFromCurl(
-                    (onboardingConfig as any).initialSetupCurlCommand as string
-                  );
+                : ((((onboardingConfig as any)?.initialParsed?.bodyKeys) || []).length > 0
+                    ? fieldsFromBodyKeys(((onboardingConfig as any)?.initialParsed?.bodyKeys) as string[])
+                    : deriveOnboardingFieldsFromCurl(
+                        (onboardingConfig as any).initialSetupCurlCommand as string
+                      ));
             if (!setupFields || setupFields.length === 0) {
               const resp = {
                 mainText:
@@ -3867,7 +3908,8 @@ Keep the response conversational and helpful, focusing on providing value before
             isSuccess2 &&
             !(
               (onboardingConfig as any)?.initialSetupCurlCommand ||
-              ((onboardingConfig as any)?.initialFields || []).length > 0
+              ((onboardingConfig as any)?.initialFields || []).length > 0 ||
+              ((((onboardingConfig as any)?.initialParsed?.bodyKeys) || []).length > 0)
             )
           ) {
             try {
@@ -3928,6 +3970,62 @@ Keep the response conversational and helpful, focusing on providing value before
                   onboardingAction: "ask_next",
                 };
                 return NextResponse.json(resp2, { headers: corsHeaders });
+              }
+              const defaultFields2 = [
+                { key: "company", label: "Company", required: false, type: "text" },
+                { key: "phone", label: "Phone", required: false, type: "phone" },
+                { key: "consent", label: "Consent", required: false, type: "checkbox" },
+              ];
+              const collectedKeys3 = Object.keys(sessionDoc.collectedData || {});
+              const tokenFromReg3 = extractApiKeyFromResponse(
+                result2.responseBody,
+                onboardingConfig
+              );
+              const autoFilled3: Record<string, any> = {};
+              const fieldsNoToken3 = defaultFields2.filter((f: any) => {
+                const k = (f.key || "").toString();
+                const kl = k.toLowerCase();
+                if (kl === "password" || kl === "pass") return false;
+                if (isApiKeyFieldKey(k, onboardingConfig)) {
+                  if (tokenFromReg3) autoFilled3[k] = tokenFromReg3;
+                  return false;
+                }
+                return !collectedKeys3.includes(k);
+              });
+              if (fieldsNoToken3.length > 0) {
+                await sessionsCollection.updateOne(
+                  { sessionId },
+                  {
+                    $set: {
+                      status: "in_progress",
+                      stageIndex: 0,
+                      fields: fieldsNoToken3,
+                      phase: "initial_setup",
+                      updatedAt: now,
+                      collectedData: {
+                        ...(sessionDoc?.collectedData || {}),
+                        ...autoFilled3,
+                      },
+                    },
+                  }
+                );
+                const firstField3 = fieldsNoToken3[0];
+                const docContext3 = await buildOnboardingDocContext(
+                  firstField3,
+                  adminId || undefined,
+                  onboardingConfig?.initialSetupDocsUrl
+                );
+                const intro3 =
+                  "✅ Registration complete. Now, let’s finish initial setup.";
+                const prompt3 = promptForField(firstField3);
+                const resp3 = {
+                  mainText: `${docContext3 ? `${docContext3}\n\n` : ""}${intro3}\n\n${prompt3}`,
+                  buttons: [],
+                  emailPrompt: "",
+                  showBookingCalendar: false,
+                  onboardingAction: "ask_next",
+                };
+                return NextResponse.json(resp3, { headers: corsHeaders });
               }
             } catch {}
             const externalMsg2 =
