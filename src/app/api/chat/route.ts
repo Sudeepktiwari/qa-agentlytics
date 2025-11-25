@@ -4724,37 +4724,132 @@ Keep the response conversational and helpful, focusing on providing value before
 
         const nextField = sessionDoc.fields[nextIndex];
         if (!nextField) {
-          // Move to confirmation step after last field
-          await sessionsCollection.updateOne(
-            { sessionId },
-            { $set: { status: "ready_to_submit", updatedAt: now } }
-          );
-          const regName =
-            (updatedData as any).name ||
-            ((updatedData as any).firstName
-              ? (updatedData as any).lastName
-                ? `${(updatedData as any).firstName} ${
-                    (updatedData as any).lastName
-                  }`
-                : (updatedData as any).firstName
-              : undefined);
-          const regEmail = (updatedData as any).email;
-          const hasPwd =
-            (updatedData as any).password || (updatedData as any).pass;
-          const lines: string[] = [];
-          if (regName) lines.push(`- name: ${regName}`);
-          if (regEmail) lines.push(`- email: ${regEmail}`);
-          if (hasPwd) lines.push(`- password: ***`);
-          const summary = lines.join("\n");
+          let result: any = { success: false, error: "Missing adminId" };
+          if (adminId) {
+            result = await onboardingService.register(updatedData, adminId);
+          }
+          const isSuccess =
+            !!result?.success ||
+            (typeof result?.status === "number" &&
+              result.status >= 200 &&
+              result.status < 300) ||
+            result?.ok === true;
+          if (isSuccess) {
+            try {
+              await sessionsCollection.updateOne(
+                { sessionId },
+                {
+                  $set: {
+                    registeredUserId: result.userId || null,
+                    updatedAt: now,
+                  },
+                }
+              );
+            } catch {}
+            const setupFields =
+              ((onboardingConfig as any)?.initialFields || []).length > 0
+                ? ((onboardingConfig as any).initialFields as any[])
+                : [];
+            if (setupFields.length === 0) {
+              const resp = {
+                mainText:
+                  "Initial setup fields are not configured. Please configure required fields in admin settings.",
+                buttons: ["Contact Admin"],
+                emailPrompt: "",
+                showBookingCalendar: false,
+                onboardingAction: "error",
+              };
+              return NextResponse.json(resp, { headers: corsHeaders });
+            }
+            const tokenFromReg = extractApiKeyFromResponse(
+              result.responseBody,
+              onboardingConfig
+            );
+            const collectedKeys = Object.keys(sessionDoc.collectedData || {});
+            const autoFilled: Record<string, any> = {};
+            const fieldsNoToken = (setupFields || []).filter((f: any) => {
+              const k = (f.key || "").toString();
+              const kl = k.toLowerCase();
+              if (kl === "password" || kl === "pass") return false;
+              if (tokenFromReg && isApiKeyFieldKey(k, onboardingConfig)) {
+                autoFilled[k] = tokenFromReg;
+                return false;
+              }
+              return !collectedKeys.includes(k);
+            });
+            await sessionsCollection.updateOne(
+              { sessionId },
+              {
+                $set: {
+                  status: "in_progress",
+                  stageIndex: 0,
+                  fields: fieldsNoToken,
+                  phase: "initial_setup",
+                  updatedAt: now,
+                  collectedData: {
+                    ...(sessionDoc?.collectedData || {}),
+                    ...autoFilled,
+                  },
+                },
+              }
+            );
+            const firstField = fieldsNoToken[0];
+            if (!firstField) {
+              await sessionsCollection.updateOne(
+                { sessionId },
+                {
+                  $set: {
+                    status: "ready_to_submit",
+                    stageIndex: 0,
+                    fields: [],
+                    phase: "initial_setup",
+                    updatedAt: now,
+                  },
+                }
+              );
+              const setupKeys = (setupFields || []).map((f: any) => f.key);
+              const data = sessionDoc.collectedData || {};
+              const limited = Object.fromEntries(
+                Object.entries(data).filter(([k]) => setupKeys.includes(k))
+              );
+              const summary = buildSafeSummary(limited);
+              const resp = {
+                mainText: `✅ Registration complete. Initial setup is ready to submit with your setup details.\n\nDetails:\n${summary}\n\nReply "Confirm" to submit initial setup, or "Edit" to change any detail.`,
+                buttons: ["Confirm and Submit", "Edit Details"],
+                emailPrompt: "",
+                showBookingCalendar: false,
+                onboardingAction: "confirm",
+              };
+              return NextResponse.json(resp, { headers: corsHeaders });
+            }
+            const docContext = await buildOnboardingDocContext(
+              firstField,
+              adminId || undefined,
+              onboardingConfig?.initialSetupDocsUrl
+            );
+            const intro =
+              "✅ Registration complete. Now, let’s finish initial setup.";
+            const prompt = promptForField(firstField);
+            const resp = {
+              mainText: `${
+                docContext ? `${docContext}\n\n` : ""
+              }${intro}\n\n${prompt}`,
+              buttons: [],
+              emailPrompt: "",
+              showBookingCalendar: false,
+              onboardingAction: "ask_next",
+            };
+            return NextResponse.json(resp, { headers: corsHeaders });
+          }
           const resp = {
-            mainText: `Great, I’ve got everything. Please review:\n${summary}\n\nReply "Confirm" to submit, or say "Edit" to change any detail.`,
-            buttons:
-              sessionDoc.phase === "change_email_only"
-                ? ["Confirm and Submit"]
-                : ["Confirm and Submit", "Edit Details"],
+            mainText:
+              String(
+                result?.error || "Registration failed. Please try again."
+              ) || "Registration failed. Please try again.",
+            buttons: ["Try Again"],
             emailPrompt: "",
             showBookingCalendar: false,
-            onboardingAction: "confirm",
+            onboardingAction: "error",
           };
           return NextResponse.json(resp, { headers: corsHeaders });
         }
@@ -4814,21 +4909,131 @@ Keep the response conversational and helpful, focusing on providing value before
 
     const nextField = sessionDoc.fields[nextIndex];
     if (!nextField) {
-      // Move to confirmation step after last field
-      await sessionsCollection.updateOne(
-        { sessionId },
-        { $set: { status: "ready_to_submit", updatedAt: now } }
-      );
-      const summary = buildSafeSummary(updated || {});
+      let result: any = { success: false, error: "Missing adminId" };
+      if (adminId) {
+        result = await onboardingService.register(updated, adminId);
+      }
+      const isSuccess =
+        !!result?.success ||
+        (typeof result?.status === "number" &&
+          result.status >= 200 &&
+          result.status < 300) ||
+        result?.ok === true;
+      if (isSuccess) {
+        try {
+          await sessionsCollection.updateOne(
+            { sessionId },
+            {
+              $set: {
+                registeredUserId: result.userId || null,
+                updatedAt: now,
+              },
+            }
+          );
+        } catch {}
+        const setupFields =
+          ((onboardingConfig as any)?.initialFields || []).length > 0
+            ? ((onboardingConfig as any).initialFields as any[])
+            : [];
+        if (setupFields.length === 0) {
+          const resp = {
+            mainText:
+              "Initial setup fields are not configured. Please configure required fields in admin settings.",
+            buttons: ["Contact Admin"],
+            emailPrompt: "",
+            showBookingCalendar: false,
+            onboardingAction: "error",
+          };
+          return NextResponse.json(resp, { headers: corsHeaders });
+        }
+        const tokenFromReg = extractApiKeyFromResponse(
+          result.responseBody,
+          onboardingConfig
+        );
+        const collectedKeys = Object.keys(sessionDoc.collectedData || {});
+        const autoFilled: Record<string, any> = {};
+        const fieldsNoToken = (setupFields || []).filter((f: any) => {
+          const k = (f.key || "").toString();
+          const kl = k.toLowerCase();
+          if (kl === "password" || kl === "pass") return false;
+          if (tokenFromReg && isApiKeyFieldKey(k, onboardingConfig)) {
+            autoFilled[k] = tokenFromReg;
+            return false;
+          }
+          return !collectedKeys.includes(k);
+        });
+        await sessionsCollection.updateOne(
+          { sessionId },
+          {
+            $set: {
+              status: "in_progress",
+              stageIndex: 0,
+              fields: fieldsNoToken,
+              phase: "initial_setup",
+              updatedAt: now,
+              collectedData: {
+                ...(sessionDoc?.collectedData || {}),
+                ...autoFilled,
+              },
+            },
+          }
+        );
+        const firstField = fieldsNoToken[0];
+        if (!firstField) {
+          await sessionsCollection.updateOne(
+            { sessionId },
+            {
+              $set: {
+                status: "ready_to_submit",
+                stageIndex: 0,
+                fields: [],
+                phase: "initial_setup",
+                updatedAt: now,
+              },
+            }
+          );
+          const setupKeys = (setupFields || []).map((f: any) => f.key);
+          const data = sessionDoc.collectedData || {};
+          const limited = Object.fromEntries(
+            Object.entries(data).filter(([k]) => setupKeys.includes(k))
+          );
+          const summary = buildSafeSummary(limited);
+          const resp = {
+            mainText: `✅ Registration complete. Initial setup is ready to submit with your setup details.\n\nDetails:\n${summary}\n\nReply "Confirm" to submit initial setup, or "Edit" to change any detail.`,
+            buttons: ["Confirm and Submit", "Edit Details"],
+            emailPrompt: "",
+            showBookingCalendar: false,
+            onboardingAction: "confirm",
+          };
+          return NextResponse.json(resp, { headers: corsHeaders });
+        }
+        const docContext = await buildOnboardingDocContext(
+          firstField,
+          adminId || undefined,
+          onboardingConfig?.initialSetupDocsUrl
+        );
+        const intro =
+          "✅ Registration complete. Now, let’s finish initial setup.";
+        const prompt = promptForField(firstField);
+        const resp = {
+          mainText: `${
+            docContext ? `${docContext}\n\n` : ""
+          }${intro}\n\n${prompt}`,
+          buttons: [],
+          emailPrompt: "",
+          showBookingCalendar: false,
+          onboardingAction: "ask_next",
+        };
+        return NextResponse.json(resp, { headers: corsHeaders });
+      }
       const resp = {
-        mainText: `Great, I’ve got everything. Please review:\n${summary}\n\nReply "Confirm" to submit, or say "Edit" to change any detail.`,
-        buttons:
-          sessionDoc.phase === "change_email_only"
-            ? ["Confirm and Submit"]
-            : ["Confirm and Submit", "Edit Details"],
+        mainText:
+          String(result?.error || "Registration failed. Please try again.") ||
+          "Registration failed. Please try again.",
+        buttons: ["Try Again"],
         emailPrompt: "",
         showBookingCalendar: false,
-        onboardingAction: "confirm",
+        onboardingAction: "error",
       };
       return NextResponse.json(resp, { headers: corsHeaders });
     }
