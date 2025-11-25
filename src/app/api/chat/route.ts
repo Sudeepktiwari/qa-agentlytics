@@ -4257,18 +4257,69 @@ Keep the response conversational and helpful, focusing on providing value before
           }
           return NextResponse.json(resp, { headers: corsHeaders });
         } else if (/\b(edit|change|update)\b/.test(lower)) {
+          const inSetup = sessionDoc?.phase === "initial_setup";
+          let editFields: any[] = [];
+          if (inSetup) {
+            const setupFields =
+              ((onboardingConfig as any)?.initialFields || []).length > 0
+                ? ((onboardingConfig as any).initialFields as any[])
+                : ((((onboardingConfig as any)?.initialParsed?.bodyKeys) || []).length > 0
+                    ? fieldsFromBodyKeys(((onboardingConfig as any)?.initialParsed?.bodyKeys) as string[])
+                    : (((onboardingConfig as any)?.initialHeaderFields || []).length > 0
+                        ? ((onboardingConfig as any).initialHeaderFields as any[])
+                        : (((onboardingConfig as any)?.initialResponseFieldDefs || []).length > 0
+                            ? ((onboardingConfig as any).initialResponseFieldDefs as any[])
+                            : deriveOnboardingFieldsFromCurl(
+                                (onboardingConfig as any).initialSetupCurlCommand as string
+                              ))));
+            editFields = setupFields || [];
+          } else {
+            editFields = Array.isArray(sessionDoc.fields) && sessionDoc.fields.length > 0
+              ? sessionDoc.fields
+              : ((onboardingConfig as any)?.registrationFields || []);
+          }
+          // Filter out sensitive fields and ensure there is at least one field to edit
+          const filteredEditFields = (editFields || []).filter((f: any) => {
+            const k = (f?.key || "").toString();
+            const kl = k.toLowerCase();
+            return kl !== "password" && kl !== "pass";
+          });
+          // If nothing to edit, fall back to confirm message with summary
+          if (!filteredEditFields || filteredEditFields.length === 0) {
+            const summary = buildSafeSummary(sessionDoc.collectedData || {});
+            const resp = {
+              mainText: `There are no editable setup fields configured.\n\nCurrent details:\n${summary}`,
+              buttons: ["Confirm and Submit"],
+              emailPrompt: "",
+              showBookingCalendar: false,
+              onboardingAction: "confirm",
+            } as any;
+            return NextResponse.json(resp, { headers: corsHeaders });
+          }
           await sessionsCollection.updateOne(
             { sessionId },
-            { $set: { status: "in_progress", stageIndex: 0, updatedAt: now } }
+            {
+              $set: {
+                status: "in_progress",
+                stageIndex: 0,
+                fields: filteredEditFields,
+                updatedAt: now,
+                phase: inSetup ? "initial_setup" : (sessionDoc?.phase || "registration"),
+              },
+            }
           );
-          const prompt = promptForField(sessionDoc.fields[0]);
+          const firstField = filteredEditFields[0];
           const docContext = await buildOnboardingDocContext(
-            sessionDoc.fields[0],
+            firstField,
             adminId || undefined,
-            onboardingConfig?.docsUrl
+            inSetup ? (onboardingConfig?.initialSetupDocsUrl || onboardingConfig?.docsUrl) : onboardingConfig?.docsUrl
           );
+          const prompt = promptForField(firstField);
+          const intro = inSetup
+            ? "Let’s update your initial setup details."
+            : "Let’s update your registration details.";
           const resp = {
-            mainText: `${docContext ? `${docContext}\n\n` : ""}${prompt}`,
+            mainText: `${docContext ? `${docContext}\n\n` : ""}${intro}\n\n${prompt}`,
             buttons: [],
             emailPrompt: "",
             showBookingCalendar: false,
