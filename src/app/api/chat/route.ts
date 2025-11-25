@@ -2285,9 +2285,9 @@ export async function POST(req: NextRequest) {
               existingOnboarding?.collectedData || {}
             );
             const isExistingUser =
-              /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists/i.test(
-                lastError || ""
-              );
+              (typeof (existingOnboarding as any)?.lastErrorHttpStatus === "number" &&
+                ((((existingOnboarding as any).lastErrorHttpStatus) === 409) || (((existingOnboarding as any).lastErrorHttpStatus) === 422))) ||
+              /duplicate\s*email|email\s*.*already\s*(?:exists|registered)/i.test(lastError || "");
             const resp = {
               mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\n${
                 isExistingUser
@@ -2573,9 +2573,9 @@ Based on the page context, create an intelligent contextual question that demons
               existingOnboarding?.collectedData || {}
             );
             const isExistingUser =
-              /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists/i.test(
-                lastError || ""
-              );
+              (typeof (existingOnboarding as any)?.lastErrorHttpStatus === "number" &&
+                ((((existingOnboarding as any).lastErrorHttpStatus) === 409) || (((existingOnboarding as any).lastErrorHttpStatus) === 422))) ||
+              /duplicate\s*email|email\s*.*already\s*(?:exists|registered)/i.test(lastError || "");
             const resp = {
               mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\n${
                 isExistingUser
@@ -3078,6 +3078,7 @@ Keep the response conversational and helpful, focusing on providing value before
                 updatedAt: now,
                 registeredUserId: result.userId || null,
                 lastError: result.error || null,
+                lastErrorHttpStatus: typeof result.status === "number" ? result.status : null,
               },
             }
           );
@@ -3443,9 +3444,8 @@ Keep the response conversational and helpful, focusing on providing value before
           if (!result.success) {
             const errTxt = (result.error || "") + (detailsText || "");
             const isExistingUser =
-              /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists/i.test(
-                errTxt
-              );
+              (typeof result.status === "number" && (result.status === 409 || result.status === 422)) ||
+              /duplicate\s*email|email\s*.*already\s*(?:exists|registered)/i.test(errTxt);
             if (isExistingUser) {
               (resp as any).buttons = ["Change Email"];
               (resp as any).onboardingAction = "error_change_email";
@@ -3504,9 +3504,9 @@ Keep the response conversational and helpful, focusing on providing value before
           if (hasPwd) lines.push(`- password: ***`);
           const summary = lines.join("\n");
           const isExistingUser =
-            /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists/i.test(
-              lastError || ""
-            );
+            (typeof (sessionDoc as any)?.lastErrorHttpStatus === "number" &&
+              (((sessionDoc as any).lastErrorHttpStatus === 409) || ((sessionDoc as any).lastErrorHttpStatus === 422))) ||
+            /duplicate\s*email|email\s*.*already\s*(?:exists|registered)/i.test(lastError || "");
           const resp = {
             mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\n${
               isExistingUser
@@ -4244,9 +4244,8 @@ Keep the response conversational and helpful, focusing on providing value before
           if (!isSuccess2) {
             const errTxt = (result2.error || "") + (detailsText2 || "");
             const isExistingUser =
-              /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists/i.test(
-                errTxt
-              );
+              (typeof result2.status === "number" && (result2.status === 409 || result2.status === 422)) ||
+              /duplicate\s*email|email\s*.*already\s*(?:exists|registered)/i.test(errTxt);
             if (isExistingUser) {
               (resp as any).buttons = ["Change Email"];
               (resp as any).onboardingAction = "error_change_email";
@@ -5221,23 +5220,23 @@ Extract key requirements (2-3 bullet points max, be concise):`;
               return NextResponse.json(
                 {
                   mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\n${
-                    /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists/i.test(
-                      lastError || ""
-                    )
+                    ((typeof (existingOnboarding as any)?.lastErrorHttpStatus === "number") &&
+                      ((((existingOnboarding as any).lastErrorHttpStatus) === 409) || (((existingOnboarding as any).lastErrorHttpStatus) === 422))) ||
+                    /duplicate\s*email|email\s*.*already\s*(?:exists|registered)/i.test(lastError || "")
                       ? "Please update your email to continue."
                       : 'Reply "Try Again" to resubmit, or "Edit" to change any detail.'
                   }\n\nCurrent details:\n${summary}`,
                   buttons:
-                    /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists/i.test(
-                      lastError || ""
-                    )
+                    ((typeof (existingOnboarding as any)?.lastErrorHttpStatus === "number") &&
+                      ((((existingOnboarding as any).lastErrorHttpStatus) === 409) || (((existingOnboarding as any).lastErrorHttpStatus) === 422))) ||
+                    /duplicate\s*email|email\s*.*already\s*(?:exists|registered)/i.test(lastError || "")
                       ? ["Change Email"]
                       : ["Try Again", "Edit Details"],
                   emailPrompt: "",
                   onboardingAction:
-                    /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists/i.test(
-                      lastError || ""
-                    )
+                    ((typeof (existingOnboarding as any)?.lastErrorHttpStatus === "number") &&
+                      ((((existingOnboarding as any).lastErrorHttpStatus) === 409) || (((existingOnboarding as any).lastErrorHttpStatus) === 422))) ||
+                    /duplicate\s*email|email\s*.*already\s*(?:exists|registered)/i.test(lastError || "")
                       ? "error_change_email"
                       : "error",
                 },
@@ -6857,23 +6856,23 @@ What specific information are you looking for? I'm here to help guide you throug
             return NextResponse.json(
               {
                 mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\n${
-                  /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists/i.test(
-                    lastError || ""
-                  )
+                  ((typeof (existingOnboarding as any)?.lastErrorHttpStatus === "number") &&
+                    ((((existingOnboarding as any).lastErrorHttpStatus) === 409) || (((existingOnboarding as any).lastErrorHttpStatus) === 422))) ||
+                  /duplicate\s*email|email\s*.*already\s*(?:exists|registered)/i.test(lastError || "")
                     ? "Please update your email to continue."
                     : 'Reply "Try Again" to resubmit, or "Edit" to change any detail.'
                 }\n\nCurrent details:\n${summary}`,
                 buttons:
-                  /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists/i.test(
-                    lastError || ""
-                  )
+                  ((typeof (existingOnboarding as any)?.lastErrorHttpStatus === "number") &&
+                    ((((existingOnboarding as any).lastErrorHttpStatus) === 409) || (((existingOnboarding as any).lastErrorHttpStatus) === 422))) ||
+                  /duplicate\s*email|email\s*.*already\s*(?:exists|registered)/i.test(lastError || "")
                     ? ["Change Email"]
                     : ["Try Again", "Edit Details"],
                 emailPrompt: "",
                 onboardingAction:
-                  /already\s*(?:exists|registered)|duplicate\s*email|email\s*.*exists/i.test(
-                    lastError || ""
-                  )
+                  ((typeof (existingOnboarding as any)?.lastErrorHttpStatus === "number") &&
+                    ((((existingOnboarding as any).lastErrorHttpStatus) === 409) || (((existingOnboarding as any).lastErrorHttpStatus) === 422))) ||
+                  /duplicate\s*email|email\s*.*already\s*(?:exists|registered)/i.test(lastError || "")
                     ? "error_change_email"
                     : "error",
               },

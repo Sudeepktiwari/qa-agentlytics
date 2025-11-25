@@ -3911,6 +3911,9 @@ export async function GET(request: Request) {
           line-height: 1.4;
           flex: 1;
         \`;
+        if (ONBOARDING_ONLY) {
+          bubbleDiv.style.maxWidth = '70%';
+        }
         bubbleDiv.innerHTML = formatMessageText(msg.content);
         
         const userAvatar = createAvatar(false);
