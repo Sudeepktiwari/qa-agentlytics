@@ -2221,7 +2221,9 @@ export async function POST(req: NextRequest) {
               const setupConfigured =
                 !!(adminOnboarding as any)?.initialSetupCurlCommand ||
                 (((adminOnboarding as any)?.initialFields || []).length > 0) ||
-                ((((adminOnboarding as any)?.initialParsed?.bodyKeys) || []).length > 0);
+                ((((adminOnboarding as any)?.initialParsed?.bodyKeys) || []).length > 0) ||
+                (((adminOnboarding as any)?.initialHeaderFields || []).length > 0) ||
+                (((adminOnboarding as any)?.initialResponseFieldDefs || []).length > 0);
               const inSetupPhase = existingOnboarding?.phase === "initial_setup";
               const hasRegisteredUser = !!existingOnboarding?.registeredUserId;
               if (inSetupPhase && setupConfigured && hasRegisteredUser) {
@@ -2230,10 +2232,14 @@ export async function POST(req: NextRequest) {
                     ? ((adminOnboarding as any).initialFields as any[])
                     : ((((adminOnboarding as any)?.initialParsed?.bodyKeys) || []).length > 0
                         ? fieldsFromBodyKeys(((adminOnboarding as any)?.initialParsed?.bodyKeys) as string[])
-                        : deriveOnboardingFieldsFromCurl(
-                            (adminOnboarding as any)
-                              .initialSetupCurlCommand as string
-                          ));
+                        : (((adminOnboarding as any)?.initialHeaderFields || []).length > 0
+                            ? ((adminOnboarding as any).initialHeaderFields as any[])
+                            : (((adminOnboarding as any)?.initialResponseFieldDefs || []).length > 0
+                                ? ((adminOnboarding as any).initialResponseFieldDefs as any[])
+                                : deriveOnboardingFieldsFromCurl(
+                                    (adminOnboarding as any)
+                                      .initialSetupCurlCommand as string
+                                  ))));
                 if (setupFields && setupFields.length > 0) {
                   const setupKeys = (setupFields || []).map((f: any) => f.key);
                   const data = existingOnboarding?.collectedData || {};
@@ -2834,7 +2840,10 @@ Keep the response conversational and helpful, focusing on providing value before
     }
   }
 
-  const onboardingEnabled = !!onboardingConfig?.enabled;
+  const widgetModeEarly =
+    req.headers.get("x-widget-mode") || req.headers.get("X-Widget-Mode") || "";
+  const isOnboardingOnlyEarly = widgetModeEarly === "onboarding_only";
+  const onboardingEnabled = !!onboardingConfig?.enabled || isOnboardingOnlyEarly;
   const sessionsCollection = db.collection("onboardingSessions");
   const existingOnboarding = await sessionsCollection.findOne({ sessionId });
   const isOnboardingAction =
@@ -2845,9 +2854,8 @@ Keep the response conversational and helpful, focusing on providing value before
           existingOnboarding?.status || ""
         )));
   // Respect widget mode header to gate onboarding in the chat API
-  const widgetMode =
-    req.headers.get("x-widget-mode") || req.headers.get("X-Widget-Mode") || "";
-  const isOnboardingOnly = widgetMode === "onboarding_only";
+  const widgetMode = widgetModeEarly;
+  const isOnboardingOnly = isOnboardingOnlyEarly;
   const bundlePreview = parseRegistrationBundle(question || "");
   const bundleCount = [
     bundlePreview.email,
@@ -3519,7 +3527,9 @@ Keep the response conversational and helpful, focusing on providing value before
         const setupConfigured =
           !!(onboardingConfig as any)?.initialSetupCurlCommand ||
           (((onboardingConfig as any)?.initialFields || []).length > 0) ||
-          ((((onboardingConfig as any)?.initialParsed?.bodyKeys) || []).length > 0);
+          ((((onboardingConfig as any)?.initialParsed?.bodyKeys) || []).length > 0) ||
+          (((onboardingConfig as any)?.initialHeaderFields || []).length > 0) ||
+          (((onboardingConfig as any)?.initialResponseFieldDefs || []).length > 0);
         const inSetupPhase = sessionDoc?.phase === "initial_setup";
         const hasRegisteredUser = !!sessionDoc?.registeredUserId;
         if (inSetupPhase && setupConfigured && hasRegisteredUser) {
@@ -3528,9 +3538,13 @@ Keep the response conversational and helpful, focusing on providing value before
               ? ((onboardingConfig as any).initialFields as any[])
               : ((((onboardingConfig as any)?.initialParsed?.bodyKeys) || []).length > 0
                   ? fieldsFromBodyKeys(((onboardingConfig as any)?.initialParsed?.bodyKeys) as string[])
-                  : deriveOnboardingFieldsFromCurl(
-                      (onboardingConfig as any).initialSetupCurlCommand as string
-                    ));
+                  : (((onboardingConfig as any)?.initialHeaderFields || []).length > 0
+                      ? ((onboardingConfig as any).initialHeaderFields as any[])
+                      : (((onboardingConfig as any)?.initialResponseFieldDefs || []).length > 0
+                          ? ((onboardingConfig as any).initialResponseFieldDefs as any[])
+                          : deriveOnboardingFieldsFromCurl(
+                              (onboardingConfig as any).initialSetupCurlCommand as string
+                            ))));
           if (!setupFields || setupFields.length === 0) {
             const resp = {
               mainText:
@@ -3794,7 +3808,9 @@ Keep the response conversational and helpful, focusing on providing value before
             isSuccess2 &&
             ((onboardingConfig as any)?.initialSetupCurlCommand ||
               ((onboardingConfig as any)?.initialFields || []).length > 0 ||
-              ((((onboardingConfig as any)?.initialParsed?.bodyKeys) || []).length > 0))
+              ((((onboardingConfig as any)?.initialParsed?.bodyKeys) || []).length > 0) ||
+              (((onboardingConfig as any)?.initialHeaderFields || []).length > 0) ||
+              (((onboardingConfig as any)?.initialResponseFieldDefs || []).length > 0))
           ) {
             const tokenFromReg2 = extractApiKeyFromResponse(
               result2.responseBody,
@@ -3811,9 +3827,13 @@ Keep the response conversational and helpful, focusing on providing value before
                 ? ((onboardingConfig as any).initialFields as any[])
                 : ((((onboardingConfig as any)?.initialParsed?.bodyKeys) || []).length > 0
                     ? fieldsFromBodyKeys(((onboardingConfig as any)?.initialParsed?.bodyKeys) as string[])
-                    : deriveOnboardingFieldsFromCurl(
-                        (onboardingConfig as any).initialSetupCurlCommand as string
-                      ));
+                    : (((onboardingConfig as any)?.initialHeaderFields || []).length > 0
+                        ? ((onboardingConfig as any).initialHeaderFields as any[])
+                        : (((onboardingConfig as any)?.initialResponseFieldDefs || []).length > 0
+                            ? ((onboardingConfig as any).initialResponseFieldDefs as any[])
+                            : deriveOnboardingFieldsFromCurl(
+                                (onboardingConfig as any).initialSetupCurlCommand as string
+                              ))));
             if (!setupFields || setupFields.length === 0) {
               const resp = {
                 mainText:
