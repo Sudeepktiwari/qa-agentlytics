@@ -578,11 +578,14 @@ function labelFromKey(key: string): string {
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-function typeFromKey(key: string): "text" | "email" | "phone" | "select" | "checkbox" {
+function typeFromKey(
+  key: string
+): "text" | "email" | "phone" | "select" | "checkbox" {
   const kl = key.toLowerCase();
   if (kl.includes("email")) return "email";
   if (kl.includes("phone")) return "phone";
-  if (kl.includes("consent") || kl.includes("agree") || kl.includes("terms")) return "checkbox";
+  if (kl.includes("consent") || kl.includes("agree") || kl.includes("terms"))
+    return "checkbox";
   return "text";
 }
 
@@ -628,7 +631,6 @@ function mergeFields(base: any[], extra: any[]): any[] {
   }
   return Array.from(map.values());
 }
-
 
 function promptForField(field: any): string {
   const base = field.label || field.key;
@@ -2220,23 +2222,31 @@ export async function POST(req: NextRequest) {
               ).onboarding;
               const setupConfigured =
                 !!(adminOnboarding as any)?.initialSetupCurlCommand ||
-                (((adminOnboarding as any)?.initialFields || []).length > 0) ||
-                ((((adminOnboarding as any)?.initialParsed?.bodyKeys) || []).length > 0) ||
-                (((adminOnboarding as any)?.initialHeaderFields || []).length > 0);
-              const inSetupPhase = existingOnboarding?.phase === "initial_setup";
+                ((adminOnboarding as any)?.initialFields || []).length > 0 ||
+                ((adminOnboarding as any)?.initialParsed?.bodyKeys || [])
+                  .length > 0 ||
+                ((adminOnboarding as any)?.initialHeaderFields || []).length >
+                  0;
+              const inSetupPhase =
+                existingOnboarding?.phase === "initial_setup";
               const hasRegisteredUser = !!existingOnboarding?.registeredUserId;
               if (inSetupPhase && setupConfigured && hasRegisteredUser) {
                 const setupFields =
                   ((adminOnboarding as any)?.initialFields || []).length > 0
                     ? ((adminOnboarding as any).initialFields as any[])
-                    : ((((adminOnboarding as any)?.initialParsed?.bodyKeys) || []).length > 0
-                        ? fieldsFromBodyKeys(((adminOnboarding as any)?.initialParsed?.bodyKeys) as string[])
-                        : (((adminOnboarding as any)?.initialHeaderFields || []).length > 0
-                            ? ((adminOnboarding as any).initialHeaderFields as any[])
-                            : deriveOnboardingFieldsFromCurl(
-                                (adminOnboarding as any)
-                                  .initialSetupCurlCommand as string
-                              )));
+                    : ((adminOnboarding as any)?.initialParsed?.bodyKeys || [])
+                        .length > 0
+                    ? fieldsFromBodyKeys(
+                        (adminOnboarding as any)?.initialParsed
+                          ?.bodyKeys as string[]
+                      )
+                    : ((adminOnboarding as any)?.initialHeaderFields || [])
+                        .length > 0
+                    ? ((adminOnboarding as any).initialHeaderFields as any[])
+                    : deriveOnboardingFieldsFromCurl(
+                        (adminOnboarding as any)
+                          .initialSetupCurlCommand as string
+                      );
                 if (setupFields && setupFields.length > 0) {
                   const setupKeys = (setupFields || []).map((f: any) => f.key);
                   const data = existingOnboarding?.collectedData || {};
@@ -2282,9 +2292,13 @@ export async function POST(req: NextRequest) {
               existingOnboarding?.collectedData || {}
             );
             const isExistingUser =
-              (typeof (existingOnboarding as any)?.lastErrorHttpStatus === "number" &&
-                ((((existingOnboarding as any).lastErrorHttpStatus) === 409) || (((existingOnboarding as any).lastErrorHttpStatus) === 422))) ||
-              /duplicate\s*email|email\s*.*already\s*(?:exists|registered)/i.test(lastError || "");
+              (typeof (existingOnboarding as any)?.lastErrorHttpStatus ===
+                "number" &&
+                ((existingOnboarding as any).lastErrorHttpStatus === 409 ||
+                  (existingOnboarding as any).lastErrorHttpStatus === 422)) ||
+              /duplicate\s*email|email\s*.*already\s*(?:exists|registered)/i.test(
+                lastError || ""
+              );
             const resp = {
               mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\n${
                 isExistingUser
@@ -2570,9 +2584,13 @@ Based on the page context, create an intelligent contextual question that demons
               existingOnboarding?.collectedData || {}
             );
             const isExistingUser =
-              (typeof (existingOnboarding as any)?.lastErrorHttpStatus === "number" &&
-                ((((existingOnboarding as any).lastErrorHttpStatus) === 409) || (((existingOnboarding as any).lastErrorHttpStatus) === 422))) ||
-              /duplicate\s*email|email\s*.*already\s*(?:exists|registered)/i.test(lastError || "");
+              (typeof (existingOnboarding as any)?.lastErrorHttpStatus ===
+                "number" &&
+                ((existingOnboarding as any).lastErrorHttpStatus === 409 ||
+                  (existingOnboarding as any).lastErrorHttpStatus === 422)) ||
+              /duplicate\s*email|email\s*.*already\s*(?:exists|registered)/i.test(
+                lastError || ""
+              );
             const resp = {
               mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\n${
                 isExistingUser
@@ -2842,9 +2860,21 @@ Keep the response conversational and helpful, focusing on providing value before
   const isOnboardingOnlyEarly = widgetModeEarly === "onboarding_only";
   if (!adminId && isOnboardingOnlyEarly) {
     adminId = "default-admin";
-    console.log(`[DEBUG] Onboarding-only mode: using fallback adminId: ${adminId}`);
+    console.log(
+      `[DEBUG] Onboarding-only mode: using fallback adminId: ${adminId}`
+    );
+    try {
+      const settings = await getAdminSettings(adminId);
+      onboardingConfig = settings.onboarding;
+    } catch (e) {
+      console.log(
+        "[Onboarding] Failed to load fallback admin onboarding settings:",
+        e
+      );
+    }
   }
-  const onboardingEnabled = !!onboardingConfig?.enabled || isOnboardingOnlyEarly;
+  const onboardingEnabled =
+    !!onboardingConfig?.enabled || isOnboardingOnlyEarly;
   const sessionsCollection = db.collection("onboardingSessions");
   const existingOnboarding = await sessionsCollection.findOne({ sessionId });
   const isOnboardingAction =
@@ -2945,7 +2975,9 @@ Keep the response conversational and helpful, focusing on providing value before
 
     // Start if no session or completed/cancelled
     let sessionDoc: any = existingOnboarding;
-    const isCompletedOrCancelled = sessionDoc ? ["completed", "cancelled"].includes(sessionDoc.status) : false;
+    const isCompletedOrCancelled = sessionDoc
+      ? ["completed", "cancelled"].includes(sessionDoc.status)
+      : false;
     if (!sessionDoc || isCompletedOrCancelled) {
       const doc = {
         sessionId,
@@ -3079,7 +3111,8 @@ Keep the response conversational and helpful, focusing on providing value before
                 updatedAt: now,
                 registeredUserId: result.userId || null,
                 lastError: result.error || null,
-                lastErrorHttpStatus: typeof result.status === "number" ? result.status : null,
+                lastErrorHttpStatus:
+                  typeof result.status === "number" ? result.status : null,
               },
             }
           );
@@ -3185,13 +3218,18 @@ Keep the response conversational and helpful, focusing on providing value before
             const setupFields =
               ((onboardingConfig as any)?.initialFields || []).length > 0
                 ? ((onboardingConfig as any).initialFields as any[])
-                : ((((onboardingConfig as any)?.initialParsed?.bodyKeys) || []).length > 0
-                    ? fieldsFromBodyKeys(((onboardingConfig as any)?.initialParsed?.bodyKeys) as string[])
-                    : (((onboardingConfig as any)?.initialHeaderFields || []).length > 0
-                        ? ((onboardingConfig as any).initialHeaderFields as any[])
-                        : deriveOnboardingFieldsFromCurl(
-                            (onboardingConfig as any).initialSetupCurlCommand as string
-                          )));
+                : ((onboardingConfig as any)?.initialParsed?.bodyKeys || [])
+                    .length > 0
+                ? fieldsFromBodyKeys(
+                    (onboardingConfig as any)?.initialParsed
+                      ?.bodyKeys as string[]
+                  )
+                : ((onboardingConfig as any)?.initialHeaderFields || [])
+                    .length > 0
+                ? ((onboardingConfig as any).initialHeaderFields as any[])
+                : deriveOnboardingFieldsFromCurl(
+                    (onboardingConfig as any).initialSetupCurlCommand as string
+                  );
             if (!setupFields || setupFields.length === 0) {
               const resp = {
                 mainText:
@@ -3286,14 +3324,16 @@ Keep the response conversational and helpful, focusing on providing value before
             isSuccess &&
             !(
               (onboardingConfig as any)?.initialSetupCurlCommand ||
-              (((onboardingConfig as any)?.initialFields || []).length > 0) ||
-              ((((onboardingConfig as any)?.initialParsed?.bodyKeys) || []).length > 0) ||
-              (((onboardingConfig as any)?.initialHeaderFields || []).length > 0)
+              ((onboardingConfig as any)?.initialFields || []).length > 0 ||
+              ((onboardingConfig as any)?.initialParsed?.bodyKeys || [])
+                .length > 0 ||
+              ((onboardingConfig as any)?.initialHeaderFields || []).length > 0
             )
           ) {
             try {
               const preferredDocs =
-                onboardingConfig?.initialSetupDocsUrl || onboardingConfig?.docsUrl;
+                onboardingConfig?.initialSetupDocsUrl ||
+                onboardingConfig?.docsUrl;
               const docDerived = await inferFieldsFromDocs(
                 adminId || undefined,
                 preferredDocs,
@@ -3304,7 +3344,9 @@ Keep the response conversational and helpful, focusing on providing value before
                   result.responseBody,
                   onboardingConfig
                 );
-                const collectedKeys = Object.keys(sessionDoc.collectedData || {});
+                const collectedKeys = Object.keys(
+                  sessionDoc.collectedData || {}
+                );
                 const autoFilled: Record<string, any> = {};
                 const fieldsNoToken = (docDerived || []).filter((f: any) => {
                   const k = (f.key || "").toString();
@@ -3343,7 +3385,9 @@ Keep the response conversational and helpful, focusing on providing value before
                     "✅ Registration complete. Now, let’s finish initial setup.";
                   const prompt = promptForField(firstField);
                   const resp = {
-                    mainText: `${docContext ? `${docContext}\n\n` : ""}${intro}\n\n${prompt}`,
+                    mainText: `${
+                      docContext ? `${docContext}\n\n` : ""
+                    }${intro}\n\n${prompt}`,
                     buttons: [],
                     emailPrompt: "",
                     showBookingCalendar: false,
@@ -3353,6 +3397,82 @@ Keep the response conversational and helpful, focusing on providing value before
                 }
               }
             } catch {}
+            if (isOnboardingOnly) {
+              const fallbackFields = [
+                {
+                  key: "websiteId",
+                  label: "Website ID",
+                  required: true,
+                  type: "text",
+                },
+                {
+                  key: "workspaceId",
+                  label: "Workspace ID",
+                  required: false,
+                  type: "text",
+                },
+                {
+                  key: "api_key",
+                  label: "API Key",
+                  required: true,
+                  type: "text",
+                },
+              ];
+              const collectedKeys = Object.keys(sessionDoc.collectedData || {});
+              const tokenFromReg2 = extractApiKeyFromResponse(
+                result.responseBody,
+                onboardingConfig
+              );
+              const autoFilled2: Record<string, any> = {};
+              const fieldsNoToken2 = (fallbackFields || []).filter((f: any) => {
+                const k = (f.key || "").toString();
+                const kl = k.toLowerCase();
+                if (kl === "password" || kl === "pass") return false;
+                if (isApiKeyFieldKey(k, onboardingConfig)) {
+                  if (tokenFromReg2) autoFilled2[k] = tokenFromReg2;
+                  return false;
+                }
+                return !collectedKeys.includes(k);
+              });
+              if (fieldsNoToken2.length > 0) {
+                await sessionsCollection.updateOne(
+                  { sessionId },
+                  {
+                    $set: {
+                      status: "in_progress",
+                      stageIndex: 0,
+                      fields: fieldsNoToken2,
+                      phase: "initial_setup",
+                      updatedAt: now,
+                      collectedData: {
+                        ...(sessionDoc?.collectedData || {}),
+                        ...autoFilled2,
+                      },
+                    },
+                  }
+                );
+                const firstField = fieldsNoToken2[0];
+                const docContext2 = await buildOnboardingDocContext(
+                  firstField,
+                  adminId || undefined,
+                  onboardingConfig?.initialSetupDocsUrl ||
+                    onboardingConfig?.docsUrl
+                );
+                const intro2 =
+                  "✅ Registration complete. Now, let’s finish initial setup.";
+                const prompt2 = promptForField(firstField);
+                const resp2 = {
+                  mainText: `${
+                    docContext2 ? `${docContext2}\n\n` : ""
+                  }${intro2}\n\n${prompt2}`,
+                  buttons: [],
+                  emailPrompt: "",
+                  showBookingCalendar: false,
+                  onboardingAction: "ask_next",
+                };
+                return NextResponse.json(resp2, { headers: corsHeaders });
+              }
+            }
             const resp = {
               mainText: "✅ You’re all set! Your account has been created.",
               buttons: ["Log In", "Talk to Sales"],
@@ -3513,8 +3633,11 @@ Keep the response conversational and helpful, focusing on providing value before
           if (!result.success) {
             const errTxt = (result.error || "") + (detailsText || "");
             const isExistingUser =
-              (typeof result.status === "number" && (result.status === 409 || result.status === 422)) ||
-              /duplicate\s*email|email\s*.*already\s*(?:exists|registered)/i.test(errTxt);
+              (typeof result.status === "number" &&
+                (result.status === 409 || result.status === 422)) ||
+              /duplicate\s*email|email\s*.*already\s*(?:exists|registered)/i.test(
+                errTxt
+              );
             if (isExistingUser) {
               (resp as any).buttons = ["Change Email"];
               (resp as any).onboardingAction = "error_change_email";
@@ -3574,8 +3697,11 @@ Keep the response conversational and helpful, focusing on providing value before
           const summary = lines.join("\n");
           const isExistingUser =
             (typeof (sessionDoc as any)?.lastErrorHttpStatus === "number" &&
-              (((sessionDoc as any).lastErrorHttpStatus === 409) || ((sessionDoc as any).lastErrorHttpStatus === 422))) ||
-            /duplicate\s*email|email\s*.*already\s*(?:exists|registered)/i.test(lastError || "");
+              ((sessionDoc as any).lastErrorHttpStatus === 409 ||
+                (sessionDoc as any).lastErrorHttpStatus === 422)) ||
+            /duplicate\s*email|email\s*.*already\s*(?:exists|registered)/i.test(
+              lastError || ""
+            );
           const resp = {
             mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\n${
               isExistingUser
@@ -3595,22 +3721,27 @@ Keep the response conversational and helpful, focusing on providing value before
         let summary = "";
         const setupConfigured =
           !!(onboardingConfig as any)?.initialSetupCurlCommand ||
-          (((onboardingConfig as any)?.initialFields || []).length > 0) ||
-          ((((onboardingConfig as any)?.initialParsed?.bodyKeys) || []).length > 0) ||
-          (((onboardingConfig as any)?.initialHeaderFields || []).length > 0);
+          ((onboardingConfig as any)?.initialFields || []).length > 0 ||
+          ((onboardingConfig as any)?.initialParsed?.bodyKeys || []).length >
+            0 ||
+          ((onboardingConfig as any)?.initialHeaderFields || []).length > 0;
         const inSetupPhase = sessionDoc?.phase === "initial_setup";
         const hasRegisteredUser = !!sessionDoc?.registeredUserId;
         if (inSetupPhase && setupConfigured && hasRegisteredUser) {
           const setupFields =
             ((onboardingConfig as any)?.initialFields || []).length > 0
               ? ((onboardingConfig as any).initialFields as any[])
-              : ((((onboardingConfig as any)?.initialParsed?.bodyKeys) || []).length > 0
-                  ? fieldsFromBodyKeys(((onboardingConfig as any)?.initialParsed?.bodyKeys) as string[])
-                  : (((onboardingConfig as any)?.initialHeaderFields || []).length > 0
-                      ? ((onboardingConfig as any).initialHeaderFields as any[])
-                      : deriveOnboardingFieldsFromCurl(
-                          (onboardingConfig as any).initialSetupCurlCommand as string
-                        )));
+              : ((onboardingConfig as any)?.initialParsed?.bodyKeys || [])
+                  .length > 0
+              ? fieldsFromBodyKeys(
+                  (onboardingConfig as any)?.initialParsed?.bodyKeys as string[]
+                )
+              : ((onboardingConfig as any)?.initialHeaderFields || []).length >
+                0
+              ? ((onboardingConfig as any).initialHeaderFields as any[])
+              : deriveOnboardingFieldsFromCurl(
+                  (onboardingConfig as any).initialSetupCurlCommand as string
+                );
           if (!setupFields || setupFields.length === 0) {
             const resp = {
               mainText:
@@ -3674,21 +3805,28 @@ Keep the response conversational and helpful, focusing on providing value before
               if (
                 sessionDoc?.phase === "initial_setup" &&
                 ((onboardingConfig as any)?.initialSetupCurlCommand ||
-                  (((onboardingConfig as any)?.initialFields || []).length > 0) ||
-                  ((((onboardingConfig as any)?.initialParsed?.bodyKeys) || []).length > 0) ||
-                  (((onboardingConfig as any)?.initialHeaderFields || []).length > 0))
+                  ((onboardingConfig as any)?.initialFields || []).length > 0 ||
+                  ((onboardingConfig as any)?.initialParsed?.bodyKeys || [])
+                    .length > 0 ||
+                  ((onboardingConfig as any)?.initialHeaderFields || [])
+                    .length > 0)
               ) {
                 const setupFields =
                   ((onboardingConfig as any)?.initialFields || []).length > 0
                     ? ((onboardingConfig as any).initialFields as any[])
-                    : ((((onboardingConfig as any)?.initialParsed?.bodyKeys) || []).length > 0
-                        ? fieldsFromBodyKeys(((onboardingConfig as any)?.initialParsed?.bodyKeys) as string[])
-                        : (((onboardingConfig as any)?.initialHeaderFields || []).length > 0
-                            ? ((onboardingConfig as any).initialHeaderFields as any[])
-                            : deriveOnboardingFieldsFromCurl(
-                                (onboardingConfig as any)
-                                  .initialSetupCurlCommand as string
-                              )));
+                    : ((onboardingConfig as any)?.initialParsed?.bodyKeys || [])
+                        .length > 0
+                    ? fieldsFromBodyKeys(
+                        (onboardingConfig as any)?.initialParsed
+                          ?.bodyKeys as string[]
+                      )
+                    : ((onboardingConfig as any)?.initialHeaderFields || [])
+                        .length > 0
+                    ? ((onboardingConfig as any).initialHeaderFields as any[])
+                    : deriveOnboardingFieldsFromCurl(
+                        (onboardingConfig as any)
+                          .initialSetupCurlCommand as string
+                      );
                 if (!setupFields || setupFields.length === 0) {
                   const resp = {
                     mainText:
@@ -3880,8 +4018,9 @@ Keep the response conversational and helpful, focusing on providing value before
             isSuccess2 &&
             ((onboardingConfig as any)?.initialSetupCurlCommand ||
               ((onboardingConfig as any)?.initialFields || []).length > 0 ||
-              ((((onboardingConfig as any)?.initialParsed?.bodyKeys) || []).length > 0) ||
-              (((onboardingConfig as any)?.initialHeaderFields || []).length > 0))
+              ((onboardingConfig as any)?.initialParsed?.bodyKeys || [])
+                .length > 0 ||
+              ((onboardingConfig as any)?.initialHeaderFields || []).length > 0)
           ) {
             const tokenFromReg2 = extractApiKeyFromResponse(
               result2.responseBody,
@@ -3896,13 +4035,18 @@ Keep the response conversational and helpful, focusing on providing value before
             const setupFields =
               ((onboardingConfig as any)?.initialFields || []).length > 0
                 ? ((onboardingConfig as any).initialFields as any[])
-                : ((((onboardingConfig as any)?.initialParsed?.bodyKeys) || []).length > 0
-                    ? fieldsFromBodyKeys(((onboardingConfig as any)?.initialParsed?.bodyKeys) as string[])
-                    : (((onboardingConfig as any)?.initialHeaderFields || []).length > 0
-                        ? ((onboardingConfig as any).initialHeaderFields as any[])
-                        : deriveOnboardingFieldsFromCurl(
-                            (onboardingConfig as any).initialSetupCurlCommand as string
-                          )));
+                : ((onboardingConfig as any)?.initialParsed?.bodyKeys || [])
+                    .length > 0
+                ? fieldsFromBodyKeys(
+                    (onboardingConfig as any)?.initialParsed
+                      ?.bodyKeys as string[]
+                  )
+                : ((onboardingConfig as any)?.initialHeaderFields || [])
+                    .length > 0
+                ? ((onboardingConfig as any).initialHeaderFields as any[])
+                : deriveOnboardingFieldsFromCurl(
+                    (onboardingConfig as any).initialSetupCurlCommand as string
+                  );
             if (!setupFields || setupFields.length === 0) {
               const resp = {
                 mainText:
@@ -3998,12 +4142,14 @@ Keep the response conversational and helpful, focusing on providing value before
             !(
               (onboardingConfig as any)?.initialSetupCurlCommand ||
               ((onboardingConfig as any)?.initialFields || []).length > 0 ||
-              ((((onboardingConfig as any)?.initialParsed?.bodyKeys) || []).length > 0)
+              ((onboardingConfig as any)?.initialParsed?.bodyKeys || [])
+                .length > 0
             )
           ) {
             try {
               const preferredDocs =
-                onboardingConfig?.initialSetupDocsUrl || onboardingConfig?.docsUrl;
+                onboardingConfig?.initialSetupDocsUrl ||
+                onboardingConfig?.docsUrl;
               const docDerived2 = await inferFieldsFromDocs(
                 adminId || undefined,
                 preferredDocs,
@@ -4014,7 +4160,9 @@ Keep the response conversational and helpful, focusing on providing value before
                   result2.responseBody,
                   onboardingConfig
                 );
-                const collectedKeys2 = Object.keys(sessionDoc.collectedData || {});
+                const collectedKeys2 = Object.keys(
+                  sessionDoc.collectedData || {}
+                );
                 const autoFilled2: Record<string, any> = {};
                 const fieldsNoToken2 = (docDerived2 || []).filter((f: any) => {
                   const k = (f.key || "").toString();
@@ -4052,7 +4200,9 @@ Keep the response conversational and helpful, focusing on providing value before
                   "✅ Registration complete. Now, let’s finish initial setup.";
                 const prompt2 = promptForField(firstField2);
                 const resp2 = {
-                  mainText: `${docContext2 ? `${docContext2}\n\n` : ""}${intro2}\n\n${prompt2}`,
+                  mainText: `${
+                    docContext2 ? `${docContext2}\n\n` : ""
+                  }${intro2}\n\n${prompt2}`,
                   buttons: [],
                   emailPrompt: "",
                   showBookingCalendar: false,
@@ -4061,11 +4211,28 @@ Keep the response conversational and helpful, focusing on providing value before
                 return NextResponse.json(resp2, { headers: corsHeaders });
               }
               const defaultFields2 = [
-                { key: "company", label: "Company", required: false, type: "text" },
-                { key: "phone", label: "Phone", required: false, type: "phone" },
-                { key: "consent", label: "Consent", required: false, type: "checkbox" },
+                {
+                  key: "company",
+                  label: "Company",
+                  required: false,
+                  type: "text",
+                },
+                {
+                  key: "phone",
+                  label: "Phone",
+                  required: false,
+                  type: "phone",
+                },
+                {
+                  key: "consent",
+                  label: "Consent",
+                  required: false,
+                  type: "checkbox",
+                },
               ];
-              const collectedKeys3 = Object.keys(sessionDoc.collectedData || {});
+              const collectedKeys3 = Object.keys(
+                sessionDoc.collectedData || {}
+              );
               const tokenFromReg3 = extractApiKeyFromResponse(
                 result2.responseBody,
                 onboardingConfig
@@ -4108,7 +4275,9 @@ Keep the response conversational and helpful, focusing on providing value before
                   "✅ Registration complete. Now, let’s finish initial setup.";
                 const prompt3 = promptForField(firstField3);
                 const resp3 = {
-                  mainText: `${docContext3 ? `${docContext3}\n\n` : ""}${intro3}\n\n${prompt3}`,
+                  mainText: `${
+                    docContext3 ? `${docContext3}\n\n` : ""
+                  }${intro3}\n\n${prompt3}`,
                   buttons: [],
                   emailPrompt: "",
                   showBookingCalendar: false,
@@ -4313,8 +4482,11 @@ Keep the response conversational and helpful, focusing on providing value before
           if (!isSuccess2) {
             const errTxt = (result2.error || "") + (detailsText2 || "");
             const isExistingUser =
-              (typeof result2.status === "number" && (result2.status === 409 || result2.status === 422)) ||
-              /duplicate\s*email|email\s*.*already\s*(?:exists|registered)/i.test(errTxt);
+              (typeof result2.status === "number" &&
+                (result2.status === 409 || result2.status === 422)) ||
+              /duplicate\s*email|email\s*.*already\s*(?:exists|registered)/i.test(
+                errTxt
+              );
             if (isExistingUser) {
               (resp as any).buttons = ["Change Email"];
               (resp as any).onboardingAction = "error_change_email";
@@ -4328,18 +4500,24 @@ Keep the response conversational and helpful, focusing on providing value before
             const setupFields =
               ((onboardingConfig as any)?.initialFields || []).length > 0
                 ? ((onboardingConfig as any).initialFields as any[])
-                : ((((onboardingConfig as any)?.initialParsed?.bodyKeys) || []).length > 0
-                    ? fieldsFromBodyKeys(((onboardingConfig as any)?.initialParsed?.bodyKeys) as string[])
-                    : (((onboardingConfig as any)?.initialHeaderFields || []).length > 0
-                        ? ((onboardingConfig as any).initialHeaderFields as any[])
-                        : deriveOnboardingFieldsFromCurl(
-                            (onboardingConfig as any).initialSetupCurlCommand as string
-                          )));
+                : ((onboardingConfig as any)?.initialParsed?.bodyKeys || [])
+                    .length > 0
+                ? fieldsFromBodyKeys(
+                    (onboardingConfig as any)?.initialParsed
+                      ?.bodyKeys as string[]
+                  )
+                : ((onboardingConfig as any)?.initialHeaderFields || [])
+                    .length > 0
+                ? ((onboardingConfig as any).initialHeaderFields as any[])
+                : deriveOnboardingFieldsFromCurl(
+                    (onboardingConfig as any).initialSetupCurlCommand as string
+                  );
             editFields = setupFields || [];
           } else {
-            editFields = Array.isArray(sessionDoc.fields) && sessionDoc.fields.length > 0
-              ? sessionDoc.fields
-              : ((onboardingConfig as any)?.registrationFields || []);
+            editFields =
+              Array.isArray(sessionDoc.fields) && sessionDoc.fields.length > 0
+                ? sessionDoc.fields
+                : (onboardingConfig as any)?.registrationFields || [];
           }
           // Filter out sensitive fields and ensure there is at least one field to edit
           const filteredEditFields = (editFields || []).filter((f: any) => {
@@ -4367,7 +4545,9 @@ Keep the response conversational and helpful, focusing on providing value before
                 stageIndex: 0,
                 fields: filteredEditFields,
                 updatedAt: now,
-                phase: inSetup ? "initial_setup" : (sessionDoc?.phase || "registration"),
+                phase: inSetup
+                  ? "initial_setup"
+                  : sessionDoc?.phase || "registration",
               },
             }
           );
@@ -4375,14 +4555,19 @@ Keep the response conversational and helpful, focusing on providing value before
           const docContext = await buildOnboardingDocContext(
             firstField,
             adminId || undefined,
-            inSetup ? (onboardingConfig?.initialSetupDocsUrl || onboardingConfig?.docsUrl) : onboardingConfig?.docsUrl
+            inSetup
+              ? onboardingConfig?.initialSetupDocsUrl ||
+                  onboardingConfig?.docsUrl
+              : onboardingConfig?.docsUrl
           );
           const prompt = promptForField(firstField);
           const intro = inSetup
             ? "Let’s update your initial setup details."
             : "Let’s update your registration details.";
           const resp = {
-            mainText: `${docContext ? `${docContext}\n\n` : ""}${intro}\n\n${prompt}`,
+            mainText: `${
+              docContext ? `${docContext}\n\n` : ""
+            }${intro}\n\n${prompt}`,
             buttons: [],
             emailPrompt: "",
             showBookingCalendar: false,
@@ -5338,23 +5523,41 @@ Extract key requirements (2-3 bullet points max, be concise):`;
               return NextResponse.json(
                 {
                   mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\n${
-                    ((typeof (existingOnboarding as any)?.lastErrorHttpStatus === "number") &&
-                      ((((existingOnboarding as any).lastErrorHttpStatus) === 409) || (((existingOnboarding as any).lastErrorHttpStatus) === 422))) ||
-                    /duplicate\s*email|email\s*.*already\s*(?:exists|registered)/i.test(lastError || "")
+                    (typeof (existingOnboarding as any)?.lastErrorHttpStatus ===
+                      "number" &&
+                      ((existingOnboarding as any).lastErrorHttpStatus ===
+                        409 ||
+                        (existingOnboarding as any).lastErrorHttpStatus ===
+                          422)) ||
+                    /duplicate\s*email|email\s*.*already\s*(?:exists|registered)/i.test(
+                      lastError || ""
+                    )
                       ? "Please update your email to continue."
                       : 'Reply "Try Again" to resubmit, or "Edit" to change any detail.'
                   }\n\nCurrent details:\n${summary}`,
                   buttons:
-                    ((typeof (existingOnboarding as any)?.lastErrorHttpStatus === "number") &&
-                      ((((existingOnboarding as any).lastErrorHttpStatus) === 409) || (((existingOnboarding as any).lastErrorHttpStatus) === 422))) ||
-                    /duplicate\s*email|email\s*.*already\s*(?:exists|registered)/i.test(lastError || "")
+                    (typeof (existingOnboarding as any)?.lastErrorHttpStatus ===
+                      "number" &&
+                      ((existingOnboarding as any).lastErrorHttpStatus ===
+                        409 ||
+                        (existingOnboarding as any).lastErrorHttpStatus ===
+                          422)) ||
+                    /duplicate\s*email|email\s*.*already\s*(?:exists|registered)/i.test(
+                      lastError || ""
+                    )
                       ? ["Change Email"]
                       : ["Try Again", "Edit Details"],
                   emailPrompt: "",
                   onboardingAction:
-                    ((typeof (existingOnboarding as any)?.lastErrorHttpStatus === "number") &&
-                      ((((existingOnboarding as any).lastErrorHttpStatus) === 409) || (((existingOnboarding as any).lastErrorHttpStatus) === 422))) ||
-                    /duplicate\s*email|email\s*.*already\s*(?:exists|registered)/i.test(lastError || "")
+                    (typeof (existingOnboarding as any)?.lastErrorHttpStatus ===
+                      "number" &&
+                      ((existingOnboarding as any).lastErrorHttpStatus ===
+                        409 ||
+                        (existingOnboarding as any).lastErrorHttpStatus ===
+                          422)) ||
+                    /duplicate\s*email|email\s*.*already\s*(?:exists|registered)/i.test(
+                      lastError || ""
+                    )
                       ? "error_change_email"
                       : "error",
                 },
@@ -6974,23 +7177,38 @@ What specific information are you looking for? I'm here to help guide you throug
             return NextResponse.json(
               {
                 mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\n${
-                  ((typeof (existingOnboarding as any)?.lastErrorHttpStatus === "number") &&
-                    ((((existingOnboarding as any).lastErrorHttpStatus) === 409) || (((existingOnboarding as any).lastErrorHttpStatus) === 422))) ||
-                  /duplicate\s*email|email\s*.*already\s*(?:exists|registered)/i.test(lastError || "")
+                  (typeof (existingOnboarding as any)?.lastErrorHttpStatus ===
+                    "number" &&
+                    ((existingOnboarding as any).lastErrorHttpStatus === 409 ||
+                      (existingOnboarding as any).lastErrorHttpStatus ===
+                        422)) ||
+                  /duplicate\s*email|email\s*.*already\s*(?:exists|registered)/i.test(
+                    lastError || ""
+                  )
                     ? "Please update your email to continue."
                     : 'Reply "Try Again" to resubmit, or "Edit" to change any detail.'
                 }\n\nCurrent details:\n${summary}`,
                 buttons:
-                  ((typeof (existingOnboarding as any)?.lastErrorHttpStatus === "number") &&
-                    ((((existingOnboarding as any).lastErrorHttpStatus) === 409) || (((existingOnboarding as any).lastErrorHttpStatus) === 422))) ||
-                  /duplicate\s*email|email\s*.*already\s*(?:exists|registered)/i.test(lastError || "")
+                  (typeof (existingOnboarding as any)?.lastErrorHttpStatus ===
+                    "number" &&
+                    ((existingOnboarding as any).lastErrorHttpStatus === 409 ||
+                      (existingOnboarding as any).lastErrorHttpStatus ===
+                        422)) ||
+                  /duplicate\s*email|email\s*.*already\s*(?:exists|registered)/i.test(
+                    lastError || ""
+                  )
                     ? ["Change Email"]
                     : ["Try Again", "Edit Details"],
                 emailPrompt: "",
                 onboardingAction:
-                  ((typeof (existingOnboarding as any)?.lastErrorHttpStatus === "number") &&
-                    ((((existingOnboarding as any).lastErrorHttpStatus) === 409) || (((existingOnboarding as any).lastErrorHttpStatus) === 422))) ||
-                  /duplicate\s*email|email\s*.*already\s*(?:exists|registered)/i.test(lastError || "")
+                  (typeof (existingOnboarding as any)?.lastErrorHttpStatus ===
+                    "number" &&
+                    ((existingOnboarding as any).lastErrorHttpStatus === 409 ||
+                      (existingOnboarding as any).lastErrorHttpStatus ===
+                        422)) ||
+                  /duplicate\s*email|email\s*.*already\s*(?:exists|registered)/i.test(
+                    lastError || ""
+                  )
                     ? "error_change_email"
                     : "error",
               },
