@@ -3889,19 +3889,29 @@ Keep the response conversational and helpful, focusing on providing value before
               sessionDoc?.phase === "initial_setup" &&
               !!sessionDoc?.registeredUserId
             ) {
-              if (requiresAuth2 && !hasAuthToken2) {
-                const resp = {
-                  mainText:
-                    "Authentication required to submit initial setup. Please log in or provide credentials.",
-                  buttons: ["Log In", "Edit Details"],
-                  emailPrompt: "",
-                  showBookingCalendar: false,
-                  onboardingAction: "auth_required",
-                };
-                return NextResponse.json(resp, { headers: corsHeaders });
+              let tokenToUse = sessionDoc?.externalAuthToken;
+              if (requiresAuth2 && !tokenToUse) {
+                try {
+                  const authRes2 = await onboardingService.authenticate(
+                    { ...(sessionDoc.collectedData || {}) },
+                    adminId!
+                  );
+                  if (authRes2.success && authRes2.token) {
+                    tokenToUse = authRes2.token;
+                    await sessionsCollection.updateOne(
+                      { sessionId },
+                      {
+                        $set: {
+                          externalAuthToken: tokenToUse,
+                          updatedAt: now,
+                        },
+                      }
+                    );
+                  }
+                } catch {}
               }
               result2 = await onboardingService.initialSetup(
-                { ...payload, __authToken: sessionDoc?.externalAuthToken },
+                { ...payload, __authToken: tokenToUse },
                 adminId
               );
             } else {

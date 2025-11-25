@@ -45,6 +45,8 @@ export interface OnboardingSettings {
   // Post-registration initial setup: docs and canonical cURL
   initialSetupDocsUrl?: string;
   initialSetupCurlCommand?: string;
+  initialSetupEndpoint?: string;
+  initialSetupMethod?: "POST" | "PUT" | "PATCH";
   fields?: OnboardingField[];
   registrationFields?: OnboardingField[];
   registrationHeaders?: string[];
@@ -147,6 +149,8 @@ export const DEFAULT_ADMIN_SETTINGS: Omit<AdminSettings, "_id" | "adminId" | "em
     authCurlCommand: undefined,
     initialSetupDocsUrl: undefined,
     initialSetupCurlCommand: undefined,
+    initialSetupEndpoint: undefined,
+    initialSetupMethod: "POST",
     fields: undefined,
     registrationFields: undefined,
     registrationHeaders: undefined,

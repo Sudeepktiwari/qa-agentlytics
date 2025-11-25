@@ -69,6 +69,28 @@ function resolveUrl(settings: OnboardingSettings): string | null {
   return null;
 }
 
+function resolveInitialSetupUrl(settings: OnboardingSettings): string | null {
+  const base = settings.apiBaseUrl || "";
+  const endpoint = (settings as any).initialSetupEndpoint || "";
+  const isAbsolute = (u: string) => /^https?:\/\//i.test(u);
+  if (endpoint && isAbsolute(endpoint)) {
+    return endpoint;
+  }
+  if (base && isAbsolute(base) && endpoint) {
+    try {
+      const baseStr = base.endsWith("/") ? base : base + "/";
+      const epStr = endpoint.startsWith("/") ? endpoint.slice(1) : endpoint;
+      return baseStr + epStr;
+    } catch {
+      return null;
+    }
+  }
+  if (base && isAbsolute(base) && !endpoint) {
+    return base;
+  }
+  return null;
+}
+
 function extractDocKeys(chunks: string[]): string[] {
   const keys = new Set<string>();
   for (const chunk of chunks) {
@@ -394,15 +416,8 @@ export const onboardingService = {
     ];
 
     const hasCurl = !!onboarding.initialSetupCurlCommand;
-    if (!hasCurl) {
-      return {
-        success: false,
-        error: "Initial setup cURL not configured",
-        status: 400,
-      };
-    }
     let url: string | null = null;
-    let method = onboarding.method || "POST";
+    let method = ((onboarding as any).initialSetupMethod as any) || onboarding.method || "POST";
     let headers: Record<string, string> = {};
     let contentType: "application/json" | "application/x-www-form-urlencoded" =
       "application/json";
@@ -562,7 +577,70 @@ export const onboardingService = {
         };
       }
     }
-    return { success: false, error: "Initial setup failed", status: 500 };
+
+    const resolved = resolveInitialSetupUrl(onboarding);
+    url = resolved;
+    if (!url) {
+      return { success: false, error: "Initial setup URL not configured", status: 400 };
+    }
+    const setupFields = ((onboarding as any).initialFields as any[]) || [];
+    if (!Array.isArray(setupFields) || setupFields.length === 0) {
+      return { success: false, error: "Initial setup fields not configured", status: 400 };
+    }
+    const headerKey = onboarding.authHeaderKey || "Authorization";
+    headers = {
+      "Content-Type": contentType,
+      ...buildAuthHeader(onboarding),
+    };
+    const tokenFromFlow = (data as any).__authToken as string | undefined;
+    if (tokenFromFlow) {
+      headers[headerKey] = headerKey.toLowerCase() === "authorization" ? `Bearer ${tokenFromFlow}` : tokenFromFlow;
+    }
+    if (onboarding.idempotencyKeyField && data[onboarding.idempotencyKeyField]) {
+      headers["Idempotency-Key"] = String(data[onboarding.idempotencyKeyField]);
+    }
+    const allowedKeys = new Set(setupFields.map((f: any) => String(f.key || "")));
+    const filtered: Record<string, any> = {};
+    for (const [k, v] of Object.entries(payload)) {
+      if (allowedKeys.has(String(k))) filtered[k] = v;
+    }
+    const safePayloadForLog = Object.fromEntries(
+      Object.entries(filtered).map(([k, v]) => {
+        const kl = k.toLowerCase();
+        const isSensitive = redactKeys.some((rk) => kl.includes(rk));
+        return [k, isSensitive ? "***" : v];
+      })
+    );
+    try {
+      const body = JSON.stringify(filtered);
+      const res = await fetch(url as string, { method, headers, body });
+      const bodyText = await res.text();
+      let parsedResp: any = null;
+      try {
+        parsedResp = JSON.parse(bodyText);
+      } catch {
+        parsedResp = bodyText;
+      }
+      if (!res.ok) {
+        const errorMessage = (() => {
+          if (typeof parsedResp === "string") return parsedResp;
+          if (!parsedResp || typeof parsedResp !== "object") return "Initial setup failed";
+          const topLevel = (parsedResp as any).error || (parsedResp as any).message;
+          const nestedData = (parsedResp as any)?.data?.error || (parsedResp as any)?.data?.message;
+          const arrayErrors = Array.isArray((parsedResp as any)?.errors)
+            ? (parsedResp as any).errors
+                .map((e: any) => e?.message || e)
+                .filter(Boolean)
+                .join("; ")
+            : undefined;
+          return topLevel || nestedData || arrayErrors || "Initial setup failed";
+        })();
+        return { success: false, error: errorMessage, status: res.status, responseBody: parsedResp };
+      }
+      return { success: true, status: res.status, responseBody: parsedResp };
+    } catch (error: any) {
+      return { success: false, error: error?.message || String(error), status: 500 };
+    }
   },
   async register(
     data: Record<string, any>,
