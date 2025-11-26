@@ -30,7 +30,7 @@ export async function GET(request: Request) {
 
   var state = (function() {
     const raw = localStorage.getItem('onboarding_state');
-    try { return raw ? JSON.parse(raw) : { step: 'registration', reg: {}, authToken: null, init: {} }; } catch { return { step: 'registration', reg: {}, authToken: null, init: {} }; }
+    try { return raw ? JSON.parse(raw) : { step: 'registration', reg: {}, authToken: null, authApiKey: null, init: {} }; } catch { return { step: 'registration', reg: {}, authToken: null, authApiKey: null, init: {} }; }
   })();
   function saveState() { localStorage.setItem('onboarding_state', JSON.stringify(state)); }
 
@@ -66,6 +66,15 @@ export async function GET(request: Request) {
     clearActions();
     addBubble('bot', "Welcome! Let's get you set up.");
     addBubble('bot', 'Please share your name, email, and a password (min 8 chars). You can type them together like: Name: Jane, Email: jane@example.com, Password: hunter2');
+    var wrap = document.createElement('div');
+    wrap.style.cssText = 'margin:8px 0;padding:10px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;display:grid;grid-template-columns:1fr;gap:8px;';
+    var name = document.createElement('input'); name.type = 'text'; name.placeholder = 'Name'; name.value = state.reg.name || ''; name.style.cssText = 'padding:10px;border:1px solid #e5e7eb;border-radius:8px;';
+    var email = document.createElement('input'); email.type = 'email'; email.placeholder = 'Email'; email.value = state.reg.email || ''; email.style.cssText = 'padding:10px;border:1px solid #e5e7eb;border-radius:8px;';
+    var password = document.createElement('input'); password.type = 'password'; password.placeholder = 'Password (min 8 chars)'; password.value = state.reg.password || ''; password.style.cssText = 'padding:10px;border:1px solid #e5e7eb;border-radius:8px;';
+    wrap.appendChild(name); wrap.appendChild(email); wrap.appendChild(password);
+    messages.appendChild(wrap);
+    addAction('Review', function(){ state.reg = { name: name.value.trim(), email: email.value.trim(), password: password.value }; saveState(); renderRegistrationConfirm(); });
+    addAction('Submit', function(){ state.reg = { name: name.value.trim(), email: email.value.trim(), password: password.value }; saveState(); submitRegistration(); });
     if (state.reg && state.reg.name && state.reg.email && state.reg.password) { addAction('Use saved details', function(){ renderRegistrationConfirm(); }); }
     state.step = 'reg_collect'; saveState();
   }
@@ -87,7 +96,7 @@ export async function GET(request: Request) {
     const res = await fetch(API_BASE + '/api/onboarding/chat', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey }, body: JSON.stringify({ action: 'register', payload: state.reg }) });
     const data = await res.json();
     if (!data.success) { addBubble('bot', 'Registration failed: ' + (data.error || '')); addAction('Edit Details', function(){ renderRegistrationIntro(); }); return; }
-    state.authToken = data.authToken || null; saveState();
+    state.authToken = data.authToken || null; state.authApiKey = data.authApiKey || null; saveState();
     var fields = Array.isArray(data.initialFields) ? data.initialFields : [];
     renderInitialSetup(fields);
   }
@@ -96,7 +105,18 @@ export async function GET(request: Request) {
   function renderInitialSetup(fields) {
     messages.innerHTML = '';
     clearActions();
-  setupFieldsCache = Array.isArray(fields) ? fields : [];
+  setupFieldsCache = Array.isArray(fields) ? fields.filter(function(f){ return !!f && (f.required === true || f.required === 'true'); }) : [];
+  try {
+    setupFieldsCache.forEach(function(f){
+      var key = String(f.key || '');
+      var lk = key.toLowerCase();
+      if (!state.init[key]) {
+        if (lk.includes('email') && state.reg.email) { state.init[key] = state.reg.email; }
+        else if (lk.includes('name') && state.reg.name) { state.init[key] = state.reg.name; }
+      }
+    });
+    saveState();
+  } catch {}
   if (!setupFieldsCache || setupFieldsCache.length === 0) { addBubble('bot', 'Registration complete. No initial setup required.'); clearActions(); addAction('Close', function(){ container.remove(); }); state.step = 'complete'; saveState(); return; }
   addBubble('bot', "Let's complete your initial setup.");
     state.step = 'setup_collect'; saveState();
@@ -115,7 +135,7 @@ export async function GET(request: Request) {
 
   async function submitInitialSetup(fields) {
     clearActions(); addBubble('bot', 'Submitting initial setup...');
-    var payload = Object.assign({}, state.init, state.authToken ? { __authToken: state.authToken } : {});
+    var payload = Object.assign({}, state.init, state.authToken ? { __authToken: state.authToken } : {}, state.authApiKey ? { __apiKey: state.authApiKey } : {});
     const res = await fetch(API_BASE + '/api/onboarding/chat', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey }, body: JSON.stringify({ action: 'initial_setup', payload }) });
     const data = await res.json();
     if (!data.success) { addBubble('bot', 'Initial setup failed: ' + (data.error || '')); addAction('Edit Details', function(){ renderInitialSetup(fields); }); return; }
@@ -131,7 +151,7 @@ export async function GET(request: Request) {
   input.addEventListener('keydown', function(e){ if (e.key === 'Enter') { e.preventDefault(); sendBtn.click(); } });
 
   if (state.step === 'registration' && state.reg && state.reg.name && state.reg.email && state.reg.password) { renderRegistrationConfirm(); }
-  else if (state.step === 'setup_collect' || state.step === 'setup_confirm') { fetch(API_BASE + '/api/onboarding/chat', { method:'POST', headers:{ 'Content-Type': 'application/json', 'x-api-key': apiKey }, body: JSON.stringify({ action:'get_initial_fields' }) }).then(function(r){ return r.json(); }).then(function(d){ var fs = Array.isArray(d.fields)? d.fields: []; if (state.step === 'setup_confirm') { renderInitialConfirm(fs); } else { renderInitialSetup(fs); } }).catch(function(){ renderInitialSetup([]); }); }
+  else if (state.step === 'setup_collect' || state.step === 'setup_confirm') { fetch(API_BASE + '/api/onboarding/chat', { method:'POST', headers:{ 'Content-Type': 'application/json', 'x-api-key': apiKey }, body: JSON.stringify({ action:'get_initial_fields' }) }).then(function(r){ return r.json(); }).then(function(d){ var fs = Array.isArray(d.fields)? d.fields: []; var onlyReq = fs.filter(function(f){ return !!f && (f.required === true || f.required === 'true'); }); if (state.step === 'setup_confirm') { renderInitialConfirm(onlyReq); } else { renderInitialSetup(onlyReq); } }).catch(function(){ renderInitialSetup([]); }); }
   else { renderRegistrationIntro(); }
 })();
 `;

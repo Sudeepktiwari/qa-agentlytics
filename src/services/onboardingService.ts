@@ -24,6 +24,7 @@ export interface RegistrationResult {
 export interface AuthResult {
   success: boolean;
   token?: string;
+  tokenType?: "token" | "apiKey";
   error?: string;
   status?: number;
   responseBody?: any;
@@ -213,6 +214,26 @@ function applyFieldMappings(
   return out;
 }
 
+function getValueByPath(obj: any, path: string): any {
+  if (!obj || !path) return undefined;
+  const parts = path
+    .replace(/\[([^\]]+)\]/g, ".$1")
+    .split(".")
+    .filter(Boolean);
+  let cur: any = obj;
+  for (const part of parts) {
+    if (cur === null || cur === undefined) return undefined;
+    if (Array.isArray(cur)) {
+      const idx = Number(part);
+      if (Number.isNaN(idx)) return undefined;
+      cur = cur[idx];
+    } else {
+      cur = (cur as any)[part];
+    }
+  }
+  return cur;
+}
+
 export const onboardingService = {
   async authenticate(
     data: Record<string, any>,
@@ -337,8 +358,27 @@ export const onboardingService = {
       }
 
       // Try common token field names
+      let tokenType: "token" | "apiKey" | undefined;
       const token = (() => {
         if (parsedResp && typeof parsedResp === "object") {
+          const explicitTokenPath = (onboarding as any)?.authResponseMappings
+            ?.tokenPath as string | undefined;
+          const explicitApiKeyPath = (onboarding as any)?.authResponseMappings
+            ?.apiKeyPath as string | undefined;
+          if (explicitTokenPath) {
+            const v = getValueByPath(parsedResp, explicitTokenPath);
+            if (typeof v === "string" && v.length > 0) {
+              tokenType = "token";
+              return v;
+            }
+          }
+          if (explicitApiKeyPath) {
+            const v = getValueByPath(parsedResp, explicitApiKeyPath);
+            if (typeof v === "string" && v.length > 0) {
+              tokenType = "apiKey";
+              return v;
+            }
+          }
           const candidates = [
             (parsedResp as any).token,
             (parsedResp as any).access_token,
@@ -352,9 +392,26 @@ export const onboardingService = {
             (parsedResp as any)?.data?.api_key,
             (parsedResp as any)?.data?.key,
           ];
-          return candidates.find(
+          const found = candidates.find(
             (t: any) => typeof t === "string" && t.length > 0
           );
+          if (found) {
+            const lowerKeys = Object.keys(parsedResp as any).map((k) =>
+              k.toLowerCase()
+            );
+            const lowerDataKeys = Object.keys(
+              ((parsedResp as any)?.data || {}) as any
+            ).map((k) => k.toLowerCase());
+            const isApiKey =
+              lowerKeys.includes("apikey") ||
+              lowerKeys.includes("api_key") ||
+              lowerKeys.includes("key") ||
+              lowerDataKeys.includes("apikey") ||
+              lowerDataKeys.includes("api_key") ||
+              lowerDataKeys.includes("key");
+            tokenType = isApiKey ? "apiKey" : "token";
+          }
+          return found;
         }
         return undefined;
       })();
@@ -379,6 +436,7 @@ export const onboardingService = {
         success: true,
         status: res.status,
         token,
+        tokenType,
         responseBody: parsedResp,
       };
     } catch (error: any) {
@@ -417,7 +475,10 @@ export const onboardingService = {
 
     const hasCurl = !!onboarding.initialSetupCurlCommand;
     let url: string | null = null;
-    let method = ((onboarding as any).initialSetupMethod as any) || onboarding.method || "POST";
+    let method =
+      ((onboarding as any).initialSetupMethod as any) ||
+      onboarding.method ||
+      "POST";
     let headers: Record<string, string> = {};
     let contentType: "application/json" | "application/x-www-form-urlencoded" =
       "application/json";
@@ -435,15 +496,44 @@ export const onboardingService = {
         "Content-Type": contentType,
       };
 
-      // If auth token was attached to data by the chat flow, set header
+      // If auth secret was attached to data by the chat flow, set appropriate headers
       const tokenFromFlow = (data as any).__authToken as string | undefined;
-      const headerKey = onboarding.authHeaderKey || "Authorization";
+      const apiKeyFromFlow = (data as any).__apiKey as string | undefined;
+      const authHeaderKey =
+        (onboarding as any).authHeaderKey || "Authorization";
+      const apiKeyHeaderKey =
+        (onboarding as any).apiKeyHeaderKey || "X-API-Key";
       if (tokenFromFlow) {
-        headers[headerKey] =
-          headerKey.toLowerCase() === "authorization"
+        headers[authHeaderKey] =
+          String(authHeaderKey).toLowerCase() === "authorization"
             ? `Bearer ${tokenFromFlow}`
             : tokenFromFlow;
       }
+      if (apiKeyFromFlow) {
+        headers[apiKeyHeaderKey] = apiKeyFromFlow;
+      }
+
+      try {
+        const setupFields = ((onboarding as any).initialFields as any[]) || [];
+        if (Array.isArray(setupFields)) {
+          if (tokenFromFlow) {
+            const tokenField = setupFields.find((f: any) =>
+              /^(token|access[_-]?token|authToken)$/i.test(String(f?.key || ""))
+            );
+            if (tokenField?.key && !payload[tokenField.key]) {
+              payload[tokenField.key] = tokenFromFlow;
+            }
+          }
+          if (apiKeyFromFlow) {
+            const keyField = setupFields.find((f: any) =>
+              /^(api[_-]?key|apiKey|key)$/i.test(String(f?.key || ""))
+            );
+            if (keyField?.key && !payload[keyField.key]) {
+              payload[keyField.key] = apiKeyFromFlow;
+            }
+          }
+        }
+      } catch {}
 
       if (!url) {
         console.error(
@@ -581,11 +671,19 @@ export const onboardingService = {
     const resolved = resolveInitialSetupUrl(onboarding);
     url = resolved;
     if (!url) {
-      return { success: false, error: "Initial setup URL not configured", status: 400 };
+      return {
+        success: false,
+        error: "Initial setup URL not configured",
+        status: 400,
+      };
     }
     const setupFields = ((onboarding as any).initialFields as any[]) || [];
     if (!Array.isArray(setupFields) || setupFields.length === 0) {
-      return { success: false, error: "Initial setup fields not configured", status: 400 };
+      return {
+        success: false,
+        error: "Initial setup fields not configured",
+        status: 400,
+      };
     }
     const headerKey = onboarding.authHeaderKey || "Authorization";
     headers = {
@@ -593,13 +691,47 @@ export const onboardingService = {
       ...buildAuthHeader(onboarding),
     };
     const tokenFromFlow = (data as any).__authToken as string | undefined;
+    const apiKeyFromFlow = (data as any).__apiKey as string | undefined;
     if (tokenFromFlow) {
-      headers[headerKey] = headerKey.toLowerCase() === "authorization" ? `Bearer ${tokenFromFlow}` : tokenFromFlow;
+      headers[headerKey] =
+        headerKey.toLowerCase() === "authorization"
+          ? `Bearer ${tokenFromFlow}`
+          : tokenFromFlow;
     }
-    if (onboarding.idempotencyKeyField && data[onboarding.idempotencyKeyField]) {
+    if (apiKeyFromFlow) {
+      const apiKeyHeaderKey =
+        (onboarding as any).apiKeyHeaderKey || "X-API-Key";
+      headers[apiKeyHeaderKey] = apiKeyFromFlow;
+    }
+    try {
+      if (Array.isArray(setupFields)) {
+        if (tokenFromFlow) {
+          const tokenField = setupFields.find((f: any) =>
+            /^(token|access[_-]?token|authToken)$/i.test(String(f?.key || ""))
+          );
+          if (tokenField?.key && !payload[tokenField.key]) {
+            payload[tokenField.key] = tokenFromFlow;
+          }
+        }
+        if (apiKeyFromFlow) {
+          const keyField = setupFields.find((f: any) =>
+            /^(api[_-]?key|apiKey|key)$/i.test(String(f?.key || ""))
+          );
+          if (keyField?.key && !payload[keyField.key]) {
+            payload[keyField.key] = apiKeyFromFlow;
+          }
+        }
+      }
+    } catch {}
+    if (
+      onboarding.idempotencyKeyField &&
+      data[onboarding.idempotencyKeyField]
+    ) {
       headers["Idempotency-Key"] = String(data[onboarding.idempotencyKeyField]);
     }
-    const allowedKeys = new Set(setupFields.map((f: any) => String(f.key || "")));
+    const allowedKeys = new Set(
+      setupFields.map((f: any) => String(f.key || ""))
+    );
     const filtered: Record<string, any> = {};
     for (const [k, v] of Object.entries(payload)) {
       if (allowedKeys.has(String(k))) filtered[k] = v;
@@ -624,22 +756,37 @@ export const onboardingService = {
       if (!res.ok) {
         const errorMessage = (() => {
           if (typeof parsedResp === "string") return parsedResp;
-          if (!parsedResp || typeof parsedResp !== "object") return "Initial setup failed";
-          const topLevel = (parsedResp as any).error || (parsedResp as any).message;
-          const nestedData = (parsedResp as any)?.data?.error || (parsedResp as any)?.data?.message;
+          if (!parsedResp || typeof parsedResp !== "object")
+            return "Initial setup failed";
+          const topLevel =
+            (parsedResp as any).error || (parsedResp as any).message;
+          const nestedData =
+            (parsedResp as any)?.data?.error ||
+            (parsedResp as any)?.data?.message;
           const arrayErrors = Array.isArray((parsedResp as any)?.errors)
             ? (parsedResp as any).errors
                 .map((e: any) => e?.message || e)
                 .filter(Boolean)
                 .join("; ")
             : undefined;
-          return topLevel || nestedData || arrayErrors || "Initial setup failed";
+          return (
+            topLevel || nestedData || arrayErrors || "Initial setup failed"
+          );
         })();
-        return { success: false, error: errorMessage, status: res.status, responseBody: parsedResp };
+        return {
+          success: false,
+          error: errorMessage,
+          status: res.status,
+          responseBody: parsedResp,
+        };
       }
       return { success: true, status: res.status, responseBody: parsedResp };
     } catch (error: any) {
-      return { success: false, error: error?.message || String(error), status: 500 };
+      return {
+        success: false,
+        error: error?.message || String(error),
+        status: 500,
+      };
     }
   },
   async register(
@@ -1082,14 +1229,12 @@ export async function deriveFieldsFromDocsForAdmin(
     /email/i.test(k) ? "email" : /phone/i.test(k) ? "phone" : "text";
   const toLabel = (k: string) =>
     k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-  return filtered
-    .slice(0, 50)
-    .map((k) => ({
-      key: k,
-      label: toLabel(k),
-      required: true,
-      type: toType(k),
-    }));
+  return filtered.slice(0, 50).map((k) => ({
+    key: k,
+    label: toLabel(k),
+    required: true,
+    type: toType(k),
+  }));
 }
 
 export async function deriveSpecFromDocsForAdmin(
@@ -1143,7 +1288,9 @@ export async function deriveSpecFromDocsForAdmin(
     if (i === -1 || !hint) return;
     try {
       let d = 0;
-      let s1 = false, s2 = false, s3 = false;
+      let s1 = false,
+        s2 = false,
+        s3 = false;
       let end = -1;
       for (let j = i; j < t.length; j++) {
         const ch = t[j];
@@ -1152,14 +1299,23 @@ export async function deriveSpecFromDocsForAdmin(
         else if (ch === "`" && !s1 && !s2) s3 = !s3;
         if (s1 || s2 || s3) continue;
         if (ch === "{") d++;
-        else if (ch === "}") { d--; if (d === 0) { end = j; break; } }
+        else if (ch === "}") {
+          d--;
+          if (d === 0) {
+            end = j;
+            break;
+          }
+        }
       }
       if (end === -1) return;
       const jsonCandidate = t.slice(i, end + 1);
       const obj = JSON.parse(jsonCandidate);
       const walk = (o: any) => {
         if (!o || typeof o !== "object") return;
-        if (Array.isArray(o)) { for (const it of o) walk(it); return; }
+        if (Array.isArray(o)) {
+          for (const it of o) walk(it);
+          return;
+        }
         for (const [k, v] of Object.entries(o)) {
           respAllowedSeed.add(String(k));
           if (v && typeof v === "object") walk(v as any);
@@ -1204,9 +1360,15 @@ export async function deriveSpecFromDocsForAdmin(
 
   let bodyFields = await deriveFieldsFromDocsForAdmin(adminId, docsUrl, mode);
   const toType = (k: string): OnboardingField["type"] =>
-    /email/i.test(String(k)) ? "email" : /phone/i.test(String(k)) ? "phone" : "text";
+    /email/i.test(String(k))
+      ? "email"
+      : /phone/i.test(String(k))
+      ? "phone"
+      : "text";
   const toLabel = (k: string) =>
-    String(k).replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+    String(k)
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase());
 
   let curlKeys: string[] = [];
   try {
@@ -1215,25 +1377,39 @@ export async function deriveSpecFromDocsForAdmin(
     }
   } catch {}
   if ((bodyFields || []).length === 0 && (curlKeys || []).length > 0) {
-    bodyFields = curlKeys.map((k) => ({ key: k, label: toLabel(k), required: true, type: toType(k) }));
+    bodyFields = curlKeys.map((k) => ({
+      key: k,
+      label: toLabel(k),
+      required: true,
+      type: toType(k),
+    }));
   }
 
   const respSet = new Set<string>();
   try {
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-  const allowedKeys = Array.from(
-    new Set([
-      ...bodyFields.map((f) => String(f.key)),
-      ...(curlKeys || []),
-    ])
-  );
-  const allowedHeaders = Array.from(headersSet);
-  const system =
-    mode === "auth"
-      ? `From the documentation chunks provided, extract ONLY the login/authentication request spec in strict JSON: headers[], body[{key,label,required,type}], response[]. Use only the given chunks; do not invent fields. Only use keys from ALLOWED_KEYS. Only use headers from ALLOWED_HEADERS. Only use response keys from ALLOWED_RESPONSE_KEYS. ALLOWED_KEYS: ${allowedKeys.join(",")}\nALLOWED_HEADERS: ${allowedHeaders.join(",")}\nALLOWED_RESPONSE_KEYS: ${Array.from(respAllowedSeed).join(",")}`
-    : mode === "registration"
-      ? `From the documentation chunks provided, extract ONLY the registration request spec in strict JSON: headers[], body[{key,label,required,type}], response[]. Use only the given chunks; do not invent fields. Only use keys from ALLOWED_KEYS. Only use headers from ALLOWED_HEADERS. Only use response keys from ALLOWED_RESPONSE_KEYS. ALLOWED_KEYS: ${allowedKeys.join(",")}\nALLOWED_HEADERS: ${allowedHeaders.join(",")}\nALLOWED_RESPONSE_KEYS: ${Array.from(respAllowedSeed).join(",")}`
-      : `From the documentation chunks provided, extract ONLY the initial setup request spec in strict JSON: headers[], body[{key,label,required,type}], response[]. Prefer nested keys (e.g., crisp.websiteId). Use only the given chunks; do not invent fields. Only use keys from ALLOWED_KEYS. Only use headers from ALLOWED_HEADERS. Only use response keys from ALLOWED_RESPONSE_KEYS. ALLOWED_KEYS: ${allowedKeys.join(",")}\nALLOWED_HEADERS: ${allowedHeaders.join(",")}\nALLOWED_RESPONSE_KEYS: ${Array.from(respAllowedSeed).join(",")}`;
+    const allowedKeys = Array.from(
+      new Set([...bodyFields.map((f) => String(f.key)), ...(curlKeys || [])])
+    );
+    const allowedHeaders = Array.from(headersSet);
+    const system =
+      mode === "auth"
+        ? `From the documentation chunks provided, extract ONLY the login/authentication request spec in strict JSON: headers[], body[{key,label,required,type}], response[]. Use only the given chunks; do not invent fields. Only use keys from ALLOWED_KEYS. Only use headers from ALLOWED_HEADERS. Only use response keys from ALLOWED_RESPONSE_KEYS. ALLOWED_KEYS: ${allowedKeys.join(
+            ","
+          )}\nALLOWED_HEADERS: ${allowedHeaders.join(
+            ","
+          )}\nALLOWED_RESPONSE_KEYS: ${Array.from(respAllowedSeed).join(",")}`
+        : mode === "registration"
+        ? `From the documentation chunks provided, extract ONLY the registration request spec in strict JSON: headers[], body[{key,label,required,type}], response[]. Use only the given chunks; do not invent fields. Only use keys from ALLOWED_KEYS. Only use headers from ALLOWED_HEADERS. Only use response keys from ALLOWED_RESPONSE_KEYS. ALLOWED_KEYS: ${allowedKeys.join(
+            ","
+          )}\nALLOWED_HEADERS: ${allowedHeaders.join(
+            ","
+          )}\nALLOWED_RESPONSE_KEYS: ${Array.from(respAllowedSeed).join(",")}`
+        : `From the documentation chunks provided, extract ONLY the initial setup request spec in strict JSON: headers[], body[{key,label,required,type}], response[]. Prefer nested keys (e.g., crisp.websiteId). Use only the given chunks; do not invent fields. Only use keys from ALLOWED_KEYS. Only use headers from ALLOWED_HEADERS. Only use response keys from ALLOWED_RESPONSE_KEYS. ALLOWED_KEYS: ${allowedKeys.join(
+            ","
+          )}\nALLOWED_HEADERS: ${allowedHeaders.join(
+            ","
+          )}\nALLOWED_RESPONSE_KEYS: ${Array.from(respAllowedSeed).join(",")}`;
     const promptHeader = `Endpoint hint: ${endpointHint}\nDocs URL: ${
       docsUrl || ""
     }\n\nChunks:\n`;
@@ -1312,9 +1488,15 @@ export async function deriveSpecFromDocsForAdmin(
         } else if ((curlKeys || []).length > 0) {
           bodyFields = (curlKeys || []).map((k) => ({
             key: k,
-            label: String(k).replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+            label: String(k)
+              .replace(/_/g, " ")
+              .replace(/\b\w/g, (c) => c.toUpperCase()),
             required: true,
-            type: /email/i.test(String(k)) ? "email" : /phone/i.test(String(k)) ? "phone" : "text",
+            type: /email/i.test(String(k))
+              ? "email"
+              : /phone/i.test(String(k))
+              ? "phone"
+              : "text",
           }));
         }
       }
@@ -1326,22 +1508,28 @@ export async function deriveSpecFromDocsForAdmin(
       const resps: string[] = Array.isArray(parsed?.response)
         ? parsed.response.map((k: any) => String(k))
         : [];
-      const respsFiltered = respAllowedSeed.size > 0
-        ? resps.filter((k) => respAllowedSeed.has(k))
-        : resps;
+      const respsFiltered =
+        respAllowedSeed.size > 0
+          ? resps.filter((k) => respAllowedSeed.has(k))
+          : resps;
       for (const k of respsFiltered) respSet.add(k);
     }
   } catch {}
 
   const addRespFromText = (t: string) => {
-    const hint = /(response|responses|returns|example\s*response|200\b|Login\s+successful)/i.test(t);
+    const hint =
+      /(response|responses|returns|example\s*response|200\b|Login\s+successful)/i.test(
+        t
+      );
     if (!hint) return;
     let pos = 0;
     while (pos < t.length) {
       const i = t.indexOf("{", pos);
       if (i === -1) break;
       let d = 0;
-      let s1 = false, s2 = false, s3 = false;
+      let s1 = false,
+        s2 = false,
+        s3 = false;
       let end = -1;
       for (let j = i; j < t.length; j++) {
         const ch = t[j];
@@ -1350,7 +1538,13 @@ export async function deriveSpecFromDocsForAdmin(
         else if (ch === "`" && !s1 && !s2) s3 = !s3;
         if (s1 || s2 || s3) continue;
         if (ch === "{") d++;
-        else if (ch === "}") { d--; if (d === 0) { end = j; break; } }
+        else if (ch === "}") {
+          d--;
+          if (d === 0) {
+            end = j;
+            break;
+          }
+        }
       }
       if (end === -1) break;
       const jsonCandidate = t.slice(i, end + 1);
@@ -1359,7 +1553,10 @@ export async function deriveSpecFromDocsForAdmin(
         const obj = JSON.parse(jsonCandidate);
         const walk = (o: any) => {
           if (!o || typeof o !== "object") return;
-          if (Array.isArray(o)) { for (const it of o) walk(it); return; }
+          if (Array.isArray(o)) {
+            for (const it of o) walk(it);
+            return;
+          }
           for (const [k, v] of Object.entries(o)) {
             respSet.add(String(k));
             if (v && typeof v === "object") walk(v as any);
@@ -1382,7 +1579,9 @@ export async function deriveSpecFromDocsForAdmin(
         const toType = (k: string): OnboardingField["type"] =>
           /email/i.test(k) ? "email" : /phone/i.test(k) ? "phone" : "text";
         const toLabel = (k: string) =>
-          String(k).replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+          String(k)
+            .replace(/_/g, " ")
+            .replace(/\b\w/g, (c) => c.toUpperCase());
         filteredBody = ck.map((k) => ({
           key: String(k),
           label: toLabel(String(k)),

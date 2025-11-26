@@ -50,16 +50,32 @@ export async function POST(request: NextRequest) {
       }
 
       let authToken: string | undefined;
+      let authApiKey: string | undefined;
+      let authType: "token" | "apiKey" | undefined;
       const settings = await getAdminSettings(adminId);
       const hasAuth = Boolean((settings.onboarding as any)?.authCurlCommand);
       if (hasAuth) {
         const authRes = await onboardingService.authenticate(payload, adminId);
-        if (authRes.success && authRes.token) authToken = authRes.token;
+        if (authRes.success && authRes.token) {
+          if (authRes.tokenType === "apiKey") {
+            authApiKey = authRes.token;
+            authType = "apiKey";
+          } else {
+            authToken = authRes.token;
+            authType = "token";
+          }
+        }
       }
 
       const initialFields = (settings.onboarding as any)?.initialFields || [];
       return NextResponse.json(
-        { success: true, authToken: authToken || null, initialFields },
+        {
+          success: true,
+          authToken: authToken || null,
+          authApiKey: authApiKey || null,
+          authType: authType || null,
+          initialFields,
+        },
         { status: 200, headers: corsHeaders }
       );
     }
@@ -89,4 +105,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
