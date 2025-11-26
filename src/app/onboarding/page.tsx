@@ -10,7 +10,7 @@ export default function OnboardingPage() {
     const v = apiKey.trim();
     if (!v) return alert("Please paste your API key");
     const s = document.createElement("script");
-    s.src = "/api/widget";
+    s.src = "/api/onboarding/widget";
     s.setAttribute("data-api-key", v);
     s.setAttribute("data-onboarding-only", "true");
     s.setAttribute("data-chat-title", "Onboarding Assistant");
