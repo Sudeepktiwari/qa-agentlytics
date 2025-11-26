@@ -49,21 +49,11 @@ export async function GET(request: Request) {
     return value !== 'false' && value !== '0';
   };
   
-  // API Key - REQUIRED, no fallback
+  // API Key
   const API_KEY = getAttr('data-api-key', null);
-  
-  // Validate API Key is provided - STRICTLY REQUIRED
-  if (!API_KEY || API_KEY.trim() === '') {
-    console.error('[Widget] API key is required. Please add data-api-key attribute to the script tag.');
-    console.error('Widget will not initialize without a valid API key.');
-    throw new Error('API key required');
-  }
-  
-  // Validate API Key format (should start with 'ak_' and be 67 characters total)
-  if (!API_KEY.startsWith('ak_') || API_KEY.length !== 67) {
-    console.error('[Widget] Invalid API key format. API key should start with ak_ and be 67 characters long.');
-    console.error('Widget will not initialize with invalid API key format.');
-    throw new Error('Invalid API key format');
+  const apiKeyValid = !!(API_KEY && API_KEY.trim()) && API_KEY.startsWith('ak_') && API_KEY.length >= 10;
+  if (!apiKeyValid) {
+    console.warn('[Widget] API key missing or invalid. The UI will still load, but API calls may fail with 401.');
   }
   
   // Configuration with comprehensive defaults
