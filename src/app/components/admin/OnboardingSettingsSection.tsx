@@ -2468,30 +2468,7 @@ const OnboardingSettingsSection: React.FC = () => {
                           >
                             <option value="text">text</option>
                           </select>
-                          <div
-                            style={{
-                              color: "#718096",
-                              fontSize: 12,
-                              marginTop: 6,
-                            }}
-                          >
-                            Value source determines how this header value is set
-                            during initial setup: a fixed value you enter, or a
-                            secret captured from the authentication response
-                            (token or API key). If the header key is
-                            Authorization and source is token, the value is
-                            formatted as Bearer &lt;token&gt;.
-                          </div>
-                          <div
-                            style={{
-                              color: "#4a5568",
-                              fontSize: 13,
-                              marginTop: 6,
-                              fontWeight: 600,
-                            }}
-                          >
-                            Value Source
-                          </div>
+
                           <label
                             style={{
                               display: "flex",
@@ -3671,28 +3648,7 @@ const OnboardingSettingsSection: React.FC = () => {
                         />{" "}
                         required
                       </label>
-                      <div
-                        style={{
-                          color: "#718096",
-                          fontSize: 12,
-                          marginTop: 6,
-                        }}
-                      >
-                        Value source determines how this body field is filled
-                        during initial setup: user-provided input, or a secret
-                        captured from the authentication response (token or API
-                        key).
-                      </div>
-                      <div
-                        style={{
-                          color: "#4a5568",
-                          fontSize: 13,
-                          marginTop: 6,
-                          fontWeight: 600,
-                        }}
-                      >
-                        Value Source
-                      </div>
+
                       <select
                         value={(f as any).source || "none"}
                         onChange={(e) => {
