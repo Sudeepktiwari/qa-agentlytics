@@ -703,7 +703,7 @@ export default function Page() {
 
             {/* Bottom Summary */}
             <div className="mt-10 rounded-xl border border-green-300 bg-green-50 px-5 py-5 flex flex-col md:flex-row md:items-center gap-3 shadow-sm">
-              <div className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-green-200 text-green-800 font-bold text-lg">
+              <div className="inline-flex h-6 w-10 items-center justify-center rounded-full bg-green-200 text-green-800 font-bold text-lg">
                 ✓
               </div>
               <p className="text-sm md:text-base text-green-800">
