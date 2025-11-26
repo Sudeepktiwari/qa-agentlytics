@@ -2,7 +2,11 @@
 
 import React, { useEffect, useState } from "react";
 import { OnboardingSettings } from "@/lib/adminSettings";
-import { parseCurlRegistrationSpec, redactHeadersForLog, extractBodyKeysFromCurl } from "@/lib/curl";
+import {
+  parseCurlRegistrationSpec,
+  redactHeadersForLog,
+  extractBodyKeysFromCurl,
+} from "@/lib/curl";
 
 const OnboardingSettingsSection: React.FC = () => {
   const [settings, setSettings] = useState<OnboardingSettings>({
@@ -84,7 +88,9 @@ const OnboardingSettingsSection: React.FC = () => {
           if ((ob as any).authDocsUrl) setAuthDocUrl((ob as any).authDocsUrl);
           if (ob.initialSetupDocsUrl) setInitialDocUrl(ob.initialSetupDocsUrl);
           try {
-            console.groupCollapsed("[Onboarding] AI-derived registration spec (load)");
+            console.groupCollapsed(
+              "[Onboarding] AI-derived registration spec (load)"
+            );
             console.log({
               docsUrl: ob.docsUrl || "",
               headers: (ob as any).registrationHeaders || [],
@@ -113,7 +119,9 @@ const OnboardingSettingsSection: React.FC = () => {
             console.groupEnd();
           } catch {}
           try {
-            console.groupCollapsed("[Onboarding] AI-derived initial setup spec (load)");
+            console.groupCollapsed(
+              "[Onboarding] AI-derived initial setup spec (load)"
+            );
             console.log({
               docsUrl: ob.initialSetupDocsUrl || "",
               headers: (ob as any).initialHeaders || [],
@@ -173,18 +181,22 @@ const OnboardingSettingsSection: React.FC = () => {
         registrationFields: (settings as any).registrationFields,
         registrationHeaderFields: (settings as any).registrationHeaderFields,
         registrationHeaders: (settings as any).registrationHeaders,
-        registrationResponseFields: (settings as any).registrationResponseFields,
-        registrationResponseFieldDefs: (settings as any).registrationResponseFieldDefs,
+        registrationResponseFields: (settings as any)
+          .registrationResponseFields,
+        registrationResponseFieldDefs: (settings as any)
+          .registrationResponseFieldDefs,
         authFields: (settings as any).authFields,
         authHeaderFields: (settings as any).authHeaderFields,
         authHeaders: (settings as any).authHeaders,
         authResponseFields: (settings as any).authResponseFields,
         authResponseFieldDefs: (settings as any).authResponseFieldDefs,
+        authResponseMappings: (settings as any).authResponseMappings,
         initialFields: (settings as any).initialFields,
         initialHeaderFields: (settings as any).initialHeaderFields,
         initialHeaders: (settings as any).initialHeaders,
         initialResponseFields: (settings as any).initialResponseFields,
         initialResponseFieldDefs: (settings as any).initialResponseFieldDefs,
+        apiKeyHeaderKey: (settings as any).apiKeyHeaderKey,
         regenRegistration,
         regenAuth,
         regenInitial,
@@ -334,9 +346,12 @@ const OnboardingSettingsSection: React.FC = () => {
         const next: any = {
           ...prev,
           curlCommand: genJson.curl || prev.curlCommand,
-          registrationParsed: (genJson.parsed || (prev as any).registrationParsed) as any,
+          registrationParsed: (genJson.parsed ||
+            (prev as any).registrationParsed) as any,
         };
-        const hasNoFields = !((prev as any).registrationFields) || ((prev as any).registrationFields || []).length === 0;
+        const hasNoFields =
+          !(prev as any).registrationFields ||
+          ((prev as any).registrationFields || []).length === 0;
         if (hasNoFields && (genJson.curl || "").length > 0) {
           // Do not derive fields from cURL; fields come from docs via API
         }
@@ -411,10 +426,13 @@ const OnboardingSettingsSection: React.FC = () => {
       setSettings((prev) => {
         const next: any = {
           ...prev,
-          initialSetupCurlCommand: (genJson.curl || (prev as any).initialSetupCurlCommand) as any,
+          initialSetupCurlCommand: (genJson.curl ||
+            (prev as any).initialSetupCurlCommand) as any,
           initialParsed: (genJson.parsed || (prev as any).initialParsed) as any,
         };
-        const hasNoFields = !((prev as any).initialFields) || ((prev as any).initialFields || []).length === 0;
+        const hasNoFields =
+          !(prev as any).initialFields ||
+          ((prev as any).initialFields || []).length === 0;
         if (hasNoFields && (genJson.curl || "").length > 0) {
           // Do not derive fields from cURL; fields come from docs via API
         }
@@ -489,10 +507,13 @@ const OnboardingSettingsSection: React.FC = () => {
       setSettings((prev) => {
         const next: any = {
           ...prev,
-          authCurlCommand: (genJson.curl || (prev as any).authCurlCommand) as any,
+          authCurlCommand: (genJson.curl ||
+            (prev as any).authCurlCommand) as any,
           authParsed: (genJson.parsed || (prev as any).authParsed) as any,
         };
-        const hasNoFields = !((prev as any).authFields) || ((prev as any).authFields || []).length === 0;
+        const hasNoFields =
+          !(prev as any).authFields ||
+          ((prev as any).authFields || []).length === 0;
         if (hasNoFields && (genJson.curl || "").length > 0) {
           // Do not derive fields from cURL; fields come from docs via API
         }
@@ -611,23 +632,84 @@ const OnboardingSettingsSection: React.FC = () => {
           </div>
           <div style={{ display: registrationOpen ? "block" : "none" }}>
             {settings.registrationParsed && (
-              <div style={{ marginBottom: 12, padding: 12, border: "1px solid #e2e8f0", borderRadius: 8 }}>
-                <div style={{ fontWeight: 600, color: "#2d3748", marginBottom: 8 }}>Parsed Summary</div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              <div
+                style={{
+                  marginBottom: 12,
+                  padding: 12,
+                  border: "1px solid #e2e8f0",
+                  borderRadius: 8,
+                }}
+              >
+                <div
+                  style={{ fontWeight: 600, color: "#2d3748", marginBottom: 8 }}
+                >
+                  Parsed Summary
+                </div>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: 8,
+                  }}
+                >
                   <div>Method: {settings.registrationParsed.method}</div>
-                  <div>Content-Type: {settings.registrationParsed.contentType}</div>
-                  <div style={{ gridColumn: "1 / -1" }}>URL: {settings.registrationParsed.url || ""}</div>
-                  <div style={{ gridColumn: "1 / -1" }}>Headers:
-                    <div style={{ marginTop: 6, display: "flex", flexWrap: "wrap", gap: 6 }}>
-                      {(Object.entries(settings.registrationParsed.headersRedacted || {}) as [string, string][]).map(([k, v]) => (
-                        <span key={k} style={{ background: "#edf2f7", padding: "4px 8px", borderRadius: 6, fontSize: 12 }}>{k}: {v}</span>
+                  <div>
+                    Content-Type: {settings.registrationParsed.contentType}
+                  </div>
+                  <div style={{ gridColumn: "1 / -1" }}>
+                    URL: {settings.registrationParsed.url || ""}
+                  </div>
+                  <div style={{ gridColumn: "1 / -1" }}>
+                    Headers:
+                    <div
+                      style={{
+                        marginTop: 6,
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: 6,
+                      }}
+                    >
+                      {(
+                        Object.entries(
+                          settings.registrationParsed.headersRedacted || {}
+                        ) as [string, string][]
+                      ).map(([k, v]) => (
+                        <span
+                          key={k}
+                          style={{
+                            background: "#edf2f7",
+                            padding: "4px 8px",
+                            borderRadius: 6,
+                            fontSize: 12,
+                          }}
+                        >
+                          {k}: {v}
+                        </span>
                       ))}
                     </div>
                   </div>
-                  <div style={{ gridColumn: "1 / -1" }}>Body Fields:
-                    <div style={{ marginTop: 6, display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  <div style={{ gridColumn: "1 / -1" }}>
+                    Body Fields:
+                    <div
+                      style={{
+                        marginTop: 6,
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: 6,
+                      }}
+                    >
                       {(settings.registrationParsed.bodyKeys || []).map((k) => (
-                        <span key={k} style={{ background: "#eef2ff", padding: "4px 8px", borderRadius: 6, fontSize: 12 }}>{k}</span>
+                        <span
+                          key={k}
+                          style={{
+                            background: "#eef2ff",
+                            padding: "4px 8px",
+                            borderRadius: 6,
+                            fontSize: 12,
+                          }}
+                        >
+                          {k}
+                        </span>
                       ))}
                     </div>
                   </div>
@@ -636,207 +718,718 @@ const OnboardingSettingsSection: React.FC = () => {
             )}
 
             <div style={{ marginTop: 4 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <label style={{ display: "block", color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Registration Body Fields</label>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <label
+                  style={{
+                    display: "block",
+                    color: "#4a5568",
+                    fontSize: 13,
+                    marginBottom: 6,
+                  }}
+                >
+                  Registration Body Fields
+                </label>
                 <button
                   onClick={async () => {
                     try {
-                      console.groupCollapsed("[Onboarding] Regenerate registration spec");
-                      console.log({ docsUrl: docUrl, curlCommand: settings.curlCommand || "" });
+                      console.groupCollapsed(
+                        "[Onboarding] Regenerate registration spec"
+                      );
+                      console.log({
+                        docsUrl: docUrl,
+                        curlCommand: settings.curlCommand || "",
+                      });
                       console.groupEnd();
                     } catch {}
                     try {
-                      const res = await fetch(`/api/admin/onboarding?derive=registration&debug=true&docsUrl=${encodeURIComponent(docUrl || "")}&curl=${encodeURIComponent(settings.curlCommand || "")}` , { credentials: "include" });
+                      const res = await fetch(
+                        `/api/admin/onboarding?derive=registration&debug=true&docsUrl=${encodeURIComponent(
+                          docUrl || ""
+                        )}&curl=${encodeURIComponent(
+                          settings.curlCommand || ""
+                        )}`,
+                        { credentials: "include" }
+                      );
                       const data = await res.json();
                       if (res.ok && data.success) {
-                        const spec = data.spec || { headers: [], body: [], response: [] };
+                        const spec = data.spec || {
+                          headers: [],
+                          body: [],
+                          response: [],
+                        };
                         const parsed = {
-                          ...(settings.registrationParsed || { method: "POST" }),
+                          ...(settings.registrationParsed || {
+                            method: "POST",
+                          }),
                           bodyKeys: (spec.body || []).map((f: any) => f.key),
                         } as any;
-                        const regBodyKeys = (spec.body || []).map((f: any) => f.key);
-                        const regRespKeys = (spec.response || []).filter((k: string) => !regBodyKeys.includes(k));
+                        const regBodyKeys = (spec.body || []).map(
+                          (f: any) => f.key
+                        );
+                        const regRespKeys = (spec.response || []).filter(
+                          (k: string) => !regBodyKeys.includes(k)
+                        );
                         setSettings({
                           ...(settings as any),
                           registrationFields: spec.body,
                           registrationHeaders: spec.headers,
-                          registrationHeaderFields: (spec.headers || []).map((h: string) => ({ key: h, label: h, required: true, type: "text" })),
+                          registrationHeaderFields: (spec.headers || []).map(
+                            (h: string) => ({
+                              key: h,
+                              label: h,
+                              required: true,
+                              type: "text",
+                            })
+                          ),
                           registrationResponseFields: regRespKeys,
-                          registrationResponseFieldDefs: regRespKeys.map((k: string) => ({ key: k, label: k, required: false, type: "text" })),
+                          registrationResponseFieldDefs: regRespKeys.map(
+                            (k: string) => ({
+                              key: k,
+                              label: k,
+                              required: false,
+                              type: "text",
+                            })
+                          ),
                           registrationParsed: parsed,
                         } as any);
                         try {
-                          console.groupCollapsed("[Onboarding] Derived registration spec (ui)");
+                          console.groupCollapsed(
+                            "[Onboarding] Derived registration spec (ui)"
+                          );
                           console.log(spec);
                           if (Array.isArray((data as any).debug)) {
-                            for (const entry of (data as any).debug) console.log(entry);
+                            for (const entry of (data as any).debug)
+                              console.log(entry);
                           }
                           console.groupEnd();
                         } catch {}
                       } else {
-                        alert(data.error || "Failed to derive registration spec");
+                        alert(
+                          data.error || "Failed to derive registration spec"
+                        );
                       }
                     } catch (e: any) {
                       alert(e?.message || "Failed to derive registration spec");
                     }
                   }}
-                  style={{ padding: "6px 10px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}
-                >Regenerate from docs</button>
+                  style={{
+                    padding: "6px 10px",
+                    background: "#2d3748",
+                    color: "white",
+                    border: "none",
+                    borderRadius: 8,
+                    fontSize: 12,
+                  }}
+                >
+                  Regenerate from docs
+                </button>
               </div>
               <div style={{ display: "grid", gap: 8 }}>
-                {(((settings as any).registrationFields) || []).map((f: any, idx: number) => (
-                  <div key={idx} style={{ display: "grid", gridTemplateColumns: "minmax(0,1.2fr) minmax(0,1.2fr) minmax(0,1fr) 110px 90px 80px", gap: 8, alignItems: "center" }}>
-                    <input value={f.key} onChange={(e) => {
-                      const arr = [ ...((settings as any).registrationFields || []) ];
-                      arr[idx] = { ...arr[idx], key: e.target.value };
-                      setSettings({ ...settings, registrationFields: arr } as any);
-                    }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, minWidth: 0 }} placeholder="key" />
-                    <input value={f.label} onChange={(e) => {
-                      const arr = [ ...((settings as any).registrationFields || []) ];
-                      arr[idx] = { ...arr[idx], label: e.target.value };
-                      setSettings({ ...settings, registrationFields: arr } as any);
-                    }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, minWidth: 0 }} placeholder="label" />
-                    <input value={(f as any).defaultValue || ""} onChange={(e) => {
-                      const arr = [ ...((settings as any).registrationFields || []) ];
-                      arr[idx] = { ...arr[idx], defaultValue: e.target.value } as any;
-                      setSettings({ ...settings, registrationFields: arr } as any);
-                    }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, minWidth: 0 }} placeholder="default value" />
-                    <select value={f.type} onChange={(e) => {
-                      const arr = [ ...((settings as any).registrationFields || []) ];
-                      arr[idx] = { ...arr[idx], type: e.target.value };
-                      setSettings({ ...settings, registrationFields: arr } as any);
-                    }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, minWidth: 0 }}>
-                      <option value="text">text</option>
-                      <option value="email">email</option>
-                      <option value="phone">phone</option>
-                      <option value="select">select</option>
-                      <option value="checkbox">checkbox</option>
-                    </select>
-                    <label style={{ display: "flex", alignItems: "center", gap: 6, color: "#4a5568", fontSize: 13 }}>
-                      <input type="checkbox" checked={!!f.required} onChange={(e) => {
-                        const arr = [ ...((settings as any).registrationFields || []) ];
-                        arr[idx] = { ...arr[idx], required: e.target.checked };
-                        setSettings({ ...settings, registrationFields: arr } as any);
-                      }} /> required
-                    </label>
-                    <button onClick={() => {
-                      const arr = [ ...((settings as any).registrationFields || []) ];
-                      arr.splice(idx, 1);
-                      setSettings({ ...settings, registrationFields: arr } as any);
-                    }} style={{ padding: "6px 8px", background: "#ef4444", color: "white", border: "none", borderRadius: 8, fontSize: 12, justifySelf: "start" }}>Remove</button>
-                  </div>
-                ))}
+                {((settings as any).registrationFields || []).map(
+                  (f: any, idx: number) => (
+                    <div
+                      key={idx}
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns:
+                          "minmax(0,1.2fr) minmax(0,1.2fr) minmax(0,1fr) 110px 90px 80px",
+                        gap: 8,
+                        alignItems: "center",
+                      }}
+                    >
+                      <input
+                        value={f.key}
+                        onChange={(e) => {
+                          const arr = [
+                            ...((settings as any).registrationFields || []),
+                          ];
+                          arr[idx] = { ...arr[idx], key: e.target.value };
+                          setSettings({
+                            ...settings,
+                            registrationFields: arr,
+                          } as any);
+                        }}
+                        style={{
+                          padding: 8,
+                          border: "1px solid #d1d5db",
+                          borderRadius: 8,
+                          fontSize: 13,
+                          minWidth: 0,
+                        }}
+                        placeholder="key"
+                      />
+                      <input
+                        value={f.label}
+                        onChange={(e) => {
+                          const arr = [
+                            ...((settings as any).registrationFields || []),
+                          ];
+                          arr[idx] = { ...arr[idx], label: e.target.value };
+                          setSettings({
+                            ...settings,
+                            registrationFields: arr,
+                          } as any);
+                        }}
+                        style={{
+                          padding: 8,
+                          border: "1px solid #d1d5db",
+                          borderRadius: 8,
+                          fontSize: 13,
+                          minWidth: 0,
+                        }}
+                        placeholder="label"
+                      />
+                      <input
+                        value={(f as any).defaultValue || ""}
+                        onChange={(e) => {
+                          const arr = [
+                            ...((settings as any).registrationFields || []),
+                          ];
+                          arr[idx] = {
+                            ...arr[idx],
+                            defaultValue: e.target.value,
+                          } as any;
+                          setSettings({
+                            ...settings,
+                            registrationFields: arr,
+                          } as any);
+                        }}
+                        style={{
+                          padding: 8,
+                          border: "1px solid #d1d5db",
+                          borderRadius: 8,
+                          fontSize: 13,
+                          minWidth: 0,
+                        }}
+                        placeholder="default value"
+                      />
+                      <select
+                        value={f.type}
+                        onChange={(e) => {
+                          const arr = [
+                            ...((settings as any).registrationFields || []),
+                          ];
+                          arr[idx] = { ...arr[idx], type: e.target.value };
+                          setSettings({
+                            ...settings,
+                            registrationFields: arr,
+                          } as any);
+                        }}
+                        style={{
+                          padding: 8,
+                          border: "1px solid #d1d5db",
+                          borderRadius: 8,
+                          fontSize: 13,
+                          minWidth: 0,
+                        }}
+                      >
+                        <option value="text">text</option>
+                        <option value="email">email</option>
+                        <option value="phone">phone</option>
+                        <option value="select">select</option>
+                        <option value="checkbox">checkbox</option>
+                      </select>
+                      <label
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
+                          color: "#4a5568",
+                          fontSize: 13,
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={!!f.required}
+                          onChange={(e) => {
+                            const arr = [
+                              ...((settings as any).registrationFields || []),
+                            ];
+                            arr[idx] = {
+                              ...arr[idx],
+                              required: e.target.checked,
+                            };
+                            setSettings({
+                              ...settings,
+                              registrationFields: arr,
+                            } as any);
+                          }}
+                        />{" "}
+                        required
+                      </label>
+                      <button
+                        onClick={() => {
+                          const arr = [
+                            ...((settings as any).registrationFields || []),
+                          ];
+                          arr.splice(idx, 1);
+                          setSettings({
+                            ...settings,
+                            registrationFields: arr,
+                          } as any);
+                        }}
+                        style={{
+                          padding: "6px 8px",
+                          background: "#ef4444",
+                          color: "white",
+                          border: "none",
+                          borderRadius: 8,
+                          fontSize: 12,
+                          justifySelf: "start",
+                        }}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  )
+                )}
                 <div>
-                  <button onClick={() => {
-                    const arr = [ ...((settings as any).registrationFields || []) ];
-                    arr.push({ key: "", label: "", required: true, type: "text" });
-                    setSettings({ ...settings, registrationFields: arr } as any);
-                  }} style={{ padding: "8px 12px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 13 }}>Add field</button>
+                  <button
+                    onClick={() => {
+                      const arr = [
+                        ...((settings as any).registrationFields || []),
+                      ];
+                      arr.push({
+                        key: "",
+                        label: "",
+                        required: true,
+                        type: "text",
+                      });
+                      setSettings({
+                        ...settings,
+                        registrationFields: arr,
+                      } as any);
+                    }}
+                    style={{
+                      padding: "8px 12px",
+                      background: "#2d3748",
+                      color: "white",
+                      border: "none",
+                      borderRadius: 8,
+                      fontSize: 13,
+                    }}
+                  >
+                    Add field
+                  </button>
                 </div>
               </div>
               <div style={{ marginTop: 10 }}>
-                <div style={{ color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Registration Headers</div>
+                <div
+                  style={{ color: "#4a5568", fontSize: 13, marginBottom: 6 }}
+                >
+                  Registration Headers
+                </div>
                 <div style={{ display: "grid", gap: 8 }}>
-                  {(((settings as any).registrationHeaderFields) || []).map((f: any, i: number) => (
-                    <div key={(f.key || "") + i} style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) 100px 90px 80px", gap: 8, alignItems: "center" }}>
-                      <input value={f.key} onChange={(e) => {
-                        const arr = [ ...(((settings as any).registrationHeaderFields) || []) ];
-                        arr[i] = { ...arr[i], key: e.target.value };
-                        const keys = arr.map((x: any) => x.key);
-                        setSettings({ ...settings, registrationHeaderFields: arr, registrationHeaders: keys } as any);
-                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, minWidth: 0 }} placeholder="header key (e.g., authorization)" />
-                      <input value={f.label || ""} onChange={(e) => {
-                        const arr = [ ...(((settings as any).registrationHeaderFields) || []) ];
-                        arr[i] = { ...arr[i], label: e.target.value };
-                        setSettings({ ...settings, registrationHeaderFields: arr } as any);
-                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, minWidth: 0 }} placeholder="label" />
-                      <input value={(f as any).defaultValue || ""} onChange={(e) => {
-                        const arr = [ ...(((settings as any).registrationHeaderFields) || []) ];
-                        arr[i] = { ...arr[i], defaultValue: e.target.value } as any;
-                        setSettings({ ...settings, registrationHeaderFields: arr } as any);
-                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, minWidth: 0 }} placeholder="default value" />
-                      <select value={f.type || "text"} onChange={(e) => {
-                        const arr = [ ...(((settings as any).registrationHeaderFields) || []) ];
-                        arr[i] = { ...arr[i], type: e.target.value };
-                        setSettings({ ...settings, registrationHeaderFields: arr } as any);
-                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, minWidth: 0 }}>
-                        <option value="text">text</option>
-                      </select>
-                      <label style={{ display: "flex", alignItems: "center", gap: 6, color: "#4a5568", fontSize: 13 }}>
-                        <input type="checkbox" checked={!!f.required} onChange={(e) => {
-                          const arr = [ ...(((settings as any).registrationHeaderFields) || []) ];
-                          arr[i] = { ...arr[i], required: e.target.checked };
-                          setSettings({ ...settings, registrationHeaderFields: arr } as any);
-                        }} /> required
-                      </label>
-                      <button onClick={() => {
-                        const arr = [ ...(((settings as any).registrationHeaderFields) || []) ];
-                        arr.splice(i, 1);
-                        const keys = arr.map((x: any) => x.key);
-                        setSettings({ ...settings, registrationHeaderFields: arr, registrationHeaders: keys } as any);
-                      }} style={{ padding: "6px 8px", background: "#ef4444", color: "white", border: "none", borderRadius: 8, fontSize: 12, justifySelf: "start" }}>Remove</button>
-                    </div>
-                  ))}
+                  {((settings as any).registrationHeaderFields || []).map(
+                    (f: any, i: number) => (
+                      <div
+                        key={(f.key || "") + i}
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns:
+                            "minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) 100px 90px 80px",
+                          gap: 8,
+                          alignItems: "center",
+                        }}
+                      >
+                        <input
+                          value={f.key}
+                          onChange={(e) => {
+                            const arr = [
+                              ...((settings as any).registrationHeaderFields ||
+                                []),
+                            ];
+                            arr[i] = { ...arr[i], key: e.target.value };
+                            const keys = arr.map((x: any) => x.key);
+                            setSettings({
+                              ...settings,
+                              registrationHeaderFields: arr,
+                              registrationHeaders: keys,
+                            } as any);
+                          }}
+                          style={{
+                            padding: 8,
+                            border: "1px solid #d1d5db",
+                            borderRadius: 8,
+                            fontSize: 13,
+                            minWidth: 0,
+                          }}
+                          placeholder="header key (e.g., authorization)"
+                        />
+                        <input
+                          value={f.label || ""}
+                          onChange={(e) => {
+                            const arr = [
+                              ...((settings as any).registrationHeaderFields ||
+                                []),
+                            ];
+                            arr[i] = { ...arr[i], label: e.target.value };
+                            setSettings({
+                              ...settings,
+                              registrationHeaderFields: arr,
+                            } as any);
+                          }}
+                          style={{
+                            padding: 8,
+                            border: "1px solid #d1d5db",
+                            borderRadius: 8,
+                            fontSize: 13,
+                            minWidth: 0,
+                          }}
+                          placeholder="label"
+                        />
+                        <input
+                          value={(f as any).defaultValue || ""}
+                          onChange={(e) => {
+                            const arr = [
+                              ...((settings as any).registrationHeaderFields ||
+                                []),
+                            ];
+                            arr[i] = {
+                              ...arr[i],
+                              defaultValue: e.target.value,
+                            } as any;
+                            setSettings({
+                              ...settings,
+                              registrationHeaderFields: arr,
+                            } as any);
+                          }}
+                          style={{
+                            padding: 8,
+                            border: "1px solid #d1d5db",
+                            borderRadius: 8,
+                            fontSize: 13,
+                            minWidth: 0,
+                          }}
+                          placeholder="default value"
+                        />
+                        <select
+                          value={f.type || "text"}
+                          onChange={(e) => {
+                            const arr = [
+                              ...((settings as any).registrationHeaderFields ||
+                                []),
+                            ];
+                            arr[i] = { ...arr[i], type: e.target.value };
+                            setSettings({
+                              ...settings,
+                              registrationHeaderFields: arr,
+                            } as any);
+                          }}
+                          style={{
+                            padding: 8,
+                            border: "1px solid #d1d5db",
+                            borderRadius: 8,
+                            fontSize: 13,
+                            minWidth: 0,
+                          }}
+                        >
+                          <option value="text">text</option>
+                        </select>
+                        <label
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                            color: "#4a5568",
+                            fontSize: 13,
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={!!f.required}
+                            onChange={(e) => {
+                              const arr = [
+                                ...((settings as any)
+                                  .registrationHeaderFields || []),
+                              ];
+                              arr[i] = {
+                                ...arr[i],
+                                required: e.target.checked,
+                              };
+                              setSettings({
+                                ...settings,
+                                registrationHeaderFields: arr,
+                              } as any);
+                            }}
+                          />{" "}
+                          required
+                        </label>
+                        <button
+                          onClick={() => {
+                            const arr = [
+                              ...((settings as any).registrationHeaderFields ||
+                                []),
+                            ];
+                            arr.splice(i, 1);
+                            const keys = arr.map((x: any) => x.key);
+                            setSettings({
+                              ...settings,
+                              registrationHeaderFields: arr,
+                              registrationHeaders: keys,
+                            } as any);
+                          }}
+                          style={{
+                            padding: "6px 8px",
+                            background: "#ef4444",
+                            color: "white",
+                            border: "none",
+                            borderRadius: 8,
+                            fontSize: 12,
+                            justifySelf: "start",
+                          }}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    )
+                  )}
                   <div>
-                    <button onClick={() => {
-                      const arr = [ ...(((settings as any).registrationHeaderFields) || []) ];
-                      arr.push({ key: "", label: "", required: true, type: "text" });
-                      const keys = arr.map((x: any) => x.key);
-                      setSettings({ ...settings, registrationHeaderFields: arr, registrationHeaders: keys } as any);
-                    }} style={{ padding: "8px 12px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 13 }}>Add header</button>
+                    <button
+                      onClick={() => {
+                        const arr = [
+                          ...((settings as any).registrationHeaderFields || []),
+                        ];
+                        arr.push({
+                          key: "",
+                          label: "",
+                          required: true,
+                          type: "text",
+                        });
+                        const keys = arr.map((x: any) => x.key);
+                        setSettings({
+                          ...settings,
+                          registrationHeaderFields: arr,
+                          registrationHeaders: keys,
+                        } as any);
+                      }}
+                      style={{
+                        padding: "8px 12px",
+                        background: "#2d3748",
+                        color: "white",
+                        border: "none",
+                        borderRadius: 8,
+                        fontSize: 13,
+                      }}
+                    >
+                      Add header
+                    </button>
                   </div>
                 </div>
               </div>
               <div style={{ marginTop: 10 }}>
-                <div style={{ color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Registration Response Fields</div>
+                <div
+                  style={{ color: "#4a5568", fontSize: 13, marginBottom: 6 }}
+                >
+                  Registration Response Fields
+                </div>
                 <div style={{ display: "grid", gap: 8 }}>
-                  {(((settings as any).registrationResponseFieldDefs || []).filter((f: any) => !(((settings as any).registrationFields || []).some((bf: any) => bf.key === f.key)))).map((f: any, i: number) => (
-                    <div key={(f.key || "") + i} style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) 100px 90px 80px", gap: 8, alignItems: "center" }}>
-                      <input value={f.key} onChange={(e) => {
-                        const arr = [ ...(((settings as any).registrationResponseFieldDefs) || []) ];
-                        arr[i] = { ...arr[i], key: e.target.value };
-                        const keys = arr.map((x: any) => x.key);
-                        setSettings({ ...settings, registrationResponseFieldDefs: arr, registrationResponseFields: keys } as any);
-                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, minWidth: 0 }} placeholder="response key (e.g., user.id)" />
-                      <input value={f.label || ""} onChange={(e) => {
-                        const arr = [ ...(((settings as any).registrationResponseFieldDefs) || []) ];
-                        arr[i] = { ...arr[i], label: e.target.value };
-                        setSettings({ ...settings, registrationResponseFieldDefs: arr } as any);
-                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, minWidth: 0 }} placeholder="label" />
-                      <input value={(f as any).defaultValue || ""} onChange={(e) => {
-                        const arr = [ ...(((settings as any).registrationResponseFieldDefs) || []) ];
-                        arr[i] = { ...arr[i], defaultValue: e.target.value } as any;
-                        setSettings({ ...settings, registrationResponseFieldDefs: arr } as any);
-                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, minWidth: 0 }} placeholder="default value" />
-                      <select value={f.type || "text"} onChange={(e) => {
-                        const arr = [ ...(((settings as any).registrationResponseFieldDefs) || []) ];
-                        arr[i] = { ...arr[i], type: e.target.value };
-                        setSettings({ ...settings, registrationResponseFieldDefs: arr } as any);
-                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, minWidth: 0 }}>
-                        <option value="text">text</option>
-                      </select>
-                      <label style={{ display: "flex", alignItems: "center", gap: 6, color: "#4a5568", fontSize: 13 }}>
-                        <input type="checkbox" checked={!!f.required} onChange={(e) => {
-                          const arr = [ ...(((settings as any).registrationResponseFieldDefs) || []) ];
-                          arr[i] = { ...arr[i], required: e.target.checked };
-                          setSettings({ ...settings, registrationResponseFieldDefs: arr } as any);
-                        }} /> required
-                      </label>
-                      <button onClick={() => {
-                        const arr = [ ...(((settings as any).registrationResponseFieldDefs) || []) ];
-                        arr.splice(i, 1);
-                        const keys = arr.map((x: any) => x.key);
-                        setSettings({ ...settings, registrationResponseFieldDefs: arr, registrationResponseFields: keys } as any);
-                      }} style={{ padding: "6px 8px", background: "#ef4444", color: "white", border: "none", borderRadius: 8, fontSize: 12, justifySelf: "start" }}>Remove</button>
-                    </div>
-                  ))}
+                  {((settings as any).registrationResponseFieldDefs || [])
+                    .filter(
+                      (f: any) =>
+                        !((settings as any).registrationFields || []).some(
+                          (bf: any) => bf.key === f.key
+                        )
+                    )
+                    .map((f: any, i: number) => (
+                      <div
+                        key={(f.key || "") + i}
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns:
+                            "minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) 100px 90px 80px",
+                          gap: 8,
+                          alignItems: "center",
+                        }}
+                      >
+                        <input
+                          value={f.key}
+                          onChange={(e) => {
+                            const arr = [
+                              ...((settings as any)
+                                .registrationResponseFieldDefs || []),
+                            ];
+                            arr[i] = { ...arr[i], key: e.target.value };
+                            const keys = arr.map((x: any) => x.key);
+                            setSettings({
+                              ...settings,
+                              registrationResponseFieldDefs: arr,
+                              registrationResponseFields: keys,
+                            } as any);
+                          }}
+                          style={{
+                            padding: 8,
+                            border: "1px solid #d1d5db",
+                            borderRadius: 8,
+                            fontSize: 13,
+                            minWidth: 0,
+                          }}
+                          placeholder="response key (e.g., user.id)"
+                        />
+                        <input
+                          value={f.label || ""}
+                          onChange={(e) => {
+                            const arr = [
+                              ...((settings as any)
+                                .registrationResponseFieldDefs || []),
+                            ];
+                            arr[i] = { ...arr[i], label: e.target.value };
+                            setSettings({
+                              ...settings,
+                              registrationResponseFieldDefs: arr,
+                            } as any);
+                          }}
+                          style={{
+                            padding: 8,
+                            border: "1px solid #d1d5db",
+                            borderRadius: 8,
+                            fontSize: 13,
+                            minWidth: 0,
+                          }}
+                          placeholder="label"
+                        />
+                        <input
+                          value={(f as any).defaultValue || ""}
+                          onChange={(e) => {
+                            const arr = [
+                              ...((settings as any)
+                                .registrationResponseFieldDefs || []),
+                            ];
+                            arr[i] = {
+                              ...arr[i],
+                              defaultValue: e.target.value,
+                            } as any;
+                            setSettings({
+                              ...settings,
+                              registrationResponseFieldDefs: arr,
+                            } as any);
+                          }}
+                          style={{
+                            padding: 8,
+                            border: "1px solid #d1d5db",
+                            borderRadius: 8,
+                            fontSize: 13,
+                            minWidth: 0,
+                          }}
+                          placeholder="default value"
+                        />
+                        <select
+                          value={f.type || "text"}
+                          onChange={(e) => {
+                            const arr = [
+                              ...((settings as any)
+                                .registrationResponseFieldDefs || []),
+                            ];
+                            arr[i] = { ...arr[i], type: e.target.value };
+                            setSettings({
+                              ...settings,
+                              registrationResponseFieldDefs: arr,
+                            } as any);
+                          }}
+                          style={{
+                            padding: 8,
+                            border: "1px solid #d1d5db",
+                            borderRadius: 8,
+                            fontSize: 13,
+                            minWidth: 0,
+                          }}
+                        >
+                          <option value="text">text</option>
+                        </select>
+                        <label
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                            color: "#4a5568",
+                            fontSize: 13,
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={!!f.required}
+                            onChange={(e) => {
+                              const arr = [
+                                ...((settings as any)
+                                  .registrationResponseFieldDefs || []),
+                              ];
+                              arr[i] = {
+                                ...arr[i],
+                                required: e.target.checked,
+                              };
+                              setSettings({
+                                ...settings,
+                                registrationResponseFieldDefs: arr,
+                              } as any);
+                            }}
+                          />{" "}
+                          required
+                        </label>
+                        <button
+                          onClick={() => {
+                            const arr = [
+                              ...((settings as any)
+                                .registrationResponseFieldDefs || []),
+                            ];
+                            arr.splice(i, 1);
+                            const keys = arr.map((x: any) => x.key);
+                            setSettings({
+                              ...settings,
+                              registrationResponseFieldDefs: arr,
+                              registrationResponseFields: keys,
+                            } as any);
+                          }}
+                          style={{
+                            padding: "6px 8px",
+                            background: "#ef4444",
+                            color: "white",
+                            border: "none",
+                            borderRadius: 8,
+                            fontSize: 12,
+                            justifySelf: "start",
+                          }}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
                   <div>
-                    <button onClick={() => {
-                      const arr = [ ...(((settings as any).registrationResponseFieldDefs) || []) ];
-                      arr.push({ key: "", label: "", required: false, type: "text" });
-                      const keys = arr.map((x: any) => x.key);
-                      setSettings({ ...settings, registrationResponseFieldDefs: arr, registrationResponseFields: keys } as any);
-                    }} style={{ padding: "8px 12px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 13 }}>Add response field</button>
+                    <button
+                      onClick={() => {
+                        const arr = [
+                          ...((settings as any).registrationResponseFieldDefs ||
+                            []),
+                        ];
+                        arr.push({
+                          key: "",
+                          label: "",
+                          required: false,
+                          type: "text",
+                        });
+                        const keys = arr.map((x: any) => x.key);
+                        setSettings({
+                          ...settings,
+                          registrationResponseFieldDefs: arr,
+                          registrationResponseFields: keys,
+                        } as any);
+                      }}
+                      style={{
+                        padding: "8px 12px",
+                        background: "#2d3748",
+                        color: "white",
+                        border: "none",
+                        borderRadius: 8,
+                        fontSize: 13,
+                      }}
+                    >
+                      Add response field
+                    </button>
                   </div>
                 </div>
               </div>
@@ -1028,7 +1621,7 @@ const OnboardingSettingsSection: React.FC = () => {
               )}
             </div>
 
-          {/* Canonical registration cURL command */}
+            {/* Canonical registration cURL command */}
             <div>
               <label
                 style={{
@@ -1059,7 +1652,11 @@ const OnboardingSettingsSection: React.FC = () => {
                       bodyKeys,
                     };
                   } catch {}
-                  const next: any = { ...(settings as any), curlCommand: curl, registrationParsed: parsed };
+                  const next: any = {
+                    ...(settings as any),
+                    curlCommand: curl,
+                    registrationParsed: parsed,
+                  };
                   setSettings(next as any);
                 }}
                 rows={6}
@@ -1410,25 +2007,88 @@ const OnboardingSettingsSection: React.FC = () => {
               )}
             </div>
 
-            {((settings as any).authParsed) && (
-              <div style={{ marginTop: 12, padding: 12, border: "1px solid #e2e8f0", borderRadius: 8 }}>
-                <div style={{ fontWeight: 600, color: "#2d3748", marginBottom: 8 }}>Parsed Summary</div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            {(settings as any).authParsed && (
+              <div
+                style={{
+                  marginTop: 12,
+                  padding: 12,
+                  border: "1px solid #e2e8f0",
+                  borderRadius: 8,
+                }}
+              >
+                <div
+                  style={{ fontWeight: 600, color: "#2d3748", marginBottom: 8 }}
+                >
+                  Parsed Summary
+                </div>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: 8,
+                  }}
+                >
                   <div>Method: {(settings as any).authParsed?.method}</div>
-                  <div>Content-Type: {(settings as any).authParsed?.contentType}</div>
-                  <div style={{ gridColumn: "1 / -1" }}>URL: {(settings as any).authParsed?.url || ""}</div>
-                  <div style={{ gridColumn: "1 / -1" }}>Headers:
-                    <div style={{ marginTop: 6, display: "flex", flexWrap: "wrap", gap: 6 }}>
-                      {(Object.entries(((settings as any).authParsed?.headersRedacted || {})) as [string, string][]).map(([k, v]) => (
-                        <span key={k} style={{ background: "#edf2f7", padding: "4px 8px", borderRadius: 6, fontSize: 12 }}>{k}: {v}</span>
+                  <div>
+                    Content-Type: {(settings as any).authParsed?.contentType}
+                  </div>
+                  <div style={{ gridColumn: "1 / -1" }}>
+                    URL: {(settings as any).authParsed?.url || ""}
+                  </div>
+                  <div style={{ gridColumn: "1 / -1" }}>
+                    Headers:
+                    <div
+                      style={{
+                        marginTop: 6,
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: 6,
+                      }}
+                    >
+                      {(
+                        Object.entries(
+                          (settings as any).authParsed?.headersRedacted || {}
+                        ) as [string, string][]
+                      ).map(([k, v]) => (
+                        <span
+                          key={k}
+                          style={{
+                            background: "#edf2f7",
+                            padding: "4px 8px",
+                            borderRadius: 6,
+                            fontSize: 12,
+                          }}
+                        >
+                          {k}: {v}
+                        </span>
                       ))}
                     </div>
                   </div>
-                  <div style={{ gridColumn: "1 / -1" }}>Body Fields:
-                    <div style={{ marginTop: 6, display: "flex", flexWrap: "wrap", gap: 6 }}>
-                      {(((settings as any).authParsed?.bodyKeys || [])).map((k: string) => (
-                        <span key={k} style={{ background: "#eef2ff", padding: "4px 8px", borderRadius: 6, fontSize: 12 }}>{k}</span>
-                      ))}
+                  <div style={{ gridColumn: "1 / -1" }}>
+                    Body Fields:
+                    <div
+                      style={{
+                        marginTop: 6,
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: 6,
+                      }}
+                    >
+                      {((settings as any).authParsed?.bodyKeys || []).map(
+                        (k: string) => (
+                          <span
+                            key={k}
+                            style={{
+                              background: "#eef2ff",
+                              padding: "4px 8px",
+                              borderRadius: 6,
+                              fontSize: 12,
+                            }}
+                          >
+                            {k}
+                          </span>
+                        )
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1436,41 +2096,93 @@ const OnboardingSettingsSection: React.FC = () => {
             )}
 
             <div style={{ marginTop: 12 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <label style={{ display: "block", color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Authentication Body Fields</label>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <label
+                  style={{
+                    display: "block",
+                    color: "#4a5568",
+                    fontSize: 13,
+                    marginBottom: 6,
+                  }}
+                >
+                  Authentication Body Fields
+                </label>
                 {
                   <button
                     onClick={async () => {
                       try {
-                        console.groupCollapsed("[Onboarding] Regenerate auth spec");
-                        console.log({ docsUrl: authDocUrl, curlCommand: (settings as any).authCurlCommand || "" });
+                        console.groupCollapsed(
+                          "[Onboarding] Regenerate auth spec"
+                        );
+                        console.log({
+                          docsUrl: authDocUrl,
+                          curlCommand: (settings as any).authCurlCommand || "",
+                        });
                         console.groupEnd();
                       } catch {}
                       try {
-                        const res = await fetch(`/api/admin/onboarding?derive=auth&debug=true&docsUrl=${encodeURIComponent(authDocUrl || "")}&curl=${encodeURIComponent((settings as any).authCurlCommand || "")}` , { credentials: "include" });
+                        const res = await fetch(
+                          `/api/admin/onboarding?derive=auth&debug=true&docsUrl=${encodeURIComponent(
+                            authDocUrl || ""
+                          )}&curl=${encodeURIComponent(
+                            (settings as any).authCurlCommand || ""
+                          )}`,
+                          { credentials: "include" }
+                        );
                         const data = await res.json();
                         if (res.ok && data.success) {
-                          const spec = data.spec || { headers: [], body: [], response: [] };
+                          const spec = data.spec || {
+                            headers: [],
+                            body: [],
+                            response: [],
+                          };
                           const parsed = {
                             ...(settings.authParsed || { method: "POST" }),
                             bodyKeys: (spec.body || []).map((f: any) => f.key),
                           } as any;
-                          const authBodyKeys = (spec.body || []).map((f: any) => f.key);
-                          const authRespKeys = (spec.response || []).filter((k: string) => !authBodyKeys.includes(k));
+                          const authBodyKeys = (spec.body || []).map(
+                            (f: any) => f.key
+                          );
+                          const authRespKeys = (spec.response || []).filter(
+                            (k: string) => !authBodyKeys.includes(k)
+                          );
                           setSettings({
                             ...(settings as any),
                             authFields: spec.body,
                             authHeaders: spec.headers,
-                            authHeaderFields: (spec.headers || []).map((h: string) => ({ key: h, label: h, required: true, type: "text" })),
+                            authHeaderFields: (spec.headers || []).map(
+                              (h: string) => ({
+                                key: h,
+                                label: h,
+                                required: true,
+                                type: "text",
+                              })
+                            ),
                             authResponseFields: authRespKeys,
-                            authResponseFieldDefs: authRespKeys.map((k: string) => ({ key: k, label: k, required: false, type: "text" })),
+                            authResponseFieldDefs: authRespKeys.map(
+                              (k: string) => ({
+                                key: k,
+                                label: k,
+                                required: false,
+                                type: "text",
+                              })
+                            ),
                             authParsed: parsed,
                           } as any);
                           try {
-                            console.groupCollapsed("[Onboarding] Derived auth spec (ui)");
+                            console.groupCollapsed(
+                              "[Onboarding] Derived auth spec (ui)"
+                            );
                             console.log(spec);
                             if (Array.isArray((data as any).debug)) {
-                              for (const entry of (data as any).debug) console.log(entry);
+                              for (const entry of (data as any).debug)
+                                console.log(entry);
                             }
                             console.groupEnd();
                           } catch {}
@@ -1481,163 +2193,813 @@ const OnboardingSettingsSection: React.FC = () => {
                         alert(e?.message || "Failed to derive auth spec");
                       }
                     }}
-                    style={{ padding: "6px 10px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}
-                  >Regenerate from docs</button>
+                    style={{
+                      padding: "6px 10px",
+                      background: "#2d3748",
+                      color: "white",
+                      border: "none",
+                      borderRadius: 8,
+                      fontSize: 12,
+                    }}
+                  >
+                    Regenerate from docs
+                  </button>
                 }
               </div>
-                <div style={{ display: "grid", gap: 8 }}>
-                  {(((settings as any).authFields) || []).map((f: any, idx: number) => (
-                    <div key={idx} style={{ display: "grid", gridTemplateColumns: "minmax(0,1.2fr) minmax(0,1.2fr) minmax(0,1fr) 110px 90px 80px", gap: 8, alignItems: "center" }}>
-                      <input value={f.key} onChange={(e) => {
-                        const arr = [ ...((settings as any).authFields || []) ];
-                        arr[idx] = { ...arr[idx], key: e.target.value };
-                        setSettings({ ...settings, authFields: arr } as any);
-                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, minWidth: 0 }} placeholder="key" />
-                      <input value={f.label} onChange={(e) => {
-                        const arr = [ ...((settings as any).authFields || []) ];
-                        arr[idx] = { ...arr[idx], label: e.target.value };
-                        setSettings({ ...settings, authFields: arr } as any);
-                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, minWidth: 0 }} placeholder="label" />
-                      <input value={(f as any).defaultValue || ""} onChange={(e) => {
-                        const arr = [ ...((settings as any).authFields || []) ];
-                        arr[idx] = { ...arr[idx], defaultValue: e.target.value } as any;
-                        setSettings({ ...settings, authFields: arr } as any);
-                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, minWidth: 0 }} placeholder="default value" />
-                      <select value={f.type} onChange={(e) => {
-                        const arr = [ ...((settings as any).authFields || []) ];
-                        arr[idx] = { ...arr[idx], type: e.target.value };
-                        setSettings({ ...settings, authFields: arr } as any);
-                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, minWidth: 0 }}>
+              <div style={{ display: "grid", gap: 8 }}>
+                {((settings as any).authFields || []).map(
+                  (f: any, idx: number) => (
+                    <div
+                      key={idx}
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns:
+                          "minmax(0,1.2fr) minmax(0,1.2fr) minmax(0,1fr) 110px 90px 80px",
+                        gap: 8,
+                        alignItems: "center",
+                      }}
+                    >
+                      <input
+                        value={f.key}
+                        onChange={(e) => {
+                          const arr = [...((settings as any).authFields || [])];
+                          arr[idx] = { ...arr[idx], key: e.target.value };
+                          setSettings({ ...settings, authFields: arr } as any);
+                        }}
+                        style={{
+                          padding: 8,
+                          border: "1px solid #d1d5db",
+                          borderRadius: 8,
+                          fontSize: 13,
+                          minWidth: 0,
+                        }}
+                        placeholder="key"
+                      />
+                      <input
+                        value={f.label}
+                        onChange={(e) => {
+                          const arr = [...((settings as any).authFields || [])];
+                          arr[idx] = { ...arr[idx], label: e.target.value };
+                          setSettings({ ...settings, authFields: arr } as any);
+                        }}
+                        style={{
+                          padding: 8,
+                          border: "1px solid #d1d5db",
+                          borderRadius: 8,
+                          fontSize: 13,
+                          minWidth: 0,
+                        }}
+                        placeholder="label"
+                      />
+                      <input
+                        value={(f as any).defaultValue || ""}
+                        onChange={(e) => {
+                          const arr = [...((settings as any).authFields || [])];
+                          arr[idx] = {
+                            ...arr[idx],
+                            defaultValue: e.target.value,
+                          } as any;
+                          setSettings({ ...settings, authFields: arr } as any);
+                        }}
+                        style={{
+                          padding: 8,
+                          border: "1px solid #d1d5db",
+                          borderRadius: 8,
+                          fontSize: 13,
+                          minWidth: 0,
+                        }}
+                        placeholder="default value"
+                      />
+                      <select
+                        value={f.type}
+                        onChange={(e) => {
+                          const arr = [...((settings as any).authFields || [])];
+                          arr[idx] = { ...arr[idx], type: e.target.value };
+                          setSettings({ ...settings, authFields: arr } as any);
+                        }}
+                        style={{
+                          padding: 8,
+                          border: "1px solid #d1d5db",
+                          borderRadius: 8,
+                          fontSize: 13,
+                          minWidth: 0,
+                        }}
+                      >
                         <option value="text">text</option>
                         <option value="email">email</option>
                         <option value="phone">phone</option>
                         <option value="select">select</option>
                         <option value="checkbox">checkbox</option>
                       </select>
-                    <label style={{ display: "flex", alignItems: "center", gap: 6, color: "#4a5568", fontSize: 13 }}>
-                      <input type="checkbox" checked={!!f.required} onChange={(e) => {
-                        const arr = [ ...((settings as any).authFields || []) ];
-                        arr[idx] = { ...arr[idx], required: e.target.checked };
-                        setSettings({ ...settings, authFields: arr } as any);
-                      }} /> required
-                    </label>
-                    <button onClick={() => {
-                      const arr = [ ...((settings as any).authFields || []) ];
-                      arr.splice(idx, 1);
-                      setSettings({ ...settings, authFields: arr } as any);
-                    }} style={{ padding: "6px 10px", background: "#ef4444", color: "white", border: "none", borderRadius: 8, fontSize: 12, justifySelf: "start" }}>Remove</button>
-                  </div>
-                ))}
+                      <label
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
+                          color: "#4a5568",
+                          fontSize: 13,
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={!!f.required}
+                          onChange={(e) => {
+                            const arr = [
+                              ...((settings as any).authFields || []),
+                            ];
+                            arr[idx] = {
+                              ...arr[idx],
+                              required: e.target.checked,
+                            };
+                            setSettings({
+                              ...settings,
+                              authFields: arr,
+                            } as any);
+                          }}
+                        />{" "}
+                        required
+                      </label>
+                      <button
+                        onClick={() => {
+                          const arr = [...((settings as any).authFields || [])];
+                          arr.splice(idx, 1);
+                          setSettings({ ...settings, authFields: arr } as any);
+                        }}
+                        style={{
+                          padding: "6px 10px",
+                          background: "#ef4444",
+                          color: "white",
+                          border: "none",
+                          borderRadius: 8,
+                          fontSize: 12,
+                          justifySelf: "start",
+                        }}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  )
+                )}
                 <div>
-                  <button onClick={() => {
-                    const arr = [ ...((settings as any).authFields || []) ];
-                    arr.push({ key: "", label: "", required: true, type: "text" });
-                    setSettings({ ...settings, authFields: arr } as any);
-                  }} style={{ padding: "8px 12px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 13 }}>Add field</button>
+                  <button
+                    onClick={() => {
+                      const arr = [...((settings as any).authFields || [])];
+                      arr.push({
+                        key: "",
+                        label: "",
+                        required: true,
+                        type: "text",
+                      });
+                      setSettings({ ...settings, authFields: arr } as any);
+                    }}
+                    style={{
+                      padding: "8px 12px",
+                      background: "#2d3748",
+                      color: "white",
+                      border: "none",
+                      borderRadius: 8,
+                      fontSize: 13,
+                    }}
+                  >
+                    Add field
+                  </button>
                 </div>
                 <div style={{ marginTop: 10 }}>
-                  <div style={{ color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Auth Headers</div>
+                  <div
+                    style={{ color: "#4a5568", fontSize: 13, marginBottom: 6 }}
+                  >
+                    Auth Headers
+                  </div>
                   <div style={{ display: "grid", gap: 8 }}>
-                    {(((settings as any).authHeaderFields) || []).map((f: any, i: number) => (
-                      <div key={(f.key || "") + i} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 120px 140px auto", gap: 8, alignItems: "center" }}>
-                        <input value={f.key} onChange={(e) => {
-                          const arr = [ ...(((settings as any).authHeaderFields) || []) ];
-                          arr[i] = { ...arr[i], key: e.target.value };
-                          const keys = arr.map((x: any) => x.key);
-                          setSettings({ ...settings, authHeaderFields: arr, authHeaders: keys } as any);
-                        }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="header key (e.g., authorization)" />
-                        <input value={f.label || ""} onChange={(e) => {
-                          const arr = [ ...(((settings as any).authHeaderFields) || []) ];
-                          arr[i] = { ...arr[i], label: e.target.value };
-                          setSettings({ ...settings, authHeaderFields: arr } as any);
-                        }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="label" />
-                        <input value={(f as any).defaultValue || ""} onChange={(e) => {
-                          const arr = [ ...(((settings as any).authHeaderFields) || []) ];
-                          arr[i] = { ...arr[i], defaultValue: e.target.value } as any;
-                          setSettings({ ...settings, authHeaderFields: arr } as any);
-                        }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="default value" />
-                        <select value={f.type || "text"} onChange={(e) => {
-                          const arr = [ ...(((settings as any).authHeaderFields) || []) ];
-                          arr[i] = { ...arr[i], type: e.target.value };
-                          setSettings({ ...settings, authHeaderFields: arr } as any);
-                        }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }}>
-                          <option value="text">text</option>
-                        </select>
-                        <label style={{ display: "flex", alignItems: "center", gap: 6, color: "#4a5568", fontSize: 13 }}>
-                          <input type="checkbox" checked={!!f.required} onChange={(e) => {
-                            const arr = [ ...(((settings as any).authHeaderFields) || []) ];
-                            arr[i] = { ...arr[i], required: e.target.checked };
-                            setSettings({ ...settings, authHeaderFields: arr } as any);
-                          }} /> required
-                        </label>
-                        <button onClick={() => {
-                          const arr = [ ...(((settings as any).authHeaderFields) || []) ];
-                          arr.splice(i, 1);
-                          const keys = arr.map((x: any) => x.key);
-                          setSettings({ ...settings, authHeaderFields: arr, authHeaders: keys } as any);
-                        }} style={{ padding: "6px 10px", background: "#ef4444", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}>Remove</button>
-                      </div>
-                    ))}
+                    {((settings as any).authHeaderFields || []).map(
+                      (f: any, i: number) => (
+                        <div
+                          key={(f.key || "") + i}
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "1fr 1fr 1fr 120px 140px auto",
+                            gap: 8,
+                            alignItems: "center",
+                          }}
+                        >
+                          <input
+                            value={f.key}
+                            onChange={(e) => {
+                              const arr = [
+                                ...((settings as any).authHeaderFields || []),
+                              ];
+                              arr[i] = { ...arr[i], key: e.target.value };
+                              const keys = arr.map((x: any) => x.key);
+                              setSettings({
+                                ...settings,
+                                authHeaderFields: arr,
+                                authHeaders: keys,
+                              } as any);
+                            }}
+                            style={{
+                              padding: 8,
+                              border: "1px solid #d1d5db",
+                              borderRadius: 8,
+                              fontSize: 13,
+                            }}
+                            placeholder="header key (e.g., authorization)"
+                          />
+                          <input
+                            value={f.label || ""}
+                            onChange={(e) => {
+                              const arr = [
+                                ...((settings as any).authHeaderFields || []),
+                              ];
+                              arr[i] = { ...arr[i], label: e.target.value };
+                              setSettings({
+                                ...settings,
+                                authHeaderFields: arr,
+                              } as any);
+                            }}
+                            style={{
+                              padding: 8,
+                              border: "1px solid #d1d5db",
+                              borderRadius: 8,
+                              fontSize: 13,
+                            }}
+                            placeholder="label"
+                          />
+                          <input
+                            value={(f as any).defaultValue || ""}
+                            onChange={(e) => {
+                              const arr = [
+                                ...((settings as any).authHeaderFields || []),
+                              ];
+                              arr[i] = {
+                                ...arr[i],
+                                defaultValue: e.target.value,
+                              } as any;
+                              setSettings({
+                                ...settings,
+                                authHeaderFields: arr,
+                              } as any);
+                            }}
+                            style={{
+                              padding: 8,
+                              border: "1px solid #d1d5db",
+                              borderRadius: 8,
+                              fontSize: 13,
+                            }}
+                            placeholder="default value"
+                          />
+                          <select
+                            value={f.type || "text"}
+                            onChange={(e) => {
+                              const arr = [
+                                ...((settings as any).authHeaderFields || []),
+                              ];
+                              arr[i] = { ...arr[i], type: e.target.value };
+                              setSettings({
+                                ...settings,
+                                authHeaderFields: arr,
+                              } as any);
+                            }}
+                            style={{
+                              padding: 8,
+                              border: "1px solid #d1d5db",
+                              borderRadius: 8,
+                              fontSize: 13,
+                            }}
+                          >
+                            <option value="text">text</option>
+                          </select>
+                          <label
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 6,
+                              color: "#4a5568",
+                              fontSize: 13,
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={!!f.required}
+                              onChange={(e) => {
+                                const arr = [
+                                  ...((settings as any).authHeaderFields || []),
+                                ];
+                                arr[i] = {
+                                  ...arr[i],
+                                  required: e.target.checked,
+                                };
+                                setSettings({
+                                  ...settings,
+                                  authHeaderFields: arr,
+                                } as any);
+                              }}
+                            />{" "}
+                            required
+                          </label>
+                          <button
+                            onClick={() => {
+                              const arr = [
+                                ...((settings as any).authHeaderFields || []),
+                              ];
+                              arr.splice(i, 1);
+                              const keys = arr.map((x: any) => x.key);
+                              setSettings({
+                                ...settings,
+                                authHeaderFields: arr,
+                                authHeaders: keys,
+                              } as any);
+                            }}
+                            style={{
+                              padding: "6px 10px",
+                              background: "#ef4444",
+                              color: "white",
+                              border: "none",
+                              borderRadius: 8,
+                              fontSize: 12,
+                            }}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      )
+                    )}
                     <div>
-                      <button onClick={() => {
-                        const arr = [ ...(((settings as any).authHeaderFields) || []) ];
-                        arr.push({ key: "", label: "", required: true, type: "text" });
-                        const keys = arr.map((x: any) => x.key);
-                        setSettings({ ...settings, authHeaderFields: arr, authHeaders: keys } as any);
-                      }} style={{ padding: "8px 12px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 13 }}>Add header</button>
+                      <button
+                        onClick={() => {
+                          const arr = [
+                            ...((settings as any).authHeaderFields || []),
+                          ];
+                          arr.push({
+                            key: "",
+                            label: "",
+                            required: true,
+                            type: "text",
+                          });
+                          const keys = arr.map((x: any) => x.key);
+                          setSettings({
+                            ...settings,
+                            authHeaderFields: arr,
+                            authHeaders: keys,
+                          } as any);
+                        }}
+                        style={{
+                          padding: "8px 12px",
+                          background: "#2d3748",
+                          color: "white",
+                          border: "none",
+                          borderRadius: 8,
+                          fontSize: 13,
+                        }}
+                      >
+                        Add header
+                      </button>
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      marginTop: 10,
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr",
+                      gap: 12,
+                    }}
+                  >
+                    <div>
+                      <label
+                        style={{
+                          display: "block",
+                          color: "#4a5568",
+                          fontSize: 13,
+                          marginBottom: 6,
+                        }}
+                      >
+                        Auth Header Key (token)
+                      </label>
+                      <select
+                        value={settings.authHeaderKey || "Authorization"}
+                        onChange={(e) => {
+                          setSettings({
+                            ...(settings as any),
+                            authHeaderKey: e.target.value,
+                          } as any);
+                        }}
+                        style={{
+                          width: "100%",
+                          padding: 8,
+                          border: "1px solid #d1d5db",
+                          borderRadius: 8,
+                          fontSize: 13,
+                        }}
+                      >
+                        {(
+                          [
+                            "Authorization",
+                            ...((settings as any).authHeaders || []),
+                          ] as string[]
+                        )
+                          .filter((v, i, arr) => arr.indexOf(v) === i)
+                          .map((h) => (
+                            <option key={h} value={h}>
+                              {h}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label
+                        style={{
+                          display: "block",
+                          color: "#4a5568",
+                          fontSize: 13,
+                          marginBottom: 6,
+                        }}
+                      >
+                        API Key Header (optional)
+                      </label>
+                      <select
+                        value={(settings as any).apiKeyHeaderKey || "X-API-Key"}
+                        onChange={(e) => {
+                          setSettings({
+                            ...(settings as any),
+                            apiKeyHeaderKey: e.target.value,
+                          } as any);
+                        }}
+                        style={{
+                          width: "100%",
+                          padding: 8,
+                          border: "1px solid #d1d5db",
+                          borderRadius: 8,
+                          fontSize: 13,
+                        }}
+                      >
+                        {(
+                          [
+                            "X-API-Key",
+                            ...((settings as any).authHeaders || []),
+                            ...((settings as any).initialHeaders || []),
+                          ] as string[]
+                        )
+                          .filter((v, i, arr) => arr.indexOf(v) === i)
+                          .map((h) => (
+                            <option key={h} value={h}>
+                              {h}
+                            </option>
+                          ))}
+                      </select>
                     </div>
                   </div>
                 </div>
                 <div style={{ marginTop: 10 }}>
-                  <div style={{ color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Auth Response Fields</div>
+                  <div
+                    style={{ color: "#4a5568", fontSize: 13, marginBottom: 6 }}
+                  >
+                    Auth Response Fields
+                  </div>
                   <div style={{ display: "grid", gap: 8 }}>
-                    {(((settings as any).authResponseFieldDefs || []).filter((f: any) => !(((settings as any).authFields || []).some((bf: any) => bf.key === f.key)))).map((f: any, i: number) => (
-                      <div key={(f.key || "") + i} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 120px 140px auto", gap: 8, alignItems: "center" }}>
-                        <input value={f.key} onChange={(e) => {
-                          const arr = [ ...(((settings as any).authResponseFieldDefs) || []) ];
-                          arr[i] = { ...arr[i], key: e.target.value };
-                          const keys = arr.map((x: any) => x.key);
-                          setSettings({ ...settings, authResponseFieldDefs: arr, authResponseFields: keys } as any);
-                        }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="response key (e.g., token)" />
-                        <input value={f.label || ""} onChange={(e) => {
-                          const arr = [ ...(((settings as any).authResponseFieldDefs) || []) ];
-                          arr[i] = { ...arr[i], label: e.target.value };
-                          setSettings({ ...settings, authResponseFieldDefs: arr } as any);
-                        }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="label" />
-                        <input value={(f as any).defaultValue || ""} onChange={(e) => {
-                          const arr = [ ...(((settings as any).authResponseFieldDefs) || []) ];
-                          arr[i] = { ...arr[i], defaultValue: e.target.value } as any;
-                          setSettings({ ...settings, authResponseFieldDefs: arr } as any);
-                        }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="default value" />
-                        <select value={f.type || "text"} onChange={(e) => {
-                          const arr = [ ...(((settings as any).authResponseFieldDefs) || []) ];
-                          arr[i] = { ...arr[i], type: e.target.value };
-                          setSettings({ ...settings, authResponseFieldDefs: arr } as any);
-                        }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }}>
-                          <option value="text">text</option>
-                        </select>
-                        <label style={{ display: "flex", alignItems: "center", gap: 6, color: "#4a5568", fontSize: 13 }}>
-                          <input type="checkbox" checked={!!f.required} onChange={(e) => {
-                            const arr = [ ...(((settings as any).authResponseFieldDefs) || []) ];
-                            arr[i] = { ...arr[i], required: e.target.checked };
-                            setSettings({ ...settings, authResponseFieldDefs: arr } as any);
-                          }} /> required
-                        </label>
-                        <button onClick={() => {
-                          const arr = [ ...(((settings as any).authResponseFieldDefs) || []) ];
-                          arr.splice(i, 1);
-                          const keys = arr.map((x: any) => x.key);
-                          setSettings({ ...settings, authResponseFieldDefs: arr, authResponseFields: keys } as any);
-                        }} style={{ padding: "6px 10px", background: "#ef4444", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}>Remove</button>
-                      </div>
-                    ))}
+                    {((settings as any).authResponseFieldDefs || [])
+                      .filter(
+                        (f: any) =>
+                          !((settings as any).authFields || []).some(
+                            (bf: any) => bf.key === f.key
+                          )
+                      )
+                      .map((f: any, i: number) => (
+                        <div
+                          key={(f.key || "") + i}
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "1fr 1fr 1fr 120px 140px auto",
+                            gap: 8,
+                            alignItems: "center",
+                          }}
+                        >
+                          <input
+                            value={f.key}
+                            onChange={(e) => {
+                              const arr = [
+                                ...((settings as any).authResponseFieldDefs ||
+                                  []),
+                              ];
+                              arr[i] = { ...arr[i], key: e.target.value };
+                              const keys = arr.map((x: any) => x.key);
+                              setSettings({
+                                ...settings,
+                                authResponseFieldDefs: arr,
+                                authResponseFields: keys,
+                              } as any);
+                            }}
+                            style={{
+                              padding: 8,
+                              border: "1px solid #d1d5db",
+                              borderRadius: 8,
+                              fontSize: 13,
+                            }}
+                            placeholder="response key (e.g., token)"
+                          />
+                          <input
+                            value={f.label || ""}
+                            onChange={(e) => {
+                              const arr = [
+                                ...((settings as any).authResponseFieldDefs ||
+                                  []),
+                              ];
+                              arr[i] = { ...arr[i], label: e.target.value };
+                              setSettings({
+                                ...settings,
+                                authResponseFieldDefs: arr,
+                              } as any);
+                            }}
+                            style={{
+                              padding: 8,
+                              border: "1px solid #d1d5db",
+                              borderRadius: 8,
+                              fontSize: 13,
+                            }}
+                            placeholder="label"
+                          />
+                          <input
+                            value={(f as any).defaultValue || ""}
+                            onChange={(e) => {
+                              const arr = [
+                                ...((settings as any).authResponseFieldDefs ||
+                                  []),
+                              ];
+                              arr[i] = {
+                                ...arr[i],
+                                defaultValue: e.target.value,
+                              } as any;
+                              setSettings({
+                                ...settings,
+                                authResponseFieldDefs: arr,
+                              } as any);
+                            }}
+                            style={{
+                              padding: 8,
+                              border: "1px solid #d1d5db",
+                              borderRadius: 8,
+                              fontSize: 13,
+                            }}
+                            placeholder="default value"
+                          />
+                          <select
+                            value={f.type || "text"}
+                            onChange={(e) => {
+                              const arr = [
+                                ...((settings as any).authResponseFieldDefs ||
+                                  []),
+                              ];
+                              arr[i] = { ...arr[i], type: e.target.value };
+                              setSettings({
+                                ...settings,
+                                authResponseFieldDefs: arr,
+                              } as any);
+                            }}
+                            style={{
+                              padding: 8,
+                              border: "1px solid #d1d5db",
+                              borderRadius: 8,
+                              fontSize: 13,
+                            }}
+                          >
+                            <option value="text">text</option>
+                          </select>
+                          <label
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 6,
+                              color: "#4a5568",
+                              fontSize: 13,
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={!!f.required}
+                              onChange={(e) => {
+                                const arr = [
+                                  ...((settings as any).authResponseFieldDefs ||
+                                    []),
+                                ];
+                                arr[i] = {
+                                  ...arr[i],
+                                  required: e.target.checked,
+                                };
+                                setSettings({
+                                  ...settings,
+                                  authResponseFieldDefs: arr,
+                                } as any);
+                              }}
+                            />{" "}
+                            required
+                          </label>
+                          <button
+                            onClick={() => {
+                              const arr = [
+                                ...((settings as any).authResponseFieldDefs ||
+                                  []),
+                              ];
+                              arr.splice(i, 1);
+                              const keys = arr.map((x: any) => x.key);
+                              setSettings({
+                                ...settings,
+                                authResponseFieldDefs: arr,
+                                authResponseFields: keys,
+                              } as any);
+                            }}
+                            style={{
+                              padding: "6px 10px",
+                              background: "#ef4444",
+                              color: "white",
+                              border: "none",
+                              borderRadius: 8,
+                              fontSize: 12,
+                            }}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
                     <div>
-                      <button onClick={() => {
-                        const arr = [ ...(((settings as any).authResponseFieldDefs) || []) ];
-                        arr.push({ key: "", label: "", required: false, type: "text" });
-                        const keys = arr.map((x: any) => x.key);
-                        setSettings({ ...settings, authResponseFieldDefs: arr, authResponseFields: keys } as any);
-                      }} style={{ padding: "8px 12px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 13 }}>Add response field</button>
+                      <button
+                        onClick={() => {
+                          const arr = [
+                            ...((settings as any).authResponseFieldDefs || []),
+                          ];
+                          arr.push({
+                            key: "",
+                            label: "",
+                            required: false,
+                            type: "text",
+                          });
+                          const keys = arr.map((x: any) => x.key);
+                          setSettings({
+                            ...settings,
+                            authResponseFieldDefs: arr,
+                            authResponseFields: keys,
+                          } as any);
+                        }}
+                        style={{
+                          padding: "8px 12px",
+                          background: "#2d3748",
+                          color: "white",
+                          border: "none",
+                          borderRadius: 8,
+                          fontSize: 13,
+                        }}
+                      >
+                        Add response field
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div
+                  style={{
+                    marginTop: 10,
+                    padding: 12,
+                    border: "1px solid #e2e8f0",
+                    borderRadius: 8,
+                  }}
+                >
+                  <div
+                    style={{
+                      fontWeight: 600,
+                      color: "#2d3748",
+                      marginBottom: 8,
+                    }}
+                  >
+                    Map Token / API Key
+                  </div>
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr",
+                      gap: 12,
+                    }}
+                  >
+                    <div>
+                      <label
+                        style={{
+                          display: "block",
+                          color: "#4a5568",
+                          fontSize: 13,
+                          marginBottom: 6,
+                        }}
+                      >
+                        Token Path
+                      </label>
+                      <select
+                        value={
+                          (settings as any).authResponseMappings?.tokenPath ||
+                          ""
+                        }
+                        onChange={(e) => {
+                          const cur =
+                            (settings as any).authResponseMappings || {};
+                          setSettings({
+                            ...(settings as any),
+                            authResponseMappings: {
+                              ...cur,
+                              tokenPath: e.target.value,
+                            },
+                          } as any);
+                        }}
+                        style={{
+                          width: "100%",
+                          padding: 8,
+                          border: "1px solid #d1d5db",
+                          borderRadius: 8,
+                          fontSize: 13,
+                        }}
+                      >
+                        <option value="">Select a response key</option>
+                        {(
+                          ((settings as any).authResponseFieldDefs || []).map(
+                            (f: any) => f.key
+                          ) as string[]
+                        ).map((k) => (
+                          <option key={k} value={k}>
+                            {k}
+                          </option>
+                        ))}
+                        {(
+                          ((settings as any).authResponseFields ||
+                            []) as string[]
+                        )
+                          .filter(Boolean)
+                          .map((k) => (
+                            <option key={k} value={k}>
+                              {k}
+                            </option>
+                          ))}
+                        {(
+                          ["token", "access_token", "authToken"] as string[]
+                        ).map((k) => (
+                          <option key={k} value={k}>
+                            {k}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label
+                        style={{
+                          display: "block",
+                          color: "#4a5568",
+                          fontSize: 13,
+                          marginBottom: 6,
+                        }}
+                      >
+                        API Key Path
+                      </label>
+                      <select
+                        value={
+                          (settings as any).authResponseMappings?.apiKeyPath ||
+                          ""
+                        }
+                        onChange={(e) => {
+                          const cur =
+                            (settings as any).authResponseMappings || {};
+                          setSettings({
+                            ...(settings as any),
+                            authResponseMappings: {
+                              ...cur,
+                              apiKeyPath: e.target.value,
+                            },
+                          } as any);
+                        }}
+                        style={{
+                          width: "100%",
+                          padding: 8,
+                          border: "1px solid #d1d5db",
+                          borderRadius: 8,
+                          fontSize: 13,
+                        }}
+                      >
+                        <option value="">Select a response key</option>
+                        {(
+                          ((settings as any).authResponseFieldDefs || []).map(
+                            (f: any) => f.key
+                          ) as string[]
+                        ).map((k) => (
+                          <option key={k} value={k}>
+                            {k}
+                          </option>
+                        ))}
+                        {(
+                          ((settings as any).authResponseFields ||
+                            []) as string[]
+                        )
+                          .filter(Boolean)
+                          .map((k) => (
+                            <option key={k} value={k}>
+                              {k}
+                            </option>
+                          ))}
+                        {(["apiKey", "api_key", "key"] as string[]).map((k) => (
+                          <option key={k} value={k}>
+                            {k}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   </div>
                 </div>
@@ -1675,7 +3037,11 @@ const OnboardingSettingsSection: React.FC = () => {
                       bodyKeys,
                     };
                   } catch {}
-                  const next: any = { ...(settings as any), authCurlCommand: curl, authParsed: parsed };
+                  const next: any = {
+                    ...(settings as any),
+                    authCurlCommand: curl,
+                    authParsed: parsed,
+                  };
                   setSettings(next as any);
                 }}
                 rows={6}
@@ -1930,23 +3296,82 @@ const OnboardingSettingsSection: React.FC = () => {
             </div>
 
             {settings.initialParsed && (
-              <div style={{ marginTop: 12, padding: 12, border: "1px solid #e2e8f0", borderRadius: 8 }}>
-                <div style={{ fontWeight: 600, color: "#2d3748", marginBottom: 8 }}>Parsed Summary</div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              <div
+                style={{
+                  marginTop: 12,
+                  padding: 12,
+                  border: "1px solid #e2e8f0",
+                  borderRadius: 8,
+                }}
+              >
+                <div
+                  style={{ fontWeight: 600, color: "#2d3748", marginBottom: 8 }}
+                >
+                  Parsed Summary
+                </div>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: 8,
+                  }}
+                >
                   <div>Method: {settings.initialParsed.method}</div>
                   <div>Content-Type: {settings.initialParsed.contentType}</div>
-                  <div style={{ gridColumn: "1 / -1" }}>URL: {settings.initialParsed.url || ""}</div>
-                  <div style={{ gridColumn: "1 / -1" }}>Headers:
-                    <div style={{ marginTop: 6, display: "flex", flexWrap: "wrap", gap: 6 }}>
-                      {(Object.entries(settings.initialParsed.headersRedacted || {}) as [string, string][]).map(([k, v]) => (
-                        <span key={k} style={{ background: "#edf2f7", padding: "4px 8px", borderRadius: 6, fontSize: 12 }}>{k}: {v}</span>
+                  <div style={{ gridColumn: "1 / -1" }}>
+                    URL: {settings.initialParsed.url || ""}
+                  </div>
+                  <div style={{ gridColumn: "1 / -1" }}>
+                    Headers:
+                    <div
+                      style={{
+                        marginTop: 6,
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: 6,
+                      }}
+                    >
+                      {(
+                        Object.entries(
+                          settings.initialParsed.headersRedacted || {}
+                        ) as [string, string][]
+                      ).map(([k, v]) => (
+                        <span
+                          key={k}
+                          style={{
+                            background: "#edf2f7",
+                            padding: "4px 8px",
+                            borderRadius: 6,
+                            fontSize: 12,
+                          }}
+                        >
+                          {k}: {v}
+                        </span>
                       ))}
                     </div>
                   </div>
-                  <div style={{ gridColumn: "1 / -1" }}>Body Fields:
-                    <div style={{ marginTop: 6, display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  <div style={{ gridColumn: "1 / -1" }}>
+                    Body Fields:
+                    <div
+                      style={{
+                        marginTop: 6,
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: 6,
+                      }}
+                    >
                       {(settings.initialParsed.bodyKeys || []).map((k) => (
-                        <span key={k} style={{ background: "#eef2ff", padding: "4px 8px", borderRadius: 6, fontSize: 12 }}>{k}</span>
+                        <span
+                          key={k}
+                          style={{
+                            background: "#eef2ff",
+                            padding: "4px 8px",
+                            borderRadius: 6,
+                            fontSize: 12,
+                          }}
+                        >
+                          {k}
+                        </span>
                       ))}
                     </div>
                   </div>
@@ -1955,41 +3380,93 @@ const OnboardingSettingsSection: React.FC = () => {
             )}
 
             <div style={{ marginTop: 12 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <label style={{ display: "block", color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Initial Setup Body Fields</label>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <label
+                  style={{
+                    display: "block",
+                    color: "#4a5568",
+                    fontSize: 13,
+                    marginBottom: 6,
+                  }}
+                >
+                  Initial Setup Body Fields
+                </label>
                 {
                   <button
                     onClick={async () => {
                       try {
-                        console.groupCollapsed("[Onboarding] Regenerate initial setup spec");
-                        console.log({ docsUrl: initialDocUrl, curlCommand: settings.initialSetupCurlCommand || "" });
+                        console.groupCollapsed(
+                          "[Onboarding] Regenerate initial setup spec"
+                        );
+                        console.log({
+                          docsUrl: initialDocUrl,
+                          curlCommand: settings.initialSetupCurlCommand || "",
+                        });
                         console.groupEnd();
                       } catch {}
                       try {
-                        const res = await fetch(`/api/admin/onboarding?derive=initial&debug=true&docsUrl=${encodeURIComponent(initialDocUrl || "")}&curl=${encodeURIComponent(settings.initialSetupCurlCommand || "")}` , { credentials: "include" });
+                        const res = await fetch(
+                          `/api/admin/onboarding?derive=initial&debug=true&docsUrl=${encodeURIComponent(
+                            initialDocUrl || ""
+                          )}&curl=${encodeURIComponent(
+                            settings.initialSetupCurlCommand || ""
+                          )}`,
+                          { credentials: "include" }
+                        );
                         const data = await res.json();
                         if (res.ok && data.success) {
-                          const spec = data.spec || { headers: [], body: [], response: [] };
+                          const spec = data.spec || {
+                            headers: [],
+                            body: [],
+                            response: [],
+                          };
                           const parsed = {
                             ...(settings.initialParsed || { method: "POST" }),
                             bodyKeys: (spec.body || []).map((f: any) => f.key),
                           } as any;
-                          const initBodyKeys = (spec.body || []).map((f: any) => f.key);
-                          const initRespKeys = (spec.response || []).filter((k: string) => !initBodyKeys.includes(k));
+                          const initBodyKeys = (spec.body || []).map(
+                            (f: any) => f.key
+                          );
+                          const initRespKeys = (spec.response || []).filter(
+                            (k: string) => !initBodyKeys.includes(k)
+                          );
                           setSettings({
                             ...(settings as any),
                             initialFields: spec.body,
                             initialHeaders: spec.headers,
-                            initialHeaderFields: (spec.headers || []).map((h: string) => ({ key: h, label: h, required: true, type: "text" })),
+                            initialHeaderFields: (spec.headers || []).map(
+                              (h: string) => ({
+                                key: h,
+                                label: h,
+                                required: true,
+                                type: "text",
+                              })
+                            ),
                             initialResponseFields: initRespKeys,
-                            initialResponseFieldDefs: initRespKeys.map((k: string) => ({ key: k, label: k, required: false, type: "text" })),
+                            initialResponseFieldDefs: initRespKeys.map(
+                              (k: string) => ({
+                                key: k,
+                                label: k,
+                                required: false,
+                                type: "text",
+                              })
+                            ),
                             initialParsed: parsed,
                           } as any);
                           try {
-                            console.groupCollapsed("[Onboarding] Derived initial setup spec (ui)");
+                            console.groupCollapsed(
+                              "[Onboarding] Derived initial setup spec (ui)"
+                            );
                             console.log(spec);
                             if (Array.isArray((data as any).debug)) {
-                              for (const entry of (data as any).debug) console.log(entry);
+                              for (const entry of (data as any).debug)
+                                console.log(entry);
                             }
                             console.groupEnd();
                           } catch {}
@@ -2000,163 +3477,601 @@ const OnboardingSettingsSection: React.FC = () => {
                         alert(e?.message || "Failed to derive initial spec");
                       }
                     }}
-                    style={{ padding: "6px 10px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}
-                  >Regenerate from docs</button>
+                    style={{
+                      padding: "6px 10px",
+                      background: "#2d3748",
+                      color: "white",
+                      border: "none",
+                      borderRadius: 8,
+                      fontSize: 12,
+                    }}
+                  >
+                    Regenerate from docs
+                  </button>
                 }
               </div>
-                <div style={{ display: "grid", gap: 8 }}>
-                  {(((settings as any).initialFields) || []).map((f: any, idx: number) => (
-                    <div key={idx} style={{ display: "grid", gridTemplateColumns: "minmax(0,1.2fr) minmax(0,1.2fr) minmax(0,1fr) 110px 90px 80px", gap: 8, alignItems: "center" }}>
-                      <input value={f.key} onChange={(e) => {
-                        const arr = [ ...((settings as any).initialFields || []) ];
-                        arr[idx] = { ...arr[idx], key: e.target.value };
-                        setSettings({ ...settings, initialFields: arr } as any);
-                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, minWidth: 0 }} placeholder="key" />
-                      <input value={f.label} onChange={(e) => {
-                        const arr = [ ...((settings as any).initialFields || []) ];
-                        arr[idx] = { ...arr[idx], label: e.target.value };
-                        setSettings({ ...settings, initialFields: arr } as any);
-                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, minWidth: 0 }} placeholder="label" />
-                      <input value={(f as any).defaultValue || ""} onChange={(e) => {
-                        const arr = [ ...((settings as any).initialFields || []) ];
-                        arr[idx] = { ...arr[idx], defaultValue: e.target.value } as any;
-                        setSettings({ ...settings, initialFields: arr } as any);
-                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, minWidth: 0 }} placeholder="default value" />
-                      <select value={f.type} onChange={(e) => {
-                        const arr = [ ...((settings as any).initialFields || []) ];
-                        arr[idx] = { ...arr[idx], type: e.target.value };
-                        setSettings({ ...settings, initialFields: arr } as any);
-                      }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, minWidth: 0 }}>
+              <div style={{ display: "grid", gap: 8 }}>
+                {((settings as any).initialFields || []).map(
+                  (f: any, idx: number) => (
+                    <div
+                      key={idx}
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns:
+                          "minmax(0,1.2fr) minmax(0,1.2fr) minmax(0,1fr) 110px 90px 80px",
+                        gap: 8,
+                        alignItems: "center",
+                      }}
+                    >
+                      <input
+                        value={f.key}
+                        onChange={(e) => {
+                          const arr = [
+                            ...((settings as any).initialFields || []),
+                          ];
+                          arr[idx] = { ...arr[idx], key: e.target.value };
+                          setSettings({
+                            ...settings,
+                            initialFields: arr,
+                          } as any);
+                        }}
+                        style={{
+                          padding: 8,
+                          border: "1px solid #d1d5db",
+                          borderRadius: 8,
+                          fontSize: 13,
+                          minWidth: 0,
+                        }}
+                        placeholder="key"
+                      />
+                      <input
+                        value={f.label}
+                        onChange={(e) => {
+                          const arr = [
+                            ...((settings as any).initialFields || []),
+                          ];
+                          arr[idx] = { ...arr[idx], label: e.target.value };
+                          setSettings({
+                            ...settings,
+                            initialFields: arr,
+                          } as any);
+                        }}
+                        style={{
+                          padding: 8,
+                          border: "1px solid #d1d5db",
+                          borderRadius: 8,
+                          fontSize: 13,
+                          minWidth: 0,
+                        }}
+                        placeholder="label"
+                      />
+                      <input
+                        value={(f as any).defaultValue || ""}
+                        onChange={(e) => {
+                          const arr = [
+                            ...((settings as any).initialFields || []),
+                          ];
+                          arr[idx] = {
+                            ...arr[idx],
+                            defaultValue: e.target.value,
+                          } as any;
+                          setSettings({
+                            ...settings,
+                            initialFields: arr,
+                          } as any);
+                        }}
+                        style={{
+                          padding: 8,
+                          border: "1px solid #d1d5db",
+                          borderRadius: 8,
+                          fontSize: 13,
+                          minWidth: 0,
+                        }}
+                        placeholder="default value"
+                      />
+                      <select
+                        value={f.type}
+                        onChange={(e) => {
+                          const arr = [
+                            ...((settings as any).initialFields || []),
+                          ];
+                          arr[idx] = { ...arr[idx], type: e.target.value };
+                          setSettings({
+                            ...settings,
+                            initialFields: arr,
+                          } as any);
+                        }}
+                        style={{
+                          padding: 8,
+                          border: "1px solid #d1d5db",
+                          borderRadius: 8,
+                          fontSize: 13,
+                          minWidth: 0,
+                        }}
+                      >
                         <option value="text">text</option>
                         <option value="email">email</option>
                         <option value="phone">phone</option>
                         <option value="select">select</option>
                         <option value="checkbox">checkbox</option>
                       </select>
-                    <label style={{ display: "flex", alignItems: "center", gap: 6, color: "#4a5568", fontSize: 13 }}>
-                      <input type="checkbox" checked={!!f.required} onChange={(e) => {
-                        const arr = [ ...((settings as any).initialFields || []) ];
-                        arr[idx] = { ...arr[idx], required: e.target.checked };
-                        setSettings({ ...settings, initialFields: arr } as any);
-                      }} /> required
-                    </label>
-                    <button onClick={() => {
-                      const arr = [ ...((settings as any).initialFields || []) ];
-                      arr.splice(idx, 1);
-                      setSettings({ ...settings, initialFields: arr } as any);
-                    }} style={{ padding: "6px 10px", background: "#ef4444", color: "white", border: "none", borderRadius: 8, fontSize: 12, justifySelf: "start" }}>Remove</button>
-                  </div>
-                ))}
+                      <label
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 6,
+                          color: "#4a5568",
+                          fontSize: 13,
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={!!f.required}
+                          onChange={(e) => {
+                            const arr = [
+                              ...((settings as any).initialFields || []),
+                            ];
+                            arr[idx] = {
+                              ...arr[idx],
+                              required: e.target.checked,
+                            };
+                            setSettings({
+                              ...settings,
+                              initialFields: arr,
+                            } as any);
+                          }}
+                        />{" "}
+                        required
+                      </label>
+                      <button
+                        onClick={() => {
+                          const arr = [
+                            ...((settings as any).initialFields || []),
+                          ];
+                          arr.splice(idx, 1);
+                          setSettings({
+                            ...settings,
+                            initialFields: arr,
+                          } as any);
+                        }}
+                        style={{
+                          padding: "6px 10px",
+                          background: "#ef4444",
+                          color: "white",
+                          border: "none",
+                          borderRadius: 8,
+                          fontSize: 12,
+                          justifySelf: "start",
+                        }}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  )
+                )}
                 <div>
-                  <button onClick={() => {
-                    const arr = [ ...((settings as any).initialFields || []) ];
-                    arr.push({ key: "", label: "", required: true, type: "text" });
-                    setSettings({ ...settings, initialFields: arr } as any);
-                  }} style={{ padding: "8px 12px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 13 }}>Add field</button>
+                  <button
+                    onClick={() => {
+                      const arr = [...((settings as any).initialFields || [])];
+                      arr.push({
+                        key: "",
+                        label: "",
+                        required: true,
+                        type: "text",
+                      });
+                      setSettings({ ...settings, initialFields: arr } as any);
+                    }}
+                    style={{
+                      padding: "8px 12px",
+                      background: "#2d3748",
+                      color: "white",
+                      border: "none",
+                      borderRadius: 8,
+                      fontSize: 13,
+                    }}
+                  >
+                    Add field
+                  </button>
                 </div>
                 <div style={{ marginTop: 10 }}>
-                  <div style={{ color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Initial Setup Headers</div>
+                  <div
+                    style={{ color: "#4a5568", fontSize: 13, marginBottom: 6 }}
+                  >
+                    Initial Setup Headers
+                  </div>
                   <div style={{ display: "grid", gap: 8 }}>
-                    {(((settings as any).initialHeaderFields) || []).map((f: any, i: number) => (
-                      <div key={(f.key || "") + i} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 120px 140px auto", gap: 8, alignItems: "center" }}>
-                        <input value={f.key} onChange={(e) => {
-                          const arr = [ ...(((settings as any).initialHeaderFields) || []) ];
-                          arr[i] = { ...arr[i], key: e.target.value };
-                          const keys = arr.map((x: any) => x.key);
-                          setSettings({ ...settings, initialHeaderFields: arr, initialHeaders: keys } as any);
-                        }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="header key (e.g., x-apikey)" />
-                        <input value={f.label || ""} onChange={(e) => {
-                          const arr = [ ...(((settings as any).initialHeaderFields) || []) ];
-                          arr[i] = { ...arr[i], label: e.target.value };
-                          setSettings({ ...settings, initialHeaderFields: arr } as any);
-                        }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="label" />
-                        <input value={(f as any).defaultValue || ""} onChange={(e) => {
-                          const arr = [ ...(((settings as any).initialHeaderFields) || []) ];
-                          arr[i] = { ...arr[i], defaultValue: e.target.value } as any;
-                          setSettings({ ...settings, initialHeaderFields: arr } as any);
-                        }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="default value" />
-                        <select value={f.type || "text"} onChange={(e) => {
-                          const arr = [ ...(((settings as any).initialHeaderFields) || []) ];
-                          arr[i] = { ...arr[i], type: e.target.value };
-                          setSettings({ ...settings, initialHeaderFields: arr } as any);
-                        }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }}>
-                          <option value="text">text</option>
-                        </select>
-                        <label style={{ display: "flex", alignItems: "center", gap: 6, color: "#4a5568", fontSize: 13 }}>
-                          <input type="checkbox" checked={!!f.required} onChange={(e) => {
-                            const arr = [ ...(((settings as any).initialHeaderFields) || []) ];
-                            arr[i] = { ...arr[i], required: e.target.checked };
-                            setSettings({ ...settings, initialHeaderFields: arr } as any);
-                          }} /> required
-                        </label>
-                        <button onClick={() => {
-                          const arr = [ ...(((settings as any).initialHeaderFields) || []) ];
-                          arr.splice(i, 1);
-                          const keys = arr.map((x: any) => x.key);
-                          setSettings({ ...settings, initialHeaderFields: arr, initialHeaders: keys } as any);
-                        }} style={{ padding: "6px 10px", background: "#ef4444", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}>Remove</button>
-                      </div>
-                    ))}
+                    {((settings as any).initialHeaderFields || []).map(
+                      (f: any, i: number) => (
+                        <div
+                          key={(f.key || "") + i}
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "1fr 1fr 1fr 120px 140px auto",
+                            gap: 8,
+                            alignItems: "center",
+                          }}
+                        >
+                          <input
+                            value={f.key}
+                            onChange={(e) => {
+                              const arr = [
+                                ...((settings as any).initialHeaderFields ||
+                                  []),
+                              ];
+                              arr[i] = { ...arr[i], key: e.target.value };
+                              const keys = arr.map((x: any) => x.key);
+                              setSettings({
+                                ...settings,
+                                initialHeaderFields: arr,
+                                initialHeaders: keys,
+                              } as any);
+                            }}
+                            style={{
+                              padding: 8,
+                              border: "1px solid #d1d5db",
+                              borderRadius: 8,
+                              fontSize: 13,
+                            }}
+                            placeholder="header key (e.g., x-apikey)"
+                          />
+                          <input
+                            value={f.label || ""}
+                            onChange={(e) => {
+                              const arr = [
+                                ...((settings as any).initialHeaderFields ||
+                                  []),
+                              ];
+                              arr[i] = { ...arr[i], label: e.target.value };
+                              setSettings({
+                                ...settings,
+                                initialHeaderFields: arr,
+                              } as any);
+                            }}
+                            style={{
+                              padding: 8,
+                              border: "1px solid #d1d5db",
+                              borderRadius: 8,
+                              fontSize: 13,
+                            }}
+                            placeholder="label"
+                          />
+                          <input
+                            value={(f as any).defaultValue || ""}
+                            onChange={(e) => {
+                              const arr = [
+                                ...((settings as any).initialHeaderFields ||
+                                  []),
+                              ];
+                              arr[i] = {
+                                ...arr[i],
+                                defaultValue: e.target.value,
+                              } as any;
+                              setSettings({
+                                ...settings,
+                                initialHeaderFields: arr,
+                              } as any);
+                            }}
+                            style={{
+                              padding: 8,
+                              border: "1px solid #d1d5db",
+                              borderRadius: 8,
+                              fontSize: 13,
+                            }}
+                            placeholder="default value"
+                          />
+                          <select
+                            value={f.type || "text"}
+                            onChange={(e) => {
+                              const arr = [
+                                ...((settings as any).initialHeaderFields ||
+                                  []),
+                              ];
+                              arr[i] = { ...arr[i], type: e.target.value };
+                              setSettings({
+                                ...settings,
+                                initialHeaderFields: arr,
+                              } as any);
+                            }}
+                            style={{
+                              padding: 8,
+                              border: "1px solid #d1d5db",
+                              borderRadius: 8,
+                              fontSize: 13,
+                            }}
+                          >
+                            <option value="text">text</option>
+                          </select>
+                          <label
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 6,
+                              color: "#4a5568",
+                              fontSize: 13,
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={!!f.required}
+                              onChange={(e) => {
+                                const arr = [
+                                  ...((settings as any).initialHeaderFields ||
+                                    []),
+                                ];
+                                arr[i] = {
+                                  ...arr[i],
+                                  required: e.target.checked,
+                                };
+                                setSettings({
+                                  ...settings,
+                                  initialHeaderFields: arr,
+                                } as any);
+                              }}
+                            />{" "}
+                            required
+                          </label>
+                          <button
+                            onClick={() => {
+                              const arr = [
+                                ...((settings as any).initialHeaderFields ||
+                                  []),
+                              ];
+                              arr.splice(i, 1);
+                              const keys = arr.map((x: any) => x.key);
+                              setSettings({
+                                ...settings,
+                                initialHeaderFields: arr,
+                                initialHeaders: keys,
+                              } as any);
+                            }}
+                            style={{
+                              padding: "6px 10px",
+                              background: "#ef4444",
+                              color: "white",
+                              border: "none",
+                              borderRadius: 8,
+                              fontSize: 12,
+                            }}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      )
+                    )}
                     <div>
-                      <button onClick={() => {
-                        const arr = [ ...(((settings as any).initialHeaderFields) || []) ];
-                        arr.push({ key: "", label: "", required: true, type: "text" });
-                        const keys = arr.map((x: any) => x.key);
-                        setSettings({ ...settings, initialHeaderFields: arr, initialHeaders: keys } as any);
-                      }} style={{ padding: "8px 12px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 13 }}>Add header</button>
+                      <button
+                        onClick={() => {
+                          const arr = [
+                            ...((settings as any).initialHeaderFields || []),
+                          ];
+                          arr.push({
+                            key: "",
+                            label: "",
+                            required: true,
+                            type: "text",
+                          });
+                          const keys = arr.map((x: any) => x.key);
+                          setSettings({
+                            ...settings,
+                            initialHeaderFields: arr,
+                            initialHeaders: keys,
+                          } as any);
+                        }}
+                        style={{
+                          padding: "8px 12px",
+                          background: "#2d3748",
+                          color: "white",
+                          border: "none",
+                          borderRadius: 8,
+                          fontSize: 13,
+                        }}
+                      >
+                        Add header
+                      </button>
                     </div>
                   </div>
                 </div>
                 <div style={{ marginTop: 10 }}>
-                  <div style={{ color: "#4a5568", fontSize: 13, marginBottom: 6 }}>Initial Setup Response Fields</div>
+                  <div
+                    style={{ color: "#4a5568", fontSize: 13, marginBottom: 6 }}
+                  >
+                    Initial Setup Response Fields
+                  </div>
                   <div style={{ display: "grid", gap: 8 }}>
-                    {(((settings as any).initialResponseFieldDefs || []).filter((f: any) => !(((settings as any).initialFields || []).some((bf: any) => bf.key === f.key)))).map((f: any, i: number) => (
-                      <div key={(f.key || "") + i} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 120px 140px auto", gap: 8, alignItems: "center" }}>
-                        <input value={f.key} onChange={(e) => {
-                          const arr = [ ...(((settings as any).initialResponseFieldDefs) || []) ];
-                          arr[i] = { ...arr[i], key: e.target.value };
-                          const keys = arr.map((x: any) => x.key);
-                          setSettings({ ...settings, initialResponseFieldDefs: arr, initialResponseFields: keys } as any);
-                        }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="response key (e.g., setup.id)" />
-                        <input value={f.label || ""} onChange={(e) => {
-                          const arr = [ ...(((settings as any).initialResponseFieldDefs) || []) ];
-                          arr[i] = { ...arr[i], label: e.target.value };
-                          setSettings({ ...settings, initialResponseFieldDefs: arr } as any);
-                        }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="label" />
-                        <input value={(f as any).defaultValue || ""} onChange={(e) => {
-                          const arr = [ ...(((settings as any).initialResponseFieldDefs) || []) ];
-                          arr[i] = { ...arr[i], defaultValue: e.target.value } as any;
-                          setSettings({ ...settings, initialResponseFieldDefs: arr } as any);
-                        }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }} placeholder="default value" />
-                        <select value={f.type || "text"} onChange={(e) => {
-                          const arr = [ ...(((settings as any).initialResponseFieldDefs) || []) ];
-                          arr[i] = { ...arr[i], type: e.target.value };
-                          setSettings({ ...settings, initialResponseFieldDefs: arr } as any);
-                        }} style={{ padding: 8, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13 }}>
-                          <option value="text">text</option>
-                        </select>
-                        <label style={{ display: "flex", alignItems: "center", gap: 6, color: "#4a5568", fontSize: 13 }}>
-                          <input type="checkbox" checked={!!f.required} onChange={(e) => {
-                            const arr = [ ...(((settings as any).initialResponseFieldDefs) || []) ];
-                            arr[i] = { ...arr[i], required: e.target.checked };
-                            setSettings({ ...settings, initialResponseFieldDefs: arr } as any);
-                          }} /> required
-                        </label>
-                        <button onClick={() => {
-                          const arr = [ ...(((settings as any).initialResponseFieldDefs) || []) ];
-                          arr.splice(i, 1);
-                          const keys = arr.map((x: any) => x.key);
-                          setSettings({ ...settings, initialResponseFieldDefs: arr, initialResponseFields: keys } as any);
-                        }} style={{ padding: "6px 10px", background: "#ef4444", color: "white", border: "none", borderRadius: 8, fontSize: 12 }}>Remove</button>
-                      </div>
-                    ))}
+                    {((settings as any).initialResponseFieldDefs || [])
+                      .filter(
+                        (f: any) =>
+                          !((settings as any).initialFields || []).some(
+                            (bf: any) => bf.key === f.key
+                          )
+                      )
+                      .map((f: any, i: number) => (
+                        <div
+                          key={(f.key || "") + i}
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "1fr 1fr 1fr 120px 140px auto",
+                            gap: 8,
+                            alignItems: "center",
+                          }}
+                        >
+                          <input
+                            value={f.key}
+                            onChange={(e) => {
+                              const arr = [
+                                ...((settings as any)
+                                  .initialResponseFieldDefs || []),
+                              ];
+                              arr[i] = { ...arr[i], key: e.target.value };
+                              const keys = arr.map((x: any) => x.key);
+                              setSettings({
+                                ...settings,
+                                initialResponseFieldDefs: arr,
+                                initialResponseFields: keys,
+                              } as any);
+                            }}
+                            style={{
+                              padding: 8,
+                              border: "1px solid #d1d5db",
+                              borderRadius: 8,
+                              fontSize: 13,
+                            }}
+                            placeholder="response key (e.g., setup.id)"
+                          />
+                          <input
+                            value={f.label || ""}
+                            onChange={(e) => {
+                              const arr = [
+                                ...((settings as any)
+                                  .initialResponseFieldDefs || []),
+                              ];
+                              arr[i] = { ...arr[i], label: e.target.value };
+                              setSettings({
+                                ...settings,
+                                initialResponseFieldDefs: arr,
+                              } as any);
+                            }}
+                            style={{
+                              padding: 8,
+                              border: "1px solid #d1d5db",
+                              borderRadius: 8,
+                              fontSize: 13,
+                            }}
+                            placeholder="label"
+                          />
+                          <input
+                            value={(f as any).defaultValue || ""}
+                            onChange={(e) => {
+                              const arr = [
+                                ...((settings as any)
+                                  .initialResponseFieldDefs || []),
+                              ];
+                              arr[i] = {
+                                ...arr[i],
+                                defaultValue: e.target.value,
+                              } as any;
+                              setSettings({
+                                ...settings,
+                                initialResponseFieldDefs: arr,
+                              } as any);
+                            }}
+                            style={{
+                              padding: 8,
+                              border: "1px solid #d1d5db",
+                              borderRadius: 8,
+                              fontSize: 13,
+                            }}
+                            placeholder="default value"
+                          />
+                          <select
+                            value={f.type || "text"}
+                            onChange={(e) => {
+                              const arr = [
+                                ...((settings as any)
+                                  .initialResponseFieldDefs || []),
+                              ];
+                              arr[i] = { ...arr[i], type: e.target.value };
+                              setSettings({
+                                ...settings,
+                                initialResponseFieldDefs: arr,
+                              } as any);
+                            }}
+                            style={{
+                              padding: 8,
+                              border: "1px solid #d1d5db",
+                              borderRadius: 8,
+                              fontSize: 13,
+                            }}
+                          >
+                            <option value="text">text</option>
+                          </select>
+                          <label
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 6,
+                              color: "#4a5568",
+                              fontSize: 13,
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={!!f.required}
+                              onChange={(e) => {
+                                const arr = [
+                                  ...((settings as any)
+                                    .initialResponseFieldDefs || []),
+                                ];
+                                arr[i] = {
+                                  ...arr[i],
+                                  required: e.target.checked,
+                                };
+                                setSettings({
+                                  ...settings,
+                                  initialResponseFieldDefs: arr,
+                                } as any);
+                              }}
+                            />{" "}
+                            required
+                          </label>
+                          <button
+                            onClick={() => {
+                              const arr = [
+                                ...((settings as any)
+                                  .initialResponseFieldDefs || []),
+                              ];
+                              arr.splice(i, 1);
+                              const keys = arr.map((x: any) => x.key);
+                              setSettings({
+                                ...settings,
+                                initialResponseFieldDefs: arr,
+                                initialResponseFields: keys,
+                              } as any);
+                            }}
+                            style={{
+                              padding: "6px 10px",
+                              background: "#ef4444",
+                              color: "white",
+                              border: "none",
+                              borderRadius: 8,
+                              fontSize: 12,
+                            }}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
                     <div>
-                      <button onClick={() => {
-                        const arr = [ ...(((settings as any).initialResponseFieldDefs) || []) ];
-                        arr.push({ key: "", label: "", required: false, type: "text" });
-                        const keys = arr.map((x: any) => x.key);
-                        setSettings({ ...settings, initialResponseFieldDefs: arr, initialResponseFields: keys } as any);
-                      }} style={{ padding: "8px 12px", background: "#2d3748", color: "white", border: "none", borderRadius: 8, fontSize: 13 }}>Add response field</button>
+                      <button
+                        onClick={() => {
+                          const arr = [
+                            ...((settings as any).initialResponseFieldDefs ||
+                              []),
+                          ];
+                          arr.push({
+                            key: "",
+                            label: "",
+                            required: false,
+                            type: "text",
+                          });
+                          const keys = arr.map((x: any) => x.key);
+                          setSettings({
+                            ...settings,
+                            initialResponseFieldDefs: arr,
+                            initialResponseFields: keys,
+                          } as any);
+                        }}
+                        style={{
+                          padding: "8px 12px",
+                          background: "#2d3748",
+                          color: "white",
+                          border: "none",
+                          borderRadius: 8,
+                          fontSize: 13,
+                        }}
+                      >
+                        Add response field
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -2194,7 +4109,11 @@ const OnboardingSettingsSection: React.FC = () => {
                       bodyKeys,
                     };
                   } catch {}
-                  const next: any = { ...(settings as any), initialSetupCurlCommand: curl, initialParsed: parsed };
+                  const next: any = {
+                    ...(settings as any),
+                    initialSetupCurlCommand: curl,
+                    initialParsed: parsed,
+                  };
                   setSettings(next as any);
                 }}
                 rows={6}
