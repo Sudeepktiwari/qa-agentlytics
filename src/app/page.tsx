@@ -622,7 +622,102 @@ export default function Page() {
             </div>
           </div>
         </section>
+        <section className="w-full bg-[#F7F9FC] text-slate-800 py-20 px-4 md:px-8 border-t border-slate-200/70">
+          <div className="mx-auto max-w-6xl text-left">
+            {/* Eyebrow + Heading */}
+            <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-blue-600/80 mb-3">
+              Revenue Leaks · Problem Space
+            </p>
+            <h2 className="text-3xl md:text-4xl font-semibold tracking-tight mb-4 text-slate-900">
+              Why Your Website Is Losing Revenue Today
+            </h2>
+            <p className="text-base md:text-lg text-slate-600 max-w-2xl">
+              You don’t have a traffic problem — you have a
+              <span className="font-semibold text-slate-900">
+                {" "}
+                buyer journey problem
+              </span>
+              . Visitors come with intent, but your systems don’t meet them at
+              the right moment.
+            </p>
 
+            {/* 3-column bar layout – light theme */}
+            <div className="mt-12 grid gap-6 md:grid-cols-3">
+              {/* Column 1 */}
+              <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-6 flex flex-col h-full">
+                <div className="h-1 w-12 rounded-full bg-blue-500 mb-4" />
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 mb-2">
+                  Problem #1
+                </p>
+                <h3 className="text-base md:text-lg font-semibold text-slate-900 mb-2">
+                  Visitors show intent, but never convert.
+                </h3>
+                <p className="text-sm text-slate-600 mb-4">
+                  High-intent visitors check pricing and compare plans — then
+                  leave without starting a conversation.
+                </p>
+                <ul className="mt-auto space-y-1.5 text-sm text-slate-500">
+                  <li>• Reactive bots wait for users to type first.</li>
+                  <li>• Demo links and redirects break momentum.</li>
+                </ul>
+              </div>
+
+              {/* Column 2 */}
+              <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-6 flex flex-col h-full">
+                <div className="h-1 w-12 rounded-full bg-blue-500 mb-4" />
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 mb-2">
+                  Problem #2
+                </p>
+                <h3 className="text-base md:text-lg font-semibold text-slate-900 mb-2">
+                  Sales time goes to the wrong conversations.
+                </h3>
+                <p className="text-sm text-slate-600 mb-4">
+                  Reps jump between tools and manually qualify leads, spending
+                  hours on low-fit prospects.
+                </p>
+                <ul className="mt-auto space-y-1.5 text-sm text-slate-500">
+                  <li>• No automated scoring or routing.</li>
+                  <li>• Pipeline looks full but win rates stay flat.</li>
+                </ul>
+              </div>
+
+              {/* Column 3 */}
+              <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-6 flex flex-col h-full">
+                <div className="h-1 w-12 rounded-full bg-blue-500 mb-4" />
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 mb-2">
+                  Problem #3
+                </p>
+                <h3 className="text-base md:text-lg font-semibold text-slate-900 mb-2">
+                  Onboarding and support repeat the same work.
+                </h3>
+                <p className="text-sm text-slate-600 mb-4">
+                  Customers don’t reach first value quickly, and every new issue
+                  feels like starting from scratch.
+                </p>
+                <ul className="mt-auto space-y-1.5 text-sm text-slate-500">
+                  <li>• Static onboarding makes users stall or churn.</li>
+                  <li>• Support can’t see full journey context.</li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Bottom Summary */}
+            <div className="mt-10 rounded-xl border border-green-300 bg-green-50 px-5 py-5 flex flex-col md:flex-row md:items-center gap-3 shadow-sm">
+              <div className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-green-200 text-green-800 font-bold text-lg">
+                ✓
+              </div>
+              <p className="text-sm md:text-base text-green-800">
+                These aren’t random issues — they’re the everyday revenue leaks
+                across your lifecycle.
+                <span className="font-semibold">
+                  Agentlytics fixes them by turning anonymous visitors into one
+                  continuous AI-driven journey from lead → sales → onboarding →
+                  support.
+                </span>
+              </p>
+            </div>
+          </div>
+        </section>
         {/* Problem */}
         <section id="problem" className="py-24">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-12 items-start">

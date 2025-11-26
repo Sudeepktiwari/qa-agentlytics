@@ -293,6 +293,11 @@ export async function GET(request: Request) {
     phone: null,
     company: null
   };
+  let registrationData = { fullName: null, email: null, password: null };
+  let registrationConfirmed = false;
+  let registrationComplete = false;
+  let initialSetupData = { companyName: null, timezone: null, preferences: null };
+  let initialSetupFormShown = false;
   let isRescheduleMode = false;
   let currentBookingData = null;
   let bookingInProgress = false;
@@ -740,6 +745,53 @@ export async function GET(request: Request) {
     // Load calendar data
     console.log("📅 [BOOKING CALENDAR] Starting to load calendar data in 500ms");
     setTimeout(() => loadBookingCalendar(calendarContainer, loadingDiv, bookingType), 500);
+  }
+
+  function renderInitialSetupForm(bubbleDiv) {
+    const formWrap = document.createElement('div');
+    formWrap.style.cssText = 'margin-top: 12px;';
+    const form = document.createElement('form');
+    form.style.cssText = 'display: flex; flex-direction: column; gap: 8px;';
+    const fields = [
+      { name: 'companyName', label: 'Company Name', type: 'text', placeholder: 'Acme Inc.' },
+      { name: 'timezone', label: 'Timezone', type: 'text', placeholder: 'America/New_York' },
+      { name: 'preferences', label: 'Setup Preferences', type: 'text', placeholder: 'E.g., enable notifications' }
+    ];
+    const inputs = {};
+    fields.forEach(f => {
+      const div = document.createElement('div');
+      const label = document.createElement('div');
+      label.textContent = f.label;
+      label.style.cssText = 'color: white; font-size: 13px; margin-bottom: 4px;';
+      const input = document.createElement('input');
+      input.type = f.type;
+      input.placeholder = f.placeholder;
+      input.style.cssText = 'width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 8px; font-size: 13px; background: white; color: black; box-sizing: border-box;';
+      inputs[f.name] = input;
+      div.appendChild(label);
+      div.appendChild(input);
+      form.appendChild(div);
+    });
+    const submit = document.createElement('button');
+    submit.type = 'submit';
+    submit.textContent = 'Submit';
+    submit.style.cssText = 'background: #f1f1f1; color: #333; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 13px; align-self: flex-start;';
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      initialSetupData.companyName = (inputs.companyName && inputs.companyName.value.trim()) || '';
+      initialSetupData.timezone = (inputs.timezone && inputs.timezone.value.trim()) || '';
+      initialSetupData.preferences = (inputs.preferences && inputs.preferences.value.trim()) || '';
+      const reviewText = 'Please review initial setup details:\n\n' +
+        'Company: ' + (initialSetupData.companyName || '-') + '\n' +
+        'Timezone: ' + (initialSetupData.timezone || '-') + '\n' +
+        'Preferences: ' + (initialSetupData.preferences || '-');
+      messages.push({ role: 'assistant', content: reviewText, buttons: ['Confirm and Submit', 'Edit Details'] });
+      renderMessages();
+    });
+    form.appendChild(submit);
+    formWrap.appendChild(form);
+    bubbleDiv.appendChild(formWrap);
+    initialSetupFormShown = true;
   }
 
   // Load and render booking calendar with enhanced UI
@@ -3703,6 +3755,13 @@ export async function GET(request: Request) {
     
     console.log("💬 [WIDGET MESSAGE] User sending message:", text);
     
+    const nameMatch = text.match(/name\s*:\s*([^,\n]+)/i);
+    const emailMatch = text.match(/email\s*:\s*([^,\n]+)/i);
+    const passMatch = text.match(/password\s*:\s*([^,\n]+)/i);
+    if (nameMatch && nameMatch[1]) registrationData.fullName = nameMatch[1].trim();
+    if (emailMatch && emailMatch[1]) registrationData.email = emailMatch[1].trim();
+    if (passMatch && passMatch[1]) registrationData.password = passMatch[1].trim();
+
     resetUserActivity();
     lastUserMessage = Date.now(); // Track when user last sent a message
     
@@ -3747,6 +3806,10 @@ export async function GET(request: Request) {
     }
     
     let botResponse = '';
+    const confirmRegex = /\b(confirm\s+and\s+submit|confirm|submit|looks\s*good|look\s*good|yes)\b/i;
+    if (ONBOARDING_ONLY && confirmRegex.test(text) && registrationData.fullName && registrationData.email && registrationData.password) {
+      registrationConfirmed = true;
+    }
     if (data.error) {
       console.log("❌ [WIDGET MESSAGE] Error in API response:", data.error);
       const errorText = (data.mainText && data.mainText.trim()) ? data.mainText : 'Sorry, something went wrong. Please try again.';
@@ -3786,14 +3849,25 @@ export async function GET(request: Request) {
       })();
       const hasServerMessage = !!(data.mainText && data.mainText.trim()) || !!(data.answer && String(data.answer).trim());
       const useFallbackForConfirm = ONBOARDING_ONLY && (isConfirmInput || lastAssistantWithConfirm) && !data.error && !hasServerMessage;
-      const botMessage = {
-        role: 'assistant',
-        content: ((data.mainText && data.mainText.trim())
+      const contentLower = String(data.mainText || '').toLowerCase();
+      const asksAnyReg = /what\s+is\s+your\s+(name|email|password)/.test(contentLower);
+      const hasAllReg = registrationData.fullName && registrationData.email && registrationData.password;
+      const summaryText = 'Please review your details:\n\n' +
+        'Name: ' + (registrationData.fullName || '-') + '\n' +
+        'Email: ' + (registrationData.email || '-') + '\n' +
+        'Password: ' + (registrationData.password ? '********' : '-') + '\n\nReply "Confirm" to submit, or say "Edit" to change any detail.';
+
+      const contentToUse = (hasAllReg && asksAnyReg) ? summaryText : ((data.mainText && data.mainText.trim())
           ? data.mainText
           : ((data.answer && String(data.answer).trim())
             ? String(data.answer)
-            : fallbackText)),
-        buttons: data.buttons || [],
+            : fallbackText));
+      const buttonsToUse = (hasAllReg && asksAnyReg) ? ['Confirm and Submit', 'Edit Details'] : (data.buttons || []);
+
+      const botMessage = {
+        role: 'assistant',
+        content: contentToUse,
+        buttons: buttonsToUse,
         emailPrompt: data.emailPrompt || '',
         showBookingCalendar: data.showBookingCalendar || false,
         bookingType: data.bookingType || null,
@@ -4166,6 +4240,10 @@ export async function GET(request: Request) {
               return;
             }
 
+            if (fullName) registrationData.fullName = fullName;
+            if (email) registrationData.email = email;
+            if (password) registrationData.password = password;
+
             // Build combined message with only provided fields (plain JS)
             const parts = [];
             if (fullName) parts.push('Name: ' + fullName);
@@ -4285,6 +4363,28 @@ export async function GET(request: Request) {
           }
         }
 
+        const shouldShowRegSummary = (function() {
+          const hasAll = registrationData.fullName && registrationData.email && registrationData.password;
+          const contentLower = String(msg.content || '').toLowerCase();
+          const asksAny = /what\s+is\s+your\s+(name|email|password)/.test(contentLower) || contentLower.includes('review your details');
+          const hasConfirmButton = Array.isArray(msg.buttons) && msg.buttons.includes('Confirm and Submit');
+          return ONBOARDING_ONLY && hasAll && (asksAny || hasConfirmButton);
+        })();
+
+        if (shouldShowRegSummary) {
+          const summary = document.createElement('div');
+          summary.style.cssText = 'margin-top: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; padding: 10px;';
+          const mask = (v) => v ? '•'.repeat(Math.max(8, String(v).length)) : '-';
+          summary.innerHTML = '<div style="font-weight:600; margin-bottom:6px;">Please review your details:</div>' +
+            '<div style="font-size:13px;">Name: ' + (registrationData.fullName || '-') + '</div>' +
+            '<div style="font-size:13px;">Email: ' + (registrationData.email || '-') + '</div>' +
+            '<div style="font-size:13px;">Password: ' + mask(registrationData.password) + '</div>';
+          bubbleDiv.appendChild(summary);
+        }
+
+        if (ONBOARDING_ONLY && registrationConfirmed && !initialSetupFormShown) {
+          renderInitialSetupForm(bubbleDiv);
+        }
       }
       
       messagesContainer.appendChild(messageDiv);
