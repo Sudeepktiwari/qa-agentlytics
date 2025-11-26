@@ -2559,165 +2559,165 @@ const OnboardingSettingsSection: React.FC = () => {
                   <div
                     style={{
                       marginTop: 10,
+                      padding: 12,
+                      border: "1px solid #e2e8f0",
+                      borderRadius: 8,
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontWeight: 600,
+                        color: "#2d3748",
+                        marginBottom: 8,
+                      }}
+                    >
+                      Map Token / API Key
+                    </div>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: 12,
+                      }}
+                    >
+                      <div>
+                        <label
+                          style={{
+                            display: "block",
+                            color: "#4a5568",
+                            fontSize: 13,
+                            marginBottom: 6,
+                          }}
+                        >
+                          Token Path
+                        </label>
+                        <select
+                          value={
+                            (settings as any).authResponseMappings?.tokenPath ||
+                            ""
+                          }
+                          onChange={(e) => {
+                            const cur =
+                              (settings as any).authResponseMappings || {};
+                            setSettings({
+                              ...(settings as any),
+                              authResponseMappings: {
+                                ...cur,
+                                tokenPath: e.target.value,
+                              },
+                            } as any);
+                          }}
+                          style={{
+                            width: "100%",
+                            padding: 8,
+                            border: "1px solid #d1d5db",
+                            borderRadius: 8,
+                            fontSize: 13,
+                          }}
+                        >
+                          <option value="">Select a response key</option>
+                          {(
+                            ((settings as any).authResponseFieldDefs || []).map(
+                              (f: any) => f.key
+                            ) as string[]
+                          ).map((k) => (
+                            <option key={k} value={k}>
+                              {k}
+                            </option>
+                          ))}
+                          {(
+                            ((settings as any).authResponseFields ||
+                              []) as string[]
+                          )
+                            .filter(Boolean)
+                            .map((k) => (
+                              <option key={k} value={k}>
+                                {k}
+                              </option>
+                            ))}
+                          {(
+                            ["token", "access_token", "authToken"] as string[]
+                          ).map((k) => (
+                            <option key={k} value={k}>
+                              {k}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label
+                          style={{
+                            display: "block",
+                            color: "#4a5568",
+                            fontSize: 13,
+                            marginBottom: 6,
+                          }}
+                        >
+                          API Key Path
+                        </label>
+                        <select
+                          value={
+                            (settings as any).authResponseMappings
+                              ?.apiKeyPath || ""
+                          }
+                          onChange={(e) => {
+                            const cur =
+                              (settings as any).authResponseMappings || {};
+                            setSettings({
+                              ...(settings as any),
+                              authResponseMappings: {
+                                ...cur,
+                                apiKeyPath: e.target.value,
+                              },
+                            } as any);
+                          }}
+                          style={{
+                            width: "100%",
+                            padding: 8,
+                            border: "1px solid #d1d5db",
+                            borderRadius: 8,
+                            fontSize: 13,
+                          }}
+                        >
+                          <option value="">Select a response key</option>
+                          {(
+                            ((settings as any).authResponseFieldDefs || []).map(
+                              (f: any) => f.key
+                            ) as string[]
+                          ).map((k) => (
+                            <option key={k} value={k}>
+                              {k}
+                            </option>
+                          ))}
+                          {(
+                            ((settings as any).authResponseFields ||
+                              []) as string[]
+                          )
+                            .filter(Boolean)
+                            .map((k) => (
+                              <option key={k} value={k}>
+                                {k}
+                              </option>
+                            ))}
+                          {(["apiKey", "api_key", "key"] as string[]).map(
+                            (k) => (
+                              <option key={k} value={k}>
+                                {k}
+                              </option>
+                            )
+                          )}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      marginTop: 10,
                       display: "grid",
                       gridTemplateColumns: "1fr 1fr",
                       gap: 12,
                     }}
                   >
-                    <div
-                      style={{
-                        marginTop: 10,
-                        padding: 12,
-                        border: "1px solid #e2e8f0",
-                        borderRadius: 8,
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontWeight: 600,
-                          color: "#2d3748",
-                          marginBottom: 8,
-                        }}
-                      >
-                        Map Token / API Key
-                      </div>
-                      <div
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns: "1fr 1fr",
-                          gap: 12,
-                        }}
-                      >
-                        <div>
-                          <label
-                            style={{
-                              display: "block",
-                              color: "#4a5568",
-                              fontSize: 13,
-                              marginBottom: 6,
-                            }}
-                          >
-                            Token Path
-                          </label>
-                          <select
-                            value={
-                              (settings as any).authResponseMappings
-                                ?.tokenPath || ""
-                            }
-                            onChange={(e) => {
-                              const cur =
-                                (settings as any).authResponseMappings || {};
-                              setSettings({
-                                ...(settings as any),
-                                authResponseMappings: {
-                                  ...cur,
-                                  tokenPath: e.target.value,
-                                },
-                              } as any);
-                            }}
-                            style={{
-                              width: "100%",
-                              padding: 8,
-                              border: "1px solid #d1d5db",
-                              borderRadius: 8,
-                              fontSize: 13,
-                            }}
-                          >
-                            <option value="">Select a response key</option>
-                            {(
-                              (
-                                (settings as any).authResponseFieldDefs || []
-                              ).map((f: any) => f.key) as string[]
-                            ).map((k) => (
-                              <option key={k} value={k}>
-                                {k}
-                              </option>
-                            ))}
-                            {(
-                              ((settings as any).authResponseFields ||
-                                []) as string[]
-                            )
-                              .filter(Boolean)
-                              .map((k) => (
-                                <option key={k} value={k}>
-                                  {k}
-                                </option>
-                              ))}
-                            {(
-                              ["token", "access_token", "authToken"] as string[]
-                            ).map((k) => (
-                              <option key={k} value={k}>
-                                {k}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <div>
-                          <label
-                            style={{
-                              display: "block",
-                              color: "#4a5568",
-                              fontSize: 13,
-                              marginBottom: 6,
-                            }}
-                          >
-                            API Key Path
-                          </label>
-                          <select
-                            value={
-                              (settings as any).authResponseMappings
-                                ?.apiKeyPath || ""
-                            }
-                            onChange={(e) => {
-                              const cur =
-                                (settings as any).authResponseMappings || {};
-                              setSettings({
-                                ...(settings as any),
-                                authResponseMappings: {
-                                  ...cur,
-                                  apiKeyPath: e.target.value,
-                                },
-                              } as any);
-                            }}
-                            style={{
-                              width: "100%",
-                              padding: 8,
-                              border: "1px solid #d1d5db",
-                              borderRadius: 8,
-                              fontSize: 13,
-                            }}
-                          >
-                            <option value="">Select a response key</option>
-                            {(
-                              (
-                                (settings as any).authResponseFieldDefs || []
-                              ).map((f: any) => f.key) as string[]
-                            ).map((k) => (
-                              <option key={k} value={k}>
-                                {k}
-                              </option>
-                            ))}
-                            {(
-                              ((settings as any).authResponseFields ||
-                                []) as string[]
-                            )
-                              .filter(Boolean)
-                              .map((k) => (
-                                <option key={k} value={k}>
-                                  {k}
-                                </option>
-                              ))}
-                            {(["apiKey", "api_key", "key"] as string[]).map(
-                              (k) => (
-                                <option key={k} value={k}>
-                                  {k}
-                                </option>
-                              )
-                            )}
-                          </select>
-                        </div>
-                      </div>
-                    </div>
                     <div>
                       <label
                         style={{
