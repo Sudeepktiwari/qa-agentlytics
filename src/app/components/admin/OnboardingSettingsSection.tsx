@@ -3623,6 +3623,29 @@ const OnboardingSettingsSection: React.FC = () => {
                         />{" "}
                         required
                       </label>
+                      <select
+                        value={(f as any).source || "none"}
+                        onChange={(e) => {
+                          const arr = [
+                            ...((settings as any).initialFields || []),
+                          ];
+                          arr[idx] = { ...arr[idx], source: e.target.value };
+                          setSettings({
+                            ...settings,
+                            initialFields: arr,
+                          } as any);
+                        }}
+                        style={{
+                          padding: 8,
+                          border: "1px solid #d1d5db",
+                          borderRadius: 8,
+                          fontSize: 13,
+                        }}
+                      >
+                        <option value="none">value: user-provided</option>
+                        <option value="token">value: auth token</option>
+                        <option value="apiKey">value: auth api key</option>
+                      </select>
                       <button
                         onClick={() => {
                           const arr = [
@@ -3780,6 +3803,30 @@ const OnboardingSettingsSection: React.FC = () => {
                             }}
                           >
                             <option value="text">text</option>
+                          </select>
+                          <select
+                            value={(f as any).source || "none"}
+                            onChange={(e) => {
+                              const arr = [
+                                ...((settings as any).initialHeaderFields ||
+                                  []),
+                              ];
+                              arr[i] = { ...arr[i], source: e.target.value };
+                              setSettings({
+                                ...settings,
+                                initialHeaderFields: arr,
+                              } as any);
+                            }}
+                            style={{
+                              padding: 8,
+                              border: "1px solid #d1d5db",
+                              borderRadius: 8,
+                              fontSize: 13,
+                            }}
+                          >
+                            <option value="none">value: custom/default</option>
+                            <option value="token">value: auth token</option>
+                            <option value="apiKey">value: auth api key</option>
                           </select>
                           <label
                             style={{

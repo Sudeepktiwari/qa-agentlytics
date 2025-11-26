@@ -515,6 +515,8 @@ export const onboardingService = {
 
       try {
         const setupFields = ((onboarding as any).initialFields as any[]) || [];
+        const setupHeaderFields =
+          ((onboarding as any).initialHeaderFields as any[]) || [];
         if (Array.isArray(setupFields)) {
           if (tokenFromFlow) {
             const tokenField = setupFields.find((f: any) =>
@@ -530,6 +532,31 @@ export const onboardingService = {
             );
             if (keyField?.key && !payload[keyField.key]) {
               payload[keyField.key] = apiKeyFromFlow;
+            }
+          }
+          for (const f of setupFields) {
+            const src = String((f as any).source || "none");
+            if (src === "token" && tokenFromFlow) {
+              payload[String(f.key || "")] = tokenFromFlow;
+            } else if (src === "apiKey" && apiKeyFromFlow) {
+              payload[String(f.key || "")] = apiKeyFromFlow;
+            }
+          }
+        }
+        if (Array.isArray(setupHeaderFields)) {
+          for (const hf of setupHeaderFields) {
+            const src = String((hf as any).source || "none");
+            const hk = String((hf as any).key || "");
+            if (!hk) continue;
+            if (src === "token" && tokenFromFlow) {
+              headers[hk] =
+                hk.toLowerCase() === "authorization"
+                  ? `Bearer ${tokenFromFlow}`
+                  : tokenFromFlow;
+            } else if (src === "apiKey" && apiKeyFromFlow) {
+              headers[hk] = apiKeyFromFlow;
+            } else if ((hf as any).defaultValue) {
+              headers[hk] = String((hf as any).defaultValue);
             }
           }
         }
@@ -721,8 +748,35 @@ export const onboardingService = {
             payload[keyField.key] = apiKeyFromFlow;
           }
         }
+        for (const f of setupFields) {
+          const src = String((f as any).source || "none");
+          if (src === "token" && tokenFromFlow) {
+            payload[String(f.key || "")] = tokenFromFlow;
+          } else if (src === "apiKey" && apiKeyFromFlow) {
+            payload[String(f.key || "")] = apiKeyFromFlow;
+          }
+        }
       }
     } catch {}
+    const setupHeaderFields =
+      ((onboarding as any).initialHeaderFields as any[]) || [];
+    if (Array.isArray(setupHeaderFields)) {
+      for (const hf of setupHeaderFields) {
+        const src = String((hf as any).source || "none");
+        const hk = String((hf as any).key || "");
+        if (!hk) continue;
+        if (src === "token" && tokenFromFlow) {
+          headers[hk] =
+            hk.toLowerCase() === "authorization"
+              ? `Bearer ${tokenFromFlow}`
+              : tokenFromFlow;
+        } else if (src === "apiKey" && apiKeyFromFlow) {
+          headers[hk] = apiKeyFromFlow;
+        } else if ((hf as any).defaultValue) {
+          headers[hk] = String((hf as any).defaultValue);
+        }
+      }
+    }
     if (
       onboarding.idempotencyKeyField &&
       data[onboarding.idempotencyKeyField]
