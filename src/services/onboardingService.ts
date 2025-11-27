@@ -302,6 +302,13 @@ export const onboardingService = {
         })
       );
 
+      const payloadUsedLog = Object.fromEntries(
+        (keysUsed || []).map((k: string) => {
+          const lk = String(k || "").toLowerCase();
+          const isSensitive = redactKeys.some((rk) => lk.includes(rk));
+          return [k, isSensitive ? "***" : (data as any)[k]];
+        })
+      );
       console.log("[Onboarding] Calling external auth API via cURL:", {
         url,
         method,
@@ -309,6 +316,7 @@ export const onboardingService = {
         headerKeys: Object.keys(headers),
         headers: redactHeadersForLog(headers),
         payloadKeys: keysUsed,
+        payload: payloadUsedLog,
       });
 
       const res = await fetch(url as string, { method, headers, body });
@@ -453,10 +461,27 @@ export const onboardingService = {
         );
       }
 
+      const respSummary = (() => {
+        if (parsedResp && typeof parsedResp === "object") {
+          const keys = Object.keys(parsedResp as any);
+          const redacted = Object.fromEntries(
+            keys.slice(0, 20).map((k) => {
+              const lk = k.toLowerCase();
+              const v = (parsedResp as any)[k];
+              const isSensitive = redactKeys.some((rk) => lk.includes(rk));
+              return [k, isSensitive ? "***" : v];
+            })
+          );
+          return { keys, preview: redacted };
+        }
+        const txt = String(parsedResp || "");
+        return { previewText: txt.slice(0, 200), length: txt.length };
+      })();
       console.log("[Onboarding] ✅ External authentication succeeded", {
         status: res.status,
         adminId,
         tokenPresent: !!token,
+        response: respSummary,
       });
       return {
         success: true,
