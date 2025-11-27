@@ -416,7 +416,33 @@ export const onboardingService = {
         return undefined;
       })();
 
-      if (!token) {
+      // If not found in body, try response headers
+      let headerToken: string | undefined;
+      try {
+        const authHeader =
+          res.headers.get("authorization") || res.headers.get("Authorization");
+        const apiKeyHeader =
+          res.headers.get("x-api-key") ||
+          res.headers.get("X-API-Key") ||
+          res.headers.get("api-key") ||
+          res.headers.get("Api-Key") ||
+          res.headers.get("apikey") ||
+          res.headers.get("ApiKey");
+        if (authHeader && !token) {
+          const m = String(authHeader).match(/Bearer\s+(.+)/i);
+          headerToken = m ? m[1] : String(authHeader);
+          tokenType = "token";
+        } else if (apiKeyHeader && !token) {
+          headerToken = String(apiKeyHeader);
+          tokenType = "apiKey";
+        }
+      } catch {}
+
+      const finalToken = (token || headerToken || "")
+        .toString()
+        .trim()
+        .replace(/^["']|["']$/g, "");
+      if (!finalToken) {
         console.warn(
           "[Onboarding] ⚠️ Auth response did not include a token field",
           {
@@ -435,7 +461,7 @@ export const onboardingService = {
       return {
         success: true,
         status: res.status,
-        token,
+        token: finalToken || undefined,
         tokenType,
         responseBody: parsedResp,
       };
@@ -612,11 +638,7 @@ export const onboardingService = {
           }
         );
 
-        const res = await fetch(url as string, {
-          method,
-          headers,
-          body,
-        });
+        let res = await fetch(url as string, { method, headers, body });
 
         const bodyText = await res.text();
         let parsedResp: any = null;
@@ -646,7 +668,85 @@ export const onboardingService = {
               topLevel || nestedData || arrayErrors || "Initial setup failed"
             );
           })();
-
+          const shouldRetry =
+            res.status === 401 ||
+            /invalid\s*(token|api\s*key)/i.test(String(errorMessage));
+          if (shouldRetry) {
+            try {
+              const altHeaders = { ...headers };
+              const hkAuth = String(
+                (onboarding as any).authHeaderKey || "Authorization"
+              );
+              const hkApi = String(
+                (onboarding as any).apiKeyHeaderKey || "X-API-Key"
+              );
+              const tok = String((data as any).__authToken || "")
+                .replace(/^\s*Bearer\s+/i, "")
+                .trim();
+              const key = String((data as any).__apiKey || "").trim();
+              if (tok && hkAuth.toLowerCase() === "authorization") {
+                altHeaders[hkAuth] = tok;
+              } else if (key && hkApi.toLowerCase() === "x-api-key") {
+                altHeaders[hkApi] = key;
+                altHeaders[hkAuth] = `Bearer ${key}`;
+              }
+              res = await fetch(url as string, {
+                method,
+                headers: altHeaders,
+                body,
+              });
+              const retryText = await res.text();
+              let retryParsed: any = null;
+              try {
+                retryParsed = JSON.parse(retryText);
+              } catch {
+                retryParsed = retryText;
+              }
+              if (!res.ok) {
+                console.error("[Onboarding] ❌ External initial setup failed", {
+                  status: res.status,
+                  adminId,
+                  url,
+                  responseBody: retryParsed,
+                  payload: safePayloadForLog,
+                  errorMessage,
+                });
+                return {
+                  success: false,
+                  error: errorMessage,
+                  status: res.status,
+                  responseBody: retryParsed,
+                };
+              }
+              console.log(
+                "[Onboarding] ✅ External initial setup succeeded (retry)",
+                {
+                  status: res.status,
+                  adminId,
+                }
+              );
+              return {
+                success: true,
+                status: res.status,
+                responseBody: retryParsed,
+              };
+            } catch {
+              console.error("[Onboarding] ❌ External initial setup failed", {
+                status: res.status,
+                adminId,
+                url,
+                responseBody: parsedResp,
+                payload: safePayloadForLog,
+                errorMessage,
+              });
+              return {
+                success: false,
+                error: errorMessage,
+                status: res.status,
+                responseBody: parsedResp,
+              };
+            }
+          }
           console.error("[Onboarding] ❌ External initial setup failed", {
             status: res.status,
             adminId,
@@ -799,7 +899,7 @@ export const onboardingService = {
     );
     try {
       const body = JSON.stringify(filtered);
-      const res = await fetch(url as string, { method, headers, body });
+      let res = await fetch(url as string, { method, headers, body });
       const bodyText = await res.text();
       let parsedResp: any = null;
       try {
@@ -827,6 +927,53 @@ export const onboardingService = {
             topLevel || nestedData || arrayErrors || "Initial setup failed"
           );
         })();
+        const shouldRetry =
+          res.status === 401 ||
+          /invalid\s*(token|api\s*key)/i.test(String(errorMessage));
+        if (shouldRetry) {
+          try {
+            const altHeaders = { ...headers };
+            const hkAuth = String(onboarding.authHeaderKey || "Authorization");
+            const hkApi = String(
+              (onboarding as any).apiKeyHeaderKey || "X-API-Key"
+            );
+            const tok = String((data as any).__authToken || "")
+              .replace(/^\s*Bearer\s+/i, "")
+              .trim();
+            const key = String((data as any).__apiKey || "").trim();
+            if (tok && hkAuth.toLowerCase() === "authorization") {
+              altHeaders[hkAuth] = tok;
+            } else if (key && hkApi.toLowerCase() === "x-api-key") {
+              altHeaders[hkApi] = key;
+              altHeaders[hkAuth] = `Bearer ${key}`;
+            }
+            res = await fetch(url as string, {
+              method,
+              headers: altHeaders,
+              body,
+            });
+            const retryText = await res.text();
+            let retryParsed: any = null;
+            try {
+              retryParsed = JSON.parse(retryText);
+            } catch {
+              retryParsed = retryText;
+            }
+            if (!res.ok) {
+              return {
+                success: false,
+                error: errorMessage,
+                status: res.status,
+                responseBody: retryParsed,
+              };
+            }
+            return {
+              success: true,
+              status: res.status,
+              responseBody: retryParsed,
+            };
+          } catch {}
+        }
         return {
           success: false,
           error: errorMessage,
@@ -1092,7 +1239,7 @@ export const onboardingService = {
             ).toString()
           : JSON.stringify(payload);
 
-      const res = await fetch(url as string, {
+      let res = await fetch(url as string, {
         method,
         headers,
         body,
@@ -1124,7 +1271,61 @@ export const onboardingService = {
             : undefined;
           return topLevel || nestedData || arrayErrors || "Registration failed";
         })();
-
+        const shouldRetry =
+          res.status === 401 ||
+          /invalid\s*(token|api\s*key)/i.test(String(errorMessage));
+        if (shouldRetry) {
+          try {
+            const altHeaders = { ...headers };
+            const hkAuth = String(onboarding.authHeaderKey || "Authorization");
+            const tok = String((data as any).__authToken || "")
+              .replace(/^\s*Bearer\s+/i, "")
+              .trim();
+            if (tok && hkAuth.toLowerCase() === "authorization") {
+              altHeaders[hkAuth] = tok;
+              res = await fetch(url as string, {
+                method,
+                headers: altHeaders,
+                body,
+              });
+              const retryText = await res.text();
+              let retryParsed: any = null;
+              try {
+                retryParsed = JSON.parse(retryText);
+              } catch {
+                retryParsed = retryText;
+              }
+              if (!res.ok) {
+                console.error("[Onboarding] ❌ External registration failed", {
+                  status: res.status,
+                  adminId,
+                  url,
+                  responseBody: retryParsed,
+                  payload: safePayloadForLog,
+                  errorMessage,
+                });
+                return {
+                  success: false,
+                  error: errorMessage,
+                  status: res.status,
+                  responseBody: retryParsed,
+                };
+              }
+              console.log(
+                "[Onboarding] ✅ External registration succeeded (retry)",
+                {
+                  status: res.status,
+                  adminId,
+                }
+              );
+              return {
+                success: true,
+                status: res.status,
+                responseBody: retryParsed,
+              };
+            }
+          } catch {}
+        }
         console.error("[Onboarding] ❌ External registration failed", {
           status: res.status,
           adminId,
