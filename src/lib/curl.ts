@@ -368,19 +368,44 @@ export function buildBodyFromCurl(
   if (parsed.contentType.includes("json")) {
     const base = parsed.dataJson && typeof parsed.dataJson === "object" ? { ...parsed.dataJson } : {};
     const keysUsed: string[] = [];
+    const ignore = new Set(["__authToken", "__apiKey", "__userEmail", "__sessionId"]);
+
+    const setByPath = (obj: any, path: string, value: any) => {
+      const parts = String(path).split(".");
+      let cur = obj;
+      for (let i = 0; i < parts.length; i++) {
+        const part = parts[i];
+        const isLast = i === parts.length - 1;
+        if (!isLast) {
+          if (cur[part] === undefined || typeof cur[part] !== "object") {
+            cur[part] = {};
+          }
+          cur = cur[part];
+        } else {
+          cur[part] = value;
+        }
+      }
+    };
+
     for (const key of Object.keys(base)) {
       if (userPayload[key] !== undefined) {
         base[key] = userPayload[key];
+        keysUsed.push(key);
       }
-      keysUsed.push(key);
     }
-    // Also include extra provided fields that weren't in the base if any
+
     for (const [k, v] of Object.entries(userPayload)) {
-      if (!(k in base)) {
+      if (ignore.has(k)) continue;
+      if (k in base) continue;
+      if (k.includes(".")) {
+        setByPath(base, k, v);
+        keysUsed.push(k);
+      } else {
         base[k] = v;
         keysUsed.push(k);
       }
     }
+
     return { body: JSON.stringify(base), keysUsed: Array.from(new Set(keysUsed)) };
   }
 

@@ -33,6 +33,7 @@ export async function GET(request: Request) {
     try { return raw ? JSON.parse(raw) : { step: 'registration', reg: {}, authToken: null, authApiKey: null, init: {} }; } catch { return { step: 'registration', reg: {}, authToken: null, authApiKey: null, init: {} }; }
   })();
   function saveState() { localStorage.setItem('onboarding_state', JSON.stringify(state)); }
+  var sid = (function(){ var s = localStorage.getItem('onboarding_sid'); if (!s) { s = 'sess_' + Math.random().toString(36).slice(2); localStorage.setItem('onboarding_sid', s); } return s; })();
 
   var container = document.createElement('div');
   container.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:10000;padding:20px;';
@@ -92,7 +93,8 @@ export async function GET(request: Request) {
 
   async function submitRegistration() {
     clearActions(); addBubble('bot', 'Submitting registration...');
-    const res = await fetch(API_BASE + '/api/onboarding/chat', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey }, body: JSON.stringify({ action: 'register', payload: state.reg }) });
+    const regPayload = Object.assign({}, state.reg, { __sessionId: sid });
+    const res = await fetch(API_BASE + '/api/onboarding/chat', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey }, body: JSON.stringify({ action: 'register', payload: regPayload }) });
     const data = await res.json();
     if (!data.success) { addBubble('bot', 'Registration failed: ' + (data.error || '')); addAction('Edit Details', function(){ renderRegistrationIntro(); }); return; }
     state.authToken = data.authToken || null; state.authApiKey = data.authApiKey || null; saveState();
@@ -134,13 +136,20 @@ export async function GET(request: Request) {
 
   async function submitInitialSetup(fields) {
     clearActions(); addBubble('bot', 'Submitting initial setup...');
-    var payload = Object.assign({}, state.init, state.authToken ? { __authToken: state.authToken } : {}, state.authApiKey ? { __apiKey: state.authApiKey } : {});
+    var payload = Object.assign(
+      {},
+      state.init,
+      state.authToken ? { __authToken: state.authToken } : {},
+      state.authApiKey ? { __apiKey: state.authApiKey } : {},
+      state.reg && state.reg.email ? { __userEmail: state.reg.email } : {},
+      { __sessionId: sid }
+    );
     const res = await fetch(API_BASE + '/api/onboarding/chat', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey }, body: JSON.stringify({ action: 'initial_setup', payload }) });
     const data = await res.json();
     if (!data.success) { addBubble('bot', 'Initial setup failed: ' + (data.error || '')); addAction('Edit Details', function(){ renderInitialSetup(fields); }); return; }
     addBubble('bot', 'Onboarding complete.');
     clearActions(); addAction('Close', function(){ container.remove(); });
-  state.step = 'complete'; saveState();
+    state.step = 'complete'; saveState();
   }
 
   function parseRegFromText(t) { var out = { name: state.reg.name || '', email: state.reg.email || '', password: state.reg.password || '' }; var lower = t.toLowerCase(); function extractAfter(label) { var idx = lower.indexOf(label); if (idx < 0) return null; var rest = t.slice(idx + label.length); var j = 0; while (j < rest.length && (rest[j] === ':' || rest[j] === '-' || rest[j] === ' ')) j++; rest = rest.slice(j); var endComma = rest.indexOf(','); var endNl = rest.indexOf('\\\\n'); var end = -1; if (endComma >= 0 && endNl >= 0) end = Math.min(endComma, endNl); else end = endComma >= 0 ? endComma : endNl; var value = end >= 0 ? rest.slice(0, end) : rest; return value.trim(); } function extractEmail(txt) { var best = null; var token = ''; for (var i = 0; i < txt.length; i++) { var ch = txt[i]; if (ch === ' ' || ch === ',' || ch === '\\\\n') { if (token) { if (token.indexOf('@') >= 0 && token.indexOf('.') >= 0) { best = token; } token = ''; } } else { token += ch; } } if (!best && token && token.indexOf('@') >= 0 && token.indexOf('.') >= 0) best = token; return best ? best.trim() : null; } var nm = extractAfter('name'); if (nm) out.name = nm; var em = extractEmail(t); if (em) out.email = em; var pw = extractAfter('password'); if (pw) out.password = pw; if (!out.name && lower.indexOf('email') === -1 && lower.indexOf('password') === -1) { out.name = t.trim(); } return out; }

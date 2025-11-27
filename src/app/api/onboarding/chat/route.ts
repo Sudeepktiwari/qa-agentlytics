@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyApiKey } from "@/lib/auth";
+import { createOrUpdateLead } from "@/lib/leads";
 import { getAdminSettings } from "@/lib/adminSettings";
 import { onboardingService } from "@/services/onboardingService";
 
@@ -89,6 +90,65 @@ export async function POST(request: NextRequest) {
           { success: false, error: result.error || "Initial setup failed" },
           { status: result.status || 400, headers: corsHeaders }
         );
+      }
+      try {
+        const emailCandidates: string[] = [];
+        for (const [k, v] of Object.entries(payload || {})) {
+          const lk = String(k).toLowerCase();
+          if (
+            typeof v === "string" &&
+            v.includes("@") &&
+            lk.includes("email")
+          ) {
+            emailCandidates.push(v);
+          }
+        }
+        const email =
+          emailCandidates[0] ||
+          String(
+            (payload as any)?.__userEmail || (payload as any)?.email || ""
+          ).trim();
+        const sessionId = String(
+          (payload as any)?.__sessionId || `onboarding_${Date.now()}`
+        );
+        if (email) {
+          await createOrUpdateLead(
+            adminId,
+            email,
+            sessionId,
+            null,
+            undefined,
+            "Initial setup completed",
+            { detectedIntent: "onboarding_initial_setup" }
+          );
+        }
+        // Persist onboarding session state regardless of email presence
+        try {
+          const db = await (await import("@/lib/mongo")).getDb();
+          const sessions = db.collection("onboardingSessions");
+          await sessions.updateOne(
+            { sessionId },
+            {
+              $set: {
+                sessionId,
+                adminId,
+                status: "completed",
+                collectedData: payload,
+                updatedAt: new Date(),
+              },
+              $setOnInsert: { createdAt: new Date() },
+            },
+            { upsert: true }
+          );
+        } catch (sessErr) {
+          console.error("[Onboarding] Session persistence error", sessErr);
+        }
+        console.log(
+          "[Onboarding] Lead persistence attempted for adminId",
+          adminId
+        );
+      } catch (e) {
+        console.error("[Onboarding] Lead persistence error", e);
       }
       return NextResponse.json(
         { success: true, responseBody: result.responseBody || null },
