@@ -74,7 +74,6 @@ export async function GET(request: Request) {
     wrap.appendChild(name); wrap.appendChild(email); wrap.appendChild(password);
     messages.appendChild(wrap);
     addAction('Review', function(){ state.reg = { name: name.value.trim(), email: email.value.trim(), password: password.value }; saveState(); renderRegistrationConfirm(); });
-    addAction('Submit', function(){ state.reg = { name: name.value.trim(), email: email.value.trim(), password: password.value }; saveState(); submitRegistration(); });
     if (state.reg && state.reg.name && state.reg.email && state.reg.password) { addAction('Use saved details', function(){ renderRegistrationConfirm(); }); }
     state.step = 'reg_collect'; saveState();
   }
