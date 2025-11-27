@@ -28,6 +28,18 @@ export interface AuthResult {
   error?: string;
   status?: number;
   responseBody?: any;
+  debug?: {
+    request?: {
+      url?: string;
+      method?: string;
+      contentType?: string;
+      headerKeys?: string[];
+      headers?: Record<string, string>;
+      payloadKeys?: string[];
+      payload?: Record<string, any>;
+    };
+    response?: any;
+  };
 }
 
 function buildAuthHeader(settings: OnboardingSettings): Record<string, string> {
@@ -309,7 +321,7 @@ export const onboardingService = {
           return [k, isSensitive ? "***" : (data as any)[k]];
         })
       );
-      console.log("[Onboarding] Calling external auth API via cURL:", {
+      const requestDebug = {
         url,
         method,
         contentType,
@@ -317,7 +329,11 @@ export const onboardingService = {
         headers: redactHeadersForLog(headers),
         payloadKeys: keysUsed,
         payload: payloadUsedLog,
-      });
+      };
+      console.log(
+        "[Onboarding] Calling external auth API via cURL:",
+        requestDebug
+      );
 
       const res = await fetch(url as string, { method, headers, body });
       const bodyText = await res.text();
@@ -362,6 +378,7 @@ export const onboardingService = {
           error: errorMessage,
           status: res.status,
           responseBody: parsedResp,
+          debug: { request: requestDebug, response: parsedResp },
         };
       }
 
@@ -399,6 +416,9 @@ export const onboardingService = {
             (parsedResp as any)?.data?.apiKey,
             (parsedResp as any)?.data?.api_key,
             (parsedResp as any)?.data?.key,
+            (parsedResp as any)?.user?.apiKey,
+            (parsedResp as any)?.user?.token,
+            (parsedResp as any)?.user?.access_token,
           ];
           const found = candidates.find(
             (t: any) => typeof t === "string" && t.length > 0
@@ -410,13 +430,19 @@ export const onboardingService = {
             const lowerDataKeys = Object.keys(
               ((parsedResp as any)?.data || {}) as any
             ).map((k) => k.toLowerCase());
+            const lowerUserKeys = Object.keys(
+              ((parsedResp as any)?.user || {}) as any
+            ).map((k) => k.toLowerCase());
             const isApiKey =
               lowerKeys.includes("apikey") ||
               lowerKeys.includes("api_key") ||
               lowerKeys.includes("key") ||
               lowerDataKeys.includes("apikey") ||
               lowerDataKeys.includes("api_key") ||
-              lowerDataKeys.includes("key");
+              lowerDataKeys.includes("key") ||
+              lowerUserKeys.includes("apikey") ||
+              lowerUserKeys.includes("api_key") ||
+              lowerUserKeys.includes("key");
             tokenType = isApiKey ? "apiKey" : "token";
           }
           return found;
@@ -463,12 +489,36 @@ export const onboardingService = {
 
       const respSummary = (() => {
         if (parsedResp && typeof parsedResp === "object") {
-          const keys = Object.keys(parsedResp as any);
+          const flat: Record<string, any> = {};
+          const stack: Array<{ o: any; p: string; d: number }> = [
+            { o: parsedResp as any, p: "", d: 0 },
+          ];
+          while (stack.length > 0) {
+            const { o, p, d } = stack.pop() as { o: any; p: string; d: number };
+            if (d > 3) continue;
+            if (o && typeof o === "object" && !Array.isArray(o)) {
+              for (const k of Object.keys(o)) {
+                const np = p ? `${p}.${k}` : k;
+                const v = o[k];
+                if (v && typeof v === "object") {
+                  stack.push({ o: v, p: np, d: d + 1 });
+                } else {
+                  flat[np] = v;
+                }
+              }
+            } else if (Array.isArray(o)) {
+              const np = p || "";
+              flat[np] = "[array]";
+            } else {
+              flat[p] = o;
+            }
+          }
+          const keys = Object.keys(flat);
           const redacted = Object.fromEntries(
-            keys.slice(0, 20).map((k) => {
+            keys.slice(0, 40).map((k) => {
               const lk = k.toLowerCase();
-              const v = (parsedResp as any)[k];
               const isSensitive = redactKeys.some((rk) => lk.includes(rk));
+              const v = flat[k];
               return [k, isSensitive ? "***" : v];
             })
           );
@@ -489,6 +539,7 @@ export const onboardingService = {
         token: finalToken || undefined,
         tokenType,
         responseBody: parsedResp,
+        debug: { request: requestDebug, response: respSummary },
       };
     } catch (error: any) {
       console.error("[Onboarding] ❌ External authentication error", {
@@ -1590,18 +1641,19 @@ export async function deriveSpecFromDocsForAdmin(
       if (end === -1) return;
       const jsonCandidate = t.slice(i, end + 1);
       const obj = JSON.parse(jsonCandidate);
-      const walk = (o: any) => {
+      const walk = (o: any, p: string) => {
         if (!o || typeof o !== "object") return;
         if (Array.isArray(o)) {
-          for (const it of o) walk(it);
+          respAllowedSeed.add(p || "array");
           return;
         }
         for (const [k, v] of Object.entries(o)) {
-          respAllowedSeed.add(String(k));
-          if (v && typeof v === "object") walk(v as any);
+          const np = p ? `${p}.${k}` : String(k);
+          respAllowedSeed.add(np);
+          if (v && typeof v === "object") walk(v as any, np);
         }
       };
-      walk(obj);
+      walk(obj, "");
     } catch {}
   };
   for (const t of ranked) seedRespFromText(t);
@@ -1674,7 +1726,7 @@ export async function deriveSpecFromDocsForAdmin(
     const allowedHeaders = Array.from(headersSet);
     const system =
       mode === "auth"
-        ? `From the documentation chunks provided, extract ONLY the login/authentication request spec in strict JSON: headers[], body[{key,label,required,type}], response[]. Use only the given chunks; do not invent fields. Only use keys from ALLOWED_KEYS. Only use headers from ALLOWED_HEADERS. Only use response keys from ALLOWED_RESPONSE_KEYS. ALLOWED_KEYS: ${allowedKeys.join(
+        ? `From the documentation chunks provided, extract ONLY the login/authentication request spec in strict JSON: headers[], body[{key,label,required,type}], response[]. Prefer nested dotted keys (e.g., user.apiKey). Use only the given chunks; do not invent fields. Only use keys from ALLOWED_KEYS. Only use headers from ALLOWED_HEADERS. Only use response keys from ALLOWED_RESPONSE_KEYS. ALLOWED_KEYS: ${allowedKeys.join(
             ","
           )}\nALLOWED_HEADERS: ${allowedHeaders.join(
             ","
@@ -1831,18 +1883,19 @@ export async function deriveSpecFromDocsForAdmin(
       pos = end + 1;
       try {
         const obj = JSON.parse(jsonCandidate);
-        const walk = (o: any) => {
+        const walk = (o: any, p: string) => {
           if (!o || typeof o !== "object") return;
           if (Array.isArray(o)) {
-            for (const it of o) walk(it);
+            respSet.add(p || "array");
             return;
           }
           for (const [k, v] of Object.entries(o)) {
-            respSet.add(String(k));
-            if (v && typeof v === "object") walk(v as any);
+            const np = p ? `${p}.${k}` : String(k);
+            respSet.add(np);
+            if (v && typeof v === "object") walk(v as any, np);
           }
         };
-        walk(obj);
+        walk(obj, "");
       } catch {}
     }
   };

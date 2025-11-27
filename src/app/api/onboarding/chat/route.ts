@@ -52,10 +52,11 @@ export async function POST(request: NextRequest) {
       let authToken: string | undefined;
       let authApiKey: string | undefined;
       let authType: "token" | "apiKey" | undefined;
+      let authRes: any = null;
       const settings = await getAdminSettings(adminId);
       const hasAuth = Boolean((settings.onboarding as any)?.authCurlCommand);
       if (hasAuth) {
-        const authRes = await onboardingService.authenticate(payload, adminId);
+        authRes = await onboardingService.authenticate(payload, adminId);
         if (authRes.success && authRes.token) {
           if (authRes.tokenType === "apiKey") {
             authApiKey = authRes.token;
@@ -74,6 +75,7 @@ export async function POST(request: NextRequest) {
           authToken: authToken || null,
           authApiKey: authApiKey || null,
           authType: authType || null,
+          authDebug: hasAuth && authRes?.debug ? authRes.debug : null,
           initialFields,
         },
         { status: 200, headers: corsHeaders }
