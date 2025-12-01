@@ -5852,6 +5852,18 @@ Extract key requirements (2-3 bullet points max, be concise):`;
           `[DEBUG] Conversation state: hasBeenGreeted=${hasBeenGreeted}, proactiveCount=${proactiveMessageCount}, visitedPages=${visitedPages.length}`
         );
 
+        const businessName = (() => {
+          try {
+            const host = new URL(pageUrl || "").hostname.replace(/^www\./, "");
+            const base = host.split(".")[0] || "";
+            return base
+              ? base.charAt(0).toUpperCase() + base.slice(1)
+              : "Our Team";
+          } catch {
+            return "Our Team";
+          }
+        })();
+
         // Track vertical detection if it's not 'general'
         if (detectedVertical !== "general") {
           await trackSDREvent(
@@ -5950,6 +5962,10 @@ MAINTEXT REQUIREMENTS:
 - Under 30 words total
 - End with a question that reveals their intent/needs
 - Show understanding of what they're viewing
+
+ GREETING REQUIREMENT:
+ - Begin with "Welcome to ${businessName}" followed by a brief connector (e.g., "—" or ",") before the context-aware question
+ - Write a single, grammatically correct sentence ending with a question mark
 
 CREATIVE VARIETY ENFORCEMENT - AVOID THESE BANNED PATTERNS:
 - "Tired of..." (BANNED - overused)
@@ -6182,9 +6198,18 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
         if (lastEmailMsg && lastEmailMsg.email) userEmail = lastEmailMsg.email;
         const botMode = userEmail ? "sales" : "lead_generation";
 
+        let finalProactiveMsg = proactiveMsg || "";
+        if (businessName && !/^\s*welcome\b/i.test(finalProactiveMsg)) {
+          finalProactiveMsg =
+            `Welcome to ${businessName} — ${finalProactiveMsg}`.trim();
+        }
+        if (finalProactiveMsg && !/[\.!?]$/.test(finalProactiveMsg)) {
+          finalProactiveMsg = `${finalProactiveMsg.replace(/\s+$/, "")}?`;
+        }
+
         // Check for booking detection in proactive message
         let enhancedProactiveData: any = {
-          answer: proactiveMsg,
+          answer: finalProactiveMsg,
           buttons: buttons,
           botMode,
           userEmail: userEmail || null,
@@ -6209,7 +6234,8 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
               bookingType:
                 bookingEnhancement.chatResponse.bookingType || "demo",
               // Override answer with booking-specific response
-              answer: bookingEnhancement.chatResponse.reply || proactiveMsg,
+              answer:
+                bookingEnhancement.chatResponse.reply || finalProactiveMsg,
             };
           }
         } catch (error) {
