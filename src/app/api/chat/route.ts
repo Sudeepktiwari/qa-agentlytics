@@ -6199,7 +6199,11 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
         const botMode = userEmail ? "sales" : "lead_generation";
 
         let finalProactiveMsg = proactiveMsg || "";
-        if (businessName && !/^\s*welcome\b/i.test(finalProactiveMsg)) {
+        if (
+          !hasBeenGreeted &&
+          businessName &&
+          !/^\s*welcome\b/i.test(finalProactiveMsg)
+        ) {
           finalProactiveMsg =
             `Welcome to ${businessName} — ${finalProactiveMsg}`.trim();
         }
