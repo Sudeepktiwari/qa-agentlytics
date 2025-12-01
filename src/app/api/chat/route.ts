@@ -282,6 +282,37 @@ function filterButtonsBasedOnBooking(buttons: string[], bookingStatus: any) {
   return filteredButtons;
 }
 
+function filterRedundantButtons(
+  buttons: string[],
+  userQuestion: string,
+  mainText: string
+) {
+  const norm = (s: string) =>
+    (s || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+  const uq = norm(userQuestion);
+  const mt = norm(mainText);
+  const tokens = new Set(
+    [...uq.split(" "), ...mt.split(" ")].filter((t) => t.length > 2)
+  );
+  const unique: string[] = [];
+  const seen = new Set<string>();
+  for (const b of buttons) {
+    const nb = norm(b);
+    if (!nb) continue;
+    if (seen.has(nb)) continue;
+    const btoks = nb.split(" ").filter((t) => t.length > 2);
+    const overlap = btoks.filter((t) => tokens.has(t)).length;
+    const ratio = btoks.length ? overlap / btoks.length : 0;
+    if (ratio >= 0.6 || (uq && (uq.includes(nb) || nb.includes(uq)))) continue;
+    seen.add(nb);
+    unique.push(b);
+  }
+  return unique;
+}
+
 // Generate booking-aware response when user has active booking
 function generateBookingAwareResponse(
   originalResponse: any,
@@ -8024,6 +8055,11 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
       responseWithMode,
       bookingStatus,
       question || ""
+    );
+    finalResponse.buttons = filterRedundantButtons(
+      finalResponse.buttons || [],
+      question || "",
+      finalResponse.mainText || ""
     );
   }
 
