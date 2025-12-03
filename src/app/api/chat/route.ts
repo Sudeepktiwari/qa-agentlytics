@@ -5933,7 +5933,7 @@ Extract key requirements (2-3 bullet points max, be concise):`;
               },
             ],
           });
-          let revisitJson = summaryResp.choices[0].message.content || "";
+          const revisitJson = summaryResp.choices[0].message.content || "";
           let parsedRevisit: any;
           try {
             parsedRevisit = JSON.parse(revisitJson);
