@@ -5907,6 +5907,89 @@ Extract key requirements (2-3 bullet points max, be concise):`;
           );
         }
 
+        const pageHistory = await chats
+          .find({ sessionId, pageUrl })
+          .sort({ createdAt: 1 })
+          .toArray();
+        if (hasBeenGreeted && pageHistory.length >= 2) {
+          const historyText = pageHistory
+            .slice(-10)
+            .map(
+              (msg: any) =>
+                `${msg.role === "user" ? "User" : "Bot"}: ${msg.content || ""}`
+            )
+            .join("\n")
+            .slice(0, 1500);
+          const summaryResp = await openai.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages: [
+              {
+                role: "system",
+                content: `You summarize prior page-specific conversation and continue helpfully. Return valid JSON with keys mainText and buttons. Requirements: mainText under 30 words, no greeting, acknowledge prior context briefly, end with a question inviting what else they want to know. Buttons: 3 short next actions derived from the history.`,
+              },
+              {
+                role: "user",
+                content: `Page: ${pageUrl}\nHistory:\n${historyText}`,
+              },
+            ],
+          });
+          let revisitJson = summaryResp.choices[0].message.content || "";
+          let parsedRevisit: any;
+          try {
+            parsedRevisit = JSON.parse(revisitJson);
+          } catch {
+            parsedRevisit = {
+              mainText:
+                "Picking up where we left off here — what else would you like to explore?",
+              buttons: ["Clarify details", "See examples", "Talk to sales"],
+            };
+          }
+          const proactiveMsg = parsedRevisit.mainText || "";
+          const buttons = Array.isArray(parsedRevisit.buttons)
+            ? parsedRevisit.buttons
+            : [];
+          let userEmail: string | null = null;
+          const lastEmailMsg = await chats.findOne(
+            { sessionId, email: { $exists: true } },
+            { sort: { createdAt: -1 } }
+          );
+          if (lastEmailMsg && lastEmailMsg.email)
+            userEmail = lastEmailMsg.email;
+          const botMode = userEmail ? "sales" : "lead_generation";
+          let finalProactiveMsg = proactiveMsg || "";
+          if (finalProactiveMsg && !/[\.\!?]$/.test(finalProactiveMsg)) {
+            finalProactiveMsg = `${finalProactiveMsg.replace(/\s+$/, "")}?`;
+          }
+          let enhancedProactiveData: any = {
+            answer: finalProactiveMsg,
+            buttons: buttons,
+            botMode,
+            userEmail: userEmail || null,
+            showBookingCalendar: false,
+            bookingType: null,
+          };
+          try {
+            const bookingEnhancement = await enhanceChatWithBookingDetection(
+              finalProactiveMsg || "",
+              [],
+              `Page URL: ${pageUrl || "unknown"}`
+            );
+            if (bookingEnhancement.chatResponse.showBookingCalendar) {
+              enhancedProactiveData = {
+                ...enhancedProactiveData,
+                showBookingCalendar: true,
+                bookingType:
+                  bookingEnhancement.chatResponse.bookingType || "demo",
+                answer:
+                  bookingEnhancement.chatResponse.reply || finalProactiveMsg,
+              };
+            }
+          } catch {}
+          return NextResponse.json(enhancedProactiveData, {
+            headers: corsHeaders,
+          });
+        }
+
         let summaryPrompt;
 
         if (!hasBeenGreeted) {
@@ -7949,6 +8032,7 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
       role: "user",
       content: question,
       createdAt: now,
+      ...(pageUrl ? { pageUrl } : {}),
       ...(emailToStore ? { email: emailToStore } : {}),
       ...(requirementsToStore ? { requirements: requirementsToStore } : {}),
       ...(adminId ? { adminId } : {}),
@@ -7966,6 +8050,7 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
       role: "assistant",
       content: answer,
       createdAt: new Date(now.getTime() + 1),
+      ...(pageUrl ? { pageUrl } : {}),
       ...(emailToStore ? { email: emailToStore } : {}),
       ...(requirementsToStore ? { requirements: requirementsToStore } : {}),
       ...(adminId ? { adminId } : {}),
