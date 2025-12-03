@@ -479,6 +479,8 @@ export async function POST(req: NextRequest) {
 
     const db = await getDb();
     const profiles = db.collection("customer_profiles");
+    const chats = db.collection("chats");
+    const conversations = db.collection("conversations");
 
     // Get existing profile
     let existingProfile = await profiles.findOne({
@@ -498,6 +500,34 @@ export async function POST(req: NextRequest) {
     const conversationContent = Array.isArray(conversation)
       ? conversation.map((msg) => `${msg.role}: ${msg.content}`).join("\n")
       : conversation || "";
+
+    // Resolve email from provided param, existing profile, or latest chat message
+    let resolvedEmail: string | null = email || null;
+    if (!resolvedEmail) {
+      // Try latest chat containing an email for this session
+      const lastEmailMsg = await chats.findOne(
+        { sessionId, email: { $exists: true } },
+        { sort: { createdAt: -1 } }
+      );
+      if (lastEmailMsg && typeof lastEmailMsg.email === "string") {
+        resolvedEmail = lastEmailMsg.email;
+      } else if (existingProfile && typeof existingProfile.email === "string") {
+        resolvedEmail = existingProfile.email;
+      }
+    }
+
+    // Resolve display name from conversation profile data if available
+    let resolvedName: string | null = null;
+    try {
+      const convo = await conversations.findOne({ sessionId });
+      if (
+        convo &&
+        typeof convo.userName === "string" &&
+        convo.userName.trim()
+      ) {
+        resolvedName = convo.userName.trim();
+      }
+    } catch {}
 
     // Determine if we should update
     const lastUpdateTime = existingProfile?.profileMeta?.lastUpdated
@@ -616,6 +646,7 @@ export async function POST(req: NextRequest) {
       sessionIds: [sessionId],
       firstContact: now.toISOString(),
       totalSessions: 1,
+      name: null,
       email: null,
       companyProfile: {},
       behaviorProfile: {},
@@ -641,7 +672,8 @@ export async function POST(req: NextRequest) {
     // Merge updates with existing profile
     const updatedProfile = {
       ...baseProfile,
-      email: email || (baseProfile as any).email,
+      name: resolvedName || (baseProfile as any).name,
+      email: resolvedEmail || (baseProfile as any).email,
       lastContact: now.toISOString(),
       sessionIds: [...new Set([...(baseProfile.sessionIds || []), sessionId])],
       companyProfile: {
@@ -704,6 +736,102 @@ export async function POST(req: NextRequest) {
         nextScheduledUpdate: "conversation_end",
       },
     };
+
+    function computeBant(profile: any) {
+      const budgetRange = profile?.requirementsProfile?.budgetRange || "";
+      const timeline = profile?.requirementsProfile?.timeline || "";
+      const decisionMaker = profile?.behaviorProfile?.decisionMaker;
+      const hasNeed = Boolean(
+        (profile?.requirementsProfile?.primaryUseCase &&
+          profile.requirementsProfile.primaryUseCase.length > 0) ||
+          (profile?.requirementsProfile?.specificFeatures &&
+            profile.requirementsProfile.specificFeatures.length > 0)
+      );
+
+      let score = 0;
+      let completeness = 0;
+
+      const budgetKnown = Boolean(budgetRange && budgetRange !== "unknown");
+      const authorityKnown = decisionMaker !== undefined;
+      const timelineKnown = Boolean(timeline && timeline !== "unknown");
+      const needKnown = hasNeed;
+
+      const basePerSignal = 20;
+      if (budgetKnown) {
+        score += basePerSignal;
+        switch (String(budgetRange)) {
+          case "under_500":
+            score += 2;
+            break;
+          case "500_2k":
+            score += 3;
+            break;
+          case "2k_10k":
+            score += 4;
+            break;
+          case "10k_plus":
+            score += 5;
+            break;
+        }
+        completeness += 1;
+      }
+      if (authorityKnown) {
+        score += basePerSignal;
+        if (decisionMaker === true) score += 5;
+        completeness += 1;
+      }
+      if (needKnown) {
+        score += basePerSignal;
+        const featuresCount = Array.isArray(
+          profile?.requirementsProfile?.specificFeatures
+        )
+          ? profile.requirementsProfile.specificFeatures.length
+          : 0;
+        score += featuresCount >= 2 ? 3 : 2;
+        completeness += 1;
+      }
+      if (timelineKnown) {
+        score += basePerSignal;
+        switch (String(timeline)) {
+          case "asap":
+          case "this_month":
+            score += 5;
+            break;
+          case "next_quarter":
+            score += 3;
+            break;
+          case "exploring":
+            score += 1;
+            break;
+        }
+        completeness += 1;
+      }
+
+      const normalizedScore = Math.min(100, Math.max(0, Math.round(score)));
+      const completenessRatio = Math.min(1, Math.max(0, completeness / 4));
+
+      let stage = "intro";
+      if (timelineKnown) stage = "timeline";
+      else if (needKnown) stage = "need";
+      else if (authorityKnown) stage = "authority";
+      else if (budgetKnown) stage = "budget";
+
+      return {
+        budgetRange: budgetKnown ? budgetRange : "unknown",
+        authorityDecisionMaker:
+          authorityKnown && typeof decisionMaker === "boolean"
+            ? decisionMaker
+            : null,
+        needSummary: profile?.requirementsProfile?.primaryUseCase || null,
+        timeline: timelineKnown ? timeline : "unknown",
+        score: normalizedScore,
+        completeness: completenessRatio,
+        stage,
+      };
+    }
+
+    const bant = computeBant(updatedProfile);
+    (updatedProfile as any).bant = bant;
 
     // Save to database
     if (existingProfile) {

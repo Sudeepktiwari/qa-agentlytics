@@ -7913,6 +7913,52 @@ What specific information are you looking for? I'm here to help guide you throug
     return null;
   };
 
+  // BANT intent detection and stage inference
+  const hasNumbers =
+    /\b\d+\s*(agents?|tickets?|k)\b|\b\d+\s*(k|month|mo)\b/i.test(
+      lowerQuestion
+    );
+  const hasBudget = /\$|usd|mo\b|per\s*month|budget|pricing|cost/i.test(
+    lowerQuestion
+  );
+  const hasAuthority = /cto|ceo|ops|manager|director|owner|founder/i.test(
+    lowerQuestion
+  );
+  const mentionsNeeds =
+    /deflection|lead\s*capture|onboarding|faster\s*responses/i.test(
+      lowerQuestion
+    );
+  const hasTimeline =
+    /\b(this\s*month|1\s*–?\s*3\s*months|>\s*3\s*months|quarter|q[1-4])\b/i.test(
+      lowerQuestion
+    );
+
+  const isBantIntent =
+    /\b(bant|qualification|lead\s*score|lead\s*scoring)\b/i.test(
+      lowerQuestion
+    ) ||
+    /support/.test((pageUrl || "").toLowerCase()) ||
+    /customer-support-ai/.test((pageUrl || "").toLowerCase()) ||
+    hasNumbers ||
+    hasBudget ||
+    hasAuthority ||
+    mentionsNeeds ||
+    hasTimeline;
+
+  const bantStage = isBantIntent
+    ? hasTimeline
+      ? "timeline"
+      : mentionsNeeds
+      ? "need"
+      : hasAuthority
+      ? "authority"
+      : hasBudget
+      ? "budget"
+      : hasNumbers
+      ? "need_probe"
+      : "intro"
+    : "";
+
   // Chat completion with sales-pitch system prompt
   let systemPrompt = "";
   const userPrompt = question;
@@ -7920,7 +7966,62 @@ What specific information are you looking for? I'm here to help guide you throug
     console.log(
       `[DEBUG] User has email: ${userEmail} - Switching to SALES mode`
     );
-    systemPrompt = `You are a helpful sales assistant for a company. The user has provided their email (${userEmail}) and is now a qualified lead. Focus on sales, product benefits, pricing, and closing deals. Always generate your response in the following JSON format:
+    if (isMeetingIntent) {
+      systemPrompt = `You are a product assistant for scheduling (sales-qualified). The user mentioned group meetings or team distribution. Return ONLY valid JSON.
+{
+  "mainText": "<Acknowledge their intent (e.g., group meetings) in one short sentence. Then ask ONE clarifying question to personalize: internal vs client and together vs distributed.>",
+  "buttons": ["Workshops / training", "Internal team meetings", "Client onboarding", "Webinars / multi-attendee"],
+  "emailPrompt": "<Offer to send a setup guide if they prefer email>"
+}
+
+Context:
+Page Context:
+${pageContext}
+
+General Context:
+${context}
+
+STRICT:
+- Be context-aware
+- No long paragraphs
+- Ask exactly ONE clarifying question
+- Buttons should be clarifying options, not generic actions
+- NEVER put JSON or buttons in mainText.`;
+    } else if (isBantIntent) {
+      systemPrompt = `You are a BANT-based qualification assistant (sales-qualified). Return ONLY valid JSON: {"mainText":"...","buttons":[...],"emailPrompt":"..."}.
+
+Rules:
+- Keep outputs short
+- Clarifying questions end with a question mark
+- Use 2–4 buttons, specific to the stage
+
+Signals seen: ${[
+        hasNumbers && "numbers",
+        hasBudget && "budget",
+        hasAuthority && "authority",
+        mentionsNeeds && "need",
+        hasTimeline && "timeline",
+      ]
+        .filter(Boolean)
+        .join(", ")}
+
+Guide them through: team size/tickets → budget ranges → decision-maker → problem focus → timeline → next steps.
+
+Buttons examples by stage:
+- Budget: ["<$500/mo","$500–$1.5k/mo",">$1.5k+/mo"]
+- Authority: ["Ops Manager","CTO","CEO"]
+- Need: ["Deflection","Lead capture","Onboarding","Faster responses"]
+- Timeline: ["This month","1–3 months","> 3 months"]
+- Summary: ["Watch demo","Start free","Talk to sales"]
+
+Context:
+Page Context:
+${pageContext}
+
+General Context:
+${context}`;
+    } else {
+      systemPrompt = `You are a helpful sales assistant for a company. The user has provided their email (${userEmail}) and is now a qualified lead. Focus on sales, product benefits, pricing, and closing deals. Always generate your response in the following JSON format:
 
 {
   "mainText": "<Provide sales-focused, persuasive responses about products/services, pricing, benefits, case studies, or next steps. Be enthusiastic and focus on value proposition. Use the context below to provide specific information. MANDATORY FORMATTING RULES: \n1. NEVER write long paragraphs - they are hard to read in chat\n2. Start with 1-2 short sentences (max 20 words each)\n3. Add double line break \\n\\n after intro\n4. Use bullet points with • symbol for ANY list of 2+ benefits/features\n5. Add TWO line breaks \\n\\n after each bullet point for better spacing\n6. Example format: 'Great question! Here's what makes us special:\\n\\n• Benefit 1\\n\\n• Benefit 2\\n\\n• Benefit 3'\n7. Use emojis sparingly for emphasis\n8. Never use long sentences in paragraphs - break them into bullets>",
@@ -7936,6 +8037,7 @@ General Context:
 ${context}
 
 IMPORTANT: This user is qualified (has provided email). Focus on sales, conversion, and closing. Generate sales-oriented buttons that move them towards purchase decisions. No need to ask for email again. ABSOLUTELY NO LONG PARAGRAPHS - USE BULLET POINTS WITH DOUBLE LINE BREAKS FOR SPACING.`;
+    }
   } else {
     // Special handling for different types of requests
     if (isTalkToSupport) {

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 
 interface CustomerProfile {
   _id: string;
+  name?: string;
   email: string;
   sessionIds: string[];
   firstContact: string;
@@ -45,6 +46,15 @@ interface CustomerProfile {
     recommendedNextSteps?: string[];
     riskFactors?: string[];
     strengths?: string[];
+  };
+  bant?: {
+    budgetRange?: string;
+    authorityDecisionMaker?: boolean | null;
+    needSummary?: string | null;
+    timeline?: string;
+    score?: number;
+    completeness?: number;
+    stage?: string;
   };
   profileMeta: {
     confidenceScore: number;
@@ -399,7 +409,7 @@ const CustomerProfilesSection: React.FC = () => {
                           marginBottom: "4px",
                         }}
                       >
-                        {profile.email || "Anonymous"}
+                        {profile.name || profile.email || "Anonymous"}
                       </div>
                       <div style={{ fontSize: "12px", color: "#718096" }}>
                         {profile.companyProfile?.industry && (
@@ -435,6 +445,20 @@ const CustomerProfilesSection: React.FC = () => {
                         {Math.round(profile.profileMeta.confidenceScore * 100)}%
                         Confidence
                       </div>
+                      {profile.bant?.score !== undefined && (
+                        <div
+                          style={{
+                            background: "#3182ce",
+                            color: "white",
+                            padding: "2px 6px",
+                            borderRadius: "4px",
+                            fontSize: "10px",
+                            fontWeight: "600",
+                          }}
+                        >
+                          BANT {profile.bant.score}
+                        </div>
+                      )}
                       {profile.intelligenceProfile?.buyingReadiness && (
                         <div
                           style={{
@@ -522,7 +546,9 @@ const CustomerProfilesSection: React.FC = () => {
                     color: "#2d3748",
                   }}
                 >
-                  {selectedProfile.email || "Anonymous Profile"}
+                  {selectedProfile.name ||
+                    selectedProfile.email ||
+                    "Anonymous Profile"}
                 </h3>
                 <div style={{ fontSize: "14px", color: "#718096" }}>
                   Profile ID: {selectedProfile._id}
@@ -591,6 +617,12 @@ const CustomerProfilesSection: React.FC = () => {
                   }}
                 >
                   <div>
+                    <span style={{ color: "#718096" }}>Name:</span>
+                    <div style={{ fontWeight: "600", color: "#2d3748" }}>
+                      {selectedProfile.name || "—"}
+                    </div>
+                  </div>
+                  <div>
                     <span style={{ color: "#718096" }}>Confidence Score:</span>
                     <div
                       style={{
@@ -614,6 +646,12 @@ const CustomerProfilesSection: React.FC = () => {
                     <span style={{ color: "#718096" }}>Total Sessions:</span>
                     <div style={{ fontWeight: "600", color: "#2d3748" }}>
                       {selectedProfile.totalSessions}
+                    </div>
+                  </div>
+                  <div>
+                    <span style={{ color: "#718096" }}>Email:</span>
+                    <div style={{ fontWeight: "600", color: "#2d3748" }}>
+                      {selectedProfile.email || "—"}
                     </div>
                   </div>
                   <div>
@@ -955,6 +993,86 @@ const CustomerProfilesSection: React.FC = () => {
                           </div>
                         </div>
                       )}
+                  </div>
+                </div>
+              )}
+
+              {/* BANT */}
+              {selectedProfile.bant && (
+                <div
+                  style={{
+                    padding: "16px",
+                    background: "#ebf8ff",
+                    borderRadius: "8px",
+                  }}
+                >
+                  <h4
+                    style={{
+                      margin: "0 0 12px 0",
+                      fontSize: "16px",
+                      fontWeight: "600",
+                      color: "#2d3748",
+                    }}
+                  >
+                    🧩 BANT Qualification
+                  </h4>
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr",
+                      gap: "12px",
+                      fontSize: "14px",
+                    }}
+                  >
+                    <div>
+                      <span style={{ color: "#718096" }}>Score:</span>{" "}
+                      <span style={{ fontWeight: "600", color: "#2d3748" }}>
+                        {selectedProfile.bant.score}
+                      </span>
+                    </div>
+                    <div>
+                      <span style={{ color: "#718096" }}>Stage:</span>{" "}
+                      <span style={{ fontWeight: "600", color: "#2d3748" }}>
+                        {(selectedProfile.bant.stage || "intro").replace(
+                          /_/g,
+                          " "
+                        )}
+                      </span>
+                    </div>
+                    <div>
+                      <span style={{ color: "#718096" }}>Budget:</span>{" "}
+                      <span style={{ fontWeight: "600", color: "#2d3748" }}>
+                        {(
+                          selectedProfile.bant.budgetRange || "unknown"
+                        ).replace(/_/g, " ")}
+                      </span>
+                    </div>
+                    <div>
+                      <span style={{ color: "#718096" }}>Authority:</span>{" "}
+                      <span style={{ fontWeight: "600", color: "#2d3748" }}>
+                        {selectedProfile.bant.authorityDecisionMaker === true
+                          ? "Decision maker"
+                          : selectedProfile.bant.authorityDecisionMaker ===
+                            false
+                          ? "Not decision maker"
+                          : "Unknown"}
+                      </span>
+                    </div>
+                    <div>
+                      <span style={{ color: "#718096" }}>Need:</span>{" "}
+                      <span style={{ fontWeight: "600", color: "#2d3748" }}>
+                        {selectedProfile.bant.needSummary || "Unknown"}
+                      </span>
+                    </div>
+                    <div>
+                      <span style={{ color: "#718096" }}>Timeline:</span>{" "}
+                      <span style={{ fontWeight: "600", color: "#2d3748" }}>
+                        {(selectedProfile.bant.timeline || "unknown").replace(
+                          /_/g,
+                          " "
+                        )}
+                      </span>
+                    </div>
                   </div>
                 </div>
               )}
