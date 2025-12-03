@@ -7871,6 +7871,34 @@ What specific information are you looking for? I'm here to help guide you throug
     lowerQuestion.includes("email") &&
     (lowerQuestion.includes("send") || lowerQuestion.includes("share"));
 
+  const isGroupMeetingIntent = /\b(group\s+meeting|group\s+event)\b/i.test(
+    lowerQuestion
+  );
+  const isRoundRobinIntent = /\bround\s*robin\b/i.test(lowerQuestion);
+  const isCollectiveIntent = /\bcollective\b/i.test(lowerQuestion);
+  const isMeetingIntent =
+    isGroupMeetingIntent || isRoundRobinIntent || isCollectiveIntent;
+
+  const isWorkshopIntent = /\b(workshop|training|class|seminar)\b/i.test(
+    lowerQuestion
+  );
+  const isInternalMeetingIntent =
+    /\b(internal team|team meeting|standup|all-hands)\b/i.test(lowerQuestion);
+  const isClientOnboardingIntent =
+    /\b(client onboarding|onboarding session|kickoff)\b/i.test(lowerQuestion);
+  const isWebinarIntent = /\b(webinar|multi-attendee|live session)\b/i.test(
+    lowerQuestion
+  );
+  const meetingTypeSelection = isWorkshopIntent
+    ? "workshops"
+    : isInternalMeetingIntent
+    ? "internal"
+    : isClientOnboardingIntent
+    ? "onboarding"
+    : isWebinarIntent
+    ? "webinar"
+    : "";
+
   // Chat completion with sales-pitch system prompt
   let systemPrompt = "";
   const userPrompt = question;
@@ -7930,6 +7958,51 @@ General Context:
 ${context}
 
 IMPORTANT: Don't provide other action buttons when user is requesting email. Focus on the email collection. KEEP RESPONSE BRIEF AND FOCUSED.`;
+    } else if (meetingTypeSelection) {
+      systemPrompt = `You are a product assistant specialized in scheduling modes. The user selected a meeting type: ${meetingTypeSelection}. Return ONLY valid JSON: {"mainText":"...","buttons":[...],"emailPrompt":"..."}.
+
+Requirements:
+- Start with 1 short sentence acknowledging their type (<=20 words)
+- Then use • bullets with TWO line breaks after each
+- Include a micro-demo: Choose date → Add capacity → Share link → Done
+- Mention capacity limits, reminders, and optional payments
+- End with ONE clarifying question
+
+Buttons: ["See how it works", "Set up a group meeting now", "Book a demo"]
+
+Context:
+Page Context:
+${pageContext}
+
+General Context:
+${context}
+
+STRICT:
+- Keep conversational, no long paragraphs
+- Ask ONE clarifying question
+- Buttons must be concrete next steps related to meetings
+- NEVER put JSON or buttons in mainText.`;
+    } else if (isMeetingIntent) {
+      systemPrompt = `You are a product assistant for scheduling. The user mentioned group meetings or team distribution. Return ONLY valid JSON.
+{
+  "mainText": "<Acknowledge their intent (e.g., group meetings) in one short sentence. Then ask ONE clarifying question to personalize: internal vs client and together vs distributed.>",
+  "buttons": ["Workshops / training", "Internal team meetings", "Client onboarding", "Webinars / multi-attendee"],
+  "emailPrompt": "<Offer to send a setup guide if they prefer email>"
+}
+
+Context:
+Page Context:
+${pageContext}
+
+General Context:
+${context}
+
+STRICT:
+- Be context-aware
+- No long paragraphs
+- Ask exactly ONE clarifying question
+- Buttons should be clarifying options, not generic actions
+- NEVER put JSON or buttons in mainText.`;
     } else {
       systemPrompt = `You are a helpful sales assistant. The user has not provided an email yet.
 
