@@ -7899,6 +7899,20 @@ What specific information are you looking for? I'm here to help guide you throug
     ? "webinar"
     : "";
 
+  const meetingStage = isMeetingIntent
+    ? meetingTypeSelection
+      ? "explain"
+      : "clarify"
+    : "";
+
+  const mapMeetingTypeToBookingType = (t: string) => {
+    const s = (t || "").toLowerCase();
+    if (s === "workshops" || s === "webinar") return "group_event";
+    if (s === "internal") return "collective";
+    if (s === "onboarding") return "group_event";
+    return null;
+  };
+
   // Chat completion with sales-pitch system prompt
   let systemPrompt = "";
   const userPrompt = question;
@@ -8106,6 +8120,9 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
       content: question,
       createdAt: now,
       ...(pageUrl ? { pageUrl } : {}),
+      ...(isMeetingIntent ? { meetingIntent: true } : {}),
+      ...(meetingStage ? { meetingStage } : {}),
+      ...(meetingTypeSelection ? { meetingType: meetingTypeSelection } : {}),
       ...(emailToStore ? { email: emailToStore } : {}),
       ...(requirementsToStore ? { requirements: requirementsToStore } : {}),
       ...(adminId ? { adminId } : {}),
@@ -8124,6 +8141,9 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
       content: answer,
       createdAt: new Date(now.getTime() + 1),
       ...(pageUrl ? { pageUrl } : {}),
+      ...(isMeetingIntent ? { meetingIntent: true } : {}),
+      ...(meetingStage ? { meetingStage } : {}),
+      ...(meetingTypeSelection ? { meetingType: meetingTypeSelection } : {}),
       ...(emailToStore ? { email: emailToStore } : {}),
       ...(requirementsToStore ? { requirements: requirementsToStore } : {}),
       ...(adminId ? { adminId } : {}),
@@ -8146,8 +8166,10 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
   try {
     const bookingEnhancement = await enhanceChatWithBookingDetection(
       question || "",
-      [], // conversation history - could be enhanced later
-      `Page URL: ${pageUrl || "unknown"}`
+      [],
+      `Page URL: ${pageUrl || "unknown"}\nMeetingType: ${
+        meetingTypeSelection || ""
+      }`
     );
 
     if (bookingEnhancement.chatResponse.showBookingCalendar) {
@@ -8214,6 +8236,30 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
       bookingStatus,
       question || ""
     );
+    if (meetingStage === "clarify") {
+      if (!finalResponse.mainText || !/[\?]$/.test(finalResponse.mainText)) {
+        finalResponse.mainText = `${(finalResponse.mainText || "").replace(
+          /\s+$/,
+          ""
+        )}?`;
+      }
+      finalResponse.buttons = [
+        "Workshops / training",
+        "Internal team meetings",
+        "Client onboarding",
+        "Webinars / multi-attendee",
+      ];
+      finalResponse.showBookingCalendar = false;
+      delete (finalResponse as any).bookingType;
+    } else if (meetingStage === "explain") {
+      finalResponse.buttons = [
+        "See how it works",
+        "Set up a group meeting now",
+        "Book a demo",
+      ];
+      const bt = mapMeetingTypeToBookingType(meetingTypeSelection);
+      if (bt) (finalResponse as any).bookingTypeHint = bt;
+    }
     finalResponse.buttons = filterRedundantButtons(
       finalResponse.buttons || [],
       question || "",
