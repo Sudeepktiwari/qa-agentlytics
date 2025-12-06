@@ -509,7 +509,7 @@ async function analyzeForProbing(input: {
     {
       role: "system",
       content:
-        "Decide if a qualification follow-up (BANT: Budget, Authority, Need, Timeline) should be sent now. Return JSON with keys shouldSendFollowUp (boolean), mainText, buttons, emailPrompt. Only probe when logical and non-intrusive. Avoid when booking is already shown or user is in sales mode with clear next action.",
+        "Decide whether to send a short qualification follow-up now using BANT (Budget, Authority, Need, Timeline). Return JSON: { shouldSendFollowUp: boolean, mainText: string, buttons: string[], emailPrompt: string }. Trigger follow-up when pricing-related interest is detected (pricing, cost, plans, quote, estimate, discount, billing) and no booking calendar is shown. Prefer 1 friendly sentence and up to 3 concise buttons. Skip follow-up when the assistant is already requesting information, when booking/reschedule/cancel flows are underway, or when the user is executing a clear next step. If botMode is 'sales', be conservative and probe mainly on pricing/timeline; if 'lead_generation', allow gentle probing. If email is missing and pricing interest is present, favor a budget or timeline question.",
     },
     {
       role: "user",
@@ -8441,37 +8441,35 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
   });
 
   let secondary: any = null;
-  if (!finalResponse.showBookingCalendar) {
-    try {
-      const probing = await analyzeForProbing({
-        userMessage: question || "",
-        assistantResponse: {
-          mainText: finalResponse.mainText,
-          buttons: finalResponse.buttons,
-          emailPrompt: (finalResponse as any).emailPrompt || "",
-        },
-        botMode,
-        userEmail,
+  try {
+    const probing = await analyzeForProbing({
+      userMessage: question || "",
+      assistantResponse: {
+        mainText: finalResponse.mainText,
+        buttons: finalResponse.buttons,
+        emailPrompt: (finalResponse as any).emailPrompt || "",
+      },
+      botMode,
+      userEmail,
+    });
+    if (probing.shouldSendFollowUp && probing.mainText) {
+      secondary = {
+        mainText: probing.mainText,
+        buttons: probing.buttons || [],
+        emailPrompt: probing.emailPrompt || "",
+      };
+      await chats.insertOne({
+        sessionId,
+        role: "assistant",
+        content: secondary.mainText,
+        buttons: secondary.buttons,
+        emailPrompt: secondary.emailPrompt,
+        createdAt: new Date(now.getTime() + 2),
+        ...(pageUrl ? { pageUrl } : {}),
+        ...(adminId ? { adminId } : {}),
       });
-      if (probing.shouldSendFollowUp && probing.mainText) {
-        secondary = {
-          mainText: probing.mainText,
-          buttons: probing.buttons || [],
-          emailPrompt: probing.emailPrompt || "",
-        };
-        await chats.insertOne({
-          sessionId,
-          role: "assistant",
-          content: secondary.mainText,
-          buttons: secondary.buttons,
-          emailPrompt: secondary.emailPrompt,
-          createdAt: new Date(now.getTime() + 2),
-          ...(pageUrl ? { pageUrl } : {}),
-          ...(adminId ? { adminId } : {}),
-        });
-      }
-    } catch {}
-  }
+    }
+  } catch {}
 
   const out = secondary ? { ...finalResponse, secondary } : finalResponse;
   return NextResponse.json(out, { headers: corsHeaders });
