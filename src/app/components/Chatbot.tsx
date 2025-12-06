@@ -1143,6 +1143,17 @@ const Chatbot: React.FC<ChatbotProps> = ({
         return newMessages;
       });
       if (data.secondary) {
+        console.log("[Chatbot] Secondary follow-up received", {
+          type: (data.secondary as any)?.type || "unknown",
+          hasMainText: !!(data.secondary as any)?.mainText,
+          buttonsCount: Array.isArray((data.secondary as any)?.buttons)
+            ? (data.secondary as any)?.buttons.length
+            : 0,
+          preview:
+            typeof (data.secondary as any)?.mainText === "string"
+              ? (data.secondary as any)?.mainText.slice(0, 100)
+              : "",
+        });
         const secParsed = parseBotResponse(data.secondary);
         const secMsg = {
           role: "assistant" as const,
@@ -1152,6 +1163,13 @@ const Chatbot: React.FC<ChatbotProps> = ({
           botMode: data.botMode,
           userEmail: data.userEmail,
         };
+        console.log("[Chatbot] Appending follow-up message", {
+          type: (data.secondary as any)?.type || "unknown",
+          contentLength: secParsed.mainText?.length || 0,
+          buttonsCount: Array.isArray(secParsed.buttons)
+            ? secParsed.buttons.length
+            : 0,
+        });
         setMessages((msgs) => [...msgs, secMsg]);
       }
       // Clear follow-up timer on user message

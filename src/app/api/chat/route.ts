@@ -8519,6 +8519,7 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
         mainText: probing.mainText,
         buttons: probing.buttons || [],
         emailPrompt: probing.emailPrompt || "",
+        type: "bant",
       };
     } else {
       secondary = buildFallbackFollowup({
@@ -8531,13 +8532,26 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
         botMode,
         userEmail,
       });
+      secondary = { ...secondary, type: "probe" };
     }
+    console.log(`[Chat API ${requestId}] Follow-up generated`, {
+      type: (secondary as any).type,
+      hasMainText: !!secondary.mainText,
+      buttonsCount: Array.isArray(secondary.buttons)
+        ? secondary.buttons.length
+        : 0,
+      preview:
+        typeof secondary.mainText === "string"
+          ? secondary.mainText.slice(0, 120)
+          : "",
+    });
     await chats.insertOne({
       sessionId,
       role: "assistant",
       content: secondary.mainText,
       buttons: secondary.buttons,
       emailPrompt: secondary.emailPrompt,
+      followupType: (secondary as any).type,
       createdAt: new Date(now.getTime() + 2),
       ...(pageUrl ? { pageUrl } : {}),
       ...(adminId ? { adminId } : {}),
