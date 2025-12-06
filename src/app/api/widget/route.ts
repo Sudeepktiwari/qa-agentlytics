@@ -1441,6 +1441,32 @@ export async function GET(request: Request) {
       isProactive: true
     };
     
+    if (messageType === 'FOLLOWUP') {
+      let lastAssistantText = '';
+      for (let i = messages.length - 1; i >= 0; i--) {
+        const m = messages[i];
+        if (m && m.role === 'assistant' && typeof m.content === 'string') {
+          lastAssistantText = m.content;
+          break;
+        }
+      }
+      const wordCount = String(lastAssistantText || '')
+        .replace(/<[^>]+>/g, ' ')
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean).length;
+      const delayMs = Math.max(4000, Math.min(wordCount * 350, 20000));
+      console.log('⏳ [WIDGET FOLLOWUP] Reader-friendly delay for followup (ms):', delayMs, 'wordCount:', wordCount);
+      setTimeout(() => {
+        messages.push(proactiveMessage);
+        console.log('📝 [WIDGET PROACTIVE] Followup message added after delay. Total messages:', messages.length);
+        renderMessages();
+        scrollToBottom();
+        startFollowupTimer();
+      }, delayMs);
+      return;
+    }
+
     messages.push(proactiveMessage);
     console.log('📝 [WIDGET PROACTIVE] Proactive message added to messages array. Total messages:', messages.length);
     
@@ -1547,9 +1573,10 @@ export async function GET(request: Request) {
         } else if (config.autoOpenProactive || isOpen) {
           const reason = isOpen ? '💬 [WIDGET CONTEXT] Chat is open, rendering proactive message' : '🎯 [WIDGET CONTEXT] Auto-open enabled, sending proactive message';
           console.log(reason);
+          const assistantCountBefore = messages.filter((m) => m && m.role === 'assistant').length;
           sendProactiveMessage(data.mainText, data.buttons || [], data.emailPrompt || '', 'PROACTIVE');
           // Suppress secondary follow-up for very first bot message
-          if (messages.length > 0 && data.secondary && data.secondary.mainText) {
+          if (assistantCountBefore > 0 && data.secondary && data.secondary.mainText) {
             sendProactiveMessage(data.secondary.mainText, data.secondary.buttons || [], data.secondary.emailPrompt || '', 'FOLLOWUP');
           }
         } else {
@@ -2177,9 +2204,10 @@ export async function GET(request: Request) {
           };
           
           // Send the proactive message
+          const assistantCountBefore2 = messages.filter((m) => m && m.role === 'assistant').length;
           sendProactiveMessage(messageText, buttons, emailPrompt);
           // Suppress secondary follow-up for first bot message in scroll-triggered flow
-          if (messages.length > 0 && data.secondary && data.secondary.mainText) {
+          if (assistantCountBefore2 > 0 && data.secondary && data.secondary.mainText) {
             sendProactiveMessage(data.secondary.mainText, data.secondary.buttons || [], data.secondary.emailPrompt || '', 'FOLLOWUP');
           }
           
@@ -3852,7 +3880,8 @@ export async function GET(request: Request) {
           .trim()
           .split(/\s+/)
           .filter(Boolean).length;
-        const delayMs = Math.max(1200, Math.min(words * 220, 5000));
+        const delayMs = Math.max(4000, Math.min(words * 350, 20000));
+        console.log('⏳ [WIDGET FOLLOWUP] Reader-friendly delay for followup (ms):', delayMs, 'wordCount:', words);
         setTimeout(() => {
           messages.push(secondaryMessage);
           renderMessages();
@@ -4397,9 +4426,10 @@ export async function GET(request: Request) {
       });
       
       if (data.mainText) {
+        const assistantCountBefore3 = messages.filter((m) => m && m.role === 'assistant').length;
         sendProactiveMessage(data.mainText);
         // Suppress secondary on very first bot message
-        if (messages.length > 0 && data.secondary && data.secondary.mainText) {
+        if (assistantCountBefore3 > 0 && data.secondary && data.secondary.mainText) {
           sendProactiveMessage(data.secondary.mainText, data.secondary.buttons || [], data.secondary.emailPrompt || '', 'FOLLOWUP');
         }
       }
