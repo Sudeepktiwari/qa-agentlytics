@@ -261,7 +261,6 @@ const Chatbot: React.FC<ChatbotProps> = ({
             })
             .then((res) => res.json())
             .then((data) => {
-              // Update bot mode tracking
               if (data.botMode) {
                 setCurrentBotMode(data.botMode);
               }
@@ -280,25 +279,41 @@ const Chatbot: React.FC<ChatbotProps> = ({
                     userEmail: data.userEmail,
                   },
                 ]);
+              if (data.secondary) {
+                const secParsed = parseBotResponse(data.secondary);
+                const secMsg = {
+                  role: "assistant" as const,
+                  content: secParsed.mainText,
+                  buttons: secParsed.buttons,
+                  emailPrompt: secParsed.emailPrompt,
+                  botMode: data.botMode,
+                  userEmail: data.userEmail,
+                };
+                console.log("[Followup] Received", {
+                  type: (data.secondary as any)?.type || "unknown",
+                  preview:
+                    typeof (data.secondary as any)?.mainText === "string"
+                      ? (data.secondary as any)?.mainText.slice(0, 100)
+                      : "",
+                  buttonsCount: Array.isArray(secParsed.buttons)
+                    ? secParsed.buttons.length
+                    : 0,
+                });
+                setMessages((msgs) => [...msgs, secMsg]);
+                console.log("[Followup] Appended to chat");
+              }
               // Start follow-up timer
               if (followupTimer.current) clearTimeout(followupTimer.current);
               setFollowupSent(false);
               setFollowupCount(0);
               setUserIsActive(false);
               setLastUserAction(Date.now());
-              console.log("[Chatbot] Setting follow-up timer for 2 minutes");
               followupTimer.current = setTimeout(() => {
-                console.log(
-                  "[Chatbot] Follow-up timer triggered, setting followupSent to true"
-                );
                 setFollowupSent(true);
               }, 120000); // 120 seconds (2 minutes)
             })
             .catch((error) => {
-              console.error(
-                "[Chatbot] Error clearing history or showing proactive message:",
-                error
-              );
+              console.error("[Chatbot] Proactive error", error);
             });
           return;
         }
@@ -316,35 +331,11 @@ const Chatbot: React.FC<ChatbotProps> = ({
         })
           .then((res) => res.json())
           .then((data) => {
-            console.log("[Chatbot] Proactive API Response:", {
-              botMode: data.botMode,
-              userEmail: data.userEmail,
-              hasAnswer: !!data.answer,
-              timestamp: new Date().toISOString(),
-            });
-
-            // Update bot mode tracking
             if (data.botMode) {
-              console.log(
-                "[Chatbot] Proactive - Updating bot mode from:",
-                currentBotMode,
-                "to:",
-                data.botMode
-              );
               setCurrentBotMode(data.botMode);
-            } else {
-              console.log("[Chatbot] Proactive - No botMode in API response");
             }
             if (data.userEmail !== undefined) {
-              console.log(
-                "[Chatbot] Proactive - Updating user email from:",
-                currentUserEmail,
-                "to:",
-                data.userEmail
-              );
               setCurrentUserEmail(data.userEmail);
-            } else {
-              console.log("[Chatbot] Proactive - No userEmail in API response");
             }
 
             if (data.answer)
@@ -358,18 +349,36 @@ const Chatbot: React.FC<ChatbotProps> = ({
                   userEmail: data.userEmail,
                 },
               ]);
+            if (data.secondary) {
+              const secParsed = parseBotResponse(data.secondary);
+              const secMsg = {
+                role: "assistant" as const,
+                content: secParsed.mainText,
+                buttons: secParsed.buttons,
+                emailPrompt: secParsed.emailPrompt,
+                botMode: data.botMode,
+                userEmail: data.userEmail,
+              };
+              console.log("[Followup] Received", {
+                type: (data.secondary as any)?.type || "unknown",
+                preview:
+                  typeof (data.secondary as any)?.mainText === "string"
+                    ? (data.secondary as any)?.mainText.slice(0, 100)
+                    : "",
+                buttonsCount: Array.isArray(secParsed.buttons)
+                  ? secParsed.buttons.length
+                  : 0,
+              });
+              setMessages((msgs) => [...msgs, secMsg]);
+              console.log("[Followup] Appended to chat");
+            }
             // Start follow-up timer
             if (followupTimer.current) clearTimeout(followupTimer.current);
             setFollowupSent(false);
             setFollowupCount(0); // Reset followup count for new URL
             setUserIsActive(false); // Reset user activity
             setLastUserAction(Date.now());
-            console.log("[Chatbot] Setting follow-up timer for 2 minutes");
             followupTimer.current = setTimeout(() => {
-              // Only send follow-up if user hasn't responded
-              console.log(
-                "[Chatbot] Follow-up timer triggered, setting followupSent to true"
-              );
               setFollowupSent(true);
             }, 120000); // 120 seconds (2 minutes)
           });
@@ -464,7 +473,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
           pageUrl: effectivePageUrl,
           followup: true,
           previousQuestions,
-          followupCount, // <-- added so backend knows which follow-up to send
+          followupCount, // <-- backend uses follow-up stage
           ...(adminId ? { adminId } : {}),
         }),
       })
@@ -489,6 +498,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
               emailPrompt: parsed.emailPrompt,
               botMode: data.botMode,
               userEmail: data.userEmail,
+              isFollowup: true,
             },
           ]);
           setFollowupCount((c) => c + 1);
@@ -1011,105 +1021,8 @@ const Chatbot: React.FC<ChatbotProps> = ({
         }),
       });
 
-      console.log("📥 [CHAT DEBUG] Raw response received:", {
-        status: res.status,
-        statusText: res.statusText,
-        ok: res.ok,
-        headers: Object.fromEntries(res.headers.entries()),
-        contentType: res.headers.get("content-type"),
-      });
-
       const data = await res.json();
-
-      console.log("🔍 [CHAT DEBUG] JSON parsed successfully:", {
-        dataType: typeof data,
-        dataKeys: Object.keys(data || {}),
-        fullData: data,
-        stringify: JSON.stringify(data, null, 2),
-      });
-
-      // 🤖 AI RESPONSE LOGGING - Clear display of the AI response
-      console.log("🤖 [AI RESPONSE] Raw AI Answer received:");
-      console.log("==========================================");
-      console.log(data.answer || "No answer field in response");
-      console.log("==========================================");
-      console.log("🤖 [AI RESPONSE] Complete API Data:");
-      console.log(JSON.stringify(data, null, 2));
-
-      console.log("[API DEBUG] Raw API response received:", {
-        status: res.status,
-        statusText: res.statusText,
-        headers: Object.fromEntries(res.headers.entries()),
-        data: data,
-        dataType: typeof data,
-        hasAnswer: !!data.answer,
-        hasButtons: !!(data.buttons && Array.isArray(data.buttons)),
-        buttonCount: Array.isArray(data.buttons) ? data.buttons.length : 0,
-        timestamp: new Date().toISOString(),
-      });
-
-      console.log("[Chatbot] API Response received:", {
-        botMode: data.botMode,
-        userEmail: data.userEmail,
-        hasAnswer: !!data.answer,
-        rawData: data,
-        timestamp: new Date().toISOString(),
-      });
-
-      // Update bot mode tracking
-      if (data.botMode) {
-        console.log(
-          "[Chatbot] Updating bot mode from:",
-          currentBotMode,
-          "to:",
-          data.botMode
-        );
-        setCurrentBotMode(data.botMode);
-      } else {
-        console.log("[Chatbot] No botMode in API response");
-      }
-      if (data.userEmail !== undefined) {
-        console.log(
-          "[Chatbot] Updating user email from:",
-          currentUserEmail,
-          "to:",
-          data.userEmail
-        );
-        setCurrentUserEmail(data.userEmail);
-      } else {
-        console.log("[Chatbot] No userEmail in API response");
-      }
-
-      console.log("🧠 [PARSE DEBUG] About to parse response:", {
-        hasAnswer: !!data.answer,
-        answerType: typeof data.answer,
-        answerContent: data.answer,
-        hasDirectButtons: !!(data.buttons && Array.isArray(data.buttons)),
-        directButtons: data.buttons,
-        hasDirectEmailPrompt: !!data.emailPrompt,
-        directEmailPrompt: data.emailPrompt,
-        willParse: data.answer || data,
-      });
       const parsed = parseBotResponse(data.answer || data);
-
-      // 🎯 PARSED RESULT LOGGING - Show exactly what was extracted
-      console.log("🎯 [PARSED RESULT] Final extracted content:");
-      console.log("==========================================");
-      console.log("Main Text:", parsed.mainText);
-      console.log("Buttons:", parsed.buttons);
-      console.log("Email Prompt:", parsed.emailPrompt);
-      console.log("==========================================");
-
-      console.log("✅ [PARSE DEBUG] Response parsed successfully:", {
-        parsedMainText: parsed.mainText,
-        parsedButtons: parsed.buttons,
-        parsedButtonsCount: parsed.buttons ? parsed.buttons.length : 0,
-        parsedEmailPrompt: parsed.emailPrompt,
-        hasContent: !!parsed.mainText,
-        hasButtons: !!(parsed.buttons && parsed.buttons.length > 0),
-        hasEmailPrompt: !!parsed.emailPrompt,
-      });
-      console.log("[PARSE DEBUG] Parsed response result:", parsed);
 
       const newMessage = {
         role: "assistant" as const,
@@ -1120,26 +1033,8 @@ const Chatbot: React.FC<ChatbotProps> = ({
         userEmail: data.userEmail,
       };
 
-      console.log("💬 [MESSAGE DEBUG] Creating new bot message:", {
-        messageContent: newMessage.content,
-        messageContentLength: newMessage.content.length,
-        messageButtons: newMessage.buttons,
-        messageButtonsCount: newMessage.buttons ? newMessage.buttons.length : 0,
-        messageEmailPrompt: newMessage.emailPrompt,
-        messageBotMode: newMessage.botMode,
-        messageUserEmail: newMessage.userEmail,
-        fullMessage: newMessage,
-      });
-
-      console.log("📋 [STATE DEBUG] Adding message to messages array");
       setMessages((msgs) => {
         const newMessages = [...msgs, newMessage];
-        console.log("📊 [STATE DEBUG] Updated messages array:", {
-          previousLength: msgs.length,
-          newLength: newMessages.length,
-          lastMessage: newMessages[newMessages.length - 1],
-          allMessages: newMessages,
-        });
         return newMessages;
       });
       if (data.secondary) {

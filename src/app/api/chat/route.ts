@@ -509,7 +509,7 @@ async function analyzeForProbing(input: {
     {
       role: "system",
       content:
-        "Decide whether to send a short qualification follow-up now using BANT (Budget, Authority, Need, Timeline). Return JSON: { shouldSendFollowUp: boolean, mainText: string, buttons: string[], emailPrompt: string }. Trigger follow-up when pricing-related interest is detected (pricing, cost, plans, quote, estimate, discount, billing) and no booking calendar is shown. Prefer 1 friendly sentence and up to 3 concise buttons. Skip follow-up when the assistant is already requesting information, when booking/reschedule/cancel flows are underway, or when the user is executing a clear next step. If botMode is 'sales', be conservative and probe mainly on pricing/timeline; if 'lead_generation', allow gentle probing. If email is missing and pricing interest is present, favor a budget or timeline question.",
+        "Decide whether to send a short qualification probe now using BANT (Budget, Authority, Need, Timeline). BASE YOUR DECISION ON THE LAST USER MESSAGE AND THE ASSISTANT'S RESPONSE. Return JSON: { shouldSendFollowUp: boolean, mainText: string, buttons: string[], emailPrompt: string }. Prefer 1 friendly sentence and up to 3 concise buttons. If botMode is 'sales', be conservative and probe mainly on pricing/timeline; if 'lead_generation', allow gentle probing.",
     },
     {
       role: "user",
@@ -562,7 +562,7 @@ function buildFallbackFollowup(input: {
   botMode: "sales" | "lead_generation";
   userEmail?: string | null;
 }) {
-  const text = `${input.userMessage} ${
+  const text = `${input.userMessage || ""} ${
     input.assistantResponse.mainText || ""
   }`.toLowerCase();
   const hasPricing =
@@ -574,6 +574,7 @@ function buildFallbackFollowup(input: {
   const hasAuthority = /(manager|director|vp|cfo|decision|approve|buy)/i.test(
     text
   );
+  const hasFeatures = /(feature|features|capabilities|options)/i.test(text);
   if (hasPricing) {
     return {
       mainText: "What budget range and timeline are you considering?",
@@ -600,6 +601,13 @@ function buildFallbackFollowup(input: {
       emailPrompt: "Add an email to coordinate next steps",
     };
   }
+  if (hasFeatures) {
+    return {
+      mainText: "Which feature matters most for you right now?",
+      buttons: ["Workflows", "Embeds", "Analytics"],
+      emailPrompt: "Share an email to send a brief feature comparison",
+    };
+  }
   if (input.botMode === "sales") {
     return {
       mainText: "What outcome are you targeting and by when?",
@@ -608,9 +616,9 @@ function buildFallbackFollowup(input: {
     };
   }
   return {
-    mainText: "What problem are you trying to solve and what’s your timeline?",
-    buttons: ["Define the problem", "This month", "Later"],
-    emailPrompt: "Add your email to get a tailored walkthrough",
+    mainText: "What are you exploring and what’s your timeline?",
+    buttons: ["Pricing", "Integrations", "Scheduling"],
+    emailPrompt: "Add your email to receive a tailored walkthrough",
   };
 }
 
@@ -2095,6 +2103,7 @@ export async function POST(req: NextRequest) {
     proactive,
     adminId: adminIdFromBody,
     followup,
+    immediateFollowup = false,
     hasBeenGreeted = false,
     proactiveMessageCount = 0,
     visitedPages = [],
@@ -6490,7 +6499,78 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
           timestamp: new Date().toISOString(),
         });
 
-        return NextResponse.json(enhancedProactiveData, {
+        let secondary: any = null;
+        try {
+          const probing = await analyzeForProbing({
+            userMessage: question || "",
+            assistantResponse: {
+              mainText: enhancedProactiveData.answer,
+              buttons: enhancedProactiveData.buttons,
+              emailPrompt: "",
+            },
+            botMode,
+            userEmail,
+          });
+          if (probing.shouldSendFollowUp && probing.mainText) {
+            secondary = {
+              mainText: probing.mainText,
+              buttons: probing.buttons || [],
+              emailPrompt: probing.emailPrompt || "",
+              type: "bant",
+            };
+          } else {
+            secondary = buildFallbackFollowup({
+              userMessage: question || "",
+              assistantResponse: {
+                mainText: enhancedProactiveData.answer,
+                buttons: enhancedProactiveData.buttons,
+                emailPrompt: "",
+              },
+              botMode,
+              userEmail,
+            });
+            secondary = { ...secondary, type: "probe" };
+          }
+          await chats.insertOne({
+            sessionId,
+            role: "assistant",
+            content: secondary.mainText,
+            buttons: secondary.buttons,
+            emailPrompt: secondary.emailPrompt,
+            followupType: (secondary as any).type,
+            createdAt: new Date(now.getTime() + 2),
+            ...(pageUrl ? { pageUrl } : {}),
+            ...(adminId ? { adminId } : {}),
+          });
+        } catch {
+          secondary = buildFallbackFollowup({
+            userMessage: question || "",
+            assistantResponse: {
+              mainText: enhancedProactiveData.answer,
+              buttons: enhancedProactiveData.buttons,
+              emailPrompt: "",
+            },
+            botMode,
+            userEmail,
+          });
+          secondary = { ...secondary, type: "probe" };
+          await chats.insertOne({
+            sessionId,
+            role: "assistant",
+            content: secondary.mainText,
+            buttons: secondary.buttons,
+            emailPrompt: secondary.emailPrompt,
+            followupType: (secondary as any).type,
+            createdAt: new Date(now.getTime() + 2),
+            ...(pageUrl ? { pageUrl } : {}),
+            ...(adminId ? { adminId } : {}),
+          });
+        }
+
+        const proactiveOut = secondary
+          ? { ...enhancedProactiveData, secondary }
+          : enhancedProactiveData;
+        return NextResponse.json(proactiveOut, {
           headers: corsHeaders,
         });
       } else if (followup) {
@@ -7341,41 +7421,43 @@ ${previousQnA}
         }
 
         // Check if user has been recently active based on recent message timestamps
-        const recentMessages = await chats
-          .find({ sessionId })
-          .sort({ createdAt: -1 })
-          .limit(5)
-          .toArray();
+        if (!immediateFollowup) {
+          const recentMessages = await chats
+            .find({ sessionId })
+            .sort({ createdAt: -1 })
+            .limit(5)
+            .toArray();
 
-        const now = new Date();
-        const recentUserActivity = recentMessages.some((msg) => {
-          const msgTime = new Date(msg.createdAt);
-          const timeDiff = now.getTime() - msgTime.getTime();
-          return msg.role === "user" && timeDiff < 25000; // 25 seconds
-        });
+          const now = new Date();
+          const recentUserActivity = recentMessages.some((msg) => {
+            const msgTime = new Date(msg.createdAt);
+            const timeDiff = now.getTime() - msgTime.getTime();
+            return msg.role === "user" && timeDiff < 25000; // 25 seconds
+          });
 
-        if (recentUserActivity) {
-          console.log(
-            `[Followup] Skipping followup - user was active within last 25 seconds for session ${sessionId}`
-          );
-          let userEmail: string | null = null;
-          const lastEmailMsg = await chats.findOne(
-            { sessionId, email: { $exists: true } },
-            { sort: { createdAt: -1 } }
-          );
-          if (lastEmailMsg && lastEmailMsg.email)
-            userEmail = lastEmailMsg.email;
-          return NextResponse.json(
-            {
-              mainText:
-                "You're already active! Please continue your conversation.",
-              buttons: [],
-              emailPrompt: "",
-              botMode: userEmail ? "sales" : "lead_generation",
-              userEmail: userEmail || null,
-            },
-            { headers: corsHeaders }
-          );
+          if (recentUserActivity) {
+            console.log(
+              `[Followup] Skipping followup - user was active within last 25 seconds for session ${sessionId}`
+            );
+            let userEmail: string | null = null;
+            const lastEmailMsg = await chats.findOne(
+              { sessionId, email: { $exists: true } },
+              { sort: { createdAt: -1 } }
+            );
+            if (lastEmailMsg && lastEmailMsg.email)
+              userEmail = lastEmailMsg.email;
+            return NextResponse.json(
+              {
+                mainText:
+                  "You're already active! Please continue your conversation.",
+                buttons: [],
+                emailPrompt: "",
+                botMode: userEmail ? "sales" : "lead_generation",
+                userEmail: userEmail || null,
+              },
+              { headers: corsHeaders }
+            );
+          }
         }
 
         // Build a list of all previously used option labels to enforce variety
