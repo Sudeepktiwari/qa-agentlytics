@@ -1845,9 +1845,11 @@ async function detectUserPersona(
     }
 
     // Only return persona if we have a reasonable confidence level
-    if (bestScore >= 3) {
+    if (bestScore >= 3 && bestMatch) {
       console.log(
-        `[Persona] Detected persona: ${bestMatch.name} (score: ${bestScore})`
+        `[Persona] Detected persona: ${
+          bestMatch?.name || "unknown"
+        } (score: ${bestScore})`
       );
       return bestMatch;
     }
@@ -6538,6 +6540,12 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
 
         let secondary: any = null;
         try {
+          const db = await getDb();
+          const chats = db.collection("chats");
+          const assistantCountBefore = await chats.countDocuments({
+            sessionId,
+            role: "assistant",
+          });
           const probing = await analyzeForProbing({
             userMessage: question || "",
             assistantResponse: {
@@ -6548,7 +6556,10 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
             botMode,
             userEmail,
           });
-          if (probing.shouldSendFollowUp && probing.mainText) {
+          if (assistantCountBefore === 0) {
+            // Do not send follow-up for first assistant message in session
+            secondary = null;
+          } else if (probing.shouldSendFollowUp && probing.mainText) {
             secondary = {
               mainText: probing.mainText,
               buttons: probing.buttons || [],
@@ -6568,17 +6579,19 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
             });
             secondary = { ...secondary, type: "probe" };
           }
-          await chats.insertOne({
-            sessionId,
-            role: "assistant",
-            content: secondary.mainText,
-            buttons: secondary.buttons,
-            emailPrompt: secondary.emailPrompt,
-            followupType: (secondary as any).type,
-            createdAt: new Date(now.getTime() + 2),
-            ...(pageUrl ? { pageUrl } : {}),
-            ...(adminId ? { adminId } : {}),
-          });
+          if (secondary) {
+            await chats.insertOne({
+              sessionId,
+              role: "assistant",
+              content: secondary.mainText,
+              buttons: secondary.buttons,
+              emailPrompt: secondary.emailPrompt,
+              followupType: (secondary as any).type,
+              createdAt: new Date(now.getTime() + 2),
+              ...(pageUrl ? { pageUrl } : {}),
+              ...(adminId ? { adminId } : {}),
+            });
+          }
         } catch {
           secondary = buildFallbackFollowup({
             userMessage: question || "",
@@ -6591,17 +6604,27 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
             userEmail,
           });
           secondary = { ...secondary, type: "probe" };
-          await chats.insertOne({
+          const db = await getDb();
+          const chats = db.collection("chats");
+          const assistantCountBefore = await chats.countDocuments({
             sessionId,
             role: "assistant",
-            content: secondary.mainText,
-            buttons: secondary.buttons,
-            emailPrompt: secondary.emailPrompt,
-            followupType: (secondary as any).type,
-            createdAt: new Date(now.getTime() + 2),
-            ...(pageUrl ? { pageUrl } : {}),
-            ...(adminId ? { adminId } : {}),
           });
+          if (assistantCountBefore > 0) {
+            await chats.insertOne({
+              sessionId,
+              role: "assistant",
+              content: secondary.mainText,
+              buttons: secondary.buttons,
+              emailPrompt: secondary.emailPrompt,
+              followupType: (secondary as any).type,
+              createdAt: new Date(now.getTime() + 2),
+              ...(pageUrl ? { pageUrl } : {}),
+              ...(adminId ? { adminId } : {}),
+            });
+          } else {
+            secondary = null;
+          }
         }
 
         const proactiveOut = secondary
@@ -6798,7 +6821,9 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
           );
         } else if (detectedPersona && pageChunks.length > 0) {
           console.log(
-            `[Persona] Generating persona-based followup for: ${detectedPersona.name}`
+            `[Persona] Generating persona-based followup for: ${
+              detectedPersona?.name || "unknown"
+            }`
           );
           personaFollowup = await generatePersonaBasedFollowup(
             detectedPersona,
@@ -6815,7 +6840,13 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
         // Use persona-based followup if available, otherwise fall back to generic
         if (personaFollowup && personaFollowup.mainText) {
           console.log(
-            `[Persona] Using persona-based followup for ${detectedPersona.name}`
+            `[Persona] Using ${
+              detectedPersona
+                ? `persona-based followup for ${
+                    detectedPersona?.name || "unknown"
+                  }`
+                : "generated followup"
+            }`
           );
 
           let userEmail: string | null = null;
@@ -8623,25 +8654,15 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
 
   let secondary: any = null;
   try {
-    const probing = await analyzeForProbing({
-      userMessage: question || "",
-      assistantResponse: {
-        mainText: finalResponse.mainText,
-        buttons: finalResponse.buttons,
-        emailPrompt: (finalResponse as any).emailPrompt || "",
-      },
-      botMode,
-      userEmail,
+    const db = await getDb();
+    const chats = db.collection("chats");
+    const assistantCountBefore = await chats.countDocuments({
+      sessionId,
+      role: "assistant",
     });
-    if (probing.shouldSendFollowUp && probing.mainText) {
-      secondary = {
-        mainText: probing.mainText,
-        buttons: probing.buttons || [],
-        emailPrompt: probing.emailPrompt || "",
-        type: "bant",
-      };
-    } else {
-      secondary = buildFallbackFollowup({
+    const skipSecondaryForFirstAssistant = assistantCountBefore === 0;
+    if (!skipSecondaryForFirstAssistant) {
+      const probing = await analyzeForProbing({
         userMessage: question || "",
         assistantResponse: {
           mainText: finalResponse.mainText,
@@ -8651,30 +8672,53 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
         botMode,
         userEmail,
       });
-      secondary = { ...secondary, type: "probe" };
+      if (probing.shouldSendFollowUp && probing.mainText) {
+        secondary = {
+          mainText: probing.mainText,
+          buttons: probing.buttons || [],
+          emailPrompt: probing.emailPrompt || "",
+          type: "bant",
+        };
+      } else {
+        secondary = buildFallbackFollowup({
+          userMessage: question || "",
+          assistantResponse: {
+            mainText: finalResponse.mainText,
+            buttons: finalResponse.buttons,
+            emailPrompt: (finalResponse as any).emailPrompt || "",
+          },
+          botMode,
+          userEmail,
+        });
+        secondary = { ...secondary, type: "probe" };
+      }
+      console.log(`[Chat API ${requestId}] Follow-up generated`, {
+        type: (secondary as any).type,
+        hasMainText: !!secondary.mainText,
+        buttonsCount: Array.isArray(secondary.buttons)
+          ? secondary.buttons.length
+          : 0,
+        preview:
+          typeof secondary.mainText === "string"
+            ? secondary.mainText.slice(0, 120)
+            : "",
+      });
+      await chats.insertOne({
+        sessionId,
+        role: "assistant",
+        content: secondary.mainText,
+        buttons: secondary.buttons,
+        emailPrompt: secondary.emailPrompt,
+        followupType: (secondary as any).type,
+        createdAt: new Date(now.getTime() + 2),
+        ...(pageUrl ? { pageUrl } : {}),
+        ...(adminId ? { adminId } : {}),
+      });
+    } else {
+      console.log(
+        `[Chat API ${requestId}] Skipping follow-up for first assistant message`
+      );
     }
-    console.log(`[Chat API ${requestId}] Follow-up generated`, {
-      type: (secondary as any).type,
-      hasMainText: !!secondary.mainText,
-      buttonsCount: Array.isArray(secondary.buttons)
-        ? secondary.buttons.length
-        : 0,
-      preview:
-        typeof secondary.mainText === "string"
-          ? secondary.mainText.slice(0, 120)
-          : "",
-    });
-    await chats.insertOne({
-      sessionId,
-      role: "assistant",
-      content: secondary.mainText,
-      buttons: secondary.buttons,
-      emailPrompt: secondary.emailPrompt,
-      followupType: (secondary as any).type,
-      createdAt: new Date(now.getTime() + 2),
-      ...(pageUrl ? { pageUrl } : {}),
-      ...(adminId ? { adminId } : {}),
-    });
   } catch (err) {
     secondary = buildFallbackFollowup({
       userMessage: question || "",
@@ -8707,17 +8751,27 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
             : "",
       }
     );
-    await chats.insertOne({
+    const assistantCountBefore = await chats.countDocuments({
       sessionId,
       role: "assistant",
-      content: secondary.mainText,
-      buttons: secondary.buttons,
-      emailPrompt: secondary.emailPrompt,
-      followupType: (secondary as any).type,
-      createdAt: new Date(now.getTime() + 2),
-      ...(pageUrl ? { pageUrl } : {}),
-      ...(adminId ? { adminId } : {}),
     });
+    if (assistantCountBefore > 0) {
+      await chats.insertOne({
+        sessionId,
+        role: "assistant",
+        content: secondary.mainText,
+        buttons: secondary.buttons,
+        emailPrompt: secondary.emailPrompt,
+        followupType: (secondary as any).type,
+        createdAt: new Date(now.getTime() + 2),
+        ...(pageUrl ? { pageUrl } : {}),
+        ...(adminId ? { adminId } : {}),
+      });
+    } else {
+      console.log(
+        `[Chat API ${requestId}] Skipping fallback follow-up insert for first assistant message`
+      );
+    }
   }
 
   const out = secondary ? { ...finalResponse, secondary } : finalResponse;

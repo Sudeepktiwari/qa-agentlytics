@@ -1548,7 +1548,8 @@ export async function GET(request: Request) {
           const reason = isOpen ? '💬 [WIDGET CONTEXT] Chat is open, rendering proactive message' : '🎯 [WIDGET CONTEXT] Auto-open enabled, sending proactive message';
           console.log(reason);
           sendProactiveMessage(data.mainText, data.buttons || [], data.emailPrompt || '', 'PROACTIVE');
-          if (data.secondary && data.secondary.mainText) {
+          // Suppress secondary follow-up for very first bot message
+          if (messages.length > 0 && data.secondary && data.secondary.mainText) {
             sendProactiveMessage(data.secondary.mainText, data.secondary.buttons || [], data.secondary.emailPrompt || '', 'FOLLOWUP');
           }
         } else {
@@ -2177,7 +2178,8 @@ export async function GET(request: Request) {
           
           // Send the proactive message
           sendProactiveMessage(messageText, buttons, emailPrompt);
-          if (data.secondary && data.secondary.mainText) {
+          // Suppress secondary follow-up for first bot message in scroll-triggered flow
+          if (messages.length > 0 && data.secondary && data.secondary.mainText) {
             sendProactiveMessage(data.secondary.mainText, data.secondary.buttons || [], data.secondary.emailPrompt || '', 'FOLLOWUP');
           }
           
@@ -3717,7 +3719,7 @@ export async function GET(request: Request) {
           toggleWidget();
         }
         
-        // Continue followup chain
+        // Continue followup chain with reader-friendly timer (already dynamic)
         startFollowupTimer();
         console.log('🔀 [WIDGET FLOW] ===== FOLLOWUP MESSAGE FLOW COMPLETE =====');
       } else {
@@ -4396,7 +4398,8 @@ export async function GET(request: Request) {
       
       if (data.mainText) {
         sendProactiveMessage(data.mainText);
-        if (data.secondary && data.secondary.mainText) {
+        // Suppress secondary on very first bot message
+        if (messages.length > 0 && data.secondary && data.secondary.mainText) {
           sendProactiveMessage(data.secondary.mainText, data.secondary.buttons || [], data.secondary.emailPrompt || '', 'FOLLOWUP');
         }
       }
