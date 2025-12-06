@@ -8556,7 +8556,50 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
       ...(pageUrl ? { pageUrl } : {}),
       ...(adminId ? { adminId } : {}),
     });
-  } catch {}
+  } catch (err) {
+    secondary = buildFallbackFollowup({
+      userMessage: question || "",
+      assistantResponse: {
+        mainText: finalResponse.mainText,
+        buttons: finalResponse.buttons,
+        emailPrompt: (finalResponse as any).emailPrompt || "",
+      },
+      botMode,
+      userEmail,
+    });
+    secondary = { ...secondary, type: "probe" };
+    console.log(
+      `[Chat API ${requestId}] Follow-up evaluator failed, using fallback`,
+      {
+        error:
+          err instanceof Error
+            ? err.message
+            : typeof err === "string"
+            ? err
+            : "Unknown error",
+        type: (secondary as any).type,
+        hasMainText: !!secondary.mainText,
+        buttonsCount: Array.isArray(secondary.buttons)
+          ? secondary.buttons.length
+          : 0,
+        preview:
+          typeof secondary.mainText === "string"
+            ? secondary.mainText.slice(0, 120)
+            : "",
+      }
+    );
+    await chats.insertOne({
+      sessionId,
+      role: "assistant",
+      content: secondary.mainText,
+      buttons: secondary.buttons,
+      emailPrompt: secondary.emailPrompt,
+      followupType: (secondary as any).type,
+      createdAt: new Date(now.getTime() + 2),
+      ...(pageUrl ? { pageUrl } : {}),
+      ...(adminId ? { adminId } : {}),
+    });
+  }
 
   const out = secondary ? { ...finalResponse, secondary } : finalResponse;
   return NextResponse.json(out, { headers: corsHeaders });
