@@ -1548,6 +1548,9 @@ export async function GET(request: Request) {
           const reason = isOpen ? '💬 [WIDGET CONTEXT] Chat is open, rendering proactive message' : '🎯 [WIDGET CONTEXT] Auto-open enabled, sending proactive message';
           console.log(reason);
           sendProactiveMessage(data.mainText, data.buttons || [], data.emailPrompt || '', 'PROACTIVE');
+          if (data.secondary && data.secondary.mainText) {
+            sendProactiveMessage(data.secondary.mainText, data.secondary.buttons || [], data.secondary.emailPrompt || '', 'FOLLOWUP');
+          }
         } else {
           console.log('🔒 [WIDGET CONTEXT] Auto-open disabled and chat closed, not sending proactive message');
         }
@@ -2174,6 +2177,9 @@ export async function GET(request: Request) {
           
           // Send the proactive message
           sendProactiveMessage(messageText, buttons, emailPrompt);
+          if (data.secondary && data.secondary.mainText) {
+            sendProactiveMessage(data.secondary.mainText, data.secondary.buttons || [], data.secondary.emailPrompt || '', 'FOLLOWUP');
+          }
           
           // Start auto-response timer for contextual questions
           if (buttons && buttons.length > 0) {
@@ -3551,6 +3557,17 @@ export async function GET(request: Request) {
       // New: support multi-field inputs from backend (or future extensions)
       inputFields: responseData.inputFields || responseData.registrationFields || null
     };
+    const normalizedSecondary = responseData.secondary
+      ? {
+          mainText:
+            (responseData.secondary.mainText ||
+              responseData.secondary.answer ||
+              ''),
+          buttons: responseData.secondary.buttons || [],
+          emailPrompt: responseData.secondary.emailPrompt || '',
+          type: responseData.secondary.type || null,
+        }
+      : null;
     
     console.log("✅ [WIDGET API] Response normalized to consistent format");
     
@@ -3562,7 +3579,7 @@ export async function GET(request: Request) {
       });
     }
     
-    return normalized;
+    return { ...normalized, ...(normalizedSecondary ? { secondary: normalizedSecondary } : {}) };
   }
 
   // Get followup topic for varied conversations
@@ -3804,6 +3821,15 @@ export async function GET(request: Request) {
       botResponse = botMessage.content;
       console.log('[Widget] Bot response received, starting followup timer');
       if (!ONBOARDING_ONLY) startFollowupTimer();
+      if (data.secondary && data.secondary.mainText) {
+        const secondaryMessage = {
+          role: 'assistant',
+          content: data.secondary.mainText,
+          buttons: data.secondary.buttons || [],
+          emailPrompt: data.secondary.emailPrompt || ''
+        };
+        messages.push(secondaryMessage);
+      }
     }
     
     console.log("🎨 [WIDGET MESSAGE] Rendering messages to UI");
@@ -4343,6 +4369,9 @@ export async function GET(request: Request) {
       
       if (data.mainText) {
         sendProactiveMessage(data.mainText);
+        if (data.secondary && data.secondary.mainText) {
+          sendProactiveMessage(data.secondary.mainText, data.secondary.buttons || [], data.secondary.emailPrompt || '', 'FOLLOWUP');
+        }
       }
     }
     
