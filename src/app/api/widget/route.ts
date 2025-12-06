@@ -1456,14 +1456,15 @@ export async function GET(request: Request) {
         .split(/\s+/)
         .filter(Boolean).length;
       const delayMs = Math.max(4000, Math.min(wordCount * 350, 20000));
-      console.log('⏳ [WIDGET FOLLOWUP] Reader-friendly delay for followup (ms):', delayMs, 'wordCount:', wordCount);
+      const totalDelayMs = delayMs + 120000;
+      console.log('⏳ [WIDGET FOLLOWUP] Total followup delay (ms):', totalDelayMs, 'readerDelayMs:', delayMs, 'wordCount:', wordCount);
       setTimeout(() => {
         messages.push(proactiveMessage);
         console.log('📝 [WIDGET PROACTIVE] Followup message added after delay. Total messages:', messages.length);
         renderMessages();
         scrollToBottom();
         startFollowupTimer();
-      }, delayMs);
+      }, totalDelayMs);
       return;
     }
 
@@ -3881,12 +3882,13 @@ export async function GET(request: Request) {
           .split(/\s+/)
           .filter(Boolean).length;
         const delayMs = Math.max(4000, Math.min(words * 350, 20000));
-        console.log('⏳ [WIDGET FOLLOWUP] Reader-friendly delay for followup (ms):', delayMs, 'wordCount:', words);
+        const totalDelayMs = delayMs + 120000;
+        console.log('⏳ [WIDGET FOLLOWUP] Total followup delay (ms):', totalDelayMs, 'readerDelayMs:', delayMs, 'wordCount:', words);
         setTimeout(() => {
           messages.push(secondaryMessage);
           renderMessages();
           scrollToBottom();
-        }, delayMs);
+        }, totalDelayMs);
       }
     }
     

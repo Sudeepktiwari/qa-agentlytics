@@ -1033,6 +1033,9 @@ const Chatbot: React.FC<ChatbotProps> = ({
         userEmail: data.userEmail,
       };
 
+      const assistantCountBefore = messages.filter(
+        (m) => m && m.role === "assistant"
+      ).length;
       setMessages((msgs) => {
         const newMessages = [...msgs, newMessage];
         return newMessages;
@@ -1058,14 +1061,34 @@ const Chatbot: React.FC<ChatbotProps> = ({
           botMode: data.botMode,
           userEmail: data.userEmail,
         };
-        console.log("[Chatbot] Appending follow-up message", {
-          type: (data.secondary as any)?.type || "unknown",
-          contentLength: secParsed.mainText?.length || 0,
-          buttonsCount: Array.isArray(secParsed.buttons)
-            ? secParsed.buttons.length
-            : 0,
-        });
-        setMessages((msgs) => [...msgs, secMsg]);
+        if (assistantCountBefore > 0) {
+          const words = String(newMessage.content || "")
+            .replace(/<[^>]+>/g, " ")
+            .trim()
+            .split(/\s+/)
+            .filter(Boolean).length;
+          const delayMs = Math.max(4000, Math.min(words * 350, 20000));
+          const totalDelayMs = delayMs + 120000;
+          console.log("⏳ [Chatbot] Total followup delay", {
+            totalDelayMs,
+            readerDelayMs: delayMs,
+            words,
+          });
+          setTimeout(() => {
+            console.log("[Chatbot] Appending follow-up message", {
+              type: (data.secondary as any)?.type || "unknown",
+              contentLength: secParsed.mainText?.length || 0,
+              buttonsCount: Array.isArray(secParsed.buttons)
+                ? secParsed.buttons.length
+                : 0,
+            });
+            setMessages((msgs) => [...msgs, secMsg]);
+          }, totalDelayMs);
+        } else {
+          console.log(
+            "[Chatbot] Skipping follow-up for first assistant message"
+          );
+        }
       }
       // Clear follow-up timer on user message
       if (followupTimer.current) clearTimeout(followupTimer.current);
