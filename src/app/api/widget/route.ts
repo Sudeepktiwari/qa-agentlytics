@@ -3391,6 +3391,22 @@ export async function GET(request: Request) {
     console.log('[Widget] Starting followup timer - count:', followupCount, 'userIsActive:', userIsActive, 'speechSynthesis.speaking:', speechSynthesis.speaking);
     console.log('[Widget] Timer starts independently of speech playback status');
     clearFollowupTimer();
+    // Reader-friendly dynamic delay based on last assistant message length
+    let lastAssistantText = '';
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const m = messages[i];
+      if (m && m.role === 'assistant' && typeof m.content === 'string') {
+        lastAssistantText = m.content;
+        break;
+      }
+    }
+    const wordCount = String(lastAssistantText || '')
+      .replace(/<[^>]+>/g, ' ')
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean).length;
+    const delayMs = Math.max(6000, Math.min(wordCount * 300, 30000));
+    console.log('[Widget] Followup dynamic delay (ms):', delayMs, 'wordCount:', wordCount);
     followupTimer = setTimeout(() => {
       const timeSinceLastAction = Date.now() - lastUserAction;
       console.log('[Widget] Followup timer triggered:', {
@@ -3400,18 +3416,19 @@ export async function GET(request: Request) {
         timeSinceLastActionSeconds: Math.round(timeSinceLastAction / 1000)
       });
       
-      if (!userIsActive && timeSinceLastAction >= 25000 && followupCount < 3) {
+      const inactivityThreshold = delayMs; // align inactivity requirement with reader-friendly delay
+      if (!userIsActive && timeSinceLastAction >= inactivityThreshold && followupCount < 3) {
         console.log('[Widget] Conditions met for followup message - sending now');
         sendFollowupMessage();
       } else {
         console.log('[Widget] Followup conditions not met:', {
           userNotActive: !userIsActive,
-          enoughTimePassed: timeSinceLastAction >= 25000,
+          enoughTimePassed: timeSinceLastAction >= inactivityThreshold,
           underLimit: followupCount < 3
         });
       }
-    }, 120000); // 120 seconds (2 minutes)
-    console.log('[Widget] Followup timer set for 2 minutes');
+    }, delayMs);
+    console.log('[Widget] Followup timer set (reader-friendly):', delayMs, 'ms');
   }
   
   // Send API request
@@ -3828,7 +3845,17 @@ export async function GET(request: Request) {
           buttons: data.secondary.buttons || [],
           emailPrompt: data.secondary.emailPrompt || ''
         };
-        messages.push(secondaryMessage);
+        const words = String(botResponse || '')
+          .replace(/<[^>]+>/g, ' ')
+          .trim()
+          .split(/\s+/)
+          .filter(Boolean).length;
+        const delayMs = Math.max(1200, Math.min(words * 220, 5000));
+        setTimeout(() => {
+          messages.push(secondaryMessage);
+          renderMessages();
+          scrollToBottom();
+        }, delayMs);
       }
     }
     
