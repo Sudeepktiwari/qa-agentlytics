@@ -552,6 +552,68 @@ async function analyzeForProbing(input: {
   };
 }
 
+function buildFallbackFollowup(input: {
+  userMessage: string;
+  assistantResponse: {
+    mainText?: string;
+    buttons?: string[];
+    emailPrompt?: string;
+  };
+  botMode: "sales" | "lead_generation";
+  userEmail?: string | null;
+}) {
+  const text = `${input.userMessage} ${
+    input.assistantResponse.mainText || ""
+  }`.toLowerCase();
+  const hasPricing =
+    /(pricing|price|cost|plan|plans|quote|estimate|discount|billing)/i.test(
+      text
+    );
+  const hasBooking =
+    /(book|schedule|demo|call|meeting|appointment|consultation)/i.test(text);
+  const hasAuthority = /(manager|director|vp|cfo|decision|approve|buy)/i.test(
+    text
+  );
+  if (hasPricing) {
+    return {
+      mainText: "What budget range and timeline are you considering?",
+      buttons: ["Under $10/seat", "$10–$16/seat", "Custom/Enterprise"],
+      emailPrompt: "Share your work email to receive a tailored quote",
+    };
+  }
+  if (hasBooking) {
+    return {
+      mainText: "Do you want to schedule a quick demo this week or next?",
+      buttons: ["This week", "Next week", "Later"],
+      emailPrompt: "Add your email to receive the calendar invite",
+    };
+  }
+  if (hasAuthority) {
+    return {
+      mainText:
+        "Who will make the decision and what problem should this solve first?",
+      buttons: [
+        "I’m the decision maker",
+        "Loop in decision maker",
+        "Define the problem",
+      ],
+      emailPrompt: "Add an email to coordinate next steps",
+    };
+  }
+  if (input.botMode === "sales") {
+    return {
+      mainText: "What outcome are you targeting and by when?",
+      buttons: ["This month", "This quarter", "Later"],
+      emailPrompt: "Share your email to receive a brief plan",
+    };
+  }
+  return {
+    mainText: "What problem are you trying to solve and what’s your timeline?",
+    buttons: ["Define the problem", "This month", "Later"],
+    emailPrompt: "Add your email to get a tailored walkthrough",
+  };
+}
+
 // 🔰 Onboarding helpers
 function detectOnboardingIntent(text?: string): boolean {
   if (!text) return false;
@@ -8458,17 +8520,28 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
         buttons: probing.buttons || [],
         emailPrompt: probing.emailPrompt || "",
       };
-      await chats.insertOne({
-        sessionId,
-        role: "assistant",
-        content: secondary.mainText,
-        buttons: secondary.buttons,
-        emailPrompt: secondary.emailPrompt,
-        createdAt: new Date(now.getTime() + 2),
-        ...(pageUrl ? { pageUrl } : {}),
-        ...(adminId ? { adminId } : {}),
+    } else {
+      secondary = buildFallbackFollowup({
+        userMessage: question || "",
+        assistantResponse: {
+          mainText: finalResponse.mainText,
+          buttons: finalResponse.buttons,
+          emailPrompt: (finalResponse as any).emailPrompt || "",
+        },
+        botMode,
+        userEmail,
       });
     }
+    await chats.insertOne({
+      sessionId,
+      role: "assistant",
+      content: secondary.mainText,
+      buttons: secondary.buttons,
+      emailPrompt: secondary.emailPrompt,
+      createdAt: new Date(now.getTime() + 2),
+      ...(pageUrl ? { pageUrl } : {}),
+      ...(adminId ? { adminId } : {}),
+    });
   } catch {}
 
   const out = secondary ? { ...finalResponse, secondary } : finalResponse;
