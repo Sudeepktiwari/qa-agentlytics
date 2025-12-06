@@ -509,7 +509,7 @@ async function analyzeForProbing(input: {
     {
       role: "system",
       content:
-        "Decide whether to send a short qualification probe now using BANT (Budget, Authority, Need, Timeline). BASE YOUR DECISION ON THE LAST USER MESSAGE AND THE ASSISTANT'S RESPONSE. Return JSON: { shouldSendFollowUp: boolean, mainText: string, buttons: string[], emailPrompt: string }. Prefer 1 friendly sentence and up to 3 concise buttons. If botMode is 'sales', be conservative and probe mainly on pricing/timeline; if 'lead_generation', allow gentle probing.",
+        "Decide whether to send a short qualification probe now using BANT (Budget, Authority, Need, Timeline). BASE YOUR DECISION ON THE LAST USER MESSAGE AND THE ASSISTANT'S RESPONSE. Return JSON: { shouldSendFollowUp: boolean, mainText: string, buttons: string[], emailPrompt: string }. The message must ask ONE qualification in ONE sentence ending with '?'. Provide 2–4 concise options in 'buttons' that directly answer that single question. Never combine multiple BANT dimensions in one question. If botMode is 'sales', prefer Budget or Timeline; if 'lead_generation', prefer Need.",
     },
     {
       role: "user",
@@ -541,8 +541,50 @@ async function analyzeForProbing(input: {
   }
   const should = Boolean(parsed && parsed.shouldSendFollowUp);
   if (!should) return { shouldSendFollowUp: false };
-  const mt = typeof parsed.mainText === "string" ? parsed.mainText : "";
-  const btns = Array.isArray(parsed.buttons) ? parsed.buttons : [];
+  const normQ = (t: string) => {
+    const s = String(t || "")
+      .split(/[?!\.]/)[0]
+      .trim();
+    if (!s) return "";
+    return s.endsWith("?") ? s : s + "?";
+  };
+  const normButtons = (
+    q: string,
+    b: any[],
+    mode: "sales" | "lead_generation"
+  ) => {
+    let out = Array.isArray(b)
+      ? b
+          .filter(Boolean)
+          .map((x: any) => String(x).trim())
+          .filter((x: string) => x.length > 0)
+      : [];
+    if (out.length === 0) {
+      const lower = q.toLowerCase();
+      if (/budget|price|cost|pricing|plan/.test(lower)) {
+        out = ["Under $10/seat", "$10–$16/seat", "Custom/Enterprise"];
+      } else if (
+        /when|time|timeline|schedule|demo|call|meeting|appointment/.test(lower)
+      ) {
+        out = ["This week", "Next week", "Later"];
+      } else if (
+        /decision|authority|approve|buy|cfo|vp|director|manager/.test(lower)
+      ) {
+        out = ["I’m the decision maker", "Add decision maker", "Unsure"];
+      } else if (/feature|need|priority|matter|help/.test(lower)) {
+        out = ["Workflows", "Embeds", "Analytics"];
+      } else {
+        out =
+          mode === "sales"
+            ? ["This month", "This quarter", "Later"]
+            : ["Pricing", "Integrations", "Scheduling"];
+      }
+    }
+    if (out.length > 4) out = out.slice(0, 4);
+    return out;
+  };
+  const mt = normQ(typeof parsed.mainText === "string" ? parsed.mainText : "");
+  const btns = normButtons(mt, parsed.buttons, input.botMode);
   const ep = typeof parsed.emailPrompt === "string" ? parsed.emailPrompt : "";
   return {
     shouldSendFollowUp: true,
@@ -577,27 +619,22 @@ function buildFallbackFollowup(input: {
   const hasFeatures = /(feature|features|capabilities|options)/i.test(text);
   if (hasPricing) {
     return {
-      mainText: "What budget range and timeline are you considering?",
+      mainText: "What budget range are you considering?",
       buttons: ["Under $10/seat", "$10–$16/seat", "Custom/Enterprise"],
       emailPrompt: "Share your work email to receive a tailored quote",
     };
   }
   if (hasBooking) {
     return {
-      mainText: "Do you want to schedule a quick demo this week or next?",
+      mainText: "When would you like to schedule a demo?",
       buttons: ["This week", "Next week", "Later"],
       emailPrompt: "Add your email to receive the calendar invite",
     };
   }
   if (hasAuthority) {
     return {
-      mainText:
-        "Who will make the decision and what problem should this solve first?",
-      buttons: [
-        "I’m the decision maker",
-        "Loop in decision maker",
-        "Define the problem",
-      ],
+      mainText: "Who will make the decision?",
+      buttons: ["I’m the decision maker", "Add decision maker", "Unsure"],
       emailPrompt: "Add an email to coordinate next steps",
     };
   }
@@ -610,13 +647,13 @@ function buildFallbackFollowup(input: {
   }
   if (input.botMode === "sales") {
     return {
-      mainText: "What outcome are you targeting and by when?",
+      mainText: "What timeline are you targeting?",
       buttons: ["This month", "This quarter", "Later"],
       emailPrompt: "Share your email to receive a brief plan",
     };
   }
   return {
-    mainText: "What are you exploring and what’s your timeline?",
+    mainText: "What are you exploring?",
     buttons: ["Pricing", "Integrations", "Scheduling"],
     emailPrompt: "Add your email to receive a tailored walkthrough",
   };
