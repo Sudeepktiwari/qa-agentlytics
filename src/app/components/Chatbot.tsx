@@ -42,7 +42,11 @@ interface ChatbotProps {
   prefillQuestions?: string[];
 }
 
-const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId, prefillQuestions = [] }) => {
+const Chatbot: React.FC<ChatbotProps> = ({
+  pageUrl,
+  adminId,
+  prefillQuestions = [],
+}) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -811,62 +815,61 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId, prefillQuestions = 
   // Copy conversation to clipboard
   const copyConversation = async () => {
     try {
-      let conversationText = 'Chat Conversation\n';
-      conversationText += '===================\n\n';
-      
+      let conversationText = "Chat Conversation\n";
+      conversationText += "===================\n\n";
+
       messages.forEach((msg, index) => {
-        const role = msg.role === 'user' ? 'You' : 'Assistant';
+        const role = msg.role === "user" ? "You" : "Assistant";
         const timestamp = new Date().toLocaleString();
-        
+
         conversationText += `[${role}] (${timestamp})\n`;
         conversationText += `${msg.content}\n`;
-        
+
         // Add buttons if present
         if (msg.buttons && msg.buttons.length > 0) {
-          conversationText += 'Options: ' + msg.buttons.join(', ') + '\n';
+          conversationText += "Options: " + msg.buttons.join(", ") + "\n";
         }
-        
-        conversationText += '\n';
+
+        conversationText += "\n";
       });
-      
+
       // Copy to clipboard
       await navigator.clipboard.writeText(conversationText);
-      
+
       // Show success feedback (you could add a toast notification here)
-      console.log('[Chatbot] Conversation copied to clipboard');
-      
+      console.log("[Chatbot] Conversation copied to clipboard");
     } catch (error) {
-      console.error('[Chatbot] Failed to copy conversation:', error);
-      
+      console.error("[Chatbot] Failed to copy conversation:", error);
+
       // Fallback for older browsers
       try {
-        let conversationText = 'Chat Conversation\n';
-        conversationText += '===================\n\n';
-        
+        let conversationText = "Chat Conversation\n";
+        conversationText += "===================\n\n";
+
         messages.forEach((msg, index) => {
-          const role = msg.role === 'user' ? 'You' : 'Assistant';
+          const role = msg.role === "user" ? "You" : "Assistant";
           const timestamp = new Date().toLocaleString();
-          
+
           conversationText += `[${role}] (${timestamp})\n`;
           conversationText += `${msg.content}\n`;
-          
+
           // Add buttons if present
           if (msg.buttons && msg.buttons.length > 0) {
-            conversationText += 'Options: ' + msg.buttons.join(', ') + '\n';
+            conversationText += "Options: " + msg.buttons.join(", ") + "\n";
           }
-          
-          conversationText += '\n';
+
+          conversationText += "\n";
         });
-        
-        const textArea = document.createElement('textarea');
+
+        const textArea = document.createElement("textarea");
         textArea.value = conversationText;
         document.body.appendChild(textArea);
         textArea.select();
-        document.execCommand('copy');
+        document.execCommand("copy");
         document.body.removeChild(textArea);
-        console.log('[Chatbot] Conversation copied to clipboard (fallback)');
+        console.log("[Chatbot] Conversation copied to clipboard (fallback)");
       } catch (fallbackError) {
-        console.error('[Chatbot] Copy fallback also failed:', fallbackError);
+        console.error("[Chatbot] Copy fallback also failed:", fallbackError);
       }
     }
   };
@@ -1139,6 +1142,18 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId, prefillQuestions = 
         });
         return newMessages;
       });
+      if (data.secondary) {
+        const secParsed = parseBotResponse(data.secondary);
+        const secMsg = {
+          role: "assistant" as const,
+          content: secParsed.mainText,
+          buttons: secParsed.buttons,
+          emailPrompt: secParsed.emailPrompt,
+          botMode: data.botMode,
+          userEmail: data.userEmail,
+        };
+        setMessages((msgs) => [...msgs, secMsg]);
+      }
       // Clear follow-up timer on user message
       if (followupTimer.current) clearTimeout(followupTimer.current);
       setFollowupSent(false);
@@ -1244,7 +1259,14 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId, prefillQuestions = 
         }}
       >
         <h3 style={{ color: "#000000", margin: 0 }}>Chatbot</h3>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            flexWrap: "wrap",
+          }}
+        >
           <button
             onClick={copyConversation}
             style={{
@@ -1269,7 +1291,8 @@ const Chatbot: React.FC<ChatbotProps> = ({ pageUrl, adminId, prefillQuestions = 
               borderRadius: 12,
               fontSize: "12px",
               fontWeight: "bold",
-              backgroundColor: currentBotMode === "sales" ? "#e3f2fd" : "#f3e5f5",
+              backgroundColor:
+                currentBotMode === "sales" ? "#e3f2fd" : "#f3e5f5",
               color: currentBotMode === "sales" ? "#1976d2" : "#7b1fa2",
               border: `1px solid ${
                 currentBotMode === "sales" ? "#bbdefb" : "#e1bee7"

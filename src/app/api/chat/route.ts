@@ -495,6 +495,63 @@ function generateBookingManagementResponse(action: string, booking: any) {
   }
 }
 
+async function analyzeForProbing(input: {
+  userMessage: string;
+  assistantResponse: {
+    mainText?: string;
+    buttons?: string[];
+    emailPrompt?: string;
+  };
+  botMode: "sales" | "lead_generation";
+  userEmail?: string | null;
+}) {
+  const messages: any = [
+    {
+      role: "system",
+      content:
+        "Decide if a qualification follow-up (BANT: Budget, Authority, Need, Timeline) should be sent now. Return JSON with keys shouldSendFollowUp (boolean), mainText, buttons, emailPrompt. Only probe when logical and non-intrusive. Avoid when booking is already shown or user is in sales mode with clear next action.",
+    },
+    {
+      role: "user",
+      content: JSON.stringify(
+        {
+          userMessage: input.userMessage,
+          assistant: input.assistantResponse,
+          botMode: input.botMode,
+          hasEmail: !!input.userEmail,
+        },
+        null,
+        2
+      ),
+    },
+  ];
+  const resp = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    temperature: 0.3,
+    max_tokens: 250,
+    response_format: { type: "json_object" },
+    messages,
+  });
+  const raw = resp.choices[0]?.message?.content || "";
+  let parsed: any = {};
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    parsed = { shouldSendFollowUp: false };
+  }
+  const should = Boolean(parsed && parsed.shouldSendFollowUp);
+  if (!should) return { shouldSendFollowUp: false };
+  const mt = typeof parsed.mainText === "string" ? parsed.mainText : "";
+  const btns = Array.isArray(parsed.buttons) ? parsed.buttons : [];
+  const ep = typeof parsed.emailPrompt === "string" ? parsed.emailPrompt : "";
+  return {
+    shouldSendFollowUp: true,
+    mainText: mt,
+    buttons: btns,
+    emailPrompt: ep,
+  };
+}
+
 // 🔰 Onboarding helpers
 function detectOnboardingIntent(text?: string): boolean {
   if (!text) return false;
@@ -8383,7 +8440,41 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
     timestamp: new Date().toISOString(),
   });
 
-  return NextResponse.json(finalResponse, { headers: corsHeaders });
+  let secondary: any = null;
+  if (!finalResponse.showBookingCalendar) {
+    try {
+      const probing = await analyzeForProbing({
+        userMessage: question || "",
+        assistantResponse: {
+          mainText: finalResponse.mainText,
+          buttons: finalResponse.buttons,
+          emailPrompt: (finalResponse as any).emailPrompt || "",
+        },
+        botMode,
+        userEmail,
+      });
+      if (probing.shouldSendFollowUp && probing.mainText) {
+        secondary = {
+          mainText: probing.mainText,
+          buttons: probing.buttons || [],
+          emailPrompt: probing.emailPrompt || "",
+        };
+        await chats.insertOne({
+          sessionId,
+          role: "assistant",
+          content: secondary.mainText,
+          buttons: secondary.buttons,
+          emailPrompt: secondary.emailPrompt,
+          createdAt: new Date(now.getTime() + 2),
+          ...(pageUrl ? { pageUrl } : {}),
+          ...(adminId ? { adminId } : {}),
+        });
+      }
+    } catch {}
+  }
+
+  const out = secondary ? { ...finalResponse, secondary } : finalResponse;
+  return NextResponse.json(out, { headers: corsHeaders });
 }
 
 export async function GET(req: NextRequest) {
