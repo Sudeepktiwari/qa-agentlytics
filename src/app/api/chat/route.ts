@@ -784,42 +784,96 @@ function buildHeuristicBantFollowup(input: {
       return ["I’m the decision maker", "Add decision maker", "Unsure"];
     return ["Workflows", "Embeds", "Analytics"];
   })();
-  return { mainText: mt, buttons: btns, emailPrompt: "" };
+  return { mainText: mt, buttons: btns, emailPrompt: "", dimension: chosen };
 }
 
 function computeBantMissingDims(
   messages: any[]
 ): ("budget" | "authority" | "need" | "timeline")[] {
-  const lower = messages
-    .filter((m: any) => String(m?.role || "").toLowerCase() === "user")
-    .map((m: any) => String(m && m.content ? m.content : "").toLowerCase())
-    .filter((s: string) => s.length > 0);
-  const hasBudget = lower.some((s: string) =>
-    /\$|budget|price|cost|pricing|per\s*month|mo\b|\b\d+\s*(usd|dollars|\$)\b/.test(
+  const allDims: ("budget" | "authority" | "need" | "timeline")[] = [
+    "budget",
+    "authority",
+    "need",
+    "timeline",
+  ];
+  const answered = new Set<"budget" | "authority" | "need" | "timeline">();
+  let pendingAsked: "budget" | "authority" | "need" | "timeline" | null = null;
+
+  for (let i = 0; i < messages.length; i++) {
+    const m = messages[i] || {};
+    const role = String(m.role || "").toLowerCase();
+    const content = String(m.content || "");
+    if (role === "assistant") {
+      const fType = String(m.followupType || "").toLowerCase();
+      const dim: any = m.bantDimension || null;
+      if (fType === "bant" && dim && allDims.includes(dim)) {
+        pendingAsked = dim as any;
+      }
+      continue;
+    }
+    if (role === "user") {
+      const s = content.toLowerCase();
+      if (
+        /\$|budget|price|cost|pricing|per\s*month|mo\b|\b\d+\s*(usd|dollars|\$)\b/.test(
+          s
+        )
+      ) {
+        answered.add("budget");
+      }
+      if (
+        /this\s*week|next\s*week|later|today|tomorrow|this\s*month|quarter|q[1-4]|schedule|demo|call|meeting|appointment/.test(
+          s
+        )
+      ) {
+        answered.add("timeline");
+      }
+      if (
+        /i\s*(am|'m)\s*the\s*decision\s*maker|my\s*manager|team\s*lead|we\s*decide|i\s*decide|manager\s*approval/.test(
+          s
+        )
+      ) {
+        answered.add("authority");
+      }
+      if (
+        /workflows|embeds|analytics|integration|feature|features|need|priority|use\s*case|help\b/.test(
+          s
+        )
+      ) {
+        answered.add("need");
+      }
+      if (pendingAsked) {
+        answered.add(pendingAsked);
+        pendingAsked = null;
+      }
+    }
+  }
+  return allDims.filter((d) => !answered.has(d));
+}
+
+function detectBantDimensionFromText(
+  t: string
+): "budget" | "authority" | "need" | "timeline" | null {
+  const s = String(t || "").toLowerCase();
+  if (/budget|price|cost|pricing|\$|usd/.test(s)) return "budget";
+  if (
+    /when|time|timeline|schedule|demo|call|meeting|appointment|week|month|quarter|today|tomorrow/.test(
       s
     )
-  );
-  const hasTimeline = lower.some((s: string) =>
-    /this\s*week|next\s*week|later|today|tomorrow|this\s*month|quarter|q[1-4]|schedule|demo|call|meeting|appointment/.test(
+  )
+    return "timeline";
+  if (
+    /decision|authority|approve|buy|cfo|vp|director|manager|who\s*will\s*make/.test(
       s
     )
-  );
-  const hasAuthority = lower.some((s: string) =>
-    /i\s*(am|'m)\s*the\s*decision\s*maker|my\s*manager|team\s*lead|we\s*decide|i\s*decide|manager\s*approval/.test(
+  )
+    return "authority";
+  if (
+    /feature|need|priority|matter|help|workflows|embeds|analytics|integration/.test(
       s
     )
-  );
-  const hasNeed = lower.some((s: string) =>
-    /workflows|embeds|analytics|integration|feature|features|need|priority|use\s*case|help\b/.test(
-      s
-    )
-  );
-  const missing: ("budget" | "authority" | "need" | "timeline")[] = [];
-  if (!hasBudget) missing.push("budget");
-  if (!hasAuthority) missing.push("authority");
-  if (!hasNeed) missing.push("need");
-  if (!hasTimeline) missing.push("timeline");
-  return missing;
+  )
+    return "need";
+  return null;
 }
 
 // 🔰 Onboarding helpers
@@ -6764,6 +6818,10 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
               buttons: secondary.buttons,
               emailPrompt: secondary.emailPrompt,
               followupType: (secondary as any).type,
+              bantDimension:
+                (secondary as any).dimension ||
+                detectBantDimensionFromText(String(secondary.mainText || "")) ||
+                null,
               createdAt: new Date(now.getTime() + 2),
               ...(pageUrl ? { pageUrl } : {}),
               ...(adminId ? { adminId } : {}),
@@ -8874,6 +8932,10 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
             buttons: immediate.buttons,
             emailPrompt: immediate.emailPrompt,
             followupType: immediate.type,
+            bantDimension:
+              immediate.dimension ||
+              detectBantDimensionFromText(String(immediate.mainText || "")) ||
+              null,
             createdAt: new Date(now.getTime() + 1),
             ...(pageUrl ? { pageUrl } : {}),
             ...(adminId ? { adminId } : {}),
@@ -8905,6 +8967,7 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
               buttons: immediate.buttons,
               emailPrompt: immediate.emailPrompt,
               followupType: immediate.type,
+              bantDimension: immediate.dimension || null,
               createdAt: new Date(now.getTime() + 1),
               ...(pageUrl ? { pageUrl } : {}),
               ...(adminId ? { adminId } : {}),
