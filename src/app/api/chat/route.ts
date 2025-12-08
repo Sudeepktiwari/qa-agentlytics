@@ -6782,25 +6782,17 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
           secondary = { ...secondary, type: "probe" };
           const db = await getDb();
           const chats = db.collection("chats");
-          const assistantCountBefore = await chats.countDocuments({
+          await chats.insertOne({
             sessionId,
             role: "assistant",
+            content: secondary.mainText,
+            buttons: secondary.buttons,
+            emailPrompt: secondary.emailPrompt,
+            followupType: (secondary as any).type,
+            createdAt: new Date(now.getTime() + 2),
+            ...(pageUrl ? { pageUrl } : {}),
+            ...(adminId ? { adminId } : {}),
           });
-          if (assistantCountBefore > 0) {
-            await chats.insertOne({
-              sessionId,
-              role: "assistant",
-              content: secondary.mainText,
-              buttons: secondary.buttons,
-              emailPrompt: secondary.emailPrompt,
-              followupType: (secondary as any).type,
-              createdAt: new Date(now.getTime() + 2),
-              ...(pageUrl ? { pageUrl } : {}),
-              ...(adminId ? { adminId } : {}),
-            });
-          } else {
-            secondary = null;
-          }
         }
 
         const proactiveOut = secondary
@@ -8795,7 +8787,7 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
   });
 
   let secondary: any = null;
-  if (!followup) {
+  {
     try {
       const db = await getDb();
       const chats = db.collection("chats");
@@ -8826,7 +8818,7 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
         const userAfterFollowup = luTime > laTime;
         return laIsRecent && !userAfterFollowup;
       })();
-      console.log(`[Chat API ${requestId}] Follow-up gating`, {
+      console.log(`[Chat API ${requestId}] Qualification gating`, {
         assistantCountBefore,
         assistantCountClient: Number(assistantCountClient),
         lastAssistantType: (lastAssistant as any)?.followupType || null,
@@ -8838,7 +8830,7 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
       });
       const inactiveEnough = Number(userInactiveForMs) >= 120000;
 
-      if (!skipDueToRecentFollowup) {
+      {
         const sessionMessagesQuick = await chats
           .find({ sessionId })
           .sort({ createdAt: 1 })
@@ -8863,13 +8855,16 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
             emailPrompt: probingQuick.emailPrompt || "",
             type: "bant",
           } as any;
-          console.log(`[Chat API ${requestId}] Immediate follow-up generated`, {
-            type: immediate.type,
-            preview: String(immediate.mainText || "").slice(0, 120),
-            buttonsCount: Array.isArray(immediate.buttons)
-              ? immediate.buttons.length
-              : 0,
-          });
+          console.log(
+            `[Chat API ${requestId}] Immediate qualification generated`,
+            {
+              type: immediate.type,
+              preview: String(immediate.mainText || "").slice(0, 120),
+              buttonsCount: Array.isArray(immediate.buttons)
+                ? immediate.buttons.length
+                : 0,
+            }
+          );
           secondary = immediate;
           await chats.insertOne({
             sessionId,
@@ -8892,7 +8887,7 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
           if (heuristicBantQuick) {
             const immediate = { ...heuristicBantQuick, type: "bant" } as any;
             console.log(
-              `[Chat API ${requestId}] Immediate follow-up generated (heuristic)`,
+              `[Chat API ${requestId}] Immediate qualification generated (heuristic)`,
               {
                 type: immediate.type,
                 preview: String(immediate.mainText || "").slice(0, 120),
@@ -8916,127 +8911,6 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
           }
         }
       }
-      if (
-        !skipSecondaryForFirstAssistant &&
-        !skipDueToRecentFollowup &&
-        inactiveEnough
-      ) {
-        const sessionMessages = await chats
-          .find({ sessionId })
-          .sort({ createdAt: 1 })
-          .limit(200)
-          .toArray();
-        const missingDims = computeBantMissingDims(sessionMessages);
-        console.log(`[Chat API ${requestId}] BANT dimensions`, {
-          missingDims,
-        });
-        console.log(`[Chat API ${requestId}] Starting BANT probe evaluation`, {
-          userMessagePreview: String(question || "").slice(0, 120),
-          assistantPreview: String(finalResponse.mainText || "").slice(0, 120),
-          botMode,
-          hasEmail: !!userEmail,
-        });
-        const probing = await analyzeForProbing({
-          userMessage: question || "",
-          assistantResponse: {
-            mainText: finalResponse.mainText,
-            buttons: finalResponse.buttons,
-            emailPrompt: (finalResponse as any).emailPrompt || "",
-          },
-          botMode,
-          userEmail,
-          missingDims,
-        });
-        if (probing.shouldSendFollowUp && probing.mainText) {
-          secondary = {
-            mainText: probing.mainText,
-            buttons: probing.buttons || [],
-            emailPrompt: probing.emailPrompt || "",
-            type: "bant",
-          };
-          console.log(`[Chat API ${requestId}] BANT generated`, {
-            hasMainText: !!secondary.mainText,
-            preview: String(secondary.mainText || "").slice(0, 120),
-            buttonsCount: Array.isArray(secondary.buttons)
-              ? secondary.buttons.length
-              : 0,
-            hasEmailPrompt: !!secondary.emailPrompt,
-            type: (secondary as any).type,
-          });
-        } else {
-          const heuristicBant = buildHeuristicBantFollowup({
-            userMessage: question || "",
-            assistantResponse: { mainText: finalResponse.mainText },
-            botMode,
-            missingDims,
-          });
-          if (heuristicBant) {
-            secondary = { ...heuristicBant, type: "bant" };
-            console.log(`[Chat API ${requestId}] BANT generated (heuristic)`, {
-              hasMainText: !!secondary.mainText,
-              preview: String(secondary.mainText || "").slice(0, 120),
-              buttonsCount: Array.isArray(secondary.buttons)
-                ? secondary.buttons.length
-                : 0,
-              hasEmailPrompt: !!secondary.emailPrompt,
-              type: (secondary as any).type,
-            });
-          } else {
-            secondary = buildFallbackFollowup({
-              userMessage: question || "",
-              assistantResponse: {
-                mainText: finalResponse.mainText,
-                buttons: finalResponse.buttons,
-                emailPrompt: (finalResponse as any).emailPrompt || "",
-              },
-              botMode,
-              userEmail,
-            });
-            secondary = { ...secondary, type: "probe" };
-            console.log(`[Chat API ${requestId}] Probe generated (fallback)`, {
-              hasMainText: !!secondary.mainText,
-              preview: String(secondary.mainText || "").slice(0, 120),
-              buttonsCount: Array.isArray(secondary.buttons)
-                ? secondary.buttons.length
-                : 0,
-              hasEmailPrompt: !!secondary.emailPrompt,
-              type: (secondary as any).type,
-            });
-          }
-        }
-        console.log(`[Chat API ${requestId}] Follow-up generated`, {
-          type: (secondary as any).type,
-          hasMainText: !!secondary.mainText,
-          buttonsCount: Array.isArray(secondary.buttons)
-            ? secondary.buttons.length
-            : 0,
-          preview:
-            typeof secondary.mainText === "string"
-              ? secondary.mainText.slice(0, 120)
-              : "",
-        });
-        console.log(`[Chat API ${requestId}] Inserting follow-up message`, {
-          type: (secondary as any).type,
-          createdAt: new Date(now.getTime() + 2).toISOString(),
-        });
-        await chats.insertOne({
-          sessionId,
-          role: "assistant",
-          content: secondary.mainText,
-          buttons: secondary.buttons,
-          emailPrompt: secondary.emailPrompt,
-          followupType: (secondary as any).type,
-          createdAt: new Date(now.getTime() + 2),
-          ...(pageUrl ? { pageUrl } : {}),
-          ...(adminId ? { adminId } : {}),
-        });
-      } else {
-        console.log(`[Chat API ${requestId}] Skipping follow-up generation`, {
-          skipSecondaryForFirstAssistant,
-          skipDueToRecentFollowup,
-          inactiveEnough,
-        });
-      }
     } catch (err) {
       secondary = buildFallbackFollowup({
         userMessage: question || "",
@@ -9050,7 +8924,7 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
       });
       secondary = { ...secondary, type: "probe" };
       console.log(
-        `[Chat API ${requestId}] Follow-up evaluator failed, using fallback`,
+        `[Chat API ${requestId}] Qualification evaluator failed, using fallback`,
         {
           error:
             err instanceof Error
@@ -9122,12 +8996,6 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
         );
       }
     }
-  }
-
-  if (followup) {
-    console.log(
-      `[Chat API ${requestId}] Followup request detected - server-side secondary generation suppressed`
-    );
   }
 
   console.log(`[Chat API ${requestId}] Final response`, {
