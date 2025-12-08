@@ -510,7 +510,7 @@ async function analyzeForProbing(input: {
     {
       role: "system",
       content:
-        "Decide whether to send a short qualification probe now using BANT (Budget, Authority, Need, Timeline). BASE YOUR DECISION ON THE LAST USER MESSAGE AND THE ASSISTANT'S RESPONSE. If you send a probe, choose ONE dimension from the provided missingDims and ask about that only. Return JSON: { shouldSendFollowUp: boolean, mainText: string, buttons: string[], emailPrompt: string }. The message must ask ONE qualification in ONE sentence ending with '?'. Provide 2–4 concise options in 'buttons' that directly answer that single question. Never combine multiple BANT dimensions in one question. If botMode is 'sales', prefer Budget or Timeline; if 'lead_generation', prefer Need.",
+        "Decide whether to send a short BANT qualification follow-up now. Use the last user message and the assistant's response. Prefer sending a follow-up when at least one of the provided missingDims remains and a question can be naturally anchored to the user's last message or the assistant's response. Choose ONE BANT dimension from missingDims and ask about that only. Return JSON: { shouldSendFollowUp: boolean, mainText: string, buttons: string[], emailPrompt: string }. The message must ask ONE qualification in ONE sentence ending with '?'. Provide 2–4 concise options in 'buttons' that directly answer that single question. Never combine multiple BANT dimensions in one question. If botMode is 'sales', prefer Budget or Timeline; if 'lead_generation', prefer Need.",
     },
     {
       role: "user",
@@ -544,7 +544,70 @@ async function analyzeForProbing(input: {
     parsed = { shouldSendFollowUp: false };
   }
   const should = Boolean(parsed && parsed.shouldSendFollowUp);
-  if (!should) return { shouldSendFollowUp: false };
+  if (!should) {
+    const combined = `${input.userMessage || ""} ${
+      input.assistantResponse.mainText || ""
+    }`.toLowerCase();
+    const hasPricing =
+      /(pricing|price|cost|plan|plans|quote|estimate|discount|billing|budget|\$|usd)/i.test(
+        combined
+      );
+    const hasBooking =
+      /(book|schedule|demo|call|meeting|appointment|timeline|when|time)/i.test(
+        combined
+      );
+    const hasAuthority =
+      /(manager|director|vp|cfo|ceo|owner|founder|decision|approve|buy|authority)/i.test(
+        combined
+      );
+    const hasFeatures =
+      /(feature|features|capabilities|options|need|priority|use\s*case|help)/i.test(
+        combined
+      );
+    const dims = (
+      Array.isArray(input.missingDims)
+        ? input.missingDims
+        : ["budget", "authority", "need", "timeline"]
+    ) as ("budget" | "authority" | "need" | "timeline")[];
+    let chosen: "budget" | "authority" | "need" | "timeline" | null = null;
+    if (hasPricing && dims.includes("budget")) chosen = "budget";
+    else if (hasBooking && dims.includes("timeline")) chosen = "timeline";
+    else if (hasAuthority && dims.includes("authority")) chosen = "authority";
+    else if (hasFeatures && dims.includes("need")) chosen = "need";
+    if (!chosen) {
+      chosen = input.botMode === "sales" ? "timeline" : "need";
+      if (!dims.includes(chosen)) {
+        chosen =
+          (dims[0] as "budget" | "authority" | "need" | "timeline") || null;
+      }
+    }
+    if (chosen) {
+      const q =
+        chosen === "budget"
+          ? "What budget range are you considering?"
+          : chosen === "timeline"
+          ? "What timeline are you targeting?"
+          : chosen === "authority"
+          ? "Who will make the decision?"
+          : "Which feature matters most right now?";
+      const mtHeu = q.endsWith("?") ? q : q + "?";
+      const btnHeu = (() => {
+        if (chosen === "budget")
+          return ["Under $10/seat", "$10–$16/seat", "Custom/Enterprise"];
+        if (chosen === "timeline") return ["This week", "Next week", "Later"];
+        if (chosen === "authority")
+          return ["I’m the decision maker", "Add decision maker", "Unsure"];
+        return ["Workflows", "Embeds", "Analytics"];
+      })();
+      return {
+        shouldSendFollowUp: true,
+        mainText: mtHeu,
+        buttons: btnHeu,
+        emailPrompt: "",
+      };
+    }
+    return { shouldSendFollowUp: false };
+  }
   const normQ = (t: string) => {
     const s = String(t || "")
       .split(/[?!\.]/)[0]
@@ -661,6 +724,69 @@ function buildFallbackFollowup(input: {
     buttons: ["Pricing", "Integrations", "Scheduling"],
     emailPrompt: "Add your email to receive a tailored walkthrough",
   };
+}
+
+function buildHeuristicBantFollowup(input: {
+  userMessage: string;
+  assistantResponse: { mainText?: string };
+  botMode: "sales" | "lead_generation";
+  missingDims?: ("budget" | "authority" | "need" | "timeline")[];
+}) {
+  const text = `${input.userMessage || ""} ${
+    input.assistantResponse.mainText || ""
+  }`.toLowerCase();
+  const dims = (
+    Array.isArray(input.missingDims)
+      ? input.missingDims
+      : ["budget", "authority", "need", "timeline"]
+  ) as ("budget" | "authority" | "need" | "timeline")[];
+  const hasPricing =
+    /(pricing|price|cost|plan|plans|quote|estimate|discount|billing|budget|\$|usd)/i.test(
+      text
+    );
+  const hasBooking =
+    /(book|schedule|demo|call|meeting|appointment|timeline|when|time)/i.test(
+      text
+    );
+  const hasAuthority =
+    /(manager|director|vp|cfo|ceo|owner|founder|decision|approve|buy|authority)/i.test(
+      text
+    );
+  const hasFeatures =
+    /(feature|features|capabilities|options|need|priority|use\s*case|help)/i.test(
+      text
+    );
+  let chosen: "budget" | "authority" | "need" | "timeline" | null = null;
+  if (hasPricing && dims.includes("budget")) chosen = "budget";
+  else if (hasBooking && dims.includes("timeline")) chosen = "timeline";
+  else if (hasAuthority && dims.includes("authority")) chosen = "authority";
+  else if (hasFeatures && dims.includes("need")) chosen = "need";
+  if (!chosen) {
+    chosen = input.botMode === "sales" ? "timeline" : "need";
+    if (!dims.includes(chosen)) {
+      chosen =
+        (dims[0] as "budget" | "authority" | "need" | "timeline") || null;
+    }
+  }
+  if (!chosen) return null;
+  const q =
+    chosen === "budget"
+      ? "What budget range are you considering?"
+      : chosen === "timeline"
+      ? "What timeline are you targeting?"
+      : chosen === "authority"
+      ? "Who will make the decision?"
+      : "Which feature matters most right now?";
+  const mt = q.endsWith("?") ? q : q + "?";
+  const btns = (() => {
+    if (chosen === "budget")
+      return ["Under $10/seat", "$10–$16/seat", "Custom/Enterprise"];
+    if (chosen === "timeline") return ["This week", "Next week", "Later"];
+    if (chosen === "authority")
+      return ["I’m the decision maker", "Add decision maker", "Unsure"];
+    return ["Workflows", "Embeds", "Analytics"];
+  })();
+  return { mainText: mt, buttons: btns, emailPrompt: "" };
 }
 
 function computeBantMissingDims(
@@ -6605,17 +6731,32 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
               type: "bant",
             };
           } else {
-            secondary = buildFallbackFollowup({
+            const heuristicBant = buildHeuristicBantFollowup({
               userMessage: question || "",
-              assistantResponse: {
-                mainText: enhancedProactiveData.answer,
-                buttons: enhancedProactiveData.buttons,
-                emailPrompt: "",
-              },
+              assistantResponse: { mainText: enhancedProactiveData.answer },
               botMode,
-              userEmail,
+              missingDims: await chats
+                .find({ sessionId })
+                .sort({ createdAt: 1 })
+                .limit(200)
+                .toArray()
+                .then((ms) => computeBantMissingDims(ms)),
             });
-            secondary = { ...secondary, type: "probe" };
+            if (heuristicBant) {
+              secondary = { ...heuristicBant, type: "bant" };
+            } else {
+              secondary = buildFallbackFollowup({
+                userMessage: question || "",
+                assistantResponse: {
+                  mainText: enhancedProactiveData.answer,
+                  buttons: enhancedProactiveData.buttons,
+                  emailPrompt: "",
+                },
+                botMode,
+                userEmail,
+              });
+              secondary = { ...secondary, type: "probe" };
+            }
           }
           if (secondary) {
             await chats.insertOne({
@@ -8747,26 +8888,45 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
             type: (secondary as any).type,
           });
         } else {
-          secondary = buildFallbackFollowup({
+          const heuristicBant = buildHeuristicBantFollowup({
             userMessage: question || "",
-            assistantResponse: {
-              mainText: finalResponse.mainText,
-              buttons: finalResponse.buttons,
-              emailPrompt: (finalResponse as any).emailPrompt || "",
-            },
+            assistantResponse: { mainText: finalResponse.mainText },
             botMode,
-            userEmail,
+            missingDims,
           });
-          secondary = { ...secondary, type: "probe" };
-          console.log(`[Chat API ${requestId}] Probe generated (fallback)`, {
-            hasMainText: !!secondary.mainText,
-            preview: String(secondary.mainText || "").slice(0, 120),
-            buttonsCount: Array.isArray(secondary.buttons)
-              ? secondary.buttons.length
-              : 0,
-            hasEmailPrompt: !!secondary.emailPrompt,
-            type: (secondary as any).type,
-          });
+          if (heuristicBant) {
+            secondary = { ...heuristicBant, type: "bant" };
+            console.log(`[Chat API ${requestId}] BANT generated (heuristic)`, {
+              hasMainText: !!secondary.mainText,
+              preview: String(secondary.mainText || "").slice(0, 120),
+              buttonsCount: Array.isArray(secondary.buttons)
+                ? secondary.buttons.length
+                : 0,
+              hasEmailPrompt: !!secondary.emailPrompt,
+              type: (secondary as any).type,
+            });
+          } else {
+            secondary = buildFallbackFollowup({
+              userMessage: question || "",
+              assistantResponse: {
+                mainText: finalResponse.mainText,
+                buttons: finalResponse.buttons,
+                emailPrompt: (finalResponse as any).emailPrompt || "",
+              },
+              botMode,
+              userEmail,
+            });
+            secondary = { ...secondary, type: "probe" };
+            console.log(`[Chat API ${requestId}] Probe generated (fallback)`, {
+              hasMainText: !!secondary.mainText,
+              preview: String(secondary.mainText || "").slice(0, 120),
+              buttonsCount: Array.isArray(secondary.buttons)
+                ? secondary.buttons.length
+                : 0,
+              hasEmailPrompt: !!secondary.emailPrompt,
+              type: (secondary as any).type,
+            });
+          }
         }
         console.log(`[Chat API ${requestId}] Follow-up generated`, {
           type: (secondary as any).type,

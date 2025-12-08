@@ -1330,7 +1330,7 @@ export async function GET(request: Request) {
   }
   
   // Send proactive message with voice and auto-opening
-  function sendProactiveMessage(text, buttons = [], emailPrompt = '', messageType = 'PROACTIVE', inputFields = null) {
+  function sendProactiveMessage(text, buttons = [], emailPrompt = '', messageType = 'PROACTIVE', inputFields = null, followupType = null) {
     if (ONBOARDING_ONLY) {
       if (messageType !== 'PROACTIVE') return;
       if (onboardingProactiveSent) return;
@@ -1436,6 +1436,7 @@ export async function GET(request: Request) {
       role: 'assistant',
       content: finalText,
       buttons: buttons || [],
+      followupType: followupType || null,
       emailPrompt: finalEmailPrompt,
       inputFields: finalInputFields,
       isProactive: true
@@ -1578,7 +1579,14 @@ export async function GET(request: Request) {
           sendProactiveMessage(data.mainText, data.buttons || [], data.emailPrompt || '', 'PROACTIVE');
           // Suppress secondary follow-up for very first bot message
           if (assistantCountBefore > 0 && data.secondary && data.secondary.mainText) {
-            sendProactiveMessage(data.secondary.mainText, data.secondary.buttons || [], data.secondary.emailPrompt || '', 'FOLLOWUP');
+            sendProactiveMessage(
+              data.secondary.mainText,
+              data.secondary.buttons || [],
+              data.secondary.emailPrompt || '',
+              'FOLLOWUP',
+              null,
+              data.secondary.type || null
+            );
           }
         } else {
           console.log('🔒 [WIDGET CONTEXT] Auto-open disabled and chat closed, not sending proactive message');
@@ -2209,7 +2217,14 @@ export async function GET(request: Request) {
           sendProactiveMessage(messageText, buttons, emailPrompt);
           // Suppress secondary follow-up for first bot message in scroll-triggered flow
           if (assistantCountBefore2 > 0 && data.secondary && data.secondary.mainText) {
-            sendProactiveMessage(data.secondary.mainText, data.secondary.buttons || [], data.secondary.emailPrompt || '', 'FOLLOWUP');
+            sendProactiveMessage(
+              data.secondary.mainText,
+              data.secondary.buttons || [],
+              data.secondary.emailPrompt || '',
+              'FOLLOWUP',
+              null,
+              data.secondary.type || null
+            );
           }
           
           // Start auto-response timer for contextual questions
@@ -3879,7 +3894,8 @@ export async function GET(request: Request) {
           role: 'assistant',
           content: data.secondary.mainText,
           buttons: data.secondary.buttons || [],
-          emailPrompt: data.secondary.emailPrompt || ''
+          emailPrompt: data.secondary.emailPrompt || '',
+          followupType: data.secondary.type || null
         };
         const words = String(botResponse || '')
           .replace(/<[^>]+>/g, ' ')
@@ -4059,6 +4075,12 @@ export async function GET(request: Request) {
         const contentDiv = document.createElement('div');
         contentDiv.innerHTML = formatMessageText(msg.content);
         bubbleDiv.appendChild(contentDiv);
+        if (msg.followupType) {
+          const tag = document.createElement('span');
+          tag.textContent = msg.followupType === 'bant' ? 'BANT' : 'Probe';
+          tag.style.cssText = 'display:inline-block;margin-top:6px;font-size:11px;background:rgba(255,255,255,0.18);color:white;border:1px solid rgba(255,255,255,0.35);padding:2px 8px;border-radius:9999px;';
+          bubbleDiv.appendChild(tag);
+        }
         
         console.log("🔘 [WIDGET RENDER] Message buttons:", msg.buttons);
         console.log("📧 [WIDGET RENDER] Message emailPrompt:", msg.emailPrompt);
@@ -4437,7 +4459,14 @@ export async function GET(request: Request) {
         sendProactiveMessage(data.mainText);
         // Suppress secondary on very first bot message
         if (assistantCountBefore3 > 0 && data.secondary && data.secondary.mainText) {
-          sendProactiveMessage(data.secondary.mainText, data.secondary.buttons || [], data.secondary.emailPrompt || '', 'FOLLOWUP');
+          sendProactiveMessage(
+            data.secondary.mainText,
+            data.secondary.buttons || [],
+            data.secondary.emailPrompt || '',
+            'FOLLOWUP',
+            null,
+            data.secondary.type || null
+          );
         }
       }
     }
