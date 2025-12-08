@@ -3790,10 +3790,12 @@ export async function GET(request: Request) {
     console.log("🔄 [WIDGET MESSAGE] Sending to API...");
     
     // Send to API with current page context
+    const assistantCountClient = messages.filter((m) => m && m.role === 'assistant').length;
     const data = await sendApiRequest('chat', {
       question: text,
       sessionId,
-      pageUrl: currentPageUrl
+      pageUrl: currentPageUrl,
+      assistantCountClient
       // Don't specify adminId - let the API extract it from the API key
     });
     

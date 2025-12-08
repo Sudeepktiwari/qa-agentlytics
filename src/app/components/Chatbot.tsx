@@ -1017,6 +1017,9 @@ const Chatbot: React.FC<ChatbotProps> = ({
           question: userMsg.content,
           sessionId,
           pageUrl: effectivePageUrl,
+          assistantCountClient: messages.filter(
+            (m) => m && m.role === "assistant"
+          ).length,
           ...(adminId ? { adminId } : {}),
         }),
       });

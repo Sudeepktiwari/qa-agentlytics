@@ -2150,6 +2150,7 @@ export async function POST(req: NextRequest) {
     contextualPageContext = null,
     autoResponse = false,
     contextualQuestion = null,
+    assistantCountClient = 0,
     // Customer Intelligence / User Profile Update parameters
     updateUserProfile = false,
     userEmail: profileUserEmail = null,
@@ -8653,34 +8654,25 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
   });
 
   let secondary: any = null;
-  try {
-    const db = await getDb();
-    const chats = db.collection("chats");
-    const assistantCountBefore = await chats.countDocuments({
-      sessionId,
-      role: "assistant",
-    });
-    const skipSecondaryForFirstAssistant = assistantCountBefore === 0;
-    if (!skipSecondaryForFirstAssistant) {
-      const probing = await analyzeForProbing({
-        userMessage: question || "",
-        assistantResponse: {
-          mainText: finalResponse.mainText,
-          buttons: finalResponse.buttons,
-          emailPrompt: (finalResponse as any).emailPrompt || "",
-        },
-        botMode,
-        userEmail,
+  if (!followup) {
+    try {
+      const db = await getDb();
+      const chats = db.collection("chats");
+      const assistantCountBefore = await chats.countDocuments({
+        sessionId,
+        role: "assistant",
       });
-      if (probing.shouldSendFollowUp && probing.mainText) {
-        secondary = {
-          mainText: probing.mainText,
-          buttons: probing.buttons || [],
-          emailPrompt: probing.emailPrompt || "",
-          type: "bant",
-        };
-      } else {
-        secondary = buildFallbackFollowup({
+      const lastAssistant = await chats.findOne(
+        { sessionId, role: "assistant" },
+        { sort: { createdAt: -1 } }
+      );
+      const skipSecondaryForFirstAssistant =
+        assistantCountBefore === 0 && Number(assistantCountClient) === 0;
+      const skipDueToRecentFollowup = Boolean(
+        (lastAssistant as any)?.followupType
+      );
+      if (!skipSecondaryForFirstAssistant && !skipDueToRecentFollowup) {
+        const probing = await analyzeForProbing({
           userMessage: question || "",
           assistantResponse: {
             mainText: finalResponse.mainText,
@@ -8690,87 +8682,113 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
           botMode,
           userEmail,
         });
-        secondary = { ...secondary, type: "probe" };
+        if (probing.shouldSendFollowUp && probing.mainText) {
+          secondary = {
+            mainText: probing.mainText,
+            buttons: probing.buttons || [],
+            emailPrompt: probing.emailPrompt || "",
+            type: "bant",
+          };
+        } else {
+          secondary = buildFallbackFollowup({
+            userMessage: question || "",
+            assistantResponse: {
+              mainText: finalResponse.mainText,
+              buttons: finalResponse.buttons,
+              emailPrompt: (finalResponse as any).emailPrompt || "",
+            },
+            botMode,
+            userEmail,
+          });
+          secondary = { ...secondary, type: "probe" };
+        }
+        console.log(`[Chat API ${requestId}] Follow-up generated`, {
+          type: (secondary as any).type,
+          hasMainText: !!secondary.mainText,
+          buttonsCount: Array.isArray(secondary.buttons)
+            ? secondary.buttons.length
+            : 0,
+          preview:
+            typeof secondary.mainText === "string"
+              ? secondary.mainText.slice(0, 120)
+              : "",
+        });
+        await chats.insertOne({
+          sessionId,
+          role: "assistant",
+          content: secondary.mainText,
+          buttons: secondary.buttons,
+          emailPrompt: secondary.emailPrompt,
+          followupType: (secondary as any).type,
+          createdAt: new Date(now.getTime() + 2),
+          ...(pageUrl ? { pageUrl } : {}),
+          ...(adminId ? { adminId } : {}),
+        });
+      } else {
+        console.log(`[Chat API ${requestId}] Skipping follow-up generation`);
       }
-      console.log(`[Chat API ${requestId}] Follow-up generated`, {
-        type: (secondary as any).type,
-        hasMainText: !!secondary.mainText,
-        buttonsCount: Array.isArray(secondary.buttons)
-          ? secondary.buttons.length
-          : 0,
-        preview:
-          typeof secondary.mainText === "string"
-            ? secondary.mainText.slice(0, 120)
-            : "",
+    } catch (err) {
+      secondary = buildFallbackFollowup({
+        userMessage: question || "",
+        assistantResponse: {
+          mainText: finalResponse.mainText,
+          buttons: finalResponse.buttons,
+          emailPrompt: (finalResponse as any).emailPrompt || "",
+        },
+        botMode,
+        userEmail,
       });
-      await chats.insertOne({
+      secondary = { ...secondary, type: "probe" };
+      console.log(
+        `[Chat API ${requestId}] Follow-up evaluator failed, using fallback`,
+        {
+          error:
+            err instanceof Error
+              ? err.message
+              : typeof err === "string"
+              ? err
+              : "Unknown error",
+          type: (secondary as any).type,
+          hasMainText: !!secondary.mainText,
+          buttonsCount: Array.isArray(secondary.buttons)
+            ? secondary.buttons.length
+            : 0,
+          preview:
+            typeof secondary.mainText === "string"
+              ? secondary.mainText.slice(0, 120)
+              : "",
+        }
+      );
+      const db = await getDb();
+      const chats = db.collection("chats");
+      const assistantCountBefore = await chats.countDocuments({
         sessionId,
         role: "assistant",
-        content: secondary.mainText,
-        buttons: secondary.buttons,
-        emailPrompt: secondary.emailPrompt,
-        followupType: (secondary as any).type,
-        createdAt: new Date(now.getTime() + 2),
-        ...(pageUrl ? { pageUrl } : {}),
-        ...(adminId ? { adminId } : {}),
       });
-    } else {
-      console.log(
-        `[Chat API ${requestId}] Skipping follow-up for first assistant message`
+      const lastAssistant = await chats.findOne(
+        { sessionId, role: "assistant" },
+        { sort: { createdAt: -1 } }
       );
-    }
-  } catch (err) {
-    secondary = buildFallbackFollowup({
-      userMessage: question || "",
-      assistantResponse: {
-        mainText: finalResponse.mainText,
-        buttons: finalResponse.buttons,
-        emailPrompt: (finalResponse as any).emailPrompt || "",
-      },
-      botMode,
-      userEmail,
-    });
-    secondary = { ...secondary, type: "probe" };
-    console.log(
-      `[Chat API ${requestId}] Follow-up evaluator failed, using fallback`,
-      {
-        error:
-          err instanceof Error
-            ? err.message
-            : typeof err === "string"
-            ? err
-            : "Unknown error",
-        type: (secondary as any).type,
-        hasMainText: !!secondary.mainText,
-        buttonsCount: Array.isArray(secondary.buttons)
-          ? secondary.buttons.length
-          : 0,
-        preview:
-          typeof secondary.mainText === "string"
-            ? secondary.mainText.slice(0, 120)
-            : "",
+      const skipDueToRecentFollowup = Boolean(
+        (lastAssistant as any)?.followupType
+      );
+      if (assistantCountBefore > 0 && !skipDueToRecentFollowup) {
+        await chats.insertOne({
+          sessionId,
+          role: "assistant",
+          content: secondary.mainText,
+          buttons: secondary.buttons,
+          emailPrompt: secondary.emailPrompt,
+          followupType: (secondary as any).type,
+          createdAt: new Date(now.getTime() + 2),
+          ...(pageUrl ? { pageUrl } : {}),
+          ...(adminId ? { adminId } : {}),
+        });
+      } else {
+        console.log(
+          `[Chat API ${requestId}] Skipping fallback follow-up insert`
+        );
       }
-    );
-    const assistantCountBefore = await chats.countDocuments({
-      sessionId,
-      role: "assistant",
-    });
-    if (assistantCountBefore > 0) {
-      await chats.insertOne({
-        sessionId,
-        role: "assistant",
-        content: secondary.mainText,
-        buttons: secondary.buttons,
-        emailPrompt: secondary.emailPrompt,
-        followupType: (secondary as any).type,
-        createdAt: new Date(now.getTime() + 2),
-        ...(pageUrl ? { pageUrl } : {}),
-        ...(adminId ? { adminId } : {}),
-      });
-    } else {
-      console.log(
-        `[Chat API ${requestId}] Skipping fallback follow-up insert for first assistant message`
-      );
     }
   }
 
