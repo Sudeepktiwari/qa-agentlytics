@@ -6720,10 +6720,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
             botMode,
             userEmail,
           });
-          if (assistantCountBefore === 0) {
-            // Do not send follow-up for first assistant message in session
-            secondary = null;
-          } else if (probing.shouldSendFollowUp && probing.mainText) {
+          if (probing.shouldSendFollowUp && probing.mainText) {
             secondary = {
               mainText: probing.mainText,
               buttons: probing.buttons || [],
@@ -8840,6 +8837,66 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
         userInactiveForMs: Number(userInactiveForMs),
       });
       const inactiveEnough = Number(userInactiveForMs) >= 120000;
+
+      if (!skipDueToRecentFollowup) {
+        const sessionMessagesQuick = await chats
+          .find({ sessionId })
+          .sort({ createdAt: 1 })
+          .limit(200)
+          .toArray();
+        const missingDimsQuick = computeBantMissingDims(sessionMessagesQuick);
+        const probingQuick = await analyzeForProbing({
+          userMessage: question || "",
+          assistantResponse: {
+            mainText: finalResponse.mainText,
+            buttons: finalResponse.buttons,
+            emailPrompt: (finalResponse as any).emailPrompt || "",
+          },
+          botMode,
+          userEmail,
+          missingDims: missingDimsQuick,
+        });
+        if (probingQuick.shouldSendFollowUp && probingQuick.mainText) {
+          const immediate = {
+            mainText: probingQuick.mainText,
+            buttons: probingQuick.buttons || [],
+            emailPrompt: probingQuick.emailPrompt || "",
+            type: "bant",
+          } as any;
+          await chats.insertOne({
+            sessionId,
+            role: "assistant",
+            content: immediate.mainText,
+            buttons: immediate.buttons,
+            emailPrompt: immediate.emailPrompt,
+            followupType: immediate.type,
+            createdAt: new Date(now.getTime() + 1),
+            ...(pageUrl ? { pageUrl } : {}),
+            ...(adminId ? { adminId } : {}),
+          });
+        } else {
+          const heuristicBantQuick = buildHeuristicBantFollowup({
+            userMessage: question || "",
+            assistantResponse: { mainText: finalResponse.mainText },
+            botMode,
+            missingDims: missingDimsQuick,
+          });
+          if (heuristicBantQuick) {
+            const immediate = { ...heuristicBantQuick, type: "bant" } as any;
+            await chats.insertOne({
+              sessionId,
+              role: "assistant",
+              content: immediate.mainText,
+              buttons: immediate.buttons,
+              emailPrompt: immediate.emailPrompt,
+              followupType: immediate.type,
+              createdAt: new Date(now.getTime() + 1),
+              ...(pageUrl ? { pageUrl } : {}),
+              ...(adminId ? { adminId } : {}),
+            });
+          }
+        }
+      }
       if (
         !skipSecondaryForFirstAssistant &&
         !skipDueToRecentFollowup &&
