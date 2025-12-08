@@ -732,9 +732,7 @@ function buildHeuristicBantFollowup(input: {
   botMode: "sales" | "lead_generation";
   missingDims?: ("budget" | "authority" | "need" | "timeline")[];
 }) {
-  const text = `${input.userMessage || ""} ${
-    input.assistantResponse.mainText || ""
-  }`.toLowerCase();
+  const text = `${input.userMessage || ""}`.toLowerCase();
   const dims = (
     Array.isArray(input.missingDims)
       ? input.missingDims
@@ -793,10 +791,13 @@ function computeBantMissingDims(
   messages: any[]
 ): ("budget" | "authority" | "need" | "timeline")[] {
   const lower = messages
+    .filter((m: any) => String(m?.role || "").toLowerCase() === "user")
     .map((m: any) => String(m && m.content ? m.content : "").toLowerCase())
     .filter((s: string) => s.length > 0);
   const hasBudget = lower.some((s: string) =>
-    /\$|budget|price|cost|pricing|plan|per\s*month|mo\b/.test(s)
+    /\$|budget|price|cost|pricing|per\s*month|mo\b|\b\d+\s*(usd|dollars|\$)\b/.test(
+      s
+    )
   );
   const hasTimeline = lower.some((s: string) =>
     /this\s*week|next\s*week|later|today|tomorrow|this\s*month|quarter|q[1-4]|schedule|demo|call|meeting|appointment/.test(
@@ -804,7 +805,7 @@ function computeBantMissingDims(
     )
   );
   const hasAuthority = lower.some((s: string) =>
-    /i\s*(am|'m)\s*the\s*decision\s*maker|decision\s*maker|approve|buy|manager|director|vp|cfo|ceo|owner|founder/.test(
+    /i\s*(am|'m)\s*the\s*decision\s*maker|my\s*manager|team\s*lead|we\s*decide|i\s*decide|manager\s*approval/.test(
       s
     )
   );
