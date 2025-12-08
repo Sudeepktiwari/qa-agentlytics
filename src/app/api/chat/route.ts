@@ -6693,6 +6693,26 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
           .map((msg) => (msg as unknown as ChatMessage).content);
         const lastFewQuestions = prevQuestions.slice(-3);
 
+        const missingDims = computeBantMissingDims(previousChats);
+        const lastUserMessage = previousChats
+          .filter((msg) => (msg as unknown as ChatMessage).role === "user")
+          .slice(-1)[0];
+        const lastUserContent = lastUserMessage
+          ? typeof (lastUserMessage as any).content === "string"
+            ? (lastUserMessage as any).content
+            : (lastUserMessage as any).content.mainText || ""
+          : "";
+        const fcPref =
+          typeof (body as any)?.followupCount === "number"
+            ? (body as any).followupCount
+            : 0;
+        const preferMessageBased =
+          fcPref === 0 && lastUserContent && lastUserContent.trim() !== "";
+        console.log("[FOLLOWUP] BANT missingDims and preference", {
+          missingDims,
+          preferMessageBased,
+        });
+
         // Helper functions needed for followup processing
         function getText(val: MainTextLike): string {
           if (typeof val === "string") return val;
@@ -6845,8 +6865,8 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
 
         let personaFollowup = null;
 
-        // Generate topic-based followup message
-        if (followupTopic !== "general") {
+        // Generate topic-based followup message (skip if message-based preferred)
+        if (!preferMessageBased && followupTopic !== "general") {
           console.log(
             `[FOLLOWUP] Generating topic-based followup for: ${followupTopic}`
           );
@@ -6857,7 +6877,11 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
             previousQnA,
             followupCount
           );
-        } else if (detectedPersona && pageChunks.length > 0) {
+        } else if (
+          !preferMessageBased &&
+          detectedPersona &&
+          pageChunks.length > 0
+        ) {
           console.log(
             `[Persona] Generating persona-based followup for: ${
               detectedPersona?.name || "unknown"
@@ -6949,90 +6973,32 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
 
         if (followupCount === 0) {
           // First follow-up: Check if there's a user message to base it on
-
-          // Get the last user message from conversation history
-          const lastUserMessage = previousChats
-            .filter((msg) => (msg as unknown as ChatMessage).role === "user")
-            .slice(-1)[0]; // Get the most recent user message
-
-          const lastUserContent = lastUserMessage
-            ? typeof lastUserMessage.content === "string"
-              ? lastUserMessage.content
-              : lastUserMessage.content.mainText || ""
-            : "";
-
-          if (lastUserContent && lastUserContent.trim() !== "") {
+          if (preferMessageBased) {
             // User has sent a message - base followup ONLY on their last message
             console.log(
               `[Followup] First followup based on last user message: "${lastUserContent}"`
             );
+            followupSystemPrompt = `You are a qualification assistant. Always return ONLY valid JSON: {"mainText":"...","buttons":[...],"emailPrompt":""}.
 
-            followupSystemPrompt = `
-You are a helpful sales assistant. The user has not provided an email yet.
+Goal: Ask ONE BANT qualification question based ONLY on the user's last message. Choose ONE missing dimension from: ${JSON.stringify(
+              missingDims
+            )}. If message is about pricing, prefer "budget".
 
-FOLLOWUP #1 GOAL: Generate a followup based ONLY on the user's last message, not the page content. Create a response that directly relates to what they just said.
-
-LAST USER MESSAGE: "${lastUserContent}"
-
-CONTENT RULES:
-- Focus ONLY on the user's last message content - ignore page context completely
-- Ask a follow-up question or provide information directly related to what they just asked
-- Keep "mainText" under 30 words; be specific to their message
-- Generate EXACTLY 3 concise, actionable buttons (2-4 words) related to their last message
-- Do NOT reference page content, features visible on page, or general website information
-- Base your response entirely on understanding and expanding on their specific question/comment
-
-**EXAMPLES OF MESSAGE-BASED FOLLOWUPS:**
-
-If user said: "How much does this cost?"
-✅ GOOD: "What's your budget range?" with buttons like "Under $100", "$100-500", "Over $500"
-
-If user said: "I need help with scheduling"
-✅ GOOD: "What type of scheduling?" with buttons like "Appointments", "Team Meetings", "Events"
-
-If user said: "Can this integrate with Salesforce?"
-✅ GOOD: "Which Salesforce features?" with buttons like "Contacts", "Leads", "Opportunities"
-
-If user said: "I'm looking for a solution"
-✅ GOOD: "What's your main challenge?" with buttons like "Time Management", "Team Coordination", "Customer Service"
-
-**LAST MESSAGE ANALYSIS:**
-1. **What did they specifically ask about?** (pricing, features, integrations, etc.)
-2. **What follow-up question would help clarify their need?**
-3. **What are 3 logical next questions related to their specific inquiry?**
-4. **How can you help them get more specific about what they need?**
-
-CREATIVE OPENING PATTERNS - Use variety, avoid repetition:
-- Clarification: "What type of...", "Which specific...", "What's your main..."
-- Expansion: "Tell me more about...", "Help me understand...", "What's most important..."
-- Options: "Are you looking for...", "Do you need...", "Would you prefer..."
-- Context: "For your situation...", "In your case...", "Based on that..."
-
-VARIETY GUIDELINES:
-- Directly address what they just said
-- Ask for clarification or more details about their specific inquiry
-- Don't make assumptions about their business or industry
-- Focus on understanding their immediate need better
+Rules:
+- Keep mainText under 25 words and end with a question.
+- Generate EXACTLY 3 short buttons (2–4 words) that directly answer the question.
+- Do NOT reference page content.
+- Do NOT combine multiple BANT dimensions.
+- Email prompt must be empty for first followup.
 
 Context:
-Last User Message: ${lastUserContent}
-Previous Conversation (for context only, don't base response on this):
-${previousQnA}
+- Last User Message: "${lastUserContent}"`;
 
-Generate response in JSON format:
-{
-  "mainText": "<Direct follow-up question or response to their last message (under 30 words)>",
-  "buttons": ["<3 options directly related to their last message, 2-4 words each>"],
-  "emailPrompt": ""
-}
+            followupUserPrompt = `Pick ONE dimension from ${JSON.stringify(
+              missingDims
+            )} and ask a direct question aligned to "${lastUserContent}".
 
-CRITICAL: Base your response ONLY on their last message "${lastUserContent}", not on page content or general context.`;
-
-            followupUserPrompt = `Create a followup response based ONLY on the user's last message: "${lastUserContent}"
-
-Do NOT use page content. Focus entirely on understanding and expanding on what they just said. Ask a clarifying question or provide options directly related to their specific inquiry.
-
-Generate exactly 3 buttons (2-4 words each) that help them be more specific about what they asked. JSON format only.`;
+Return JSON only.`;
           } else {
             // No user message yet - use existing page-context driven logic
             console.log(
