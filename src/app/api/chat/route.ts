@@ -8863,6 +8863,14 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
             emailPrompt: probingQuick.emailPrompt || "",
             type: "bant",
           } as any;
+          console.log(`[Chat API ${requestId}] Immediate follow-up generated`, {
+            type: immediate.type,
+            preview: String(immediate.mainText || "").slice(0, 120),
+            buttonsCount: Array.isArray(immediate.buttons)
+              ? immediate.buttons.length
+              : 0,
+          });
+          secondary = immediate;
           await chats.insertOne({
             sessionId,
             role: "assistant",
@@ -8883,6 +8891,17 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
           });
           if (heuristicBantQuick) {
             const immediate = { ...heuristicBantQuick, type: "bant" } as any;
+            console.log(
+              `[Chat API ${requestId}] Immediate follow-up generated (heuristic)`,
+              {
+                type: immediate.type,
+                preview: String(immediate.mainText || "").slice(0, 120),
+                buttonsCount: Array.isArray(immediate.buttons)
+                  ? immediate.buttons.length
+                  : 0,
+              }
+            );
+            secondary = immediate;
             await chats.insertOne({
               sessionId,
               role: "assistant",
@@ -9111,6 +9130,14 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
     );
   }
 
+  console.log(`[Chat API ${requestId}] Final response`, {
+    hasSecondary: !!secondary,
+    secondaryType: (secondary as any)?.type || null,
+    secondaryPreview:
+      secondary && typeof (secondary as any).mainText === "string"
+        ? String((secondary as any).mainText).slice(0, 120)
+        : null,
+  });
   const out = secondary ? { ...finalResponse, secondary } : finalResponse;
   return NextResponse.json(out, { headers: corsHeaders });
 }
