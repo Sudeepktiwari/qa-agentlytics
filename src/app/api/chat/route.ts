@@ -504,12 +504,13 @@ async function analyzeForProbing(input: {
   };
   botMode: "sales" | "lead_generation";
   userEmail?: string | null;
+  missingDims?: ("budget" | "authority" | "need" | "timeline")[];
 }) {
   const messages: any = [
     {
       role: "system",
       content:
-        "Decide whether to send a short qualification probe now using BANT (Budget, Authority, Need, Timeline). BASE YOUR DECISION ON THE LAST USER MESSAGE AND THE ASSISTANT'S RESPONSE. Return JSON: { shouldSendFollowUp: boolean, mainText: string, buttons: string[], emailPrompt: string }. The message must ask ONE qualification in ONE sentence ending with '?'. Provide 2–4 concise options in 'buttons' that directly answer that single question. Never combine multiple BANT dimensions in one question. If botMode is 'sales', prefer Budget or Timeline; if 'lead_generation', prefer Need.",
+        "Decide whether to send a short qualification probe now using BANT (Budget, Authority, Need, Timeline). BASE YOUR DECISION ON THE LAST USER MESSAGE AND THE ASSISTANT'S RESPONSE. If you send a probe, choose ONE dimension from the provided missingDims and ask about that only. Return JSON: { shouldSendFollowUp: boolean, mainText: string, buttons: string[], emailPrompt: string }. The message must ask ONE qualification in ONE sentence ending with '?'. Provide 2–4 concise options in 'buttons' that directly answer that single question. Never combine multiple BANT dimensions in one question. If botMode is 'sales', prefer Budget or Timeline; if 'lead_generation', prefer Need.",
     },
     {
       role: "user",
@@ -519,6 +520,9 @@ async function analyzeForProbing(input: {
           assistant: input.assistantResponse,
           botMode: input.botMode,
           hasEmail: !!input.userEmail,
+          missingDims: Array.isArray(input.missingDims)
+            ? input.missingDims
+            : ["budget", "authority", "need", "timeline"],
         },
         null,
         2
@@ -657,6 +661,38 @@ function buildFallbackFollowup(input: {
     buttons: ["Pricing", "Integrations", "Scheduling"],
     emailPrompt: "Add your email to receive a tailored walkthrough",
   };
+}
+
+function computeBantMissingDims(
+  messages: any[]
+): ("budget" | "authority" | "need" | "timeline")[] {
+  const lower = messages
+    .map((m: any) => String(m && m.content ? m.content : "").toLowerCase())
+    .filter((s: string) => s.length > 0);
+  const hasBudget = lower.some((s: string) =>
+    /\$|budget|price|cost|pricing|plan|per\s*month|mo\b/.test(s)
+  );
+  const hasTimeline = lower.some((s: string) =>
+    /this\s*week|next\s*week|later|today|tomorrow|this\s*month|quarter|q[1-4]|schedule|demo|call|meeting|appointment/.test(
+      s
+    )
+  );
+  const hasAuthority = lower.some((s: string) =>
+    /i\s*(am|'m)\s*the\s*decision\s*maker|decision\s*maker|approve|buy|manager|director|vp|cfo|ceo|owner|founder/.test(
+      s
+    )
+  );
+  const hasNeed = lower.some((s: string) =>
+    /workflows|embeds|analytics|integration|feature|features|need|priority|use\s*case|help\b/.test(
+      s
+    )
+  );
+  const missing: ("budget" | "authority" | "need" | "timeline")[] = [];
+  if (!hasBudget) missing.push("budget");
+  if (!hasAuthority) missing.push("authority");
+  if (!hasNeed) missing.push("need");
+  if (!hasTimeline) missing.push("timeline");
+  return missing;
 }
 
 // 🔰 Onboarding helpers
@@ -2151,6 +2187,7 @@ export async function POST(req: NextRequest) {
     autoResponse = false,
     contextualQuestion = null,
     assistantCountClient = 0,
+    userInactiveForMs = 0,
     // Customer Intelligence / User Profile Update parameters
     updateUserProfile = false,
     userEmail: profileUserEmail = null,
@@ -8693,8 +8730,23 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
         lastUserAt: (lastUser as any)?.createdAt || null,
         skipSecondaryForFirstAssistant,
         skipDueToRecentFollowup,
+        userInactiveForMs: Number(userInactiveForMs),
       });
-      if (!skipSecondaryForFirstAssistant && !skipDueToRecentFollowup) {
+      const inactiveEnough = Number(userInactiveForMs) >= 120000;
+      if (
+        !skipSecondaryForFirstAssistant &&
+        !skipDueToRecentFollowup &&
+        inactiveEnough
+      ) {
+        const sessionMessages = await chats
+          .find({ sessionId })
+          .sort({ createdAt: 1 })
+          .limit(200)
+          .toArray();
+        const missingDims = computeBantMissingDims(sessionMessages);
+        console.log(`[Chat API ${requestId}] BANT dimensions`, {
+          missingDims,
+        });
         console.log(`[Chat API ${requestId}] Starting BANT probe evaluation`, {
           userMessagePreview: String(question || "").slice(0, 120),
           assistantPreview: String(finalResponse.mainText || "").slice(0, 120),
@@ -8710,6 +8762,7 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
           },
           botMode,
           userEmail,
+          missingDims,
         });
         if (probing.shouldSendFollowUp && probing.mainText) {
           secondary = {
@@ -8779,6 +8832,7 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
         console.log(`[Chat API ${requestId}] Skipping follow-up generation`, {
           skipSecondaryForFirstAssistant,
           skipDueToRecentFollowup,
+          inactiveEnough,
         });
       }
     } catch (err) {

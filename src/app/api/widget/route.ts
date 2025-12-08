@@ -3447,7 +3447,7 @@ export async function GET(request: Request) {
         timeSinceLastActionSeconds: Math.round(timeSinceLastAction / 1000)
       });
       
-      const inactivityThreshold = delayMs; // align inactivity requirement with reader-friendly delay
+      const inactivityThreshold = Math.max(120000, delayMs);
       if (!userIsActive && timeSinceLastAction >= inactivityThreshold && followupCount < 3) {
         console.log('[Widget] Conditions met for followup message - sending now');
         sendFollowupMessage();
@@ -3694,7 +3694,8 @@ export async function GET(request: Request) {
         followupType: 'question_based',
         lastUserQuestion: lastUserMessage,
         userConversationHistory: userMessages.map(msg => msg.content),
-        pageSummary: extractPageSummary()
+        pageSummary: extractPageSummary(),
+        userInactiveForMs: Date.now() - lastUserAction
       };
     } else {
       // No user messages or subsequent followups - use topic-based approach
@@ -3708,7 +3709,8 @@ export async function GET(request: Request) {
         followupCount,
         followupType: 'topic_based',
         followupTopic: followupTopic,
-        pageSummary: extractPageSummary()
+        pageSummary: extractPageSummary(),
+        userInactiveForMs: Date.now() - lastUserAction
       };
     }
     
@@ -3795,7 +3797,8 @@ export async function GET(request: Request) {
       question: text,
       sessionId,
       pageUrl: currentPageUrl,
-      assistantCountClient
+      assistantCountClient,
+      userInactiveForMs: Date.now() - lastUserAction
       // Don't specify adminId - let the API extract it from the API key
     });
     

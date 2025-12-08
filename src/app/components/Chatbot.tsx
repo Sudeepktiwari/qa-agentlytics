@@ -1020,6 +1020,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
           assistantCountClient: messages.filter(
             (m) => m && m.role === "assistant"
           ).length,
+          userInactiveForMs: Date.now() - lastUserAction,
           ...(adminId ? { adminId } : {}),
         }),
       });
