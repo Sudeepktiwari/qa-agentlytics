@@ -1439,7 +1439,10 @@ export async function GET(request: Request) {
       followupType: followupType || null,
       emailPrompt: finalEmailPrompt,
       inputFields: finalInputFields,
-      isProactive: true
+      isProactive: true,
+      tag: (messageType === 'FOLLOWUP')
+        ? 'followup'
+        : ((messageType === 'CONTEXTUAL_RESPONSE' || messageType === 'CONTEXTUAL_QUESTION') ? 'mirroring' : null)
     };
     
     if (messageType === 'FOLLOWUP') {
@@ -3752,7 +3755,8 @@ export async function GET(request: Request) {
           showBookingCalendar: data.showBookingCalendar || false,
           bookingType: data.bookingType || null,
           // Carry multi-field inputs if provided
-          inputFields: data.inputFields || null
+          inputFields: data.inputFields || null,
+          tag: 'followup'
         };
         messages.push(botMessage);
         renderMessages();
@@ -3895,7 +3899,8 @@ export async function GET(request: Request) {
           content: data.secondary.mainText,
           buttons: data.secondary.buttons || [],
           emailPrompt: data.secondary.emailPrompt || '',
-          followupType: data.secondary.type || null
+          followupType: data.secondary.type || null,
+          tag: 'followup'
         };
         const words = String(botResponse || '')
           .replace(/<[^>]+>/g, ' ')
@@ -4080,6 +4085,12 @@ export async function GET(request: Request) {
           tag.textContent = msg.followupType === 'bant' ? 'BANT' : 'Probe';
           tag.style.cssText = 'display:inline-block;margin-top:6px;font-size:11px;background:rgba(255,255,255,0.18);color:white;border:1px solid rgba(255,255,255,0.35);padding:2px 8px;border-radius:9999px;';
           bubbleDiv.appendChild(tag);
+        }
+        if (msg.tag) {
+          const tag2 = document.createElement('span');
+          tag2.textContent = String(msg.tag);
+          tag2.style.cssText = 'display:inline-block;margin-top:6px;font-size:11px;background:rgba(255,255,255,0.18);color:white;border:1px solid rgba(255,255,255,0.35);padding:2px 8px;border-radius:9999px;';
+          bubbleDiv.appendChild(tag2);
         }
         
         console.log("🔘 [WIDGET RENDER] Message buttons:", msg.buttons);
@@ -4588,6 +4599,37 @@ export async function GET(request: Request) {
       showCopyFeedback(false);
     }
   }
+  function copyConversationWithTags() {
+    try {
+      var conversationText = 'Chat Conversation\n';
+      conversationText += '===================\n\n';
+      messages.forEach(function(msg) {
+        var role = msg.role === 'user' ? 'You' : 'Assistant';
+        var timestamp = msg.timestamp ? new Date(msg.timestamp).toLocaleString() : '';
+        var tag = msg.tag ? (' [' + String(msg.tag) + ']') : '';
+        conversationText += '[' + role + ']' + tag + (timestamp ? ' (' + timestamp + ')' : '') + '\n';
+        conversationText += String(msg.content) + '\n';
+        if (msg.buttons && msg.buttons.length > 0) {
+          conversationText += 'Options: ' + msg.buttons.join(', ') + '\n';
+        }
+        conversationText += '\n';
+      });
+      navigator.clipboard.writeText(conversationText).then(function() {
+        showCopyFeedback(true);
+      }).catch(function() {
+        var textArea = document.createElement('textarea');
+        textArea.value = conversationText;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        showCopyFeedback(true);
+      });
+    } catch (error) {
+      console.error('Failed to copy conversation:', error);
+      showCopyFeedback(false);
+    }
+  }
   
   // Show copy feedback
   function showCopyFeedback(success) {
@@ -4650,7 +4692,7 @@ export async function GET(request: Request) {
     // Copy conversation button
     document.addEventListener('click', (e) => {
       if (e.target.id === 'appointy-copy-btn') {
-        copyConversation();
+        copyConversationWithTags();
       }
     });
     
