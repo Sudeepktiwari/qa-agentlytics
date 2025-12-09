@@ -8289,6 +8289,149 @@ What specific information are you looking for? I'm here to help guide you throug
     console.log(`[DEBUG] User provided email in current message: ${userEmail}`);
   }
 
+  const enableBantChaining = true;
+  if (enableBantChaining) {
+    const lastAssistant = await chats.findOne(
+      { sessionId, role: "assistant" },
+      { sort: { createdAt: -1 } }
+    );
+    const lastFollowupType = String(
+      (lastAssistant as any)?.followupType || ""
+    ).toLowerCase();
+    const lastBantDim: any = (lastAssistant as any)?.bantDimension || null;
+    const detectedAnswerDim = detectBantDimensionFromText(question || "");
+    const isBantAnswer =
+      lastFollowupType === "bant" && detectedAnswerDim !== null;
+    if (isBantAnswer) {
+      const sessionDocsQuick = await chats
+        .find({ sessionId })
+        .sort({ createdAt: 1 })
+        .limit(200)
+        .toArray();
+      const sessionMessagesQuick: any[] = (sessionDocsQuick || []).map(
+        (d: any) => ({
+          role: d.role,
+          content: d.content,
+          followupType: (d as any).followupType,
+          bantDimension: (d as any).bantDimension,
+        })
+      );
+      sessionMessagesQuick.push({ role: "user", content: question || "" });
+      const missingDimsQuick = computeBantMissingDims(sessionMessagesQuick);
+      let nextBant: any = null;
+      const botModeChain: "sales" | "lead_generation" = userEmail
+        ? "sales"
+        : "lead_generation";
+      try {
+        const probingQuick = await analyzeForProbing({
+          userMessage: question || "",
+          assistantResponse: {
+            mainText: String((lastAssistant as any)?.content || ""),
+            buttons: (lastAssistant as any)?.buttons || [],
+            emailPrompt: (lastAssistant as any)?.emailPrompt || "",
+          },
+          botMode: botModeChain,
+          userEmail,
+          missingDims: missingDimsQuick,
+        });
+        if (probingQuick.shouldSendFollowUp && probingQuick.mainText) {
+          nextBant = {
+            mainText: probingQuick.mainText,
+            buttons: probingQuick.buttons || [],
+            emailPrompt: probingQuick.emailPrompt || "",
+          };
+        }
+      } catch {}
+      if (!nextBant) {
+        const heuristic = buildHeuristicBantFollowup({
+          userMessage: question || "",
+          assistantResponse: {
+            mainText: String((lastAssistant as any)?.content || ""),
+          },
+          botMode: botModeChain,
+          missingDims: missingDimsQuick,
+        });
+        if (heuristic) {
+          nextBant = {
+            mainText: heuristic.mainText,
+            buttons: heuristic.buttons,
+            emailPrompt: heuristic.emailPrompt,
+          };
+        }
+      }
+      if (!nextBant) {
+        const fallback = buildFallbackFollowup({
+          userMessage: question || "",
+          assistantResponse: {
+            mainText: String((lastAssistant as any)?.content || ""),
+            buttons: (lastAssistant as any)?.buttons || [],
+            emailPrompt: (lastAssistant as any)?.emailPrompt || "",
+          },
+          botMode: botModeChain,
+          userEmail,
+        });
+        nextBant = fallback;
+      }
+      if (nextBant && nextBant.mainText) {
+        const bookingAware = generateBookingAwareResponse(
+          { ...nextBant },
+          bookingStatus,
+          question || ""
+        );
+        await chats.insertMany([
+          {
+            sessionId,
+            role: "user",
+            content: question,
+            createdAt: now,
+            ...(pageUrl ? { pageUrl } : {}),
+            ...(detectedEmail ? { email: detectedEmail } : {}),
+            ...(adminId ? { adminId } : {}),
+            ...(bookingStatus.hasActiveBooking && bookingStatus.currentBooking
+              ? {
+                  hasActiveBooking: true,
+                  bookingId: bookingStatus.currentBooking._id,
+                  bookingType: bookingStatus.currentBooking.requestType,
+                }
+              : {}),
+          },
+          {
+            sessionId,
+            role: "assistant",
+            content: bookingAware.mainText,
+            buttons: bookingAware.buttons,
+            emailPrompt: bookingAware.emailPrompt,
+            followupType: "bant",
+            bantDimension:
+              detectBantDimensionFromText(
+                String(bookingAware.mainText || "")
+              ) || null,
+            createdAt: new Date(now.getTime() + 1),
+            ...(pageUrl ? { pageUrl } : {}),
+            ...(adminId ? { adminId } : {}),
+            ...(bookingStatus.hasActiveBooking && bookingStatus.currentBooking
+              ? {
+                  hasActiveBooking: true,
+                  bookingId: bookingStatus.currentBooking._id,
+                  bookingType: bookingStatus.currentBooking.requestType,
+                }
+              : {}),
+          },
+        ]);
+        const responseWithMode = {
+          ...bookingAware,
+          botMode: botModeChain,
+          userEmail: userEmail || null,
+        };
+        if (bookingStatus.hasActiveBooking && bookingStatus.currentBooking) {
+          (responseWithMode as any).showBookingCalendar = false;
+          delete (responseWithMode as any).bookingType;
+        }
+        return NextResponse.json(responseWithMode, { headers: corsHeaders });
+      }
+    }
+  }
+
   // Detect if the user message matches any previous assistant message's buttons
   // (currently unused but kept for future functionality)
   // let isButtonAction = false;
