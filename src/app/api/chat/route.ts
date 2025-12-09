@@ -331,6 +331,20 @@ function extractBulletOptionsFromText(text: string): string[] {
   return options;
 }
 
+function stripBulletLines(text: string): string {
+  const lines = String(text || "").split(/\r?\n/);
+  const kept: string[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    const raw = lines[i] || "";
+    if (/^\s*•\s+/.test(raw)) continue;
+    kept.push(raw);
+  }
+  return kept
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 // Generate booking-aware response when user has active booking
 function generateBookingAwareResponse(
   originalResponse: any,
@@ -9177,6 +9191,7 @@ CRITICAL: If requirements are missing, ask ONE short clarifying question first (
       : [];
     if (extractedFromBullets.length > 0) {
       finalResponse.buttons = extractedFromBullets.slice(0, 3);
+      finalResponse.mainText = stripBulletLines(finalResponse.mainText || "");
     }
     const mainTextForFilter =
       extractedFromBullets.length > 0 ? "" : finalResponse.mainText || "";
