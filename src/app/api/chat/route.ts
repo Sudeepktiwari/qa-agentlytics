@@ -895,7 +895,7 @@ function isAnswerToAskedDim(
       s
     );
   if (dim === "need")
-    return /workflows|embeds|analytics|integration|feature|features|need|priority|use\s*case|help|explore|learn|customize/.test(
+    return /workflows|embeds|analytics|integration|feature|features|need|priority|use\s*case|help|explore|learn|customize|project\s*management|collaboration|data\s*analytics/.test(
       s
     );
   return false;
@@ -8324,9 +8324,19 @@ What specific information are you looking for? I'm here to help guide you throug
       (lastAssistant as any)?.followupType || ""
     ).toLowerCase();
     const lastBantDim: any = (lastAssistant as any)?.bantDimension || null;
+    const lastButtons: string[] = Array.isArray((lastAssistant as any)?.buttons)
+      ? ((lastAssistant as any).buttons as string[])
+      : [];
+    const isButtonClick = lastButtons.some(
+      (b) =>
+        String(b).toLowerCase().trim() ===
+        String(question || "")
+          .toLowerCase()
+          .trim()
+    );
     const isBantAnswer =
       lastFollowupType === "bant" &&
-      isAnswerToAskedDim(question || "", lastBantDim);
+      (isAnswerToAskedDim(question || "", lastBantDim) || isButtonClick);
     if (isBantAnswer) {
       const sessionDocsQuick = await chats
         .find({ sessionId })
