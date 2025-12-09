@@ -876,6 +876,31 @@ function detectBantDimensionFromText(
   return null;
 }
 
+function isAnswerToAskedDim(
+  t: string,
+  dim: "budget" | "authority" | "need" | "timeline" | null
+): boolean {
+  if (!dim) return false;
+  const s = String(t || "").toLowerCase();
+  if (dim === "budget")
+    return /\$|budget|price|cost|pricing|per\s*month|mo\b|\b\d+\s*(usd|dollars|\$)\b|free|under|above|range|plan|tier/.test(
+      s
+    );
+  if (dim === "timeline")
+    return /this\s*week|next\s*week|later|today|tomorrow|this\s*month|quarter|q[1-4]|schedule|demo|call|meeting|appointment|soon|now|date|time/.test(
+      s
+    );
+  if (dim === "authority")
+    return /i\s*(am|'m)\s*the\s*decision\s*maker|manager|director|vp|cfo|ceo|owner|founder|team\s*lead|approve|authority|procurement|legal/.test(
+      s
+    );
+  if (dim === "need")
+    return /workflows|embeds|analytics|integration|feature|features|need|priority|use\s*case|help|explore|learn|customize/.test(
+      s
+    );
+  return false;
+}
+
 // 🔰 Onboarding helpers
 function detectOnboardingIntent(text?: string): boolean {
   if (!text) return false;
@@ -8299,9 +8324,9 @@ What specific information are you looking for? I'm here to help guide you throug
       (lastAssistant as any)?.followupType || ""
     ).toLowerCase();
     const lastBantDim: any = (lastAssistant as any)?.bantDimension || null;
-    const detectedAnswerDim = detectBantDimensionFromText(question || "");
     const isBantAnswer =
-      lastFollowupType === "bant" && detectedAnswerDim !== null;
+      lastFollowupType === "bant" &&
+      isAnswerToAskedDim(question || "", lastBantDim);
     if (isBantAnswer) {
       const sessionDocsQuick = await chats
         .find({ sessionId })
