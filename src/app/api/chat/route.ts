@@ -313,27 +313,22 @@ function filterRedundantButtons(
   return unique;
 }
 
-function extractOptionsFromText(text: string): string[] {
-  const t = String(text || "");
-  const results: string[] = [];
-  const optionsLine = t.match(/Options:\s*([^\n]+)/i);
-  if (optionsLine && optionsLine[1]) {
-    const raw = optionsLine[1];
-    for (const part of raw.split(/[,|]/)) {
-      const s = part.trim();
-      if (s) results.push(s);
-    }
+function extractBulletOptionsFromText(text: string): string[] {
+  const lines = String(text || "").split(/\r?\n/);
+  const options: string[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    const raw = lines[i] || "";
+    const m = raw.match(/^\s*•\s*(.+?)\s*$/);
+    if (!m) continue;
+    let opt = m[1];
+    opt = opt.replace(/^[-•\s]+/, "");
+    opt = opt.replace(/[.\s]+$/, "");
+    opt = opt.trim();
+    if (!opt) continue;
+    options.push(opt);
+    if (options.length >= 4) break;
   }
-  const bulletRegex = /(?:^|\n)[\u2022•\-]\s+([^\n]+)/g;
-  let m: RegExpExecArray | null;
-  while ((m = bulletRegex.exec(t)) !== null) {
-    const label = String(m[1] || "").trim();
-    if (label) results.push(label);
-  }
-  const uniq = Array.from(
-    new Set(results.map((b) => b.replace(/\s+/g, " ").trim()))
-  );
-  return uniq.filter((b) => b.length > 0).slice(0, 4);
+  return options;
 }
 
 // Generate booking-aware response when user has active booking
@@ -9177,15 +9172,15 @@ CRITICAL: If requirements are missing, ask ONE short clarifying question first (
       const bt = mapMeetingTypeToBookingType(meetingTypeSelection);
       if (bt) (finalResponse as any).bookingTypeHint = bt;
     }
-    {
-      const extractedButtons = extractOptionsFromText(
+    if (
+      (!finalResponse.buttons || finalResponse.buttons.length === 0) &&
+      /•/.test(finalResponse.mainText || "")
+    ) {
+      const extracted = extractBulletOptionsFromText(
         finalResponse.mainText || ""
       );
-      if (extractedButtons.length) {
-        finalResponse.buttons = [
-          ...(finalResponse.buttons || []),
-          ...extractedButtons,
-        ];
+      if (extracted.length > 0) {
+        finalResponse.buttons = extracted.slice(0, 3);
       }
     }
     finalResponse.buttons = filterRedundantButtons(
