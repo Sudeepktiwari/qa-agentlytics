@@ -3897,19 +3897,29 @@ export async function GET(request: Request) {
           emailPrompt: data.secondary.emailPrompt || '',
           followupType: data.secondary.type || null
         };
-        const words = String(botResponse || '')
-          .replace(/<[^>]+>/g, ' ')
-          .trim()
-          .split(/\s+/)
-          .filter(Boolean).length;
-        const delayMs = Math.max(4000, Math.min(words * 350, 20000));
-        const totalDelayMs = delayMs + 120000;
-        console.log('⏳ [WIDGET FOLLOWUP] Total followup delay (ms):', totalDelayMs, 'readerDelayMs:', delayMs, 'wordCount:', words);
-        setTimeout(() => {
+        const typeLower = String(secondaryMessage.followupType || '').toLowerCase();
+        const isImmediateType = typeLower === 'bant' || typeLower === 'probe' || typeLower === 'probing';
+
+        if (isImmediateType) {
+          console.log('⚡ [WIDGET FOLLOWUP] Immediate secondary message for type:', typeLower);
           messages.push(secondaryMessage);
           renderMessages();
           scrollToBottom();
-        }, totalDelayMs);
+        } else {
+          const words = String(botResponse || '')
+            .replace(/<[^>]+>/g, ' ')
+            .trim()
+            .split(/\s+/)
+            .filter(Boolean).length;
+          const delayMs = Math.max(4000, Math.min(words * 350, 20000));
+          const totalDelayMs = delayMs + 120000;
+          console.log('⏳ [WIDGET FOLLOWUP] Total followup delay (ms):', totalDelayMs, 'readerDelayMs:', delayMs, 'wordCount:', words);
+          setTimeout(() => {
+            messages.push(secondaryMessage);
+            renderMessages();
+            scrollToBottom();
+          }, totalDelayMs);
+        }
       }
     }
     
