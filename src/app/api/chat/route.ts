@@ -2406,6 +2406,9 @@ export async function POST(req: NextRequest) {
     contextualQuestion = null,
     assistantCountClient = 0,
     userInactiveForMs = 0,
+    isScrolling = false,
+    scrollDepth = 0,
+    idlePing = false,
     // Customer Intelligence / User Profile Update parameters
     updateUserProfile = false,
     userEmail: profileUserEmail = null,
@@ -6898,6 +6901,24 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
           headers: corsHeaders,
         });
       } else if (followup) {
+        if (isScrolling) {
+          const lastEmailDoc = await chats.findOne(
+            { sessionId, email: { $exists: true } },
+            { sort: { createdAt: -1 } }
+          );
+          const botModeMirror: "sales" | "lead_generation" =
+            lastEmailDoc && lastEmailDoc.email ? "sales" : "lead_generation";
+          const mirrorText = `I’m here while you browse. Want a quick overview or help with something specific?`;
+          const mirrorResp = {
+            mainText: mirrorText,
+            buttons: ["Overview", "Features", "Pricing", "Book Demo"],
+            emailPrompt: "",
+            botMode: botModeMirror,
+            userEmail:
+              botModeMirror === "sales" ? lastEmailDoc?.email || null : null,
+          } as any;
+          return NextResponse.json(mirrorResp, { headers: corsHeaders });
+        }
         // For follow-up, use the same JSON-output system prompt as main chat
         const previousChats = await chats
           .find({ sessionId })
@@ -8126,6 +8147,24 @@ What specific information are you looking for? I'm here to help guide you throug
 
   // Handle followup without pageUrl (generic followup logic)
   if (followup && !pageUrl) {
+    if (isScrolling) {
+      const lastEmailDoc2 = await chats.findOne(
+        { sessionId, email: { $exists: true } },
+        { sort: { createdAt: -1 } }
+      );
+      const botModeMirror2: "sales" | "lead_generation" =
+        lastEmailDoc2 && lastEmailDoc2.email ? "sales" : "lead_generation";
+      const mirrorResp2 = {
+        mainText:
+          "I’m here while you browse. Want a quick overview or help with something specific?",
+        buttons: ["Overview", "Features", "Pricing", "Book Demo"],
+        emailPrompt: "",
+        botMode: botModeMirror2,
+        userEmail:
+          botModeMirror2 === "sales" ? lastEmailDoc2?.email || null : null,
+      } as any;
+      return NextResponse.json(mirrorResp2, { headers: corsHeaders });
+    }
     console.log(
       `[Followup] Processing followup without pageUrl for session ${sessionId}`
     );

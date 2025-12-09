@@ -3719,7 +3719,10 @@ export async function GET(request: Request) {
         lastUserQuestion: lastUserMessage,
         userConversationHistory: userMessages.map(msg => msg.content),
         pageSummary: extractPageSummary(),
-        userInactiveForMs: Date.now() - lastUserAction
+        userInactiveForMs: Date.now() - lastUserAction,
+        isScrolling: isScrolling,
+        scrollDepth: (getViewportContext() || {}).scrollDepth || 0,
+        idlePing: true
       };
     } else {
       // No user messages or subsequent followups - use topic-based approach
@@ -3734,7 +3737,10 @@ export async function GET(request: Request) {
         followupType: 'topic_based',
         followupTopic: followupTopic,
         pageSummary: extractPageSummary(),
-        userInactiveForMs: Date.now() - lastUserAction
+        userInactiveForMs: Date.now() - lastUserAction,
+        isScrolling: isScrolling,
+        scrollDepth: (getViewportContext() || {}).scrollDepth || 0,
+        idlePing: true
       };
     }
     
@@ -3822,7 +3828,9 @@ export async function GET(request: Request) {
       sessionId,
       pageUrl: currentPageUrl,
       assistantCountClient,
-      userInactiveForMs: Date.now() - lastUserAction
+      userInactiveForMs: Date.now() - lastUserAction,
+      isScrolling: isScrolling,
+      scrollDepth: (getViewportContext() || {}).scrollDepth || 0
       // Don't specify adminId - let the API extract it from the API key
     });
     
