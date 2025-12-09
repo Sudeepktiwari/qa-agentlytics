@@ -8737,6 +8737,15 @@ What specific information are you looking for? I'm here to help guide you throug
   // Chat completion with sales-pitch system prompt
   let systemPrompt = "";
   const userPrompt = question;
+  // Determine if customer requirements have been captured for this session
+  let hasRequirements = false;
+  try {
+    const reqDoc = await chats.findOne(
+      { sessionId, requirements: { $exists: true } },
+      { sort: { createdAt: -1 } }
+    );
+    hasRequirements = Boolean(reqDoc && reqDoc.requirements);
+  } catch {}
   if (userEmail) {
     console.log(
       `[DEBUG] User has email: ${userEmail} - Switching to SALES mode`
@@ -8895,7 +8904,15 @@ STRICT:
 - Buttons should be clarifying options, not generic actions
 - NEVER put JSON or buttons in mainText.`;
     } else {
-      systemPrompt = `You are a helpful lead-generation assistant. The user has not provided contact details yet. Keep the conversation human-like and smooth: when needed, ask ONE short clarifying question to understand intent and needs before giving a concise helpful answer. After answering, invite contact information.
+      systemPrompt = `You are a helpful lead-generation assistant. The user has not provided contact details yet. Keep the conversation human-like and smooth.
+
+CRITICAL CONVERSATION RULES:
+- If requirements are missing (${
+        hasRequirements ? "captured" : "missing"
+      }), FIRST ask ONE short clarifying question to understand intent/needs before providing detailed content (e.g., pricing or feature lists).
+- Do NOT list pricing or features until you ask that one clarifying question.
+- After the clarifying question (in a later turn), you may provide concise content tailored to their needs.
+- Invite contact information naturally once you provide value.
 
 You will receive page and general context. Always generate your response in the following JSON format:
 
@@ -8930,7 +8947,7 @@ ${pageContext}
 General Context:
 ${context}
 
-CRITICAL: When intent is unclear, ask ONE short clarifying question first; otherwise provide a concise answer. Generate buttons and the contact prompt directly related to the user's specific question. Do not use generic buttons. NEVER PUT JSON OR BUTTONS IN MAINTEXT - ONLY IN THE BUTTONS ARRAY. Respond with pure JSON only.`;
+CRITICAL: If requirements are missing, ask ONE short clarifying question first (do not provide pricing/features in the same turn); otherwise provide a concise answer. Generate buttons and the contact prompt directly related to the user's specific question. Do not use generic buttons. NEVER PUT JSON OR BUTTONS IN MAINTEXT - ONLY IN THE BUTTONS ARRAY. Respond with pure JSON only.`;
     }
   }
 
