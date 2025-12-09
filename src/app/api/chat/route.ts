@@ -313,6 +313,29 @@ function filterRedundantButtons(
   return unique;
 }
 
+function extractOptionsFromText(text: string): string[] {
+  const t = String(text || "");
+  const results: string[] = [];
+  const optionsLine = t.match(/Options:\s*([^\n]+)/i);
+  if (optionsLine && optionsLine[1]) {
+    const raw = optionsLine[1];
+    for (const part of raw.split(/[,|]/)) {
+      const s = part.trim();
+      if (s) results.push(s);
+    }
+  }
+  const bulletRegex = /(?:^|\n)[\u2022•\-]\s+([^\n]+)/g;
+  let m: RegExpExecArray | null;
+  while ((m = bulletRegex.exec(t)) !== null) {
+    const label = String(m[1] || "").trim();
+    if (label) results.push(label);
+  }
+  const uniq = Array.from(
+    new Set(results.map((b) => b.replace(/\s+/g, " ").trim()))
+  );
+  return uniq.filter((b) => b.length > 0).slice(0, 4);
+}
+
 // Generate booking-aware response when user has active booking
 function generateBookingAwareResponse(
   originalResponse: any,
@@ -9153,6 +9176,17 @@ CRITICAL: If requirements are missing, ask ONE short clarifying question first (
       ];
       const bt = mapMeetingTypeToBookingType(meetingTypeSelection);
       if (bt) (finalResponse as any).bookingTypeHint = bt;
+    }
+    {
+      const extractedButtons = extractOptionsFromText(
+        finalResponse.mainText || ""
+      );
+      if (extractedButtons.length) {
+        finalResponse.buttons = [
+          ...(finalResponse.buttons || []),
+          ...extractedButtons,
+        ];
+      }
     }
     finalResponse.buttons = filterRedundantButtons(
       finalResponse.buttons || [],
