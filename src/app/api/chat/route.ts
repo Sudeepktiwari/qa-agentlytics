@@ -8376,7 +8376,7 @@ What specific information are you looking for? I'm here to help guide you throug
         "timeline",
       ];
       const orderedMissing = order.filter((d) => missingDimsQuick.includes(d));
-      let nextType: "bant" | "completion" = "bant";
+      const nextType: "bant" | "completion" = "bant";
       if (orderedMissing.length === 0) {
         const completion = {
           mainText:
