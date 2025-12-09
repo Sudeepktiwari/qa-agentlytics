@@ -308,6 +308,7 @@ export async function GET(request: Request) {
   let scrollRaf = null;
   let currentViewportSection = null;
   let sectionObserver = null;
+  let mirrorMessageScrollThreshold = 40;
   
   console.log('🔍 [WIDGET MIRROR] Mirror configuration:', {
     mirrorMode: config.mirrorMode,
@@ -2313,7 +2314,7 @@ export async function GET(request: Request) {
       console.log('📜 [WIDGET MIRROR] Skipping section message - user is actively scrolling');
       return;
     }
-    
+
     // Only send contextual messages if user isn't currently chatting
     if (lastUserMessage && (Date.now() - lastUserMessage > 10000) && !userIsActive) {
       // Send contextual data to API for potential proactive messages
@@ -2325,12 +2326,16 @@ export async function GET(request: Request) {
         timeOnPage: Date.now() - (window.appointyPageLoadTime || Date.now()),
         viewportContext: getViewportContext()
       };
-      
+
       console.log('📊 [WIDGET MIRROR] Section data for', sectionName, ':', sectionData);
-      
+
+      if (sectionData.scrollPercentage < mirrorMessageScrollThreshold) {
+        return;
+      }
+
       // Generate contextual questions immediately (but only if not scrolling)
       generateContextualQuestions(sectionData);
-      
+
       // Debounce section-based proactive messages
       clearTimeout(window.appointySectionTimeout);
       window.appointySectionTimeout = setTimeout(() => {
@@ -2566,6 +2571,9 @@ export async function GET(request: Request) {
   
   // Generate contextual questions based on what user is viewing
   async function generateContextualQuestions(sectionData) {
+    if (sectionData.scrollPercentage < mirrorMessageScrollThreshold) {
+      return;
+    }
     const questions = [];
     const { sectionName, sectionContent, viewportContext } = sectionData;
     
@@ -3062,7 +3070,8 @@ export async function GET(request: Request) {
   // Send section context to API
   async function sendSectionContextToAPI(sectionData) {
     if (!isOpen || followupSent) return; // Don't spam if chat is closed or already sent followup
-    
+    if (sectionData && sectionData.scrollPercentage < mirrorMessageScrollThreshold) return;
+
     // Check if AI contextual question system is already handling this section
     if (contextualMessageDelayActive) {
       console.log('⏸️ [WIDGET MIRROR] AI contextual system is active, skipping section context API to prevent interference');

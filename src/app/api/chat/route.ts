@@ -9014,7 +9014,7 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
   });
 
   let secondary: any = null;
-  const enableImmediateQualification = false;
+  const enableImmediateQualification = true;
   if (enableImmediateQualification) {
     try {
       const db = await getDb();
@@ -9110,16 +9110,35 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
             ...(adminId ? { adminId } : {}),
           });
         } else {
-          const heuristicBantQuick = buildHeuristicBantFollowup({
-            userMessage: question || "",
-            assistantResponse: { mainText: finalResponse.mainText },
-            botMode,
-            missingDims: missingDimsQuick,
-          });
-          if (heuristicBantQuick) {
-            const immediate = { ...heuristicBantQuick, type: "bant" } as any;
+          const txt = String(finalResponse.mainText || "").toLowerCase();
+          const priceSignal = /\$|price|pricing|per\s*month|plan|seat/.test(
+            txt
+          );
+          const timeSignal =
+            /schedule|demo|call|meeting|appointment|today|tomorrow|week|month|timeline/.test(
+              txt
+            );
+          let immediate: any = null;
+          if (missingDimsQuick.length > 0 && priceSignal) {
+            immediate = {
+              mainText: "What budget range are you considering?",
+              buttons: ["Under $10/seat", "$10–$16/seat", "Custom/Enterprise"],
+              emailPrompt: "",
+              type: "bant",
+              dimension: "budget",
+            } as any;
+          } else if (missingDimsQuick.length > 0 && timeSignal) {
+            immediate = {
+              mainText: "What timeline are you targeting?",
+              buttons: ["This week", "Next week", "Later"],
+              emailPrompt: "",
+              type: "bant",
+              dimension: "timeline",
+            } as any;
+          }
+          if (immediate) {
             console.log(
-              `[Chat API ${requestId}] Immediate qualification generated (heuristic)`,
+              `[Chat API ${requestId}] Immediate qualification generated (targeted)`,
               {
                 type: immediate.type,
                 preview: String(immediate.mainText || "").slice(0, 120),
@@ -9136,7 +9155,10 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
               buttons: immediate.buttons,
               emailPrompt: immediate.emailPrompt,
               followupType: immediate.type,
-              bantDimension: immediate.dimension || null,
+              bantDimension:
+                immediate.dimension ||
+                detectBantDimensionFromText(String(immediate.mainText || "")) ||
+                null,
               createdAt: new Date(now.getTime() + 1),
               ...(pageUrl ? { pageUrl } : {}),
               ...(adminId ? { adminId } : {}),
