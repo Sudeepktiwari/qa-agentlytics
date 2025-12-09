@@ -581,6 +581,9 @@ async function analyzeForProbing(input: {
           (dims[0] as "budget" | "authority" | "need" | "timeline") || null;
       }
     }
+    if (!input.userEmail) {
+      chosen = null;
+    }
     if (chosen) {
       const q =
         chosen === "budget"
@@ -731,7 +734,9 @@ function buildHeuristicBantFollowup(input: {
   assistantResponse: { mainText?: string };
   botMode: "sales" | "lead_generation";
   missingDims?: ("budget" | "authority" | "need" | "timeline")[];
+  userEmail?: string | null;
 }) {
+  if (!input.userEmail) return null;
   const text = `${input.userMessage || ""}`.toLowerCase();
   const dims = (
     Array.isArray(input.missingDims)
@@ -6820,7 +6825,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
               mainText: probing.mainText,
               buttons: probing.buttons || [],
               emailPrompt: probing.emailPrompt || "",
-              type: "bant",
+              type: userEmail ? "bant" : "probe",
             };
           } else {
             const heuristicBant = buildHeuristicBantFollowup({
@@ -6833,6 +6838,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
                 .limit(200)
                 .toArray()
                 .then((ms) => computeBantMissingDims(ms)),
+              userEmail,
             });
             if (heuristicBant) {
               secondary = { ...heuristicBant, type: "bant" };
@@ -7219,17 +7225,16 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
         );
 
         if (followupCount === 0) {
-          // First follow-up: Check if there's a user message to base it on
           if (preferMessageBased) {
-            // User has sent a message - base followup ONLY on their last message
             console.log(
               `[Followup] First followup based on last user message: "${lastUserContent}"`
             );
-            followupSystemPrompt = `You are a qualification assistant. Always return ONLY valid JSON: {"mainText":"...","buttons":[...],"emailPrompt":""}.
+            if (userHasEmail) {
+              followupSystemPrompt = `You are a qualification assistant. Always return ONLY valid JSON: {"mainText":"...","buttons":[...],"emailPrompt":""}.
 
 Goal: Ask ONE BANT qualification question based ONLY on the user's last message. Choose ONE missing dimension from: ${JSON.stringify(
-              missingDims
-            )}. If message is about pricing, prefer "budget".
+                missingDims
+              )}. If message is about pricing, prefer "budget".
 
 Rules:
 - Keep mainText under 25 words and end with a question.
@@ -7241,11 +7246,24 @@ Rules:
 Context:
 - Last User Message: "${lastUserContent}"`;
 
-            followupUserPrompt = `Pick ONE dimension from ${JSON.stringify(
-              missingDims
-            )} and ask a direct question aligned to "${lastUserContent}".
+              followupUserPrompt = `Pick ONE dimension from ${JSON.stringify(
+                missingDims
+              )} and ask a direct question aligned to "${lastUserContent}".
 
 Return JSON only.`;
+            } else {
+              followupSystemPrompt = `You are a helpful assistant. Always return ONLY valid JSON: {"mainText":"...","buttons":[...],"emailPrompt":""}.
+
+Goal: Ask ONE short clarifying question based ONLY on the user's last message to understand their requirements better.
+
+Rules:
+- Keep mainText under 25 words and end with a question.
+- Generate EXACTLY 3 short buttons (2–4 words) with plausible choices related to the message.
+- Do NOT reference page content.
+- Email prompt must be empty for first followup.`;
+
+              followupUserPrompt = `Create ONE clarifying question aligned to: "${lastUserContent}". Return JSON only.`;
+            }
           } else {
             // No user message yet - use existing page-context driven logic
             console.log(
@@ -8365,7 +8383,7 @@ What specific information are you looking for? I'm here to help guide you throug
     console.log(`[DEBUG] User provided email in current message: ${userEmail}`);
   }
 
-  const enableBantChaining = true;
+  const enableBantChaining = !!userEmail;
   if (enableBantChaining) {
     const lastAssistant = await chats.findOne(
       { sessionId, role: "assistant" },
@@ -8778,11 +8796,11 @@ ${pageContext}
 General Context:
 ${context}`;
     } else {
-      systemPrompt = `You are a helpful sales assistant for a company. The user has provided their email (${userEmail}) and is now a qualified lead. Focus on sales, product benefits, pricing, and closing deals. Always generate your response in the following JSON format:
+      systemPrompt = `You are a helpful sales assistant for a company. The user has provided their email (${userEmail}) and is now a qualified lead. Keep the conversation human-like and smooth: when needed, ask ONE short clarifying question to understand intent and needs before giving a concise, benefits-focused response. Encourage booking a call. Always generate your response in the following JSON format:
 
 {
   "mainText": "<Provide sales-focused, persuasive responses about products/services, pricing, benefits, case studies, or next steps. Be enthusiastic and focus on value proposition. Use the context below to provide specific information. MANDATORY FORMATTING RULES: \n1. NEVER write long paragraphs - they are hard to read in chat\n2. Start with 1-2 short sentences (max 20 words each)\n3. Add double line break \\n\\n after intro\n4. Use bullet points with • symbol for ANY list of 2+ benefits/features\n5. Add TWO line breaks \\n\\n after each bullet point for better spacing\n6. Example format: 'Great question! Here's what makes us special:\\n\\n• Benefit 1\\n\\n• Benefit 2\\n\\n• Benefit 3'\n7. Use emojis sparingly for emphasis\n8. Never use long sentences in paragraphs - break them into bullets>",
-  "buttons": ["<Generate 2-4 sales-oriented action buttons like 'Get Pricing', 'Schedule Demo', 'View Case Studies', 'Speak with Sales Rep', 'Compare Plans', etc. Make them action-oriented and sales-focused.>"],
+  "buttons": ["<Generate 2-4 sales-oriented action buttons like 'Schedule Demo', 'Get Pricing', 'View Case Studies', 'Speak with Sales Rep', 'Compare Plans'. Prioritize booking actions.>"],
   "emailPrompt": ""
 }
 
@@ -8793,7 +8811,7 @@ ${pageContext}
 General Context:
 ${context}
 
-IMPORTANT: This user is qualified (has provided email). Focus on sales, conversion, and closing. Generate sales-oriented buttons that move them towards purchase decisions. No need to ask for email again. ABSOLUTELY NO LONG PARAGRAPHS - USE BULLET POINTS WITH DOUBLE LINE BREAKS FOR SPACING.`;
+IMPORTANT: This user is qualified (has provided email). Focus on sales, conversion, and closing. If intent is unclear, ask ONE short clarifying question first. Generate sales-oriented buttons that move them towards booking and purchase decisions. No need to ask for email again. ABSOLUTELY NO LONG PARAGRAPHS - USE BULLET POINTS WITH DOUBLE LINE BREAKS FOR SPACING.`;
     }
   } else {
     // Special handling for different types of requests
@@ -8877,12 +8895,12 @@ STRICT:
 - Buttons should be clarifying options, not generic actions
 - NEVER put JSON or buttons in mainText.`;
     } else {
-      systemPrompt = `You are a helpful sales assistant. The user has not provided an email yet.
+      systemPrompt = `You are a helpful lead-generation assistant. The user has not provided contact details yet. Keep the conversation human-like and smooth: when needed, ask ONE short clarifying question to understand intent and needs before giving a concise helpful answer. After answering, invite contact information.
 
 You will receive page and general context. Always generate your response in the following JSON format:
 
 {
-  "mainText": "<A dynamic, page-aware summary or answer, using the context below. MANDATORY FORMATTING RULES: 
+  "mainText": "<A dynamic, page-aware summary or answer (or a brief clarifying question when intent is unclear), using the context below. MANDATORY FORMATTING RULES: 
 1. NEVER write long paragraphs - they are hard to read in chat
 2. Start with 1-2 short sentences (max 20 words each)
 3. Add double line break \\n\\n after intro
@@ -8895,7 +8913,7 @@ You will receive page and general context. Always generate your response in the 
 10. CRITICAL: Do NOT assume or reference specific industries, business types, or professions unless explicitly mentioned
 11. CRITICAL: NEVER put JSON syntax, curly braces {}, or button arrays in the mainText field>",
   "buttons": ["<Generate 2-4 contextually relevant action buttons based on the user's question and the content you provided. These should be specific to their query and help them take the next logical step.>"],
-  "emailPrompt": "<Create a contextual email prompt that relates to the specific topic discussed, offering to send more detailed information about that topic specifically.>"
+  "emailPrompt": "<Create a conversational contact prompt inviting name, email, or phone—whichever they prefer—related to the specific topic discussed (e.g., 'What's the best contact—name and email or phone—so I can send the details?')>"
 }
 
 STRICT RULES:
@@ -8912,7 +8930,7 @@ ${pageContext}
 General Context:
 ${context}
 
-CRITICAL: Generate buttons and email prompt that are directly related to the user's specific question. Do not use generic buttons. NEVER PUT JSON OR BUTTONS IN MAINTEXT - ONLY IN THE BUTTONS ARRAY. Respond with pure JSON only.`;
+CRITICAL: When intent is unclear, ask ONE short clarifying question first; otherwise provide a concise answer. Generate buttons and the contact prompt directly related to the user's specific question. Do not use generic buttons. NEVER PUT JSON OR BUTTONS IN MAINTEXT - ONLY IN THE BUTTONS ARRAY. Respond with pure JSON only.`;
     }
   }
 
@@ -9208,7 +9226,7 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
             mainText: probingQuick.mainText,
             buttons: probingQuick.buttons || [],
             emailPrompt: probingQuick.emailPrompt || "",
-            type: "bant",
+            type: userEmail ? "bant" : "probe",
           } as any;
           console.log(
             `[Chat API ${requestId}] Immediate qualification generated`,
@@ -9246,7 +9264,7 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
               txt
             );
           let immediate: any = null;
-          if (missingDimsQuick.length > 0 && priceSignal) {
+          if (userEmail && missingDimsQuick.length > 0 && priceSignal) {
             immediate = {
               mainText: "What budget range are you considering?",
               buttons: ["Under $10/seat", "$10–$16/seat", "Custom/Enterprise"],
@@ -9254,7 +9272,7 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
               type: "bant",
               dimension: "budget",
             } as any;
-          } else if (missingDimsQuick.length > 0 && timeSignal) {
+          } else if (userEmail && missingDimsQuick.length > 0 && timeSignal) {
             immediate = {
               mainText: "What timeline are you targeting?",
               buttons: ["This week", "Next week", "Later"],
