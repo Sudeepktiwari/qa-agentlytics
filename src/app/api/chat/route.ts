@@ -6776,13 +6776,8 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
         const botMode = userEmail ? "sales" : "lead_generation";
 
         let finalProactiveMsg = proactiveMsg || "";
-        if (
-          !hasBeenGreeted &&
-          businessName &&
-          !/^\s*welcome\b/i.test(finalProactiveMsg)
-        ) {
-          finalProactiveMsg =
-            `Welcome to ${businessName} — ${finalProactiveMsg}`.trim();
+        if (!hasBeenGreeted && businessName) {
+          finalProactiveMsg = finalProactiveMsg.trim();
         }
         if (finalProactiveMsg && !/[\.!?]$/.test(finalProactiveMsg)) {
           finalProactiveMsg = `${finalProactiveMsg.replace(/\s+$/, "")}?`;
@@ -6835,7 +6830,8 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
         });
 
         let secondary: any = null;
-        try {
+        const enableProactiveFollowups = false;
+        if (enableProactiveFollowups) {
           const db = await getDb();
           const chats = db.collection("chats");
           const assistantCountBefore = await chats.countDocuments({
@@ -6905,31 +6901,6 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
               ...(adminId ? { adminId } : {}),
             });
           }
-        } catch {
-          secondary = buildFallbackFollowup({
-            userMessage: question || "",
-            assistantResponse: {
-              mainText: enhancedProactiveData.answer,
-              buttons: enhancedProactiveData.buttons,
-              emailPrompt: "",
-            },
-            botMode,
-            userEmail,
-          });
-          secondary = { ...secondary, type: "probe" };
-          const db = await getDb();
-          const chats = db.collection("chats");
-          await chats.insertOne({
-            sessionId,
-            role: "assistant",
-            content: secondary.mainText,
-            buttons: secondary.buttons,
-            emailPrompt: secondary.emailPrompt,
-            followupType: (secondary as any).type,
-            createdAt: new Date(now.getTime() + 2),
-            ...(pageUrl ? { pageUrl } : {}),
-            ...(adminId ? { adminId } : {}),
-          });
         }
 
         const proactiveOut = secondary
