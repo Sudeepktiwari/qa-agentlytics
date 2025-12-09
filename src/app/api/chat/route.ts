@@ -891,7 +891,7 @@ function isAnswerToAskedDim(
       s
     );
   if (dim === "authority")
-    return /i\s*(am|'m)\s*the\s*decision\s*maker|manager|director|vp|cfo|ceo|owner|founder|team\s*lead|approve|authority|procurement|legal/.test(
+    return /i\s*(am|'m)\s*the\s*decision\s*maker|manager|director|vp|cfo|ceo|owner|founder|team\s*lead|approve|authority|procurement|legal|unsure|not\s*sure/.test(
       s
     );
   if (dim === "need")
@@ -8357,42 +8357,75 @@ What specific information are you looking for? I'm here to help guide you throug
       const botModeChain: "sales" | "lead_generation" = userEmail
         ? "sales"
         : "lead_generation";
-      try {
-        const probingQuick = await analyzeForProbing({
-          userMessage: question || "",
-          assistantResponse: {
-            mainText: String((lastAssistant as any)?.content || ""),
-            buttons: (lastAssistant as any)?.buttons || [],
-            emailPrompt: (lastAssistant as any)?.emailPrompt || "",
-          },
-          botMode: botModeChain,
-          userEmail,
-          missingDims: missingDimsQuick,
-        });
-        if (probingQuick.shouldSendFollowUp && probingQuick.mainText) {
+      const order: ("budget" | "authority" | "need" | "timeline")[] = [
+        "budget",
+        "authority",
+        "need",
+        "timeline",
+      ];
+      const orderedMissing = order.filter((d) => missingDimsQuick.includes(d));
+      if (orderedMissing.length === 0) {
+        const completion = {
+          mainText:
+            "Thank you for sharing these details. What else would you like to explore?",
+          buttons: [
+            "Explore Features",
+            "Compare Plans",
+            "Schedule a Demo",
+            "Talk to Sales",
+          ],
+          emailPrompt: "",
+        } as any;
+        nextBant = completion;
+      } else {
+        const dim = orderedMissing[0];
+        if (dim === "budget") {
           nextBant = {
-            mainText: probingQuick.mainText,
-            buttons: probingQuick.buttons || [],
-            emailPrompt: probingQuick.emailPrompt || "",
-          };
+            mainText: "What budget range are you considering?",
+            buttons: ["Under $10/seat", "$10–$16/seat", "Custom/Enterprise"],
+            emailPrompt: "",
+          } as any;
+        } else if (dim === "authority") {
+          nextBant = {
+            mainText: "Who will make the decision?",
+            buttons: ["I’m the decision maker", "Add decision maker", "Unsure"],
+            emailPrompt: "",
+          } as any;
+        } else if (dim === "need") {
+          nextBant = {
+            mainText: "Which feature matters most right now?",
+            buttons: ["Workflows", "Embeds", "Analytics"],
+            emailPrompt: "",
+          } as any;
+        } else {
+          nextBant = {
+            mainText: "What timeline are you targeting?",
+            buttons: ["This week", "Next week", "Later"],
+            emailPrompt: "",
+          } as any;
         }
-      } catch {}
+      }
       if (!nextBant) {
-        const heuristic = buildHeuristicBantFollowup({
-          userMessage: question || "",
-          assistantResponse: {
-            mainText: String((lastAssistant as any)?.content || ""),
-          },
-          botMode: botModeChain,
-          missingDims: missingDimsQuick,
-        });
-        if (heuristic) {
-          nextBant = {
-            mainText: heuristic.mainText,
-            buttons: heuristic.buttons,
-            emailPrompt: heuristic.emailPrompt,
-          };
-        }
+        try {
+          const probingQuick = await analyzeForProbing({
+            userMessage: question || "",
+            assistantResponse: {
+              mainText: String((lastAssistant as any)?.content || ""),
+              buttons: (lastAssistant as any)?.buttons || [],
+              emailPrompt: (lastAssistant as any)?.emailPrompt || "",
+            },
+            botMode: botModeChain,
+            userEmail,
+            missingDims: missingDimsQuick,
+          });
+          if (probingQuick.shouldSendFollowUp && probingQuick.mainText) {
+            nextBant = {
+              mainText: probingQuick.mainText,
+              buttons: probingQuick.buttons || [],
+              emailPrompt: probingQuick.emailPrompt || "",
+            };
+          }
+        } catch {}
       }
       if (!nextBant) {
         const fallback = buildFallbackFollowup({
