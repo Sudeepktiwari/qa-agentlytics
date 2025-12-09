@@ -9172,21 +9172,18 @@ CRITICAL: If requirements are missing, ask ONE short clarifying question first (
       const bt = mapMeetingTypeToBookingType(meetingTypeSelection);
       if (bt) (finalResponse as any).bookingTypeHint = bt;
     }
-    if (
-      (!finalResponse.buttons || finalResponse.buttons.length === 0) &&
-      /•/.test(finalResponse.mainText || "")
-    ) {
-      const extracted = extractBulletOptionsFromText(
-        finalResponse.mainText || ""
-      );
-      if (extracted.length > 0) {
-        finalResponse.buttons = extracted.slice(0, 3);
-      }
+    const extractedFromBullets = /•/.test(finalResponse.mainText || "")
+      ? extractBulletOptionsFromText(finalResponse.mainText || "")
+      : [];
+    if (extractedFromBullets.length > 0) {
+      finalResponse.buttons = extractedFromBullets.slice(0, 3);
     }
+    const mainTextForFilter =
+      extractedFromBullets.length > 0 ? "" : finalResponse.mainText || "";
     finalResponse.buttons = filterRedundantButtons(
       finalResponse.buttons || [],
       question || "",
-      finalResponse.mainText || ""
+      mainTextForFilter
     );
   }
 
