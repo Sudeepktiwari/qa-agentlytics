@@ -779,10 +779,22 @@ function buildHeuristicBantFollowup(input: {
   const btns = (() => {
     if (chosen === "budget")
       return ["Under $10/seat", "$10–$16/seat", "Custom/Enterprise"];
-    if (chosen === "timeline") return ["This week", "Next week", "Later"];
+    if (chosen === "timeline")
+      return [
+        "Immediately",
+        "Within a month",
+        "1-3 months",
+        "3-6 months",
+        "No specific timeline",
+      ];
     if (chosen === "authority")
-      return ["I’m the decision maker", "Add decision maker", "Unsure"];
-    return ["Workflows", "Embeds", "Analytics"];
+      return [
+        "Myself",
+        "Manager approval required",
+        "Team decision",
+        "Not sure yet",
+      ];
+    return ["Project Management", "Team Collaboration", "Data Analytics"];
   })();
   return { mainText: mt, buttons: btns, emailPrompt: "", dimension: chosen };
 }
@@ -8364,6 +8376,7 @@ What specific information are you looking for? I'm here to help guide you throug
         "timeline",
       ];
       const orderedMissing = order.filter((d) => missingDimsQuick.includes(d));
+      let nextType: "bant" | "completion" = "bant";
       if (orderedMissing.length === 0) {
         const completion = {
           mainText:
@@ -8375,6 +8388,7 @@ What specific information are you looking for? I'm here to help guide you throug
             "Talk to Sales",
           ],
           emailPrompt: "",
+          type: "completion",
         } as any;
         nextBant = completion;
       } else {
@@ -8384,24 +8398,47 @@ What specific information are you looking for? I'm here to help guide you throug
             mainText: "What budget range are you considering?",
             buttons: ["Under $10/seat", "$10–$16/seat", "Custom/Enterprise"],
             emailPrompt: "",
+            type: "bant",
+            dimension: "budget",
           } as any;
         } else if (dim === "authority") {
           nextBant = {
             mainText: "Who will make the decision?",
-            buttons: ["I’m the decision maker", "Add decision maker", "Unsure"],
+            buttons: [
+              "Myself",
+              "Manager approval required",
+              "Team decision",
+              "Not sure yet",
+            ],
             emailPrompt: "",
+            type: "bant",
+            dimension: "authority",
           } as any;
         } else if (dim === "need") {
           nextBant = {
             mainText: "Which feature matters most right now?",
-            buttons: ["Workflows", "Embeds", "Analytics"],
+            buttons: [
+              "Project Management",
+              "Team Collaboration",
+              "Data Analytics",
+            ],
             emailPrompt: "",
+            type: "bant",
+            dimension: "need",
           } as any;
         } else {
           nextBant = {
             mainText: "What timeline are you targeting?",
-            buttons: ["This week", "Next week", "Later"],
+            buttons: [
+              "Immediately",
+              "Within a month",
+              "1-3 months",
+              "3-6 months",
+              "No specific timeline",
+            ],
             emailPrompt: "",
+            type: "bant",
+            dimension: "timeline",
           } as any;
         }
       }
@@ -8469,11 +8506,19 @@ What specific information are you looking for? I'm here to help guide you throug
             content: bookingAware.mainText,
             buttons: bookingAware.buttons,
             emailPrompt: bookingAware.emailPrompt,
-            followupType: "bant",
+            followupType:
+              ((bookingAware as any).type as any) ||
+              ((nextBant as any).type as any) ||
+              "bant",
             bantDimension:
-              detectBantDimensionFromText(
-                String(bookingAware.mainText || "")
-              ) || null,
+              (((bookingAware as any).type as any) ||
+                ((nextBant as any).type as any)) === "bant"
+                ? detectBantDimensionFromText(
+                    String(bookingAware.mainText || "")
+                  ) ||
+                  (nextBant as any).dimension ||
+                  null
+                : null,
             createdAt: new Date(now.getTime() + 1),
             ...(pageUrl ? { pageUrl } : {}),
             ...(adminId ? { adminId } : {}),
