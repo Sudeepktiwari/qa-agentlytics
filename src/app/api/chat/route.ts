@@ -9014,7 +9014,8 @@ CRITICAL: Generate buttons and email prompt that are directly related to the use
   });
 
   let secondary: any = null;
-  {
+  const enableImmediateQualification = false;
+  if (enableImmediateQualification) {
     try {
       const db = await getDb();
       const chats = db.collection("chats");
