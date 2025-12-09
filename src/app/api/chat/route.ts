@@ -9176,7 +9176,7 @@ CRITICAL: If requirements are missing, ask ONE short clarifying question first (
   });
 
   let secondary: any = null;
-  const enableImmediateQualification = true;
+  const enableImmediateQualification = false;
   if (enableImmediateQualification) {
     try {
       const db = await getDb();
