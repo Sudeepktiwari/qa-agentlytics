@@ -8912,8 +8912,8 @@ STRICT:
 CRITICAL CONVERSATION RULES:
 - If requirements are missing (${
         hasRequirements ? "captured" : "missing"
-      }), FIRST ask ONE short clarifying question to understand intent/needs before providing detailed content (e.g., pricing or feature lists).
-- Do NOT list pricing or features until you ask that one clarifying question.
+      }), ask ONE short clarifying question ONLY when intent is unclear; otherwise provide requested content directly (including pricing or features).
+- If the user explicitly asks for pricing or features, provide them immediately without additional clarification.
 - After the clarifying question (in a later turn), you may provide concise content tailored to their needs.
 - Invite contact information naturally once you provide value.
 
@@ -8950,7 +8950,7 @@ ${pageContext}
 General Context:
 ${context}
 
-CRITICAL: If requirements are missing, ask ONE short clarifying question first (do not provide pricing/features in the same turn); otherwise provide a concise answer. Generate buttons and the contact prompt directly related to the user's specific question. Do not use generic buttons. NEVER PUT JSON OR BUTTONS IN MAINTEXT - ONLY IN THE BUTTONS ARRAY. Respond with pure JSON only.`;
+CRITICAL: If intent is unclear and requirements are missing, ask ONE short clarifying question first; otherwise provide a concise answer directly (including pricing/features if requested). Generate buttons and the contact prompt directly related to the user's specific question. Do not use generic buttons. NEVER PUT JSON OR BUTTONS IN MAINTEXT - ONLY IN THE BUTTONS ARRAY. Respond with pure JSON only.`;
     }
   }
 
@@ -9157,9 +9157,13 @@ CRITICAL: If requirements are missing, ask ONE short clarifying question first (
       const bt = mapMeetingTypeToBookingType(meetingTypeSelection);
       if (bt) (finalResponse as any).bookingTypeHint = bt;
     }
-    const extractedFromBullets = /•/.test(finalResponse.mainText || "")
-      ? extractBulletOptionsFromText(finalResponse.mainText || "")
-      : [];
+    const isQuestion = /\?\s*$/.test(
+      String(finalResponse.mainText || "").trim()
+    );
+    const extractedFromBullets =
+      isQuestion && /•/.test(finalResponse.mainText || "")
+        ? extractBulletOptionsFromText(finalResponse.mainText || "")
+        : [];
     if (extractedFromBullets.length > 0) {
       finalResponse.buttons = extractedFromBullets.slice(0, 3);
       finalResponse.mainText = stripBulletLines(finalResponse.mainText || "");
