@@ -9099,6 +9099,51 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
     }
   }
 
+  const justCapturedEmail = !!detectedEmail;
+  if (justCapturedEmail && parsed && typeof parsed.mainText === "string") {
+    let prevAssistantText = "";
+    let prevAssistantButtons: string[] = [];
+    try {
+      const prevAssistant = await chats.findOne(
+        { sessionId, role: "assistant" },
+        { sort: { createdAt: -1 } }
+      );
+      if (prevAssistant) {
+        prevAssistantText = String((prevAssistant as any).content || "");
+        if (Array.isArray((prevAssistant as any).buttons)) {
+          prevAssistantButtons = ((prevAssistant as any).buttons || []).map(
+            (b: any) => String(b || "")
+          );
+        }
+      }
+    } catch {}
+
+    const textL = prevAssistantText.toLowerCase();
+    const btnL = prevAssistantButtons.map((b) => b.toLowerCase());
+    let reason = "share relevant next steps and resources";
+    if (
+      /integration|api|webhook/.test(textL) ||
+      btnL.some((b) => /integration|api|webhook/.test(b))
+    ) {
+      reason = "follow up on your integration request and share setup options";
+    } else if (/demo/.test(textL) || btnL.some((b) => /demo/.test(b))) {
+      reason = "help you schedule a demo and send details";
+    } else if (
+      /(call|talk|meeting)/.test(textL) ||
+      btnL.some((b) => /(call|talk|meeting)/.test(b))
+    ) {
+      reason = "coordinate a call and confirm availability";
+    } else if (
+      /(price|pricing|plan)/.test(textL) ||
+      btnL.some((b) => /(price|pricing|plan)/.test(b))
+    ) {
+      reason = "share pricing information tailored to your needs";
+    }
+
+    const ack = `Thank you for sharing your email with us — we'll use it to ${reason}.`;
+    parsed.mainText = ack;
+  }
+
   await chats.insertMany([
     {
       sessionId,
@@ -9281,7 +9326,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
   });
 
   let secondary: any = null;
-  const enableImmediateQualification = false;
+  const enableImmediateQualification = !!justCapturedEmail;
   if (enableImmediateQualification) {
     try {
       const db = await getDb();
