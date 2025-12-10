@@ -780,7 +780,7 @@ async function analyzeForProbing(input: {
     return out;
   };
   const mt = normQ(typeof parsed.mainText === "string" ? parsed.mainText : "");
-  let btns = normButtons(mt, parsed.buttons, input.botMode);
+  const btns = normButtons(mt, parsed.buttons, input.botMode);
   const needSegmentFirst = /budget|price|cost|pricing|plan/.test(
     mt.toLowerCase()
   );
