@@ -331,6 +331,49 @@ function extractBulletOptionsFromText(text: string): string[] {
   return options;
 }
 
+function toTitleCase(s: string): string {
+  return String(s || "")
+    .toLowerCase()
+    .split(/\s+/)
+    .map((w) => (w ? w[0].toUpperCase() + w.slice(1) : ""))
+    .join(" ");
+}
+
+function extractFeatureOptionsFromText(text: string): string[] {
+  const src = String(text || "");
+  const bulletOpts = extractBulletOptionsFromText(src);
+  const out: string[] = [];
+  for (const b of bulletOpts) {
+    const cleaned = b.replace(/[:.;]+\s*$/, "").trim();
+    if (cleaned && cleaned.length <= 60) out.push(cleaned);
+    if (out.length >= 4) break;
+  }
+  if (out.length > 0) return out.slice(0, 4);
+  const lower = src.toLowerCase();
+  const candidates = [
+    "workflows",
+    "integrations",
+    "reminders",
+    "automation",
+    "team scheduling",
+    "event types",
+    "analytics",
+    "compliance",
+    "security",
+    "calendar",
+    "api",
+    "webhooks",
+    "routing",
+    "availability",
+    "templates",
+  ];
+  for (const c of candidates) {
+    if (lower.includes(c)) out.push(toTitleCase(c));
+    if (out.length >= 4) break;
+  }
+  return out.slice(0, 4);
+}
+
 function stripBulletLines(text: string): string {
   const lines = String(text || "").split(/\r?\n/);
   const kept: string[] = [];
