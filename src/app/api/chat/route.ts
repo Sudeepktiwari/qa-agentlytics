@@ -5815,36 +5815,7 @@ Extract key requirements (2-3 bullet points max, be concise):`;
       adminId || undefined
     );
 
-    // Immediate SDR-style activation message after email detection
-    const companyName = "Your Company"; // TODO: Make this dynamic from admin settings
-    const productName = "our platform"; // TODO: Make this dynamic from admin settings
-
-    const activationMessage = {
-      mainText: `Hi! I'm ${companyName}'s friendly assistant. I'm here to show how ${productName} can boost your productivity and streamline your workflow.`,
-      buttons: ["Explore Solutions", "See Use Cases", "Book Quick Demo"],
-      emailPrompt: "",
-      botMode: "sales",
-      userEmail: detectedEmail,
-    };
-
-    // Store the activation message immediately
-    await chats.insertOne({
-      sessionId,
-      role: "assistant",
-      content: activationMessage.mainText,
-      buttons: activationMessage.buttons,
-      emailPrompt: activationMessage.emailPrompt,
-      botMode: activationMessage.botMode,
-      userEmail: detectedEmail,
-      email: detectedEmail,
-      adminId,
-      createdAt: now,
-      apiKey,
-      pageUrl,
-    });
-
-    // Return activation message immediately (this becomes the bot's response to the email)
-    return NextResponse.json(activationMessage, { headers: corsHeaders });
+    // Continue without returning early; downstream logic will generate an acknowledgment
   }
 
   // ===== INTELLIGENT CUSTOMER PROFILING =====
@@ -9226,7 +9197,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
   }
 
   const justCapturedEmail = !!detectedEmail;
-  if (justCapturedEmail && parsed && typeof parsed.mainText === "string") {
+  if (justCapturedEmail) {
     let prevAssistantText = "";
     let prevAssistantButtons: string[] = [];
     try {
@@ -9267,8 +9238,10 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
     }
 
     const ack = `Thank you for sharing your email with us — we'll use it to ${reason}.`;
-    parsed.mainText = ack;
     emailAckText = ack;
+    if (parsed && typeof parsed.mainText === "string") {
+      parsed.mainText = ack;
+    }
   }
 
   await chats.insertMany([
@@ -9296,10 +9269,11 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
     {
       sessionId,
       role: "assistant",
-      content:
-        parsed && typeof parsed.mainText === "string" && parsed.mainText
-          ? parsed.mainText
-          : answer,
+      content: emailAckText
+        ? emailAckText
+        : parsed && typeof parsed.mainText === "string" && parsed.mainText
+        ? parsed.mainText
+        : answer,
       createdAt: new Date(now.getTime() + 1),
       ...(pageUrl ? { pageUrl } : {}),
       ...(isMeetingIntent ? { meetingIntent: true } : {}),
