@@ -607,13 +607,13 @@ async function analyzeForProbing(input: {
   };
   botMode: "sales" | "lead_generation";
   userEmail?: string | null;
-  missingDims?: ("budget" | "authority" | "need" | "timeline")[];
+  missingDims?: ("budget" | "authority" | "need" | "timeline" | "segment")[];
 }) {
   const messages: any = [
     {
       role: "system",
       content:
-        "Decide whether to send a short BANT qualification follow-up now. Use the last user message and the assistant's response. Prefer sending a follow-up when at least one of the provided missingDims remains and a question can be naturally anchored to the user's last message or the assistant's response. Choose ONE BANT dimension from missingDims and ask about that only. Return JSON: { shouldSendFollowUp: boolean, mainText: string, buttons: string[], emailPrompt: string }. The message must ask ONE qualification in ONE sentence ending with '?'. Provide 2–4 concise options in 'buttons' that directly answer that single question. Never combine multiple BANT dimensions in one question. If botMode is 'sales', prefer Budget or Timeline; if 'lead_generation', prefer Need.",
+        "Decide whether to send a short BANT qualification follow-up now. Use the last user message and the assistant's response. Prefer sending a follow-up when at least one of the provided missingDims remains and a question can be naturally anchored to the user's last message or the assistant's response. Choose ONE BANT dimension from missingDims and ask about that only. Return JSON: { shouldSendFollowUp: boolean, mainText: string, buttons: string[], emailPrompt: string }. The message must ask ONE qualification in ONE sentence ending with '?'. Provide 2–4 concise options in 'buttons' that directly answer that single question. Never combine multiple BANT dimensions in one question. If botMode is 'sales', prefer Budget or Timeline; if 'lead_generation', prefer Need. If Budget is missing but Business Type ('segment') is also missing, ask Business Type first.",
     },
     {
       role: "user",
@@ -670,9 +670,15 @@ async function analyzeForProbing(input: {
     const dims = (
       Array.isArray(input.missingDims)
         ? input.missingDims
-        : ["budget", "authority", "need", "timeline"]
-    ) as ("budget" | "authority" | "need" | "timeline")[];
-    let chosen: "budget" | "authority" | "need" | "timeline" | null = null;
+        : ["budget", "authority", "need", "timeline", "segment"]
+    ) as ("budget" | "authority" | "need" | "timeline" | "segment")[];
+    let chosen:
+      | "budget"
+      | "authority"
+      | "need"
+      | "timeline"
+      | "segment"
+      | null = null;
     if (hasPricing && dims.includes("budget")) chosen = "budget";
     else if (hasBooking && dims.includes("timeline")) chosen = "timeline";
     else if (hasAuthority && dims.includes("authority")) chosen = "authority";
@@ -681,13 +687,21 @@ async function analyzeForProbing(input: {
       chosen = input.botMode === "sales" ? "timeline" : "need";
       if (!dims.includes(chosen)) {
         chosen =
-          (dims[0] as "budget" | "authority" | "need" | "timeline") || null;
+          (dims[0] as
+            | "budget"
+            | "authority"
+            | "need"
+            | "timeline"
+            | "segment") || null;
       }
     }
     if (!input.userEmail) {
       chosen = null;
     }
     if (chosen) {
+      if (chosen === "budget" && dims.includes("segment")) {
+        chosen = "segment";
+      }
       const q =
         chosen === "budget"
           ? "What budget range are you considering?"
@@ -695,6 +709,8 @@ async function analyzeForProbing(input: {
           ? "What timeline are you targeting?"
           : chosen === "authority"
           ? "Who will make the decision?"
+          : chosen === "segment"
+          ? "What type of business are you?"
           : "Which feature matters most right now?";
       const mtHeu = q.endsWith("?") ? q : q + "?";
       const btnHeu = (() => {
@@ -703,6 +719,7 @@ async function analyzeForProbing(input: {
         if (chosen === "timeline") return ["This week", "Next week", "Later"];
         if (chosen === "authority")
           return ["I’m the decision maker", "Add decision maker", "Unsure"];
+        if (chosen === "segment") return ["Individual", "SMB", "Enterprise"];
         return ["Workflows", "Embeds", "Analytics"];
       })();
       return {
@@ -744,6 +761,12 @@ async function analyzeForProbing(input: {
         /decision|authority|approve|buy|cfo|vp|director|manager/.test(lower)
       ) {
         out = ["I’m the decision maker", "Add decision maker", "Unsure"];
+      } else if (
+        /type\s*of\s*business|business\s*type|individual|smb|enterprise/.test(
+          lower
+        )
+      ) {
+        out = ["Individual", "SMB", "Enterprise"];
       } else if (/feature|need|priority|matter|help/.test(lower)) {
         out = ["Workflows", "Embeds", "Analytics"];
       } else {
@@ -836,7 +859,7 @@ function buildHeuristicBantFollowup(input: {
   userMessage: string;
   assistantResponse: { mainText?: string };
   botMode: "sales" | "lead_generation";
-  missingDims?: ("budget" | "authority" | "need" | "timeline")[];
+  missingDims?: ("budget" | "authority" | "need" | "timeline" | "segment")[];
   userEmail?: string | null;
 }) {
   if (!input.userEmail) return null;
@@ -844,8 +867,8 @@ function buildHeuristicBantFollowup(input: {
   const dims = (
     Array.isArray(input.missingDims)
       ? input.missingDims
-      : ["budget", "authority", "need", "timeline"]
-  ) as ("budget" | "authority" | "need" | "timeline")[];
+      : ["budget", "authority", "need", "timeline", "segment"]
+  ) as ("budget" | "authority" | "need" | "timeline" | "segment")[];
   const hasPricing =
     /(pricing|price|cost|plan|plans|quote|estimate|discount|billing|budget|\$|usd)/i.test(
       text
@@ -862,7 +885,8 @@ function buildHeuristicBantFollowup(input: {
     /(feature|features|capabilities|options|need|priority|use\s*case|help)/i.test(
       text
     );
-  let chosen: "budget" | "authority" | "need" | "timeline" | null = null;
+  let chosen: "budget" | "authority" | "need" | "timeline" | "segment" | null =
+    null;
   if (hasPricing && dims.includes("budget")) chosen = "budget";
   else if (hasBooking && dims.includes("timeline")) chosen = "timeline";
   else if (hasAuthority && dims.includes("authority")) chosen = "authority";
@@ -871,9 +895,11 @@ function buildHeuristicBantFollowup(input: {
     chosen = input.botMode === "sales" ? "timeline" : "need";
     if (!dims.includes(chosen)) {
       chosen =
-        (dims[0] as "budget" | "authority" | "need" | "timeline") || null;
+        (dims[0] as "budget" | "authority" | "need" | "timeline" | "segment") ||
+        null;
     }
   }
+  if (chosen === "budget" && dims.includes("segment")) chosen = "segment";
   if (!chosen) return null;
   const q =
     chosen === "budget"
@@ -882,6 +908,8 @@ function buildHeuristicBantFollowup(input: {
       ? "What timeline are you targeting?"
       : chosen === "authority"
       ? "Who will make the decision?"
+      : chosen === "segment"
+      ? "What type of business are you?"
       : "Which feature matters most right now?";
   const mt = q.endsWith("?") ? q : q + "?";
   const btns = (() => {
@@ -902,6 +930,7 @@ function buildHeuristicBantFollowup(input: {
         "Team decision",
         "Not sure yet",
       ];
+    if (chosen === "segment") return ["Individual", "SMB", "Enterprise"];
     return ["Project Management", "Team Collaboration", "Data Analytics"];
   })();
   return { mainText: mt, buttons: btns, emailPrompt: "", dimension: chosen };
@@ -909,15 +938,19 @@ function buildHeuristicBantFollowup(input: {
 
 function computeBantMissingDims(
   messages: any[]
-): ("budget" | "authority" | "need" | "timeline")[] {
-  const allDims: ("budget" | "authority" | "need" | "timeline")[] = [
-    "budget",
-    "authority",
-    "need",
-    "timeline",
-  ];
-  const answered = new Set<"budget" | "authority" | "need" | "timeline">();
-  let pendingAsked: "budget" | "authority" | "need" | "timeline" | null = null;
+): ("budget" | "authority" | "need" | "timeline" | "segment")[] {
+  const allDims: ("budget" | "authority" | "need" | "timeline" | "segment")[] =
+    ["budget", "authority", "need", "timeline", "segment"];
+  const answered = new Set<
+    "budget" | "authority" | "need" | "timeline" | "segment"
+  >();
+  let pendingAsked:
+    | "budget"
+    | "authority"
+    | "need"
+    | "timeline"
+    | "segment"
+    | null = null;
 
   for (let i = 0; i < messages.length; i++) {
     const m = messages[i] || {};
@@ -961,6 +994,15 @@ function computeBantMissingDims(
       ) {
         answered.add("need");
       }
+      if (/(individual|solo|freelancer|personal)\b/.test(s)) {
+        answered.add("segment");
+      }
+      if (/(smb|small\s*business|startup|team|mid\s*market)\b/.test(s)) {
+        answered.add("segment");
+      }
+      if (/(enterprise|corporate|large\s*company|global)\b/.test(s)) {
+        answered.add("segment");
+      }
       if (pendingAsked) {
         answered.add(pendingAsked);
         pendingAsked = null;
@@ -972,7 +1014,7 @@ function computeBantMissingDims(
 
 function detectBantDimensionFromText(
   t: string
-): "budget" | "authority" | "need" | "timeline" | null {
+): "budget" | "authority" | "need" | "timeline" | "segment" | null {
   const s = String(t || "").toLowerCase();
   if (/budget|price|cost|pricing|\$|usd/.test(s)) return "budget";
   if (
@@ -993,12 +1035,14 @@ function detectBantDimensionFromText(
     )
   )
     return "need";
+  if (/type\s*of\s*business|business\s*type|individual|smb|enterprise/.test(s))
+    return "segment";
   return null;
 }
 
 function isAnswerToAskedDim(
   t: string,
-  dim: "budget" | "authority" | "need" | "timeline" | null
+  dim: "budget" | "authority" | "need" | "timeline" | "segment" | null
 ): boolean {
   if (!dim) return false;
   const s = String(t || "").toLowerCase();
@@ -1016,6 +1060,10 @@ function isAnswerToAskedDim(
     );
   if (dim === "need")
     return /workflows|embeds|analytics|integration|feature|features|need|priority|use\s*case|help|explore|learn|customize|project\s*management|collaboration|data\s*analytics/.test(
+      s
+    );
+  if (dim === "segment")
+    return /(individual|solo|freelancer|personal|smb|small\s*business|startup|team|mid\s*market|enterprise|corporate|large\s*company|global)/.test(
       s
     );
   return false;
@@ -9546,10 +9594,32 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
               txt
             );
           let immediate: any = null;
-          if (userEmail && missingDimsQuick.length > 0 && priceSignal) {
+          const segment = getBusinessSegment(sessionMessagesQuick);
+          if (
+            userEmail &&
+            missingDimsQuick.includes("segment") &&
+            priceSignal
+          ) {
+            immediate = {
+              mainText: "What type of business are you?",
+              buttons: ["Individual", "SMB", "Enterprise"],
+              emailPrompt: "",
+              type: "bant",
+              dimension: "segment",
+            } as any;
+          } else if (userEmail && missingDimsQuick.length > 0 && priceSignal) {
+            const budgetButtons = (() => {
+              if (segment === "individual")
+                return ["Under $20/mo", "$20–$50/mo", "$50+"];
+              if (segment === "smb")
+                return ["Under $500/mo", "$500–$1.5k/mo", "$1.5k+"];
+              if (segment === "enterprise")
+                return ["Under $10k/yr", "$10k–$50k/yr", "$50k+/yr"];
+              return ["Under $10/seat", "$10–$16/seat", "Custom/Enterprise"];
+            })();
             immediate = {
               mainText: "What budget range are you considering?",
-              buttons: ["Under $10/seat", "$10–$16/seat", "Custom/Enterprise"],
+              buttons: budgetButtons,
               emailPrompt: "",
               type: "bant",
               dimension: "budget",
@@ -9820,4 +9890,46 @@ export async function DELETE(req: NextRequest) {
       { status: 500, headers: corsHeaders }
     );
   }
+}
+function getBusinessSegment(
+  messages: any[]
+): "individual" | "smb" | "enterprise" | null {
+  let segment: "individual" | "smb" | "enterprise" | null = null;
+  for (let i = 0; i < messages.length; i++) {
+    const m = messages[i] || {};
+    const role = String(m.role || "").toLowerCase();
+    const content = String(m.content || "").toLowerCase();
+    const dim: any = m.bantDimension || null;
+    if (role === "user") {
+      if (/(individual|solo|freelancer|personal)\b/.test(content))
+        segment = "individual";
+      else if (
+        /(smb|small\s*business|startup|team|mid\s*market)\b/.test(content)
+      )
+        segment = "smb";
+      else if (/(enterprise|corporate|large\s*company|global)\b/.test(content))
+        segment = "enterprise";
+    }
+    if (
+      role === "assistant" &&
+      String(m.followupType || "").toLowerCase() === "bant" &&
+      dim === "segment"
+    ) {
+      const next = messages[i + 1] || {};
+      const nextContent = String(next.content || "").toLowerCase();
+      if (String(next.role || "").toLowerCase() === "user") {
+        if (/(individual|solo|freelancer|personal)\b/.test(nextContent))
+          segment = "individual";
+        else if (
+          /(smb|small\s*business|startup|team|mid\s*market)\b/.test(nextContent)
+        )
+          segment = "smb";
+        else if (
+          /(enterprise|corporate|large\s*company|global)\b/.test(nextContent)
+        )
+          segment = "enterprise";
+      }
+    }
+  }
+  return segment;
 }
