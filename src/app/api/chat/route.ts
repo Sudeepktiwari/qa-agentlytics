@@ -9203,7 +9203,12 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
       }`
     );
 
-    if (bookingEnhancement.chatResponse.showBookingCalendar) {
+    const explicitBooking =
+      /\b(book(\s+a)?\s+demo|schedule(\s+a)?\s+demo|request(\s+a)?\s+demo|book(\s+a)?\s+call|schedule(\s+a)?\s+call|arrange(\s+a)?\s+call|set\s+up(\s+a)?\s+call|talk\s+to\s+sales|talk\s+to\s+an\s+agent|speak\s+(to|with)\s+(sales|an\s+agent)|connect\s+with\s+sales|contact\s+sales|talk\s+to\s+a\s+specialist|book(\s+a)?\s+consultation|schedule(\s+a)?\s+consultation|arrange(\s+a)?\s+consultation|set\s+up(\s+a)?\s+consultation)\b/i;
+    if (
+      bookingEnhancement.chatResponse.showBookingCalendar &&
+      explicitBooking.test(String(question || ""))
+    ) {
       console.log(
         `[Chat API ${requestId}] Booking detected - enhancing response with calendar`
       );
