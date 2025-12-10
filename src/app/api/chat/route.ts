@@ -343,9 +343,37 @@ function extractFeatureOptionsFromText(text: string): string[] {
   const src = String(text || "");
   const bulletOpts = extractBulletOptionsFromText(src);
   const out: string[] = [];
+  const toPhrase = (s: string): string => {
+    const k = String(s || "")
+      .toLowerCase()
+      .trim();
+    const map: Record<string, string> = {
+      workflows: "Automation Workflows",
+      integrations: "Explore Integrations",
+      reminders: "Set Up Reminders",
+      automation: "Build Automations",
+      "team scheduling": "Team Scheduling",
+      "event types": "Event Types",
+      analytics: "View Analytics",
+      compliance: "Compliance Overview",
+      security: "Security Features",
+      calendar: "Calendar Sync",
+      api: "API Docs",
+      webhooks: "Webhook Setup",
+      routing: "Routing Rules",
+      availability: "Set Availability",
+      templates: "Use Templates",
+    };
+    if (k in map) return map[k];
+    const words = String(s || "")
+      .trim()
+      .split(/\s+/);
+    if (words.length >= 2) return s.trim();
+    return `Explore ${toTitleCase(s)}`.trim();
+  };
   for (const b of bulletOpts) {
     const cleaned = b.replace(/[:.;]+\s*$/, "").trim();
-    if (cleaned && cleaned.length <= 60) out.push(cleaned);
+    if (cleaned && cleaned.length <= 60) out.push(toPhrase(cleaned));
     if (out.length >= 4) break;
   }
   if (out.length > 0) return out.slice(0, 4);
@@ -368,38 +396,10 @@ function extractFeatureOptionsFromText(text: string): string[] {
     "templates",
   ];
   for (const c of candidates) {
-    if (lower.includes(c)) out.push(toTitleCase(c));
+    if (lower.includes(c)) out.push(toPhrase(c));
     if (out.length >= 4) break;
   }
   return out.slice(0, 4);
-}
-
-function isVagueRequest(text: string): boolean {
-  const t = String(text || "").trim();
-  if (!t) return true;
-  const words = t.split(/\s+/).filter(Boolean);
-  const wc = words.length;
-  const hasQ =
-    /\?$/.test(t) ||
-    /^(how|what|which|when|where|why|can|does|do|is|are|should|could)\b/i.test(
-      t
-    );
-  const hasVerb =
-    /(\bconfigure\b|\bcompare\b|\bbook\b|\bschedule\b|\bprice\b|\bcost\b|\bset\b|\bintegrate\b|\bconnect\b|\bcreate\b|\bbuild\b|\binstall\b|\buse\b)/i.test(
-      t
-    );
-  const nouny = /^[a-z\s]+$/i.test(t);
-  return (wc <= 2 && !hasQ && !hasVerb) || (nouny && !hasQ && !hasVerb);
-}
-
-function generateClarifier(pageCtx: string, generalCtx: string) {
-  const opts = extractFeatureOptionsFromText(pageCtx || generalCtx || "");
-  const buttons =
-    opts.length > 0
-      ? opts.slice(0, 4)
-      : ["Pricing", "Integrations", "Scheduling", "Support"].slice(0, 3);
-  const mainText = "Which option fits your needs?";
-  return { mainText, buttons };
 }
 
 function stripBulletLines(text: string): string {
@@ -9149,77 +9149,6 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
 
   // Check for booking detection and enhance response if needed
   let enhancedResponse = parsed;
-  // Detect if the user's message matches a previous assistant button selection
-  let isButtonSelection = false;
-  try {
-    const db = await getDb();
-    const chats = db.collection("chats");
-    const lastAssistantWithButtons = await chats.findOne(
-      {
-        sessionId,
-        role: "assistant",
-        buttons: { $exists: true },
-      },
-      { sort: { createdAt: -1 } }
-    );
-    if (
-      lastAssistantWithButtons &&
-      Array.isArray((lastAssistantWithButtons as any).buttons)
-    ) {
-      isButtonSelection = (
-        (lastAssistantWithButtons as any).buttons as string[]
-      )
-        .map((b) => String(b).toLowerCase().trim())
-        .includes(
-          String(question || "")
-            .toLowerCase()
-            .trim()
-        );
-    }
-  } catch {}
-
-  const isVague = isVagueRequest(question || "");
-  if (isVague && !isButtonSelection) {
-    const clar = generateClarifier(pageContext || "", context || "");
-    // Avoid repeating the exact same clarifier as the previous assistant message
-    let shouldOverride = true;
-    try {
-      const db = await getDb();
-      const chats = db.collection("chats");
-      const lastAssistant = await chats.findOne(
-        { sessionId, role: "assistant" },
-        { sort: { createdAt: -1 } }
-      );
-      const lastText = lastAssistant
-        ? typeof (lastAssistant as any).content === "string"
-          ? String((lastAssistant as any).content || "")
-          : (lastAssistant as any).content &&
-            typeof (lastAssistant as any).content === "object" &&
-            "mainText" in (lastAssistant as any).content
-          ? String((lastAssistant as any).content.mainText || "")
-          : ""
-        : "";
-      if (
-        /which option fits your needs\??$/i.test(clar.mainText || "") &&
-        /which option fits your needs\??$/i.test(String(lastText || ""))
-      ) {
-        shouldOverride = false;
-      }
-    } catch {}
-
-    if (shouldOverride) {
-      enhancedResponse = {
-        mainText: clar.mainText.endsWith("?")
-          ? clar.mainText
-          : `${clar.mainText}`.replace(/\s+$/, "") + "?",
-        buttons: clar.buttons,
-        emailPrompt:
-          parsed && typeof (parsed as any).emailPrompt === "string"
-            ? (parsed as any).emailPrompt
-            : "",
-      } as any;
-    }
-  }
   try {
     const bookingEnhancement = await enhanceChatWithBookingDetection(
       question || "",
