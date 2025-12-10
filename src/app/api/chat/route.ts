@@ -9149,19 +9149,76 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
 
   // Check for booking detection and enhance response if needed
   let enhancedResponse = parsed;
+  // Detect if the user's message matches a previous assistant button selection
+  let isButtonSelection = false;
+  try {
+    const db = await getDb();
+    const chats = db.collection("chats");
+    const lastAssistantWithButtons = await chats.findOne(
+      {
+        sessionId,
+        role: "assistant",
+        buttons: { $exists: true },
+      },
+      { sort: { createdAt: -1 } }
+    );
+    if (
+      lastAssistantWithButtons &&
+      Array.isArray((lastAssistantWithButtons as any).buttons)
+    ) {
+      isButtonSelection = (
+        (lastAssistantWithButtons as any).buttons as string[]
+      )
+        .map((b) => String(b).toLowerCase().trim())
+        .includes(
+          String(question || "")
+            .toLowerCase()
+            .trim()
+        );
+    }
+  } catch {}
+
   const isVague = isVagueRequest(question || "");
-  if (isVague) {
+  if (isVague && !isButtonSelection) {
     const clar = generateClarifier(pageContext || "", context || "");
-    enhancedResponse = {
-      mainText: clar.mainText.endsWith("?")
-        ? clar.mainText
-        : `${clar.mainText}`.replace(/\s+$/, "") + "?",
-      buttons: clar.buttons,
-      emailPrompt:
-        parsed && typeof (parsed as any).emailPrompt === "string"
-          ? (parsed as any).emailPrompt
-          : "",
-    } as any;
+    // Avoid repeating the exact same clarifier as the previous assistant message
+    let shouldOverride = true;
+    try {
+      const db = await getDb();
+      const chats = db.collection("chats");
+      const lastAssistant = await chats.findOne(
+        { sessionId, role: "assistant" },
+        { sort: { createdAt: -1 } }
+      );
+      const lastText = lastAssistant
+        ? typeof (lastAssistant as any).content === "string"
+          ? String((lastAssistant as any).content || "")
+          : (lastAssistant as any).content &&
+            typeof (lastAssistant as any).content === "object" &&
+            "mainText" in (lastAssistant as any).content
+          ? String((lastAssistant as any).content.mainText || "")
+          : ""
+        : "";
+      if (
+        /which option fits your needs\??$/i.test(clar.mainText || "") &&
+        /which option fits your needs\??$/i.test(String(lastText || ""))
+      ) {
+        shouldOverride = false;
+      }
+    } catch {}
+
+    if (shouldOverride) {
+      enhancedResponse = {
+        mainText: clar.mainText.endsWith("?")
+          ? clar.mainText
+          : `${clar.mainText}`.replace(/\s+$/, "") + "?",
+        buttons: clar.buttons,
+        emailPrompt:
+          parsed && typeof (parsed as any).emailPrompt === "string"
+            ? (parsed as any).emailPrompt
+            : "",
+      } as any;
+    }
   }
   try {
     const bookingEnhancement = await enhanceChatWithBookingDetection(
