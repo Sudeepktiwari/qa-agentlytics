@@ -9196,7 +9196,10 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
     {
       sessionId,
       role: "assistant",
-      content: answer,
+      content:
+        parsed && typeof parsed.mainText === "string" && parsed.mainText
+          ? parsed.mainText
+          : answer,
       createdAt: new Date(now.getTime() + 1),
       ...(pageUrl ? { pageUrl } : {}),
       ...(isMeetingIntent ? { meetingIntent: true } : {}),
