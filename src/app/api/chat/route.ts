@@ -6511,7 +6511,6 @@ Extract key requirements (2-3 bullet points max, be concise):`;
           summaryPrompt = `CONTEXT ANALYSIS:
 Page URL: ${pageUrl}
 User Intent: ${detectedIntent}
-Industry Detected: ${detectedVertical}
 Page Content Preview: ${summaryContext.substring(0, 800)}...
 
 TASK: Create an intelligent proactive message that demonstrates understanding of this specific page and asks a contextual question to understand the user's needs.
@@ -6540,8 +6539,8 @@ MAINTEXT REQUIREMENTS:
 - End with a question that reveals their intent/needs
 - Show understanding of what they're viewing
 
- GREETING REQUIREMENT:
- - Begin with "Welcome to ${businessName}" followed by a brief connector (e.g., "—" or ",") before the context-aware question
+ NO-GREETING REQUIREMENT:
+ - Do not include greetings or business names
  - Write a single, grammatically correct sentence ending with a question mark
 
 CREATIVE VARIETY ENFORCEMENT - AVOID THESE BANNED PATTERNS:
@@ -6570,11 +6569,7 @@ BUTTONS REQUIREMENTS:
 - Be specific and actionable (not generic categories)
 - Match what a user would naturally want to do next on this specific page
 
-${
-  detectedVertical !== "general"
-    ? `Industry Context: This appears to be a ${detectedVertical} business, so tailor the question and options accordingly.`
-    : ""
-}`;
+`;
         } else {
           // Follow-up proactive message - deeper context analysis
           const isRevisit = visitedPages.some((page: string) =>
