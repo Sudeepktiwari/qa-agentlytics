@@ -6840,11 +6840,38 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
         const proactiveMsg = proactiveResponse.mainText;
         let buttons = proactiveResponse.buttons || [];
         if (!hasBeenGreeted) {
-          const featureButtons = extractFeatureOptionsFromText(
-            summaryContext || ""
-          );
-          if (featureButtons.length > 0) {
-            buttons = featureButtons.slice(0, 4);
+          let structuredButtons: string[] = [];
+          if (adminId && pageUrl) {
+            try {
+              const db = await getDb();
+              const pageDoc = await db
+                .collection("crawled_pages")
+                .findOne({ adminId, url: pageUrl });
+              const ss: any = pageDoc?.structuredSummary;
+              if (ss && typeof ss === "object") {
+                const pool: string[] = [];
+                if (Array.isArray(ss.primaryFeatures))
+                  pool.push(...ss.primaryFeatures);
+                if (Array.isArray(ss.solutions)) pool.push(...ss.solutions);
+                const cleaned = pool
+                  .map((s) => toTitleCase(String(s || "").trim()))
+                  .filter((s) => s && s.length > 0 && s.length <= 60);
+                if (cleaned.length > 0) {
+                  const shuffled = cleaned.sort(() => Math.random() - 0.5);
+                  structuredButtons = shuffled.slice(0, 4);
+                }
+              }
+            } catch {}
+          }
+          if (structuredButtons.length > 0) {
+            buttons = structuredButtons;
+          } else {
+            const featureButtons = extractFeatureOptionsFromText(
+              summaryContext || ""
+            );
+            if (featureButtons.length > 0) {
+              buttons = featureButtons.slice(0, 4);
+            }
           }
         }
 
