@@ -6539,9 +6539,10 @@ MAINTEXT REQUIREMENTS:
 - End with a question that reveals their intent/needs
 - Show understanding of what they're viewing
 
- NO-GREETING REQUIREMENT:
- - Do not include greetings or business names
+ GREETING REQUIREMENT:
+ - Begin with "Welcome to ${businessName}" followed by a brief connector (e.g., "—" or ",") before the context-aware question
  - Write a single, grammatically correct sentence ending with a question mark
+ - Do not assume industry or role unless explicitly mentioned
 
 CREATIVE VARIETY ENFORCEMENT - AVOID THESE BANNED PATTERNS:
 - "Tired of..." (BANNED - overused)
@@ -6771,7 +6772,14 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
         const botMode = userEmail ? "sales" : "lead_generation";
 
         let finalProactiveMsg = proactiveMsg || "";
-        if (!hasBeenGreeted && businessName) {
+        if (
+          !hasBeenGreeted &&
+          businessName &&
+          !/^\s*welcome\b/i.test(finalProactiveMsg)
+        ) {
+          finalProactiveMsg =
+            `Welcome to ${businessName} — ${finalProactiveMsg}`.trim();
+        } else {
           finalProactiveMsg = finalProactiveMsg.trim();
         }
         if (finalProactiveMsg && !/[\.!?]$/.test(finalProactiveMsg)) {
