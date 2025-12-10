@@ -715,7 +715,7 @@ async function analyzeForProbing(input: {
       const mtHeu = q.endsWith("?") ? q : q + "?";
       const btnHeu = (() => {
         if (chosen === "budget")
-          return ["Under $10/seat", "$10–$16/seat", "Custom/Enterprise"];
+          return ["Under $500/mo", "$500–$1.5k/mo", "$1.5k+"];
         if (chosen === "timeline") return ["This week", "Next week", "Later"];
         if (chosen === "authority")
           return ["I’m the decision maker", "Add decision maker", "Unsure"];
@@ -954,7 +954,7 @@ function buildHeuristicBantFollowup(input: {
   const mt = q.endsWith("?") ? q : q + "?";
   const btns = (() => {
     if (chosen === "budget")
-      return ["Under $10/seat", "$10–$16/seat", "Custom/Enterprise"];
+      return ["Under $500/mo", "$500–$1.5k/mo", "$1.5k+"];
     if (chosen === "timeline")
       return [
         "Immediately",
@@ -8726,13 +8726,32 @@ What specific information are you looking for? I'm here to help guide you throug
       } else {
         const dim = orderedMissing[0];
         if (dim === "budget") {
-          nextBant = {
-            mainText: "What budget range are you considering?",
-            buttons: ["Under $10/seat", "$10–$16/seat", "Custom/Enterprise"],
-            emailPrompt: "",
-            type: "bant",
-            dimension: "budget",
-          } as any;
+          const segment = getBusinessSegment(sessionMessagesQuick);
+          if (missingDimsQuick.includes("segment") && !segment) {
+            nextBant = {
+              mainText: "What type of business are you?",
+              buttons: ["Individual", "SMB", "Enterprise"],
+              emailPrompt: "",
+              type: "bant",
+              dimension: "segment",
+            } as any;
+          } else {
+            const budgetButtons =
+              segment === "individual"
+                ? ["Under $20/mo", "$20–$50/mo", "$50+"]
+                : segment === "smb"
+                ? ["Under $500/mo", "$500–$1.5k/mo", "$1.5k+"]
+                : segment === "enterprise"
+                ? ["Under $10k/yr", "$10k–$50k/yr", "$50k+/yr"]
+                : ["Under $500/mo", "$500–$1.5k/mo", "$1.5k+"];
+            nextBant = {
+              mainText: "What budget range are you considering?",
+              buttons: budgetButtons,
+              emailPrompt: "",
+              type: "bant",
+              dimension: "budget",
+            } as any;
+          }
         } else if (dim === "authority") {
           nextBant = {
             mainText: "Who will make the decision?",
