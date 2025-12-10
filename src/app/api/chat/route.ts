@@ -7268,6 +7268,103 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
           );
         }
 
+        const emailJustProvided = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i.test(
+          String(question || "")
+        );
+        if (emailJustProvided) {
+          let prevAssistantText = "";
+          let prevAssistantButtons: string[] = [];
+          try {
+            const db = await getDb();
+            const chats = db.collection("chats");
+            const prevAssistant = await chats.findOne(
+              { sessionId, role: "assistant" },
+              { sort: { createdAt: -1 } }
+            );
+            if (prevAssistant) {
+              prevAssistantText = String((prevAssistant as any).content || "");
+              if (Array.isArray((prevAssistant as any).buttons)) {
+                prevAssistantButtons = (
+                  (prevAssistant as any).buttons || []
+                ).map((b: any) => String(b || ""));
+              }
+            }
+          } catch {}
+
+          const textL = prevAssistantText.toLowerCase();
+          const btnL = prevAssistantButtons.map((b) => b.toLowerCase());
+          let reason = "share relevant next steps and resources";
+          if (
+            /integration|api|webhook/.test(textL) ||
+            btnL.some((b) => /integration|api|webhook/.test(b))
+          ) {
+            reason =
+              "follow up on your integration request and share setup options";
+          } else if (/demo/.test(textL) || btnL.some((b) => /demo/.test(b))) {
+            reason = "help you schedule a demo and send details";
+          } else if (
+            /(call|talk|meeting)/.test(textL) ||
+            btnL.some((b) => /(call|talk|meeting)/.test(b))
+          ) {
+            reason = "coordinate a call and confirm availability";
+          } else if (
+            /(price|pricing|plan)/.test(textL) ||
+            btnL.some((b) => /(price|pricing|plan)/.test(b))
+          ) {
+            reason = "share pricing information tailored to your needs";
+          }
+          const ack = `Thank you for sharing your email with us — we'll use it to ${reason}.`;
+          personaFollowup = { mainText: ack, buttons: [] } as any;
+
+          try {
+            const db = await getDb();
+            const chats = db.collection("chats");
+            const sessionMessagesQuick = await chats
+              .find({ sessionId })
+              .sort({ createdAt: 1 })
+              .limit(200)
+              .toArray();
+            const missingDimsQuick =
+              computeBantMissingDims(sessionMessagesQuick);
+            const probingQuick = await analyzeForProbing({
+              userMessage: question || "",
+              assistantResponse: {
+                mainText: ack,
+                buttons: [],
+                emailPrompt: "",
+              },
+              botMode: "sales",
+              userEmail: String(question || ""),
+              missingDims: missingDimsQuick,
+            });
+            if (probingQuick.shouldSendFollowUp && probingQuick.mainText) {
+              const immediate = {
+                mainText: probingQuick.mainText,
+                buttons: probingQuick.buttons || [],
+                emailPrompt: probingQuick.emailPrompt || "",
+                type: "bant",
+              } as any;
+              await chats.insertOne({
+                sessionId,
+                role: "assistant",
+                content: immediate.mainText,
+                buttons: immediate.buttons,
+                emailPrompt: immediate.emailPrompt,
+                followupType: immediate.type,
+                bantDimension:
+                  immediate.dimension ||
+                  detectBantDimensionFromText(
+                    String(immediate.mainText || "")
+                  ) ||
+                  null,
+                createdAt: new Date(),
+                ...(pageUrl ? { pageUrl } : {}),
+                ...(adminId ? { adminId } : {}),
+              });
+            }
+          } catch {}
+        }
+
         let followupSystemPrompt = "";
         let followupUserPrompt = "";
 
