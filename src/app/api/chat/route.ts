@@ -752,7 +752,7 @@ async function analyzeForProbing(input: {
     if (out.length === 0) {
       const lower = q.toLowerCase();
       if (/budget|price|cost|pricing|plan/.test(lower)) {
-        out = ["Under $10/seat", "$10–$16/seat", "Custom/Enterprise"];
+        out = ["Under $500/mo", "$500–$1.5k/mo", "$1.5k+"];
       } else if (
         /when|time|timeline|schedule|demo|call|meeting|appointment/.test(lower)
       ) {
@@ -9598,6 +9598,29 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
             emailPrompt: probingQuick.emailPrompt || "",
             type: userEmail ? "bant" : "probe",
           } as any;
+          const inferredDim = detectBantDimensionFromText(
+            String(immediate.mainText || "")
+          );
+          if (inferredDim === "budget") {
+            const segment = getBusinessSegment(sessionMessagesQuick);
+            if (missingDimsQuick.includes("segment") && !segment) {
+              immediate.mainText = "What type of business are you?";
+              immediate.buttons = ["Individual", "SMB", "Enterprise"];
+              immediate.dimension = "segment";
+              immediate.type = "bant";
+            } else {
+              immediate.buttons =
+                segment === "individual"
+                  ? ["Under $20/mo", "$20–$50/mo", "$50+"]
+                  : segment === "smb"
+                  ? ["Under $500/mo", "$500–$1.5k/mo", "$1.5k+"]
+                  : segment === "enterprise"
+                  ? ["Under $10k/yr", "$10k–$50k/yr", "$50k+/yr"]
+                  : ["Under $500/mo", "$500–$1.5k/mo", "$1.5k+"];
+              immediate.dimension = "budget";
+              immediate.type = "bant";
+            }
+          }
           console.log(
             `[Chat API ${requestId}] Immediate qualification generated`,
             {
@@ -9655,7 +9678,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
                 return ["Under $500/mo", "$500–$1.5k/mo", "$1.5k+"];
               if (segment === "enterprise")
                 return ["Under $10k/yr", "$10k–$50k/yr", "$50k+/yr"];
-              return ["Under $10/seat", "$10–$16/seat", "Custom/Enterprise"];
+              return ["Under $500/mo", "$500–$1.5k/mo", "$1.5k+"];
             })();
             immediate = {
               mainText: "What budget range are you considering?",
