@@ -9598,19 +9598,6 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
             emailPrompt: probingQuick.emailPrompt || "",
             type: userEmail ? "bant" : "probe",
           } as any;
-          // Guard: enforce segment before budget if segment is missing
-          const isBudgetProbe =
-            detectBantDimensionFromText(String(immediate.mainText || "")) ===
-            "budget";
-          const segmentMissing = (missingDimsQuick || []).includes(
-            "segment" as any
-          );
-          if (immediate.type === "bant" && isBudgetProbe && segmentMissing) {
-            immediate.mainText = "What type of business are you?";
-            immediate.buttons = ["Individual", "SMB", "Enterprise"];
-            immediate.emailPrompt = "";
-            immediate.dimension = "segment";
-          }
           console.log(
             `[Chat API ${requestId}] Immediate qualification generated`,
             {
