@@ -6516,12 +6516,19 @@ Extract key requirements (2-3 bullet points max, be concise):`;
               detectedVertical,
               isReturningVisitor
             );
+            const featureButtonsFirst = extractFeatureOptionsFromText(
+              summaryContext || ""
+            );
+            const sdrButtons =
+              featureButtonsFirst.length > 0
+                ? featureButtonsFirst
+                : conversionButtons;
 
             const sdrMessage = {
               mainText: isReturningVisitor
                 ? `Welcome back! Let's continue exploring how ${productName} can help. ${verticalInfo.message}`
                 : `Hi! I'm ${companyName}'s friendly assistant. ${verticalInfo.message}`,
-              buttons: conversionButtons,
+              buttons: sdrButtons,
             };
 
             // Store the SDR continuation message
@@ -6803,7 +6810,15 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
         }
 
         const proactiveMsg = proactiveResponse.mainText;
-        const buttons = proactiveResponse.buttons || [];
+        let buttons = proactiveResponse.buttons || [];
+        if (!hasBeenGreeted) {
+          const featureButtons = extractFeatureOptionsFromText(
+            summaryContext || ""
+          );
+          if (featureButtons.length > 0) {
+            buttons = featureButtons.slice(0, 4);
+          }
+        }
 
         // Determine bot mode for proactive message
         let userEmail: string | null = null;
