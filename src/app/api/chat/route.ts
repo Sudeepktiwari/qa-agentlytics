@@ -9093,6 +9093,8 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
   const parsed = parseAIResponse(answer || "");
   console.log("[DEBUG] Parsed AI response:", parsed);
 
+  let emailAckText = "";
+
   // Additional cleanup for parsed mainText
   if (parsed && parsed.mainText) {
     parsed.mainText = parsed.mainText
@@ -9169,6 +9171,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
 
     const ack = `Thank you for sharing your email with us — we'll use it to ${reason}.`;
     parsed.mainText = ack;
+    emailAckText = ack;
   }
 
   await chats.insertMany([
@@ -9346,6 +9349,10 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
     );
   }
 
+  if (justCapturedEmail && emailAckText) {
+    finalResponse.mainText = emailAckText;
+  }
+
   console.log(`[Chat API ${requestId}] Main response:`, {
     botMode,
     userEmail: userEmail || null,
@@ -9378,9 +9385,10 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
         { sessionId, role: "user" },
         { sort: { createdAt: -1 } }
       );
-      const skipSecondaryForFirstAssistant =
+      let skipSecondaryForFirstAssistant =
         assistantCountBefore === 0 && Number(assistantCountClient) === 0;
-      const skipDueToRecentFollowup = (() => {
+      if (enableImmediateQualification) skipSecondaryForFirstAssistant = false;
+      let skipDueToRecentFollowup = (() => {
         const la: any = lastAssistant || null;
         if (!la || !la.followupType) return false;
         const laTime = la.createdAt ? new Date(la.createdAt).getTime() : 0;
@@ -9393,6 +9401,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
         const userAfterFollowup = luTime > laTime;
         return laIsRecent && !userAfterFollowup;
       })();
+      if (enableImmediateQualification) skipDueToRecentFollowup = false;
       console.log(`[Chat API ${requestId}] Qualification gating`, {
         assistantCountBefore,
         assistantCountClient: Number(assistantCountClient),
@@ -9511,6 +9520,39 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
               ...(adminId ? { adminId } : {}),
             });
           }
+        }
+      }
+      if (!secondary && enableImmediateQualification && userEmail) {
+        const sessionMessagesQuick2 = await chats
+          .find({ sessionId })
+          .sort({ createdAt: 1 })
+          .limit(200)
+          .toArray();
+        const missingDimsQuick2 = computeBantMissingDims(sessionMessagesQuick2);
+        if (missingDimsQuick2.length > 0) {
+          const immediate = {
+            mainText: "What timeline are you targeting?",
+            buttons: ["This week", "Next week", "Later"],
+            emailPrompt: "",
+            type: "bant",
+            dimension: "timeline",
+          } as any;
+          secondary = immediate;
+          await chats.insertOne({
+            sessionId,
+            role: "assistant",
+            content: immediate.mainText,
+            buttons: immediate.buttons,
+            emailPrompt: immediate.emailPrompt,
+            followupType: immediate.type,
+            bantDimension:
+              immediate.dimension ||
+              detectBantDimensionFromText(String(immediate.mainText || "")) ||
+              null,
+            createdAt: new Date(now.getTime() + 1),
+            ...(pageUrl ? { pageUrl } : {}),
+            ...(adminId ? { adminId } : {}),
+          });
         }
       }
     } catch (err) {
