@@ -780,7 +780,30 @@ async function analyzeForProbing(input: {
     return out;
   };
   const mt = normQ(typeof parsed.mainText === "string" ? parsed.mainText : "");
-  const btns = normButtons(mt, parsed.buttons, input.botMode);
+  let btns = normButtons(mt, parsed.buttons, input.botMode);
+  const needSegmentFirst = /budget|price|cost|pricing|plan/.test(
+    mt.toLowerCase()
+  );
+  const dimsArr = Array.isArray(input.missingDims)
+    ? (input.missingDims as (
+        | "budget"
+        | "authority"
+        | "need"
+        | "timeline"
+        | "segment"
+      )[])
+    : ["budget", "authority", "need", "timeline", "segment"];
+  if (needSegmentFirst && dimsArr.includes("segment")) {
+    const segQ = "What type of business are you?";
+    const segBtns = ["Individual", "SMB", "Enterprise"];
+    return {
+      shouldSendFollowUp: true,
+      mainText: segQ,
+      buttons: segBtns,
+      emailPrompt:
+        typeof parsed.emailPrompt === "string" ? parsed.emailPrompt : "",
+    };
+  }
   const ep = typeof parsed.emailPrompt === "string" ? parsed.emailPrompt : "";
   return {
     shouldSendFollowUp: true,
@@ -813,10 +836,27 @@ function buildFallbackFollowup(input: {
     text
   );
   const hasFeatures = /(feature|features|capabilities|options)/i.test(text);
+  const isIndividual = /(individual|solo|freelancer|personal)\b/.test(text);
+  const isSMB = /(smb|small\s*business|startup|team|mid\s*market)\b/.test(text);
+  const isEnterprise = /(enterprise|corporate|large\s*company|global)\b/.test(
+    text
+  );
   if (hasPricing) {
+    if (!isIndividual && !isSMB && !isEnterprise) {
+      return {
+        mainText: "What type of business are you?",
+        buttons: ["Individual", "SMB", "Enterprise"],
+        emailPrompt: "",
+      };
+    }
+    const budgetButtons = isIndividual
+      ? ["Under $20/mo", "$20–$50/mo", "$50+"]
+      : isSMB
+      ? ["Under $500/mo", "$500–$1.5k/mo", "$1.5k+"]
+      : ["Under $10k/yr", "$10k–$50k/yr", "$50k+/yr"];
     return {
       mainText: "What budget range are you considering?",
-      buttons: ["Under $10/seat", "$10–$16/seat", "Custom/Enterprise"],
+      buttons: budgetButtons,
       emailPrompt: "Share your work email to receive a tailored quote",
     };
   }
