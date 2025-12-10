@@ -374,6 +374,34 @@ function extractFeatureOptionsFromText(text: string): string[] {
   return out.slice(0, 4);
 }
 
+function isVagueRequest(text: string): boolean {
+  const t = String(text || "").trim();
+  if (!t) return true;
+  const words = t.split(/\s+/).filter(Boolean);
+  const wc = words.length;
+  const hasQ =
+    /\?$/.test(t) ||
+    /^(how|what|which|when|where|why|can|does|do|is|are|should|could)\b/i.test(
+      t
+    );
+  const hasVerb =
+    /(\bconfigure\b|\bcompare\b|\bbook\b|\bschedule\b|\bprice\b|\bcost\b|\bset\b|\bintegrate\b|\bconnect\b|\bcreate\b|\bbuild\b|\binstall\b|\buse\b)/i.test(
+      t
+    );
+  const nouny = /^[a-z\s]+$/i.test(t);
+  return (wc <= 2 && !hasQ && !hasVerb) || (nouny && !hasQ && !hasVerb);
+}
+
+function generateClarifier(pageCtx: string, generalCtx: string) {
+  const opts = extractFeatureOptionsFromText(pageCtx || generalCtx || "");
+  const buttons =
+    opts.length > 0
+      ? opts.slice(0, 4)
+      : ["Pricing", "Integrations", "Scheduling", "Support"].slice(0, 3);
+  const mainText = "Which option fits your needs?";
+  return { mainText, buttons };
+}
+
 function stripBulletLines(text: string): string {
   const lines = String(text || "").split(/\r?\n/);
   const kept: string[] = [];
@@ -9121,6 +9149,20 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
 
   // Check for booking detection and enhance response if needed
   let enhancedResponse = parsed;
+  const isVague = isVagueRequest(question || "");
+  if (isVague) {
+    const clar = generateClarifier(pageContext || "", context || "");
+    enhancedResponse = {
+      mainText: clar.mainText.endsWith("?")
+        ? clar.mainText
+        : `${clar.mainText}`.replace(/\s+$/, "") + "?",
+      buttons: clar.buttons,
+      emailPrompt:
+        parsed && typeof (parsed as any).emailPrompt === "string"
+          ? (parsed as any).emailPrompt
+          : "",
+    } as any;
+  }
   try {
     const bookingEnhancement = await enhanceChatWithBookingDetection(
       question || "",
