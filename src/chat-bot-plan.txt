@@ -1,0 +1,357 @@
+Nice — here’s a single, **detailed, actionable implementation plan** you can hand straight to engineers and product owners. It follows the architecture and UX rules we agreed on: domain routing, single clarifier at moderate confidence, bridge phrasing, option gating, BANT-aware CTAs, session continuity, testing, and rollout instrumentation.
+
+# 1 — High-level summary
+
+Goal: make assistant replies context-aware, probe before prescribing, and feel conversational while staying actionable.
+Outcome: replies include a short bridge, domain-matched tailored bullets, at most one clarifier when confidence is moderate, and ≤3 context-specific CTAs only after intent alignment. System returns structured metadata so UI can gate options.
+
+---
+
+# 2 — Phases, tasks, deliverables, and acceptance
+
+## Phase A — Foundations (Design & small experiment)
+
+**Tasks**
+
+* Finalize domain list and slot schemas.
+* Create clarifier template bank and transition phrase bank.
+* Build a 200-utterance labeled calibration set (balanced across domains).
+* Design the assistant response JSON schema (text + metadata for UI).
+
+**Deliverables**
+
+* `domains_slots.yaml` (domain → slots → criticality & clarifier templates).
+* `response_schema.json` (backend → UI contract).
+* Sample labeled dataset (200 utterances).
+
+**Acceptance**
+
+* Domains and critical slots reviewed.
+* JSON schema agreed by frontend and backend teams.
+
+---
+
+## Phase B — Backend: Intent + Slot Pipeline & Composer
+
+**Tasks**
+
+* Integrate domain classifier that outputs `{domain, confidence}`.
+* Integrate slot extractor to produce `{slots, missingSlots}`.
+* Implement decision engine in follow-up generator:
+
+  * conf < 0.35 → disambiguator question (open).
+  * 0.35 ≤ conf < 0.75 → ask exactly **one** highest-priority clarifier (no options).
+  * conf ≥ 0.75 → compose bridge + tailored bullets; if critical slot missing ask a single clarifier inline (and do not show options until answered), else show CTAs.
+* Add continuity enforcer that checks `active_subject` and rewrites response if mismatch.
+* Compose final assistant text with a bridge sentence + short bullets + next step.
+* Return metadata for UI: domain, domainMatch, conf, missingSlots, suggestedActions.
+
+**Deliverables**
+
+* `route.ts` modifications: domain hook, slot handling, decision logic, composer.
+* Unit tests for decision branches.
+
+**Acceptance**
+
+* For the sample "class scheduling" messages, the system asks 1 clarifier for moderate confidence and does not show options until clarified.
+* Every assistant reply includes a transition phrase.
+
+---
+
+## Phase C — UI: Option gating & CTA rendering
+
+**Tasks**
+
+* Implement UI contract: parse backend metadata to decide whether to render action buttons.
+* Show at most 2–3 action buttons; labels are action-oriented (e.g., “Set capacity now”).
+* Disable options when `clarifierShown == true && missingSlots nonempty`.
+* Add “Skip” and “More info” fallback actions when clarifier unanswered or user replies “I don’t know”.
+
+**Deliverables**
+
+* Frontend changes to options renderer and analytics events for button clicks.
+
+**Acceptance**
+
+* Buttons appear only when `domainMatch == true` or `conf >= 0.75` and `missingSlots == []`.
+
+---
+
+## Phase D — Session state, continuity & recovery
+
+**Tasks**
+
+* Store session state: `active_subject`, `domain`, `slots`, `last_user_turn_ts`.
+* Rules:
+
+  * `active_subject` persists N minutes (configurable, e.g., 30 min) or until user explicitly changes topic.
+  * If user pivots (explicit mention of new domain), invalidate `active_subject`.
+  * If assistant misroutes, continuity enforcer asks a corrective clarifier like: “Do you mean X or Y?” and rewrites previous reply if necessary.
+* Add a fallback path: after clarifier unanswered for 2 messages, provide 2 fallback options.
+
+**Deliverables**
+
+* Session state schema and tests for domain switching.
+
+**Acceptance**
+
+* No mismatches like answering “workshops” when user asked “class scheduling” (automated test).
+
+---
+
+## Phase E — BANT integration & CTA ranking
+
+**Tasks**
+
+* Implement CTA ranking function which takes BANT signals + domain slots → ranked action list.
+
+  * Example rules: if `timeline` present & `authority` missing → rank “Invite decision maker” high.
+  * If `budget` known & `authority` known → rank “Request quote” or “Upgrade plan”.
+* Map needs to product features via a safe feature map (no hallucinations).
+* Represent CTAs as objects with `id`, `label`, `prereqSlots`, `intentTag`.
+
+**Deliverables**
+
+* `cta_ranking.js` (or .ts) and feature map JSON.
+* Tests mapping slot combos → CTAs.
+
+**Acceptance**
+
+* CTA set adapts to readiness signals in test matrix.
+
+---
+
+## Phase F — Testing, metrics, and rollout
+
+**Tasks**
+
+* Unit tests for classifier thresholds and clarifier selection.
+* Integration tests simulating multi-turn flows; include negative tests for mismatches.
+* Human QA on 200 real/simulated dialogues to measure Off-topic rate and clarifier helpfulness.
+* Instrumentation of metrics and dashboards.
+
+**Deliverables**
+
+* Test suite, QA report, dashboards.
+
+**Acceptance**
+
+* Clarifier engagement and off-topic rates meet agreed thresholds vs baseline (e.g., off-topic < 5%).
+
+---
+
+# 3 — JSON schema for backend → UI contract (copy-ready)
+
+Use this schema in responses so frontend has exact gating metadata:
+
+```json
+{
+  "responseText": "Got it — for client onboarding classes you can set capacity and reminders. About how many attendees should I expect?",
+  "domain": "education/classes",
+  "domainMatch": true,
+  "confidence": 0.82,
+  "missingSlots": ["attendees"],
+  "slots": {
+    "class_type": "client onboarding",
+    "recurring": null,
+    "payments": null,
+    "booking_window": null
+  },
+  "clarifierShown": true,
+  "suggestedActions": [
+    {"id":"set_capacity","label":"Set capacity now","prereqSlots":["attendees"]},
+    {"id":"pick_date","label":"Pick a date","prereqSlots":[]}
+  ],
+  "metadata": {
+    "transitionPhrase":"Got it —",
+    "bridge":"for client onboarding classes",
+    "timestamp":"2025-12-11T07:00:00+05:30"
+  }
+}
+```
+
+Notes:
+
+* `domainMatch` indicates whether the reply text is aligned to the detected domain. UI should avoid showing CTAs when `domainMatch==false`.
+* `suggestedActions` are pre-ranked server-side. UI shows top N (<=3) actions whose `prereqSlots` are satisfied or clearly actionable.
+
+---
+
+# 4 — `domains_slots.yaml` (example; copy-ready)
+
+```yaml
+education/classes:
+  slots:
+    class_type: {critical: true, clarifier: "Are these client onboarding sessions, workshops, or recurring classes?"}
+    attendees: {critical: true, clarifier: "About how many attendees should I expect?"}
+    recurring: {critical: true, clarifier: "Is this one-time or recurring (weekly/monthly)?"}
+    payments: {critical: false, clarifier: "Will you accept payments or run free sessions?"}
+    booking_window: {critical: false, clarifier: "How far in advance can clients book (days/weeks)?"}
+
+group_meetings:
+  slots:
+    meeting_type: {critical: true, clarifier: "Is this a webinar, roundtable, or training?"}
+    attendees: {critical: true, clarifier: "Approximate attendee count?"}
+    recurrence: {critical: true, clarifier: "Recurring or one-time?"}
+    capacity: {critical: false, clarifier: "Do you need a registration limit/capacity?"}
+
+onboarding:
+  slots:
+    attendees: {critical: true, clarifier: "How many new clients/people per session?"}
+    payments: {critical: false, clarifier: "Will onboarding require payment?"}
+    duration: {critical: false, clarifier: "Typical session duration?"}
+
+pricing:
+  slots:
+    business_segment: {critical: true, clarifier: "Are you a freelancer, small business or enterprise?"}
+    approx_budget: {critical: true, clarifier: "Do you have an approximate budget range?"}
+    billing_preference: {critical: false, clarifier: "Monthly or annual billing?"}
+```
+
+---
+
+# 5 — Clarifier ranking & selection algorithm (pseudocode)
+
+1. Sort `missingSlots` by `critical` then by `ease_of_answer` (binary or numeric preferred).
+2. If conf ∈ [0.35,0.75): ask `clarifier` for `missingSlots[0]` and set `clarifierShown=true`.
+3. If conf ≥ 0.75 and `missingSlots` contains critical:
+
+   * Inline: reply with bridge + tailored bullets + single clarifier for the highest-priority critical slot.
+4. If conf < 0.35: ask a disambiguation open question: e.g., “Do you mean scheduling classes, workshops, or client onboarding?”
+
+---
+
+# 6 — Composer templates (bridge + bullets + next step)
+
+* Transition phrases (pick one): `["Got it —", "Thanks — that helps.", "Based on that,", "Nice —"]`
+* Bridge example: `"Got it — for client onboarding classes,"`
+* Bullets (keep 2–4 very short):
+
+  * `• Set capacity limits to control seats.`
+  * `• Add reminders to reduce no-shows.`
+  * `• Use optional payments to collect fees.`
+* Next step line (one short question or CTA):
+
+  * `Quick question: About how many attendees should I expect?`
+  * or if ready: `If that fits, would you like to: [Set capacity now] [Pick a date]`
+
+Make sure text is compact (1–2 sentence bridge, 2–3 short bullets, then next step).
+
+---
+
+# 7 — CTA ranking rules (examples)
+
+* If `timeline` present & `authority` missing → rank “Invite decision maker” highest.
+* If `budget` present & `authority` present → rank “Request quote” or “Choose plan” highest.
+* If `attendees` unknown but `class_type` known → rank “Set capacity now” lower, ask attendees first.
+* Always cap to top 3 CTAs and ensure labels are action-oriented.
+
+---
+
+# 8 — Test matrix (automated + manual)
+
+**Automated tests**
+
+* Decision branching: for inputs at conf=0.34, 0.5, 0.8 ensure correct clarifier/answer behavior.
+* Continuity: user says “class scheduling” → assistant must not answer about “workshops” only.
+* UI contract: metadata fields exist and are consistent.
+
+**Manual QA**
+
+* 200 dialogue review to measure:
+
+  * Off-topic rate (goal < 5%).
+  * Clarifier helpfulness score (1–5) average (target > 3.8).
+  * Option CTR baseline vs new system.
+
+---
+
+# 9 — Metrics to instrument (per-turn)
+
+Log a compact analytics object with each assistant turn (avoid PII):
+
+```json
+{
+  "turnId":"uuid",
+  "sessionId":"uuid",
+  "domain":"education/classes",
+  "confidence":0.82,
+  "missingSlots":["attendees"],
+  "clarifierShown":true,
+  "optionsShown":["set_capacity","pick_date"],
+  "clickedOptionId":null,
+  "timestamp":"2025-12-11T07:00:00+05:30"
+}
+```
+
+Dashboards:
+
+* Clarifier Engagement Rate = answeredClarifiers / clarifiersShown
+* Option CTR = clicks / optionsShown
+* Off-topic Rate = flaggedOfftopic / totalTurns
+* BANT completion rate = sessions reaching minimum BANT completeness
+
+Alert thresholds: off-topic rate > 8% or clarifier engagement < 20% after 1k turns → investigate.
+
+---
+
+# 10 — Rollout plan & runbook
+
+* Canary: release to 10% of traffic for 72 hours with verbose logging.
+* Observe metrics for 24–72 hours:
+
+  * Clarifier engagement, Option CTR, Off-topic rate, complaints.
+* Gradually scale to 50% → 100% if metrics stable.
+* Rollback triggers:
+
+  * Off-topic rate increases by 3× baseline.
+  * User complaints spike or critical errors in compose pipeline.
+* Runbook steps:
+
+  1. Pause rollout.
+  2. Revert to previous route.ts commit.
+  3. Post-mortem and hotfix (e.g., threshold tuning).
+
+---
+
+# 11 — Example improved flows (applied to your transcript)
+
+1. User: “can i use calendly for class scheduling?”
+   Assistant (improved):
+   `Got it — for class scheduling, are these client onboarding sessions, workshops, or recurring classes?`
+   (metadata: domain=education/classes, conf=0.6, missingSlots=[class_type])
+
+2. User selects “Client onboarding”
+   Assistant:
+   `Thanks — for client onboarding classes you’ll likely want capacity limits and reminders.`
+   `• Set capacity to control seats.`
+   `• Add automated reminders to reduce no-shows.`
+   `Quick question: About how many attendees should I expect?`
+   (metadata: conf=0.82, missingSlots=[attendees], suggestedActions: [] — options withheld until attendees answered)
+
+3. User: “Share the scheduling link with your clients”
+   Assistant:
+   `Great — once capacity and reminders are set, share your link by email or embed it on your site. Want to set capacity now or pick a date?`
+   (metadata: domainMatch=true, optionsShown=[set_capacity,pick_date])
+
+---
+
+# 12 — Risks & safeguards (brief)
+
+* Over-probing fatigue → cap to 1 clarifier; provide skip fallback.
+* Hallucinations → only use approved feature map for product claims.
+* Session drift → explicit domain invalidation rules.
+
+---
+
+# 13 — Next immediate deliverables I can produce for you now
+
+Pick any (I’ll produce the first two by default if you don’t pick):
+
+1. An executable `route.ts` modification preview (60–120 LOC) that implements the decision logic, composer, and returns full response metadata.
+2. The JSON response schema + TypeScript types for UI consumption.
+3. A 200-utterance labeled dataset (CSV) for classifier calibration.
+4. Unit test skeletons for the decision branches.
+5. YAML domain→slots file expanded for all domains you listed.
+
+Tell me which of the items above you want me to generate now (or say “do all”) and I’ll output them immediately.

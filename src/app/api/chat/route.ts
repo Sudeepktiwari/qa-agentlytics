@@ -991,6 +991,7 @@ function computeBantMissingDims(
     | "timeline"
     | "segment"
     | null = null;
+  let pendingAskedButtons: string[] = [];
 
   for (let i = 0; i < messages.length; i++) {
     const m = messages[i] || {};
@@ -1001,6 +1002,11 @@ function computeBantMissingDims(
       const dim: any = m.bantDimension || null;
       if (fType === "bant" && dim && allDims.includes(dim)) {
         pendingAsked = dim as any;
+        pendingAskedButtons = Array.isArray((m as any).buttons)
+          ? ((m as any).buttons as any[])
+              .filter(Boolean)
+              .map((x: any) => String(x).trim().toLowerCase())
+          : [];
       }
       continue;
     }
@@ -1014,7 +1020,7 @@ function computeBantMissingDims(
         answered.add("budget");
       }
       if (
-        /this\s*week|next\s*week|later|today|tomorrow|this\s*month|quarter|q[1-4]|schedule|demo|call|meeting|appointment/.test(
+        /\b(this\s*week|next\s*week|later|today|tomorrow|this\s*month|quarter|q[1-4]|in\s+\d+\s*(days|weeks)|\d{4}-\d{2}-\d{2})\b/.test(
           s
         )
       ) {
@@ -1044,8 +1050,19 @@ function computeBantMissingDims(
         answered.add("segment");
       }
       if (pendingAsked) {
-        answered.add(pendingAsked);
+        const matchesAnswer = isAnswerToAskedDim(s, pendingAsked);
+        const clickedButton =
+          Array.isArray(pendingAskedButtons) &&
+          pendingAskedButtons.includes(
+            String(content || "")
+              .trim()
+              .toLowerCase()
+          );
+        if (matchesAnswer || clickedButton) {
+          answered.add(pendingAsked);
+        }
         pendingAsked = null;
+        pendingAskedButtons = [];
       }
     }
   }
@@ -1091,7 +1108,7 @@ function isAnswerToAskedDim(
       s
     );
   if (dim === "timeline")
-    return /this\s*week|next\s*week|later|today|tomorrow|this\s*month|quarter|q[1-4]|schedule|demo|call|meeting|appointment|soon|now|date|time/.test(
+    return /\b(this\s*week|next\s*week|later|today|tomorrow|this\s*month|quarter|q[1-4]|in\s+\d+\s*(days|weeks)|\d{4}-\d{2}-\d{2}|soon|now)\b/.test(
       s
     );
   if (dim === "authority")
@@ -3156,17 +3173,39 @@ Based on the page context, create an intelligent contextual question that demons
 
       // Sales/Lead exclusivity: if sales is active, do not run lead-gen contextual bot
       if (sessionEmail) {
-        return NextResponse.json(
-          {
-            mainText:
-              "We’re now in sales mode and will focus on next steps. Would you like to schedule a demo, review pricing, or talk to sales?",
-            buttons: ["Schedule Demo", "View Pricing", "Talk to Sales"],
-            emailPrompt: "",
-            botMode: "sales",
-            userEmail: sessionEmail,
-          },
-          { headers: corsHeaders }
-        );
+        try {
+          const db2 = await getDb();
+          const chats2 = db2.collection("chats");
+          const sessionDocs = await chats2
+            .find({ sessionId })
+            .sort({ createdAt: 1 })
+            .limit(200)
+            .toArray();
+          const sessionMessages: any[] = (sessionDocs || []).map((d: any) => ({
+            role: d.role,
+            content: d.content,
+            followupType: (d as any).followupType,
+            bantDimension: (d as any).bantDimension,
+            buttons: Array.isArray((d as any).buttons)
+              ? (d as any).buttons
+              : [],
+          }));
+          const missingDims = computeBantMissingDims(sessionMessages);
+          if (missingDims.length === 0) {
+            return NextResponse.json(
+              {
+                mainText:
+                  "We’re now in sales mode and will focus on next steps. Would you like to schedule a demo, review pricing, or talk to sales?",
+                buttons: ["Schedule Demo", "View Pricing", "Talk to Sales"],
+                emailPrompt: "",
+                botMode: "sales",
+                userEmail: sessionEmail,
+              },
+              { headers: corsHeaders }
+            );
+          }
+        } catch (e) {}
+        // If BANT incomplete, continue building contextual response
       }
 
       const responseWithMode = {
@@ -8693,6 +8732,7 @@ What specific information are you looking for? I'm here to help guide you throug
           content: d.content,
           followupType: (d as any).followupType,
           bantDimension: (d as any).bantDimension,
+          buttons: Array.isArray((d as any).buttons) ? (d as any).buttons : [],
         })
       );
       sessionMessagesQuick.push({ role: "user", content: question || "" });
