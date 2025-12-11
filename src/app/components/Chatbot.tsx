@@ -59,7 +59,6 @@ const Chatbot: React.FC<ChatbotProps> = ({
   const [emailInputValue, setEmailInputValue] = useState("");
   // Add state for selected radio button
   const [selectedRadio, setSelectedRadio] = useState<number | null>(null);
-  const [othersInputValue, setOthersInputValue] = useState("");
   // Track user activity to prevent unnecessary followups
   const [userIsActive, setUserIsActive] = useState(false);
   const [lastUserAction, setLastUserAction] = useState<number>(Date.now());
@@ -1410,53 +1409,6 @@ const Chatbot: React.FC<ChatbotProps> = ({
                             </button>
                           );
                         })}
-                      </div>
-                      <div style={{ marginTop: 8, color: "#000000" }}>
-                        <form
-                          onSubmit={(e) => {
-                            e.preventDefault();
-                            const value = String(othersInputValue || "").trim();
-                            if (!value) return;
-                            if (followupTimer.current) {
-                              clearTimeout(followupTimer.current);
-                              followupTimer.current = null;
-                            }
-                            setFollowupSent(false);
-                            setUserIsActive(false);
-                            setLastUserAction(Date.now());
-                            sendMessage(value);
-                            setOthersInputValue("");
-                          }}
-                        >
-                          <input
-                            type="text"
-                            value={othersInputValue}
-                            onChange={(e) =>
-                              setOthersInputValue(e.target.value)
-                            }
-                            placeholder="Please share more details"
-                            style={{
-                              marginRight: 8,
-                              backgroundColor: "#ffffff",
-                              color: "#000000",
-                              border: "1px solid #ccc",
-                              padding: "6px 10px",
-                            }}
-                          />
-                          <button
-                            type="submit"
-                            style={{
-                              backgroundColor: "#0070f3",
-                              color: "#ffffff",
-                              border: "none",
-                              padding: "8px 16px",
-                              borderRadius: "4px",
-                              cursor: "pointer",
-                            }}
-                          >
-                            Submit
-                          </button>
-                        </form>
                       </div>
                     </div>
                   ) : (
