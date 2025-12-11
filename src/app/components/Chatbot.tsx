@@ -67,6 +67,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
     "sales" | "lead_generation"
   >("lead_generation");
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
+  const [othersInputValue, setOthersInputValue] = useState("");
 
   // Helper function to clean malformed JSON strings
   const cleanJsonString = (jsonStr: string): string => {
@@ -969,6 +970,38 @@ const Chatbot: React.FC<ChatbotProps> = ({
     return buttons;
   };
 
+  const isLikelyBantQuestion = (msg: Message, buttons: string[]): boolean => {
+    const text = String(msg.content || "");
+    const t = text.toLowerCase();
+    const isQuestion = /\?\s*$/.test(text.trim());
+    const btns = (buttons || []).map((b) => String(b).toLowerCase());
+    const budget =
+      /(\$|usd|per\s*month|\bmo\b|budget|pricing|cost)/.test(t) ||
+      btns.some((b) => /(\$|under|mo|yr|pricing|budget)/.test(b));
+    const timeline =
+      /(today|tomorrow|week|month|months|quarter|timeline|immediately|within)/.test(
+        t
+      ) ||
+      btns.some((b) =>
+        /(today|tomorrow|week|month|months|immediately|within)/.test(b)
+      );
+    const authority =
+      /(manager|director|vp|cto|ceo|decision|approval|who\s*will\s*make)/.test(
+        t
+      ) || btns.some((b) => /(manager|team|myself|approval|cto|ceo)/.test(b));
+    const need =
+      /(feature|need|priority|analytics|integration|project|team|collaboration)/.test(
+        t
+      ) ||
+      btns.some((b) =>
+        /(analytics|integration|project|collaboration|feature)/.test(b)
+      );
+    const segment =
+      /(individual|smb|enterprise|business\s*type)/.test(t) ||
+      btns.some((b) => /(individual|smb|enterprise)/.test(b));
+    return isQuestion && (budget || timeline || authority || need || segment);
+  };
+
   const sendMessage = async (userInput: string) => {
     if (!userInput.trim()) return;
 
@@ -1410,6 +1443,63 @@ const Chatbot: React.FC<ChatbotProps> = ({
                           );
                         })}
                       </div>
+                      {isLikelyBantQuestion(msg, finalButtons) &&
+                        i === messages.length - 1 && (
+                          <div style={{ marginTop: 8, color: "#000000" }}>
+                            <form
+                              onSubmit={(e) => {
+                                e.preventDefault();
+                                const v = String(othersInputValue || "").trim();
+                                if (!v) return;
+                                if (followupTimer.current) {
+                                  clearTimeout(followupTimer.current);
+                                  followupTimer.current = null;
+                                }
+                                setFollowupSent(false);
+                                setUserIsActive(false);
+                                setLastUserAction(Date.now());
+                                sendMessage(v);
+                                setOthersInputValue("");
+                              }}
+                            >
+                              <input
+                                type="text"
+                                value={othersInputValue}
+                                onChange={(e) => {
+                                  setOthersInputValue(e.target.value);
+                                  if (
+                                    e.target.value.length > 0 &&
+                                    !userIsActive
+                                  ) {
+                                    setUserIsActive(true);
+                                    setLastUserAction(Date.now());
+                                  }
+                                }}
+                                placeholder="Please share more details"
+                                style={{
+                                  marginRight: 8,
+                                  backgroundColor: "#ffffff",
+                                  color: "#000000",
+                                  border: "1px solid #ccc",
+                                  padding: "6px 10px",
+                                }}
+                              />
+                              <button
+                                type="submit"
+                                style={{
+                                  backgroundColor: "#0070f3",
+                                  color: "#ffffff",
+                                  border: "none",
+                                  padding: "8px 16px",
+                                  borderRadius: "4px",
+                                  cursor: "pointer",
+                                }}
+                              >
+                                Submit
+                              </button>
+                            </form>
+                          </div>
+                        )}
                     </div>
                   ) : (
                     <div style={{ marginTop: 4, fontSize: 12, color: "#666" }}>
