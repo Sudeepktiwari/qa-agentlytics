@@ -1027,34 +1027,53 @@ const Chatbot: React.FC<ChatbotProps> = ({
   };
 
   const isLikelyBantQuestion = (msg: Message, buttons: string[]): boolean => {
-    const text = String(msg.content || "");
-    const t = text.toLowerCase();
+    const t = String(msg.content || "").toLowerCase();
     const btns = (buttons || []).map((b) => String(b).toLowerCase());
-    const budget =
-      /(\$|usd|per\s*month|\bmo\b|budget|pricing|cost)/.test(t) ||
-      btns.some((b) => /(\$|under|mo|yr|pricing|budget)/.test(b));
-    const timeline =
-      /(today|tomorrow|week|month|months|quarter|timeline|immediately|within)/.test(
-        t
-      ) ||
-      btns.some((b) =>
-        /(today|tomorrow|week|month|months|immediately|within)/.test(b)
-      );
-    const authority =
-      /(manager|director|vp|cto|ceo|decision|approval|who\s*will\s*make)/.test(
-        t
-      ) || btns.some((b) => /(manager|team|myself|approval|cto|ceo)/.test(b));
-    const need =
-      /(feature|need|priority|analytics|integration|project|team|collaboration)/.test(
-        t
-      ) ||
-      btns.some((b) =>
-        /(analytics|integration|project|collaboration|feature)/.test(b)
-      );
-    const segment =
-      /(individual|smb|enterprise|business\s*type)/.test(t) ||
-      btns.some((b) => /(individual|smb|enterprise)/.test(b));
-    return budget || timeline || authority || need || segment;
+    const businessSet = ["individual", "smb", "enterprise"];
+    const decisionSet = [
+      "myself",
+      "manager approval required",
+      "team decision",
+      "not sure yet",
+    ];
+    const timelineSet = [
+      "immediately",
+      "within a month",
+      "1-3 months",
+      "3-6 months",
+      "no specific timeline",
+    ];
+    const featureSet = [
+      "project management",
+      "team collaboration",
+      "data analytics",
+    ];
+    const countMatches = (set: string[]) =>
+      btns.filter((b) => set.some((k) => b.includes(k))).length;
+    const businessMatches = countMatches(businessSet);
+    const decisionMatches = countMatches(decisionSet);
+    const timelineMatches = countMatches(timelineSet);
+    const featureMatches = countMatches(featureSet);
+    const budgetMatches = btns.filter(
+      (b) =>
+        b.includes("/yr") ||
+        b.includes("under") ||
+        /\$\d/.test(b) ||
+        /\d+k/.test(b)
+    ).length;
+    const isQuestion =
+      /\?\s*$/.test(t) ||
+      t.startsWith("what ") ||
+      t.startsWith("which ") ||
+      t.startsWith("who ");
+    return (
+      isQuestion &&
+      (businessMatches >= 2 ||
+        decisionMatches >= 2 ||
+        timelineMatches >= 2 ||
+        featureMatches >= 2 ||
+        budgetMatches >= 2)
+    );
   };
 
   const sendMessage = async (userInput: string) => {
