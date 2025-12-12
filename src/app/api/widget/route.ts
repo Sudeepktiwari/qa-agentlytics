@@ -4404,7 +4404,7 @@ export async function GET(request: Request) {
           console.log("🚫 [WIDGET RENDER] Skipping email prompt - calendar is shown");
         }
         
-        if (!hideInteractiveElements && ((msg.followupType && msg.followupType === 'bant') || (msg.buttons && msg.buttons.length > 0))) {
+        if (!hideInteractiveElements && msg.followupType === 'bant') {
           const textWrap = document.createElement('div');
           textWrap.style.cssText = 'margin-top: 8px;';
           
