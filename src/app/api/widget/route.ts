@@ -3890,25 +3890,6 @@ export async function GET(request: Request) {
       const useFallbackForConfirm = ONBOARDING_ONLY && (isConfirmInput || lastAssistantWithConfirm) && !data.error && !hasServerMessage;
       const btnsForInference = Array.isArray(data.buttons) ? data.buttons : [];
       const contentForInference = String((data.mainText && data.mainText.trim()) ? data.mainText : ((data.answer && String(data.answer).trim()) ? String(data.answer) : fallbackText)).toLowerCase();
-      const btnsLower = btnsForInference.map(b => String(b).toLowerCase());
-      const contentLower = contentForInference;
-      const catBusiness = ['individual','smb','enterprise'];
-      const catDecision = ['myself','manager approval required','team decision','not sure yet'];
-      const catTimeline = ['immediately','within a month','1-3 months','3-6 months','no specific timeline'];
-      const catFeature = ['project management','team collaboration','data analytics'];
-      const buttonsMatchCategory = (cat) => btnsLower.filter(b => cat.some(k => b.includes(k))).length >= 2;
-      const budgetButtonsCount = btnsLower.filter(b => (b.includes('$') || b.includes('k') || b.includes('under') || b.includes('/yr') || /\d/.test(b))).length;
-      const buttonsIndicateBant = buttonsMatchCategory(catBusiness) || buttonsMatchCategory(catDecision) || buttonsMatchCategory(catTimeline) || buttonsMatchCategory(catFeature) || budgetButtonsCount >= 2;
-      const contentIndicatesBant =
-        contentLower.includes('what type of business are you') ||
-        contentLower.includes('what budget range are you considering') ||
-        contentLower.includes('who will make the decision') ||
-        contentLower.includes('which feature matters most right now') ||
-        contentLower.includes('what timeline are you targeting');
-      let inferredType = data.type || null;
-      if (!inferredType && (buttonsIndicateBant || contentIndicatesBant)) {
-        inferredType = 'bant';
-      }
       const botMessage = {
         role: 'assistant',
         content: ((data.mainText && data.mainText.trim())
@@ -3922,7 +3903,7 @@ export async function GET(request: Request) {
         bookingType: data.bookingType || null,
         inputFields: data.inputFields || null,
         onboardingAction: inferredAction,
-        followupType: inferredType
+        followupType: (data.type || null)
       };
       messages.push(botMessage);
       botResponse = botMessage.content;

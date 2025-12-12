@@ -1028,52 +1028,14 @@ const Chatbot: React.FC<ChatbotProps> = ({
 
   const isLikelyBantQuestion = (msg: Message, buttons: string[]): boolean => {
     const t = String(msg.content || "").toLowerCase();
-    const btns = (buttons || []).map((b) => String(b).toLowerCase());
-    const businessSet = ["individual", "smb", "enterprise"];
-    const decisionSet = [
-      "myself",
-      "manager approval required",
-      "team decision",
-      "not sure yet",
+    const phrases = [
+      "what type of business are you",
+      "what budget range are you considering",
+      "who will make the decision",
+      "which feature matters most right now",
+      "what timeline are you targeting",
     ];
-    const timelineSet = [
-      "immediately",
-      "within a month",
-      "1-3 months",
-      "3-6 months",
-      "no specific timeline",
-    ];
-    const featureSet = [
-      "project management",
-      "team collaboration",
-      "data analytics",
-    ];
-    const countMatches = (set: string[]) =>
-      btns.filter((b) => set.some((k) => b.includes(k))).length;
-    const businessMatches = countMatches(businessSet);
-    const decisionMatches = countMatches(decisionSet);
-    const timelineMatches = countMatches(timelineSet);
-    const featureMatches = countMatches(featureSet);
-    const budgetMatches = btns.filter(
-      (b) =>
-        b.includes("/yr") ||
-        b.includes("under") ||
-        /\$\d/.test(b) ||
-        /\d+k/.test(b)
-    ).length;
-    const isQuestion =
-      /\?\s*$/.test(t) ||
-      t.startsWith("what ") ||
-      t.startsWith("which ") ||
-      t.startsWith("who ");
-    return (
-      isQuestion &&
-      (businessMatches >= 2 ||
-        decisionMatches >= 2 ||
-        timelineMatches >= 2 ||
-        featureMatches >= 2 ||
-        budgetMatches >= 2)
-    );
+    return phrases.some((p) => t.includes(p));
   };
 
   const sendMessage = async (userInput: string) => {
