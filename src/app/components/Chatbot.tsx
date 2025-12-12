@@ -1509,7 +1509,8 @@ const Chatbot: React.FC<ChatbotProps> = ({
                           );
                         })}
                       </div>
-                      {isLikelyBantQuestion(msg, finalButtons) && (
+                      {(isLikelyBantQuestion(msg, finalButtons) ||
+                        (finalButtons && finalButtons.length > 0)) && (
                         <div style={{ marginTop: 8, color: "#000000" }}>
                           <form
                             onSubmit={(e) => {
@@ -1606,7 +1607,8 @@ const Chatbot: React.FC<ChatbotProps> = ({
                           </div>
                         ) : null;
                       })()}
-                      {isLikelyBantQuestion(msg, finalButtons) && (
+                      {(isLikelyBantQuestion(msg, finalButtons) ||
+                        (finalButtons && finalButtons.length > 0)) && (
                         <div style={{ marginTop: 8, color: "#000000" }}>
                           <form
                             onSubmit={(e) => {
