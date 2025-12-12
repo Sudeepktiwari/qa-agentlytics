@@ -8926,6 +8926,7 @@ What specific information are you looking for? I'm here to help guide you throug
           ...bookingAware,
           botMode: botModeChain,
           userEmail: userEmail || null,
+          type: "bant",
         };
         if (bookingStatus.hasActiveBooking && bookingStatus.currentBooking) {
           (responseWithMode as any).showBookingCalendar = false;

@@ -3622,6 +3622,7 @@ export async function GET(request: Request) {
       emailPrompt: responseData.emailPrompt || '',
       botMode: responseData.botMode || 'lead_generation',
       userEmail: responseData.userEmail || null,
+      type: responseData.type || null,
       // 🎯 BOOKING CALENDAR FIELDS - ESSENTIAL FOR CALENDAR FUNCTIONALITY
       showBookingCalendar: responseData.showBookingCalendar || false,
       bookingType: responseData.bookingType || null,
