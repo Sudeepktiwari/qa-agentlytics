@@ -4416,7 +4416,7 @@ export async function GET(request: Request) {
           
           const input = document.createElement('input');
           input.type = 'text';
-          input.placeholder = 'Please share more details';
+          input.placeholder = 'Other (please specify)';
           input.style.cssText = \`
             flex: 1;
             padding: 8px;

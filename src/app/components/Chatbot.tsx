@@ -1521,7 +1521,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
                                   setLastUserAction(Date.now());
                                 }
                               }}
-                              placeholder="Please share more details"
+                              placeholder="Other (please specify)"
                               style={{
                                 marginRight: 8,
                                 backgroundColor: "#ffffff",
@@ -1618,7 +1618,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
                                   setLastUserAction(Date.now());
                                 }
                               }}
-                              placeholder="Please share more details"
+                              placeholder="Other (please specify)"
                               style={{
                                 marginRight: 8,
                                 backgroundColor: "#ffffff",
