@@ -3900,7 +3900,8 @@ export async function GET(request: Request) {
         showBookingCalendar: data.showBookingCalendar || false,
         bookingType: data.bookingType || null,
         inputFields: data.inputFields || null,
-        onboardingAction: inferredAction
+        onboardingAction: inferredAction,
+        followupType: (data.type || null)
       };
       messages.push(botMessage);
       botResponse = botMessage.content;
