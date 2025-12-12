@@ -318,6 +318,7 @@ export async function GET(request: Request) {
 
   // Messages array
   let messages = [];
+  let activeFollowupType = null;
   
   // Format text with markdown-like styling
   function formatMessageText(text) {
@@ -3888,6 +3889,24 @@ export async function GET(request: Request) {
       })();
       const hasServerMessage = !!(data.mainText && data.mainText.trim()) || !!(data.answer && String(data.answer).trim());
       const useFallbackForConfirm = ONBOARDING_ONLY && (isConfirmInput || lastAssistantWithConfirm) && !data.error && !hasServerMessage;
+      const btnsForInference = Array.isArray(data.buttons) ? data.buttons : [];
+      const contentForInference = String((data.mainText && data.mainText.trim()) ? data.mainText : ((data.answer && String(data.answer).trim()) ? String(data.answer) : fallbackText)).toLowerCase();
+      const bantButtonKeywords = ['individual','smb','enterprise','manager approval required','team decision','myself','not sure yet','immediately','within a month','1-3 months','3-6 months','no specific timeline','project management','team collaboration','data analytics'];
+      const hasBudgetPattern = btnsForInference.some(b => {
+        const t = String(b).toLowerCase();
+        return t.includes('under') || t.includes('$') || /\d/.test(t);
+      });
+      const hasBantButtons = btnsForInference.some(b => {
+        const t = String(b).toLowerCase();
+        return bantButtonKeywords.some(k => t.includes(k)) || hasBudgetPattern;
+      });
+      const hasBantWords = ['budget','who will make the decision','feature matters','timeline'].some(k => contentForInference.includes(k));
+      let inferredType = data.type || null;
+      if (!inferredType) {
+        if (hasBantButtons || hasBantWords || activeFollowupType === 'bant') {
+          inferredType = 'bant';
+        }
+      }
       const botMessage = {
         role: 'assistant',
         content: ((data.mainText && data.mainText.trim())
@@ -3901,9 +3920,12 @@ export async function GET(request: Request) {
         bookingType: data.bookingType || null,
         inputFields: data.inputFields || null,
         onboardingAction: inferredAction,
-        followupType: (data.type || null)
+        followupType: inferredType
       };
       messages.push(botMessage);
+      if (botMessage.followupType) {
+        activeFollowupType = botMessage.followupType;
+      }
       botResponse = botMessage.content;
       console.log('[Widget] Bot response received, starting followup timer');
       if (!ONBOARDING_ONLY) startFollowupTimer();
@@ -3921,6 +3943,9 @@ export async function GET(request: Request) {
         if (isImmediateType) {
           console.log('⚡ [WIDGET FOLLOWUP] Immediate secondary message for type:', typeLower);
           messages.push(secondaryMessage);
+          if (secondaryMessage.followupType) {
+            activeFollowupType = secondaryMessage.followupType;
+          }
           renderMessages();
           scrollToBottom();
         } else {
@@ -3934,6 +3959,9 @@ export async function GET(request: Request) {
           console.log('⏳ [WIDGET FOLLOWUP] Total followup delay (ms):', totalDelayMs, 'readerDelayMs:', delayMs, 'wordCount:', words);
           setTimeout(() => {
             messages.push(secondaryMessage);
+            if (secondaryMessage.followupType) {
+              activeFollowupType = secondaryMessage.followupType;
+            }
             renderMessages();
             scrollToBottom();
           }, totalDelayMs);
