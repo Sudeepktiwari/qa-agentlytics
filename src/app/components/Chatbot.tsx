@@ -40,12 +40,16 @@ interface ChatbotProps {
   pageUrl?: string;
   adminId?: string;
   prefillQuestions?: string[];
+  disableProactive?: boolean;
+  seedAssistantMessages?: string[];
 }
 
 const Chatbot: React.FC<ChatbotProps> = ({
   pageUrl,
   adminId,
   prefillQuestions = [],
+  disableProactive,
+  seedAssistantMessages = [],
 }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -176,6 +180,22 @@ const Chatbot: React.FC<ChatbotProps> = ({
   // Remove getEffectivePageUrl and getPreviousQuestions from component scope
 
   useEffect(() => {
+    if (disableProactive) {
+      const seeds = Array.isArray(seedAssistantMessages)
+        ? seedAssistantMessages
+        : [];
+      if (seeds.length > 0) {
+        setMessages(
+          seeds.map((text) => ({
+            role: "assistant" as const,
+            content: text,
+            buttons: [],
+            emailPrompt: "",
+          }))
+        );
+      }
+      return;
+    }
     if (isTestEnv) {
       // In test, only run after a link is selected
       // if (!proactiveTriggered || !selectedLink) return;
@@ -391,7 +411,13 @@ const Chatbot: React.FC<ChatbotProps> = ({
         clearTimeout(followupTimer.current);
       }
     };
-  }, [pageUrl, adminId, isTestEnv /*, proactiveTriggered, selectedLink */]);
+  }, [
+    pageUrl,
+    adminId,
+    isTestEnv,
+    disableProactive,
+    seedAssistantMessages /*, proactiveTriggered, selectedLink */,
+  ]);
 
   useEffect(() => {
     if (messages.length === 0) return;
@@ -970,10 +996,39 @@ const Chatbot: React.FC<ChatbotProps> = ({
     return buttons;
   };
 
+  const getDefaultBantButtons = (text: string): string[] => {
+    const t = String(text || "").toLowerCase();
+    const budget = /(\$|usd|per\s*month|\bmo\b|budget|pricing|cost)/.test(t);
+    const timeline =
+      /(today|tomorrow|week|month|months|quarter|timeline|immediately|within)/.test(
+        t
+      );
+    const authority =
+      /(manager|director|vp|cto|ceo|decision|approval|who\s*will\s*make)/.test(
+        t
+      );
+    const need =
+      /(feature|need|priority|analytics|integration|project|team|collaboration)/.test(
+        t
+      );
+    if (budget) return ["Under $500/mo", "$500–$2k/mo", "$2k–$10k/mo", "$10k+"];
+    if (authority)
+      return ["Yes, I'm the decision maker", "No, I need approval"];
+    if (timeline)
+      return ["Today", "This week", "This month", "Within 3 months"];
+    if (need)
+      return [
+        "Analytics",
+        "Integration",
+        "Lead qualification",
+        "Support automation",
+      ];
+    return [];
+  };
+
   const isLikelyBantQuestion = (msg: Message, buttons: string[]): boolean => {
     const text = String(msg.content || "");
     const t = text.toLowerCase();
-    const isQuestion = /\?\s*$/.test(text.trim());
     const btns = (buttons || []).map((b) => String(b).toLowerCase());
     const budget =
       /(\$|usd|per\s*month|\bmo\b|budget|pricing|cost)/.test(t) ||
@@ -999,7 +1054,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
     const segment =
       /(individual|smb|enterprise|business\s*type)/.test(t) ||
       btns.some((b) => /(individual|smb|enterprise)/.test(b));
-    return isQuestion && (budget || timeline || authority || need || segment);
+    return budget || timeline || authority || need || segment;
   };
 
   const sendMessage = async (userInput: string) => {
@@ -1388,6 +1443,17 @@ const Chatbot: React.FC<ChatbotProps> = ({
                     finalButtons
                   );
 
+                  if (finalButtons.length === 0) {
+                    const fallback = getDefaultBantButtons(msg.content);
+                    if (fallback.length > 0) {
+                      finalButtons = fallback;
+                      console.log(
+                        "[BUTTON DEBUG] Using fallback BANT buttons:",
+                        finalButtons
+                      );
+                    }
+                  }
+
                   return finalButtons.length > 0 ? (
                     <div style={{ marginTop: 8 }}>
                       <div
@@ -1443,67 +1509,159 @@ const Chatbot: React.FC<ChatbotProps> = ({
                           );
                         })}
                       </div>
-                      {isLikelyBantQuestion(msg, finalButtons) &&
-                        i === messages.length - 1 && (
-                          <div style={{ marginTop: 8, color: "#000000" }}>
-                            <form
-                              onSubmit={(e) => {
-                                e.preventDefault();
-                                const v = String(othersInputValue || "").trim();
-                                if (!v) return;
-                                if (followupTimer.current) {
-                                  clearTimeout(followupTimer.current);
-                                  followupTimer.current = null;
+                      {isLikelyBantQuestion(msg, finalButtons) && (
+                        <div style={{ marginTop: 8, color: "#000000" }}>
+                          <form
+                            onSubmit={(e) => {
+                              e.preventDefault();
+                              const v = String(othersInputValue || "").trim();
+                              if (!v) return;
+                              if (followupTimer.current) {
+                                clearTimeout(followupTimer.current);
+                                followupTimer.current = null;
+                              }
+                              setFollowupSent(false);
+                              setUserIsActive(false);
+                              setLastUserAction(Date.now());
+                              sendMessage(v);
+                              setOthersInputValue("");
+                            }}
+                          >
+                            <input
+                              type="text"
+                              value={othersInputValue}
+                              onChange={(e) => {
+                                setOthersInputValue(e.target.value);
+                                if (
+                                  e.target.value.length > 0 &&
+                                  !userIsActive
+                                ) {
+                                  setUserIsActive(true);
+                                  setLastUserAction(Date.now());
                                 }
-                                setFollowupSent(false);
-                                setUserIsActive(false);
-                                setLastUserAction(Date.now());
-                                sendMessage(v);
-                                setOthersInputValue("");
+                              }}
+                              placeholder="Please share more details"
+                              style={{
+                                marginRight: 8,
+                                backgroundColor: "#ffffff",
+                                color: "#000000",
+                                border: "1px solid #ccc",
+                                padding: "6px 10px",
+                              }}
+                            />
+                            <button
+                              type="submit"
+                              style={{
+                                backgroundColor: "#0070f3",
+                                color: "#ffffff",
+                                border: "none",
+                                padding: "8px 16px",
+                                borderRadius: "4px",
+                                cursor: "pointer",
                               }}
                             >
-                              <input
-                                type="text"
-                                value={othersInputValue}
-                                onChange={(e) => {
-                                  setOthersInputValue(e.target.value);
-                                  if (
-                                    e.target.value.length > 0 &&
-                                    !userIsActive
-                                  ) {
-                                    setUserIsActive(true);
-                                    setLastUserAction(Date.now());
-                                  }
-                                }}
-                                placeholder="Please share more details"
-                                style={{
-                                  marginRight: 8,
-                                  backgroundColor: "#ffffff",
-                                  color: "#000000",
-                                  border: "1px solid #ccc",
-                                  padding: "6px 10px",
-                                }}
-                              />
-                              <button
-                                type="submit"
-                                style={{
-                                  backgroundColor: "#0070f3",
-                                  color: "#ffffff",
-                                  border: "none",
-                                  padding: "8px 16px",
-                                  borderRadius: "4px",
-                                  cursor: "pointer",
-                                }}
-                              >
-                                Submit
-                              </button>
-                            </form>
-                          </div>
-                        )}
+                              Submit
+                            </button>
+                          </form>
+                        </div>
+                      )}
                     </div>
                   ) : (
-                    <div style={{ marginTop: 4, fontSize: 12, color: "#666" }}>
-                      [DEBUG: No buttons found to render]
+                    <div style={{ marginTop: 8 }}>
+                      <div style={{ fontSize: 12, color: "#666" }}>
+                        [DEBUG: No buttons found to render]
+                      </div>
+                      {(() => {
+                        const fallback = getDefaultBantButtons(msg.content);
+                        return fallback.length > 0 ? (
+                          <div style={{ marginTop: 8 }}>
+                            <div
+                              style={{
+                                display: "flex",
+                                flexWrap: "wrap",
+                                gap: 8,
+                              }}
+                            >
+                              {fallback.map((action, idx) => (
+                                <button
+                                  key={idx}
+                                  type="button"
+                                  onClick={() => handleActionClick(action, msg)}
+                                  style={{
+                                    backgroundColor: "#edf2f7",
+                                    color: "#1a202c",
+                                    border: "1px solid #cbd5e0",
+                                    borderRadius: 16,
+                                    padding: "8px 12px",
+                                    cursor: "pointer",
+                                    fontSize: 13,
+                                    fontWeight: 600,
+                                    transition: "all 0.2s ease",
+                                  }}
+                                >
+                                  {action}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        ) : null;
+                      })()}
+                      {isLikelyBantQuestion(msg, finalButtons) && (
+                        <div style={{ marginTop: 8, color: "#000000" }}>
+                          <form
+                            onSubmit={(e) => {
+                              e.preventDefault();
+                              const v = String(othersInputValue || "").trim();
+                              if (!v) return;
+                              if (followupTimer.current) {
+                                clearTimeout(followupTimer.current);
+                                followupTimer.current = null;
+                              }
+                              setFollowupSent(false);
+                              setUserIsActive(false);
+                              setLastUserAction(Date.now());
+                              sendMessage(v);
+                              setOthersInputValue("");
+                            }}
+                          >
+                            <input
+                              type="text"
+                              value={othersInputValue}
+                              onChange={(e) => {
+                                setOthersInputValue(e.target.value);
+                                if (
+                                  e.target.value.length > 0 &&
+                                  !userIsActive
+                                ) {
+                                  setUserIsActive(true);
+                                  setLastUserAction(Date.now());
+                                }
+                              }}
+                              placeholder="Please share more details"
+                              style={{
+                                marginRight: 8,
+                                backgroundColor: "#ffffff",
+                                color: "#000000",
+                                border: "1px solid #ccc",
+                                padding: "6px 10px",
+                              }}
+                            />
+                            <button
+                              type="submit"
+                              style={{
+                                backgroundColor: "#0070f3",
+                                color: "#ffffff",
+                                border: "none",
+                                padding: "8px 16px",
+                                borderRadius: "4px",
+                                cursor: "pointer",
+                              }}
+                            >
+                              Submit
+                            </button>
+                          </form>
+                        </div>
+                      )}
                     </div>
                   );
                 })()}
