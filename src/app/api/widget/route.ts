@@ -4403,6 +4403,62 @@ export async function GET(request: Request) {
         } else if (msg.emailPrompt && msg.emailPrompt.trim() && hideInteractiveElements) {
           console.log("🚫 [WIDGET RENDER] Skipping email prompt - calendar is shown");
         }
+        
+        if (!hideInteractiveElements && ((msg.followupType && msg.followupType === 'bant') || (msg.buttons && msg.buttons.length > 0))) {
+          const textWrap = document.createElement('div');
+          textWrap.style.cssText = 'margin-top: 8px;';
+          
+          const form = document.createElement('form');
+          form.style.cssText = 'display: flex; gap: 8px;';
+          
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.placeholder = 'Please share more details';
+          input.style.cssText = \`
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 13px;
+            outline: none;
+            background: white;
+            color: black;
+            box-sizing: border-box;
+          \`;
+          
+          input.addEventListener('input', () => {
+            if (input.value.length > 0) {
+              setUserActive();
+            }
+          });
+          
+          const submit = document.createElement('button');
+          submit.type = 'submit';
+          submit.textContent = 'Submit';
+          submit.style.cssText = \`
+            background: #f1f1f1;
+            color: #333;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+          \`;
+          
+          form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const v = (input.value || '').trim();
+            if (!v) return;
+            resetUserActivity();
+            sendMessage(v);
+            input.value = '';
+          });
+          
+          form.appendChild(input);
+          form.appendChild(submit);
+          textWrap.appendChild(form);
+          bubbleDiv.appendChild(textWrap);
+        }
 
         // Add booking calendar if present
         console.log("🔍 [WIDGET DEBUG] Checking booking calendar flags:", {
