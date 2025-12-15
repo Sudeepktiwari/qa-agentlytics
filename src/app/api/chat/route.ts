@@ -613,7 +613,7 @@ async function analyzeForProbing(input: {
     {
       role: "system",
       content:
-        "Decide whether to send a short BANT qualification follow-up now. Use the last user message and the assistant's response. Prefer sending a follow-up when at least one of the provided missingDims remains and a question can be naturally anchored to the user's last message or the assistant's response. Choose ONE BANT dimension from missingDims and ask about that only. Return JSON: { shouldSendFollowUp: boolean, mainText: string, buttons: string[], emailPrompt: string }. The message must ask ONE qualification in ONE sentence ending with '?'. Provide 2–4 concise options in 'buttons' that directly answer that single question. Never combine multiple BANT dimensions in one question. If botMode is 'sales', prefer Budget or Timeline; if 'lead_generation', prefer Need. If Budget is missing but Business Type ('segment') is also missing, ask Business Type first.",
+        "Compose a short, helpful follow-up anchored to the last user message and assistant response. Return JSON: { shouldSendFollowUp: boolean, mainText: string, buttons: string[], emailPrompt: string }. If botMode is 'sales', do NOT ask BANT; instead provide a one-sentence helpful tip or next step with 2–4 concise, action-oriented buttons (e.g., 'See pricing', 'Compare plans', 'Integration guide', 'Schedule demo'). If botMode is 'lead_generation', you may ask ONE BANT clarifier at most; never combine dimensions.",
     },
     {
       role: "user",
@@ -779,7 +779,10 @@ async function analyzeForProbing(input: {
     if (out.length > 4) out = out.slice(0, 4);
     return out;
   };
-  const mt = normQ(typeof parsed.mainText === "string" ? parsed.mainText : "");
+  const mt =
+    input.botMode === "sales"
+      ? String(parsed.mainText || "").trim()
+      : normQ(typeof parsed.mainText === "string" ? parsed.mainText : "");
   const btns = normButtons(mt, parsed.buttons, input.botMode);
   const needSegmentFirst = /budget|price|cost|pricing|plan/.test(
     mt.toLowerCase()
@@ -7641,7 +7644,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
                 mainText: probingQuick.mainText,
                 buttons: probingQuick.buttons || [],
                 emailPrompt: probingQuick.emailPrompt || "",
-                type: "bant",
+                type: "probe",
               } as any;
               await chats.insertOne({
                 sessionId,
@@ -8912,7 +8915,7 @@ What specific information are you looking for? I'm here to help guide you throug
     console.log(`[DEBUG] User provided email in current message: ${userEmail}`);
   }
 
-  const enableBantChaining = !!userEmail;
+  const enableBantChaining = false;
   if (enableBantChaining) {
     const lastAssistant = await chats.findOne(
       { sessionId, role: "assistant" },
@@ -9902,12 +9905,12 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
             mainText: probingQuick.mainText,
             buttons: probingQuick.buttons || [],
             emailPrompt: probingQuick.emailPrompt || "",
-            type: userEmail ? "bant" : "probe",
+            type: "probe",
           } as any;
           const inferredDim = detectBantDimensionFromText(
             String(immediate.mainText || "")
           );
-          if (inferredDim === "budget") {
+          if (inferredDim === "budget" && botMode !== "sales") {
             const segment = getBusinessSegment(sessionMessagesQuick);
             if (missingDimsQuick.includes("segment") && !segment) {
               immediate.mainText = "What type of business are you?";
@@ -9965,6 +9968,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
           let immediate: any = null;
           const segment = getBusinessSegment(sessionMessagesQuick);
           if (
+            botMode !== "sales" &&
             userEmail &&
             missingDimsQuick.includes("segment") &&
             priceSignal
@@ -9976,7 +9980,12 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
               type: "bant",
               dimension: "segment",
             } as any;
-          } else if (userEmail && missingDimsQuick.length > 0 && priceSignal) {
+          } else if (
+            botMode !== "sales" &&
+            userEmail &&
+            missingDimsQuick.length > 0 &&
+            priceSignal
+          ) {
             const budgetButtons = (() => {
               if (segment === "individual")
                 return ["Under $20/mo", "$20–$50/mo", "$50+"];
@@ -9993,7 +10002,12 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
               type: "bant",
               dimension: "budget",
             } as any;
-          } else if (userEmail && missingDimsQuick.length > 0 && timeSignal) {
+          } else if (
+            botMode !== "sales" &&
+            userEmail &&
+            missingDimsQuick.length > 0 &&
+            timeSignal
+          ) {
             immediate = {
               mainText: "What timeline are you targeting?",
               buttons: ["This week", "Next week", "Later"],
@@ -10032,7 +10046,12 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
           }
         }
       }
-      if (!secondary && enableImmediateQualification && userEmail) {
+      if (
+        !secondary &&
+        enableImmediateQualification &&
+        userEmail &&
+        botMode !== "sales"
+      ) {
         const sessionDocsQuick2 = await chats
           .find({ sessionId })
           .sort({ createdAt: 1 })
