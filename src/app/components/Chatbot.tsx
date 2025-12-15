@@ -98,6 +98,19 @@ const Chatbot: React.FC<ChatbotProps> = ({
     }
   };
 
+  const sanitizeButtonLabel = (s: string): string => {
+    return String(s)
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&nbsp;/gi, " ")
+      .replace(/&amp;/gi, "&")
+      .replace(/&#39;/g, "'")
+      .replace(/&quot;/gi, '"')
+      .replace(/&lt;/gi, "<")
+      .replace(/&gt;/gi, ">")
+      .replace(/\s+/g, " ")
+      .trim();
+  };
+
   // Debug logging for bot mode state
   console.log("[Chatbot] Current bot mode state:", {
     currentBotMode,
@@ -234,7 +247,9 @@ const Chatbot: React.FC<ChatbotProps> = ({
                   return {
                     ...msg,
                     content: parsed.mainText || "",
-                    buttons: parsed.buttons || [],
+                    buttons: Array.isArray(parsed.buttons)
+                      ? parsed.buttons.map(sanitizeButtonLabel).filter(Boolean)
+                      : [],
                     emailPrompt: parsed.emailPrompt || "",
                   };
                 } catch {
@@ -294,7 +309,9 @@ const Chatbot: React.FC<ChatbotProps> = ({
                   {
                     role: "assistant",
                     content: data.answer,
-                    buttons: data.buttons || [],
+                    buttons: Array.isArray(data.buttons)
+                      ? data.buttons.map(sanitizeButtonLabel).filter(Boolean)
+                      : [],
                     emailPrompt: "",
                     botMode: data.botMode,
                     userEmail: data.userEmail,
@@ -364,7 +381,9 @@ const Chatbot: React.FC<ChatbotProps> = ({
                 {
                   role: "assistant",
                   content: data.answer,
-                  buttons: data.buttons || [],
+                  buttons: Array.isArray(data.buttons)
+                    ? data.buttons.map(sanitizeButtonLabel).filter(Boolean)
+                    : [],
                   emailPrompt: "",
                   botMode: data.botMode,
                   userEmail: data.userEmail,
@@ -610,7 +629,9 @@ const Chatbot: React.FC<ChatbotProps> = ({
 
           return {
             mainText: parsed.mainText || "Here are some options for you:",
-            buttons: Array.isArray(parsed.buttons) ? parsed.buttons : [],
+            buttons: Array.isArray(parsed.buttons)
+              ? parsed.buttons.map(sanitizeButtonLabel).filter(Boolean)
+              : [],
             emailPrompt: parsed.emailPrompt || "",
           };
         } else {
@@ -679,7 +700,9 @@ const Chatbot: React.FC<ChatbotProps> = ({
           console.log("🎉 [PARSE] Final result from JSON block extraction:", {
             finalMainText: mainText.trim(),
             finalMainTextLength: mainText.trim().length,
-            finalButtons: Array.isArray(parsed.buttons) ? parsed.buttons : [],
+            finalButtons: Array.isArray(parsed.buttons)
+              ? parsed.buttons.map(sanitizeButtonLabel).filter(Boolean)
+              : [],
             finalButtonCount: Array.isArray(parsed.buttons)
               ? parsed.buttons.length
               : 0,
@@ -693,7 +716,9 @@ const Chatbot: React.FC<ChatbotProps> = ({
 
           return {
             mainText: mainText.trim(),
-            buttons: Array.isArray(parsed.buttons) ? parsed.buttons : [],
+            buttons: Array.isArray(parsed.buttons)
+              ? parsed.buttons.map(sanitizeButtonLabel).filter(Boolean)
+              : [],
             emailPrompt: parsed.emailPrompt || "",
           };
         } catch (e) {
@@ -714,7 +739,9 @@ const Chatbot: React.FC<ChatbotProps> = ({
           const cleanedButtonsStr = cleanJsonString(buttonsArrayStr);
           const buttonsArray = JSON.parse(cleanedButtonsStr);
           if (Array.isArray(buttonsArray)) {
-            extractedButtons = buttonsArray;
+            extractedButtons = buttonsArray
+              .map(sanitizeButtonLabel)
+              .filter(Boolean);
             console.log(
               "[Chatbot] Extracted buttons from text format:",
               extractedButtons
@@ -759,7 +786,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
       console.log("[Chatbot] Cleaned string content:", cleaned.trim());
       return {
         mainText: cleaned.trim(),
-        buttons: extractedButtons,
+        buttons: extractedButtons.map(sanitizeButtonLabel).filter(Boolean),
         emailPrompt: extractedEmailPrompt,
       };
     }
@@ -810,7 +837,9 @@ const Chatbot: React.FC<ChatbotProps> = ({
 
     const result = {
       mainText,
-      buttons: Array.isArray(data.buttons) ? data.buttons : [],
+      buttons: Array.isArray(data.buttons)
+        ? data.buttons.map(sanitizeButtonLabel).filter(Boolean)
+        : [],
       emailPrompt: typeof data.emailPrompt === "string" ? data.emailPrompt : "",
     };
 
@@ -978,6 +1007,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
           .replace(/^_+|_+$/g, "") // underscores
           .replace(/^`+|`+$/g, "") // backticks
           .replace(/[.!?]*$/, ""); // trailing punctuation
+        label = sanitizeButtonLabel(label);
 
         // Simple validation: reasonable length and not empty
         if (label.length >= 3 && label.length <= 60) {
