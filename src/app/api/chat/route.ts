@@ -1097,28 +1097,28 @@ function computeBantMissingDims(
     if (role === "user") {
       const s = content.toLowerCase();
       if (
-        /\$|budget|price|cost|pricing|per\s*month|mo\b|\b\d+\s*(usd|dollars|\$)\b/.test(
+        /\$|budget|price|cost|pricing|per\s*month|monthly|\/mo\b|per\s*year|yearly|annually|\/yr\b|\b\d+\s*(usd|dollars|\$|k|grand)\b|less\s*than|under|below|more\s*than|above|over|free|range/.test(
           s
         )
       ) {
         answered.add("budget");
       }
       if (
-        /\b(this\s*week|next\s*week|later|today|tomorrow|this\s*month|quarter|q[1-4]|in\s+\d+\s*(days|weeks)|\d{4}-\d{2}-\d{2})\b/.test(
+        /\b(this\s*week|next\s*week|later|today|tomorrow|this\s*month|next\s*month|this\s*year|next\s*year|quarter|q[1-4]|in\s+\d+\s*(days?|weeks?|months?|years?|mos?|yrs?)|\d{4}-\d{2}-\d{2})\b/.test(
           s
         )
       ) {
         answered.add("timeline");
       }
       if (
-        /i\s*(am|'m)\s*the\s*decision\s*maker|my\s*manager|team\s*lead|we\s*decide|i\s*decide|manager\s*approval/.test(
+        /i\s*(am|'m)\s*the\s*decision\s*maker|\b(it'?s\s*me|myself)\b|i\s*(decide|approve|buy)\b|my\s*manager|team\s*lead|we\s*decide|manager\s*approval|need\s*approval|procurement|legal|finance|cfo|ceo|owner|founder|director|vp/.test(
           s
         )
       ) {
         answered.add("authority");
       }
       if (
-        /workflows|embeds|analytics|integration|feature|features|need|priority|use\s*case|help\b/.test(
+        /workflows|embeds|analytics|integration|feature|features|need|priority|use\s*case|help\b|automation|reminders|calendar|api|webhooks|routing|availability|templates|reporting|compliance|security|scheduling|project\s*management|collaboration|data\s*analytics/.test(
           s
         )
       ) {
@@ -1127,7 +1127,7 @@ function computeBantMissingDims(
       if (/(individual|solo|freelancer|personal)\b/.test(s)) {
         answered.add("segment");
       }
-      if (/(smb|small\s*business|startup|team|mid\s*market)\b/.test(s)) {
+      if (/(smb|sme|small\s*business|startup|team|mid\s*market)\b/.test(s)) {
         answered.add("segment");
       }
       if (/(enterprise|corporate|large\s*company|global)\b/.test(s)) {
@@ -1188,23 +1188,23 @@ function isAnswerToAskedDim(
   if (!dim) return false;
   const s = String(t || "").toLowerCase();
   if (dim === "budget")
-    return /\$|budget|price|cost|pricing|per\s*month|mo\b|\b\d+\s*(usd|dollars|\$)\b|free|under|above|range|plan|tier/.test(
+    return /\$|budget|price|cost|pricing|per\s*month|monthly|\/mo\b|per\s*year|yearly|annually|\/yr\b|\b\d+\s*(usd|dollars|\$|k|grand)\b|free|under|less\s*than|below|above|over|more\s*than|range|plan|tier/.test(
       s
     );
   if (dim === "timeline")
-    return /\b(this\s*week|next\s*week|later|today|tomorrow|this\s*month|quarter|q[1-4]|in\s+\d+\s*(days|weeks)|\d{4}-\d{2}-\d{2}|soon|now)\b/.test(
+    return /\b(this\s*week|next\s*week|later|today|tomorrow|this\s*month|next\s*month|this\s*year|next\s*year|quarter|q[1-4]|in\s+\d+\s*(days?|weeks?|months?|years?|mos?|yrs?)|\d{4}-\d{2}-\d{2}|soon|now)\b/.test(
       s
     );
   if (dim === "authority")
-    return /i\s*(am|'m)\s*the\s*decision\s*maker|manager|director|vp|cfo|ceo|owner|founder|team\s*lead|approve|authority|procurement|legal|unsure|not\s*sure/.test(
+    return /i\s*(am|'m)\s*the\s*decision\s*maker|\b(it'?s\s*me|myself)\b|manager|director|vp|cfo|ceo|owner|founder|team\s*lead|approve|authority|procurement|legal|finance|unsure|not\s*sure/.test(
       s
     );
   if (dim === "need")
-    return /workflows|embeds|analytics|integration|feature|features|need|priority|use\s*case|help|explore|learn|customize|project\s*management|collaboration|data\s*analytics/.test(
+    return /workflows|embeds|analytics|integration|feature|features|need|priority|use\s*case|help|explore|learn|customize|project\s*management|collaboration|data\s*analytics|automation|reminders|calendar|api|webhooks|routing|availability|templates|reporting|compliance|security|scheduling/.test(
       s
     );
   if (dim === "segment")
-    return /(individual|solo|freelancer|personal|smb|small\s*business|startup|team|mid\s*market|enterprise|corporate|large\s*company|global)/.test(
+    return /(individual|solo|freelancer|personal|smb|sme|small\s*business|startup|team|mid\s*market|enterprise|corporate|large\s*company|global)/.test(
       s
     );
   return false;
