@@ -2526,6 +2526,7 @@ Conversation Flow Intelligence:
         },
       ],
       temperature: 0.7,
+      response_format: { type: "json_object" },
     });
 
     return JSON.parse(completion.choices[0].message.content || "{}");
@@ -2617,6 +2618,7 @@ async function generateTopicBasedFollowup(
       ],
       temperature: 0.7,
       max_tokens: 500,
+      response_format: { type: "json_object" },
     });
 
     const responseText = completion.choices[0].message.content;

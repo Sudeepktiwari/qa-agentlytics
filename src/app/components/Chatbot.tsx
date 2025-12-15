@@ -111,6 +111,22 @@ const Chatbot: React.FC<ChatbotProps> = ({
       .trim();
   };
 
+  const normalizeMainText = (text: string): string => {
+    let t = String(text || "");
+    t = t.replace(/\\n\\n/g, "\n\n").replace(/\\n/g, "\n");
+    t = t.replace(/\\'/g, "'");
+    t = t.replace(/\\([!?:;.,(){}\\[\\]])/g, "$1");
+    t = t
+      .replace(/&nbsp;/gi, " ")
+      .replace(/&amp;/gi, "&")
+      .replace(/&#39;/g, "'")
+      .replace(/&quot;/gi, '"')
+      .replace(/&lt;/gi, "<")
+      .replace(/&gt;/gi, ">");
+    t = t.replace(/\s+/g, " ").trim();
+    return t;
+  };
+
   // Debug logging for bot mode state
   console.log("[Chatbot] Current bot mode state:", {
     currentBotMode,
@@ -308,7 +324,10 @@ const Chatbot: React.FC<ChatbotProps> = ({
                 setMessages([
                   {
                     role: "assistant",
-                    content: data.answer,
+                    content:
+                      typeof data.answer === "string"
+                        ? normalizeMainText(data.answer)
+                        : data.answer,
                     buttons: Array.isArray(data.buttons)
                       ? data.buttons.map(sanitizeButtonLabel).filter(Boolean)
                       : [],
@@ -380,7 +399,10 @@ const Chatbot: React.FC<ChatbotProps> = ({
               setMessages([
                 {
                   role: "assistant",
-                  content: data.answer,
+                  content:
+                    typeof data.answer === "string"
+                      ? normalizeMainText(data.answer)
+                      : data.answer,
                   buttons: Array.isArray(data.buttons)
                     ? data.buttons.map(sanitizeButtonLabel).filter(Boolean)
                     : [],
@@ -628,7 +650,9 @@ const Chatbot: React.FC<ChatbotProps> = ({
           });
 
           return {
-            mainText: parsed.mainText || "Here are some options for you:",
+            mainText: normalizeMainText(
+              parsed.mainText || "Here are some options for you:"
+            ),
             buttons: Array.isArray(parsed.buttons)
               ? parsed.buttons.map(sanitizeButtonLabel).filter(Boolean)
               : [],
@@ -715,7 +739,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
           });
 
           return {
-            mainText: mainText.trim(),
+            mainText: normalizeMainText(mainText.trim()),
             buttons: Array.isArray(parsed.buttons)
               ? parsed.buttons.map(sanitizeButtonLabel).filter(Boolean)
               : [],
@@ -785,7 +809,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
 
       console.log("[Chatbot] Cleaned string content:", cleaned.trim());
       return {
-        mainText: cleaned.trim(),
+        mainText: normalizeMainText(cleaned.trim()),
         buttons: extractedButtons.map(sanitizeButtonLabel).filter(Boolean),
         emailPrompt: extractedEmailPrompt,
       };
@@ -836,7 +860,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
     }
 
     const result = {
-      mainText,
+      mainText: normalizeMainText(mainText),
       buttons: Array.isArray(data.buttons)
         ? data.buttons.map(sanitizeButtonLabel).filter(Boolean)
         : [],
