@@ -10138,8 +10138,6 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
               : "",
         }
       );
-      const db = await getDb();
-      const chats = db.collection("chats");
       const assistantCountBefore = await chats.countDocuments({
         sessionId,
         role: "assistant",
