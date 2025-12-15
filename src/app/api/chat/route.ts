@@ -976,6 +976,16 @@ function buildHeuristicBantFollowup(input: {
   return { mainText: mt, buttons: btns, emailPrompt: "", dimension: chosen };
 }
 
+function mapChatDocsToBantMessages(docs: any[]): any[] {
+  return (Array.isArray(docs) ? docs : []).map((d: any) => ({
+    role: d?.role,
+    content: d?.content,
+    followupType: (d as any)?.followupType,
+    bantDimension: (d as any)?.bantDimension,
+    buttons: Array.isArray((d as any)?.buttons) ? (d as any).buttons : [],
+  }));
+}
+
 function computeBantMissingDims(
   messages: any[]
 ): ("budget" | "authority" | "need" | "timeline" | "segment")[] {
@@ -7592,11 +7602,17 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
           try {
             const db = await getDb();
             const chats = db.collection("chats");
-            const sessionMessagesQuick = await chats
+            const sessionDocsQuick = await chats
               .find({ sessionId })
               .sort({ createdAt: 1 })
               .limit(200)
               .toArray();
+            const sessionMessagesQuick =
+              mapChatDocsToBantMessages(sessionDocsQuick);
+            sessionMessagesQuick.push({
+              role: "user",
+              content: question || "",
+            });
             const missingDimsQuick =
               computeBantMissingDims(sessionMessagesQuick);
             if (missingDimsQuick.length === 0) {
@@ -9848,11 +9864,17 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
       const inactiveEnough = Number(userInactiveForMs) >= 120000;
 
       {
-        const sessionMessagesQuick = await chats
+        const sessionDocsQuick = await chats
           .find({ sessionId })
           .sort({ createdAt: 1 })
           .limit(200)
           .toArray();
+        const sessionMessagesQuick =
+          mapChatDocsToBantMessages(sessionDocsQuick);
+        sessionMessagesQuick.push({
+          role: "user",
+          content: question || "",
+        });
         const missingDimsQuick = computeBantMissingDims(sessionMessagesQuick);
         if (missingDimsQuick.length === 0) {
           await updateProfileOnBantComplete(
@@ -10011,11 +10033,17 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
         }
       }
       if (!secondary && enableImmediateQualification && userEmail) {
-        const sessionMessagesQuick2 = await chats
+        const sessionDocsQuick2 = await chats
           .find({ sessionId })
           .sort({ createdAt: 1 })
           .limit(200)
           .toArray();
+        const sessionMessagesQuick2 =
+          mapChatDocsToBantMessages(sessionDocsQuick2);
+        sessionMessagesQuick2.push({
+          role: "user",
+          content: question || "",
+        });
         const missingDimsQuick2 = computeBantMissingDims(sessionMessagesQuick2);
         if (missingDimsQuick2.length > 0) {
           const immediate = {
