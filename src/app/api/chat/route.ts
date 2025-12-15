@@ -1126,6 +1126,139 @@ function isAnswerToAskedDim(
   return false;
 }
 
+async function updateProfileOnBantComplete(
+  origin: string,
+  sessionId: string,
+  adminId?: string | null,
+  apiKey?: string | null,
+  pageUrl?: string,
+  currentQuestion?: string
+): Promise<void> {
+  try {
+    const db = await getDb();
+    const chats = db.collection("chats");
+    const historyDocs = await chats
+      .find({ sessionId })
+      .sort({ createdAt: 1 })
+      .toArray();
+    const conversationForProfiling = historyDocs.map((doc: any) => ({
+      role: doc.role as string,
+      content: doc.content as string,
+      createdAt: doc.createdAt as Date,
+    }));
+    if (currentQuestion) {
+      conversationForProfiling.push({
+        role: "user",
+        content: currentQuestion,
+        createdAt: new Date(),
+      } as any);
+    }
+    const visitedPages = [
+      ...new Set(historyDocs.map((m: any) => m.pageUrl).filter(Boolean)),
+    ];
+    const messageCount = conversationForProfiling.length;
+    const timeInSession = visitedPages.length * 60;
+    const pageTransitions = visitedPages;
+    const profileResponse = await fetch(`${origin}/api/customer-profiles`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey || "",
+      },
+      body: JSON.stringify({
+        sessionId,
+        conversation: conversationForProfiling,
+        messageCount,
+        timeInSession,
+        pageTransitions,
+        pageUrl,
+        trigger: "bant_complete",
+      }),
+    });
+    if (profileResponse.ok) {
+      const profileResult = (await profileResponse.json()) as any;
+      if (profileResult.updated) {
+        console.log(
+          `[CustomerProfiling] Profile updated via ${profileResult.trigger} - Confidence: ${profileResult.confidence}`
+        );
+        if (profileResult.profile?.intelligenceProfile?.buyingReadiness) {
+          console.log(
+            `[CustomerProfiling] Buying readiness: ${profileResult.profile.intelligenceProfile.buyingReadiness}`
+          );
+        }
+      }
+    }
+  } catch (e) {
+    console.log("[CustomerProfiling] BANT completion update failed:", e);
+  }
+}
+
+async function updateProfileOnContactRequest(
+  origin: string,
+  sessionId: string,
+  apiKey?: string | null,
+  pageUrl?: string,
+  currentMessage?: string
+): Promise<void> {
+  try {
+    const db = await getDb();
+    const chats = db.collection("chats");
+    const historyDocs = await chats
+      .find({ sessionId })
+      .sort({ createdAt: 1 })
+      .toArray();
+    const conversationForProfiling = historyDocs.map((doc: any) => ({
+      role: doc.role as string,
+      content: doc.content as string,
+      createdAt: doc.createdAt as Date,
+    }));
+    if (currentMessage) {
+      conversationForProfiling.push({
+        role: "user",
+        content: currentMessage,
+        createdAt: new Date(),
+      } as any);
+    }
+    const visitedPages = [
+      ...new Set(historyDocs.map((m: any) => m.pageUrl).filter(Boolean)),
+    ];
+    const messageCount = conversationForProfiling.length;
+    const timeInSession = visitedPages.length * 60;
+    const pageTransitions = visitedPages;
+    const profileResponse = await fetch(`${origin}/api/customer-profiles`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey || "",
+      },
+      body: JSON.stringify({
+        sessionId,
+        conversation: conversationForProfiling,
+        messageCount,
+        timeInSession,
+        pageTransitions,
+        pageUrl,
+        trigger: "contact_request",
+      }),
+    });
+    if (profileResponse.ok) {
+      const profileResult = (await profileResponse.json()) as any;
+      if (profileResult.updated) {
+        console.log(
+          `[CustomerProfiling] Profile updated via ${profileResult.trigger} - Confidence: ${profileResult.confidence}`
+        );
+        if (profileResult.profile?.intelligenceProfile?.buyingReadiness) {
+          console.log(
+            `[CustomerProfiling] Buying readiness: ${profileResult.profile.intelligenceProfile.buyingReadiness}`
+          );
+        }
+      }
+    }
+  } catch (e) {
+    console.log("[CustomerProfiling] Contact-request update failed:", e);
+  }
+}
+
 // 🔰 Onboarding helpers
 function detectOnboardingIntent(text?: string): boolean {
   if (!text) return false;
@@ -3139,6 +3272,13 @@ Based on the page context, create an intelligent contextual question that demons
           console.log(
             "[Chat API] Booking detected in contextual question - enhancing response with calendar"
           );
+          await updateProfileOnContactRequest(
+            req.nextUrl.origin,
+            sessionId,
+            apiKey,
+            pageUrl,
+            question || ""
+          );
           enhancedResponse = {
             ...parsed,
             showBookingCalendar: true,
@@ -3192,6 +3332,14 @@ Based on the page context, create an intelligent contextual question that demons
           }));
           const missingDims = computeBantMissingDims(sessionMessages);
           if (missingDims.length === 0) {
+            await updateProfileOnBantComplete(
+              req.nextUrl.origin,
+              sessionId,
+              null,
+              apiKey,
+              pageUrl,
+              question || ""
+            );
             return NextResponse.json(
               {
                 mainText:
@@ -3396,6 +3544,13 @@ Keep the response conversational and helpful, focusing on providing value before
         if (bookingEnhancement.chatResponse.showBookingCalendar) {
           console.log(
             "[Chat API] Booking detected in auto-response - enhancing response with calendar"
+          );
+          await updateProfileOnContactRequest(
+            req.nextUrl.origin,
+            sessionId,
+            apiKey,
+            pageUrl,
+            contextualQuestion || ""
           );
           enhancedAutoResponse = {
             ...parsed,
@@ -7018,6 +7173,13 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
             console.log(
               "[Chat API] Booking detected in proactive message - enhancing response with calendar"
             );
+            await updateProfileOnContactRequest(
+              req.nextUrl.origin,
+              sessionId,
+              apiKey,
+              pageUrl,
+              proactiveMsg || ""
+            );
             enhancedProactiveData = {
               ...enhancedProactiveData,
               showBookingCalendar: true,
@@ -7182,6 +7344,17 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
           missingDims,
           preferMessageBased,
         });
+
+        if (missingDims.length === 0) {
+          await updateProfileOnBantComplete(
+            req.nextUrl.origin,
+            sessionId,
+            null,
+            apiKey,
+            pageUrl,
+            lastUserContent || ""
+          );
+        }
 
         // Helper functions needed for followup processing
         function getText(val: MainTextLike): string {
@@ -7424,6 +7597,16 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
               .toArray();
             const missingDimsQuick =
               computeBantMissingDims(sessionMessagesQuick);
+            if (missingDimsQuick.length === 0) {
+              await updateProfileOnBantComplete(
+                req.nextUrl.origin,
+                sessionId,
+                null,
+                apiKey,
+                pageUrl,
+                question || ""
+              );
+            }
             const probingQuick = await analyzeForProbing({
               userMessage: question || "",
               assistantResponse: {
@@ -7496,6 +7679,13 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
             if (bookingEnhancement.chatResponse.showBookingCalendar) {
               console.log(
                 "[Chat API] Booking detected in persona followup - enhancing response with calendar"
+              );
+              await updateProfileOnContactRequest(
+                req.nextUrl.origin,
+                sessionId,
+                apiKey,
+                pageUrl,
+                question || ""
               );
               enhancedPersonaFollowup = {
                 ...personaFollowup,
@@ -8243,6 +8433,13 @@ ${previousQnA}
               console.log(
                 "[Chat API] Booking detected in generic followup - enhancing response with calendar"
               );
+              await updateProfileOnContactRequest(
+                req.nextUrl.origin,
+                sessionId,
+                apiKey,
+                pageUrl,
+                question || ""
+              );
               enhancedFollowup = {
                 ...parsed,
                 showBookingCalendar: true,
@@ -8750,6 +8947,14 @@ What specific information are you looking for? I'm here to help guide you throug
       const orderedMissing = order.filter((d) => missingDimsQuick.includes(d));
       const nextType: "bant" | "completion" = "bant";
       if (orderedMissing.length === 0) {
+        await updateProfileOnBantComplete(
+          req.nextUrl.origin,
+          sessionId,
+          null,
+          apiKey,
+          pageUrl,
+          question || ""
+        );
         const completion = {
           mainText:
             "Thank you for sharing these details. What else would you like to explore?",
@@ -9464,6 +9669,13 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
       console.log(
         `[Chat API ${requestId}] Booking detected - enhancing response with calendar`
       );
+      await updateProfileOnContactRequest(
+        req.nextUrl.origin,
+        sessionId,
+        apiKey,
+        pageUrl,
+        question || ""
+      );
       // Completely override with booking response, don't merge with potentially corrupted parsed response
       enhancedResponse = {
         mainText:
@@ -9640,6 +9852,16 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
           .limit(200)
           .toArray();
         const missingDimsQuick = computeBantMissingDims(sessionMessagesQuick);
+        if (missingDimsQuick.length === 0) {
+          await updateProfileOnBantComplete(
+            req.nextUrl.origin,
+            sessionId,
+            null,
+            apiKey,
+            pageUrl,
+            question || ""
+          );
+        }
         const probingQuick = await analyzeForProbing({
           userMessage: question || "",
           assistantResponse: {
@@ -9817,6 +10039,15 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
             ...(pageUrl ? { pageUrl } : {}),
             ...(adminId ? { adminId } : {}),
           });
+        } else {
+          await updateProfileOnBantComplete(
+            req.nextUrl.origin,
+            sessionId,
+            null,
+            apiKey,
+            pageUrl,
+            question || ""
+          );
         }
       }
     } catch (err) {

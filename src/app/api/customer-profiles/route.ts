@@ -160,7 +160,7 @@ function detectFeatureRequest(message: string): boolean {
 
 function detectContactRequest(message: string): boolean {
   const contactKeywords =
-    /\b(call|phone|talk to|speak with|contact|demo|meeting|schedule|sales|support)\b/i;
+    /\b(call|phone|talk to|speak with|contact|demo|meeting|schedule|sales|support|book|booking)\b/i;
   return contactKeywords.test(message);
 }
 
@@ -615,6 +615,8 @@ export async function POST(req: NextRequest) {
           break;
         case "periodic_update":
         case "extended_session":
+        case "contact_request":
+        case "bant_complete":
           updates.intelligenceProfile = await analyzeProfileSection(
             "intelligence",
             conversationContent,
