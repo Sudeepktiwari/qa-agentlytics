@@ -25,6 +25,12 @@ interface Message {
   emailPrompt?: string;
   botMode?: "sales" | "lead_generation";
   userEmail?: string | null;
+  clarifierShown?: boolean;
+  missingDims?: string[];
+  domain?: string;
+  domainMatch?: boolean;
+  confidence?: number;
+  suggestedActions?: { id: string; label: string; prereqSlots: string[] }[];
 }
 
 // Type for backend bot response
@@ -334,6 +340,15 @@ const Chatbot: React.FC<ChatbotProps> = ({
                     emailPrompt: "",
                     botMode: data.botMode,
                     userEmail: data.userEmail,
+                    domain: data.domain,
+                    domainMatch: data.domainMatch,
+                    confidence:
+                      typeof data.confidence === "number"
+                        ? data.confidence
+                        : undefined,
+                    suggestedActions: Array.isArray(data.suggestedActions)
+                      ? data.suggestedActions
+                      : undefined,
                   },
                 ]);
               if (data.secondary) {
@@ -345,6 +360,17 @@ const Chatbot: React.FC<ChatbotProps> = ({
                   emailPrompt: secParsed.emailPrompt,
                   botMode: data.botMode,
                   userEmail: data.userEmail,
+                  domain: (data.secondary as any)?.domain,
+                  domainMatch: (data.secondary as any)?.domainMatch,
+                  confidence:
+                    typeof (data.secondary as any)?.confidence === "number"
+                      ? (data.secondary as any)?.confidence
+                      : undefined,
+                  suggestedActions: Array.isArray(
+                    (data.secondary as any)?.suggestedActions
+                  )
+                    ? (data.secondary as any)?.suggestedActions
+                    : undefined,
                 };
                 console.log("[Followup] Received", {
                   type: (data.secondary as any)?.type || "unknown",
@@ -567,6 +593,19 @@ const Chatbot: React.FC<ChatbotProps> = ({
               botMode: data.botMode,
               userEmail: data.userEmail,
               isFollowup: true,
+              clarifierShown: !!data.clarifierShown,
+              missingDims: Array.isArray(data.missingDims)
+                ? (data.missingDims as string[])
+                : undefined,
+              domain: data.domain,
+              domainMatch: data.domainMatch,
+              confidence:
+                typeof data.confidence === "number"
+                  ? data.confidence
+                  : undefined,
+              suggestedActions: Array.isArray(data.suggestedActions)
+                ? data.suggestedActions
+                : undefined,
             },
           ]);
           setFollowupCount((c) => c + 1);
@@ -1158,6 +1197,24 @@ const Chatbot: React.FC<ChatbotProps> = ({
         emailPrompt: parsed.emailPrompt,
         botMode: data.botMode,
         userEmail: data.userEmail,
+        clarifierShown: !!(data.answer?.clarifierShown ?? data.clarifierShown),
+        missingDims: Array.isArray(data.answer?.missingDims ?? data.missingDims)
+          ? data.answer?.missingDims ?? data.missingDims
+          : undefined,
+        domain: (data.answer?.domain ?? data.domain) || undefined,
+        domainMatch:
+          typeof (data.answer?.domainMatch ?? data.domainMatch) === "boolean"
+            ? data.answer?.domainMatch ?? data.domainMatch
+            : undefined,
+        confidence:
+          typeof (data.answer?.confidence ?? data.confidence) === "number"
+            ? data.answer?.confidence ?? data.confidence
+            : undefined,
+        suggestedActions: Array.isArray(
+          data.answer?.suggestedActions ?? data.suggestedActions
+        )
+          ? data.answer?.suggestedActions ?? data.suggestedActions
+          : undefined,
       };
 
       const assistantCountBefore = messages.filter(
@@ -1187,6 +1244,10 @@ const Chatbot: React.FC<ChatbotProps> = ({
           emailPrompt: secParsed.emailPrompt,
           botMode: data.botMode,
           userEmail: data.userEmail,
+          clarifierShown: !!(data.secondary as any)?.clarifierShown,
+          missingDims: Array.isArray((data.secondary as any)?.missingDims)
+            ? ((data.secondary as any)?.missingDims as string[])
+            : undefined,
         };
         if (assistantCountBefore > 0) {
           const words = String(newMessage.content || "")
@@ -1456,13 +1517,26 @@ const Chatbot: React.FC<ChatbotProps> = ({
 
                   // Always extract buttons from bullets if no buttons array, or if buttons array is empty
                   let finalButtons: string[] = [];
+                  const clarifierActive =
+                    !!msg.clarifierShown &&
+                    Array.isArray(msg.missingDims) &&
+                    msg.missingDims.length > 0;
+                  const domainGateOk =
+                    msg.domainMatch === true ||
+                    (typeof msg.confidence === "number" &&
+                      msg.confidence >= 0.75);
+                  const missingGateOk =
+                    !Array.isArray(msg.missingDims) ||
+                    msg.missingDims.length === 0;
+                  const allowOptions =
+                    !clarifierActive && domainGateOk && missingGateOk;
                   if (msg.buttons && msg.buttons.length > 0) {
                     finalButtons = msg.buttons;
                     console.log(
                       "[BUTTON DEBUG] Using buttons from API response:",
                       finalButtons
                     );
-                  } else {
+                  } else if (allowOptions) {
                     console.log(
                       "[BUTTON DEBUG] No API buttons found, extracting from content..."
                     );
@@ -1478,7 +1552,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
                     finalButtons
                   );
 
-                  if (finalButtons.length === 0) {
+                  if (finalButtons.length === 0 && allowOptions) {
                     const fallback = getDefaultBantButtons(msg.content);
                     if (fallback.length > 0) {
                       finalButtons = fallback;
@@ -1489,7 +1563,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
                     }
                   }
 
-                  return finalButtons.length > 0 ? (
+                  return finalButtons.length > 0 && allowOptions ? (
                     <div style={{ marginTop: 8 }}>
                       <div
                         style={{

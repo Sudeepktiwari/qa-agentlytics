@@ -1000,6 +1000,66 @@ function mapChatDocsToBantMessages(docs: any[]): any[] {
   }));
 }
 
+function inferDomainFromContext(
+  pageUrl?: string,
+  intent?: string
+): {
+  domain: string;
+  confidence: number;
+  domainMatch: boolean;
+} {
+  const url = String(pageUrl || "").toLowerCase();
+  const i = String(intent || "").toLowerCase();
+  let domain = "general";
+  if (url.includes("pricing") || i.includes("pricing")) domain = "pricing";
+  else if (i.includes("group") || i.includes("meeting"))
+    domain = "group_meetings";
+  else if (url.includes("class") || i.includes("class"))
+    domain = "education/classes";
+  else if (url.includes("support") || i.includes("support")) domain = "support";
+  const confidence = domain === "general" ? 0.6 : 0.8;
+  return { domain, confidence, domainMatch: domain !== "general" };
+}
+
+function computeSuggestedActions(input: {
+  missingDims: ("budget" | "authority" | "need" | "timeline" | "segment")[];
+  botMode: "sales" | "lead_generation";
+}): { id: string; label: string; prereqSlots: string[] }[] {
+  const out: { id: string; label: string; prereqSlots: string[] }[] = [];
+  const m = input.missingDims || [];
+  if (m.includes("authority")) {
+    out.push({
+      id: "invite_decision_maker",
+      label: "Invite decision maker",
+      prereqSlots: ["authority"],
+    });
+  }
+  if (input.botMode === "sales" && m.length === 0) {
+    out.push({ id: "schedule_demo", label: "Schedule Demo", prereqSlots: [] });
+    out.push({ id: "view_pricing", label: "View Pricing", prereqSlots: [] });
+    out.push({ id: "talk_to_sales", label: "Talk to Sales", prereqSlots: [] });
+  } else if (m.includes("budget")) {
+    out.push({
+      id: "share_budget_range",
+      label: "Share budget range",
+      prereqSlots: ["budget"],
+    });
+  } else if (m.includes("timeline")) {
+    out.push({
+      id: "pick_start_date",
+      label: "Pick start date",
+      prereqSlots: ["timeline"],
+    });
+  } else if (m.includes("need")) {
+    out.push({
+      id: "prioritize_feature",
+      label: "Prioritize a feature",
+      prereqSlots: ["need"],
+    });
+  }
+  return out.slice(0, 3);
+}
+
 function computeBantMissingDims(
   messages: any[]
 ): ("budget" | "authority" | "need" | "timeline" | "segment")[] {
@@ -3386,6 +3446,22 @@ Based on the page context, create an intelligent contextual question that demons
         ...enhancedResponse,
         botMode: "lead_generation",
         userEmail: null,
+        ...(() => {
+          const md = inferDomainFromContext(pageUrl, "");
+          const db = { missingDims: [] as string[] };
+          return {
+            domain: md.domain,
+            confidence: md.confidence,
+            domainMatch: md.domainMatch,
+            missingSlots: db.missingDims,
+            slots: {},
+            clarifierShown: false,
+            suggestedActions: computeSuggestedActions({
+              missingDims: [],
+              botMode: "lead_generation",
+            }),
+          };
+        })(),
       };
 
       console.log(
@@ -7750,6 +7826,22 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
               : "",
             botMode,
             userEmail: userEmail || null,
+            clarifierShown: false,
+            missingDims,
+            ...(() => {
+              const md = inferDomainFromContext(pageUrl, detectedIntent);
+              return {
+                domain: md.domain,
+                confidence: md.confidence,
+                domainMatch: md.domainMatch,
+                missingSlots: missingDims,
+                slots: {},
+                suggestedActions: computeSuggestedActions({
+                  missingDims,
+                  botMode,
+                }),
+              };
+            })(),
           };
 
           return NextResponse.json(followupWithMode, { headers: corsHeaders });
@@ -8496,6 +8588,22 @@ ${previousQnA}
             ...enhancedFollowup,
             botMode,
             userEmail: userEmail || null,
+            clarifierShown: false,
+            missingDims,
+            ...(() => {
+              const md = inferDomainFromContext(pageUrl, detectedIntent);
+              return {
+                domain: md.domain,
+                confidence: md.confidence,
+                domainMatch: md.domainMatch,
+                missingSlots: missingDims,
+                slots: {},
+                suggestedActions: computeSuggestedActions({
+                  missingDims,
+                  botMode,
+                }),
+              };
+            })(),
           };
 
           return NextResponse.json(followupWithMode, { headers: corsHeaders });
@@ -9165,6 +9273,28 @@ What specific information are you looking for? I'm here to help guide you throug
           botMode: botModeChain,
           userEmail: userEmail || null,
           type: "bant",
+          clarifierShown:
+            ((bookingAware as any).type as any) === "bant" ||
+            ((nextBant as any).type as any) === "bant",
+          missingDims: missingDimsQuick,
+          ...(() => {
+            const md = inferDomainFromContext(pageUrl, "");
+            const conf =
+              Array.isArray(missingDimsQuick) && missingDimsQuick.length > 0
+                ? 0.65
+                : 0.85;
+            return {
+              domain: md.domain,
+              confidence: conf,
+              domainMatch: md.domainMatch,
+              missingSlots: missingDimsQuick,
+              slots: {},
+              suggestedActions: computeSuggestedActions({
+                missingDims: missingDimsQuick as any,
+                botMode: botModeChain,
+              }),
+            };
+          })(),
         };
         if (bookingStatus.hasActiveBooking && bookingStatus.currentBooking) {
           (responseWithMode as any).showBookingCalendar = false;
