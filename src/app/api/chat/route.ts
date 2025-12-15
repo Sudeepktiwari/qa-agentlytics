@@ -613,7 +613,7 @@ async function analyzeForProbing(input: {
     {
       role: "system",
       content:
-        "Compose a short, helpful follow-up anchored to the last user message and assistant response. Return JSON: { shouldSendFollowUp: boolean, mainText: string, buttons: string[], emailPrompt: string }. If botMode is 'sales', do NOT ask BANT; instead provide a one-sentence helpful tip or next step with 2–4 concise, action-oriented buttons (e.g., 'See pricing', 'Compare plans', 'Integration guide', 'Schedule demo'). If botMode is 'lead_generation', you may ask ONE BANT clarifier at most; never combine dimensions.",
+        "Decide whether to send a short BANT qualification follow-up now. Use the last user message and the assistant's response. Prefer sending a follow-up when at least one of the provided missingDims remains and a question can be naturally anchored to the user's last message or the assistant's response. Choose ONE BANT dimension from missingDims and ask about that only. Return JSON: { shouldSendFollowUp: boolean, mainText: string, buttons: string[], emailPrompt: string }. The message must ask ONE qualification in ONE sentence ending with '?'. Provide 2–4 concise options in 'buttons' that directly answer that single question. Never combine multiple BANT dimensions in one question. If botMode is 'sales', prefer Budget or Timeline; if 'lead_generation', prefer Need. If Budget is missing but Business Type ('segment') is also missing, ask Business Type first.",
     },
     {
       role: "user",
@@ -779,10 +779,7 @@ async function analyzeForProbing(input: {
     if (out.length > 4) out = out.slice(0, 4);
     return out;
   };
-  const mt =
-    input.botMode === "sales"
-      ? String(parsed.mainText || "").trim()
-      : normQ(typeof parsed.mainText === "string" ? parsed.mainText : "");
+  const mt = normQ(typeof parsed.mainText === "string" ? parsed.mainText : "");
   const btns = normButtons(mt, parsed.buttons, input.botMode);
   const needSegmentFirst = /budget|price|cost|pricing|plan/.test(
     mt.toLowerCase()
@@ -825,10 +822,24 @@ function buildFallbackFollowup(input: {
   };
   botMode: "sales" | "lead_generation";
   userEmail?: string | null;
+  missingDims?: ("budget" | "authority" | "need" | "timeline" | "segment")[];
 }) {
   const text = `${input.userMessage || ""} ${
     input.assistantResponse.mainText || ""
   }`.toLowerCase();
+  const dims =
+    Array.isArray(input.missingDims) && input.missingDims.length > 0
+      ? (input.missingDims as (
+          | "budget"
+          | "authority"
+          | "need"
+          | "timeline"
+          | "segment"
+        )[])
+      : [];
+  const bantCompleted = Array.isArray(input.missingDims)
+    ? input.missingDims.length === 0
+    : false;
   const hasPricing =
     /(pricing|price|cost|plan|plans|quote|estimate|discount|billing)/i.test(
       text
@@ -844,7 +855,7 @@ function buildFallbackFollowup(input: {
   const isEnterprise = /(enterprise|corporate|large\s*company|global)\b/.test(
     text
   );
-  if (hasPricing) {
+  if (hasPricing && !bantCompleted && (!input.userEmail || dims.length > 0)) {
     if (!isIndividual && !isSMB && !isEnterprise) {
       return {
         mainText: "What type of business are you?",
@@ -870,14 +881,14 @@ function buildFallbackFollowup(input: {
       emailPrompt: "Add your email to receive the calendar invite",
     };
   }
-  if (hasAuthority) {
+  if (hasAuthority && input.userEmail && !bantCompleted && dims.length > 0) {
     return {
       mainText: "Who will make the decision?",
       buttons: ["I’m the decision maker", "Add decision maker", "Unsure"],
       emailPrompt: "Add an email to coordinate next steps",
     };
   }
-  if (hasFeatures) {
+  if (hasFeatures && (!input.userEmail || !bantCompleted || dims.length > 0)) {
     return {
       mainText: "Which feature matters most for you right now?",
       buttons: ["Workflows", "Embeds", "Analytics"],
@@ -7644,7 +7655,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
                 mainText: probingQuick.mainText,
                 buttons: probingQuick.buttons || [],
                 emailPrompt: probingQuick.emailPrompt || "",
-                type: "probe",
+                type: "bant",
               } as any;
               await chats.insertOne({
                 sessionId,
@@ -8915,7 +8926,7 @@ What specific information are you looking for? I'm here to help guide you throug
     console.log(`[DEBUG] User provided email in current message: ${userEmail}`);
   }
 
-  const enableBantChaining = false;
+  const enableBantChaining = !!userEmail;
   if (enableBantChaining) {
     const lastAssistant = await chats.findOne(
       { sessionId, role: "assistant" },
@@ -9091,6 +9102,7 @@ What specific information are you looking for? I'm here to help guide you throug
           },
           botMode: botModeChain,
           userEmail,
+          missingDims: missingDimsQuick,
         });
         nextBant = fallback;
       }
@@ -9905,12 +9917,12 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
             mainText: probingQuick.mainText,
             buttons: probingQuick.buttons || [],
             emailPrompt: probingQuick.emailPrompt || "",
-            type: "probe",
+            type: userEmail ? "bant" : "probe",
           } as any;
           const inferredDim = detectBantDimensionFromText(
             String(immediate.mainText || "")
           );
-          if (inferredDim === "budget" && botMode !== "sales") {
+          if (inferredDim === "budget") {
             const segment = getBusinessSegment(sessionMessagesQuick);
             if (missingDimsQuick.includes("segment") && !segment) {
               immediate.mainText = "What type of business are you?";
@@ -9968,7 +9980,6 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
           let immediate: any = null;
           const segment = getBusinessSegment(sessionMessagesQuick);
           if (
-            botMode !== "sales" &&
             userEmail &&
             missingDimsQuick.includes("segment") &&
             priceSignal
@@ -9980,12 +9991,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
               type: "bant",
               dimension: "segment",
             } as any;
-          } else if (
-            botMode !== "sales" &&
-            userEmail &&
-            missingDimsQuick.length > 0 &&
-            priceSignal
-          ) {
+          } else if (userEmail && missingDimsQuick.length > 0 && priceSignal) {
             const budgetButtons = (() => {
               if (segment === "individual")
                 return ["Under $20/mo", "$20–$50/mo", "$50+"];
@@ -10002,12 +10008,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
               type: "bant",
               dimension: "budget",
             } as any;
-          } else if (
-            botMode !== "sales" &&
-            userEmail &&
-            missingDimsQuick.length > 0 &&
-            timeSignal
-          ) {
+          } else if (userEmail && missingDimsQuick.length > 0 && timeSignal) {
             immediate = {
               mainText: "What timeline are you targeting?",
               buttons: ["This week", "Next week", "Later"],
@@ -10046,12 +10047,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
           }
         }
       }
-      if (
-        !secondary &&
-        enableImmediateQualification &&
-        userEmail &&
-        botMode !== "sales"
-      ) {
+      if (!secondary && enableImmediateQualification && userEmail) {
         const sessionDocsQuick2 = await chats
           .find({ sessionId })
           .sort({ createdAt: 1 })
@@ -10100,6 +10096,16 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
         }
       }
     } catch (err) {
+      const db = await getDb();
+      const chats = db.collection("chats");
+      const sessionDocsQuick = await chats
+        .find({ sessionId })
+        .sort({ createdAt: 1 })
+        .limit(200)
+        .toArray();
+      const sessionMessagesQuick = mapChatDocsToBantMessages(sessionDocsQuick);
+      sessionMessagesQuick.push({ role: "user", content: question || "" });
+      const missingDimsQuick = computeBantMissingDims(sessionMessagesQuick);
       secondary = buildFallbackFollowup({
         userMessage: question || "",
         assistantResponse: {
@@ -10109,6 +10115,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
         },
         botMode,
         userEmail,
+        missingDims: missingDimsQuick,
       });
       secondary = { ...secondary, type: "probe" };
       console.log(
