@@ -835,6 +835,35 @@ export async function POST(req: NextRequest) {
     const bant = computeBant(updatedProfile);
     (updatedProfile as any).bant = bant;
 
+    const initialReadiness = String(
+      (updatedProfile as any)?.intelligenceProfile?.buyingReadiness || ""
+    ).toLowerCase();
+    const convText = String(conversationContent || "").toLowerCase();
+    const hasEmailSignal = Boolean(updatedProfile.email);
+    const hasBudgetSignal =
+      String(
+        (updatedProfile as any)?.requirementsProfile?.budgetRange || ""
+      ) !== "unknown";
+    const hasTimelineSignal = ["asap", "this_month"].includes(
+      String((updatedProfile as any)?.requirementsProfile?.timeline || "")
+    );
+    const hasConversionSignal =
+      /\b(schedule\s+(demo|call)|get\s+pricing|compare\s+plans|talk\s+to\s+sales|contact\s+sales|book\s+(demo|appointment)|pricing|quote)\b/i.test(
+        convText
+      );
+    const minimalInterest =
+      !hasEmailSignal &&
+      !hasBudgetSignal &&
+      !hasTimelineSignal &&
+      !hasConversionSignal &&
+      ((bant?.score as number) || 0) < 40;
+    if (initialReadiness === "low" && !minimalInterest) {
+      updatedProfile.intelligenceProfile = {
+        ...(updatedProfile as any).intelligenceProfile,
+        buyingReadiness: "medium",
+      };
+    }
+
     // Save to database
     if (existingProfile) {
       await profiles.updateOne(
