@@ -254,33 +254,46 @@ const Chatbot: React.FC<ChatbotProps> = ({
       .then((res) => res.json())
       .then((data) => {
         if (data.history) {
-          setMessages(
-            data.history.map((msg: Message) => {
-              if (msg.role === "assistant") {
-                try {
-                  const cleanedContent =
-                    typeof msg.content === "string"
-                      ? cleanJsonString(msg.content)
-                      : msg.content;
-                  const parsed =
-                    typeof cleanedContent === "string"
-                      ? JSON.parse(cleanedContent)
-                      : cleanedContent;
-                  return {
-                    ...msg,
-                    content: parsed.mainText || "",
-                    buttons: Array.isArray(parsed.buttons)
-                      ? parsed.buttons.map(sanitizeButtonLabel).filter(Boolean)
-                      : [],
-                    emailPrompt: parsed.emailPrompt || "",
-                  };
-                } catch {
-                  return msg;
-                }
+          const mapped = data.history.map((msg: Message) => {
+            if (msg.role === "assistant") {
+              try {
+                const cleanedContent =
+                  typeof msg.content === "string"
+                    ? cleanJsonString(msg.content)
+                    : msg.content;
+                const parsed =
+                  typeof cleanedContent === "string"
+                    ? JSON.parse(cleanedContent)
+                    : cleanedContent;
+                return {
+                  ...msg,
+                  content: parsed.mainText || "",
+                  buttons: Array.isArray(parsed.buttons)
+                    ? parsed.buttons.map(sanitizeButtonLabel).filter(Boolean)
+                    : [],
+                  emailPrompt: parsed.emailPrompt || "",
+                };
+              } catch {
+                return msg;
               }
-              return msg;
-            })
-          );
+            }
+            return msg;
+          });
+          const summaryText =
+            typeof (data as any).pageSummary === "string"
+              ? String((data as any).pageSummary).trim()
+              : "";
+          if (summaryText) {
+            const summaryMsg: Message = {
+              role: "assistant",
+              content: normalizeMainText(summaryText),
+              buttons: [],
+              emailPrompt: "",
+            };
+            setMessages([summaryMsg, ...mapped]);
+          } else {
+            setMessages(mapped);
+          }
         }
 
         // Check if we should clear history before showing proactive message (after reset)

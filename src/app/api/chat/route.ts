@@ -10335,17 +10335,52 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
 
 export async function GET(req: NextRequest) {
   const sessionId = req.nextUrl.searchParams.get("sessionId");
+  const pageUrl = req.nextUrl.searchParams.get("pageUrl");
   if (!sessionId)
     return NextResponse.json({ history: [] }, { headers: corsHeaders });
   const db = await getDb();
   const chats = db.collection("chats");
+  const filter: any = pageUrl ? { sessionId, pageUrl } : { sessionId };
   const history = await chats
-    .find({ sessionId }, { projection: { _id: 0 } })
+    .find(filter, { projection: { _id: 0 } })
     .sort({ createdAt: -1 })
-    .limit(20)
+    .limit(50)
     .toArray();
+  const pageMessages = await chats
+    .find(filter, { projection: { role: 1, content: 1, createdAt: 1, _id: 0 } })
+    .sort({ createdAt: 1 })
+    .limit(300)
+    .toArray();
+  let pageSummary = "";
+  try {
+    const convoText = pageMessages
+      .map(
+        (m: any) =>
+          `[${m.role}] ${String(m.content || "")
+            .replace(/\s+/g, " ")
+            .trim()}`
+      )
+      .join("\n")
+      .slice(0, 8000);
+    if (convoText.length > 0) {
+      const resp = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        temperature: 0.2,
+        max_tokens: 120,
+        messages: [
+          {
+            role: "system",
+            content:
+              "Summarize the prior conversation concisely. Return 2–4 lines that capture key topics, decisions, timelines, and next steps relevant to this page.",
+          },
+          { role: "user", content: convoText },
+        ],
+      });
+      pageSummary = String(resp.choices[0]?.message?.content || "").trim();
+    }
+  } catch {}
   return NextResponse.json(
-    { history: history.reverse() },
+    { history: history.reverse(), pageSummary },
     { headers: corsHeaders }
   );
 }
