@@ -30,7 +30,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning={true}
       >
-        <Script
+        {/* <Script
           src="http://localhost:3000/api/widget"
           data-api-key="ak_b17dd57a2e0d78b5d3f1155e94167da890dda703409fe1e36e647c2e6cc8d345"
           data-theme="green"
@@ -39,7 +39,7 @@ export default function RootLayout({
           data-voice-gender="female"
           data-auto-open-proactive="true"
           strategy="afterInteractive"
-        />
+        /> */}
         <GlobalHeader />
         {children}
       </body>
