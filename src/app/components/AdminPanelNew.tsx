@@ -177,13 +177,17 @@ const AdminPanel: React.FC = () => {
         setTotalProcessed(newTotalProcessed);
         setTotalRemaining(data.totalRemaining);
 
-        // Update status with progress information
+        const overallProcessed = data.totalDiscovered
+          ? data.totalDiscovered - data.totalRemaining
+          : newTotalProcessed;
+        const pctRaw = data.totalDiscovered
+          ? (overallProcessed / data.totalDiscovered) * 100
+          : 0;
+        const pct = overallProcessed > 0 ? Math.max(pctRaw, 0.1) : 0;
         const progressInfo = data.totalDiscovered
-          ? `Progress: ${newTotalProcessed}/${
+          ? `Progress: ${overallProcessed}/${
               data.totalDiscovered
-            } pages (${Math.round(
-              (newTotalProcessed / data.totalDiscovered) * 100
-            )}%)`
+            } pages (${pct.toFixed(1)}%)`
           : `Processed: ${newTotalProcessed} pages`;
 
         setSitemapStatus(
