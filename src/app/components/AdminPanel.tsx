@@ -147,7 +147,7 @@ const AdminPanel: React.FC = () => {
       setAuthError("");
       try {
         const res = await fetch("/api/auth/verify", {
-          credentials: 'include', // Include cookies for authentication
+          credentials: "include", // Include cookies for authentication
         });
         if (res.ok) {
           const data = await res.json();
@@ -171,7 +171,7 @@ const AdminPanel: React.FC = () => {
       const res = await fetch("/api/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: 'include', // Include cookies for authentication
+        credentials: "include", // Include cookies for authentication
         body: JSON.stringify({
           action: form.action,
           email: form.email,
@@ -303,9 +303,9 @@ const AdminPanel: React.FC = () => {
 
   // Logout handler
   const handleLogout = async () => {
-    await fetch("/api/auth/logout", { 
+    await fetch("/api/auth/logout", {
       method: "POST",
-      credentials: 'include' // Include cookies for logout
+      credentials: "include", // Include cookies for logout
     });
     setAuth(null);
   };
@@ -314,7 +314,7 @@ const AdminPanel: React.FC = () => {
   const fetchApiKey = async () => {
     try {
       const res = await fetch("/api/auth/api-key", {
-        credentials: 'include' // Include cookies for authentication
+        credentials: "include", // Include cookies for authentication
       });
       const data = await res.json();
       if (res.ok) {
@@ -330,9 +330,9 @@ const AdminPanel: React.FC = () => {
     setApiKeyLoading(true);
     setApiKeyError("");
     try {
-      const res = await fetch("/api/auth/api-key", { 
+      const res = await fetch("/api/auth/api-key", {
         method: "POST",
-        credentials: 'include' // Include cookies for authentication
+        credentials: "include", // Include cookies for authentication
       });
       const data = await res.json();
       if (res.ok) {
@@ -369,7 +369,7 @@ const AdminPanel: React.FC = () => {
         });
 
         const res = await fetch(`/api/leads?${params}`, {
-          credentials: 'include' // Include cookies for authentication
+          credentials: "include", // Include cookies for authentication
         });
         const data = await res.json();
 
@@ -399,7 +399,7 @@ const AdminPanel: React.FC = () => {
     try {
       // Fetch uploaded documents
       const docsRes = await fetch("/api/admin-docs?admin=1", {
-        credentials: 'include' // Include cookies for authentication
+        credentials: "include", // Include cookies for authentication
       });
       const docsData = await docsRes.json();
       const uploadedDocs = docsRes.ok ? docsData.documents || [] : [];
@@ -530,7 +530,7 @@ const AdminPanel: React.FC = () => {
       const res = await fetch("/api/admin-docs?admin=1", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        credentials: 'include', // Include cookies for authentication
+        credentials: "include", // Include cookies for authentication
         body: JSON.stringify({ filename }),
       });
 
@@ -711,7 +711,7 @@ const AdminPanel: React.FC = () => {
       const res = await fetch("/api/leads", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        credentials: 'include', // Include cookies for authentication
+        credentials: "include", // Include cookies for authentication
         body: JSON.stringify({ email }),
       });
 
@@ -736,7 +736,7 @@ const AdminPanel: React.FC = () => {
   const fetchSitemapUrls = async () => {
     try {
       const res = await fetch("/api/sitemap?urls=1", {
-        credentials: 'include' // Include cookies for authentication
+        credentials: "include", // Include cookies for authentication
       });
       const data = await res.json();
       if (data.urls) setSitemapUrls(data.urls);
@@ -749,7 +749,7 @@ const AdminPanel: React.FC = () => {
     if (auth) {
       // Fetch last submitted sitemapUrl from admin settings
       fetch("/api/sitemap?settings=1", {
-        credentials: 'include' // Include cookies for authentication
+        credentials: "include", // Include cookies for authentication
       })
         .then((res) => res.json())
         .then((data) => {
@@ -895,8 +895,16 @@ const AdminPanel: React.FC = () => {
             >
               📘 API Setup & Docs
             </h3>
-            <p style={{ color: "#718096", fontSize: "14px", margin: "0 0 16px 0" }}>
-              Index your API docs and generate a canonical registration cURL. Use the quick setup buttons in the chat below to guide the initial configuration.
+            <p
+              style={{
+                color: "#718096",
+                fontSize: "14px",
+                margin: "0 0 16px 0",
+              }}
+            >
+              Index your API docs and generate a canonical registration cURL.
+              Use the quick setup buttons in the chat below to guide the initial
+              configuration.
             </p>
             <OnboardingSettingsSection />
           </div>
@@ -935,44 +943,6 @@ const AdminPanel: React.FC = () => {
             selectedPageUrl={selectedPageUrl}
             onSelectedPageUrlChange={setSelectedPageUrl}
           />
-
-          {/* Live Chatbot Preview */}
-          <div
-            style={{
-              background: "rgba(255, 255, 255, 0.95)",
-              backdropFilter: "blur(10px)",
-              borderRadius: "20px",
-              padding: "24px",
-              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
-              border: "1px solid rgba(255, 255, 255, 0.2)",
-              marginBottom: "24px",
-            }}
-          >
-            <h3
-              style={{
-                margin: "0 0 16px 0",
-                fontSize: "20px",
-                fontWeight: "700",
-                color: "#2d3748",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-              }}
-            >
-              💬 Live Chatbot Preview
-            </h3>
-            <Chatbot
-              pageUrl={selectedPageUrl || undefined}
-              adminId={auth?.adminId}
-              prefillQuestions={[
-                "Provide API documentation URL for indexing",
-                "Generate cURL for registration endpoint",
-                "Set API base URL and key",
-                "Test registration cURL",
-                "Save canonical registration cURL"
-              ]}
-            />
-          </div>
 
           {/* Document Upload */}
           <div
