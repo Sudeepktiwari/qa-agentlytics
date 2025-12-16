@@ -10376,7 +10376,25 @@ export async function GET(req: NextRequest) {
           { role: "user", content: convoText },
         ],
       });
-      pageSummary = String(resp.choices[0]?.message?.content || "").trim();
+      const aiSummary = String(resp.choices[0]?.message?.content || "").trim();
+      const lastUserMsgs = pageMessages
+        .filter((m: any) => String(m.role || "").toLowerCase() === "user")
+        .map((m: any) =>
+          String(m.content || "")
+            .replace(/\s+/g, " ")
+            .trim()
+        );
+      const recentQuestions = lastUserMsgs.slice(-2);
+      const askedPart =
+        recentQuestions.length === 0
+          ? ""
+          : recentQuestions.length === 1
+          ? `You asked: "${recentQuestions[0]}". `
+          : `You asked: "${recentQuestions[0]}" and "${recentQuestions[1]}". `;
+      const discussedPart =
+        aiSummary.length > 0 ? `We discussed: ${aiSummary}. ` : "";
+      const closingPart = "What else would you like to know?";
+      pageSummary = `${askedPart}${discussedPart}${closingPart}`.trim();
     }
   } catch {}
   return NextResponse.json(
