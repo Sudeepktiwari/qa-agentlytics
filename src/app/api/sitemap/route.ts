@@ -134,7 +134,7 @@ Guidelines:
 
 async function parseSitemap(sitemapUrl: string): Promise<string[]> {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout for sitemap fetch
+  const timeoutId = setTimeout(() => controller.abort(), 60000);
 
   try {
     const res = await fetch(sitemapUrl, { signal: controller.signal });
@@ -176,6 +176,41 @@ async function parseSitemap(sitemapUrl: string): Promise<string[]> {
     }
     throw error;
   }
+}
+
+async function discoverSitemapCandidates(inputUrl: string): Promise<string[]> {
+  const candidates = new Set<string>();
+  let origin = "";
+  try {
+    const u = new URL(inputUrl);
+    origin = `${u.protocol}//${u.hostname}`;
+  } catch {
+    return [];
+  }
+  candidates.add(`${origin}/sitemap.xml`);
+  candidates.add(`${origin}/sitemap_index.xml`);
+  candidates.add(`${origin}/hc/sitemap.xml`);
+  candidates.add(`${origin}/help/sitemap.xml`);
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const res = await fetch(`${origin}/robots.txt`, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    if (res.ok) {
+      const text = await res.text();
+      const lines = text.split("\n");
+      for (const line of lines) {
+        const m = line.match(/sitemap:\s*(\S+)/i);
+        if (m && m[1]) {
+          try {
+            const sUrl = new URL(m[1], origin).href;
+            candidates.add(sUrl);
+          } catch {}
+        }
+      }
+    }
+  } catch {}
+  return Array.from(candidates);
 }
 
 async function extractLinksUsingBrowser(pageUrl: string): Promise<string[]> {
@@ -625,7 +660,8 @@ async function extractLinksFromPage(pageUrl: string): Promise<string[]> {
   try {
     const res = await fetch(pageUrl, {
       headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; Sitemap-Crawler/1.0)",
+        "User-Agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         Accept:
           "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         "Accept-Language": "en-US,en;q=0.5",
@@ -1003,6 +1039,25 @@ async function discoverUrls(
   } catch (error) {
     console.log(`[Discovery] Not a valid sitemap, trying as webpage: ${error}`);
   }
+
+  // Try common sitemap candidates from robots.txt and known paths
+  try {
+    const candidates = await discoverSitemapCandidates(inputUrl);
+    if (candidates.length > 0) {
+      console.log(`[Discovery] Trying ${candidates.length} sitemap candidates`);
+      for (const candidate of candidates) {
+        try {
+          const urls = await parseSitemap(candidate);
+          if (urls.length > 0) {
+            console.log(
+              `[Discovery] Found ${urls.length} URLs via candidate sitemap: ${candidate}`
+            );
+            return { urls, type: "sitemap" };
+          }
+        } catch {}
+      }
+    }
+  } catch {}
 
   // If sitemap parsing fails, try regular HTML crawling first
   try {
