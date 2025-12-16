@@ -15,7 +15,7 @@ import { Pinecone } from "@pinecone-database/pinecone";
 import puppeteer from "puppeteer";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
-const MAX_PAGES = 10; // Reduced for timeout protection
+const MAX_PAGES = 6;
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // Initialize Pinecone
@@ -194,7 +194,9 @@ async function discoverSitemapCandidates(inputUrl: string): Promise<string[]> {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000);
-    const res = await fetch(`${origin}/robots.txt`, { signal: controller.signal });
+    const res = await fetch(`${origin}/robots.txt`, {
+      signal: controller.signal,
+    });
     clearTimeout(timeoutId);
     if (res.ok) {
       const text = await res.text();
@@ -1532,6 +1534,32 @@ export async function POST(req: NextRequest) {
       const result = await discoverUrls(normalizedUrl);
       urls = result.urls;
       discoveryType = result.type;
+      // Clean and filter discovered URLs to the requested locale (reduces batch size)
+      const cleanedUrls = urls.map((u) => u.trim().replace(/,$/, ""));
+      if (discoveryType === "sitemap") {
+        try {
+          const u = new URL(normalizedUrl);
+          const localeMatch = u.pathname.match(/\/hc\/(\w[\w-]*)/);
+          const locale = localeMatch ? localeMatch[1] : null;
+          const originHost = u.hostname;
+          const filtered = cleanedUrls.filter((link) => {
+            try {
+              const lu = new URL(link);
+              const sameHost = lu.hostname === originHost;
+              const sameLocale =
+                !locale || lu.pathname.includes(`/hc/${locale}`);
+              return sameHost && sameLocale;
+            } catch {
+              return false;
+            }
+          });
+          urls = Array.from(new Set(filtered));
+        } catch {
+          urls = Array.from(new Set(cleanedUrls));
+        }
+      } else {
+        urls = Array.from(new Set(cleanedUrls));
+      }
       console.log(
         `[Crawl] Discovery SUCCESS - Found ${urls.length} URLs via ${discoveryType}`
       );
@@ -1579,12 +1607,21 @@ export async function POST(req: NextRequest) {
       discoveryType, // Track how this URL was discovered
     }));
     if (sitemapUrlDocs.length > 0) {
-      for (const doc of sitemapUrlDocs) {
-        await sitemapUrls.updateOne(
-          { adminId: doc.adminId, url: doc.url, sitemapUrl: doc.sitemapUrl }, // Include sitemapUrl in the query
-          { $setOnInsert: doc },
-          { upsert: true }
-        );
+      const ops = sitemapUrlDocs.map((doc) => ({
+        updateOne: {
+          filter: {
+            adminId: doc.adminId,
+            url: doc.url,
+            sitemapUrl: doc.sitemapUrl,
+          },
+          update: { $setOnInsert: doc },
+          upsert: true,
+        },
+      }));
+      const CHUNK = 500;
+      for (let i = 0; i < ops.length; i += CHUNK) {
+        const chunk = ops.slice(i, i + CHUNK);
+        await sitemapUrls.bulkWrite(chunk, { ordered: false });
       }
     }
 

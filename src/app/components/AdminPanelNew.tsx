@@ -34,7 +34,7 @@ const AdminPanel: React.FC = () => {
   const [sitemapLoading, setSitemapLoading] = useState(false);
 
   // Auto-continue crawling state
-  const [autoContinue, setAutoContinue] = useState(false);
+  const [autoContinue, setAutoContinue] = useState(true);
   const [continueCrawling, setContinueCrawling] = useState(false);
   const [totalProcessed, setTotalProcessed] = useState(0);
   const [totalRemaining, setTotalRemaining] = useState(0);

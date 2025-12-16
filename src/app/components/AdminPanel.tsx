@@ -193,7 +193,7 @@ const AdminPanel: React.FC = () => {
   };
 
   // Auto-continue state
-  const [autoContinue, setAutoContinue] = useState(false);
+  const [autoContinue, setAutoContinue] = useState(true);
   const [continueCrawling, setContinueCrawling] = useState(false);
   const [totalProcessed, setTotalProcessed] = useState(0);
   const [totalRemaining, setTotalRemaining] = useState(0);
