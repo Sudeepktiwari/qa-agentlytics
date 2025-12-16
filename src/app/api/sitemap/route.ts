@@ -1690,17 +1690,31 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Recalculate crawled URLs after reset
     const updatedCrawledDocs = await sitemapUrls
       .find({ adminId, sitemapUrl, crawled: true })
+      .project({ url: 1, _id: 0 })
       .toArray();
     const updatedCrawledUrls = new Set(
-      updatedCrawledDocs.map((doc) => doc.url)
+      updatedCrawledDocs.map((doc: any) => doc.url)
     );
+    const globallyCrawledDocs = await sitemapUrls
+      .find({ adminId, crawled: true })
+      .project({ url: 1, _id: 0 })
+      .toArray();
+    const globalCrawledUrls = new Set(
+      globallyCrawledDocs.map((doc: any) => doc.url)
+    );
+    const existingPageUrls = new Set<string>(
+      await pages.distinct("url", { adminId })
+    );
+    const alreadyCrawledUrls = new Set<string>([
+      ...Array.from(updatedCrawledUrls),
+      ...Array.from(globalCrawledUrls),
+      ...Array.from(existingPageUrls),
+    ]);
 
-    // Select the next batch of uncrawled URLs (up to MAX_PAGES)
     const uncrawledUrls = urls
-      .filter((url) => !updatedCrawledUrls.has(url))
+      .filter((url) => !alreadyCrawledUrls.has(url))
       .slice(0, MAX_PAGES);
 
     console.log(
