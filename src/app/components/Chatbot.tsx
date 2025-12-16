@@ -31,6 +31,7 @@ interface Message {
   domainMatch?: boolean;
   confidence?: number;
   suggestedActions?: { id: string; label: string; prereqSlots: string[] }[];
+  isSummary?: boolean;
 }
 
 // Type for backend bot response
@@ -104,8 +105,20 @@ const Chatbot: React.FC<ChatbotProps> = ({
     }
   };
 
-  const sanitizeButtonLabel = (s: string): string => {
-    return String(s)
+  const sanitizeButtonLabel = (s: any): string => {
+    let raw: any = s;
+    if (raw && typeof raw === "object") {
+      // Prefer common label-like fields
+      raw =
+        raw.label ??
+        raw.text ??
+        raw.title ??
+        raw.name ??
+        raw.value ??
+        // Handle nested label objects
+        (typeof raw.label === "object" ? raw.label?.text ?? "" : "");
+    }
+    return String(raw ?? "")
       .replace(/<[^>]+>/g, " ")
       .replace(/&nbsp;/gi, " ")
       .replace(/&amp;/gi, "&")
@@ -289,6 +302,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
               content: normalizeMainText(summaryText),
               buttons: [],
               emailPrompt: "",
+              isSummary: true,
             };
             setMessages([summaryMsg, ...mapped]);
           } else {
@@ -968,7 +982,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
         conversationText += `${msg.content}\n`;
 
         // Add buttons if present
-        if (msg.buttons && msg.buttons.length > 0) {
+        if (!msg.isSummary && msg.buttons && msg.buttons.length > 0) {
           conversationText += "Options: " + msg.buttons.join(", ") + "\n";
         }
 
