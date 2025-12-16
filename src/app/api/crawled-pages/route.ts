@@ -35,10 +35,10 @@ export async function GET(request: NextRequest) {
       .sort({ createdAt: -1 })
       .toArray();
 
-    // Add summary status flag
+    // Add summary status flag (consider either structured or basic summary)
     const pagesWithStatus = pages.map((page) => ({
       ...page,
-      hasStructuredSummary: !!page.structuredSummary,
+      hasStructuredSummary: !!(page.structuredSummary || page.summary),
     }));
 
     return NextResponse.json({
