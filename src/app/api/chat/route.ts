@@ -10379,26 +10379,43 @@ export async function GET(req: NextRequest) {
       const aiSummary = String(resp.choices[0]?.message?.content || "").trim();
 
       if (aiSummary.length > 0) {
-        pageSummary = aiSummary;
+        const formatted = aiSummary
+          .replace(/^[\s]*[-•*]\s*/gm, "")
+          .replace(/\n+/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+        const hasClosing = /what else would you like to know\?\s*$/i.test(
+          formatted
+        );
+        let prefixed = formatted;
+        if (!/^last time\b/i.test(prefixed)) {
+          prefixed = `Last time you were here, ${prefixed}`;
+        }
+        pageSummary = hasClosing
+          ? prefixed
+          : `${prefixed} What else would you like to know?`;
       } else {
         throw new Error("Empty AI summary");
       }
     }
   } catch (error) {
     console.error("Summary generation failed:", error);
-    // Fallback if OpenAI fails
     try {
       const userMsgs = pageMessages
         .filter((m: any) => String(m.role || "").toLowerCase() === "user")
-        .map((m: any) => String(m.content || "").trim())
+        .map((m: any) =>
+          String(m.content || "")
+            .replace(/\s+/g, " ")
+            .trim()
+        )
         .filter((s) => s.length > 0);
-
-      const uniqueTopics = Array.from(new Set(userMsgs)).slice(-5);
-
-      if (uniqueTopics.length > 0) {
-        pageSummary = `Welcome back! You previously asked about: ${uniqueTopics
-          .map((t) => `"${t}"`)
-          .join(", ")}. What else would you like to know?`;
+      const recent = userMsgs.slice(-2);
+      if (recent.length > 0) {
+        const asked =
+          recent.length === 1
+            ? `"${recent[0]}"`
+            : `"${recent[0]}" and "${recent[1]}"`;
+        pageSummary = `Last time you were here, you asked about ${asked}, and we talked through the relevant details. What else would you like to know?`;
       }
     } catch {}
   }
