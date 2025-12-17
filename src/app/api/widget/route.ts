@@ -3040,9 +3040,34 @@ export async function GET(request: Request) {
       if (h.textContent.trim()) content.headings.push(h.textContent.trim());
     });
     
-    // Extract meaningful text (first paragraph or description)
-    const firstParagraph = element.querySelector('p');
-    if (firstParagraph) content.text = firstParagraph.textContent.trim().substring(0, 200);
+    // Extract meaningful text - capture more content for AI analysis
+    let textContent = '';
+    // Select paragraphs, list items, and other text containers
+    const textElements = element.querySelectorAll('p, li, dd, dt, blockquote, article, .text-content');
+    
+    // If specific text elements found, accumulate them
+    if (textElements.length > 0) {
+      for (const el of textElements) {
+        const text = el.textContent.trim();
+        // Filter out very short texts and noise
+        if (text.length > 10) {
+          textContent += text + ' ';
+        }
+        // Limit total text to avoid token limits (e.g., 2000 chars)
+        if (textContent.length > 2000) {
+          textContent = textContent.substring(0, 2000) + '...';
+          break;
+        }
+      }
+    } 
+    
+    // If no specific text elements or very little text, try generic text extraction
+    if (textContent.length < 50 && element.textContent.trim().length > 0) {
+      // Get direct text nodes and clean up
+      textContent = element.textContent.replace(/\s+/g, ' ').trim().substring(0, 1000);
+    }
+    
+    content.text = textContent.trim();
     
     // Check for special elements
     content.hasForm = element.querySelector('form') !== null;
