@@ -10348,7 +10348,7 @@ export async function GET(req: NextRequest) {
     .toArray();
   const pageMessages = await chats
     .find(filter, { projection: { role: 1, content: 1, createdAt: 1, _id: 0 } })
-    .sort({ createdAt: 1 })
+    .sort({ createdAt: -1 })
     .limit(1000)
     .toArray();
   let pageSummary = "";
@@ -10366,12 +10366,12 @@ export async function GET(req: NextRequest) {
       const resp = await openai.chat.completions.create({
         model: "gpt-4o-mini",
         temperature: 0.2,
-        max_tokens: 450,
+        max_tokens: 650,
         messages: [
           {
             role: "system",
             content:
-              "You are a helpful assistant generating a revisit summary for a user returning to a webpage. Write the summary in your own words. Begin with a short natural header framing what was previously discussed on this page. Then list 6–12 concise bullet points (~250 words total) that comprehensively summarize what the user asked and what information was provided across the entire conversation. End with a brief, friendly question inviting them to continue. Return only the summary text.",
+              "You are a helpful assistant generating a revisit summary for a user returning to a webpage. Write the summary in your own words. Begin with a short natural header framing what was previously discussed on this page. Then provide 8–12 detailed pointers as bullet points, each line starting with '- '. Keep the total around 250–350 words. Ensure the bullets concisely capture what the user asked and what information was provided across the entire conversation. End with a brief, friendly question inviting them to continue. Return only the summary text.",
           },
           { role: "user", content: convoText },
         ],
@@ -10396,12 +10396,12 @@ export async function GET(req: NextRequest) {
         .filter((s) => s.length > 0);
       const seen = new Set<string>();
       const deduped: string[] = [];
-      for (let i = texts.length - 1; i >= 0 && deduped.length < 12; i--) {
+      for (let i = 0; i < texts.length && deduped.length < 12; i++) {
         const t = texts[i];
         const k = t.toLowerCase();
         if (!seen.has(k)) {
           seen.add(k);
-          deduped.unshift(t);
+          deduped.push(t);
         }
       }
       if (deduped.length > 0) {
