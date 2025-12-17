@@ -10365,13 +10365,13 @@ export async function GET(req: NextRequest) {
     if (convoText.length > 0) {
       const resp = await openai.chat.completions.create({
         model: "gpt-4o-mini",
-        temperature: 0.3,
-        max_tokens: 150,
+        temperature: 0.2,
+        max_tokens: 300,
         messages: [
           {
             role: "system",
             content:
-              "You are a helpful assistant welcoming a user back to a webpage. Summarize the previous conversation history provided below in a friendly, conversational paragraph (2-3 sentences). Explicitly mention what the user asked about and what information was provided. Start naturally (e.g., 'Last time you were here...'). End with 'What else would you like to know?' Do not use bullet points or lists.",
+              "You are a helpful assistant generating a revisit summary for a user returning to a webpage. Write the summary in your own words. Begin with a short header line that naturally frames what was previously discussed on this page. Then list 4–8 concise bullet points (~200 words total) that summarize what the user asked and what information was provided. End with a brief, friendly question inviting them to continue. Return only the summary text.",
           },
           { role: "user", content: convoText },
         ],
@@ -10379,21 +10379,7 @@ export async function GET(req: NextRequest) {
       const aiSummary = String(resp.choices[0]?.message?.content || "").trim();
 
       if (aiSummary.length > 0) {
-        const formatted = aiSummary
-          .replace(/^[\s]*[-•*]\s*/gm, "")
-          .replace(/\n+/g, " ")
-          .replace(/\s+/g, " ")
-          .trim();
-        const hasClosing = /what else would you like to know\?\s*$/i.test(
-          formatted
-        );
-        let prefixed = formatted;
-        if (!/^last time\b/i.test(prefixed)) {
-          prefixed = `Last time you were here, ${prefixed}`;
-        }
-        pageSummary = hasClosing
-          ? prefixed
-          : `${prefixed} What else would you like to know?`;
+        pageSummary = aiSummary;
       } else {
         throw new Error("Empty AI summary");
       }
@@ -10409,13 +10395,10 @@ export async function GET(req: NextRequest) {
             .trim()
         )
         .filter((s) => s.length > 0);
-      const recent = userMsgs.slice(-2);
-      if (recent.length > 0) {
-        const asked =
-          recent.length === 1
-            ? `"${recent[0]}"`
-            : `"${recent[0]}" and "${recent[1]}"`;
-        pageSummary = `Last time you were here, you asked about ${asked}, and we talked through the relevant details. What else would you like to know?`;
+      const uniqueTopics = Array.from(new Set(userMsgs)).slice(-6);
+      if (uniqueTopics.length > 0) {
+        const pointerText = uniqueTopics.map((t) => `- ${t}`).join("\n");
+        pageSummary = pointerText;
       }
     } catch {}
   }
