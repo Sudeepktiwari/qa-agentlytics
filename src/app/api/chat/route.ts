@@ -6835,7 +6835,7 @@ Extract key requirements (2-3 bullet points max, be concise):`;
             parsedRevisit = {
               mainText:
                 "Picking up where we left off here — what else would you like to explore?",
-              buttons: ["Clarify details", "See examples", "Talk to sales"],
+              buttons: [],
             };
           }
           const proactiveMsg = parsedRevisit.mainText || "";
