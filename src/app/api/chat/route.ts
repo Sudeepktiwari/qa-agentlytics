@@ -6808,13 +6808,14 @@ Extract key requirements (2-3 bullet points max, be concise):`;
                 `${msg.role === "user" ? "User" : "Bot"}: ${msg.content || ""}`
             )
             .join("\n")
-            .slice(0, 1500);
+            .slice(0, 3000);
           const summaryResp = await openai.chat.completions.create({
             model: "gpt-4o-mini",
+            max_tokens: 450,
             messages: [
               {
                 role: "system",
-                content: `You summarize prior page-specific conversation and continue helpfully. Return valid JSON with keys mainText and buttons. Requirements: mainText under 30 words, no greeting, acknowledge prior context briefly, end with a question inviting what else they want to know. Buttons: 3 short next actions derived from the history.`,
+                content: `You summarize prior page-specific conversation and continue helpfully. Return valid JSON with keys mainText and buttons. Requirements: mainText should be a detailed summary using 4-6 concise bullet points (prefixed with '• ') capturing key discussed items, followed by a brief bridging sentence and a question inviting them to continue. Buttons: 3 short next actions derived from the history.`,
               },
               {
                 role: "user",
