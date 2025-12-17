@@ -10349,7 +10349,7 @@ export async function GET(req: NextRequest) {
   const pageMessages = await chats
     .find(filter, { projection: { role: 1, content: 1, createdAt: 1, _id: 0 } })
     .sort({ createdAt: 1 })
-    .limit(300)
+    .limit(1000)
     .toArray();
   let pageSummary = "";
   try {
@@ -10361,17 +10361,17 @@ export async function GET(req: NextRequest) {
             .trim()}`
       )
       .join("\n")
-      .slice(0, 8000);
+      .slice(0, 12000);
     if (convoText.length > 0) {
       const resp = await openai.chat.completions.create({
         model: "gpt-4o-mini",
         temperature: 0.2,
-        max_tokens: 300,
+        max_tokens: 450,
         messages: [
           {
             role: "system",
             content:
-              "You are a helpful assistant generating a revisit summary for a user returning to a webpage. Write the summary in your own words. Begin with a short header line that naturally frames what was previously discussed on this page. Then list 4–8 concise bullet points (~200 words total) that summarize what the user asked and what information was provided. End with a brief, friendly question inviting them to continue. Return only the summary text.",
+              "You are a helpful assistant generating a revisit summary for a user returning to a webpage. Write the summary in your own words. Begin with a short natural header framing what was previously discussed on this page. Then list 6–12 concise bullet points (~250 words total) that comprehensively summarize what the user asked and what information was provided across the entire conversation. End with a brief, friendly question inviting them to continue. Return only the summary text.",
           },
           { role: "user", content: convoText },
         ],
@@ -10387,17 +10387,25 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     console.error("Summary generation failed:", error);
     try {
-      const userMsgs = pageMessages
-        .filter((m: any) => String(m.role || "").toLowerCase() === "user")
+      const texts = pageMessages
         .map((m: any) =>
           String(m.content || "")
             .replace(/\s+/g, " ")
             .trim()
         )
         .filter((s) => s.length > 0);
-      const uniqueTopics = Array.from(new Set(userMsgs)).slice(-6);
-      if (uniqueTopics.length > 0) {
-        const pointerText = uniqueTopics.map((t) => `- ${t}`).join("\n");
+      const seen = new Set<string>();
+      const deduped: string[] = [];
+      for (let i = texts.length - 1; i >= 0 && deduped.length < 12; i--) {
+        const t = texts[i];
+        const k = t.toLowerCase();
+        if (!seen.has(k)) {
+          seen.add(k);
+          deduped.unshift(t);
+        }
+      }
+      if (deduped.length > 0) {
+        const pointerText = deduped.map((t) => `- ${t}`).join("\n");
         pageSummary = pointerText;
       }
     } catch {}
