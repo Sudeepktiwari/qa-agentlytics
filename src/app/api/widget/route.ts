@@ -2202,6 +2202,12 @@ export async function GET(request: Request) {
         
         // Add 2-minute delay before displaying the response
         setTimeout(() => {
+          // Abort if user has become active during the delay
+          if (userIsActive) {
+            console.log('🛑 [WIDGET SCROLL] User became active during delay, aborting scroll-based message');
+            return;
+          }
+
           console.log('🎯 [WIDGET SCROLL] 2-minute delay complete, now displaying message');
           
           // Create structured contextual question data
@@ -2214,19 +2220,7 @@ export async function GET(request: Request) {
           };
           
           // Send the proactive message
-          const assistantCountBefore2 = messages.filter((m) => m && m.role === 'assistant').length;
           sendProactiveMessage(messageText, buttons, emailPrompt);
-          // Suppress secondary follow-up for first bot message in scroll-triggered flow
-          if (assistantCountBefore2 > 0 && data.secondary && data.secondary.mainText) {
-            sendProactiveMessage(
-              data.secondary.mainText,
-              data.secondary.buttons || [],
-              data.secondary.emailPrompt || '',
-              'FOLLOWUP',
-              null,
-              data.secondary.type || null
-            );
-          }
           
           // Start auto-response timer for contextual questions
           if (buttons && buttons.length > 0) {
