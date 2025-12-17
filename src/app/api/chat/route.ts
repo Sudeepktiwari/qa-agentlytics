@@ -6839,9 +6839,8 @@ Extract key requirements (2-3 bullet points max, be concise):`;
             };
           }
           const proactiveMsg = parsedRevisit.mainText || "";
-          const buttons = Array.isArray(parsedRevisit.buttons)
-            ? parsedRevisit.buttons
-            : [];
+          // Force buttons to be empty to prevent options from showing up in revisit summary
+          const buttons: string[] = [];
           let userEmail: string | null = null;
           const lastEmailMsg = await chats.findOne(
             { sessionId, email: { $exists: true } },
@@ -6851,6 +6850,15 @@ Extract key requirements (2-3 bullet points max, be concise):`;
             userEmail = lastEmailMsg.email;
           const botMode = userEmail ? "sales" : "lead_generation";
           let finalProactiveMsg = proactiveMsg || "";
+
+          // Strip out "Options:", "Buttons:" etc. from the generated text if the AI included them
+          finalProactiveMsg = finalProactiveMsg
+            .replace(
+              /(?:Options|Buttons|Quick Actions|Choose from):\s*[\s\S]*$/i,
+              ""
+            )
+            .trim();
+
           if (finalProactiveMsg && !/[\.\!?]$/.test(finalProactiveMsg)) {
             finalProactiveMsg = `${finalProactiveMsg.replace(/\s+$/, "")}?`;
           }
@@ -10387,7 +10395,13 @@ export async function GET(req: NextRequest) {
       const aiSummary = String(resp.choices[0]?.message?.content || "").trim();
 
       if (aiSummary.length > 0) {
-        pageSummary = aiSummary;
+        // Strip out "Options:", "Buttons:" etc. if the AI included them
+        pageSummary = aiSummary
+          .replace(
+            /(?:Options|Buttons|Quick Actions|Choose from):\s*[\s\S]*$/i,
+            ""
+          )
+          .trim();
       } else {
         throw new Error("Empty AI summary");
       }
