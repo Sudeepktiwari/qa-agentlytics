@@ -6803,10 +6803,14 @@ Extract key requirements (2-3 bullet points max, be concise):`;
         if (hasBeenGreeted && pageHistory.length >= 2) {
           const historyText = pageHistory
             .slice(-10)
-            .map(
-              (msg: any) =>
-                `${msg.role === "user" ? "User" : "Bot"}: ${msg.content || ""}`
-            )
+            .map((msg: any) => {
+              let content = String(msg.content || "");
+              content = content.replace(
+                /(?:Options|Buttons|Quick Actions|Choose from):\s*[\s\S]*$/i,
+                ""
+              );
+              return `${msg.role === "user" ? "User" : "Bot"}: ${content}`;
+            })
             .join("\n")
             .slice(0, 3000);
           const summaryResp = await openai.chat.completions.create({
@@ -6815,7 +6819,7 @@ Extract key requirements (2-3 bullet points max, be concise):`;
             messages: [
               {
                 role: "system",
-                content: `You summarize prior page-specific conversation and continue helpfully. Return valid JSON with keys mainText and buttons. Requirements: mainText should start with a 1-2 sentence friendly intro like "Here is what we discussed last time:", followed by 4-6 concise bullet points (prefixed with '• '). IMPORTANT: consolidate each distinct topic into exactly one bullet point with a short summary. End with a brief bridging sentence and a question inviting them to continue. Buttons: 3 short next actions derived from the history.`,
+                content: `You summarize prior page-specific conversation and continue helpfully. Return valid JSON with keys mainText and buttons. Requirements: mainText should start with a 1-2 sentence friendly intro like "Here is what we discussed last time:", followed by 4-6 concise bullet points (prefixed with '• '). IMPORTANT: consolidate each distinct topic into exactly one bullet point with a short summary. Do not list the options or buttons that were presented to the user. End with a brief bridging sentence and a question inviting them to continue. Buttons: 3 short next actions derived from the history.`,
               },
               {
                 role: "user",
@@ -10355,12 +10359,15 @@ export async function GET(req: NextRequest) {
   let pageSummary = "";
   try {
     const convoText = pageMessages
-      .map(
-        (m: any) =>
-          `[${m.role}] ${String(m.content || "")
-            .replace(/\s+/g, " ")
-            .trim()}`
-      )
+      .map((m: any) => {
+        let content = String(m.content || "");
+        // Strip out "Options:", "Buttons:", etc. and anything following them (typically button lists)
+        content = content.replace(
+          /(?:Options|Buttons|Quick Actions|Choose from):\s*[\s\S]*$/i,
+          ""
+        );
+        return `[${m.role}] ${content.replace(/\s+/g, " ").trim()}`;
+      })
       .join("\n")
       .slice(0, 12000);
     if (convoText.length > 0) {
@@ -10389,11 +10396,14 @@ export async function GET(req: NextRequest) {
     console.error("Summary generation failed:", error);
     try {
       const texts = pageMessages
-        .map((m: any) =>
-          String(m.content || "")
-            .replace(/\s+/g, " ")
-            .trim()
-        )
+        .map((m: any) => {
+          let content = String(m.content || "");
+          content = content.replace(
+            /(?:Options|Buttons|Quick Actions|Choose from):\s*[\s\S]*$/i,
+            ""
+          );
+          return content.replace(/\s+/g, " ").trim();
+        })
         .filter((s) => s.length > 0);
       const seen = new Set<string>();
       const deduped: string[] = [];
