@@ -10365,38 +10365,43 @@ export async function GET(req: NextRequest) {
     if (convoText.length > 0) {
       const resp = await openai.chat.completions.create({
         model: "gpt-4o-mini",
-        temperature: 0.2,
-        max_tokens: 120,
+        temperature: 0.3,
+        max_tokens: 150,
         messages: [
           {
             role: "system",
             content:
-              "Summarize the prior conversation concisely. Return 2–4 lines that capture key topics, decisions, timelines, and next steps relevant to this page.",
+              "You are a helpful assistant welcoming a user back to a webpage. Summarize the previous conversation history provided below in a friendly, conversational paragraph (2-3 sentences). Explicitly mention what the user asked about and what information was provided. Start naturally (e.g., 'Last time you were here...'). End with 'What else would you like to know?' Do not use bullet points or lists.",
           },
           { role: "user", content: convoText },
         ],
       });
       const aiSummary = String(resp.choices[0]?.message?.content || "").trim();
-      const lastUserMsgs = pageMessages
-        .filter((m: any) => String(m.role || "").toLowerCase() === "user")
-        .map((m: any) =>
-          String(m.content || "")
-            .replace(/\s+/g, " ")
-            .trim()
-        );
-      const recentQuestions = lastUserMsgs.slice(-2);
-      const askedPart =
-        recentQuestions.length === 0
-          ? ""
-          : recentQuestions.length === 1
-          ? `You asked: "${recentQuestions[0]}". `
-          : `You asked: "${recentQuestions[0]}" and "${recentQuestions[1]}". `;
-      const discussedPart =
-        aiSummary.length > 0 ? `We discussed: ${aiSummary}. ` : "";
-      const closingPart = "What else would you like to know?";
-      pageSummary = `${askedPart}${discussedPart}${closingPart}`.trim();
+
+      if (aiSummary.length > 0) {
+        pageSummary = aiSummary;
+      } else {
+        throw new Error("Empty AI summary");
+      }
     }
-  } catch {}
+  } catch (error) {
+    console.error("Summary generation failed:", error);
+    // Fallback if OpenAI fails
+    try {
+      const userMsgs = pageMessages
+        .filter((m: any) => String(m.role || "").toLowerCase() === "user")
+        .map((m: any) => String(m.content || "").trim())
+        .filter((s) => s.length > 0);
+
+      const uniqueTopics = Array.from(new Set(userMsgs)).slice(-5);
+
+      if (uniqueTopics.length > 0) {
+        pageSummary = `Welcome back! You previously asked about: ${uniqueTopics
+          .map((t) => `"${t}"`)
+          .join(", ")}. What else would you like to know?`;
+      }
+    } catch {}
+  }
   return NextResponse.json(
     { history: history.reverse(), pageSummary },
     { headers: corsHeaders }

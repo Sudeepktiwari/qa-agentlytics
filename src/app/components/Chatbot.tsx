@@ -108,15 +108,23 @@ const Chatbot: React.FC<ChatbotProps> = ({
   const sanitizeButtonLabel = (s: any): string => {
     let raw: any = s;
     if (raw && typeof raw === "object") {
-      // Prefer common label-like fields
-      raw =
-        raw.label ??
-        raw.text ??
-        raw.title ??
-        raw.name ??
-        raw.value ??
+      // Prefer common label-like fields, ensuring they are strings
+      const candidate =
+        (typeof raw.label === "string" ? raw.label : null) ??
+        (typeof raw.text === "string" ? raw.text : null) ??
+        (typeof raw.title === "string" ? raw.title : null) ??
+        (typeof raw.name === "string" ? raw.name : null) ??
+        (typeof raw.value === "string" ? raw.value : null) ??
         // Handle nested label objects
-        (typeof raw.label === "object" ? raw.label?.text ?? "" : "");
+        (raw.label && typeof raw.label === "object" ? raw.label?.text : null);
+
+      if (candidate) {
+        raw = candidate;
+      } else {
+        // If it's an object but we can't find a string label, return empty
+        // This prevents [object Object] from appearing
+        return "";
+      }
     }
     return String(raw ?? "")
       .replace(/<[^>]+>/g, " ")
@@ -982,9 +990,9 @@ const Chatbot: React.FC<ChatbotProps> = ({
         conversationText += `${msg.content}\n`;
 
         // Add buttons if present
-        if (!msg.isSummary && msg.buttons && msg.buttons.length > 0) {
-          conversationText += "Options: " + msg.buttons.join(", ") + "\n";
-        }
+        // if (!msg.isSummary && msg.buttons && msg.buttons.length > 0) {
+        //   conversationText += "Options: " + msg.buttons.join(", ") + "\n";
+        // }
 
         conversationText += "\n";
       });
@@ -1010,9 +1018,9 @@ const Chatbot: React.FC<ChatbotProps> = ({
           conversationText += `${msg.content}\n`;
 
           // Add buttons if present
-          if (msg.buttons && msg.buttons.length > 0) {
-            conversationText += "Options: " + msg.buttons.join(", ") + "\n";
-          }
+          // if (msg.buttons && msg.buttons.length > 0) {
+          //   conversationText += "Options: " + msg.buttons.join(", ") + "\n";
+          // }
 
           conversationText += "\n";
         });
