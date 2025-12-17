@@ -6815,7 +6815,7 @@ Extract key requirements (2-3 bullet points max, be concise):`;
             messages: [
               {
                 role: "system",
-                content: `You summarize prior page-specific conversation and continue helpfully. Return valid JSON with keys mainText and buttons. Requirements: mainText should start with a 1-2 sentence friendly intro like "Here is what we discussed last time:", followed by 4-6 concise bullet points (prefixed with '• ') capturing key discussed items, then a brief bridging sentence and a question inviting them to continue. Buttons: 3 short next actions derived from the history.`,
+                content: `You summarize prior page-specific conversation and continue helpfully. Return valid JSON with keys mainText and buttons. Requirements: mainText should start with a 1-2 sentence friendly intro like "Here is what we discussed last time:", followed by 4-6 concise bullet points (prefixed with '• '). IMPORTANT: consolidate each distinct topic into exactly one bullet point with a short summary. End with a brief bridging sentence and a question inviting them to continue. Buttons: 3 short next actions derived from the history.`,
               },
               {
                 role: "user",
