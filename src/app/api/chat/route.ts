@@ -1061,13 +1061,44 @@ function computeSuggestedActions(input: {
 }
 
 function computeBantMissingDims(
-  messages: any[]
+  messages: any[],
+  profile: any = null
 ): ("budget" | "authority" | "need" | "timeline" | "segment")[] {
   const allDims: ("budget" | "authority" | "need" | "timeline" | "segment")[] =
     ["budget", "authority", "need", "timeline", "segment"];
   const answered = new Set<
     "budget" | "authority" | "need" | "timeline" | "segment"
   >();
+
+  if (profile) {
+    if (
+      profile.requirementsProfile?.budgetRange &&
+      profile.requirementsProfile.budgetRange !== "unknown"
+    ) {
+      answered.add("budget");
+    }
+    if (
+      profile.requirementsProfile?.timeline &&
+      profile.requirementsProfile.timeline !== "unknown"
+    ) {
+      answered.add("timeline");
+    }
+    if (typeof profile.behaviorProfile?.decisionMaker === "boolean") {
+      answered.add("authority");
+    }
+    if (
+      (profile.requirementsProfile?.primaryUseCase &&
+        profile.requirementsProfile.primaryUseCase.length > 0) ||
+      (profile.requirementsProfile?.specificFeatures &&
+        profile.requirementsProfile.specificFeatures.length > 0)
+    ) {
+      answered.add("need");
+    }
+    if (profile.companyProfile?.size) {
+      answered.add("segment");
+    }
+  }
+
   let pendingAsked:
     | "budget"
     | "authority"
@@ -2857,6 +2888,18 @@ export async function POST(req: NextRequest) {
 
   // Add request ID for debugging
   const requestId = Math.random().toString(36).substring(7);
+
+  // Fetch customer profile for BANT logic
+  let customerProfile = null;
+  if (sessionId) {
+    try {
+      const db = await getDb();
+      const profiles = db.collection("customer_profiles");
+      customerProfile = await profiles.findOne({ sessionIds: sessionId });
+    } catch (e) {
+      console.error("[Chat API] Error fetching customer profile:", e);
+    }
+  }
   console.log(`[Chat API ${requestId}] Processing request:`, {
     question: question ? `"${question}"` : undefined,
     sessionId,
@@ -3416,7 +3459,10 @@ Based on the page context, create an intelligent contextual question that demons
               ? (d as any).buttons
               : [],
           }));
-          const missingDims = computeBantMissingDims(sessionMessages);
+          const missingDims = computeBantMissingDims(
+            sessionMessages,
+            customerProfile
+          );
           if (missingDims.length === 0) {
             await updateProfileOnBantComplete(
               req.nextUrl.origin,
@@ -7356,7 +7402,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
                 .sort({ createdAt: 1 })
                 .limit(200)
                 .toArray()
-                .then((ms) => computeBantMissingDims(ms)),
+                .then((ms) => computeBantMissingDims(ms, customerProfile)),
               userEmail,
             });
             if (heuristicBant) {
@@ -7440,7 +7486,10 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
           .map((msg) => (msg as unknown as ChatMessage).content);
         const lastFewQuestions = prevQuestions.slice(-3);
 
-        const missingDims = computeBantMissingDims(previousChats);
+        const missingDims = computeBantMissingDims(
+          previousChats,
+          customerProfile
+        );
         const lastUserMessage = previousChats
           .filter((msg) => (msg as unknown as ChatMessage).role === "user")
           .slice(-1)[0];
@@ -7716,8 +7765,10 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
               role: "user",
               content: question || "",
             });
-            const missingDimsQuick =
-              computeBantMissingDims(sessionMessagesQuick);
+            const missingDimsQuick = computeBantMissingDims(
+              sessionMessagesQuick,
+              customerProfile
+            );
             if (missingDimsQuick.length === 0) {
               await updateProfileOnBantComplete(
                 req.nextUrl.origin,
@@ -9086,7 +9137,10 @@ What specific information are you looking for? I'm here to help guide you throug
         })
       );
       sessionMessagesQuick.push({ role: "user", content: question || "" });
-      const missingDimsQuick = computeBantMissingDims(sessionMessagesQuick);
+      const missingDimsQuick = computeBantMissingDims(
+        sessionMessagesQuick,
+        customerProfile
+      );
       let nextBant: any = null;
       const botModeChain: "sales" | "lead_generation" = userEmail
         ? "sales"
@@ -10033,7 +10087,10 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
           role: "user",
           content: question || "",
         });
-        const missingDimsQuick = computeBantMissingDims(sessionMessagesQuick);
+        const missingDimsQuick = computeBantMissingDims(
+          sessionMessagesQuick,
+          customerProfile
+        );
         if (missingDimsQuick.length === 0) {
           await updateProfileOnBantComplete(
             req.nextUrl.origin,
@@ -10202,7 +10259,10 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
           role: "user",
           content: question || "",
         });
-        const missingDimsQuick2 = computeBantMissingDims(sessionMessagesQuick2);
+        const missingDimsQuick2 = computeBantMissingDims(
+          sessionMessagesQuick2,
+          customerProfile
+        );
         if (missingDimsQuick2.length > 0) {
           const immediate = {
             mainText: "What timeline are you targeting?",
@@ -10248,7 +10308,10 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
         .toArray();
       const sessionMessagesQuick = mapChatDocsToBantMessages(sessionDocsQuick);
       sessionMessagesQuick.push({ role: "user", content: question || "" });
-      const missingDimsQuick = computeBantMissingDims(sessionMessagesQuick);
+      const missingDimsQuick = computeBantMissingDims(
+        sessionMessagesQuick,
+        customerProfile
+      );
       secondary = buildFallbackFollowup({
         userMessage: question || "",
         assistantResponse: {
