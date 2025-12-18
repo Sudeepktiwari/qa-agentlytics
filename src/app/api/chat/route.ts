@@ -598,6 +598,68 @@ function generateBookingManagementResponse(action: string, booking: any) {
   }
 }
 
+async function generateSalesEntryResponse(
+  messages: any[],
+  profile: any
+): Promise<{ mainText: string; buttons: string[] }> {
+  const relevantContext = {
+    profile: profile || {},
+    recentMessages: messages.slice(-15)
+  };
+
+  const systemPrompt = `
+You are an expert sales AI assistant. The user has just completed the qualification process (BANT - Budget, Authority, Need, Timeline).
+Your goal is to transition the conversation to "Sales Mode" by providing a concise summary of what has been discussed and offering relevant next steps.
+
+Input Context:
+- User Profile: Contains collected data.
+- Recent Messages: The conversation leading up to this point.
+
+Instructions:
+1. Analyze the conversation and profile to understand the user's specific needs, budget, timeline, and authority level.
+2. Generate a "mainText" response that:
+   - Acknowledges the information provided.
+   - Summarizes the key points (e.g., "Thanks for sharing that. It sounds like you're looking for [Need] with a budget of [Budget]...").
+   - Proposes the immediate next step (e.g., "I can set up a demo tailored to [Need]" or "Let's look at plans that fit your [Budget]").
+3. Generate 2-4 "buttons" for the user to click. These should be specific actions based on the summary (e.g., "Schedule Demo for [Need]", "See [Segment] Pricing", "Talk to Sales").
+4. Keep the tone professional, helpful, and encouraging.
+
+Return ONLY a valid JSON object with this structure:
+{
+  "mainText": "string",
+  "buttons": ["string", "string", "string"]
+}
+`;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: JSON.stringify(relevantContext) }
+      ],
+      temperature: 0.3,
+      response_format: { type: "json_object" }
+    });
+
+    const content = response.choices[0]?.message?.content;
+    if (content) {
+      const parsed = JSON.parse(content);
+      return {
+        mainText: parsed.mainText || "Thanks! We have everything we need. How would you like to proceed?",
+        buttons: Array.isArray(parsed.buttons) ? parsed.buttons.slice(0, 4) : ["Schedule Demo", "View Pricing"]
+      };
+    }
+  } catch (error) {
+    console.error("Error generating sales entry response:", error);
+  }
+
+  return {
+    mainText: "We’re now in sales mode and will focus on next steps. Would you like to schedule a demo, review pricing, or talk to sales?",
+    buttons: ["Schedule Demo", "View Pricing", "Talk to Sales"]
+  };
+}
+
 async function analyzeForProbing(input: {
   userMessage: string;
   assistantResponse: {
