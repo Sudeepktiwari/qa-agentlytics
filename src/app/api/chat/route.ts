@@ -613,7 +613,7 @@ async function analyzeForProbing(input: {
     {
       role: "system",
       content:
-        "Decide whether to send a short BANT qualification follow-up now. Use the last user message and the assistant's response. Prefer sending a follow-up when at least one of the provided missingDims remains and a question can be naturally anchored to the user's last message or the assistant's response. Choose ONE BANT dimension from missingDims and ask about that only. Return JSON: { shouldSendFollowUp: boolean, mainText: string, buttons: string[], emailPrompt: string }. The message must ask ONE qualification in ONE sentence ending with '?'. Provide 2–4 concise options in 'buttons' that directly answer that single question. Never combine multiple BANT dimensions in one question. If botMode is 'sales', prefer Budget or Timeline; if 'lead_generation', prefer Need. If Budget is missing but Business Type ('segment') is also missing, ask Business Type first.",
+        "Decide whether to send a short BANT qualification follow-up now. Use the last user message and the assistant's response. Prefer sending a follow-up when at least one of the provided missingDims remains and a question can be naturally anchored to the user's last message or the assistant's response. Choose ONE BANT dimension from missingDims and ask about that only. Return JSON: { shouldSendFollowUp: boolean, mainText: string, buttons: string[], emailPrompt: string, bantDimension: string }. The message must ask ONE qualification in ONE sentence ending with '?'. Provide 2–4 concise options in 'buttons' that directly answer that single question. Never combine multiple BANT dimensions in one question. If botMode is 'sales', prefer Budget or Timeline; if 'lead_generation', prefer Need. If Budget is missing but Business Type ('segment') is also missing, ask Business Type first.",
     },
     {
       role: "user",
@@ -647,6 +647,20 @@ async function analyzeForProbing(input: {
     parsed = { shouldSendFollowUp: false };
   }
   const should = Boolean(parsed && parsed.shouldSendFollowUp);
+
+  // Validate that the generated BANT dimension is actually missing
+  if (should) {
+    const generatedDim = parsed.bantDimension;
+    const missingDims = Array.isArray(input.missingDims)
+      ? input.missingDims
+      : ["budget", "authority", "need", "timeline", "segment"];
+
+    if (generatedDim && !missingDims.includes(generatedDim as any)) {
+      // Generated dimension is not in the missing list. Block it.
+      return { shouldSendFollowUp: false };
+    }
+  }
+
   if (!should) {
     const combined = `${input.userMessage || ""} ${
       input.assistantResponse.mainText || ""
@@ -3483,6 +3497,27 @@ Based on the page context, create an intelligent contextual question that demons
               },
               { headers: corsHeaders }
             );
+          } else if (!enhancedResponse.showBookingCalendar) {
+            // If BANT incomplete and no booking detected, try to ask next BANT question
+            const probing = await analyzeForProbing({
+              userMessage: `User is viewing page: ${pageUrl}`,
+              assistantResponse: enhancedResponse,
+              botMode: "lead_generation",
+              userEmail: sessionEmail,
+              missingDims: missingDims,
+            });
+
+            if (probing.shouldSendFollowUp && probing.mainText) {
+              enhancedResponse = {
+                ...enhancedResponse,
+                mainText: probing.mainText,
+                buttons: probing.buttons,
+                emailPrompt:
+                  probing.emailPrompt || enhancedResponse.emailPrompt,
+                bantDimension: (probing as any).bantDimension,
+                followupType: "bant",
+              };
+            }
           }
         } catch (e) {}
         // If BANT incomplete, continue building contextual response
