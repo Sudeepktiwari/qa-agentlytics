@@ -604,7 +604,7 @@ async function generateSalesEntryResponse(
 ): Promise<{ mainText: string; buttons: string[] }> {
   const relevantContext = {
     profile: profile || {},
-    recentMessages: messages.slice(-15)
+    recentMessages: messages.slice(-15),
   };
 
   const systemPrompt = `
@@ -636,18 +636,22 @@ Return ONLY a valid JSON object with this structure:
       model: "gpt-4o-mini",
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: JSON.stringify(relevantContext) }
+        { role: "user", content: JSON.stringify(relevantContext) },
       ],
       temperature: 0.3,
-      response_format: { type: "json_object" }
+      response_format: { type: "json_object" },
     });
 
     const content = response.choices[0]?.message?.content;
     if (content) {
       const parsed = JSON.parse(content);
       return {
-        mainText: parsed.mainText || "Thanks! We have everything we need. How would you like to proceed?",
-        buttons: Array.isArray(parsed.buttons) ? parsed.buttons.slice(0, 4) : ["Schedule Demo", "View Pricing"]
+        mainText:
+          parsed.mainText ||
+          "Thanks! We have everything we need. How would you like to proceed?",
+        buttons: Array.isArray(parsed.buttons)
+          ? parsed.buttons.slice(0, 4)
+          : ["Schedule Demo", "View Pricing"],
       };
     }
   } catch (error) {
@@ -655,8 +659,9 @@ Return ONLY a valid JSON object with this structure:
   }
 
   return {
-    mainText: "We’re now in sales mode and will focus on next steps. Would you like to schedule a demo, review pricing, or talk to sales?",
-    buttons: ["Schedule Demo", "View Pricing", "Talk to Sales"]
+    mainText:
+      "We’re now in sales mode and will focus on next steps. Would you like to schedule a demo, review pricing, or talk to sales?",
+    buttons: ["Schedule Demo", "View Pricing", "Talk to Sales"],
   };
 }
 
@@ -8330,41 +8335,23 @@ Generate exactly 3 buttons using ACTUAL terms from the page content that are COM
           if (userHasEmail) {
             // User is in sales mode - aggressive SDR-style conversion focus
             followupSystemPrompt = `
-You are a confident sales assistant. The user has already provided their email and is a qualified lead in sales mode.
+You are a helpful, confident sales assistant. The user is in sales mode (email captured).
 
-CRITICAL: This is FOLLOWUP #3 (followupCount=2). You MUST extract and use a THIRD COMPLETELY DIFFERENT aspect from the actual page content.
+CRITICAL: This is FOLLOWUP #3 (followupCount=2). Provide a short 3–4 line summary of the conversation and close the chat while offering help.
 
-**FOLLOWUP #3 PAGE CONTENT EXTRACTION:**
-1. **Find Remaining Features**: Identify additional features/services on page not used in previous followups
-2. **Extract Different Benefits**: Find other outcomes/results mentioned on page
-3. **Identify Additional Use Cases**: Look for other customer scenarios described on page
-4. **Use Different Terminology**: Extract fresh industry-specific terms from page content
+Summary Requirements:
+- Line 1–2: Reflect key points the user shared (needs, goals, page context).
+- Line 3: Reference BANT highlights if available (budget/timeline/authority/need).
+- Line 4: A friendly closure that offers help and next step.
 
-**MANDATORY: BASE ON ACTUAL PAGE CONTENT**
-- **Scan Page for Unused Elements**: Find features, benefits, outcomes not mentioned before
-- **Extract Real Terminology**: Use actual words/phrases from page content
-- **Different Business Focus**: Address third distinct business need from page
-- **Avoid Previous Content**: Don't reuse any concepts from earlier followups
+Buttons:
+- Generate 2–3 concise, helpful actions based on your summary (e.g., "Schedule Demo", "Get Custom Quote", "Talk to Specialist").
+- Use terms consistent with the page and the user’s expressed needs.
 
-PREVIOUS TOPICS/BUTTONS USED (ABSOLUTELY FORBIDDEN):
-Previous Buttons: ${
-              previousButtons.length > 0
-                ? previousButtons.map((btn: string) => `"${btn}"`).join(", ")
-                : "None"
-            }
-Previous Messages: ${
-              previousMainTexts.length > 0
-                ? previousMainTexts
-                    .slice(-3)
-                    .map((text: string) => `"${text}"`)
-                    .join(", ")
-                : "None"
-            }
-
-You will receive page and general context, the detected intent, and the previous conversation. Always generate your response in the following JSON format:
+Output JSON ONLY:
 {
-  "mainText": "<Direct, value-focused message. Reference specific ROI, time savings, or competitive advantage. Be consultative but assertive. Maximum 30 words. Use numbers/statistics when possible.>",
-  "buttons": ["<2-3 high-conversion actions like 'Book 15-min Demo', 'Get Custom Quote', 'Talk to Specialist', 'See ROI Calculator'>"],
+  "mainText": "<3–4 lines. Each line is a short sentence. End with a friendly offer to help.>",
+  "buttons": ["<2–3 helpful actions tailored to the summary>"],
   "emailPrompt": ""
 }
 
@@ -8378,16 +8365,11 @@ ${detectedIntent}
 Previous Conversation:
 ${previousQnA}
 
-SDR Guidelines:
-- Reference specific business outcomes (save X hours, increase Y%, reduce Z cost)
-- Create urgency with limited-time value
-- Use consultative language ("Based on what you're viewing...")
-- Be confident about the solution fit
-- Focus on next concrete step in sales process
-- Only use the above JSON format.
-- Respond with ONLY valid JSON - no additional text before or after
-- NEVER include JSON objects or button arrays within the mainText field`;
-            followupUserPrompt = `Create an SDR-style value proposition with specific benefits. The user has email so focus on conversion. Reference ROI, time savings, or competitive advantage. Be assertive but consultative. Only output the JSON format as instructed.`;
+Guidelines:
+- Use consultative tone; be specific, not generic.
+- Avoid repeating earlier followups; use fresh details.
+- Do not include JSON inside mainText.`;
+            followupUserPrompt = `Summarize the conversation in 3–4 short lines and close by offering help. Generate 2–3 actionable buttons based on the summary. Only output the JSON format as instructed.`;
           } else {
             // User hasn't provided email yet - value-focused followup with topic diversification
             followupSystemPrompt = `
