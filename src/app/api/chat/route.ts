@@ -1243,7 +1243,7 @@ function computeBantMissingDims(
       if (/(individual|solo|freelancer|personal)\b/.test(s)) {
         answered.add("segment");
       }
-      if (/(smb|sme|small\s*business|startup|team|mid\s*market)\b/.test(s)) {
+      if (/(smb|sme|small\s*business|startup|mid\s*market)\b/.test(s)) {
         answered.add("segment");
       }
       if (/(enterprise|corporate|large\s*company|global)\b/.test(s)) {
@@ -1320,7 +1320,7 @@ function isAnswerToAskedDim(
       s
     );
   if (dim === "segment")
-    return /(individual|solo|freelancer|personal|smb|sme|small\s*business|startup|team|mid\s*market|enterprise|corporate|large\s*company|global)/.test(
+    return /(individual|solo|freelancer|personal|smb|sme|small\s*business|startup|mid\s*market|enterprise|corporate|large\s*company|global)/.test(
       s
     );
   return false;
@@ -3558,7 +3558,25 @@ Based on the page context, create an intelligent contextual question that demons
               : 0,
             timestamp: new Date().toISOString(),
           });
-          if (missingDims.length === 0) {
+          const lastDoc: any = sessionDocs[sessionDocs.length - 1] || null;
+          const lastAssistantIdx = [...sessionDocs]
+            .reverse()
+            .findIndex(
+              (d: any) => String(d.role || "").toLowerCase() === "assistant"
+            );
+          const lastAssistantDoc =
+            lastAssistantIdx >= 0
+              ? sessionDocs[sessionDocs.length - 1 - lastAssistantIdx]
+              : null;
+          const justCompletedBant =
+            missingDims.length === 0 &&
+            !!lastAssistantDoc &&
+            String((lastAssistantDoc as any)?.followupType || "")
+              .toLowerCase()
+              .includes("bant") &&
+            !!lastDoc &&
+            String(lastDoc.role || "").toLowerCase() === "user";
+          if (justCompletedBant) {
             await updateProfileOnBantComplete(
               req.nextUrl.origin,
               sessionId,
@@ -9267,12 +9285,13 @@ What specific information are you looking for? I'm here to help guide you throug
       const botModeChain: "sales" | "lead_generation" = userEmail
         ? "sales"
         : "lead_generation";
-      const order: ("budget" | "authority" | "need" | "timeline")[] = [
-        "budget",
-        "authority",
-        "need",
-        "timeline",
-      ];
+      const order: (
+        | "budget"
+        | "authority"
+        | "need"
+        | "timeline"
+        | "segment"
+      )[] = ["segment", "budget", "authority", "need", "timeline"];
       const orderedMissing = order.filter((d) => missingDimsQuick.includes(d));
       const nextType: "bant" | "completion" = "bant";
       if (orderedMissing.length === 0) {
@@ -9299,33 +9318,31 @@ What specific information are you looking for? I'm here to help guide you throug
         nextBant = completion;
       } else {
         const dim = orderedMissing[0];
-        if (dim === "budget") {
+        if (dim === "segment") {
+          nextBant = {
+            mainText: "What type of business are you?",
+            buttons: ["Individual", "SMB", "Enterprise"],
+            emailPrompt: "",
+            type: "bant",
+            dimension: "segment",
+          } as any;
+        } else if (dim === "budget") {
           const segment = getBusinessSegment(sessionMessagesQuick);
-          if (missingDimsQuick.includes("segment") && !segment) {
-            nextBant = {
-              mainText: "What type of business are you?",
-              buttons: ["Individual", "SMB", "Enterprise"],
-              emailPrompt: "",
-              type: "bant",
-              dimension: "segment",
-            } as any;
-          } else {
-            const budgetButtons =
-              segment === "individual"
-                ? ["Under $20/mo", "$20–$50/mo", "$50+"]
-                : segment === "smb"
-                ? ["Under $500/mo", "$500–$1.5k/mo", "$1.5k+"]
-                : segment === "enterprise"
-                ? ["Under $10k/yr", "$10k–$50k/yr", "$50k+/yr"]
-                : ["Under $500/mo", "$500–$1.5k/mo", "$1.5k+"];
-            nextBant = {
-              mainText: "What budget range are you considering?",
-              buttons: budgetButtons,
-              emailPrompt: "",
-              type: "bant",
-              dimension: "budget",
-            } as any;
-          }
+          const budgetButtons =
+            segment === "individual"
+              ? ["Under $20/mo", "$20–$50/mo", "$50+"]
+              : segment === "smb"
+              ? ["Under $500/mo", "$500–$1.5k/mo", "$1.5k+"]
+              : segment === "enterprise"
+              ? ["Under $10k/yr", "$10k–$50k/yr", "$50k+/yr"]
+              : ["Under $500/mo", "$500–$1.5k/mo", "$1.5k+"];
+          nextBant = {
+            mainText: "What budget range are you considering?",
+            buttons: budgetButtons,
+            emailPrompt: "",
+            type: "bant",
+            dimension: "budget",
+          } as any;
         } else if (dim === "authority") {
           nextBant = {
             mainText: "Who will make the decision?",
