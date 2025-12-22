@@ -10491,29 +10491,41 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
           customerProfile
         );
         if (missingDimsQuick2.length > 0) {
-          const immediate = {
-            mainText: "What timeline are you targeting?",
-            buttons: ["This week", "Next week", "Later"],
-            emailPrompt: "",
-            type: "bant",
-            dimension: "timeline",
-          } as any;
-          secondary = immediate;
-          await chats.insertOne({
-            sessionId,
-            role: "assistant",
-            content: immediate.mainText,
-            buttons: immediate.buttons,
-            emailPrompt: immediate.emailPrompt,
-            followupType: immediate.type,
-            bantDimension:
-              immediate.dimension ||
-              detectBantDimensionFromText(String(immediate.mainText || "")) ||
-              null,
-            createdAt: new Date(now.getTime() + 1),
-            ...(pageUrl ? { pageUrl } : {}),
-            ...(adminId ? { adminId } : {}),
+          const fallback = buildHeuristicBantFollowup({
+            userMessage: question || "",
+            assistantResponse: {
+              mainText: finalResponse.mainText,
+            },
+            botMode,
+            missingDims: missingDimsQuick2,
+            userEmail,
           });
+
+          if (fallback) {
+            const immediate = {
+              mainText: fallback.mainText,
+              buttons: fallback.buttons,
+              emailPrompt: fallback.emailPrompt,
+              type: "bant",
+              dimension: fallback.dimension,
+            } as any;
+            secondary = immediate;
+            await chats.insertOne({
+              sessionId,
+              role: "assistant",
+              content: immediate.mainText,
+              buttons: immediate.buttons,
+              emailPrompt: immediate.emailPrompt,
+              followupType: immediate.type,
+              bantDimension:
+                immediate.dimension ||
+                detectBantDimensionFromText(String(immediate.mainText || "")) ||
+                null,
+              createdAt: new Date(now.getTime() + 1),
+              ...(pageUrl ? { pageUrl } : {}),
+              ...(adminId ? { adminId } : {}),
+            });
+          }
         } else {
           await updateProfileOnBantComplete(
             req.nextUrl.origin,
