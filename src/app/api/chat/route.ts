@@ -1161,6 +1161,8 @@ function computeBantMissingDims(
   >();
 
   if (profile) {
+    /*
+    // Disable profile-based skipping to ensure questions are asked in the chat flow
     if (
       profile.requirementsProfile?.budgetRange &&
       profile.requirementsProfile.budgetRange !== "unknown"
@@ -1187,6 +1189,7 @@ function computeBantMissingDims(
     if (profile.companyProfile?.size) {
       answered.add("segment");
     }
+    */
   }
 
   let pendingAsked:
@@ -1239,7 +1242,7 @@ function computeBantMissingDims(
         answered.add("authority");
       }
       if (
-        /workflows|embeds|analytics|integration|feature|features|need|priority|use\s*case|help\b|automation|reminders|calendar|api|webhooks|routing|availability|templates|reporting|compliance|security|scheduling|project\s*management|collaboration|data\s*analytics/.test(
+        /workflows|embeds|analytics|integration|feature|features|need|priority|use\s*case|help\b|automation|reminders|calendar|api|webhooks|availability|templates|reporting|compliance|security|scheduling|project\s*management|collaboration|data\s*analytics/.test(
           s
         )
       ) {
