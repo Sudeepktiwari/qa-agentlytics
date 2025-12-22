@@ -1240,13 +1240,22 @@ function computeBantMissingDims(
       ) {
         answered.add("need");
       }
-      if (/(individual|solo|freelancer|personal)\b/.test(s)) {
+      if (
+        /(individual|solo|freelancer)\b/.test(s) ||
+        /\bpersonal\s*(use|plan|account|project)\b/.test(s)
+      ) {
         answered.add("segment");
       }
-      if (/(smb|sme|small\s*business|startup|mid\s*market)\b/.test(s)) {
+      if (
+        /(smb|small\s*business|startup|mid\s*market)\b/.test(s) ||
+        /\bteam\s*(of|size|plan)\b/.test(s)
+      ) {
         answered.add("segment");
       }
-      if (/(enterprise|corporate|large\s*company|global)\b/.test(s)) {
+      if (
+        /(enterprise|corporate|large\s*company)\b/.test(s) ||
+        /\bglobal\s*(deployment|scale|rollout)\b/.test(s)
+      ) {
         answered.add("segment");
       }
       if (pendingAsked) {
@@ -3525,136 +3534,193 @@ Based on the page context, create an intelligent contextual question that demons
         sessionEmail = null;
       }
 
+      // Fetch session messages for ALL users to enable BANT logic
+      let sessionMessages: any[] = [];
+      let missingDims: any[] = [
+        "segment",
+        "budget",
+        "authority",
+        "need",
+        "timeline",
+      ];
+      let sessionDocs: any[] = [];
+
+      try {
+        const db2 = await getDb();
+        const chats2 = db2.collection("chats");
+        sessionDocs = await chats2
+          .find({ sessionId })
+          .sort({ createdAt: 1 })
+          .limit(200)
+          .toArray();
+        sessionMessages = (sessionDocs || []).map((d: any) => ({
+          role: d.role,
+          content: d.content,
+          followupType: (d as any).followupType,
+          bantDimension: (d as any).bantDimension,
+          buttons: Array.isArray((d as any).buttons) ? (d as any).buttons : [],
+        }));
+
+        // Include current question in calculation
+        const messagesWithCurrent = [
+          ...sessionMessages,
+          { role: "user", content: question || "" },
+        ];
+
+        missingDims = computeBantMissingDims(
+          messagesWithCurrent,
+          customerProfile
+        );
+      } catch (e) {}
+
       // Sales/Lead exclusivity: if sales is active, do not run lead-gen contextual bot
       if (sessionEmail) {
-        try {
-          const db2 = await getDb();
-          const chats2 = db2.collection("chats");
-          const sessionDocs = await chats2
-            .find({ sessionId })
-            .sort({ createdAt: 1 })
-            .limit(200)
-            .toArray();
-          const sessionMessages: any[] = (sessionDocs || []).map((d: any) => ({
-            role: d.role,
-            content: d.content,
-            followupType: (d as any).followupType,
-            bantDimension: (d as any).bantDimension,
-            buttons: Array.isArray((d as any).buttons)
-              ? (d as any).buttons
-              : [],
-          }));
-          const missingDims = computeBantMissingDims(
-            sessionMessages,
-            customerProfile
+        console.log("[BANT] Contextual check results", {
+          sessionId,
+          hasEmail: !!sessionEmail,
+          missingDims,
+          pageUrl,
+          lastAssistantButtonsCount: Array.isArray(enhancedResponse.buttons)
+            ? enhancedResponse.buttons.length
+            : 0,
+          timestamp: new Date().toISOString(),
+        });
+        const lastDoc: any = sessionDocs[sessionDocs.length - 1] || null;
+        const lastAssistantIdx = [...sessionDocs]
+          .reverse()
+          .findIndex(
+            (d: any) => String(d.role || "").toLowerCase() === "assistant"
           );
-          console.log("[BANT] Contextual check results", {
+        const lastAssistantDoc =
+          lastAssistantIdx >= 0
+            ? sessionDocs[sessionDocs.length - 1 - lastAssistantIdx]
+            : null;
+        const justCompletedBant =
+          missingDims.length === 0 &&
+          !!lastAssistantDoc &&
+          String((lastAssistantDoc as any)?.followupType || "")
+            .toLowerCase()
+            .includes("bant") &&
+          !!lastDoc &&
+          String(lastDoc.role || "").toLowerCase() === "user";
+        if (justCompletedBant) {
+          await updateProfileOnBantComplete(
+            req.nextUrl.origin,
             sessionId,
-            hasEmail: !!sessionEmail,
-            missingDims,
+            null,
+            apiKey,
             pageUrl,
-            lastAssistantButtonsCount: Array.isArray(enhancedResponse.buttons)
-              ? enhancedResponse.buttons.length
-              : 0,
+            question || ""
+          );
+          console.log("[SalesMode] Switching due to BANT complete", {
+            sessionId,
+            missingDimsCount: missingDims.length,
+            hasEmail: !!sessionEmail,
+            pageUrl,
             timestamp: new Date().toISOString(),
           });
-          const lastDoc: any = sessionDocs[sessionDocs.length - 1] || null;
-          const lastAssistantIdx = [...sessionDocs]
-            .reverse()
-            .findIndex(
-              (d: any) => String(d.role || "").toLowerCase() === "assistant"
-            );
-          const lastAssistantDoc =
-            lastAssistantIdx >= 0
-              ? sessionDocs[sessionDocs.length - 1 - lastAssistantIdx]
-              : null;
-          const justCompletedBant =
-            missingDims.length === 0 &&
-            !!lastAssistantDoc &&
-            String((lastAssistantDoc as any)?.followupType || "")
-              .toLowerCase()
-              .includes("bant") &&
-            !!lastDoc &&
-            String(lastDoc.role || "").toLowerCase() === "user";
-          if (justCompletedBant) {
-            await updateProfileOnBantComplete(
-              req.nextUrl.origin,
-              sessionId,
-              null,
-              apiKey,
-              pageUrl,
-              question || ""
-            );
-            console.log("[SalesMode] Switching due to BANT complete", {
-              sessionId,
-              missingDimsCount: missingDims.length,
-              hasEmail: !!sessionEmail,
-              pageUrl,
-              timestamp: new Date().toISOString(),
-            });
-            return NextResponse.json(
-              {
-                mainText:
-                  "We’re now in sales mode and will focus on next steps. Would you like to schedule a demo, review pricing, or talk to sales?",
-                buttons: ["Schedule Demo", "View Pricing", "Talk to Sales"],
-                emailPrompt: "",
-                botMode: "sales",
-                userEmail: sessionEmail,
-              },
-              { headers: corsHeaders }
-            );
-          } else if (!enhancedResponse.showBookingCalendar) {
-            // If BANT incomplete and no booking detected, try to ask next BANT question
-            const probing = await analyzeForProbing({
-              userMessage: `User is viewing page: ${pageUrl}`,
-              assistantResponse: enhancedResponse,
-              botMode: "lead_generation",
+          return NextResponse.json(
+            {
+              mainText:
+                "We’re now in sales mode and will focus on next steps. Would you like to schedule a demo, review pricing, or talk to sales?",
+              buttons: ["Schedule Demo", "View Pricing", "Talk to Sales"],
+              emailPrompt: "",
+              botMode: "sales",
               userEmail: sessionEmail,
-              missingDims: missingDims,
-            });
+            },
+            { headers: corsHeaders }
+          );
+        } else if (!enhancedResponse.showBookingCalendar) {
+          // If BANT incomplete and no booking detected, try to ask next BANT question
+          const probing = await analyzeForProbing({
+            userMessage: `User is viewing page: ${pageUrl}`,
+            assistantResponse: enhancedResponse,
+            botMode: "lead_generation",
+            userEmail: sessionEmail,
+            missingDims: missingDims,
+          });
 
-            if (probing.shouldSendFollowUp && probing.mainText) {
-              try {
-                const segmentDetected = (() => {
-                  try {
-                    return getBusinessSegment(sessionMessages);
-                  } catch {
-                    return null;
-                  }
-                })();
-                const wantsBudgetFirst =
-                  String((probing as any).bantDimension || "").toLowerCase() ===
-                    "budget" ||
-                  /budget|price|cost|pricing|\$|usd/i.test(
-                    String(probing.mainText || "")
-                  );
-                const segmentMissing = missingDims.includes("segment");
-                const shouldSwitchToSegment =
-                  wantsBudgetFirst && segmentMissing && !segmentDetected;
-                if (shouldSwitchToSegment) {
-                  (probing as any).mainText = "What type of business are you?";
-                  (probing as any).buttons = [
-                    "Individual",
-                    "SMB",
-                    "Enterprise",
-                  ];
-                  (probing as any).bantDimension = "segment";
+          if (probing.shouldSendFollowUp && probing.mainText) {
+            try {
+              const segmentDetected = (() => {
+                try {
+                  return getBusinessSegment(sessionMessages);
+                } catch {
+                  return null;
                 }
-              } catch {}
-              enhancedResponse = {
-                ...enhancedResponse,
-                mainText: probing.mainText,
-                buttons: probing.buttons,
-                emailPrompt:
-                  probing.emailPrompt || enhancedResponse.emailPrompt,
-                bantDimension: (probing as any).bantDimension,
-                followupType: "bant",
-              };
-            }
+              })();
+              const wantsBudgetFirst =
+                String((probing as any).bantDimension || "").toLowerCase() ===
+                  "budget" ||
+                /budget|price|cost|pricing|\$|usd/i.test(
+                  String(probing.mainText || "")
+                );
+              const segmentMissing = missingDims.includes("segment");
+              const shouldSwitchToSegment =
+                wantsBudgetFirst && segmentMissing && !segmentDetected;
+              if (shouldSwitchToSegment) {
+                (probing as any).mainText = "What type of business are you?";
+                (probing as any).buttons = ["Individual", "SMB", "Enterprise"];
+                (probing as any).bantDimension = "segment";
+              } else if (wantsBudgetFirst && segmentDetected) {
+                (probing as any).buttons =
+                  segmentDetected === "individual"
+                    ? ["Under $20/mo", "$20–$50/mo", "$50+"]
+                    : segmentDetected === "smb"
+                    ? ["Under $500/mo", "$500–$1.5k/mo", "$1.5k+"]
+                    : ["Under $10k/yr", "$10k–$50k/yr", "$50k+/yr"];
+              }
+            } catch {}
+            enhancedResponse = {
+              ...enhancedResponse,
+              mainText: probing.mainText,
+              buttons: probing.buttons,
+              emailPrompt: probing.emailPrompt || enhancedResponse.emailPrompt,
+              bantDimension: (probing as any).bantDimension,
+              followupType: "bant",
+            };
           }
-        } catch (e) {}
-        // If BANT incomplete, continue building contextual response
+        }
       }
+
+      // UNIVERSAL CHECK: Ensure Segment is asked before Budget
+      // This runs for EVERYONE, even if no email or if BANT logic wasn't triggered explicitly
+      try {
+        const isAskingBudget = /budget|price|cost|pricing|\$|usd/i.test(
+          enhancedResponse.mainText || ""
+        );
+        const isSegmentMissing = missingDims.includes("segment");
+        const segmentDetected = getBusinessSegment([
+          ...sessionMessages,
+          { role: "user", content: question || "" },
+        ]);
+
+        if (isAskingBudget && isSegmentMissing && !segmentDetected) {
+          console.log(
+            "[BANT] Intercepting budget question to ask segment first"
+          );
+          enhancedResponse = {
+            ...enhancedResponse,
+            mainText:
+              "To help us recommend the best plan for you, what type of business are you?",
+            buttons: ["Individual", "SMB", "Enterprise"],
+            bantDimension: "segment",
+            followupType: "bant",
+          };
+        } else if (isAskingBudget && segmentDetected) {
+          const budgetButtons =
+            segmentDetected === "individual"
+              ? ["Under $20/mo", "$20–$50/mo", "$50+"]
+              : segmentDetected === "smb"
+              ? ["Under $500/mo", "$500–$1.5k/mo", "$1.5k+"]
+              : ["Under $10k/yr", "$10k–$50k/yr", "$50k+/yr"];
+          enhancedResponse = {
+            ...enhancedResponse,
+            buttons: budgetButtons,
+            bantDimension: enhancedResponse.bantDimension || "budget",
+          };
+        }
+      } catch (e) {}
 
       const responseWithMode = {
         ...enhancedResponse,
@@ -10732,13 +10798,20 @@ function getBusinessSegment(
     const content = String(m.content || "").toLowerCase();
     const dim: any = m.bantDimension || null;
     if (role === "user") {
-      if (/(individual|solo|freelancer|personal)\b/.test(content))
+      if (
+        /(individual|solo|freelancer)\b/.test(content) ||
+        /\bpersonal\s*(use|plan|account|project)\b/.test(content)
+      )
         segment = "individual";
       else if (
-        /(smb|small\s*business|startup|team|mid\s*market)\b/.test(content)
+        /(smb|small\s*business|startup|mid\s*market)\b/.test(content) ||
+        /\bteam\s*(of|size|plan)\b/.test(content)
       )
         segment = "smb";
-      else if (/(enterprise|corporate|large\s*company|global)\b/.test(content))
+      else if (
+        /(enterprise|corporate|large\s*company)\b/.test(content) ||
+        /\bglobal\s*(deployment|scale|rollout)\b/.test(content)
+      )
         segment = "enterprise";
     }
     if (
