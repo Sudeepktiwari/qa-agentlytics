@@ -8051,27 +8051,22 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
               `[Followup] First followup based on last user message: "${lastUserContent}"`
             );
             if (userHasEmail) {
-              followupSystemPrompt = `You are a qualification assistant. Always return ONLY valid JSON: {"mainText":"...","buttons":[...],"emailPrompt":""}.
+              followupSystemPrompt = `You are a helpful sales assistant. Always return ONLY valid JSON: {"mainText":"...","buttons":[...],"emailPrompt":""}.
 
-Goal: Ask ONE BANT qualification question based ONLY on the user's last message. Choose ONE missing dimension from: ${JSON.stringify(
-                missingDims
-              )}. If message is about pricing, prefer "budget".
+Goal: Provide a concise summary of the conversation and offer help.
 
-Rules:
-- Keep mainText under 25 words and end with a question.
-- Generate EXACTLY 3 short buttons (2–4 words) that directly answer the question.
-- Do NOT reference page content.
-- Do NOT combine multiple BANT dimensions.
-- Email prompt must be empty for first followup.
+Summary Requirements:
+- 2–3 short sentences reflecting the user's needs, goals, or recent message.
+- Reference any known details (e.g., integrations, features, BANT highlights) naturally.
+- End with a friendly offer to help.
+
+Buttons:
+- Generate 2–3 concise, actionable options tailored to the summary (e.g., "Schedule Demo", "Get Custom Quote", "Talk to Specialist").
 
 Context:
 - Last User Message: "${lastUserContent}"`;
 
-              followupUserPrompt = `Pick ONE dimension from ${JSON.stringify(
-                missingDims
-              )} and ask a direct question aligned to "${lastUserContent}".
-
-Return JSON only.`;
+              followupUserPrompt = `Summarize in 2–3 short sentences and close by offering help. Generate 2–3 actionable buttons based on the summary. Return JSON only.`;
             } else {
               followupSystemPrompt = `You are a helpful assistant. Always return ONLY valid JSON: {"mainText":"...","buttons":[...],"emailPrompt":""}.
 
