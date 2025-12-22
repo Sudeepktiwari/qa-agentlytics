@@ -658,6 +658,10 @@ Return ONLY a valid JSON object with this structure:
     console.error("Error generating sales entry response:", error);
   }
 
+  console.log("[SalesEntry] Using fallback sales entry response", {
+    reason: "empty_or_invalid_ai_content",
+    timestamp: new Date().toISOString(),
+  });
   return {
     mainText:
       "We’re now in sales mode and will focus on next steps. Would you like to schedule a demo, review pricing, or talk to sales?",
@@ -3544,6 +3548,16 @@ Based on the page context, create an intelligent contextual question that demons
             sessionMessages,
             customerProfile
           );
+          console.log("[BANT] Contextual check results", {
+            sessionId,
+            hasEmail: !!sessionEmail,
+            missingDims,
+            pageUrl,
+            lastAssistantButtonsCount: Array.isArray(enhancedResponse.buttons)
+              ? enhancedResponse.buttons.length
+              : 0,
+            timestamp: new Date().toISOString(),
+          });
           if (missingDims.length === 0) {
             await updateProfileOnBantComplete(
               req.nextUrl.origin,
@@ -3553,6 +3567,13 @@ Based on the page context, create an intelligent contextual question that demons
               pageUrl,
               question || ""
             );
+            console.log("[SalesMode] Switching due to BANT complete", {
+              sessionId,
+              missingDimsCount: missingDims.length,
+              hasEmail: !!sessionEmail,
+              pageUrl,
+              timestamp: new Date().toISOString(),
+            });
             return NextResponse.json(
               {
                 mainText:
