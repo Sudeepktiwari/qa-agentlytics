@@ -62,6 +62,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const followupTimer = useRef<NodeJS.Timeout | null>(null);
+  const typingStopTimer = useRef<NodeJS.Timeout | null>(null);
   const [followupSent, setFollowupSent] = useState(false);
   const [followupCount, setFollowupCount] = useState(0);
   const isTestEnv = process.env.NEXT_PUBLIC_ENV === "test";
@@ -512,6 +513,11 @@ const Chatbot: React.FC<ChatbotProps> = ({
         console.log("[Chatbot] Clearing follow-up timer on unmount");
         clearTimeout(followupTimer.current);
       }
+      if (typingStopTimer.current) {
+        console.log("[Chatbot] Clearing typing stop timer on unmount");
+        clearTimeout(typingStopTimer.current);
+        typingStopTimer.current = null;
+      }
     };
   }, [
     pageUrl,
@@ -584,10 +590,9 @@ const Chatbot: React.FC<ChatbotProps> = ({
     }
     // Send follow-up if triggered and last message is from bot, and limit to 3
     if (followupSent && lastMsg.role === "assistant" && followupCount < 3) {
-      // Additional check: don't send if user has been active recently
-      const timeSinceLastAction = Date.now() - lastUserAction;
-      if (userIsActive || timeSinceLastAction < 25000) {
-        console.log("[Chatbot] Skipping followup - user was active recently");
+      // Additional check: don't send if user is currently active (typing)
+      if (userIsActive) {
+        console.log("[Chatbot] Skipping followup - user currently active");
         setFollowupSent(false);
         return;
       }
@@ -1345,6 +1350,15 @@ const Chatbot: React.FC<ChatbotProps> = ({
       setUserIsActive(true);
       setLastUserAction(Date.now());
 
+      // Detect when typing stops to mark user inactive even if input not cleared
+      if (typingStopTimer.current) {
+        clearTimeout(typingStopTimer.current);
+      }
+      typingStopTimer.current = setTimeout(() => {
+        console.log("[Chatbot] Typing stopped, marking user inactive");
+        setUserIsActive(false);
+      }, 3000);
+
       // Reset followup timer when user starts typing
       if (followupTimer.current) {
         console.log("[Chatbot] User typing, resetting followup timer");
@@ -1365,6 +1379,10 @@ const Chatbot: React.FC<ChatbotProps> = ({
     } else if (e.target.value.length === 0 && userIsActive) {
       // User cleared the input, mark as less active but don't reset timer
       setUserIsActive(false);
+      if (typingStopTimer.current) {
+        clearTimeout(typingStopTimer.current);
+        typingStopTimer.current = null;
+      }
     }
   };
 
