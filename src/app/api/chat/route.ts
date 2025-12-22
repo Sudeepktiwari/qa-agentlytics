@@ -3575,6 +3575,33 @@ Based on the page context, create an intelligent contextual question that demons
             });
 
             if (probing.shouldSendFollowUp && probing.mainText) {
+              try {
+                const segmentDetected = (() => {
+                  try {
+                    return getBusinessSegment(sessionMessages);
+                  } catch {
+                    return null;
+                  }
+                })();
+                const wantsBudgetFirst =
+                  String((probing as any).bantDimension || "").toLowerCase() ===
+                    "budget" ||
+                  /budget|price|cost|pricing|\$|usd/i.test(
+                    String(probing.mainText || "")
+                  );
+                const segmentMissing = missingDims.includes("segment");
+                const shouldSwitchToSegment =
+                  wantsBudgetFirst && segmentMissing && !segmentDetected;
+                if (shouldSwitchToSegment) {
+                  (probing as any).mainText = "What type of business are you?";
+                  (probing as any).buttons = [
+                    "Individual",
+                    "SMB",
+                    "Enterprise",
+                  ];
+                  (probing as any).bantDimension = "segment";
+                }
+              } catch {}
               enhancedResponse = {
                 ...enhancedResponse,
                 mainText: probing.mainText,
