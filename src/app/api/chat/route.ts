@@ -3000,6 +3000,23 @@ export async function POST(req: NextRequest) {
       console.error("[Chat API] Error fetching customer profile:", e);
     }
   }
+
+  // Resolve user email from session if not in current request
+  let resolvedUserEmail =
+    profileUserEmail || customerProfile?.contactProfile?.email || null;
+  if (!resolvedUserEmail && sessionId) {
+    try {
+      const db = await getDb();
+      const chats = db.collection("chats");
+      const lastEmailMsg = await chats.findOne(
+        { sessionId, email: { $exists: true } },
+        { sort: { createdAt: -1 } }
+      );
+      if (lastEmailMsg && lastEmailMsg.email) {
+        resolvedUserEmail = lastEmailMsg.email;
+      }
+    } catch (e) {}
+  }
   console.log(`[Chat API ${requestId}] Processing request:`, {
     question: question ? `"${question}"` : undefined,
     sessionId,
@@ -10096,7 +10113,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
   ]);
 
   // Add bot mode information to the response
-  const botMode = userEmail ? "sales" : "lead_generation";
+  const botMode = resolvedUserEmail ? "sales" : "lead_generation";
 
   // Check for booking detection and enhance response if needed
   let enhancedResponse = parsed;
@@ -10151,7 +10168,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
   const responseWithMode = {
     ...enhancedResponse,
     botMode,
-    userEmail: userEmail || null, // Include for debugging
+    userEmail: resolvedUserEmail || userEmail || null, // Include for debugging
   };
 
   // If the user already has a valid active booking, suppress calendar prompts
@@ -10248,7 +10265,10 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
   });
 
   let secondary: any = null;
-  const enableImmediateQualification = !!justCapturedEmail;
+
+  // resolvedUserEmail is already resolved at the top of the function
+  const enableImmediateQualification =
+    !!justCapturedEmail || !!resolvedUserEmail;
   if (enableImmediateQualification) {
     try {
       const db = await getDb();
@@ -10267,7 +10287,9 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
       );
       let skipSecondaryForFirstAssistant =
         assistantCountBefore === 0 && Number(assistantCountClient) === 0;
+      // If we are in qualification mode, we don't skip just because it's first assistant
       if (enableImmediateQualification) skipSecondaryForFirstAssistant = false;
+
       let skipDueToRecentFollowup = (() => {
         const la: any = lastAssistant || null;
         if (!la || !la.followupType) return false;
@@ -10281,7 +10303,9 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
         const userAfterFollowup = luTime > laTime;
         return laIsRecent && !userAfterFollowup;
       })();
-      if (enableImmediateQualification) skipDueToRecentFollowup = false;
+      // Only force-skip checks if we JUST captured email (start of flow)
+      if (justCapturedEmail) skipDueToRecentFollowup = false;
+
       console.log(`[Chat API ${requestId}] Qualification gating`, {
         assistantCountBefore,
         assistantCountClient: Number(assistantCountClient),
@@ -10294,7 +10318,12 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
       });
       const inactiveEnough = Number(userInactiveForMs) >= 120000;
 
-      {
+      // Ensure we don't double-probe if the user just answered a probe
+      // But if we have resolvedUserEmail, we WANT to probe until done.
+      // skipDueToRecentFollowup handles the "double bot message" case.
+      // We should proceed if skipDueToRecentFollowup is false.
+
+      if (!skipDueToRecentFollowup) {
         const sessionDocsQuick = await chats
           .find({ sessionId })
           .sort({ createdAt: 1 })
@@ -10328,7 +10357,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
             emailPrompt: (finalResponse as any).emailPrompt || "",
           },
           botMode,
-          userEmail,
+          userEmail: resolvedUserEmail,
           missingDims: missingDimsQuick,
         });
         if (probingQuick.shouldSendFollowUp && probingQuick.mainText) {
@@ -10336,7 +10365,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
             mainText: probingQuick.mainText,
             buttons: probingQuick.buttons || [],
             emailPrompt: probingQuick.emailPrompt || "",
-            type: userEmail ? "bant" : "probe",
+            type: resolvedUserEmail ? "bant" : "probe",
             dimension: (probingQuick as any).dimension,
           } as any;
           const inferredDim =
@@ -10410,7 +10439,12 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
           const justAskedSegment =
             (lastAssistant as any)?.bantDimension === "segment";
 
-          if (userEmail && priceSignal && !segment && !justAskedSegment) {
+          if (
+            resolvedUserEmail &&
+            priceSignal &&
+            !segment &&
+            !justAskedSegment
+          ) {
             immediate = {
               mainText: "What type of business are you?",
               buttons: ["Individual", "SMB", "Enterprise"],
@@ -10418,7 +10452,11 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
               type: "bant",
               dimension: "segment",
             } as any;
-          } else if (userEmail && missingDimsQuick.length > 0 && priceSignal) {
+          } else if (
+            resolvedUserEmail &&
+            missingDimsQuick.length > 0 &&
+            priceSignal
+          ) {
             const budgetButtons = (() => {
               if (segment === "individual")
                 return ["Under $20/mo", "$20–$50/mo", "$50+"];
@@ -10435,7 +10473,11 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
               type: "bant",
               dimension: "budget",
             } as any;
-          } else if (userEmail && missingDimsQuick.length > 0 && timeSignal) {
+          } else if (
+            resolvedUserEmail &&
+            missingDimsQuick.length > 0 &&
+            timeSignal
+          ) {
             immediate = {
               mainText: "What timeline are you targeting?",
               buttons: ["This week", "Next week", "Later"],
@@ -10474,7 +10516,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
           }
         }
       }
-      if (!secondary && enableImmediateQualification && userEmail) {
+      if (!secondary && enableImmediateQualification && resolvedUserEmail) {
         const sessionDocsQuick2 = await chats
           .find({ sessionId })
           .sort({ createdAt: 1 })
@@ -10498,7 +10540,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
             },
             botMode,
             missingDims: missingDimsQuick2,
-            userEmail,
+            userEmail: resolvedUserEmail,
           });
 
           if (fallback) {
@@ -10559,7 +10601,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
           emailPrompt: (finalResponse as any).emailPrompt || "",
         },
         botMode,
-        userEmail,
+        userEmail: resolvedUserEmail,
         missingDims: missingDimsQuick,
       });
       secondary = { ...secondary, type: "probe" };
