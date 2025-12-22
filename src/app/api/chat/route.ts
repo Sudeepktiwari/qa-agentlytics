@@ -1035,15 +1035,19 @@ function buildHeuristicBantFollowup(input: {
   else if (hasBooking && dims.includes("timeline")) chosen = "timeline";
   else if (hasAuthority && dims.includes("authority")) chosen = "authority";
   else if (hasFeatures && dims.includes("need")) chosen = "need";
+  if (chosen === "budget" && dims.includes("segment")) chosen = "segment";
   if (!chosen) {
-    chosen = input.botMode === "sales" ? "timeline" : "need";
+    if (dims.includes("segment")) {
+      chosen = "segment";
+    } else {
+      chosen = input.botMode === "sales" ? "timeline" : "need";
+    }
     if (!dims.includes(chosen)) {
       chosen =
         (dims[0] as "budget" | "authority" | "need" | "timeline" | "segment") ||
         null;
     }
   }
-  if (chosen === "budget" && dims.includes("segment")) chosen = "segment";
   if (!chosen) return null;
   const q =
     chosen === "budget"
@@ -1255,13 +1259,15 @@ function computeBantMissingDims(
         answered.add("segment");
       }
       if (
-        /(smb|small\s*business|startup|mid\s*market)\b/.test(s) ||
+        /(smb|small\s*business|startup|mid\s*market|medium\s*business)\b/.test(
+          s
+        ) ||
         /\bteam\s*(of|size|plan)\b/.test(s)
       ) {
         answered.add("segment");
       }
       if (
-        /(enterprise|corporate|large\s*company)\b/.test(s) ||
+        /(enterprise|corporate|large\s*company|non\s*profit)\b/.test(s) ||
         /\bglobal\s*(deployment|scale|rollout)\b/.test(s)
       ) {
         answered.add("segment");
@@ -1310,7 +1316,11 @@ function detectBantDimensionFromText(
     )
   )
     return "need";
-  if (/type\s*of\s*business|business\s*type|individual|smb|enterprise/.test(s))
+  if (
+    /type\s*of\s*business|business\s*type|individual|smb|enterprise|medium\s*business|small\s*business|non\s*profit/.test(
+      s
+    )
+  )
     return "segment";
   return null;
 }
@@ -1338,7 +1348,7 @@ function isAnswerToAskedDim(
       s
     );
   if (dim === "segment")
-    return /(individual|solo|freelancer|personal|smb|sme|small\s*business|startup|mid\s*market|enterprise|corporate|large\s*company|global)/.test(
+    return /(individual|solo|freelancer|personal|smb|sme|small\s*business|startup|mid\s*market|enterprise|corporate|large\s*company|global|medium\s*business|non\s*profit)/.test(
       s
     );
   return false;
@@ -10352,25 +10362,59 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
             question || ""
           );
         }
-        const probingQuick = await analyzeForProbing({
-          userMessage: question || "",
-          assistantResponse: {
-            mainText: finalResponse.mainText,
-            buttons: finalResponse.buttons,
-            emailPrompt: (finalResponse as any).emailPrompt || "",
-          },
-          botMode,
-          userEmail: resolvedUserEmail,
-          missingDims: missingDimsQuick,
-        });
-        if (probingQuick.shouldSendFollowUp && probingQuick.mainText) {
-          const immediate = {
-            mainText: probingQuick.mainText,
-            buttons: probingQuick.buttons || [],
-            emailPrompt: probingQuick.emailPrompt || "",
-            type: resolvedUserEmail ? "bant" : "probe",
-            dimension: (probingQuick as any).dimension,
-          } as any;
+
+        let immediate: any = null;
+
+        // PRIORITIZE HEURISTIC BANT if email is known (Sales Mode)
+        // This ensures we ask standard BANT questions (e.g. Segment) immediately
+        if (resolvedUserEmail && missingDimsQuick.length > 0) {
+          const heuristic = buildHeuristicBantFollowup({
+            userMessage: question || "",
+            assistantResponse: { mainText: finalResponse.mainText },
+            botMode: "sales",
+            missingDims: missingDimsQuick,
+            userEmail: resolvedUserEmail,
+          });
+          if (heuristic) {
+            immediate = {
+              mainText: heuristic.mainText,
+              buttons: heuristic.buttons,
+              emailPrompt: heuristic.emailPrompt,
+              type: "bant",
+              dimension: heuristic.dimension,
+            };
+          }
+        }
+
+        // Only use LLM probing if heuristic didn't produce a question
+        let probingQuick: any = { shouldSendFollowUp: false };
+        if (!immediate) {
+          probingQuick = await analyzeForProbing({
+            userMessage: question || "",
+            assistantResponse: {
+              mainText: finalResponse.mainText,
+              buttons: finalResponse.buttons,
+              emailPrompt: (finalResponse as any).emailPrompt || "",
+            },
+            botMode,
+            userEmail: resolvedUserEmail,
+            missingDims: missingDimsQuick,
+          });
+        }
+
+        if (
+          immediate ||
+          (probingQuick.shouldSendFollowUp && probingQuick.mainText)
+        ) {
+          if (!immediate) {
+            immediate = {
+              mainText: probingQuick.mainText,
+              buttons: probingQuick.buttons || [],
+              emailPrompt: probingQuick.emailPrompt || "",
+              type: resolvedUserEmail ? "bant" : "probe",
+              dimension: (probingQuick as any).dimension,
+            } as any;
+          }
           const inferredDim =
             immediate.dimension ||
             detectBantDimensionFromText(String(immediate.mainText || ""));
