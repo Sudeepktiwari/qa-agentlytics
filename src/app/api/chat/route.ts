@@ -1040,7 +1040,12 @@ function buildHeuristicBantFollowup(input: {
     if (dims.includes("segment")) {
       chosen = "segment";
     } else {
-      chosen = input.botMode === "sales" ? "timeline" : "need";
+      // Prioritize budget after segment, then timeline/need
+      chosen = dims.includes("budget")
+        ? "budget"
+        : input.botMode === "sales"
+        ? "timeline"
+        : "need";
     }
     if (!dims.includes(chosen)) {
       chosen =
@@ -1267,7 +1272,7 @@ function computeBantMissingDims(
         answered.add("segment");
       }
       if (
-        /(enterprise|corporate|large\s*company|non\s*profit)\b/.test(s) ||
+        /(enterprise|corporate|large\s*company|non[\s-]*profit)\b/.test(s) ||
         /\bglobal\s*(deployment|scale|rollout)\b/.test(s)
       ) {
         answered.add("segment");
@@ -1317,7 +1322,7 @@ function detectBantDimensionFromText(
   )
     return "need";
   if (
-    /type\s*of\s*business|business\s*type|individual|smb|enterprise|medium\s*business|small\s*business|non\s*profit/.test(
+    /type\s*of\s*business|business\s*type|individual|smb|enterprise|medium\s*business|small\s*business|non[\s-]*profit/.test(
       s
     )
   )
@@ -1348,7 +1353,7 @@ function isAnswerToAskedDim(
       s
     );
   if (dim === "segment")
-    return /(individual|solo|freelancer|personal|smb|sme|small\s*business|startup|mid\s*market|enterprise|corporate|large\s*company|global|medium\s*business|non\s*profit)/.test(
+    return /(individual|solo|freelancer|personal|smb|sme|small\s*business|startup|mid\s*market|enterprise|corporate|large\s*company|global|medium\s*business|non[\s-]*profit)/.test(
       s
     );
   return false;
@@ -10307,10 +10312,8 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
         const la: any = lastAssistant || null;
         if (!la || !la.followupType) return false;
         const laTime = la.createdAt ? new Date(la.createdAt).getTime() : 0;
-        const luTime =
-          lastUser && (lastUser as any).createdAt
-            ? new Date((lastUser as any).createdAt).getTime()
-            : 0;
+        // Use current message time (now) as the latest user action to avoid DB read race conditions
+        const luTime = now.getTime();
         const recentWindowMs = 30000;
         const laIsRecent = laTime > 0 && Date.now() - laTime < recentWindowMs;
         const userAfterFollowup = luTime > laTime;
@@ -10324,7 +10327,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
         assistantCountClient: Number(assistantCountClient),
         lastAssistantType: (lastAssistant as any)?.followupType || null,
         lastAssistantAt: (lastAssistant as any)?.createdAt || null,
-        lastUserAt: (lastUser as any)?.createdAt || null,
+        currentUserAt: now,
         skipSecondaryForFirstAssistant,
         skipDueToRecentFollowup,
         userInactiveForMs: Number(userInactiveForMs),
@@ -10342,6 +10345,15 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
           .sort({ createdAt: 1 })
           .limit(200)
           .toArray();
+
+        // Robustly resolve email from history if not already resolved
+        if (!resolvedUserEmail) {
+          const emailMsg = [...sessionDocsQuick]
+            .reverse()
+            .find((d: any) => d.email);
+          if (emailMsg) resolvedUserEmail = (emailMsg as any).email;
+        }
+
         const sessionMessagesQuick =
           mapChatDocsToBantMessages(sessionDocsQuick);
         sessionMessagesQuick.push({
