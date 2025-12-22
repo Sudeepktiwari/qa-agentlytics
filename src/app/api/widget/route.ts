@@ -3338,6 +3338,9 @@ export async function GET(request: Request) {
     userIsActive = true;
     lastUserAction = Date.now();
     
+    // Clear any pending timers when user becomes active
+    clearFollowupTimer();
+    
     // Clear auto-response timer when user becomes active
     clearAutoResponseTimer();
   }
@@ -3429,30 +3432,40 @@ export async function GET(request: Request) {
       .trim()
       .split(/\s+/)
       .filter(Boolean).length;
+    
+    // Calculate delays: reading time (delayMs) and total inactivity threshold
     const delayMs = Math.max(6000, Math.min(wordCount * 300, 30000));
-    console.log('[Widget] Followup dynamic delay (ms):', delayMs, 'wordCount:', wordCount);
+    // Use a robust threshold (at least 30s + delay, or fixed 2 mins)
+    // The previous issue was timeout(delayMs) < threshold(120s), causing check to fail.
+    // We now sync the timeout with the threshold.
+    const inactivityThreshold = Math.max(45000, delayMs + 10000); // Wait at least 45s or reading time + 10s buffer
+
+    console.log('[Widget] Followup timer config:', { delayMs, inactivityThreshold, wordCount });
+    
     followupTimer = setTimeout(() => {
       const timeSinceLastAction = Date.now() - lastUserAction;
       console.log('[Widget] Followup timer triggered:', {
         userIsActive,
         timeSinceLastAction,
         followupCount,
-        timeSinceLastActionSeconds: Math.round(timeSinceLastAction / 1000)
+        timeSinceLastActionSeconds: Math.round(timeSinceLastAction / 1000),
+        requiredThreshold: inactivityThreshold
       });
       
-      const inactivityThreshold = Math.max(120000, delayMs);
-      if (!userIsActive && timeSinceLastAction >= inactivityThreshold && followupCount < 3) {
+      // Allow a small margin of error (e.g. 1s) for the time check
+      if (!userIsActive && timeSinceLastAction >= (inactivityThreshold - 1000) && followupCount < 3) {
         console.log('[Widget] Conditions met for followup message - sending now');
         sendFollowupMessage();
       } else {
         console.log('[Widget] Followup conditions not met:', {
           userNotActive: !userIsActive,
-          enoughTimePassed: timeSinceLastAction >= inactivityThreshold,
-          underLimit: followupCount < 3
+          enoughTimePassed: timeSinceLastAction >= (inactivityThreshold - 1000),
+          underLimit: followupCount < 3,
+          timeDiff: timeSinceLastAction - inactivityThreshold
         });
       }
-    }, delayMs);
-    console.log('[Widget] Followup timer set (reader-friendly):', delayMs, 'ms');
+    }, inactivityThreshold);
+    console.log('[Widget] Followup timer set for:', inactivityThreshold, 'ms');
   }
   
   // Send API request
