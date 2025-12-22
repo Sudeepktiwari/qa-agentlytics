@@ -812,6 +812,7 @@ async function analyzeForProbing(input: {
         mainText: mtHeu,
         buttons: btnHeu,
         emailPrompt: "",
+        dimension: chosen,
       };
     }
     return { shouldSendFollowUp: false };
@@ -887,6 +888,7 @@ async function analyzeForProbing(input: {
       buttons: segBtns,
       emailPrompt:
         typeof parsed.emailPrompt === "string" ? parsed.emailPrompt : "",
+      dimension: "segment",
     };
   }
   const ep = typeof parsed.emailPrompt === "string" ? parsed.emailPrompt : "";
@@ -895,6 +897,7 @@ async function analyzeForProbing(input: {
     mainText: mt,
     buttons: btns,
     emailPrompt: ep,
+    dimension: parsed.bantDimension || null,
   };
 }
 
@@ -946,6 +949,7 @@ function buildFallbackFollowup(input: {
         mainText: "What type of business are you?",
         buttons: ["Individual", "SMB", "Enterprise"],
         emailPrompt: "",
+        dimension: "segment",
       };
     }
     const budgetButtons = isIndividual
@@ -957,6 +961,7 @@ function buildFallbackFollowup(input: {
       mainText: "What budget range are you considering?",
       buttons: budgetButtons,
       emailPrompt: "Share your work email to receive a tailored quote",
+      dimension: "budget",
     };
   }
   if (hasBooking) {
@@ -1282,7 +1287,8 @@ function detectBantDimensionFromText(
   t: string
 ): "budget" | "authority" | "need" | "timeline" | "segment" | null {
   const s = String(t || "").toLowerCase();
-  if (/budget|price|cost|pricing|\$|usd/.test(s)) return "budget";
+  if (/budget|price|cost|pricing|\$|usd|spend|investment/.test(s))
+    return "budget";
   if (
     /when|time|timeline|schedule|demo|call|meeting|appointment|week|month|quarter|today|tomorrow/.test(
       s
@@ -3655,9 +3661,13 @@ Based on the page context, create an intelligent contextual question that demons
                 /budget|price|cost|pricing|\$|usd/i.test(
                   String(probing.mainText || "")
                 );
-              const segmentMissing = missingDims.includes("segment");
+              const lastAssistant = [...sessionMessages]
+                .reverse()
+                .find((m) => m.role === "assistant");
+              const justAskedSegment =
+                (lastAssistant as any)?.bantDimension === "segment";
               const shouldSwitchToSegment =
-                wantsBudgetFirst && segmentMissing && !segmentDetected;
+                wantsBudgetFirst && !segmentDetected && !justAskedSegment;
               if (shouldSwitchToSegment) {
                 (probing as any).mainText = "What type of business are you?";
                 (probing as any).buttons = ["Individual", "SMB", "Enterprise"];
@@ -3689,13 +3699,17 @@ Based on the page context, create an intelligent contextual question that demons
         const isAskingBudget = /budget|price|cost|pricing|\$|usd/i.test(
           enhancedResponse.mainText || ""
         );
-        const isSegmentMissing = missingDims.includes("segment");
         const segmentDetected = getBusinessSegment([
           ...sessionMessages,
           { role: "user", content: question || "" },
         ]);
+        const lastAssistant = [...sessionMessages]
+          .reverse()
+          .find((m) => m.role === "assistant");
+        const justAskedSegment =
+          (lastAssistant as any)?.bantDimension === "segment";
 
-        if (isAskingBudget && isSegmentMissing && !segmentDetected) {
+        if (isAskingBudget && !segmentDetected && !justAskedSegment) {
           console.log(
             "[BANT] Intercepting budget question to ask segment first"
           );
@@ -10323,13 +10337,19 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
             buttons: probingQuick.buttons || [],
             emailPrompt: probingQuick.emailPrompt || "",
             type: userEmail ? "bant" : "probe",
+            dimension: (probingQuick as any).dimension,
           } as any;
-          const inferredDim = detectBantDimensionFromText(
-            String(immediate.mainText || "")
-          );
+          const inferredDim =
+            immediate.dimension ||
+            detectBantDimensionFromText(String(immediate.mainText || ""));
           if (inferredDim === "budget") {
             const segment = getBusinessSegment(sessionMessagesQuick);
-            if (missingDimsQuick.includes("segment") && !segment) {
+            const lastAssistant = [...sessionMessagesQuick]
+              .reverse()
+              .find((m) => m.role === "assistant");
+            const justAskedSegment =
+              (lastAssistant as any)?.bantDimension === "segment";
+            if (!segment && !justAskedSegment) {
               immediate.mainText = "What type of business are you?";
               immediate.buttons = ["Individual", "SMB", "Enterprise"];
               immediate.dimension = "segment";
@@ -10384,11 +10404,13 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
             );
           let immediate: any = null;
           const segment = getBusinessSegment(sessionMessagesQuick);
-          if (
-            userEmail &&
-            missingDimsQuick.includes("segment") &&
-            priceSignal
-          ) {
+          const lastAssistant = [...sessionMessagesQuick]
+            .reverse()
+            .find((m) => m.role === "assistant");
+          const justAskedSegment =
+            (lastAssistant as any)?.bantDimension === "segment";
+
+          if (userEmail && priceSignal && !segment && !justAskedSegment) {
             immediate = {
               mainText: "What type of business are you?",
               buttons: ["Individual", "SMB", "Enterprise"],
