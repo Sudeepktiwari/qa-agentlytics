@@ -8585,13 +8585,12 @@ Summary Requirements:
 - CRITICAL: Use standard Markdown newlines (\n\n) to separate these lines. Do NOT combine them into one paragraph.
 
 Buttons:
-- Generate 2–3 concise, helpful actions based on your summary (e.g., "Schedule Demo", "Get Custom Quote", "Talk to Specialist").
-- Use terms consistent with the page and the user’s expressed needs.
+- CRITICAL: Do NOT generate any buttons. The array must be empty.
 
 Output JSON ONLY:
 {
   "mainText": "<3–4 lines. Each line is a short sentence separated by \\n\\n. End with a friendly offer to help.>",
-  "buttons": ["<2–3 helpful actions tailored to the summary>"],
+  "buttons": [],
   "emailPrompt": ""
 }
 
@@ -8609,7 +8608,7 @@ Guidelines:
 - Use consultative tone; be specific, not generic.
 - Avoid repeating earlier followups; use fresh details.
 - Do not include JSON inside mainText.`;
-            followupUserPrompt = `Summarize the conversation in 3–4 short lines and close by offering help. Generate 2–3 actionable buttons based on the summary. Only output the JSON format as instructed.`;
+            followupUserPrompt = `Summarize the conversation in 3–4 short lines and close by offering help. Do NOT generate any buttons. Only output the JSON format as instructed.`;
           } else {
             // User hasn't provided email yet - final summary offer (moved from 4th followup to 3rd)
             followupSystemPrompt = `
