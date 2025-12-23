@@ -943,8 +943,12 @@ function buildFallbackFollowup(input: {
   const isEnterprise = /(enterprise|corporate|large\s*company|global)\b/.test(
     text
   );
-  if (hasPricing && !bantCompleted && (!input.userEmail || dims.length > 0)) {
-    if (!isIndividual && !isSMB && !isEnterprise) {
+  if (
+    hasPricing &&
+    !bantCompleted &&
+    (!input.userEmail || dims.includes("budget") || dims.includes("segment"))
+  ) {
+    if (dims.includes("segment") && !isIndividual && !isSMB && !isEnterprise) {
       return {
         mainText: "What type of business are you?",
         buttons: ["Individual", "SMB", "Enterprise"],
@@ -952,17 +956,21 @@ function buildFallbackFollowup(input: {
         dimension: "segment",
       };
     }
-    const budgetButtons = isIndividual
-      ? ["Under $20/mo", "$20–$50/mo", "$50+"]
-      : isSMB
-      ? ["Under $500/mo", "$500–$1.5k/mo", "$1.5k+"]
-      : ["Under $10k/yr", "$10k–$50k/yr", "$50k+/yr"];
-    return {
-      mainText: "What budget range are you considering?",
-      buttons: budgetButtons,
-      emailPrompt: "Share your work email to receive a tailored quote",
-      dimension: "budget",
-    };
+    if (dims.includes("budget")) {
+      const budgetButtons = isIndividual
+        ? ["Under $20/mo", "$20–$50/mo", "$50+"]
+        : isSMB
+        ? ["Under $500/mo", "$500–$1.5k/mo", "$1.5k+"]
+        : ["Under $10k/yr", "$10k–$50k/yr", "$50k+/yr"];
+      return {
+        mainText: "What budget range are you considering?",
+        buttons: budgetButtons,
+        emailPrompt: "Share your work email to receive a tailored quote",
+        dimension: "budget",
+      };
+    }
+    // If pricing is detected but budget is already answered, fall through
+    // to other conditions (booking/timeline/features) without re-asking budget.
   }
   if (hasBooking) {
     return {
@@ -971,21 +979,29 @@ function buildFallbackFollowup(input: {
       emailPrompt: "Add your email to receive the calendar invite",
     };
   }
-  if (hasAuthority && input.userEmail && !bantCompleted && dims.length > 0) {
+  if (
+    hasAuthority &&
+    input.userEmail &&
+    !bantCompleted &&
+    dims.includes("authority")
+  ) {
     return {
       mainText: "Who will make the decision?",
       buttons: ["I’m the decision maker", "Add decision maker", "Unsure"],
       emailPrompt: "Add an email to coordinate next steps",
     };
   }
-  if (hasFeatures && (!input.userEmail || !bantCompleted || dims.length > 0)) {
+  if (
+    hasFeatures &&
+    (!input.userEmail || !bantCompleted || dims.includes("need"))
+  ) {
     return {
       mainText: "Which feature matters most for you right now?",
       buttons: ["Workflows", "Embeds", "Analytics"],
       emailPrompt: "Share an email to send a brief feature comparison",
     };
   }
-  if (input.botMode === "sales") {
+  if (input.botMode === "sales" && dims.includes("timeline")) {
     return {
       mainText: "What timeline are you targeting?",
       buttons: ["This month", "This quarter", "Later"],
@@ -10431,13 +10447,62 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
             immediate.dimension ||
             detectBantDimensionFromText(String(immediate.mainText || ""));
           if (inferredDim === "budget") {
+            const budgetMissing = missingDimsQuick.includes("budget");
             const segment = getBusinessSegment(sessionMessagesQuick);
             const lastAssistant = [...sessionMessagesQuick]
               .reverse()
               .find((m) => m.role === "assistant");
             const justAskedSegment =
               (lastAssistant as any)?.bantDimension === "segment";
-            if (!segment && !justAskedSegment) {
+            if (!budgetMissing) {
+              const altOrder: (
+                | "segment"
+                | "authority"
+                | "need"
+                | "timeline"
+              )[] = ["segment", "authority", "need", "timeline"];
+              const nextAlt =
+                altOrder.find((d) => missingDimsQuick.includes(d)) || null;
+              if (nextAlt === "segment" && !justAskedSegment) {
+                immediate.mainText = "What type of business are you?";
+                immediate.buttons = ["Individual", "SMB", "Enterprise"];
+                immediate.dimension = "segment";
+                immediate.type = "bant";
+              } else if (nextAlt === "authority") {
+                immediate.mainText = "Who will make the decision?";
+                immediate.buttons = [
+                  "Myself",
+                  "Manager approval required",
+                  "Team decision",
+                  "Not sure yet",
+                ];
+                immediate.dimension = "authority";
+                immediate.type = "bant";
+              } else if (nextAlt === "need") {
+                immediate.mainText = "Which feature matters most right now?";
+                immediate.buttons = [
+                  "Project Management",
+                  "Team Collaboration",
+                  "Data Analytics",
+                ];
+                immediate.dimension = "need";
+                immediate.type = "bant";
+              } else if (nextAlt === "timeline") {
+                immediate.mainText = "What timeline are you targeting?";
+                immediate.buttons = [
+                  "Immediately",
+                  "Within a month",
+                  "1-3 months",
+                  "3-6 months",
+                  "No specific timeline",
+                ];
+                immediate.dimension = "timeline";
+                immediate.type = "bant";
+              } else {
+                // No alternative missing dims; leave as-is but clear dimension to avoid false budget re-ask
+                immediate.dimension = null;
+              }
+            } else if (!segment && !justAskedSegment) {
               immediate.mainText = "What type of business are you?";
               immediate.buttons = ["Individual", "SMB", "Enterprise"];
               immediate.dimension = "segment";
@@ -10514,7 +10579,8 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
           } else if (
             resolvedUserEmail &&
             missingDimsQuick.length > 0 &&
-            priceSignal
+            priceSignal &&
+            missingDimsQuick.includes("budget")
           ) {
             const budgetButtons = (() => {
               if (segment === "individual")

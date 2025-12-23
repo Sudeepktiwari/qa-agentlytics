@@ -4164,11 +4164,17 @@ export async function GET(request: Request) {
             \`;
             
             const textSpan = document.createElement('span');
-            const displayText = (typeof buttonText === 'string')
-              ? buttonText
-              : ((buttonText && typeof buttonText === 'object' && 'text' in buttonText)
-                ? String(buttonText.text || '')
-                : String(buttonText));
+            const displayText = (function(bt) {
+              if (typeof bt === 'string') return bt;
+              if (bt && typeof bt === 'object') {
+                if ('text' in bt && bt.text) return String(bt.text);
+                if ('label' in bt && bt.label) return String(bt.label);
+                if ('value' in bt && bt.value) return String(bt.value);
+                if ('title' in bt && bt.title) return String(bt.title);
+                return 'Unknown Option';
+              }
+              return String(bt || '').trim() || 'Unknown Option';
+            })(buttonText);
             textSpan.textContent = displayText;
             
             button.appendChild(bulletSpan);
@@ -4678,7 +4684,16 @@ export async function GET(request: Request) {
         // Add buttons if present
         if (msg.buttons && msg.buttons.length > 0) {
           const buttonTexts = (msg.buttons || [])
-            .map(b => (typeof b === 'string') ? b : ((b && b.text) ? String(b.text) : ''))
+            .map(b => {
+              if (typeof b === 'string') return b;
+              if (b && typeof b === 'object') {
+                if ('text' in b && b.text) return String(b.text);
+                if ('label' in b && b.label) return String(b.label);
+                if ('value' in b && b.value) return String(b.value);
+                if ('title' in b && b.title) return String(b.title);
+              }
+              return '';
+            })
             .filter(Boolean);
           conversationText += 'Options: ' + buttonTexts.join(', ') + '\\n';
         }
