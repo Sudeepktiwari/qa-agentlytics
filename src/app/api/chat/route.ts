@@ -8578,71 +8578,15 @@ Guidelines:
 - Do not include JSON inside mainText.`;
             followupUserPrompt = `Summarize the conversation in 3–4 short lines and close by offering help. Generate 2–3 actionable buttons based on the summary. Only output the JSON format as instructed.`;
           } else {
-            // User hasn't provided email yet - value-focused followup with topic diversification
+            // User hasn't provided email yet - final summary offer (moved from 4th followup to 3rd)
             followupSystemPrompt = `
-You are a helpful sales assistant. The user has not provided an email yet.
-
-CRITICAL: This is FOLLOWUP #3 (followupCount=2). You MUST extract and use a THIRD COMPLETELY DIFFERENT aspect from the actual page content.
-
-**FOLLOWUP #3 PAGE CONTENT EXTRACTION REQUIREMENTS:**
-1. **Scan for Remaining Content**: Find additional features, benefits, or services on page not used in previous followups
-2. **Extract Different Business Value**: Identify other outcomes, ROI, or competitive advantages mentioned on page
-3. **Use Fresh Page Terminology**: Extract new industry-specific terms and phrases from page content
-4. **Address Different Customer Need**: Target different business pain point or opportunity mentioned on page
-
-**MANDATORY: EXTRACT FROM ACTUAL PAGE CONTENT**
-- **Find Unused Features**: Look for additional tools, services, capabilities mentioned on page
-- **Identify Different Benefits**: Extract other results, outcomes, improvements described on page
-- **Different Industry Focus**: Use other vertical-specific terms found on page
-- **Alternative Solutions**: Reference other ways the page says it helps customers
-
-**PAGE-BASED THIRD ANGLE EXAMPLES:**
-
-If page content includes "scheduling + payments + analytics + integrations":
-- Followup #1: Used scheduling content
-- Followup #2: Used payments content  
-- Followup #3: Extract analytics OR integrations content from page
-
-If page content includes "CRM + automation + reporting + mobile access":
-- Followup #1: Used CRM content
-- Followup #2: Used automation content
-- Followup #3: Extract reporting OR mobile access content from page
-
-**CUSTOMER PROFILING THROUGH PAGE CONTENT:**
-- **Button 1**: Different feature/tool mentioned on page
-- **Button 2**: Different business outcome described on page
-- **Button 3**: Different customer segment or use case from page
-
-PREVIOUS TOPICS/BUTTONS USED (ABSOLUTELY FORBIDDEN):
-Previous Buttons: ${
-              previousButtons.length > 0
-                ? previousButtons.map((btn: string) => `"${btn}"`).join(", ")
-                : "None"
-            }
-Previous Messages: ${
-              previousMainTexts.length > 0
-                ? previousMainTexts
-                    .slice(-3)
-                    .map((text: string) => `"${text}"`)
-                    .join(", ")
-                : "None"
-            }
-
-**COST OPTIMIZATION & SAVINGS:**
-- Message Focus: Reducing expenses, budget optimization, cost-effectiveness
-- Examples: "Cut operational costs?", "Optimize your budget?", "Reduce overhead?"
-- Buttons: "Cost Savings", "Budget Optimization", "Expense Reduction"
-
-**INTEGRATION & CONNECTIVITY:**
-- Message Focus: Connecting systems, seamless workflows, unified platform
-- Examples: "Connect your tools?", "Unify your systems?", "Seamless integration?"
-- Buttons: "System Integration", "Tool Connectivity", "Unified Platform"
+You are a helpful sales assistant. The user has not provided an email yet and has not responded to several nudges.
 
 You will receive page and general context, the detected intent, and the previous conversation. Always generate your response in the following JSON format:
 {
-  "mainText": "<A value-focused message highlighting specific benefits. STRICT LIMITS: Maximum 30 words total. Create curiosity about unique value they haven't considered.>",
-  "buttons": ["<Generate exactly 3 options, each 2-4 words. They should read like tappable choices that convey value from your chosen angle.>"],
-  "emailPrompt": "<Create a contextual email prompt that relates to your chosen topic and specific page content. Explain what specific information you'll send them.>"
+  "mainText": "<Looks like you stepped away. I've saved all your options! Want a quick summary emailed? 📧 STRICT LIMITS: Maximum 30 words total. Be friendly.>",
+  "buttons": ["Yes Email Me", "No Thanks", "Keep Browsing"],
+  "emailPrompt": "If you'd like a summary or more help, I can email it to you."
 }
 Context:
 Page Context:
@@ -8657,8 +8601,8 @@ ${previousQnA}
 - Do not answer in any other way.
 - Respond with ONLY valid JSON - no additional text before or after
 - NEVER include JSON objects or button arrays within the mainText field
-- Your mainText must be a friendly, direct request for the user's email, referencing the actual page context or detected intent. Do NOT ask another qualifying question or repeat previous questions.`;
-            followupUserPrompt = `Ask the user for their email in a friendly, direct way, explaining why you need it to send them setup instructions, a demo, or connect them to support for this page. Reference the page context or detected intent if possible. Do NOT ask another qualifying question. Do NOT include any buttons. Only output the JSON format as instructed.`;
+- Your mainText must summarize the user's journey and offer to email a summary. Be natural and avoid formulaic language.`;
+            followupUserPrompt = `Offer to email the user a summary of their options, summarizing their last few actions or options in a friendly way. Only output the JSON format as instructed.`;
           }
         } else if (followupCount === 3) {
           // Final nudge: aggressive conversion attempt for sales mode
