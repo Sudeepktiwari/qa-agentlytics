@@ -4164,7 +4164,12 @@ export async function GET(request: Request) {
             \`;
             
             const textSpan = document.createElement('span');
-            textSpan.textContent = buttonText;
+            const displayText = (typeof buttonText === 'string')
+              ? buttonText
+              : ((buttonText && typeof buttonText === 'object' && 'text' in buttonText)
+                ? String(buttonText.text || '')
+                : String(buttonText));
+            textSpan.textContent = displayText;
             
             button.appendChild(bulletSpan);
             button.appendChild(textSpan);
@@ -4234,9 +4239,9 @@ export async function GET(request: Request) {
               button.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
             });
             button.addEventListener('click', () => {
-              console.log("🔘 [WIDGET BUTTON] Button clicked:", buttonText);
+              console.log("🔘 [WIDGET BUTTON] Button clicked:", displayText);
               resetUserActivity();
-              sendMessage(buttonText);
+              sendMessage(displayText);
             });
             
             buttonsDiv.appendChild(button);
@@ -4672,7 +4677,10 @@ export async function GET(request: Request) {
         
         // Add buttons if present
         if (msg.buttons && msg.buttons.length > 0) {
-          conversationText += 'Options: ' + msg.buttons.join(', ') + '\\n';
+          const buttonTexts = (msg.buttons || [])
+            .map(b => (typeof b === 'string') ? b : ((b && b.text) ? String(b.text) : ''))
+            .filter(Boolean);
+          conversationText += 'Options: ' + buttonTexts.join(', ') + '\\n';
         }
         
         conversationText += '\\n';
