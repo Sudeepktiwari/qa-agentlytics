@@ -2854,10 +2854,13 @@ async function generateTopicBasedFollowup(
     2. Is helpful and informative
     3. Encourages engagement
     4. Includes relevant action buttons
+    5. CRITICAL: Use HTML <br/> tags for line breaks to structure your message into readable paragraphs. Do NOT produce a single block of text.
     
     Return JSON in this exact format:
     {
-      "mainText": "<your focused message about ${topicInfo.mainFocus}>",
+      "mainText": "<your focused message about ${
+        topicInfo.mainFocus
+      }. Use <br/> tags for spacing.>",
       "buttons": ${JSON.stringify(topicInfo.buttons)},
       "emailPrompt": "<ONLY include this if followupCount >= 2 AND user hasn't provided email yet. Otherwise empty string>"
     }`;
@@ -8478,7 +8481,7 @@ If page mentions "team collaboration + project tracking + client communication":
 
 You will receive page and general context, the detected intent, and the previous conversation. Always generate your response in the following JSON format:
 {
-  "mainText": "<A micro-conversion nudge—small, low-friction ask. STRICT LIMITS: Maximum 30 words total. Use casual, friendly tone. Be specific to their context and what they're actually viewing.>",
+  "mainText": "<A micro-conversion nudge—small, low-friction ask. STRICT LIMITS: Maximum 30 words total. Use casual, friendly tone. Be specific to their context and what they're actually viewing. Use <br/> tags if multiple lines are needed.>",
   "buttons": ["<Generate exactly 3 options, each 2-4 words. They are tappable choices, specific to the page content.>"],
   "emailPrompt": ""
 }
@@ -8556,6 +8559,7 @@ Summary Requirements:
 - Line 1–2: Reflect key points the user shared (needs, goals, page context).
 - Line 3: Reference BANT highlights if available (budget/timeline/authority/need).
 - Line 4: A friendly closure that offers help and next step.
+- CRITICAL: Use HTML <br/> tags to separate these lines. Do NOT combine them into one paragraph.
 
 Buttons:
 - Generate 2–3 concise, helpful actions based on your summary (e.g., "Schedule Demo", "Get Custom Quote", "Talk to Specialist").
@@ -8563,7 +8567,7 @@ Buttons:
 
 Output JSON ONLY:
 {
-  "mainText": "<3–4 lines. Each line is a short sentence. End with a friendly offer to help.>",
+  "mainText": "<3–4 lines. Each line is a short sentence separated by <br/> tags. End with a friendly offer to help.>",
   "buttons": ["<2–3 helpful actions tailored to the summary>"],
   "emailPrompt": ""
 }
