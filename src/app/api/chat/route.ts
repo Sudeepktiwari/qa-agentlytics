@@ -622,13 +622,23 @@ function generateBookingManagementResponse(action: string, booking: any) {
       };
 
     default:
-      return {
-        mainText: `I can help you manage your ${booking.requestType} scheduled for ${bookingDate} at ${bookingTime}. What would you like to do?`,
-        buttons: ["View Full Details", "Reschedule", "Cancel Booking"],
-        emailPrompt: "",
-        showBookingCalendar: false,
-        bookingAction: "manage",
-      };
+      // Only return a management response if the user explicitly asks to manage the booking
+      // Otherwise return null to let the AI answer the user's question
+      if (
+        action.toLowerCase().includes("manage") &&
+        (action.toLowerCase().includes("booking") ||
+          action.toLowerCase().includes("appointment") ||
+          action.toLowerCase().includes("call"))
+      ) {
+        return {
+          mainText: `I can help you manage your ${booking.requestType} scheduled for ${bookingDate} at ${bookingTime}. What would you like to do?`,
+          buttons: ["View Full Details", "Reschedule", "Cancel Booking"],
+          emailPrompt: "",
+          showBookingCalendar: false,
+          bookingAction: "manage",
+        };
+      }
+      return null;
   }
 }
 
