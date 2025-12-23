@@ -425,6 +425,31 @@ function limitWords(text: string, maxWords: number): string {
   return parts.slice(0, maxWords).join(" ");
 }
 
+function limitWordsPreservingFormatting(
+  text: string,
+  maxWords: number
+): string {
+  const words = text.match(/\S+/g) || [];
+  if (words.length <= maxWords) return text;
+
+  // Find the position of the last allowed word
+  let count = 0;
+  let index = 0;
+  const regex = /\S+/g;
+  let match;
+
+  while ((match = regex.exec(text)) !== null) {
+    count++;
+    if (count === maxWords) {
+      index = regex.lastIndex;
+      break;
+    }
+  }
+
+  // Return truncated text + ellipsis
+  return text.slice(0, index) + "...";
+}
+
 // Generate booking-aware response when user has active booking
 function generateBookingAwareResponse(
   originalResponse: any,
@@ -2854,14 +2879,14 @@ async function generateTopicBasedFollowup(
     2. Is helpful and informative
     3. Encourages engagement
     4. Includes relevant action buttons
-    5. CRITICAL: Use HTML <br/> tags for line breaks to structure your message into readable paragraphs. Do NOT produce a single block of text.
+    5. CRITICAL: Use standard Markdown newlines (\n\n) to structure your message into readable paragraphs. Do NOT produce a single block of text.
     6. CRITICAL: Keep the main message under 100 words total.
     
     Return JSON in this exact format:
     {
       "mainText": "<your focused message about ${
         topicInfo.mainFocus
-      } (max 100 words). Use <br/> tags for spacing.>",
+      } (max 100 words). Use \\n\\n for spacing.>",
       "buttons": ${JSON.stringify(topicInfo.buttons)},
       "emailPrompt": "<ONLY include this if followupCount >= 2 AND user hasn't provided email yet. Otherwise empty string>"
     }`;
@@ -2879,7 +2904,7 @@ async function generateTopicBasedFollowup(
         },
       ],
       temperature: 0.7,
-      max_tokens: 200,
+      max_tokens: 300,
       response_format: { type: "json_object" },
     });
 
@@ -8479,7 +8504,7 @@ If page mentions "team collaboration + project tracking + client communication":
 
 You will receive page and general context, the detected intent, and the previous conversation. Always generate your response in the following JSON format:
 {
-  "mainText": "<A micro-conversion nudge—small, low-friction ask. STRICT LIMITS: Maximum 30 words total. Use casual, friendly tone. Be specific to their context and what they're actually viewing. Use <br/> tags if multiple lines are needed.>",
+  "mainText": "<A micro-conversion nudge—small, low-friction ask. STRICT LIMITS: Maximum 30 words total. Use casual, friendly tone. Be specific to their context and what they're actually viewing. Use Markdown newlines (\\n\\n) if multiple lines are needed.>",
   "buttons": ["<Generate exactly 3 options, each 2-4 words. They are tappable choices, specific to the page content.>"],
   "emailPrompt": ""
 }
@@ -8557,7 +8582,7 @@ Summary Requirements:
 - Line 1–2: Reflect key points the user shared (needs, goals, page context).
 - Line 3: Reference BANT highlights if available (budget/timeline/authority/need).
 - Line 4: A friendly closure that offers help and next step.
-- CRITICAL: Use HTML <br/> tags to separate these lines. Do NOT combine them into one paragraph.
+- CRITICAL: Use standard Markdown newlines (\n\n) to separate these lines. Do NOT combine them into one paragraph.
 
 Buttons:
 - Generate 2–3 concise, helpful actions based on your summary (e.g., "Schedule Demo", "Get Custom Quote", "Talk to Specialist").
@@ -8565,7 +8590,7 @@ Buttons:
 
 Output JSON ONLY:
 {
-  "mainText": "<3–4 lines. Each line is a short sentence separated by <br/> tags. End with a friendly offer to help.>",
+  "mainText": "<3–4 lines. Each line is a short sentence separated by \\n\\n. End with a friendly offer to help.>",
   "buttons": ["<2–3 helpful actions tailored to the summary>"],
   "emailPrompt": ""
 }
@@ -8764,7 +8789,7 @@ ${previousQnA}
                 { role: "system", content: followupSystemPrompt },
                 { role: "user", content: augmentedUserPrompt },
               ],
-              max_tokens: 200,
+              max_tokens: 300,
               response_format: { type: "json_object" },
             });
             followupMsg = followupResp.choices[0].message.content || "";
@@ -8890,7 +8915,10 @@ ${previousQnA}
 
           const limitedMainText =
             botMode === "sales" && (followupCount === 1 || followupCount === 2)
-              ? limitWords(String(enhancedFollowup.mainText || ""), 100)
+              ? limitWordsPreservingFormatting(
+                  String(enhancedFollowup.mainText || ""),
+                  100
+                )
               : enhancedFollowup.mainText;
 
           const followupWithMode = {
