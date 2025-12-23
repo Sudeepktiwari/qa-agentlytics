@@ -2855,12 +2855,13 @@ async function generateTopicBasedFollowup(
     3. Encourages engagement
     4. Includes relevant action buttons
     5. CRITICAL: Use HTML <br/> tags for line breaks to structure your message into readable paragraphs. Do NOT produce a single block of text.
+    6. CRITICAL: Keep the main message under 100 words total.
     
     Return JSON in this exact format:
     {
       "mainText": "<your focused message about ${
         topicInfo.mainFocus
-      }. Use <br/> tags for spacing.>",
+      } (max 100 words). Use <br/> tags for spacing.>",
       "buttons": ${JSON.stringify(topicInfo.buttons)},
       "emailPrompt": "<ONLY include this if followupCount >= 2 AND user hasn't provided email yet. Otherwise empty string>"
     }`;
@@ -2878,7 +2879,7 @@ async function generateTopicBasedFollowup(
         },
       ],
       temperature: 0.7,
-      max_tokens: 500,
+      max_tokens: 200,
       response_format: { type: "json_object" },
     });
 
@@ -8200,10 +8201,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
             !userEmail &&
             enhancedPersonaFollowup.emailPrompt;
 
-          const personaMainText =
-            botMode === "sales" && (followupCount === 1 || followupCount === 2)
-              ? limitWords(String(enhancedPersonaFollowup.mainText || ""), 100)
-              : enhancedPersonaFollowup.mainText;
+          const personaMainText = enhancedPersonaFollowup.mainText;
 
           const followupWithMode = {
             ...enhancedPersonaFollowup,
@@ -8766,6 +8764,8 @@ ${previousQnA}
                 { role: "system", content: followupSystemPrompt },
                 { role: "user", content: augmentedUserPrompt },
               ],
+              max_tokens: 200,
+              response_format: { type: "json_object" },
             });
             followupMsg = followupResp.choices[0].message.content || "";
             try {
