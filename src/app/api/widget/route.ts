@@ -3491,6 +3491,19 @@ export async function GET(request: Request) {
         delete sanitized.followupTopic;
       } catch {}
     }
+    const requestId = Math.random().toString(36).slice(2);
+    const startTime = Date.now();
+    const netInfo = {
+      online: typeof navigator !== 'undefined' ? navigator.onLine : null,
+      visibility: typeof document !== 'undefined' ? document.visibilityState : null,
+      href: typeof window !== 'undefined' ? window.location.href : null
+    };
+    console.log("🛰️ [WIDGET API] Request init:", {
+      requestId,
+      endpoint,
+      base: CHATBOT_API_BASE,
+      netInfo
+    });
     const requestData = {
       ...sanitized,
       responseFormat: {
@@ -3531,6 +3544,13 @@ export async function GET(request: Request) {
           bookingType: null
         };
       }
+      if (!response.ok) {
+        console.warn('⚠️ [WIDGET API] Non-OK response received', {
+          requestId,
+          status: response.status,
+          statusText: response.statusText
+        });
+      }
       
       const contentType = response.headers.get('content-type') || '';
       let responseData;
@@ -3568,10 +3588,30 @@ export async function GET(request: Request) {
       console.log("Email Prompt:", normalizedResponse.emailPrompt || "No email prompt");
       console.log("Bot Mode:", normalizedResponse.botMode || "No bot mode");
       console.log("==========================================");
+      console.log("[WIDGET API] Request complete:", {
+        requestId,
+        durationMs: Date.now() - startTime
+      });
       
       return normalizedResponse;
     } catch (error) {
-      console.error('❌ [WIDGET API] Error:', error);
+      const diagnostics = {
+        requestId,
+        endpoint,
+        base: CHATBOT_API_BASE,
+        durationMs: Date.now() - startTime,
+        online: typeof navigator !== 'undefined' ? navigator.onLine : null,
+        visibility: typeof document !== 'undefined' ? document.visibilityState : null,
+        href: typeof window !== 'undefined' ? window.location.href : null,
+        isOpen,
+        userIsActive,
+        followupCount,
+        lastUserActionDelta: Date.now() - lastUserAction,
+        errorName: error && error.name,
+        errorMessage: error && error.message
+      };
+      console.error('❌ [WIDGET API] Error diagnostics:', diagnostics);
+      console.error('❌ [WIDGET API] Error object:', error);
       return {
         mainText: 'Connection failed. Please check your network and try again.',
         buttons: [],
@@ -4851,6 +4891,19 @@ export async function GET(request: Request) {
     
     // Track page load time for analytics
     window.appointyPageLoadTime = Date.now();
+    
+    try {
+      window.addEventListener('online', () => {
+        console.log('[WIDGET NET] Browser is online');
+      });
+      window.addEventListener('offline', () => {
+        console.warn('[WIDGET NET] Browser is offline');
+      });
+      console.log('[WIDGET NET] Initial network status:', {
+        online: typeof navigator !== 'undefined' ? navigator.onLine : null,
+        visibility: typeof document !== 'undefined' ? document.visibilityState : null
+      });
+    } catch {}
     
     // Add widget HTML
     widgetContainer.innerHTML = createWidgetHTML();
