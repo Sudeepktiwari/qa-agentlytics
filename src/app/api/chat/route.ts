@@ -416,6 +416,15 @@ function stripBulletLines(text: string): string {
     .trim();
 }
 
+function limitWords(text: string, maxWords: number): string {
+  const stripped = String(text || "")
+    .replace(/<[^>]+>/g, " ")
+    .trim();
+  const parts = stripped.split(/\s+/).filter(Boolean);
+  if (parts.length <= maxWords) return stripped;
+  return parts.slice(0, maxWords).join(" ");
+}
+
 // Generate booking-aware response when user has active booking
 function generateBookingAwareResponse(
   originalResponse: any,
@@ -8182,8 +8191,14 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
             !userEmail &&
             enhancedPersonaFollowup.emailPrompt;
 
+          const personaMainText =
+            botMode === "sales" && (followupCount === 1 || followupCount === 2)
+              ? limitWords(String(enhancedPersonaFollowup.mainText || ""), 100)
+              : enhancedPersonaFollowup.mainText;
+
           const followupWithMode = {
             ...enhancedPersonaFollowup,
+            mainText: personaMainText,
             emailPrompt: shouldAskForEmail
               ? enhancedPersonaFollowup.emailPrompt
               : "",
@@ -8919,8 +8934,14 @@ ${previousQnA}
 
           const botMode = userEmail ? "sales" : "lead_generation";
 
+          const limitedMainText =
+            botMode === "sales" && (followupCount === 1 || followupCount === 2)
+              ? limitWords(String(enhancedFollowup.mainText || ""), 100)
+              : enhancedFollowup.mainText;
+
           const followupWithMode = {
             ...enhancedFollowup,
+            mainText: limitedMainText,
             botMode,
             userEmail: userEmail || null,
             clarifierShown: false,
