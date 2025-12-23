@@ -7981,7 +7981,12 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
         let personaFollowup = null;
 
         // Generate topic-based followup message (skip if message-based preferred)
-        if (!preferMessageBased && followupTopic !== "general") {
+        // Skip topic-based generation for 3rd sales followup (count=2) to enforce summary/closure
+        if (
+          !preferMessageBased &&
+          followupTopic !== "general" &&
+          !(userHasEmail && followupCount === 2)
+        ) {
           console.log(
             `[FOLLOWUP] Generating topic-based followup for: ${followupTopic}`
           );
@@ -7995,7 +8000,8 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
         } else if (
           !preferMessageBased &&
           detectedPersona &&
-          pageChunks.length > 0
+          pageChunks.length > 0 &&
+          !(userHasEmail && followupCount === 2)
         ) {
           console.log(
             `[Persona] Generating persona-based followup for: ${
