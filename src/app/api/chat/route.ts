@@ -10296,6 +10296,12 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
     finalResponse.mainText = emailAckText;
   }
 
+  // Ensure userEmail is always included in the response if available
+  // This is critical for the widget to persist the email
+  if (resolvedUserEmail || userEmail) {
+    (finalResponse as any).userEmail = resolvedUserEmail || userEmail;
+  }
+
   console.log(`[Chat API ${requestId}] Main response:`, {
     botMode,
     userEmail: userEmail || null,

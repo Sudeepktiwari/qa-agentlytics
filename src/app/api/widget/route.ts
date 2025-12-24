@@ -3882,6 +3882,13 @@ export async function GET(request: Request) {
     if (data.botMode) {
       updateBotModeIndicator(data.botMode, data.userEmail);
     }
+
+    // Update user email if provided by backend (e.g. detected in chat)
+    if (data.userEmail) {
+      console.log("📧 [WIDGET MESSAGE] Backend identified user email:", data.userEmail);
+      userBookingData.email = data.userEmail;
+      localStorage.setItem('appointy_user_email', data.userEmail);
+    }
     
     let botResponse = '';
     if (data.error) {
@@ -4401,6 +4408,9 @@ export async function GET(request: Request) {
           
           const emailInput = document.createElement('input');
           emailInput.type = 'email';
+          if (userBookingData.email) {
+            emailInput.value = userBookingData.email;
+          }
           emailInput.placeholder = 'Type in your email';
           emailInput.required = true;
           emailInput.style.cssText = \`
