@@ -288,8 +288,8 @@ export async function GET(request: Request) {
   
   // User booking data for multi-step booking process
   let userBookingData = {
-    email: null,
-    name: null,
+    email: localStorage.getItem('appointy_user_email') || null,
+    name: localStorage.getItem('appointy_user_name') || null,
     phone: null,
     company: null
   };
@@ -554,6 +554,9 @@ export async function GET(request: Request) {
     
     const emailInput = document.createElement('input');
     emailInput.type = 'email';
+    if (userBookingData.email) {
+      emailInput.value = userBookingData.email;
+    }
     emailInput.placeholder = 'your.email@company.com';
     emailInput.style.cssText = 'width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; box-sizing: border-box; outline: none;';
     emailInput.addEventListener('focus', () => {
@@ -578,6 +581,9 @@ export async function GET(request: Request) {
     
     const nameInput = document.createElement('input');
     nameInput.type = 'text';
+    if (userBookingData.name && userBookingData.name !== 'Anonymous User') {
+      nameInput.value = userBookingData.name;
+    }
     nameInput.placeholder = 'John Doe';
     nameInput.style.cssText = 'width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; box-sizing: border-box; outline: none;';
     nameInput.addEventListener('focus', () => {
@@ -652,6 +658,12 @@ export async function GET(request: Request) {
       // Store user data
       userBookingData.email = email;
       userBookingData.name = name || 'Anonymous User';
+      
+      // Persist to local storage for future visits
+      localStorage.setItem('appointy_user_email', email);
+      if (name) {
+        localStorage.setItem('appointy_user_name', name);
+      }
       
       // 🔥 UPDATE SESSION WITH EMAIL FOR CUSTOMER INTELLIGENCE
       try {
