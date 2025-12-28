@@ -3346,12 +3346,28 @@ export async function POST(req: NextRequest) {
               buttons: probeResult.buttons,
               emailPrompt: probeResult.emailPrompt,
             };
+          } else {
+            // Fallback: Force a BANT question if AI declines (e.g. thinks conversation is over)
+            console.log(
+              `[Chat API ${requestId}] ⚠️ AI declined post-booking follow-up, forcing fallback BANT question.`
+            );
+            followUpMessage = {
+              text: "To help us prepare for our call, do you have a specific budget in mind for this project?",
+              buttons: ["Under $1k", "$1k-$5k", "$5k-$10k", "Not sure yet"],
+              emailPrompt: null,
+            };
           }
         } catch (e) {
           console.warn(
             `[Chat API ${requestId}] ⚠️ Failed to generate post-booking BANT follow-up:`,
             e
           );
+          // Fallback on error
+          followUpMessage = {
+            text: "To help us prepare for our call, do you have a specific budget in mind for this project?",
+            buttons: ["Under $1k", "$1k-$5k", "$5k-$10k", "Not sure yet"],
+            emailPrompt: null,
+          };
         }
       }
 
