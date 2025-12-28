@@ -1248,9 +1248,27 @@ export async function GET(request: Request) {
                     profileRes.followUpMessage.emailPrompt
                 );
             }, 1500);
+          } else {
+             // Client-side fallback if backend doesn't return followUpMessage for any reason
+             console.log("⚠️ [WIDGET BOOKING] No BANT follow-up received, using client-side fallback");
+             setTimeout(() => {
+                sendProactiveMessage(
+                    "To help us prepare for our call, do you have a specific budget in mind for this project?", 
+                    ["Under $1k", "$1k-$5k", "$5k-$10k", "Not sure yet"], 
+                    null
+                );
+             }, 1500);
           }
         } catch (error) {
           console.warn("⚠️ [WIDGET BOOKING] Failed to update customer intelligence:", error);
+           // Error fallback
+           setTimeout(() => {
+              sendProactiveMessage(
+                  "To help us prepare for our call, do you have a specific budget in mind for this project?", 
+                  ["Under $1k", "$1k-$5k", "$5k-$10k", "Not sure yet"], 
+                  null
+              );
+           }, 1500);
         }
 
         // Hide all calendar elements after successful booking

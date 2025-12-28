@@ -3322,6 +3322,69 @@ export async function POST(req: NextRequest) {
             visitedPages: [pageUrl],
           }
         );
+
+        // 🔥 ALSO UPDATE CUSTOMER_PROFILES COLLECTION
+        try {
+          const profilesCollection = db.collection("customer_profiles");
+          const existingProfile = await profilesCollection.findOne({
+            adminId,
+            $or: [{ email: profileUserEmail }, { sessionIds: sessionId }],
+          });
+
+          if (existingProfile) {
+            await profilesCollection.updateOne(
+              { _id: existingProfile._id },
+              {
+                $set: {
+                  name: profileUserName || existingProfile.name,
+                  email: profileUserEmail, // Ensure email is set
+                  lastContact: new Date().toISOString(),
+                },
+                $addToSet: { sessionIds: sessionId },
+              }
+            );
+            console.log(
+              `[Chat API ${requestId}] ✅ Updated existing customer profile for ${profileUserEmail}`
+            );
+          } else {
+            await profilesCollection.insertOne({
+              adminId,
+              sessionIds: [sessionId],
+              name: profileUserName || "Anonymous User",
+              email: profileUserEmail,
+              firstContact: new Date().toISOString(),
+              lastContact: new Date().toISOString(),
+              totalSessions: 1,
+              companyProfile: {},
+              behaviorProfile: {},
+              requirementsProfile: {},
+              engagementProfile: {
+                questionsAsked: 0,
+                pagesVisited: [pageUrl],
+                timeOnSite: 0,
+                returnVisits: 0,
+                conversionSignals: [],
+                objections: [],
+              },
+              intelligenceProfile: {},
+              profileMeta: {
+                confidenceScore: 0.5,
+                lastUpdated: new Date().toISOString(),
+                updateTriggers: ["booking_confirmation"],
+                totalUpdates: 1,
+                nextScheduledUpdate: "conversation_end",
+              },
+            });
+            console.log(
+              `[Chat API ${requestId}] ✅ Created new customer profile for ${profileUserEmail}`
+            );
+          }
+        } catch (profileError) {
+          console.error(
+            `[Chat API ${requestId}] ⚠️ Failed to update customer_profiles:`,
+            profileError
+          );
+        }
       }
 
       // Generate BANT follow-up if booking confirmed
