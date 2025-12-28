@@ -583,7 +583,7 @@ export async function GET(request: Request) {
     
     const nameLabel = document.createElement('label');
     nameLabel.style.cssText = 'display: block; margin-bottom: 6px; font-weight: 500; color: #374151; font-size: 13px;';
-    nameLabel.textContent = 'Full Name (Optional)';
+    nameLabel.textContent = 'Full Name *';
     nameDiv.appendChild(nameLabel);
     
     const nameInput = document.createElement('input');
@@ -4545,14 +4545,10 @@ export async function GET(request: Request) {
           console.log("📅 [WIDGET RENDER] ✅ RENDERING BOOKING CALENDAR FOR:", msg.bookingType);
           console.log("📊 [WIDGET RENDER] Current userBookingData:", userBookingData);
           
-          // Check if we have user email already
-          if (!userBookingData.email) {
-            console.log("📧 [WIDGET RENDER] No email found, showing email collection form");
-            showEmailCollectionForm(bubbleDiv, msg.bookingType);
-          } else {
-            console.log("📧 [WIDGET RENDER] Email found, showing booking calendar directly");
-            showBookingCalendar(bubbleDiv, msg.bookingType);
-          }
+          // Always show email collection form to verify/collect details
+          // If email is known, it will be pre-filled and disabled in the form
+          console.log("📧 [WIDGET RENDER] Showing details collection form");
+          showEmailCollectionForm(bubbleDiv, msg.bookingType);
         }
 
       }
