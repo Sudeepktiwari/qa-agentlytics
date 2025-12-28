@@ -556,9 +556,16 @@ export async function GET(request: Request) {
     emailInput.type = 'email';
     if (userBookingData.email) {
       emailInput.value = userBookingData.email;
+      emailInput.disabled = true;
     }
     emailInput.placeholder = 'your.email@company.com';
     emailInput.style.cssText = 'width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; box-sizing: border-box; outline: none;';
+    
+    if (userBookingData.email) {
+       emailInput.style.backgroundColor = '#f3f4f6';
+       emailInput.style.color = '#6b7280';
+       emailInput.style.cursor = 'not-allowed';
+    }
     emailInput.addEventListener('focus', () => {
       emailInput.style.borderColor = '#0070f3';
       emailInput.style.boxShadow = '0 0 0 3px rgba(0, 112, 243, 0.1)';
@@ -614,6 +621,14 @@ export async function GET(request: Request) {
       const name = nameInput.value.trim();
       
       console.log("📧 [EMAIL FORM] Collected data:", { email, name });
+      
+      // Validate name
+      if (!name) {
+        console.log("❌ [EMAIL FORM] Name is empty");
+        nameInput.style.borderColor = '#ef4444';
+        nameInput.focus();
+        return;
+      }
       
       // Validate email with detailed debugging
       // Using a simpler but robust email regex pattern
