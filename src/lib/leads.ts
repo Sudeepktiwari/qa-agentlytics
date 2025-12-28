@@ -174,7 +174,7 @@ export async function getLeadAnalytics(adminId: string) {
 export async function updateLeadStatus(
   adminId: string,
   leadId: string,
-  status: string,
+  status?: string,
   notes?: string,
   value?: number,
   tags?: string[]
@@ -184,16 +184,16 @@ export async function updateLeadStatus(
     const leads = db.collection("leads");
 
     const updateData: {
-      status: string;
+      status?: string;
       updatedAt: Date;
       notes?: string;
       value?: number;
       tags?: string[];
     } = {
-      status,
       updatedAt: new Date(),
     };
 
+    if (status !== undefined) updateData.status = status;
     if (notes !== undefined) updateData.notes = notes;
     if (value !== undefined) updateData.value = value;
     if (tags !== undefined) updateData.tags = tags;

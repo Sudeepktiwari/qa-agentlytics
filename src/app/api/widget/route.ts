@@ -1241,6 +1241,13 @@ export async function GET(request: Request) {
           
           if (profileRes && profileRes.followUpMessage) {
             console.log("🎯 [WIDGET BOOKING] Triggering post-booking BANT follow-up");
+            
+            // Ensure widget is open and visible
+            if (!isOpen) {
+                 console.log("🚪 [WIDGET BOOKING] Restoring chat interface for BANT follow-up");
+                 toggleWidget();
+            }
+
             setTimeout(() => {
                 sendProactiveMessage(
                     profileRes.followUpMessage.text, 
@@ -1251,6 +1258,13 @@ export async function GET(request: Request) {
           } else {
              // Client-side fallback if backend doesn't return followUpMessage for any reason
              console.log("⚠️ [WIDGET BOOKING] No BANT follow-up received, using client-side fallback");
+             
+             // Ensure widget is open and visible
+            if (!isOpen) {
+                 console.log("🚪 [WIDGET BOOKING] Restoring chat interface for BANT follow-up (fallback)");
+                 toggleWidget();
+            }
+
              setTimeout(() => {
                 sendProactiveMessage(
                     "To help us prepare for our call, do you have a specific budget in mind for this project?", 
@@ -1262,6 +1276,13 @@ export async function GET(request: Request) {
         } catch (error) {
           console.warn("⚠️ [WIDGET BOOKING] Failed to update customer intelligence:", error);
            // Error fallback
+           
+           // Ensure widget is open and visible
+            if (!isOpen) {
+                 console.log("🚪 [WIDGET BOOKING] Restoring chat interface for BANT follow-up (error fallback)");
+                 toggleWidget();
+            }
+
            setTimeout(() => {
               sendProactiveMessage(
                   "To help us prepare for our call, do you have a specific budget in mind for this project?", 
