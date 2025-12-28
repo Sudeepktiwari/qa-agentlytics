@@ -3085,7 +3085,10 @@ export async function POST(req: NextRequest) {
 
   // Resolve user email from session if not in current request
   let resolvedUserEmail =
-    profileUserEmail || customerProfile?.contactProfile?.email || null;
+    profileUserEmail ||
+    customerProfile?.email ||
+    customerProfile?.contactProfile?.email ||
+    null;
   if (!resolvedUserEmail && sessionId) {
     try {
       const db = await getDb();
@@ -3438,6 +3441,39 @@ export async function POST(req: NextRequest) {
         `[Chat API ${requestId}] ✅ User profile updated successfully`
       );
 
+      // Insert booking confirmation into chats collection for history and email resolution
+      if (bookingConfirmed && profileUserEmail) {
+        try {
+          const chatsCollection = db.collection("chats");
+          await chatsCollection.insertOne({
+            sessionId,
+            role: "assistant",
+            content: bookingMessage
+              ? bookingMessage.content
+              : `Booking confirmed: ${bookingType}`,
+            createdAt: new Date(),
+            email: profileUserEmail, // Critical for resolvedUserEmail logic
+            botMode: "sales",
+            metadata: {
+              type: "booking_confirmation",
+              bookingType,
+              bookingDate,
+              bookingTime,
+              confirmationNumber,
+            },
+            adminId: apiAuth?.adminId || "default-admin",
+          });
+          console.log(
+            `[Chat API ${requestId}] ✅ Inserted booking confirmation to chats collection`
+          );
+        } catch (chatError) {
+          console.error(
+            `[Chat API ${requestId}] ⚠️ Failed to insert booking msg to chats:`,
+            chatError
+          );
+        }
+      }
+
       // Return early for profile update requests
       return NextResponse.json(
         {
@@ -3445,6 +3481,8 @@ export async function POST(req: NextRequest) {
           message: "User profile updated successfully",
           profileData: profileUpdateData,
           followUpMessage: followUpMessage,
+          botMode: "sales",
+          userEmail: profileUserEmail,
         },
         { headers: corsHeaders }
       );
