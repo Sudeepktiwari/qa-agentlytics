@@ -1239,6 +1239,11 @@ export async function GET(request: Request) {
 
           console.log("✅ [WIDGET BOOKING] Customer intelligence updated with booking confirmation");
           
+          // Update bot mode if returned from API (Critical for switching to sales mode immediately)
+          if (profileRes && profileRes.botMode) {
+            updateBotModeIndicator(profileRes.botMode, profileRes.userEmail);
+          }
+
           if (profileRes && profileRes.followUpMessage) {
             console.log("🎯 [WIDGET BOOKING] Triggering post-booking BANT follow-up");
             
