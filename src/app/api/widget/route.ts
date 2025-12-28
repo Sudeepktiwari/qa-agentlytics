@@ -1220,7 +1220,7 @@ export async function GET(request: Request) {
 
         // 🔥 UPDATE SESSION WITH BOOKING CONFIRMATION FOR CUSTOMER INTELLIGENCE
         try {
-          await sendApiRequest('chat', {
+          const profileRes = await sendApiRequest('chat', {
             sessionId: sessionId,
             pageUrl: currentPageUrl,
             updateUserProfile: true,
@@ -1238,6 +1238,17 @@ export async function GET(request: Request) {
           });
 
           console.log("✅ [WIDGET BOOKING] Customer intelligence updated with booking confirmation");
+          
+          if (profileRes && profileRes.followUpMessage) {
+            console.log("🎯 [WIDGET BOOKING] Triggering post-booking BANT follow-up");
+            setTimeout(() => {
+                sendProactiveMessage(
+                    profileRes.followUpMessage.text, 
+                    profileRes.followUpMessage.buttons, 
+                    profileRes.followUpMessage.emailPrompt
+                );
+            }, 1500);
+          }
         } catch (error) {
           console.warn("⚠️ [WIDGET BOOKING] Failed to update customer intelligence:", error);
         }

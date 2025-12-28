@@ -3268,14 +3268,36 @@ export async function POST(req: NextRequest) {
         ...(leadStatus && { leadStatus }),
       };
 
-      await conversationsCollection.updateOne(
-        { sessionId },
-        {
-          $set: profileUpdateData,
-          $setOnInsert: { createdAt: new Date() },
-        },
-        { upsert: true }
-      );
+      // Create booking confirmation message
+      const bookingMessage = bookingConfirmed
+        ? {
+            role: "assistant",
+            content:
+              question ||
+              `Booking confirmed: ${bookingType} on ${bookingDate} at ${bookingTime}`,
+            createdAt: new Date(),
+            metadata: {
+              type: "booking_confirmation",
+              bookingType,
+              bookingDate,
+              bookingTime,
+              confirmationNumber,
+            },
+          }
+        : null;
+
+      const updateOp: any = {
+        $set: profileUpdateData,
+        $setOnInsert: { createdAt: new Date() },
+      };
+
+      if (bookingMessage) {
+        updateOp.$push = { messages: bookingMessage };
+      }
+
+      await conversationsCollection.updateOne({ sessionId }, updateOp, {
+        upsert: true,
+      });
 
       // Also create/update lead record
       if (profileUserEmail) {
@@ -3302,6 +3324,37 @@ export async function POST(req: NextRequest) {
         );
       }
 
+      // Generate BANT follow-up if booking confirmed
+      let followUpMessage = null;
+      if (bookingConfirmed) {
+        try {
+          // Exclude 'timeline' since they just booked
+          // Assume other dims are missing since this is likely a fresh booking interaction
+          const missingDims = ["budget", "authority", "need", "segment"];
+
+          const probeResult = await analyzeForProbing({
+            userMessage: `I have confirmed my booking for ${bookingType} on ${bookingDate} at ${bookingTime}`,
+            assistantResponse: { mainText: "Booking confirmed successfully." },
+            botMode: "sales",
+            userEmail: profileUserEmail,
+            missingDims: missingDims as any,
+          });
+
+          if (probeResult && probeResult.shouldSendFollowUp) {
+            followUpMessage = {
+              text: probeResult.mainText,
+              buttons: probeResult.buttons,
+              emailPrompt: probeResult.emailPrompt,
+            };
+          }
+        } catch (e) {
+          console.warn(
+            `[Chat API ${requestId}] ⚠️ Failed to generate post-booking BANT follow-up:`,
+            e
+          );
+        }
+      }
+
       console.log(
         `[Chat API ${requestId}] ✅ User profile updated successfully`
       );
@@ -3312,6 +3365,7 @@ export async function POST(req: NextRequest) {
           success: true,
           message: "User profile updated successfully",
           profileData: profileUpdateData,
+          followUpMessage: followUpMessage,
         },
         { headers: corsHeaders }
       );
