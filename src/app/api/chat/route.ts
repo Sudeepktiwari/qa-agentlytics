@@ -256,6 +256,10 @@ function filterButtonsBasedOnBooking(buttons: string[], bookingStatus: any) {
     "appointment",
     "consultation",
     "talk to sales",
+    "speak with sales",
+    "speak to sales",
+    "sales rep",
+    "contact sales",
   ];
 
   // Filter out booking-related buttons
@@ -10503,6 +10507,15 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
       question || "",
       mainTextForFilter
     );
+    // Re-apply booking-based button filtering after any stage-specific overrides
+    if (bookingStatus.hasActiveBooking) {
+      finalResponse.buttons = filterButtonsBasedOnBooking(
+        finalResponse.buttons || [],
+        bookingStatus
+      );
+      finalResponse.showBookingCalendar = false;
+      delete (finalResponse as any).bookingType;
+    }
   }
 
   if (justCapturedEmail && emailAckText) {
