@@ -1820,8 +1820,10 @@ const Chatbot: React.FC<ChatbotProps> = ({
                     </div>
                   );
                 })()}
-                {/* Always render email prompt/input if present */}
-                {msg.emailPrompt && msg.emailPrompt.trim() !== "" && (
+                {msg.emailPrompt &&
+                  msg.emailPrompt.trim() !== "" &&
+                  currentBotMode !== "sales" &&
+                  !currentUserEmail && (
                   <div style={{ marginTop: 8, color: "#000000" }}>
                     <div>{msg.emailPrompt}</div>
                     <form
