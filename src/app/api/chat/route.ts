@@ -317,6 +317,88 @@ function filterRedundantButtons(
   return unique;
 }
 
+// Map option text to high-level intent categories
+function categorizeOption(text: string): string | null {
+  const t = String(text || "").toLowerCase();
+  const checks: Array<{ cat: string; kw: RegExp[] }> = [
+    { cat: "pricing", kw: [/price|pricing|plan|cost|fee|quote|subscription/] },
+    {
+      cat: "features",
+      kw: [
+        /feature|capabilit|workflow|automation|reminder|routing|availability|event type|calendar sync|meeting routing/,
+      ],
+    },
+    { cat: "demo", kw: [/demo|walkthrough|tour|preview/] },
+    {
+      cat: "sales",
+      kw: [
+        /sales|talk to sales|speak with sales|contact sales|sales rep|specialist/,
+      ],
+    },
+    {
+      cat: "support",
+      kw: [
+        /support|help|assistance|issue|problem|contact support|troubleshoot|bug|error/,
+      ],
+    },
+    { cat: "docs", kw: [/docs|documentation|api|webhook|developer/] },
+    { cat: "onboarding", kw: [/onboarding|setup|get started|start/] },
+    {
+      cat: "integration",
+      kw: [
+        /integration|google meet|zoom|microsoft teams|google|outlook|exchange/,
+      ],
+    },
+    {
+      cat: "calendar",
+      kw: [
+        /calendar|time slot|availability|schedule|booking|appointment|meeting/,
+      ],
+    },
+  ];
+  for (const c of checks) {
+    if (c.kw.some((re) => re.test(t))) return c.cat;
+  }
+  return null;
+}
+
+// Collect previously clicked option labels and categories from user messages
+function collectClickedOptionHistory(previousChats: any[]) {
+  const labels = new Set<string>();
+  const categories = new Set<string>();
+  try {
+    const userMsgs = previousChats
+      .filter((msg) => (msg as any)?.role === "user")
+      .map((msg) => String((msg as any)?.content || ""));
+    for (const u of userMsgs) {
+      const label = u.trim();
+      if (!label) continue;
+      labels.add(label.toLowerCase());
+      const cat = categorizeOption(label);
+      if (cat) categories.add(cat);
+    }
+  } catch {}
+  return { labels, categories };
+}
+
+// Filter buttons based on previously clicked labels/categories
+function filterButtonsBasedOnHistory(buttons: string[], previousChats: any[]) {
+  if (!Array.isArray(buttons) || buttons.length === 0) return buttons || [];
+  const { labels, categories } = collectClickedOptionHistory(
+    previousChats || []
+  );
+  const out: string[] = [];
+  for (const b of buttons) {
+    const lb = String(b || "").toLowerCase();
+    const cat = categorizeOption(lb);
+    const isExactRepeat = labels.has(lb);
+    const isCategoryBlocked = !!cat && categories.has(cat);
+    if (isExactRepeat || isCategoryBlocked) continue;
+    out.push(b);
+  }
+  return out;
+}
+
 function extractBulletOptionsFromText(text: string): string[] {
   const lines = String(text || "").split(/\r?\n/);
   const options: string[] = [];
@@ -8479,11 +8561,26 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
               };
             })(),
           };
-          const bookingAwareFollowup = generateBookingAwareResponse(
+          // Apply booking-aware logic and history-based filtering to persona followup
+          let bookingAwareFollowup = generateBookingAwareResponse(
             followupWithMode,
             bookingStatus,
             question || ""
           );
+          bookingAwareFollowup = {
+            ...bookingAwareFollowup,
+            buttons: filterButtonsBasedOnHistory(
+              bookingAwareFollowup.buttons || [],
+              previousChats
+            ),
+          };
+          if (
+            Array.isArray(bookingAwareFollowup.buttons) &&
+            bookingAwareFollowup.buttons.length === 0
+          ) {
+            // If no valid options remain, keep the conversation natural without repeating options
+            bookingAwareFollowup.emailPrompt = "";
+          }
           return NextResponse.json(bookingAwareFollowup, {
             headers: corsHeaders,
           });
@@ -10539,6 +10636,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
       question || "",
       mainTextForFilter
     );
+    // Exclude buttons the user already clicked or closely related to same intent
     // Re-apply booking-based button filtering after any stage-specific overrides
     if (bookingStatus.hasActiveBooking) {
       finalResponse.buttons = filterButtonsBasedOnBooking(
