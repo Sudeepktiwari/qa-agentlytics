@@ -764,6 +764,7 @@ export async function GET(request: Request) {
     bubbleDiv.appendChild(calendarDiv);
     
     console.log("📅 [BOOKING CALENDAR] Calendar div added to bubble");
+    scrollToBottom();
     
     // Load calendar data
     console.log("📅 [BOOKING CALENDAR] Starting to load calendar data in 500ms");
@@ -798,6 +799,7 @@ export async function GET(request: Request) {
       // Hide loading and show calendar
       loadingDiv.style.display = 'none';
       container.style.display = 'block';
+      scrollToBottom();
       
       if (!calendarData || !calendarData.days || calendarData.days.length === 0) {
         container.innerHTML = '<div style="text-align: center; padding: 20px; color: #666; background: #f8f9fa; border-radius: 8px;"><div style="margin-bottom: 8px; font-size: 18px;">📅</div><div style="font-weight: 500; margin-bottom: 4px;">No available slots found</div><div style="font-size: 13px;">Please contact us directly to schedule your ' + bookingType + '</div></div>';
@@ -4141,6 +4143,11 @@ export async function GET(request: Request) {
   function renderMessages() {
     const messagesContainer = document.getElementById('appointy-messages');
     if (!messagesContainer) return;
+    const prevScrollTop = messagesContainer.scrollTop;
+    const prevScrollHeight = messagesContainer.scrollHeight;
+    const nearBottomThreshold = 80;
+    const wasNearBottom =
+      prevScrollHeight - (prevScrollTop + messagesContainer.clientHeight) <= nearBottomThreshold;
     
     messagesContainer.innerHTML = '';
     
@@ -4623,8 +4630,11 @@ export async function GET(request: Request) {
       messagesContainer.appendChild(messageDiv);
     });
     
-    // Enhanced scroll to bottom that handles animated content
-    scrollToBottomEnhanced();
+    if (wasNearBottom) {
+      scrollToBottomEnhanced();
+    } else {
+      messagesContainer.scrollTop = prevScrollTop;
+    }
   }
   
   // Initialize proactive message
