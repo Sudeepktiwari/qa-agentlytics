@@ -3481,6 +3481,11 @@ export async function POST(req: NextRequest) {
           message: "User profile updated successfully",
           profileData: profileUpdateData,
           followUpMessage: followUpMessage,
+          mainText:
+            (followUpMessage && followUpMessage.text) ||
+            "Your profile has been updated.",
+          buttons: (followUpMessage && followUpMessage.buttons) || [],
+          emailPrompt: (followUpMessage && followUpMessage.emailPrompt) || "",
           botMode: "sales",
           userEmail: profileUserEmail,
         },

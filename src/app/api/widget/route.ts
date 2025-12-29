@@ -1260,6 +1260,18 @@ export async function GET(request: Request) {
                     profileRes.followUpMessage.emailPrompt
                 );
             }, 1500);
+          } else if (profileRes && profileRes.mainText) {
+            if (!isOpen) {
+                 console.log("🚪 [WIDGET BOOKING] Restoring chat interface for post-booking message");
+                 toggleWidget();
+            }
+            setTimeout(() => {
+                sendProactiveMessage(
+                    profileRes.mainText, 
+                    (profileRes.buttons || []), 
+                    profileRes.emailPrompt || ''
+                );
+            }, 1500);
           } else {
              // Client-side fallback if backend doesn't return followUpMessage for any reason
              console.log("⚠️ [WIDGET BOOKING] No BANT follow-up received, using client-side fallback");
