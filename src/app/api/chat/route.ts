@@ -7405,14 +7405,15 @@ Extract key requirements (2-3 bullet points max, be concise):`;
           const proactiveMsg = parsedRevisit.mainText || "";
           // Force buttons to be empty to prevent options from showing up in revisit summary
           const buttons: string[] = [];
-          let userEmail: string | null = null;
-          const lastEmailMsg = await chats.findOne(
-            { sessionId, email: { $exists: true } },
-            { sort: { createdAt: -1 } }
-          );
-          if (lastEmailMsg && lastEmailMsg.email)
-            userEmail = lastEmailMsg.email;
-          const botMode = userEmail ? "sales" : "lead_generation";
+          const userEmail =
+            resolvedUserEmail ||
+            (bookingStatus.hasActiveBooking
+              ? bookingStatus.currentBooking?.email || null
+              : null);
+          const botMode =
+            userEmail || bookingStatus.hasActiveBooking
+              ? "sales"
+              : "lead_generation";
           let finalProactiveMsg = proactiveMsg || "";
 
           // Strip out "Options:", "Buttons:" etc. from the generated text if the AI included them
@@ -7808,13 +7809,15 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
         }
 
         // Determine bot mode for proactive message
-        let userEmail: string | null = null;
-        const lastEmailMsg = await chats.findOne(
-          { sessionId, email: { $exists: true } },
-          { sort: { createdAt: -1 } }
-        );
-        if (lastEmailMsg && lastEmailMsg.email) userEmail = lastEmailMsg.email;
-        const botMode = userEmail ? "sales" : "lead_generation";
+        const userEmail =
+          resolvedUserEmail ||
+          (bookingStatus.hasActiveBooking
+            ? bookingStatus.currentBooking?.email || null
+            : null);
+        const botMode =
+          userEmail || bookingStatus.hasActiveBooking
+            ? "sales"
+            : "lead_generation";
 
         let finalProactiveMsg = proactiveMsg || "";
         if (
@@ -7971,7 +7974,9 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
             { sort: { createdAt: -1 } }
           );
           const botModeMirror: "sales" | "lead_generation" =
-            lastEmailDoc && lastEmailDoc.email ? "sales" : "lead_generation";
+            resolvedUserEmail || bookingStatus.hasActiveBooking
+              ? "sales"
+              : "lead_generation";
           const mirrorText = `I’m here while you browse. Want a quick overview or help with something specific?`;
           const mirrorResp = {
             mainText: mirrorText,
@@ -7979,7 +7984,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
             emailPrompt: "",
             botMode: botModeMirror,
             userEmail:
-              botModeMirror === "sales" ? lastEmailDoc?.email || null : null,
+              botModeMirror === "sales" ? resolvedUserEmail || null : null,
           } as any;
           return NextResponse.json(mirrorResp, { headers: corsHeaders });
         }
@@ -8357,10 +8362,15 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
             }`
           );
 
-          let userEmail: string | null = null;
-          if (lastEmailMsg && lastEmailMsg.email)
-            userEmail = lastEmailMsg.email;
-          const botMode = userEmail ? "sales" : "lead_generation";
+          const userEmail =
+            resolvedUserEmail ||
+            (bookingStatus.hasActiveBooking
+              ? bookingStatus.currentBooking?.email || null
+              : null);
+          const botMode =
+            userEmail || bookingStatus.hasActiveBooking
+              ? "sales"
+              : "lead_generation";
 
           // Respect lead progression - only ask for email on 3rd followup
           // Check for booking detection in persona followup
@@ -9091,7 +9101,10 @@ ${previousQnA}
             // Continue with original response if booking detection fails
           }
 
-          const botMode = userEmail ? "sales" : "lead_generation";
+          const botMode =
+            resolvedUserEmail || bookingStatus.hasActiveBooking
+              ? "sales"
+              : "lead_generation";
 
           const limitedMainText =
             botMode === "sales" && (followupCount === 1 || followupCount === 2)
@@ -9142,8 +9155,11 @@ ${previousQnA}
               mainText: "Sorry, something went wrong generating a followup.",
               buttons: [],
               emailPrompt: "",
-              botMode: userEmail ? "sales" : "lead_generation",
-              userEmail: userEmail || null,
+              botMode:
+                resolvedUserEmail || bookingStatus.hasActiveBooking
+                  ? "sales"
+                  : "lead_generation",
+              userEmail: resolvedUserEmail || null,
             },
             { headers: corsHeaders }
           );
@@ -9192,7 +9208,10 @@ What specific information are you looking for? I'm here to help guide you throug
         { sort: { createdAt: -1 } }
       );
       if (lastEmailMsg && lastEmailMsg.email) userEmail = lastEmailMsg.email;
-      const botMode = userEmail ? "sales" : "lead_generation";
+      const botMode =
+        resolvedUserEmail || bookingStatus.hasActiveBooking
+          ? "sales"
+          : "lead_generation";
 
       return NextResponse.json(
         {
@@ -9310,13 +9329,15 @@ What specific information are you looking for? I'm here to help guide you throug
       }
 
       // Add bot mode to fallback followup
-      let userEmail: string | null = null;
-      const lastEmailMsg = await chats.findOne(
-        { sessionId, email: { $exists: true } },
-        { sort: { createdAt: -1 } }
-      );
-      if (lastEmailMsg && lastEmailMsg.email) userEmail = lastEmailMsg.email;
-      const botMode = userEmail ? "sales" : "lead_generation";
+      const userEmail =
+        resolvedUserEmail ||
+        (bookingStatus.hasActiveBooking
+          ? bookingStatus.currentBooking?.email || null
+          : null);
+      const botMode =
+        userEmail || bookingStatus.hasActiveBooking
+          ? "sales"
+          : "lead_generation";
 
       return NextResponse.json(
         {
@@ -9335,12 +9356,10 @@ What specific information are you looking for? I'm here to help guide you throug
   // Handle followup without pageUrl (generic followup logic)
   if (followup && !pageUrl) {
     if (isScrolling) {
-      const lastEmailDoc2 = await chats.findOne(
-        { sessionId, email: { $exists: true } },
-        { sort: { createdAt: -1 } }
-      );
       const botModeMirror2: "sales" | "lead_generation" =
-        lastEmailDoc2 && lastEmailDoc2.email ? "sales" : "lead_generation";
+        resolvedUserEmail || bookingStatus.hasActiveBooking
+          ? "sales"
+          : "lead_generation";
       const mirrorResp2 = {
         mainText:
           "I’m here while you browse. Want a quick overview or help with something specific?",
@@ -9348,7 +9367,7 @@ What specific information are you looking for? I'm here to help guide you throug
         emailPrompt: "",
         botMode: botModeMirror2,
         userEmail:
-          botModeMirror2 === "sales" ? lastEmailDoc2?.email || null : null,
+          botModeMirror2 === "sales" ? resolvedUserEmail || null : null,
       } as any;
       return NextResponse.json(mirrorResp2, { headers: corsHeaders });
     }
@@ -9455,13 +9474,15 @@ What specific information are you looking for? I'm here to help guide you throug
         );
 
         // Add bot mode to generic followup
-        let userEmail: string | null = null;
-        const lastEmailMsg = await chats.findOne(
-          { sessionId, email: { $exists: true } },
-          { sort: { createdAt: -1 } }
-        );
-        if (lastEmailMsg && lastEmailMsg.email) userEmail = lastEmailMsg.email;
-        const botMode = userEmail ? "sales" : "lead_generation";
+        const userEmail =
+          resolvedUserEmail ||
+          (bookingStatus.hasActiveBooking
+            ? bookingStatus.currentBooking?.email || null
+            : null);
+        const botMode =
+          userEmail || bookingStatus.hasActiveBooking
+            ? "sales"
+            : "lead_generation";
 
         return NextResponse.json(
           {
@@ -9539,12 +9560,24 @@ What specific information are you looking for? I'm here to help guide you throug
   }
 
   // Detect if user is identified (has provided email)
-  let userEmail: string | null = null;
-  const lastEmailMsg = await chats.findOne(
-    { sessionId, email: { $exists: true } },
-    { sort: { createdAt: -1 } }
-  );
-  if (lastEmailMsg && lastEmailMsg.email) userEmail = lastEmailMsg.email;
+  let userEmail: string | null = resolvedUserEmail;
+
+  // If not resolved yet, check active booking
+  if (
+    !userEmail &&
+    bookingStatus.hasActiveBooking &&
+    bookingStatus.currentBooking?.email
+  ) {
+    userEmail = bookingStatus.currentBooking.email;
+  }
+
+  if (!userEmail) {
+    const lastEmailMsg = await chats.findOne(
+      { sessionId, email: { $exists: true } },
+      { sort: { createdAt: -1 } }
+    );
+    if (lastEmailMsg && lastEmailMsg.email) userEmail = lastEmailMsg.email;
+  }
 
   // If we detected an email in the current message, the user is now identified
   if (detectedEmail) {
@@ -9596,9 +9629,10 @@ What specific information are you looking for? I'm here to help guide you throug
         customerProfile
       );
       let nextBant: any = null;
-      const botModeChain: "sales" | "lead_generation" = userEmail
-        ? "sales"
-        : "lead_generation";
+      const botModeChain: "sales" | "lead_generation" =
+        resolvedUserEmail || bookingStatus.hasActiveBooking
+          ? "sales"
+          : "lead_generation";
       const order: (
         | "budget"
         | "authority"
@@ -10330,7 +10364,10 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
   ]);
 
   // Add bot mode information to the response
-  const botMode = resolvedUserEmail ? "sales" : "lead_generation";
+  const botMode =
+    resolvedUserEmail || bookingStatus.hasActiveBooking
+      ? "sales"
+      : "lead_generation";
 
   // Check for booking detection and enhance response if needed
   let enhancedResponse = parsed;
