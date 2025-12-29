@@ -1009,7 +1009,11 @@ async function analyzeForProbing(input: {
         | "segment"
       )[])
     : ["budget", "authority", "need", "timeline", "segment"];
-  if (needSegmentFirst && dimsArr.includes("segment")) {
+  if (
+    input.botMode === "lead_generation" &&
+    needSegmentFirst &&
+    dimsArr.includes("segment")
+  ) {
     const segQ = "What type of business are you?";
     const segBtns = ["Individual", "SMB", "Enterprise"];
     return {
@@ -1078,7 +1082,13 @@ function buildFallbackFollowup(input: {
     !bantCompleted &&
     (!input.userEmail || dims.includes("budget") || dims.includes("segment"))
   ) {
-    if (dims.includes("segment") && !isIndividual && !isSMB && !isEnterprise) {
+    if (
+      input.botMode === "lead_generation" &&
+      dims.includes("segment") &&
+      !isIndividual &&
+      !isSMB &&
+      !isEnterprise
+    ) {
       return {
         mainText: "What type of business are you?",
         buttons: ["Individual", "SMB", "Enterprise"],
@@ -3506,8 +3516,10 @@ export async function POST(req: NextRequest) {
             sessionMsgsForBant,
             customerProfile
           );
-          // Exclude 'timeline' since they just booked
-          missingDims = missingDims.filter((d) => d !== "timeline");
+          // Exclude 'timeline' and 'segment' since they just booked
+          missingDims = missingDims.filter(
+            (d) => d !== "timeline" && d !== "segment"
+          );
 
           // Only send a follow-up if there are still truly missing dimensions
           if (Array.isArray(missingDims) && missingDims.length > 0) {
