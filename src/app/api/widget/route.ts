@@ -706,7 +706,11 @@ export async function GET(request: Request) {
       // Show success message and calendar
       console.log("🔄 [EMAIL FORM] Hiding form and showing calendar");
       formDiv.style.display = 'none';
+      enableForceScrollBottom(2000);
+      scrollToBottomEnhanced();
       showBookingCalendar(bubbleDiv, bookingType);
+      setTimeout(() => scrollToBottomEnhanced(), 100);
+      setTimeout(() => scrollToBottomEnhanced(), 250);
     });
     
     // Add the button to the form
@@ -764,7 +768,10 @@ export async function GET(request: Request) {
     bubbleDiv.appendChild(calendarDiv);
     
     console.log("📅 [BOOKING CALENDAR] Calendar div added to bubble");
-    scrollToBottom();
+    enableForceScrollBottom(2000);
+    scrollToBottomEnhanced();
+    setTimeout(() => scrollToBottomEnhanced(), 120);
+    setTimeout(() => scrollToBottomEnhanced(), 300);
     
     // Load calendar data
     console.log("📅 [BOOKING CALENDAR] Starting to load calendar data in 500ms");
@@ -799,7 +806,10 @@ export async function GET(request: Request) {
       // Hide loading and show calendar
       loadingDiv.style.display = 'none';
       container.style.display = 'block';
-      scrollToBottom();
+      enableForceScrollBottom(1500);
+      scrollToBottomEnhanced();
+      setTimeout(() => scrollToBottomEnhanced(), 100);
+      setTimeout(() => scrollToBottomEnhanced(), 250);
       
       if (!calendarData || !calendarData.days || calendarData.days.length === 0) {
         container.innerHTML = '<div style="text-align: center; padding: 20px; color: #666; background: #f8f9fa; border-radius: 8px;"><div style="margin-bottom: 8px; font-size: 18px;">📅</div><div style="font-weight: 500; margin-bottom: 4px;">No available slots found</div><div style="font-size: 13px;">Please contact us directly to schedule your ' + bookingType + '</div></div>';
@@ -4119,6 +4129,11 @@ export async function GET(request: Request) {
       setTimeout(() => scrollToBottom(), delay);
     });
   }
+  
+  let forceScrollBottomUntil = 0;
+  function enableForceScrollBottom(ms) {
+    forceScrollBottomUntil = Date.now() + Math.max(0, ms || 0);
+  }
 
   // Show typing indicator
   function showTypingIndicator() {
@@ -4148,6 +4163,7 @@ export async function GET(request: Request) {
     const nearBottomThreshold = 80;
     const wasNearBottom =
       prevScrollHeight - (prevScrollTop + messagesContainer.clientHeight) <= nearBottomThreshold;
+    const forceBottom = Date.now() < forceScrollBottomUntil;
     
     messagesContainer.innerHTML = '';
     
@@ -4630,7 +4646,7 @@ export async function GET(request: Request) {
       messagesContainer.appendChild(messageDiv);
     });
     
-    if (wasNearBottom) {
+    if (forceBottom || wasNearBottom) {
       scrollToBottomEnhanced();
     } else {
       messagesContainer.scrollTop = prevScrollTop;

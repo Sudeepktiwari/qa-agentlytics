@@ -8479,8 +8479,14 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
               };
             })(),
           };
-
-          return NextResponse.json(followupWithMode, { headers: corsHeaders });
+          const bookingAwareFollowup = generateBookingAwareResponse(
+            followupWithMode,
+            bookingStatus,
+            question || ""
+          );
+          return NextResponse.json(bookingAwareFollowup, {
+            headers: corsHeaders,
+          });
         }
 
         // Fall back to generic followup logic
