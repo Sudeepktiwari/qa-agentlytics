@@ -7601,12 +7601,31 @@ Extract key requirements (2-3 bullet points max, be concise):`;
               featureButtonsFirst.length > 0
                 ? featureButtonsFirst
                 : conversionButtons;
+            // Apply history and booking-aware filtering
+            let finalSdrButtons = sdrButtons;
+            try {
+              const history = await chats
+                .find({ sessionId })
+                .sort({ createdAt: 1 })
+                .limit(200)
+                .toArray();
+              finalSdrButtons = filterButtonsBasedOnHistory(
+                finalSdrButtons || [],
+                history || []
+              );
+              if (bookingStatus.hasActiveBooking) {
+                finalSdrButtons = filterButtonsBasedOnBooking(
+                  finalSdrButtons || [],
+                  bookingStatus
+                );
+              }
+            } catch {}
 
             const sdrMessage = {
               mainText: isReturningVisitor
                 ? `Welcome back! Let's continue exploring how ${productName} can help. ${verticalInfo.message}`
                 : `Hi! I'm ${companyName}'s friendly assistant. ${verticalInfo.message}`,
-              buttons: sdrButtons,
+              buttons: finalSdrButtons,
             };
 
             // Store the SDR continuation message
