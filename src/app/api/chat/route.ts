@@ -3398,46 +3398,72 @@ export async function POST(req: NextRequest) {
       let followUpMessage = null;
       if (bookingConfirmed) {
         try {
+          // Compute current BANT missing dimensions from session history
+          let sessionDocsForBant: any[] = [];
+          try {
+            const dbForBant = await getDb();
+            const chatsForBant = dbForBant.collection("chats");
+            sessionDocsForBant = await chatsForBant
+              .find({ sessionId })
+              .sort({ createdAt: 1 })
+              .limit(200)
+              .toArray();
+          } catch {}
+          const sessionMsgsForBant = (sessionDocsForBant || []).map(
+            (d: any) => ({
+              role: d.role,
+              content: d.content,
+              followupType: (d as any).followupType,
+              bantDimension: (d as any).bantDimension,
+              buttons: Array.isArray((d as any).buttons)
+                ? (d as any).buttons
+                : [],
+            })
+          );
+          let missingDims = computeBantMissingDims(
+            sessionMsgsForBant,
+            customerProfile
+          );
           // Exclude 'timeline' since they just booked
-          // Assume other dims are missing since this is likely a fresh booking interaction
-          const missingDims = ["budget", "authority", "need", "segment"];
+          missingDims = missingDims.filter((d) => d !== "timeline");
 
-          const probeResult = await analyzeForProbing({
-            userMessage: `I have confirmed my booking for ${bookingType} on ${bookingDate} at ${bookingTime}`,
-            assistantResponse: { mainText: "Booking confirmed successfully." },
-            botMode: "sales",
-            userEmail: profileUserEmail,
-            missingDims: missingDims as any,
-          });
+          // Only send a follow-up if there are still truly missing dimensions
+          if (Array.isArray(missingDims) && missingDims.length > 0) {
+            const probeResult = await analyzeForProbing({
+              userMessage: `I have confirmed my booking for ${bookingType} on ${bookingDate} at ${bookingTime}`,
+              assistantResponse: {
+                mainText: "Booking confirmed successfully.",
+              },
+              botMode: "sales",
+              userEmail: profileUserEmail,
+              missingDims: missingDims as any,
+            });
 
-          if (probeResult && probeResult.shouldSendFollowUp) {
-            followUpMessage = {
-              text: probeResult.mainText,
-              buttons: probeResult.buttons,
-              emailPrompt: probeResult.emailPrompt,
-            };
+            if (probeResult && probeResult.shouldSendFollowUp) {
+              followUpMessage = {
+                text: probeResult.mainText,
+                buttons: probeResult.buttons,
+                emailPrompt: probeResult.emailPrompt,
+              };
+            } else {
+              // Do not force a fallback BANT if no dimension is confidently missing
+              console.log(
+                `[Chat API ${requestId}] ⚠️ AI declined post-booking follow-up; skipping forced BANT since dims may be complete.`
+              );
+            }
           } else {
-            // Fallback: Force a BANT question if AI declines (e.g. thinks conversation is over)
+            // Nothing missing; skip follow-up entirely
             console.log(
-              `[Chat API ${requestId}] ⚠️ AI declined post-booking follow-up, forcing fallback BANT question.`
+              `[Chat API ${requestId}] ✅ BANT appears complete; skipping post-booking follow-up.`
             );
-            followUpMessage = {
-              text: "To help us prepare for our call, do you have a specific budget in mind for this project?",
-              buttons: ["Under $1k", "$1k-$5k", "$5k-$10k", "Not sure yet"],
-              emailPrompt: null,
-            };
           }
         } catch (e) {
           console.warn(
             `[Chat API ${requestId}] ⚠️ Failed to generate post-booking BANT follow-up:`,
             e
           );
-          // Fallback on error
-          followUpMessage = {
-            text: "To help us prepare for our call, do you have a specific budget in mind for this project?",
-            buttons: ["Under $1k", "$1k-$5k", "$5k-$10k", "Not sure yet"],
-            emailPrompt: null,
-          };
+          // On errors, avoid forcing BANT to prevent duplicates
+          followUpMessage = null;
         }
       }
 
