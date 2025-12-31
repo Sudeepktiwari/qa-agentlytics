@@ -32,6 +32,7 @@ interface Message {
   confidence?: number;
   suggestedActions?: { id: string; label: string; prereqSlots: string[] }[];
   isSummary?: boolean;
+  topicsDiscussed?: string[];
 }
 
 // Type for backend bot response
@@ -41,6 +42,7 @@ interface BotResponse {
   emailPrompt?: string;
   botMode?: "sales" | "lead_generation";
   userEmail?: string | null;
+  topicsDiscussed?: string[];
 }
 
 interface ChatbotProps {
@@ -376,6 +378,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
                     emailPrompt: "",
                     botMode: data.botMode,
                     userEmail: data.userEmail,
+                    topicsDiscussed: data.topicsDiscussed,
                     domain: data.domain,
                     domainMatch: data.domainMatch,
                     confidence:
@@ -396,6 +399,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
                   emailPrompt: secParsed.emailPrompt,
                   botMode: data.botMode,
                   userEmail: data.userEmail,
+                  topicsDiscussed: data.topicsDiscussed,
                   domain: (data.secondary as any)?.domain,
                   domainMatch: (data.secondary as any)?.domainMatch,
                   confidence:
@@ -471,6 +475,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
                   emailPrompt: "",
                   botMode: data.botMode,
                   userEmail: data.userEmail,
+                  topicsDiscussed: data.topicsDiscussed,
                 },
               ]);
             if (data.secondary) {
@@ -482,6 +487,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
                 emailPrompt: secParsed.emailPrompt,
                 botMode: data.botMode,
                 userEmail: data.userEmail,
+                topicsDiscussed: data.topicsDiscussed,
               };
               console.log("[Followup] Received", {
                 type: (data.secondary as any)?.type || "unknown",
@@ -625,6 +631,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
               emailPrompt: parsed.emailPrompt,
               botMode: data.botMode,
               userEmail: data.userEmail,
+              topicsDiscussed: data.topicsDiscussed,
               isFollowup: true,
               clarifierShown: !!data.clarifierShown,
               missingDims: Array.isArray(data.missingDims)
@@ -1054,7 +1061,10 @@ const Chatbot: React.FC<ChatbotProps> = ({
   };
 
   // Fallback: extract actionable options from plain text bullets when buttons array is empty
-  const extractButtonsFromText = (text: string): string[] => {
+  const extractButtonsFromText = (
+    text: string,
+    topicsDiscussed: string[] = []
+  ): string[] => {
     if (!text) return [];
 
     console.log("[BUTTON DEBUG] Extracting buttons from text:", text);
@@ -1118,11 +1128,30 @@ const Chatbot: React.FC<ChatbotProps> = ({
       if (buttons.length >= 6) break;
     }
 
-    console.log("[BUTTON DEBUG] Final extracted buttons:", buttons);
-    return buttons;
+    // Filter out buttons related to discussed topics
+    const normalizedTopics = (topicsDiscussed || []).map((t) =>
+      String(t || "").toLowerCase()
+    );
+    const filteredButtons = buttons.filter((btn) => {
+      const lb = btn.toLowerCase();
+      const isDiscussed = normalizedTopics.some((topic) => {
+        if (topic.length < 3) return false;
+        return lb.includes(topic) || topic.includes(lb);
+      });
+      if (isDiscussed) {
+        console.log("[BUTTON DEBUG] Filtered out discussed topic button:", btn);
+      }
+      return !isDiscussed;
+    });
+
+    console.log("[BUTTON DEBUG] Final extracted buttons:", filteredButtons);
+    return filteredButtons;
   };
 
-  const getDefaultBantButtons = (text: string): string[] => {
+  const getDefaultBantButtons = (
+    text: string,
+    topicsDiscussed: string[] = []
+  ): string[] => {
     const t = String(text || "").toLowerCase();
     const budget = /(\$|usd|per\s*month|\bmo\b|budget|pricing|cost)/.test(t);
     const timeline =
@@ -1137,19 +1166,41 @@ const Chatbot: React.FC<ChatbotProps> = ({
       /(feature|need|priority|analytics|integration|project|team|collaboration)/.test(
         t
       );
-    if (budget) return ["Under $500/mo", "$500–$2k/mo", "$2k–$10k/mo", "$10k+"];
-    if (authority)
-      return ["Yes, I'm the decision maker", "No, I need approval"];
-    if (timeline)
-      return ["Today", "This week", "This month", "Within 3 months"];
-    if (need)
-      return [
+    let buttons: string[] = [];
+    if (budget)
+      buttons = ["Under $500/mo", "$500–$2k/mo", "$2k–$10k/mo", "$10k+"];
+    else if (authority)
+      buttons = ["Yes, I'm the decision maker", "No, I need approval"];
+    else if (timeline)
+      buttons = ["Today", "This week", "This month", "Within 3 months"];
+    else if (need)
+      buttons = [
         "Analytics",
         "Integration",
         "Lead qualification",
         "Support automation",
       ];
-    return [];
+
+    // Filter out buttons related to discussed topics
+    const normalizedTopics = (topicsDiscussed || []).map((t) =>
+      String(t || "").toLowerCase()
+    );
+    const filteredButtons = buttons.filter((btn) => {
+      const lb = btn.toLowerCase();
+      const isDiscussed = normalizedTopics.some((topic) => {
+        if (topic.length < 3) return false;
+        return lb.includes(topic) || topic.includes(lb);
+      });
+      if (isDiscussed) {
+        console.log(
+          "[BUTTON DEBUG] Filtered out discussed topic button (fallback):",
+          btn
+        );
+      }
+      return !isDiscussed;
+    });
+
+    return filteredButtons;
   };
 
   const isLikelyBantQuestion = (msg: Message, buttons: string[]): boolean => {
@@ -1248,6 +1299,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
         )
           ? data.answer?.suggestedActions ?? data.suggestedActions
           : undefined,
+        topicsDiscussed: data.topicsDiscussed,
       };
 
       const assistantCountBefore = messages.filter(
@@ -1281,6 +1333,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
           missingDims: Array.isArray((data.secondary as any)?.missingDims)
             ? ((data.secondary as any)?.missingDims as string[])
             : undefined,
+          topicsDiscussed: data.topicsDiscussed,
         };
         if (assistantCountBefore > 0) {
           const words = String(newMessage.content || "")
@@ -1586,7 +1639,10 @@ const Chatbot: React.FC<ChatbotProps> = ({
                     console.log(
                       "[BUTTON DEBUG] No API buttons found, extracting from content..."
                     );
-                    finalButtons = extractButtonsFromText(msg.content);
+                    finalButtons = extractButtonsFromText(
+                      msg.content,
+                      msg.topicsDiscussed
+                    );
                     console.log(
                       "[BUTTON DEBUG] Extracted buttons from content:",
                       finalButtons
@@ -1599,7 +1655,10 @@ const Chatbot: React.FC<ChatbotProps> = ({
                   );
 
                   if (finalButtons.length === 0 && allowOptions) {
-                    const fallback = getDefaultBantButtons(msg.content);
+                    const fallback = getDefaultBantButtons(
+                      msg.content,
+                      msg.topicsDiscussed
+                    );
                     if (fallback.length > 0) {
                       finalButtons = fallback;
                       console.log(
@@ -1824,71 +1883,71 @@ const Chatbot: React.FC<ChatbotProps> = ({
                   msg.emailPrompt.trim() !== "" &&
                   currentBotMode !== "sales" &&
                   !currentUserEmail && (
-                  <div style={{ marginTop: 8, color: "#000000" }}>
-                    <div>{msg.emailPrompt}</div>
-                    <form
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        if (emailInputValue.trim()) {
-                          console.log(
-                            "[Chatbot] Email submitted, resetting followup timer"
-                          );
-                          // Reset followup timer when email is submitted
-                          if (followupTimer.current) {
-                            clearTimeout(followupTimer.current);
-                            followupTimer.current = null;
-                          }
-                          setFollowupSent(false);
-                          setUserIsActive(false);
-                          setLastUserAction(Date.now());
-                          sendMessage(emailInputValue.trim());
-                          setEmailInputValue("");
-                        }
-                      }}
-                      style={{ marginTop: 8 }}
-                    >
-                      <input
-                        type="email"
-                        value={emailInputValue}
-                        onChange={(e) => {
-                          setEmailInputValue(e.target.value);
-                          // Mark user as active when typing email
-                          if (e.target.value.length > 0 && !userIsActive) {
-                            setUserIsActive(true);
+                    <div style={{ marginTop: 8, color: "#000000" }}>
+                      <div>{msg.emailPrompt}</div>
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          if (emailInputValue.trim()) {
+                            console.log(
+                              "[Chatbot] Email submitted, resetting followup timer"
+                            );
+                            // Reset followup timer when email is submitted
+                            if (followupTimer.current) {
+                              clearTimeout(followupTimer.current);
+                              followupTimer.current = null;
+                            }
+                            setFollowupSent(false);
+                            setUserIsActive(false);
                             setLastUserAction(Date.now());
+                            sendMessage(emailInputValue.trim());
+                            setEmailInputValue("");
                           }
                         }}
-                        placeholder="Enter your email"
-                        required
-                        style={{
-                          marginRight: 8,
-                          backgroundColor: "#ffffff",
-                          color: "#000000",
-                          border: "1px solid #ccc",
-                        }}
-                      />
-                      <button
-                        type="submit"
-                        style={{
-                          backgroundColor: "#0070f3",
-                          color: "#ffffff",
-                          border: "none",
-                          padding: "8px 16px",
-                          borderRadius: "4px",
-                          cursor: "pointer",
-                        }}
+                        style={{ marginTop: 8 }}
                       >
-                        {msg.emailPrompt.toLowerCase().includes("support")
-                          ? "Contact Support"
-                          : msg.emailPrompt.toLowerCase().includes("setup")
-                          ? "Send Setup Guide"
-                          : msg.emailPrompt.toLowerCase().includes("demo")
-                          ? "Get Demo"
-                          : "Submit"}
-                      </button>
-                    </form>
-                  </div>
-                )}
+                        <input
+                          type="email"
+                          value={emailInputValue}
+                          onChange={(e) => {
+                            setEmailInputValue(e.target.value);
+                            // Mark user as active when typing email
+                            if (e.target.value.length > 0 && !userIsActive) {
+                              setUserIsActive(true);
+                              setLastUserAction(Date.now());
+                            }
+                          }}
+                          placeholder="Enter your email"
+                          required
+                          style={{
+                            marginRight: 8,
+                            backgroundColor: "#ffffff",
+                            color: "#000000",
+                            border: "1px solid #ccc",
+                          }}
+                        />
+                        <button
+                          type="submit"
+                          style={{
+                            backgroundColor: "#0070f3",
+                            color: "#ffffff",
+                            border: "none",
+                            padding: "8px 16px",
+                            borderRadius: "4px",
+                            cursor: "pointer",
+                          }}
+                        >
+                          {msg.emailPrompt.toLowerCase().includes("support")
+                            ? "Contact Support"
+                            : msg.emailPrompt.toLowerCase().includes("setup")
+                            ? "Send Setup Guide"
+                            : msg.emailPrompt.toLowerCase().includes("demo")
+                            ? "Get Demo"
+                            : "Submit"}
+                        </button>
+                      </form>
+                    </div>
+                  )}
               </>
             ) : (
               <span>{msg.content}</span>

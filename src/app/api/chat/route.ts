@@ -382,18 +382,38 @@ function collectClickedOptionHistory(previousChats: any[]) {
 }
 
 // Filter buttons based on previously clicked labels/categories
-function filterButtonsBasedOnHistory(buttons: string[], previousChats: any[]) {
+function filterButtonsBasedOnHistory(
+  buttons: string[],
+  previousChats: any[],
+  topicsDiscussed: string[] = []
+) {
   if (!Array.isArray(buttons) || buttons.length === 0) return buttons || [];
   const { labels, categories } = collectClickedOptionHistory(
     previousChats || []
   );
+
+  // Normalize topics for fuzzy matching
+  const normalizedTopics = (topicsDiscussed || []).map((t) =>
+    String(t || "").toLowerCase()
+  );
+
   const out: string[] = [];
   for (const b of buttons) {
     const lb = String(b || "").toLowerCase();
     const cat = categorizeOption(lb);
     const isExactRepeat = labels.has(lb);
     const isCategoryBlocked = !!cat && categories.has(cat);
-    if (isExactRepeat || isCategoryBlocked) continue;
+
+    // Filter if button relates to an already discussed topic
+    // Logic: If the button text contains a discussed topic or vice versa
+    const isTopicDiscussed = normalizedTopics.some((topic) => {
+      if (topic.length < 3) return false; // Ignore very short topics
+      return (
+        lb.includes(topic) || topic.includes(lb) || (cat && topic.includes(cat))
+      );
+    });
+
+    if (isExactRepeat || isCategoryBlocked || isTopicDiscussed) continue;
     out.push(b);
   }
   return out;
@@ -7623,7 +7643,8 @@ Extract key requirements (2-3 bullet points max, be concise):`;
                 .toArray();
               finalSdrButtons = filterButtonsBasedOnHistory(
                 finalSdrButtons || [],
-                history || []
+                history || [],
+                customerProfile?.intelligenceProfile?.topicsDiscussed || []
               );
               if (bookingStatus.hasActiveBooking) {
                 finalSdrButtons = filterButtonsBasedOnBooking(
@@ -8602,8 +8623,11 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
             ...bookingAwareFollowup,
             buttons: filterButtonsBasedOnHistory(
               bookingAwareFollowup.buttons || [],
-              previousChats
+              previousChats,
+              customerProfile?.intelligenceProfile?.topicsDiscussed || []
             ),
+            topicsDiscussed:
+              customerProfile?.intelligenceProfile?.topicsDiscussed || [],
           };
           if (
             Array.isArray(bookingAwareFollowup.buttons) &&
@@ -9210,11 +9234,41 @@ ${previousQnA}
             const prev = new Set(
               previousButtonsAll.map((b) => normalizeLabel(b))
             );
+
+            // Normalize topics for fuzzy matching
+            const topicsDiscussed =
+              customerProfile?.intelligenceProfile?.topicsDiscussed || [];
+            const normalizedTopics = topicsDiscussed.map((t: string) =>
+              String(t || "").toLowerCase()
+            );
+
             parsed.buttons = parsed.buttons.filter((b: string) => {
               const key = normalizeLabel(String(b || ""));
               if (!key) return false;
               if (prev.has(key)) return false;
               if (seen.has(key)) return false;
+
+              // Filter if button relates to an already discussed topic
+              const isTopicDiscussed = normalizedTopics.some(
+                (topic: string) => {
+                  if (topic.length < 3) return false; // Ignore very short topics
+                  return key.includes(topic) || topic.includes(key);
+                }
+              );
+
+              if (isTopicDiscussed) {
+                console.log(
+                  `[Followup] Filtering button "${b}" because it relates to discussed topic: "${topicsDiscussed.find(
+                    (t: string) =>
+                      String(t || "")
+                        .toLowerCase()
+                        .includes(key) ||
+                      key.includes(String(t || "").toLowerCase())
+                  )}"`
+                );
+                return false;
+              }
+
               seen.add(key);
               return true;
             });
