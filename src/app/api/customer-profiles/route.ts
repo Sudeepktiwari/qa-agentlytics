@@ -116,7 +116,7 @@ function detectEmailInMessage(message: string): boolean {
 
 function detectBudgetMention(message: string): boolean {
   const budgetKeywords =
-    /\b(budget|cost|price|pricing|expensive|cheap|affordable|\$[\d,]+|investment|spend|financial)\b/i;
+    /\b(budget|cost|price|pricing|expensive|cheap|affordable|\$[\d,]+|investment|spend|financial|plan|plans|billing|subscription|quote|rates|fees)\b/i;
   return budgetKeywords.test(message);
 }
 
@@ -270,16 +270,16 @@ Focus on specific requirements and constraints mentioned.`,
     intelligence: `Analyze this conversation to generate intelligence insights:
 
 Conversation:
-\${conversationContent}
+${conversationContent}
 
 Current profile context:
-\${JSON.stringify(existingProfile, null, 2)}
+${JSON.stringify(existingProfile, null, 2)}
 
 Extract and return JSON:
 {
   "buyingReadiness": "low|medium|high|very_high",
   "conversionProbability": 0.0-1.0,
-  "topicsDiscussed": ["list of 3-5 main topics discussed"],
+  "topicsDiscussed": ["list of 3-5 main topics discussed (use canonical terms like 'pricing', 'features', 'security', 'integrations')"],
   "recommendedNextSteps": ["specific recommended actions"],
   "riskFactors": ["potential obstacles or concerns"],
   "strengths": ["positive signals and opportunities"]
