@@ -43,6 +43,7 @@ interface CustomerProfile {
   intelligenceProfile: {
     buyingReadiness?: string;
     conversionProbability?: number;
+    topicsDiscussed?: string[];
     recommendedNextSteps?: string[];
     riskFactors?: string[];
     strengths?: string[];
@@ -1119,6 +1120,50 @@ const CustomerProfilesSection: React.FC = () => {
                         </span>
                       </div>
                     )}
+                    <div style={{ marginBottom: "8px" }}>
+                      <span style={{ color: "#718096" }}>
+                        Topics Discussed:
+                      </span>{" "}
+                      {selectedProfile.intelligenceProfile?.topicsDiscussed &&
+                      selectedProfile.intelligenceProfile.topicsDiscussed
+                        .length > 0 ? (
+                        <div
+                          style={{
+                            display: "flex",
+                            flexWrap: "wrap",
+                            gap: "4px",
+                            marginTop: "4px",
+                          }}
+                        >
+                          {selectedProfile.intelligenceProfile.topicsDiscussed.map(
+                            (topic, idx) => (
+                              <span
+                                key={idx}
+                                style={{
+                                  background: "#f3e8ff",
+                                  color: "#6b21a8",
+                                  padding: "2px 6px",
+                                  borderRadius: "4px",
+                                  fontSize: "12px",
+                                }}
+                              >
+                                {topic}
+                              </span>
+                            )
+                          )}
+                        </div>
+                      ) : (
+                        <span
+                          style={{
+                            color: "#a0aec0",
+                            fontStyle: "italic",
+                            fontSize: "14px",
+                          }}
+                        >
+                          No topics analyzed yet
+                        </span>
+                      )}
+                    </div>
                     {selectedProfile.intelligenceProfile
                       .conversionProbability !== undefined && (
                       <div style={{ marginBottom: "8px" }}>

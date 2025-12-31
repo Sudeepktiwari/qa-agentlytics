@@ -270,15 +270,16 @@ Focus on specific requirements and constraints mentioned.`,
     intelligence: `Analyze this conversation to generate intelligence insights:
 
 Conversation:
-${conversationContent}
+\${conversationContent}
 
 Current profile context:
-${JSON.stringify(existingProfile, null, 2)}
+\${JSON.stringify(existingProfile, null, 2)}
 
 Extract and return JSON:
 {
   "buyingReadiness": "low|medium|high|very_high",
   "conversionProbability": 0.0-1.0,
+  "topicsDiscussed": ["list of 3-5 main topics discussed"],
   "recommendedNextSteps": ["specific recommended actions"],
   "riskFactors": ["potential obstacles or concerns"],
   "strengths": ["positive signals and opportunities"]
@@ -599,6 +600,12 @@ export async function POST(req: NextRequest) {
             conversationContent,
             existingProfile
           );
+          // Also update intelligence for topics discussed
+          updates.intelligenceProfile = await analyzeProfileSection(
+            "intelligence",
+            conversationContent,
+            existingProfile
+          );
           break;
         case "technical_discussion":
         case "integration_discussion":
@@ -609,6 +616,12 @@ export async function POST(req: NextRequest) {
           );
           updates.behaviorProfile = await analyzeProfileSection(
             "behavior",
+            conversationContent,
+            existingProfile
+          );
+          // Also update intelligence for topics discussed
+          updates.intelligenceProfile = await analyzeProfileSection(
+            "intelligence",
             conversationContent,
             existingProfile
           );
