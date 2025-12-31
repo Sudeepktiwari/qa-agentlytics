@@ -3022,6 +3022,9 @@ async function generateTopicBasedFollowup(
     4. Includes relevant action buttons
     5. CRITICAL: Use standard Markdown newlines (\n\n) to structure your message into readable paragraphs. Do NOT produce a single block of text.
     6. CRITICAL: Keep the main message under 100 words total.
+    7. CRITICAL: Do NOT generate buttons for topics already discussed: ${topicsDiscussed.join(
+      ", "
+    )}.
     
     Return JSON in this exact format:
     {
@@ -10307,8 +10310,10 @@ ${context}`;
       systemPrompt = `You are a helpful sales assistant for a company. The user has provided their email (${userEmail}) and is now a qualified lead. Keep the conversation human-like and smooth: when needed, ask ONE short clarifying question to understand intent and needs before giving a concise, benefits-focused response. Encourage booking a call. Always generate your response in the following JSON format:
 
 {
-  "mainText": "<Provide sales-focused, persuasive responses about products/services, pricing, benefits, case studies, or next steps. Be enthusiastic and focus on value proposition. Use the context below to provide specific information. MANDATORY FORMATTING RULES: \n1. NEVER write long paragraphs - they are hard to read in chat\n2. Start with 1-2 short sentences (max 20 words each)\n3. Add double line break \\n\\n after intro\n4. Use bullet points with • symbol for ANY list of 2+ benefits/features\n5. Add TWO line breaks \\n\\n after each bullet point for better spacing\n6. Example format: 'Great question! Here's what makes us special:\\n\\n• Benefit 1\\n\\n• Benefit 2\\n\\n• Benefit 3'\n7. Use emojis sparingly for emphasis\n8. Never use long sentences in paragraphs - break them into bullets>",
-  "buttons": ["<Generate 2-4 sales-oriented action buttons like 'Schedule Demo', 'Get Pricing', 'View Case Studies', 'Speak with Sales Rep', 'Compare Plans'. Prioritize booking actions.>"],
+  "mainText": "<Provide sales-focused, persuasive responses about products/services, pricing, benefits, case studies, or next steps. Be enthusiastic and focus on value proposition. Use the context below to provide specific information. MANDATORY FORMATTING RULES: \n1. NEVER write long paragraphs - they are hard to read in chat\n2. Start with 1-2 short sentences (max 20 words each)\n3. Add double line break \\n\\n after intro\n4. Use bullet points with • symbol for ANY list of 2+ benefits/features\n5. Add TWO line breaks \\n\\n after each bullet point for better spacing\n6. Example format: 'Great question! Here's what makes us special:\\n\\n• Benefit 1\\n\\n• Benefit 2\\n\\n• Benefit 3'\n7. Use emojis sparingly for emphasis\n8. Never use long sentences in paragraphs - break them into bullets\n9. CRITICAL: Do NOT generate buttons for topics already discussed: ${
+    customerProfile?.intelligenceProfile?.topicsDiscussed?.join(", ") || ""
+  }>",
+  "buttons": ["<Generate 2-4 sales-oriented action buttons like 'Schedule Demo', 'Get Pricing', 'View Case Studies', 'Speak with Sales Rep', 'Compare Plans'. Prioritize booking actions. Do NOT include buttons for topics already discussed.>"],
   "emailPrompt": ""
 }
 
@@ -10327,8 +10332,10 @@ IMPORTANT: This user is qualified (has provided email). Focus on sales, conversi
       systemPrompt = `You are a helpful support assistant. The user wants to talk to support. Provide a helpful, specific support response based on the context and their needs. Always generate your response in the following JSON format:
 
 {
-  "mainText": "<A helpful, specific support response that addresses their likely needs based on the context. Be warm and professional. Provide specific next steps or information about how to get help. MANDATORY FORMATTING RULES: \n1. NEVER write long paragraphs - they are hard to read in chat\n2. Start with 1-2 short sentences (max 20 words each)\n3. Add double line break \\n\\n after intro\n4. Use bullet points with • symbol for ANY steps or multiple items\n5. Add TWO line breaks \\n\\n after each bullet point for better spacing\n6. Example format: 'I'm here to help!\\n\\n• Step 1\\n\\n• Step 2\\n\\n• Step 3'\n7. Use emojis sparingly for clarity\n8. Never use long sentences in paragraphs - break them into bullets>",
-  "buttons": ["<Generate 2-3 relevant support-related actions like 'Schedule Support Call', 'Check Help Center', 'Report Technical Issue', etc. Make them specific to their context.>"],
+  "mainText": "<A helpful, specific support response that addresses their likely needs based on the context. Be warm and professional. Provide specific next steps or information about how to get help. MANDATORY FORMATTING RULES: \n1. NEVER write long paragraphs - they are hard to read in chat\n2. Start with 1-2 short sentences (max 20 words each)\n3. Add double line break \\n\\n after intro\n4. Use bullet points with • symbol for ANY steps or multiple items\n5. Add TWO line breaks \\n\\n after each bullet point for better spacing\n6. Example format: 'I'm here to help!\\n\\n• Step 1\\n\\n• Step 2\\n\\n• Step 3'\n7. Use emojis sparingly for clarity\n8. Never use long sentences in paragraphs - break them into bullets\n9. CRITICAL: Do NOT generate buttons for topics already discussed: ${
+    customerProfile?.intelligenceProfile?.topicsDiscussed?.join(", ") || ""
+  }>",
+  "buttons": ["<Generate 2-3 relevant support-related actions like 'Schedule Support Call', 'Check Help Center', 'Report Technical Issue', etc. Make them specific to their context. Do NOT include buttons for topics already discussed.>"],
   "emailPrompt": ""
 }
 
@@ -10427,8 +10434,11 @@ You will receive page and general context. Always generate your response in the 
 8. Never use long sentences in paragraphs - break them into bullets
 9. CRITICAL: NEVER include action buttons, button lists, or JSON objects in mainText - buttons go ONLY in the buttons array
 10. CRITICAL: Do NOT assume or reference specific industries, business types, or professions unless explicitly mentioned
-11. CRITICAL: NEVER put JSON syntax, curly braces {}, or button arrays in the mainText field>",
-  "buttons": ["<Generate 2-4 contextually relevant action buttons based on the user's question and the content you provided. These should be specific to their query and help them take the next logical step.>"],
+11. CRITICAL: NEVER put JSON syntax, curly braces {}, or button arrays in the mainText field
+12. CRITICAL: Do NOT generate buttons for topics already discussed: ${
+        customerProfile?.intelligenceProfile?.topicsDiscussed?.join(", ") || ""
+      }>",
+  "buttons": ["<Generate 2-4 contextually relevant action buttons based on the user's question and the content you provided. These should be specific to their query and help them take the next logical step. Do NOT include buttons for topics already discussed.>"],
   "emailPrompt": "<Create a conversational contact prompt inviting name, email, or phone—whichever they prefer—related to the specific topic discussed (e.g., 'What's the best contact—name and email or phone—so I can send the details?')>"
 }
 
