@@ -2879,7 +2879,8 @@ async function generatePersonaBasedFollowup(
   pageContext: string,
   currentPage: string,
   conversationHistory: string,
-  followupCount: number
+  followupCount: number,
+  topicsDiscussed: string[] = []
 ): Promise<any> {
   try {
     const systemPrompt = `
@@ -2894,6 +2895,8 @@ Customer Segment Profile:
 - Urgency: ${detectedPersona.urgency}
 - Decision Maker: ${detectedPersona.decisionMaker ? "Yes" : "No"}
 
+Topics Already Discussed: ${topicsDiscussed.join(", ")}
+
 IMPORTANT: Do NOT assume or reference any specific industry, business type, or profession unless the customer has explicitly mentioned it in the conversation. Stay generic and focus on the pain points and features instead.
 
 Current Context:
@@ -2905,7 +2908,7 @@ Current Context:
 Generate your response in JSON format:
 {
   "mainText": "<Under 30 words. Inform about a specific important item on the page and invite a quick response. End with: 'Please tap an option below.' No personal names>",
-  "buttons": ["<Generate exactly 3 short options (2-4 words) that are actionable and specific to the page>"] ,
+  "buttons": ["<Generate exactly 3 short options (2-4 words) that are actionable and specific to the page. IMPORTANT: Do NOT include options related to topics already discussed.>"] ,
   "emailPrompt": "<ONLY include this if followupCount >= 2 AND user hasn't provided email yet. Otherwise empty string>"
 }
 
@@ -2919,6 +2922,9 @@ LEAD GENERATION BUTTON STRATEGY - 3-Button Framework (PERSONA-BASED):
 1) Persona Pain Point  2) Persona Solution  3) Persona Requirement
 - Extract these directly from page content where possible.
 - Buttons must be 2-4 words, actionable, and distinct.
+- Do NOT generate buttons for topics already discussed: ${topicsDiscussed.join(
+      ", "
+    )}.
 
 Conversation Flow Intelligence:
 - Reference actual page content (features, solutions, use cases) and avoid repetition from the last 1-2 messages.
@@ -2951,7 +2957,8 @@ async function generateTopicBasedFollowup(
   pageContent: string,
   pageUrl: string,
   previousQnA: string,
-  followupCount: number
+  followupCount: number,
+  topicsDiscussed: string[] = []
 ) {
   try {
     const topicPrompts = {
@@ -2984,6 +2991,13 @@ async function generateTopicBasedFollowup(
     const topicInfo =
       (topicPrompts as any)[followupTopic] || topicPrompts.pricing_plans;
 
+    // Filter hardcoded buttons against discussed topics
+    const filteredButtons = filterButtonsBasedOnHistory(
+      topicInfo.buttons,
+      [], // No chat history needed for this specific check, just topics
+      topicsDiscussed
+    );
+
     const systemPrompt = `You are a sales assistant focused specifically on ${
       topicInfo.mainFocus
     }. 
@@ -2993,6 +3007,7 @@ async function generateTopicBasedFollowup(
     - Page URL: ${pageUrl}
     - Followup Number: ${followupCount + 1}
     - Focus Area: ${topicInfo.mainFocus}
+    - Topics Already Discussed: ${topicsDiscussed.join(", ")}
     
     Previous Conversation:
     ${previousQnA || "No previous conversation"}
@@ -3013,7 +3028,9 @@ async function generateTopicBasedFollowup(
       "mainText": "<your focused message about ${
         topicInfo.mainFocus
       } (max 100 words). Use \\n\\n for spacing.>",
-      "buttons": ${JSON.stringify(topicInfo.buttons)},
+      "buttons": ${
+        filteredButtons.length > 0 ? JSON.stringify(filteredButtons) : "[]"
+      },
       "emailPrompt": "<ONLY include this if followupCount >= 2 AND user hasn't provided email yet. Otherwise empty string>"
     }`;
 
@@ -8379,7 +8396,8 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
             pageContextForPrompt,
             pageUrl,
             previousQnA,
-            followupCount
+            followupCount,
+            customerProfile?.intelligenceProfile?.topicsDiscussed || []
           );
         } else if (
           !preferMessageBased &&
@@ -8397,7 +8415,8 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
             pageContextForPrompt,
             pageUrl,
             previousQnA,
-            followupCount
+            followupCount,
+            customerProfile?.intelligenceProfile?.topicsDiscussed || []
           );
         }
 
