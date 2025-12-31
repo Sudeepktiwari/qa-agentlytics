@@ -203,7 +203,7 @@ async function inferRequestFormatFromDocs(adminId: string, docsUrl?: string) {
       });
       const embedding = embedResp.data[0].embedding as number[];
       const similar = await querySimilarChunks(embedding, 5, adminId);
-      chunks = similar as string[];
+      chunks = similar.map((s) => s.text);
     } catch {}
   }
 
@@ -1480,7 +1480,7 @@ export async function deriveFieldsFromDocsForAdmin(
       });
       const embedding = embedResp.data[0].embedding as number[];
       const similar = await querySimilarChunks(embedding, 5, adminId);
-      chunks = similar as string[];
+      chunks = similar.map((s) => s.text);
     } catch {}
   }
   const scoreChunk = (t: string): number => {
@@ -1592,7 +1592,7 @@ export async function deriveSpecFromDocsForAdmin(
       });
       const embedding = embedResp.data[0].embedding as number[];
       const similar = await querySimilarChunks(embedding, 5, adminId);
-      chunks = similar as string[];
+      chunks = similar.map((s) => s.text);
     } catch {}
   }
   const score = (t: string): number => {

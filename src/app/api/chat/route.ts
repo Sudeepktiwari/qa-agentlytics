@@ -1722,7 +1722,7 @@ async function inferFieldsFromDocs(
       });
       const embedding = embedResp.data[0].embedding as number[];
       const similar = await querySimilarChunks(embedding, 5, adminId);
-      chunks = similar as string[];
+      chunks = similar.map((s) => s.text);
     }
 
     if (!chunks || chunks.length === 0) return [];
@@ -1947,7 +1947,7 @@ async function buildOnboardingDocContext(
       });
       const embedding = embedResp.data[0].embedding as number[];
       const similar = await querySimilarChunks(embedding, 5, adminId);
-      chunks = similar as string[];
+      chunks = similar.map((s) => s.text);
     }
 
     if (!chunks || chunks.length === 0) return "";
@@ -9812,12 +9812,15 @@ What specific information are you looking for? I'm here to help guide you throug
   const questionEmbedding = embedResp.data[0].embedding;
 
   // Retrieve relevant chunks (global context for now, or filter by adminId if needed)
-  const topChunks = await querySimilarChunks(
+  const topSimilar = await querySimilarChunks(
     questionEmbedding,
     5,
     adminId || undefined
   );
-  const context = topChunks.join("\n---\n");
+  const context = topSimilar.map((s) => s.text).join("\n---\n");
+  const sources = topSimilar
+    .map((s) => s.source)
+    .filter((s) => !!s && s.length > 0);
 
   // Also get page-specific context if available
   let pageContext = "";
@@ -10794,6 +10797,10 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
   // This is critical for the widget to persist the email
   if (resolvedUserEmail || userEmail) {
     (finalResponse as any).userEmail = resolvedUserEmail || userEmail;
+  }
+
+  if (sources && sources.length > 0) {
+    (finalResponse as any).sources = sources;
   }
 
   console.log(`[Chat API ${requestId}] Main response:`, {

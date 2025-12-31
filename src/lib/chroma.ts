@@ -67,10 +67,12 @@ export async function querySimilarChunks(
     filter: { adminId: effectiveAdminId }, // always restrict search to the resolved admin
   });
 
-  type PineconeMatch = { metadata?: { adminId?: string; chunk?: string } };
+  type PineconeMatch = { metadata?: { adminId?: string; chunk?: string; filename?: string } };
   const matches: PineconeMatch[] = result.matches || [];
-  // Return the chunk text
-  return matches.map((m: PineconeMatch) => m.metadata?.chunk || "");
+  return matches.map((m: PineconeMatch) => ({
+    text: m.metadata?.chunk || "",
+    source: m.metadata?.filename || "",
+  }));
 }
 
 export async function listDocuments(adminId?: string) {

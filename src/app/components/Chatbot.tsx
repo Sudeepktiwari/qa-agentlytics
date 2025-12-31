@@ -33,6 +33,7 @@ interface Message {
   suggestedActions?: { id: string; label: string; prereqSlots: string[] }[];
   isSummary?: boolean;
   topicsDiscussed?: string[];
+  sources?: string[];
 }
 
 // Type for backend bot response
@@ -1300,6 +1301,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
           ? data.answer?.suggestedActions ?? data.suggestedActions
           : undefined,
         topicsDiscussed: data.topicsDiscussed,
+        sources: data.sources,
       };
 
       const assistantCountBefore = messages.filter(
@@ -1600,6 +1602,69 @@ const Chatbot: React.FC<ChatbotProps> = ({
               <>
                 <div style={{ color: "#000000" }}>
                   <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  {msg.role === "assistant" &&
+                    msg.sources &&
+                    msg.sources.length > 0 && (
+                      <div
+                        style={{
+                          marginTop: "8px",
+                          borderTop: "1px solid #eee",
+                          paddingTop: "4px",
+                        }}
+                      >
+                        <details>
+                          <summary
+                            style={{
+                              cursor: "pointer",
+                              fontSize: "12px",
+                              color: "#6b7280",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "4px",
+                            }}
+                          >
+                            ℹ️ View Sources
+                          </summary>
+                          <ul
+                            style={{
+                              margin: "4px 0 0 0",
+                              paddingLeft: "16px",
+                              fontSize: "12px",
+                            }}
+                          >
+                            {Array.from(new Set(msg.sources)).map(
+                              (src, idx) => (
+                                <li key={idx} style={{ marginBottom: "2px" }}>
+                                  {src.startsWith("http") ? (
+                                    <a
+                                      href={src}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      style={{
+                                        color: "#2563eb",
+                                        textDecoration: "underline",
+                                        wordBreak: "break-all",
+                                      }}
+                                    >
+                                      {src}
+                                    </a>
+                                  ) : (
+                                    <span
+                                      style={{
+                                        color: "#4b5563",
+                                        wordBreak: "break-all",
+                                      }}
+                                    >
+                                      {src}
+                                    </span>
+                                  )}
+                                </li>
+                              )
+                            )}
+                          </ul>
+                        </details>
+                      </div>
+                    )}
                 </div>
                 {/* Always render action buttons if present */}
                 {(() => {

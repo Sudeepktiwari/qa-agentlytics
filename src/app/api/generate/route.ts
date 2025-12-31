@@ -45,7 +45,8 @@ export async function POST(request: NextRequest) {
     const promptEmbedding = embedResp.data[0].embedding;
 
     // Retrieve topK chunks scoped to admin
-    const chunks = await querySimilarChunks(promptEmbedding, Number(topK) || 5, adminId);
+    const similar = await querySimilarChunks(promptEmbedding, Number(topK) || 5, adminId);
+    const chunks = similar.map((s) => s.text);
     const context = chunks.join("\n---\n");
 
     // Compose instructions: return ONLY a cURL command
