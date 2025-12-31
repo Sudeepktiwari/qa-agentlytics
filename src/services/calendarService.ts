@@ -49,7 +49,7 @@ export class CalendarService {
       slotDuration: 30, // 30-minute slots
       bufferTime: 0, // No buffer between slots
       advanceBookingDays: 1, // Can book starting tomorrow
-      maxBookingDays: 30, // Can book up to 30 days ahead
+      maxBookingDays: 60, // Can book up to 60 days ahead (rolling window)
     };
   }
 
