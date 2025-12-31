@@ -318,45 +318,54 @@ function filterRedundantButtons(
 }
 
 // Map option text to high-level intent categories
+const OPTION_CATEGORIES: Array<{ cat: string; kw: RegExp[] }> = [
+  {
+    cat: "pricing",
+    kw: [
+      /price|pricing|plan|cost|fee|quote|subscription|budget|bill|rate|expense|payment|money/,
+    ],
+  },
+  {
+    cat: "features",
+    kw: [
+      /feature|capabilit|workflow|automation|reminder|routing|availability|event type|calendar sync|meeting routing|function|tool/,
+    ],
+  },
+  { cat: "demo", kw: [/demo|walkthrough|tour|preview/] },
+  {
+    cat: "sales",
+    kw: [
+      /sales|talk to sales|speak with sales|contact sales|sales rep|specialist|account executive/,
+    ],
+  },
+  {
+    cat: "support",
+    kw: [
+      /support|help|assistance|issue|problem|contact support|troubleshoot|bug|error|aid/,
+    ],
+  },
+  {
+    cat: "docs",
+    kw: [/docs|documentation|api|webhook|developer|manual|guide|reference/],
+  },
+  { cat: "onboarding", kw: [/onboarding|setup|get started|start/] },
+  {
+    cat: "integration",
+    kw: [
+      /integration|google meet|zoom|microsoft teams|google|outlook|exchange|connection|plugin|app|connect/,
+    ],
+  },
+  {
+    cat: "calendar",
+    kw: [
+      /calendar|time slot|availability|schedule|booking|appointment|meeting|date|time/,
+    ],
+  },
+];
+
 function categorizeOption(text: string): string | null {
   const t = String(text || "").toLowerCase();
-  const checks: Array<{ cat: string; kw: RegExp[] }> = [
-    { cat: "pricing", kw: [/price|pricing|plan|cost|fee|quote|subscription/] },
-    {
-      cat: "features",
-      kw: [
-        /feature|capabilit|workflow|automation|reminder|routing|availability|event type|calendar sync|meeting routing/,
-      ],
-    },
-    { cat: "demo", kw: [/demo|walkthrough|tour|preview/] },
-    {
-      cat: "sales",
-      kw: [
-        /sales|talk to sales|speak with sales|contact sales|sales rep|specialist/,
-      ],
-    },
-    {
-      cat: "support",
-      kw: [
-        /support|help|assistance|issue|problem|contact support|troubleshoot|bug|error/,
-      ],
-    },
-    { cat: "docs", kw: [/docs|documentation|api|webhook|developer/] },
-    { cat: "onboarding", kw: [/onboarding|setup|get started|start/] },
-    {
-      cat: "integration",
-      kw: [
-        /integration|google meet|zoom|microsoft teams|google|outlook|exchange/,
-      ],
-    },
-    {
-      cat: "calendar",
-      kw: [
-        /calendar|time slot|availability|schedule|booking|appointment|meeting/,
-      ],
-    },
-  ];
-  for (const c of checks) {
+  for (const c of OPTION_CATEGORIES) {
     if (c.kw.some((re) => re.test(t))) return c.cat;
   }
   return null;
@@ -397,12 +406,27 @@ function filterButtonsBasedOnHistory(
     String(t || "").toLowerCase()
   );
 
+  // Map discussed topics to their canonical categories/synonyms
+  const discussedCategories = new Set<string>();
+  for (const topic of normalizedTopics) {
+    if (topic.length < 3) continue;
+    for (const c of OPTION_CATEGORIES) {
+      if (c.kw.some((re) => re.test(topic))) {
+        discussedCategories.add(c.cat);
+      }
+    }
+  }
+
   const out: string[] = [];
   for (const b of buttons) {
     const lb = String(b || "").toLowerCase();
     const cat = categorizeOption(lb);
     const isExactRepeat = labels.has(lb);
-    const isCategoryBlocked = !!cat && categories.has(cat);
+
+    // Filter if button category matches any category derived from discussed topics
+    // This handles synonyms: if topic is "budget" (maps to pricing), and button is "See Rates" (pricing), it's filtered.
+    const isCategoryBlocked =
+      !!cat && (categories.has(cat) || discussedCategories.has(cat));
 
     // Filter if button relates to an already discussed topic
     // Logic: If the button text contains a discussed topic or vice versa
