@@ -9818,9 +9818,11 @@ What specific information are you looking for? I'm here to help guide you throug
     adminId || undefined
   );
   const context = topSimilar.map((s) => s.text).join("\n---\n");
-  const sources = topSimilar
-    .map((s) => s.source)
-    .filter((s) => !!s && s.length > 0);
+  const sources = [
+    ...new Set(
+      topSimilar.map((s) => s.source).filter((s) => !!s && s.length > 0)
+    ),
+  ];
 
   // Also get page-specific context if available
   let pageContext = "";
@@ -10115,6 +10117,7 @@ What specific information are you looking for? I'm here to help guide you throug
               domainMatch: md.domainMatch,
               missingSlots: missingDimsQuick,
               slots: {},
+              sources: sources || [],
               suggestedActions: computeSuggestedActions({
                 missingDims: missingDimsQuick as any,
                 botMode: botModeChain,

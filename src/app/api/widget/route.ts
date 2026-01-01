@@ -4039,9 +4039,11 @@ export async function GET(request: Request) {
         bookingType: data.bookingType || null,
         inputFields: data.inputFields || null,
         onboardingAction: inferredAction,
-        followupType: (data.type || null)
+        followupType: (data.type || null),
+        sources: Array.isArray(data.sources) ? data.sources : []
       };
       messages.push(botMessage);
+      console.log('[Widget] Bot message added with sources:', botMessage.sources);
       botResponse = botMessage.content;
       console.log('[Widget] Bot response received, starting followup timer');
       if (!ONBOARDING_ONLY) startFollowupTimer();
@@ -4252,6 +4254,44 @@ export async function GET(request: Request) {
         const contentDiv = document.createElement('div');
         contentDiv.innerHTML = formatMessageText(msg.content);
         bubbleDiv.appendChild(contentDiv);
+        
+        // Render sources if available
+        if (msg.sources && msg.sources.length > 0) {
+          const sourcesContainer = document.createElement('div');
+          sourcesContainer.style.cssText = 'margin-top: 8px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 6px;';
+          
+          const infoHeader = document.createElement('div');
+          infoHeader.style.cssText = 'display: flex; align-items: center; cursor: pointer; font-size: 12px; color: rgba(255,255,255,0.9); user-select: none;';
+          infoHeader.innerHTML = '<span style="margin-right: 4px; font-size: 14px;">ℹ️</span> Sources';
+          
+          const linksList = document.createElement('div');
+          linksList.style.cssText = 'display: none; margin-top: 6px; flex-direction: column; gap: 4px;';
+          
+          msg.sources.forEach(src => {
+            if (!src) return;
+            const link = document.createElement('a');
+            link.href = src;
+            link.target = '_blank';
+            link.textContent = src;
+            link.style.cssText = 'color: white; text-decoration: underline; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; max-width: 100%;';
+            
+            // Allow clicking link without bubbling to header toggle
+            link.onclick = (e) => e.stopPropagation();
+            
+            linksList.appendChild(link);
+          });
+          
+          infoHeader.onclick = (e) => {
+            e.stopPropagation();
+            const isHidden = linksList.style.display === 'none';
+            linksList.style.display = isHidden ? 'flex' : 'none';
+          };
+          
+          sourcesContainer.appendChild(infoHeader);
+          sourcesContainer.appendChild(linksList);
+          bubbleDiv.appendChild(sourcesContainer);
+        }
+
         if (msg.followupType) {
           const tag = document.createElement('span');
           tag.textContent = msg.followupType === 'bant' ? 'BANT' : 'Probe';
