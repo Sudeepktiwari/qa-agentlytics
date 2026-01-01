@@ -138,7 +138,9 @@ export class ResponseValidator {
       return "I'd be happy to help you!";
     }
 
-    return JavaScriptSafetyUtils.escapeForJavaScript(sanitized);
+    // Do not escape for JavaScript here as this is used in JSON responses
+    // Escaping quotes will cause backslashes to appear in the UI
+    return sanitized;
   }
 
   /**
