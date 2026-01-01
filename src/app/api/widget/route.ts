@@ -4263,8 +4263,38 @@ export async function GET(request: Request) {
           sourcesContainer.style.cssText = 'margin-top: 8px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 6px;';
           
           const infoHeader = document.createElement('div');
-          infoHeader.style.cssText = 'display: flex; align-items: center; cursor: pointer; font-size: 12px; color: rgba(255,255,255,0.9); user-select: none;';
-          infoHeader.innerHTML = '<span style="margin-right: 4px; font-size: 14px;">ℹ️</span> Sources';
+          infoHeader.style.cssText = 'display: flex; align-items: center; justify-content: space-between; cursor: pointer; font-size: 12px; color: rgba(255,255,255,0.9); user-select: none;';
+          
+          // Create left side (Icon + Text)
+          const titleSpan = document.createElement('div');
+          titleSpan.style.cssText = 'display: flex; align-items: center;';
+          titleSpan.innerHTML = '<span style="margin-right: 4px; font-size: 14px;">ℹ️</span> Sources';
+          
+          // Create copy button
+          const copyBtn = document.createElement('div');
+          copyBtn.textContent = '📋 Copy';
+          copyBtn.title = 'Copy answer with sources';
+          copyBtn.style.cssText = 'opacity: 0.8; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.1); font-size: 11px; transition: all 0.2s;';
+          
+          copyBtn.onmouseover = () => { copyBtn.style.background = 'rgba(255,255,255,0.25)'; };
+          copyBtn.onmouseout = () => { copyBtn.style.background = 'rgba(255,255,255,0.1)'; };
+          
+          copyBtn.onclick = (e) => {
+            e.stopPropagation();
+            const textToCopy = contentDiv.innerText + '\n\nSources:\n' + msg.sources.join('\n');
+            navigator.clipboard.writeText(textToCopy).then(() => {
+              const originalText = copyBtn.textContent;
+              copyBtn.textContent = '✅ Copied';
+              setTimeout(() => { copyBtn.textContent = originalText; }, 2000);
+            }).catch(err => {
+              console.error('Failed to copy:', err);
+              copyBtn.textContent = '❌ Error';
+              setTimeout(() => { copyBtn.textContent = '📋 Copy'; }, 2000);
+            });
+          };
+          
+          infoHeader.appendChild(titleSpan);
+          infoHeader.appendChild(copyBtn);
           
           const linksList = document.createElement('div');
           linksList.style.cssText = 'display: none; margin-top: 6px; flex-direction: column; gap: 4px;';
@@ -4284,7 +4314,9 @@ export async function GET(request: Request) {
           });
           
           infoHeader.onclick = (e) => {
-            e.stopPropagation();
+            // Don't toggle if clicking the copy button (handled by stopPropagation, but extra safety)
+            if (e.target === copyBtn) return;
+            
             const isHidden = linksList.style.display === 'none';
             linksList.style.display = isHidden ? 'flex' : 'none';
           };
