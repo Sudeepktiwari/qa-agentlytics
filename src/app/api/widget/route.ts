@@ -4281,7 +4281,7 @@ export async function GET(request: Request) {
           
           copyBtn.onclick = (e) => {
             e.stopPropagation();
-            const textToCopy = contentDiv.innerText + '\n\nSources:\n' + msg.sources.join('\n');
+            const textToCopy = contentDiv.innerText + '\\n\\nSources:\\n' + msg.sources.join('\\n');
             navigator.clipboard.writeText(textToCopy).then(() => {
               const originalText = copyBtn.textContent;
               copyBtn.textContent = '✅ Copied';
