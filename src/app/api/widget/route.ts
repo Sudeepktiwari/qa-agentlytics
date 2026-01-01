@@ -3756,7 +3756,8 @@ export async function GET(request: Request) {
       bookingType: responseData.bookingType || null,
       onboardingAction: responseData.onboardingAction || null,
       // New: support multi-field inputs from backend (or future extensions)
-      inputFields: responseData.inputFields || responseData.registrationFields || null
+      inputFields: responseData.inputFields || responseData.registrationFields || null,
+      sources: responseData.sources || []
     };
     const normalizedSecondary = responseData.secondary
       ? {
@@ -3896,7 +3897,8 @@ export async function GET(request: Request) {
           showBookingCalendar: data.showBookingCalendar || false,
           bookingType: data.bookingType || null,
           // Carry multi-field inputs if provided
-          inputFields: data.inputFields || null
+          inputFields: data.inputFields || null,
+          sources: data.sources || []
         };
         messages.push(botMessage);
         renderMessages();
