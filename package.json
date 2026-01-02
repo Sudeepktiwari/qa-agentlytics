@@ -31,15 +31,9 @@
     "react-helmet": "^6.1.0",
     "react-icons": "^5.5.0",
     "react-markdown": "^10.1.0",
-    "react-quill": "^2.0.0",
+    "react-quill-new": "^3.7.0",
     "remotion": "^4.0.365",
     "turndown": "^7.2.2"
-  },
-  "overrides": {
-    "react-quill": {
-      "react": "$react",
-      "react-dom": "$react-dom"
-    }
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

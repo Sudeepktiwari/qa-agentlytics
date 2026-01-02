@@ -6,10 +6,13 @@ import dynamic from "next/dynamic";
 import Card from "@/app/components/Card";
 import GlobalHeader from "@/app/components/GlobalHeader";
 import TurndownService from "turndown";
-import "react-quill/dist/quill.snow.css";
+import "react-quill-new/dist/quill.snow.css";
 
 // Dynamic import for ReactQuill to avoid SSR issues
-const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
+const ReactQuill = dynamic(() => import("react-quill-new"), {
+  ssr: false,
+  loading: () => <p>Loading editor...</p>,
+});
 
 export default function CreateBlogPage() {
   const [title, setTitle] = useState("");
