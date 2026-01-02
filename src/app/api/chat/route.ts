@@ -3672,6 +3672,38 @@ export async function POST(req: NextRequest) {
         }
       }
 
+      // 🔥 FILTER BUTTONS if booking confirmed (prevents "Book a Consultation" after booking)
+      let finalButtons = (followUpMessage && followUpMessage.buttons) || [];
+      if (bookingConfirmed) {
+        // Create a temporary booking status object for filtering
+        const tempBookingStatus = {
+          hasActiveBooking: true,
+          currentBooking: {
+            _id: "temp_confirm",
+            requestType: bookingType || "Appointment",
+            preferredDate: bookingDate || new Date().toISOString(),
+            preferredTime: bookingTime || "00:00",
+            confirmationNumber: confirmationNumber || "NEW",
+            status: "confirmed",
+            email: profileUserEmail || "",
+          },
+          canBookAgain: false,
+          allBookings: [],
+          bookingDetails: {
+            type: bookingType || "Appointment",
+            date: bookingDate || new Date().toISOString(),
+            time: bookingTime || "00:00",
+            confirmation: confirmationNumber || "NEW",
+            status: "confirmed",
+          },
+        } as any;
+
+        finalButtons = filterButtonsBasedOnBooking(
+          finalButtons,
+          tempBookingStatus
+        );
+      }
+
       // Return early for profile update requests
       return NextResponse.json(
         {
@@ -3680,7 +3712,7 @@ export async function POST(req: NextRequest) {
           profileData: profileUpdateData,
           followUpMessage: followUpMessage,
           mainText: (followUpMessage && followUpMessage.text) || "",
-          buttons: (followUpMessage && followUpMessage.buttons) || [],
+          buttons: finalButtons,
           emailPrompt: (followUpMessage && followUpMessage.emailPrompt) || "",
           botMode: "sales",
           userEmail: profileUserEmail,
