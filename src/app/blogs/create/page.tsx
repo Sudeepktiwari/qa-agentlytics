@@ -23,6 +23,9 @@ export default function CreateBlogPage() {
   const [author, setAuthor] = useState("");
   const [activeTab, setActiveTab] = useState<"write" | "preview">("write");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pendingImages, setPendingImages] = useState<Map<string, File>>(
+    new Map()
+  );
   const router = useRouter();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -33,10 +36,56 @@ export default function CreateBlogPage() {
     setIsSubmitting(true);
 
     try {
+      let finalContent = content;
+
+      // Upload pending images
+      if (pendingImages.size > 0) {
+        // Regex to find blob urls in content: blob:http://...
+        const blobUrlRegex = /!\[(.*?)\]\((blob:.*?)\)/g;
+        let match;
+        const uploads = [];
+
+        // Find all blob images used in content
+        while ((match = blobUrlRegex.exec(content)) !== null) {
+          const fullMatch = match[0];
+          const altText = match[1];
+          const blobUrl = match[2];
+
+          if (pendingImages.has(blobUrl)) {
+            uploads.push({
+              blobUrl,
+              file: pendingImages.get(blobUrl)!,
+              altText,
+            });
+          }
+        }
+
+        // Upload them
+        for (const upload of uploads) {
+          try {
+            const formData = new FormData();
+            formData.append("file", upload.file);
+
+            const res = await fetch("/api/upload", {
+              method: "POST",
+              body: formData,
+            });
+
+            if (res.ok) {
+              const data = await res.json();
+              // Replace blob url with server url in final content
+              finalContent = finalContent.replace(upload.blobUrl, data.url);
+            }
+          } catch (e) {
+            console.error("Failed to upload image", e);
+          }
+        }
+      }
+
       const res = await fetch("/api/blogs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, content, author }),
+        body: JSON.stringify({ title, content: finalContent, author }),
       });
 
       if (res.ok) {
@@ -119,41 +168,21 @@ export default function CreateBlogPage() {
       const textarea = textareaRef.current;
       if (!textarea) return;
 
-      // Insert placeholder
+      // Create object URL
+      const objectUrl = URL.createObjectURL(imageFile);
+
+      // Store file in pending images
+      setPendingImages((prev) => new Map(prev).set(objectUrl, imageFile!));
+
+      // Insert markdown with blob URL
       const start = textarea.selectionStart;
       const end = textarea.selectionEnd;
-      const placeholder = "![Uploading image...]()";
+      const imageMarkdown = `![Image](${objectUrl})`;
 
       const newText =
-        content.substring(0, start) + placeholder + content.substring(end);
+        content.substring(0, start) + imageMarkdown + content.substring(end);
 
       setContent(newText);
-
-      // Upload image
-      try {
-        const formData = new FormData();
-        formData.append("file", imageFile);
-
-        const res = await fetch("/api/upload", {
-          method: "POST",
-          body: formData,
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          const imageMarkdown = `![Image](${data.url})`;
-
-          // Replace placeholder with actual image markdown
-          setContent((prev) => prev.replace(placeholder, imageMarkdown));
-        } else {
-          alert("Failed to upload image");
-          setContent((prev) => prev.replace(placeholder, ""));
-        }
-      } catch (err) {
-        console.error("Upload error:", err);
-        alert("Error uploading image");
-        setContent((prev) => prev.replace(placeholder, ""));
-      }
       return;
     }
 
@@ -165,7 +194,7 @@ export default function CreateBlogPage() {
       // Configure turndown to handle specific tags if needed
       turndownService.addRule("codeBlock", {
         filter: "pre",
-        replacement: function (content) {
+        replacement: function (content: string) {
           return "```\n" + content + "\n```";
         },
       });
