@@ -1,10 +1,20 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Card from "@/app/components/Card";
 import GlobalHeader from "@/app/components/GlobalHeader";
 import ReactMarkdown from "react-markdown";
+import { 
+  Bold, 
+  Italic, 
+  Link as LinkIcon, 
+  Image as ImageIcon, 
+  List, 
+  Quote, 
+  Code, 
+  Heading as HeadingIcon 
+} from "lucide-react";
 
 export default function CreateBlogPage() {
   const [title, setTitle] = useState("");
@@ -13,6 +23,7 @@ export default function CreateBlogPage() {
   const [activeTab, setActiveTab] = useState<"write" | "preview">("write");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,6 +49,48 @@ export default function CreateBlogPage() {
       alert("An error occurred");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const insertMarkdown = (prefix: string, suffix: string = "", placeholder: string = "") => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+    const selectedText = text.substring(start, end);
+    
+    // If wrapping with same characters (toggle behavior check could be added here, but simple insertion is safer for now)
+    const newText =
+      text.substring(0, start) +
+      prefix +
+      (selectedText || placeholder) +
+      suffix +
+      text.substring(end);
+
+    setContent(newText);
+
+    // Restore focus and update cursor
+    setTimeout(() => {
+      textarea.focus();
+      // If text was selected, keep it selected inside the tags
+      if (selectedText.length > 0) {
+        textarea.setSelectionRange(start + prefix.length, end + prefix.length);
+      } else {
+        // If placeholder inserted, select the placeholder so user can type over it
+        const newCursorPos = start + prefix.length;
+        textarea.setSelectionRange(newCursorPos, newCursorPos + placeholder.length);
+      }
+    }, 0);
+  };
+
+  const handleHeadingChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const level = parseInt(e.target.value);
+    if (level > 0) {
+      insertMarkdown("#".repeat(level) + " ", "", "Heading");
+      // Reset select to default
+      e.target.value = "0";
     }
   };
 
@@ -111,25 +164,95 @@ export default function CreateBlogPage() {
               </div>
 
               {activeTab === "write" ? (
-                <>
+                <div className="border border-slate-200 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 transition-all bg-white">
+                  {/* Toolbar */}
+                  <div className="flex flex-wrap items-center gap-2 p-2 bg-slate-50 border-b border-slate-200">
+                    <div className="flex items-center gap-1 border-r border-slate-300 pr-2 mr-1">
+                        <HeadingIcon className="w-4 h-4 text-slate-500" />
+                        <select 
+                            onChange={handleHeadingChange}
+                            defaultValue="0"
+                            className="bg-transparent text-sm text-slate-700 focus:outline-none cursor-pointer w-24"
+                            title="Heading Level"
+                        >
+                            <option value="0">Normal</option>
+                            <option value="1">Heading 1</option>
+                            <option value="2">Heading 2</option>
+                            <option value="3">Heading 3</option>
+                            <option value="4">Heading 4</option>
+                        </select>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => insertMarkdown("**", "**", "bold text")}
+                      className="p-1.5 hover:bg-slate-200 rounded text-slate-600"
+                      title="Bold"
+                    >
+                      <Bold className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertMarkdown("*", "*", "italic text")}
+                      className="p-1.5 hover:bg-slate-200 rounded text-slate-600"
+                      title="Italic"
+                    >
+                      <Italic className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertMarkdown("> ", "", "quote")}
+                      className="p-1.5 hover:bg-slate-200 rounded text-slate-600"
+                      title="Quote"
+                    >
+                      <Quote className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertMarkdown("`", "`", "code")}
+                      className="p-1.5 hover:bg-slate-200 rounded text-slate-600"
+                      title="Inline Code"
+                    >
+                      <Code className="w-4 h-4" />
+                    </button>
+                    <div className="w-px h-4 bg-slate-300 mx-1"></div>
+                    <button
+                      type="button"
+                      onClick={() => insertMarkdown("[", "](url)", "link text")}
+                      className="p-1.5 hover:bg-slate-200 rounded text-slate-600"
+                      title="Link"
+                    >
+                      <LinkIcon className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertMarkdown("![", "](https://example.com/image.jpg)", "alt text")}
+                      className="p-1.5 hover:bg-slate-200 rounded text-slate-600"
+                      title="Image"
+                    >
+                      <ImageIcon className="w-4 h-4" />
+                    </button>
+                    <div className="w-px h-4 bg-slate-300 mx-1"></div>
+                    <button
+                      type="button"
+                      onClick={() => insertMarkdown("- ", "", "list item")}
+                      className="p-1.5 hover:bg-slate-200 rounded text-slate-600"
+                      title="List"
+                    >
+                      <List className="w-4 h-4" />
+                    </button>
+                  </div>
+
                   <textarea
+                    ref={textareaRef}
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
-                    placeholder="# Heading&#10;&#10;Write your story here...&#10;&#10;![Image Alt Text](https://example.com/image.jpg)"
-                    rows={12}
-                    className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all font-mono text-sm"
+                    placeholder="Start writing your story..."
+                    rows={15}
+                    className="w-full px-4 py-3 outline-none resize-y font-mono text-sm"
                     required
                   />
-                  <div className="mt-2 text-xs text-slate-500 bg-blue-50 p-3 rounded border border-blue-100">
-                    <p className="font-semibold mb-1">Markdown Quick Guide:</p>
-                    <ul className="list-disc list-inside space-y-1">
-                      <li>Use <code># Title</code> for headings</li>
-                      <li>Use <code>**bold**</code> for bold text</li>
-                      <li>Use <code>![Alt Text](url)</code> for images</li>
-                      <li>Use <code>- Item</code> for lists</li>
-                    </ul>
-                  </div>
-                </>
+                </div>
               ) : (
                 <div className="w-full px-4 py-3 border border-slate-200 rounded-lg min-h-[300px] prose prose-slate max-w-none overflow-y-auto bg-white">
                   {content ? (
