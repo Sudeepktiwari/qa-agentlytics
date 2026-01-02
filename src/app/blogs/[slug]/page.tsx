@@ -102,7 +102,7 @@ export default async function BlogPost({ params }: Props) {
                         alt={alt || "Blog image"}
                         width={width}
                         height={height}
-                        className="rounded-lg shadow-md w-full object-cover max-h-[500px]"
+                        className="rounded-lg shadow-md max-w-full h-auto"
                       />
                       {alt && (
                         <span className="block text-center text-sm text-slate-500 mt-2 italic">
