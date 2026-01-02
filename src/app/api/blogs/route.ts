@@ -88,3 +88,29 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Database error" }, { status: 500 });
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "Post ID is required" },
+        { status: 400 }
+      );
+    }
+
+    const postsCollection = await getPostsCollection();
+    const result = await postsCollection.deleteOne({ id });
+
+    if (result.deletedCount === 0) {
+      return NextResponse.json({ error: "Post not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (e) {
+    console.error("Failed to delete post:", e);
+    return NextResponse.json({ error: "Database error" }, { status: 500 });
+  }
+}

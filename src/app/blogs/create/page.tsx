@@ -1,11 +1,20 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import Card from "@/app/components/Card";
 import GlobalHeader from "@/app/components/GlobalHeader";
 import "react-quill-new/dist/quill.snow.css";
+
+interface Post {
+  id: string;
+  title: string;
+  slug: string;
+  date: string;
+  author: string;
+}
 
 // Helper to compress images
 const compressImage = async (
@@ -51,7 +60,39 @@ export default function CreateBlogPage() {
   const [content, setContent] = useState(""); // Stores HTML content from Quill
   const [author, setAuthor] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [posts, setPosts] = useState<Post[]>([]);
   const router = useRouter();
+
+  const fetchPosts = async () => {
+    try {
+      const res = await fetch("/api/blogs");
+      if (res.ok) {
+        const data = await res.json();
+        setPosts(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch posts", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchPosts();
+  }, []);
+
+  const handleDeletePost = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this post?")) return;
+    try {
+      const res = await fetch(`/api/blogs?id=${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setPosts(posts.filter((p) => p.id !== id));
+      } else {
+        alert("Failed to delete post");
+      }
+    } catch (error) {
+      console.error("Error deleting post", error);
+      alert("Error deleting post");
+    }
+  };
 
   // Configure Quill modules
   const modules = useMemo(
@@ -142,6 +183,12 @@ export default function CreateBlogPage() {
 
       if (res.ok) {
         const data = await res.json();
+        // Don't redirect immediately, maybe just refresh list and clear form?
+        // But usually creation redirects to the new post.
+        // Let's keep redirect, but maybe user wants to create multiple?
+        // User asked to "show the blogs list", implying a management view.
+        // But usually "Create" page is for creating.
+        // Let's stick to redirect for now as it's standard flow.
         router.push(`/blogs/${data.slug}`);
       } else {
         const errorData = await res.json().catch(() => ({}));
@@ -163,7 +210,7 @@ export default function CreateBlogPage() {
           Create a New Blog Post
         </h1>
 
-        <Card className="p-8">
+        <Card className="p-8 mb-12">
           <form onSubmit={handleCreate} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
@@ -220,6 +267,50 @@ export default function CreateBlogPage() {
             </button>
           </form>
         </Card>
+
+        {/* Existing Posts List */}
+        <div className="space-y-6">
+          <h2 className="text-2xl font-bold text-slate-900 text-center">
+            Existing Posts
+          </h2>
+          <div className="space-y-4">
+            {posts.map((post) => (
+              <Card
+                key={post.id}
+                className="p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
+              >
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900">
+                    {post.title}
+                  </h3>
+                  <p className="text-sm text-slate-500">
+                    By {post.author} on {post.date}
+                  </p>
+                </div>
+                <div className="flex gap-4 shrink-0">
+                  <Link
+                    href={`/blogs/${post.slug}`}
+                    className="px-4 py-2 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg font-medium transition-colors"
+                    target="_blank"
+                  >
+                    Visit Page
+                  </Link>
+                  <button
+                    onClick={() => handleDeletePost(post.id)}
+                    className="px-4 py-2 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg font-medium transition-colors"
+                  >
+                    Delete Post
+                  </button>
+                </div>
+              </Card>
+            ))}
+            {posts.length === 0 && (
+              <p className="text-center text-slate-500 py-8">
+                No posts yet. Create your first one above!
+              </p>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
