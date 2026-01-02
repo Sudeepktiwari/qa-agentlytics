@@ -65,7 +65,7 @@ export default async function BlogPost({ params }: Props) {
   return (
     <div className="min-h-screen bg-white">
       <GlobalHeader />
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20">
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20">
         <Link
           href="/blogs"
           className="inline-flex items-center text-sm font-medium text-slate-500 hover:text-blue-600 mb-8 transition-colors"
@@ -86,12 +86,12 @@ export default async function BlogPost({ params }: Props) {
           Back to all posts
         </Link>
 
-        <article className="w-full">
-          <header className="mb-10 text-center max-w-3xl mx-auto">
+        <article className="w-full overflow-hidden">
+          <header className="mb-10 text-center mx-auto">
             <div className="text-sm font-bold tracking-wider text-blue-600 mb-3 uppercase">
               {post.category || "Blog Post"}
             </div>
-            <h1 className="text-3xl md:text-5xl font-extrabold text-slate-900 mb-6 leading-tight">
+            <h1 className="text-3xl md:text-5xl font-extrabold text-slate-900 mb-6 leading-tight break-words">
               {post.title}
             </h1>
             <div className="flex flex-wrap items-center justify-center gap-4 text-slate-500 text-sm md:text-base">
@@ -112,7 +112,7 @@ export default async function BlogPost({ params }: Props) {
             </div>
           </header>
 
-          <div className="prose prose-lg prose-slate mx-auto max-w-none prose-img:rounded-xl prose-img:shadow-lg prose-headings:scroll-mt-20 prose-a:text-blue-600 hover:prose-a:text-blue-700">
+          <div className="prose prose-lg prose-slate mx-auto max-w-none break-words prose-img:rounded-xl prose-img:shadow-lg prose-headings:scroll-mt-20 prose-a:text-blue-600 hover:prose-a:text-blue-700">
             {parse(post.content, {
               replace: (domNode) => {
                 if (domNode instanceof Element && domNode.name === "img") {
