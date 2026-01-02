@@ -1,6 +1,19 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import {
+  CheckCircle2,
+  Lightbulb,
+  Settings,
+  ChevronDown,
+  ChevronRight,
+  AlertCircle,
+  Check,
+  Terminal,
+  Play,
+  Users,
+  Zap,
+} from "lucide-react";
 import { OnboardingSettings } from "@/lib/adminSettings";
 import {
   parseCurlRegistrationSpec,
@@ -530,2035 +543,307 @@ const OnboardingSettingsSection: React.FC = () => {
     }
   };
 
+  const steps = [
+    { name: "Registration", completed: registrationComplete, key: "reg" },
+    { name: "Authentication", completed: authenticationComplete, key: "auth" },
+    { name: "Initial Setup", completed: initialSetupComplete, key: "init" },
+  ];
+  const progress = Math.round(
+    (steps.filter((s) => s.completed).length / 3) * 100
+  );
+
+  // Mock Analytics Data for Storytelling (Rule 6)
+  const analytics = {
+    kpis: [
+      {
+        label: "Total Developers",
+        value: "1,248",
+        change: "+12.5%",
+        trend: "up",
+        icon: <Users size={16} />,
+      },
+      {
+        label: "Completion Rate",
+        value: "68.2%",
+        change: "+4.1%",
+        trend: "up",
+        icon: <CheckCircle2 size={16} />,
+      },
+      {
+        label: "Avg. Time to First Call",
+        value: "4m 12s",
+        change: "-32s",
+        trend: "down",
+        icon: <Zap size={16} />,
+      },
+    ],
+    funnel: [
+      {
+        step: "Doc Visitors",
+        count: 3800,
+        height: "100%",
+        color: "bg-slate-200",
+      },
+      { step: "Signups", count: 1248, height: "45%", color: "bg-blue-200" },
+      { step: "Auth Setup", count: 980, height: "35%", color: "bg-indigo-300" },
+      {
+        step: "First API Call",
+        count: 850,
+        height: "30%",
+        color: "bg-emerald-400",
+      },
+    ],
+  };
+
   return (
-    <div
-      style={{
-        background: "rgba(255, 255, 255, 0.95)",
-        backdropFilter: "blur(10px)",
-        borderRadius: "20px",
-        padding: "24px",
-        boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
-        border: "1px solid rgba(255, 255, 255, 0.2)",
-        marginBottom: "24px",
-      }}
-    >
-      <h3
-        style={{
-          margin: "0 0 16px 0",
-          fontSize: "20px",
-          fontWeight: "700",
-          color: "#2d3748",
-          display: "flex",
-          alignItems: "center",
-          gap: "8px",
-        }}
-      >
-        🧭 Onboarding Settings
-      </h3>
-
-      {loading ? (
-        <div style={{ color: "#718096" }}>Loading onboarding settings…</div>
-      ) : (
-        <div style={{ display: "grid", gap: 16 }}>
-          {error && (
+    <div className="space-y-8">
+      {/* Analytics Storytelling Section (Rule 6) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* KPIs */}
+        <div className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {analytics.kpis.map((kpi, idx) => (
             <div
-              style={{
-                padding: "12px 16px",
-                borderRadius: "8px",
-                background: "linear-gradient(135deg, #fed7d7, #feb2b2)",
-                border: "1px solid #fc8181",
-                color: "#742a2a",
-                fontSize: "14px",
-                marginBottom: "8px",
-              }}
+              key={idx}
+              className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-start justify-between"
             >
-              {error}
-            </div>
-          )}
-          {success && (
-            <div
-              style={{
-                padding: "12px 16px",
-                borderRadius: "8px",
-                background: "linear-gradient(135deg, #c6f6d5, #9ae6b4)",
-                border: "1px solid #68d391",
-                color: "#22543d",
-                fontSize: "14px",
-                marginBottom: "8px",
-              }}
-            >
-              {success}
-            </div>
-          )}
-
-          {/* Registration */}
-          <div
-            role="button"
-            tabIndex={0}
-            aria-expanded={registrationOpen}
-            onClick={() => setRegistrationOpen(!registrationOpen)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                setRegistrationOpen(!registrationOpen);
-              }
-            }}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginTop: 8,
-              padding: "12px 14px",
-              border: "1px solid #e2e8f0",
-              borderRadius: 12,
-              background: "#f7fafc",
-              cursor: "pointer",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontWeight: 600, color: "#2d3748" }}>
-                {registrationOpen ? "▼" : "▶"} Registration
-              </span>
-              {registrationComplete && (
-                <span
-                  aria-label="complete"
-                  title="Docs indexed and cURL generated"
-                  style={{ color: "#38a169" }}
-                >
-                  ✅
-                </span>
-              )}
-            </div>
-          </div>
-          <div style={{ display: registrationOpen ? "block" : "none" }}>
-            {settings.registrationParsed && (
-              <div
-                style={{
-                  marginBottom: 12,
-                  padding: 12,
-                  border: "1px solid #e2e8f0",
-                  borderRadius: 8,
-                }}
-              >
+              <div>
+                <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">
+                  {kpi.label}
+                </p>
+                <h3 className="text-2xl font-bold text-slate-900">
+                  {kpi.value}
+                </h3>
                 <div
-                  style={{ fontWeight: 600, color: "#2d3748", marginBottom: 8 }}
+                  className={`flex items-center gap-1 text-xs font-bold mt-2 ${
+                    (kpi.trend === "up" &&
+                      kpi.label !== "Avg. Time to First Call") ||
+                    (kpi.trend === "down" &&
+                      kpi.label === "Avg. Time to First Call")
+                      ? "text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md inline-flex"
+                      : "text-red-600 bg-red-50 px-2 py-1 rounded-md inline-flex"
+                  }`}
                 >
-                  Parsed Summary
-                </div>
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: 8,
-                  }}
-                >
-                  <div>Method: {settings.registrationParsed.method}</div>
-                  <div>
-                    Content-Type: {settings.registrationParsed.contentType}
-                  </div>
-                  <div style={{ gridColumn: "1 / -1" }}>
-                    URL: {settings.registrationParsed.url || ""}
-                  </div>
-                  <div style={{ gridColumn: "1 / -1" }}>
-                    Headers:
-                    <div
-                      style={{
-                        marginTop: 6,
-                        display: "flex",
-                        flexWrap: "wrap",
-                        gap: 6,
-                      }}
-                    >
-                      {(
-                        Object.entries(
-                          settings.registrationParsed.headersRedacted || {}
-                        ) as [string, string][]
-                      ).map(([k, v]) => (
-                        <span
-                          key={k}
-                          style={{
-                            background: "#edf2f7",
-                            padding: "4px 8px",
-                            borderRadius: 6,
-                            fontSize: 12,
-                          }}
-                        >
-                          {k}: {v}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  <div style={{ gridColumn: "1 / -1" }}>
-                    Body Fields:
-                    <div
-                      style={{
-                        marginTop: 6,
-                        display: "flex",
-                        flexWrap: "wrap",
-                        gap: 6,
-                      }}
-                    >
-                      {(settings.registrationParsed.bodyKeys || []).map((k) => (
-                        <span
-                          key={k}
-                          style={{
-                            background: "#eef2ff",
-                            padding: "4px 8px",
-                            borderRadius: 6,
-                            fontSize: 12,
-                          }}
-                        >
-                          {k}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
+                  {kpi.change} vs last month
                 </div>
               </div>
-            )}
+              <div className="p-2 bg-slate-50 rounded-lg text-slate-400">
+                {kpi.icon}
+              </div>
+            </div>
+          ))}
+        </div>
 
-            <div style={{ marginTop: 4 }}>
+        {/* Funnel & Insights */}
+        <div className="lg:col-span-2 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+          <div className="flex items-center justify-between mb-6">
+            <h4 className="text-slate-900 font-bold text-lg">
+              Onboarding Funnel
+            </h4>
+            <select className="text-sm border-slate-200 rounded-lg text-slate-500 focus:ring-blue-500">
+              <option>Last 30 Days</option>
+              <option>Last Quarter</option>
+            </select>
+          </div>
+
+          <div className="flex items-end justify-between h-48 px-4 gap-4">
+            {analytics.funnel.map((step, idx) => (
               <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
+                key={idx}
+                className="flex flex-col items-center gap-2 flex-1 group"
               >
-                <label
-                  style={{
-                    display: "block",
-                    color: "#4a5568",
-                    fontSize: 13,
-                    marginBottom: 6,
-                  }}
+                <div className="text-xs font-bold text-slate-900 mb-1 opacity-0 group-hover:opacity-100 transition-opacity transform translate-y-2 group-hover:translate-y-0">
+                  {step.count}
+                </div>
+                <div
+                  className={`w-full rounded-t-lg transition-all duration-500 hover:opacity-80 ${step.color}`}
+                  style={{ height: step.height }}
+                />
+                <div className="text-xs font-medium text-slate-500 text-center">
+                  {step.step}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Configuration Health (Moved here) */}
+        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col relative overflow-hidden">
+          <h4 className="text-slate-900 font-bold text-lg mb-2">
+            Setup Health
+          </h4>
+          <p className="text-slate-500 text-sm mb-6">
+            Your onboarding configuration status.
+          </p>
+
+          <div className="relative flex-1 flex flex-col justify-center items-center">
+            <div className="relative w-32 h-32 flex items-center justify-center">
+              <svg className="w-full h-full transform -rotate-90">
+                <circle
+                  cx="64"
+                  cy="64"
+                  r="56"
+                  stroke="#e2e8f0"
+                  strokeWidth="8"
+                  fill="transparent"
+                />
+                <circle
+                  cx="64"
+                  cy="64"
+                  r="56"
+                  stroke="#2563eb"
+                  strokeWidth="8"
+                  fill="transparent"
+                  strokeDasharray={351.86}
+                  strokeDashoffset={351.86 * (1 - progress / 100)}
+                  className="transition-all duration-1000 ease-out"
+                />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-3xl font-bold text-slate-900">
+                  {progress}%
+                </span>
+              </div>
+            </div>
+            <div className="mt-6 w-full space-y-3">
+              {steps.map((step) => (
+                <div
+                  key={step.key}
+                  className="flex items-center justify-between text-sm"
                 >
-                  Registration Body Fields
-                </label>
-                <button
-                  onClick={async () => {
-                    try {
-                      console.groupCollapsed(
-                        "[Onboarding] Regenerate registration spec"
-                      );
-                      console.log({
-                        docsUrl: docUrl,
-                        curlCommand: settings.curlCommand || "",
-                      });
-                      console.groupEnd();
-                    } catch {}
-                    try {
-                      const res = await fetch(
-                        `/api/admin/onboarding?derive=registration&debug=true&docsUrl=${encodeURIComponent(
-                          docUrl || ""
-                        )}&curl=${encodeURIComponent(
-                          settings.curlCommand || ""
-                        )}`,
-                        { credentials: "include" }
-                      );
-                      const data = await res.json();
-                      if (res.ok && data.success) {
-                        const spec = data.spec || {
-                          headers: [],
-                          body: [],
-                          response: [],
-                        };
-                        const parsed = {
-                          ...(settings.registrationParsed || {
-                            method: "POST",
-                          }),
-                          bodyKeys: (spec.body || []).map((f: any) => f.key),
-                        } as any;
-                        const regBodyKeys = (spec.body || []).map(
-                          (f: any) => f.key
-                        );
-                        const regRespKeys = (spec.response || []).filter(
-                          (k: string) => !regBodyKeys.includes(k)
-                        );
-                        setSettings({
-                          ...(settings as any),
-                          registrationFields: spec.body,
-                          registrationHeaders: spec.headers,
-                          registrationHeaderFields: (spec.headers || []).map(
-                            (h: string) => ({
-                              key: h,
-                              label: h,
-                              required: true,
-                              type: "text",
-                            })
-                          ),
-                          registrationResponseFields: regRespKeys,
-                          registrationResponseFieldDefs: regRespKeys.map(
-                            (k: string) => ({
-                              key: k,
-                              label: k,
-                              required: false,
-                              type: "text",
-                            })
-                          ),
-                          registrationParsed: parsed,
-                        } as any);
-                        try {
-                          console.groupCollapsed(
-                            "[Onboarding] Derived registration spec (ui)"
-                          );
-                          console.log(spec);
-                          if (Array.isArray((data as any).debug)) {
-                            for (const entry of (data as any).debug)
-                              console.log(entry);
-                          }
-                          console.groupEnd();
-                        } catch {}
-                      } else {
-                        alert(
-                          data.error || "Failed to derive registration spec"
-                        );
-                      }
-                    } catch (e: any) {
-                      alert(e?.message || "Failed to derive registration spec");
+                  <span
+                    className={
+                      step.completed
+                        ? "text-slate-900 font-medium"
+                        : "text-slate-500"
                     }
-                  }}
-                  style={{
-                    padding: "6px 10px",
-                    background: "#2d3748",
-                    color: "white",
-                    border: "none",
-                    borderRadius: 8,
-                    fontSize: 12,
-                  }}
-                >
-                  Regenerate from docs
-                </button>
-              </div>
-              <div style={{ display: "grid", gap: 8 }}>
-                {((settings as any).registrationFields || []).map(
-                  (f: any, idx: number) => (
-                    <div
-                      key={idx}
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns:
-                          "minmax(0,1.2fr) minmax(0,1.2fr) minmax(0,1fr) 110px 90px 80px",
-                        gap: 8,
-                        alignItems: "center",
-                      }}
-                    >
-                      <input
-                        value={f.key}
-                        onChange={(e) => {
-                          const arr = [
-                            ...((settings as any).registrationFields || []),
-                          ];
-                          arr[idx] = { ...arr[idx], key: e.target.value };
-                          setSettings({
-                            ...settings,
-                            registrationFields: arr,
-                          } as any);
-                        }}
-                        style={{
-                          padding: 8,
-                          border: "1px solid #d1d5db",
-                          borderRadius: 8,
-                          fontSize: 13,
-                          minWidth: 0,
-                        }}
-                        placeholder="key"
-                      />
-                      <input
-                        value={f.label}
-                        onChange={(e) => {
-                          const arr = [
-                            ...((settings as any).registrationFields || []),
-                          ];
-                          arr[idx] = { ...arr[idx], label: e.target.value };
-                          setSettings({
-                            ...settings,
-                            registrationFields: arr,
-                          } as any);
-                        }}
-                        style={{
-                          padding: 8,
-                          border: "1px solid #d1d5db",
-                          borderRadius: 8,
-                          fontSize: 13,
-                          minWidth: 0,
-                        }}
-                        placeholder="label"
-                      />
-                      <input
-                        value={(f as any).defaultValue || ""}
-                        onChange={(e) => {
-                          const arr = [
-                            ...((settings as any).registrationFields || []),
-                          ];
-                          arr[idx] = {
-                            ...arr[idx],
-                            defaultValue: e.target.value,
-                          } as any;
-                          setSettings({
-                            ...settings,
-                            registrationFields: arr,
-                          } as any);
-                        }}
-                        style={{
-                          padding: 8,
-                          border: "1px solid #d1d5db",
-                          borderRadius: 8,
-                          fontSize: 13,
-                          minWidth: 0,
-                        }}
-                        placeholder="default value"
-                      />
-                      <select
-                        value={f.type}
-                        onChange={(e) => {
-                          const arr = [
-                            ...((settings as any).registrationFields || []),
-                          ];
-                          arr[idx] = { ...arr[idx], type: e.target.value };
-                          setSettings({
-                            ...settings,
-                            registrationFields: arr,
-                          } as any);
-                        }}
-                        style={{
-                          padding: 8,
-                          border: "1px solid #d1d5db",
-                          borderRadius: 8,
-                          fontSize: 13,
-                          minWidth: 0,
-                        }}
-                      >
-                        <option value="text">text</option>
-                        <option value="email">email</option>
-                        <option value="phone">phone</option>
-                        <option value="select">select</option>
-                        <option value="checkbox">checkbox</option>
-                      </select>
-                      <label
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 6,
-                          color: "#4a5568",
-                          fontSize: 13,
-                        }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={!!f.required}
-                          onChange={(e) => {
-                            const arr = [
-                              ...((settings as any).registrationFields || []),
-                            ];
-                            arr[idx] = {
-                              ...arr[idx],
-                              required: e.target.checked,
-                            };
-                            setSettings({
-                              ...settings,
-                              registrationFields: arr,
-                            } as any);
-                          }}
-                        />{" "}
-                        required
-                      </label>
-                      <button
-                        onClick={() => {
-                          const arr = [
-                            ...((settings as any).registrationFields || []),
-                          ];
-                          arr.splice(idx, 1);
-                          setSettings({
-                            ...settings,
-                            registrationFields: arr,
-                          } as any);
-                        }}
-                        style={{
-                          padding: "6px 8px",
-                          background: "#ef4444",
-                          color: "white",
-                          border: "none",
-                          borderRadius: 8,
-                          fontSize: 12,
-                          justifySelf: "start",
-                        }}
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  )
-                )}
-                <div>
-                  <button
-                    onClick={() => {
-                      const arr = [
-                        ...((settings as any).registrationFields || []),
-                      ];
-                      arr.push({
-                        key: "",
-                        label: "",
-                        required: true,
-                        type: "text",
-                      });
-                      setSettings({
-                        ...settings,
-                        registrationFields: arr,
-                      } as any);
-                    }}
-                    style={{
-                      padding: "8px 12px",
-                      background: "#2d3748",
-                      color: "white",
-                      border: "none",
-                      borderRadius: 8,
-                      fontSize: 13,
-                    }}
                   >
-                    Add field
-                  </button>
-                </div>
-              </div>
-              <div style={{ marginTop: 10 }}>
-                <div
-                  style={{ color: "#4a5568", fontSize: 13, marginBottom: 6 }}
-                >
-                  Registration Headers
-                </div>
-                <div style={{ display: "grid", gap: 8 }}>
-                  {((settings as any).registrationHeaderFields || []).map(
-                    (f: any, i: number) => (
-                      <div
-                        key={(f.key || "") + i}
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns:
-                            "minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) 100px 90px 80px",
-                          gap: 8,
-                          alignItems: "center",
-                        }}
-                      >
-                        <input
-                          value={f.key}
-                          onChange={(e) => {
-                            const arr = [
-                              ...((settings as any).registrationHeaderFields ||
-                                []),
-                            ];
-                            arr[i] = { ...arr[i], key: e.target.value };
-                            const keys = arr.map((x: any) => x.key);
-                            setSettings({
-                              ...settings,
-                              registrationHeaderFields: arr,
-                              registrationHeaders: keys,
-                            } as any);
-                          }}
-                          style={{
-                            padding: 8,
-                            border: "1px solid #d1d5db",
-                            borderRadius: 8,
-                            fontSize: 13,
-                            minWidth: 0,
-                          }}
-                          placeholder="header key (e.g., authorization)"
-                        />
-                        <input
-                          value={f.label || ""}
-                          onChange={(e) => {
-                            const arr = [
-                              ...((settings as any).registrationHeaderFields ||
-                                []),
-                            ];
-                            arr[i] = { ...arr[i], label: e.target.value };
-                            setSettings({
-                              ...settings,
-                              registrationHeaderFields: arr,
-                            } as any);
-                          }}
-                          style={{
-                            padding: 8,
-                            border: "1px solid #d1d5db",
-                            borderRadius: 8,
-                            fontSize: 13,
-                            minWidth: 0,
-                          }}
-                          placeholder="label"
-                        />
-                        <input
-                          value={(f as any).defaultValue || ""}
-                          onChange={(e) => {
-                            const arr = [
-                              ...((settings as any).registrationHeaderFields ||
-                                []),
-                            ];
-                            arr[i] = {
-                              ...arr[i],
-                              defaultValue: e.target.value,
-                            } as any;
-                            setSettings({
-                              ...settings,
-                              registrationHeaderFields: arr,
-                            } as any);
-                          }}
-                          style={{
-                            padding: 8,
-                            border: "1px solid #d1d5db",
-                            borderRadius: 8,
-                            fontSize: 13,
-                            minWidth: 0,
-                          }}
-                          placeholder="default value"
-                        />
-                        <select
-                          value={f.type || "text"}
-                          onChange={(e) => {
-                            const arr = [
-                              ...((settings as any).registrationHeaderFields ||
-                                []),
-                            ];
-                            arr[i] = { ...arr[i], type: e.target.value };
-                            setSettings({
-                              ...settings,
-                              registrationHeaderFields: arr,
-                            } as any);
-                          }}
-                          style={{
-                            padding: 8,
-                            border: "1px solid #d1d5db",
-                            borderRadius: 8,
-                            fontSize: 13,
-                            minWidth: 0,
-                          }}
-                        >
-                          <option value="text">text</option>
-                        </select>
-                        <label
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 6,
-                            color: "#4a5568",
-                            fontSize: 13,
-                          }}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={!!f.required}
-                            onChange={(e) => {
-                              const arr = [
-                                ...((settings as any)
-                                  .registrationHeaderFields || []),
-                              ];
-                              arr[i] = {
-                                ...arr[i],
-                                required: e.target.checked,
-                              };
-                              setSettings({
-                                ...settings,
-                                registrationHeaderFields: arr,
-                              } as any);
-                            }}
-                          />{" "}
-                          required
-                        </label>
-                        <button
-                          onClick={() => {
-                            const arr = [
-                              ...((settings as any).registrationHeaderFields ||
-                                []),
-                            ];
-                            arr.splice(i, 1);
-                            const keys = arr.map((x: any) => x.key);
-                            setSettings({
-                              ...settings,
-                              registrationHeaderFields: arr,
-                              registrationHeaders: keys,
-                            } as any);
-                          }}
-                          style={{
-                            padding: "6px 8px",
-                            background: "#ef4444",
-                            color: "white",
-                            border: "none",
-                            borderRadius: 8,
-                            fontSize: 12,
-                            justifySelf: "start",
-                          }}
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    )
+                    {step.name}
+                  </span>
+                  {step.completed ? (
+                    <CheckCircle2 size={16} className="text-emerald-500" />
+                  ) : (
+                    <div className="w-4 h-4 rounded-full border border-slate-300" />
                   )}
-                  <div>
-                    <button
-                      onClick={() => {
-                        const arr = [
-                          ...((settings as any).registrationHeaderFields || []),
-                        ];
-                        arr.push({
-                          key: "",
-                          label: "",
-                          required: true,
-                          type: "text",
-                        });
-                        const keys = arr.map((x: any) => x.key);
-                        setSettings({
-                          ...settings,
-                          registrationHeaderFields: arr,
-                          registrationHeaders: keys,
-                        } as any);
-                      }}
-                      style={{
-                        padding: "8px 12px",
-                        background: "#2d3748",
-                        color: "white",
-                        border: "none",
-                        borderRadius: 8,
-                        fontSize: 13,
-                      }}
-                    >
-                      Add header
-                    </button>
-                  </div>
                 </div>
-              </div>
-              <div style={{ marginTop: 10 }}>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Actionable Insights Banner */}
+      <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4 flex items-start gap-3">
+        <div className="p-2 bg-indigo-100 rounded-lg text-indigo-600">
+          <Lightbulb size={20} />
+        </div>
+        <div>
+          <h4 className="font-bold text-indigo-900 text-sm">
+            Optimization Insight
+          </h4>
+          <p className="text-indigo-700 text-sm mt-1">
+            21% of users drop off during <strong>Auth Setup</strong>. Your
+            documentation might be unclear.
+            <button className="ml-2 underline font-bold hover:text-indigo-900">
+              Review Auth Docs
+            </button>
+          </p>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center shadow-sm text-slate-600">
+            <Settings size={18} />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-slate-900">
+              Configuration & Actions
+            </h3>
+            <p className="text-xs text-slate-500">
+              Manage your registration and authentication specs
+            </p>
+          </div>
+        </div>
+        <div className="p-6">
+          {loading ? (
+            <div style={{ color: "#718096" }}>Loading onboarding settings…</div>
+          ) : (
+            <div style={{ display: "grid", gap: 16 }}>
+              {error && (
                 <div
-                  style={{ color: "#4a5568", fontSize: 13, marginBottom: 6 }}
-                >
-                  Registration Response Fields
-                </div>
-                <div style={{ display: "grid", gap: 8 }}>
-                  {((settings as any).registrationResponseFieldDefs || [])
-                    .filter(
-                      (f: any) =>
-                        !((settings as any).registrationFields || []).some(
-                          (bf: any) => bf.key === f.key
-                        )
-                    )
-                    .map((f: any, i: number) => (
-                      <div
-                        key={(f.key || "") + i}
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns:
-                            "minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) 100px 90px 80px",
-                          gap: 8,
-                          alignItems: "center",
-                        }}
-                      >
-                        <input
-                          value={f.key}
-                          onChange={(e) => {
-                            const arr = [
-                              ...((settings as any)
-                                .registrationResponseFieldDefs || []),
-                            ];
-                            arr[i] = { ...arr[i], key: e.target.value };
-                            const keys = arr.map((x: any) => x.key);
-                            setSettings({
-                              ...settings,
-                              registrationResponseFieldDefs: arr,
-                              registrationResponseFields: keys,
-                            } as any);
-                          }}
-                          style={{
-                            padding: 8,
-                            border: "1px solid #d1d5db",
-                            borderRadius: 8,
-                            fontSize: 13,
-                            minWidth: 0,
-                          }}
-                          placeholder="response key (e.g., user.id)"
-                        />
-                        <input
-                          value={f.label || ""}
-                          onChange={(e) => {
-                            const arr = [
-                              ...((settings as any)
-                                .registrationResponseFieldDefs || []),
-                            ];
-                            arr[i] = { ...arr[i], label: e.target.value };
-                            setSettings({
-                              ...settings,
-                              registrationResponseFieldDefs: arr,
-                            } as any);
-                          }}
-                          style={{
-                            padding: 8,
-                            border: "1px solid #d1d5db",
-                            borderRadius: 8,
-                            fontSize: 13,
-                            minWidth: 0,
-                          }}
-                          placeholder="label"
-                        />
-                        <input
-                          value={(f as any).defaultValue || ""}
-                          onChange={(e) => {
-                            const arr = [
-                              ...((settings as any)
-                                .registrationResponseFieldDefs || []),
-                            ];
-                            arr[i] = {
-                              ...arr[i],
-                              defaultValue: e.target.value,
-                            } as any;
-                            setSettings({
-                              ...settings,
-                              registrationResponseFieldDefs: arr,
-                            } as any);
-                          }}
-                          style={{
-                            padding: 8,
-                            border: "1px solid #d1d5db",
-                            borderRadius: 8,
-                            fontSize: 13,
-                            minWidth: 0,
-                          }}
-                          placeholder="default value"
-                        />
-                        <select
-                          value={f.type || "text"}
-                          onChange={(e) => {
-                            const arr = [
-                              ...((settings as any)
-                                .registrationResponseFieldDefs || []),
-                            ];
-                            arr[i] = { ...arr[i], type: e.target.value };
-                            setSettings({
-                              ...settings,
-                              registrationResponseFieldDefs: arr,
-                            } as any);
-                          }}
-                          style={{
-                            padding: 8,
-                            border: "1px solid #d1d5db",
-                            borderRadius: 8,
-                            fontSize: 13,
-                            minWidth: 0,
-                          }}
-                        >
-                          <option value="text">text</option>
-                        </select>
-                        <label
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 6,
-                            color: "#4a5568",
-                            fontSize: 13,
-                          }}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={!!f.required}
-                            onChange={(e) => {
-                              const arr = [
-                                ...((settings as any)
-                                  .registrationResponseFieldDefs || []),
-                              ];
-                              arr[i] = {
-                                ...arr[i],
-                                required: e.target.checked,
-                              };
-                              setSettings({
-                                ...settings,
-                                registrationResponseFieldDefs: arr,
-                              } as any);
-                            }}
-                          />{" "}
-                          required
-                        </label>
-                        <button
-                          onClick={() => {
-                            const arr = [
-                              ...((settings as any)
-                                .registrationResponseFieldDefs || []),
-                            ];
-                            arr.splice(i, 1);
-                            const keys = arr.map((x: any) => x.key);
-                            setSettings({
-                              ...settings,
-                              registrationResponseFieldDefs: arr,
-                              registrationResponseFields: keys,
-                            } as any);
-                          }}
-                          style={{
-                            padding: "6px 8px",
-                            background: "#ef4444",
-                            color: "white",
-                            border: "none",
-                            borderRadius: 8,
-                            fontSize: 12,
-                            justifySelf: "start",
-                          }}
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    ))}
-                  <div>
-                    <button
-                      onClick={() => {
-                        const arr = [
-                          ...((settings as any).registrationResponseFieldDefs ||
-                            []),
-                        ];
-                        arr.push({
-                          key: "",
-                          label: "",
-                          required: false,
-                          type: "text",
-                        });
-                        const keys = arr.map((x: any) => x.key);
-                        setSettings({
-                          ...settings,
-                          registrationResponseFieldDefs: arr,
-                          registrationResponseFields: keys,
-                        } as any);
-                      }}
-                      style={{
-                        padding: "8px 12px",
-                        background: "#2d3748",
-                        color: "white",
-                        border: "none",
-                        borderRadius: 8,
-                        fontSize: 13,
-                      }}
-                    >
-                      Add response field
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div style={{ marginBottom: 16 }}>
-              <label
-                style={{
-                  display: "block",
-                  color: "#4a5568",
-                  fontSize: 13,
-                  marginBottom: 6,
-                }}
-              >
-                Registration API Document URL (Google Docs or any public page)
-              </label>
-              <input
-                type="url"
-                placeholder="https://docs.google.com/document/d/<DOC_ID>/edit?usp=sharing or https://yourdocs.page"
-                value={docUrl}
-                onChange={(e) => setDocUrl(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: 10,
-                  border: "1px solid #d1d5db",
-                  borderRadius: 8,
-                  fontSize: 14,
-                }}
-              />
-
-              <div style={{ marginTop: 10 }}>
-                <label
                   style={{
-                    display: "block",
-                    color: "#4a5568",
-                    fontSize: 13,
-                    marginBottom: 6,
+                    padding: "12px 16px",
+                    borderRadius: "8px",
+                    background: "linear-gradient(135deg, #fed7d7, #feb2b2)",
+                    border: "1px solid #fc8181",
+                    color: "#742a2a",
+                    fontSize: "14px",
+                    marginBottom: "8px",
                   }}
                 >
-                  Or upload a plain text file (.txt or .md)
-                </label>
-                <input
-                  type="file"
-                  accept=".txt,.md"
-                  onChange={handleFileChange}
-                />
-              </div>
-
-              <div style={{ marginTop: 10, display: "flex", gap: 12 }}>
-                <div style={{ flex: 1 }}>
-                  <label
-                    style={{
-                      display: "block",
-                      color: "#4a5568",
-                      fontSize: 13,
-                      marginBottom: 6,
-                    }}
-                  >
-                    Namespace
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="docs"
-                    value={namespace}
-                    onChange={(e) => setNamespace(e.target.value)}
-                    style={{
-                      width: "100%",
-                      padding: 10,
-                      border: "1px solid #d1d5db",
-                      borderRadius: 8,
-                      fontSize: 14,
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div style={{ marginTop: 10 }}>
-                <label
-                  style={{
-                    display: "block",
-                    color: "#4a5568",
-                    fontSize: 13,
-                    marginBottom: 6,
-                  }}
-                >
-                  Optional prompt
-                </label>
-                <textarea
-                  placeholder={
-                    "POST /users/register with JSON {email, password}; include Content-Type header"
-                  }
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  rows={3}
-                  style={{
-                    width: "100%",
-                    padding: 10,
-                    border: "1px solid #d1d5db",
-                    borderRadius: 8,
-                    fontSize: 14,
-                    fontFamily: "monospace",
-                  }}
-                />
-              </div>
-
-              <div style={{ marginTop: 10 }}>
-                <button
-                  onClick={indexDocs}
-                  disabled={indexing || generating}
-                  style={{
-                    padding: "10px 14px",
-                    background:
-                      indexing || generating
-                        ? "#a0aec0"
-                        : "linear-gradient(135deg, #4299e1, #3182ce)",
-                    color: "white",
-                    border: "none",
-                    borderRadius: 12,
-                    fontSize: 14,
-                    fontWeight: 600,
-                    cursor: indexing || generating ? "not-allowed" : "pointer",
-                  }}
-                >
-                  {indexing
-                    ? "Indexing…"
-                    : generating
-                    ? "Generating cURL…"
-                    : "Index docs"}
-                </button>
-              </div>
-
-              {indexStatus && (
-                <div style={{ color: "#4a5568", fontSize: 12, marginTop: 6 }}>
-                  {indexStatus}
+                  {error}
                 </div>
               )}
-              {generatedCurl && (
-                <div style={{ marginTop: 12 }}>
-                  <label
-                    style={{
-                      display: "block",
-                      color: "#4a5568",
-                      fontSize: 13,
-                      marginBottom: 6,
-                    }}
-                  >
-                    Generated cURL
-                  </label>
-                  <textarea
-                    value={generatedCurl}
-                    readOnly
-                    rows={5}
-                    style={{
-                      width: "100%",
-                      padding: 12,
-                      border: "1px solid #d1d5db",
-                      borderRadius: 8,
-                      fontSize: 14,
-                      fontFamily: "monospace",
-                    }}
-                  />
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: 8,
-                      alignItems: "center",
-                      marginTop: 6,
-                    }}
-                  >
-                    <button
-                      onClick={() =>
-                        navigator.clipboard.writeText(generatedCurl)
-                      }
-                      style={{
-                        padding: "8px 12px",
-                        background: "#2d3748",
-                        color: "white",
-                        border: "none",
-                        borderRadius: 8,
-                        fontSize: 13,
-                      }}
-                    >
-                      Copy cURL
-                    </button>
-                    <span style={{ color: "#718096", fontSize: 12 }}>
-                      Context hits: {hits}
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Canonical registration cURL command */}
-            <div>
-              <label
-                style={{
-                  display: "block",
-                  color: "#4a5568",
-                  fontSize: 13,
-                  marginBottom: 6,
-                }}
-              >
-                Canonical registration cURL
-              </label>
-              <textarea
-                placeholder={
-                  'curl -X POST https://api.your-service.com/register \\\n+  -H \'Content-Type: application/json\' \\\n+  -H \'Authorization: Bearer <token>\' \\\n+  -d \'{"email":"user@example.com","firstName":"Jane","lastName":"Doe"}\''
-                }
-                value={settings.curlCommand || ""}
-                onChange={(e) => {
-                  const curl = e.target.value;
-                  let parsed: any = undefined;
-                  try {
-                    const p = parseCurlRegistrationSpec(curl);
-                    const bodyKeys = extractBodyKeysFromCurl(curl);
-                    parsed = {
-                      method: p.method,
-                      url: p.url,
-                      contentType: p.contentType,
-                      headersRedacted: redactHeadersForLog(p.headers),
-                      bodyKeys,
-                    };
-                  } catch {}
-                  const next: any = {
-                    ...(settings as any),
-                    curlCommand: curl,
-                    registrationParsed: parsed,
-                  };
-                  setSettings(next as any);
-                }}
-                rows={6}
-                style={{
-                  width: "100%",
-                  padding: 12,
-                  border: "1px solid #d1d5db",
-                  borderRadius: 8,
-                  fontSize: 14,
-                  fontFamily: "monospace",
-                  whiteSpace: "pre-wrap",
-                }}
-              />
-              <div style={{ color: "#718096", fontSize: 12, marginTop: 6 }}>
-                Paste the exact cURL used to register a user. We will
-                auto-derive method, URL, headers, content type, and required
-                fields from it.
-              </div>
-            </div>
-          </div>
-
-          {/* Onboarding Widget Embed */}
-          <div
-            role="button"
-            tabIndex={0}
-            aria-expanded={embedOpen}
-            onClick={() => setEmbedOpen(!embedOpen)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                setEmbedOpen(!embedOpen);
-              }
-            }}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginTop: 24,
-              padding: "12px 14px",
-              border: "1px solid #e2e8f0",
-              borderRadius: 12,
-              background: "#f7fafc",
-              cursor: "pointer",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontWeight: 600, color: "#2d3748" }}>
-                {embedOpen ? "▼" : "▶"} Onboarding Widget Embed
-              </span>
-            </div>
-            <div style={{ color: "#718096", fontSize: 12 }}>
-              {embedOpen ? "Collapse" : "Expand"}
-            </div>
-          </div>
-          <div style={{ display: embedOpen ? "block" : "none" }}>
-            <div style={{ marginTop: 12 }}>
-              <label
-                style={{
-                  display: "block",
-                  color: "#4a5568",
-                  fontSize: 13,
-                  marginBottom: 6,
-                }}
-              >
-                Embed snippet
-              </label>
-              {(() => {
-                const origin =
-                  typeof window !== "undefined" ? window.location.origin : "";
-                const apiKey = settings.apiKey || "<YOUR_API_KEY>";
-                const snippet = `<script src="${origin}/api/widget" data-api-key="${apiKey}" data-theme="green" data-onboarding-only="true"></script>`;
-                return (
-                  <div>
-                    <textarea
-                      value={snippet}
-                      readOnly
-                      rows={2}
-                      style={{
-                        width: "100%",
-                        padding: 12,
-                        border: "1px solid #d1d5db",
-                        borderRadius: 8,
-                        fontSize: 13,
-                        fontFamily: "monospace",
-                      }}
-                    />
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: 8,
-                        alignItems: "center",
-                        marginTop: 6,
-                      }}
-                    >
-                      <button
-                        onClick={() => navigator.clipboard.writeText(snippet)}
-                        style={{
-                          padding: "8px 12px",
-                          background: "#2d3748",
-                          color: "white",
-                          border: "none",
-                          borderRadius: 8,
-                          fontSize: 13,
-                        }}
-                      >
-                        Copy embed
-                      </button>
-                      <span style={{ color: "#718096", fontSize: 12 }}>
-                        Paste into your site to enable onboarding-only widget.
-                      </span>
-                    </div>
-                  </div>
-                );
-              })()}
-            </div>
-          </div>
-
-          {/* Authentication */}
-          <div
-            role="button"
-            tabIndex={0}
-            aria-expanded={authenticationOpen}
-            onClick={() => setAuthenticationOpen(!authenticationOpen)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                setAuthenticationOpen(!authenticationOpen);
-              }
-            }}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginTop: 24,
-              padding: "12px 14px",
-              border: "1px solid #e2e8f0",
-              borderRadius: 12,
-              background: "#f7fafc",
-              cursor: "pointer",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontWeight: 600, color: "#2d3748" }}>
-                {authenticationOpen ? "▼" : "▶"} Authentication
-              </span>
-              {authenticationComplete && (
-                <span
-                  aria-label="complete"
-                  title="Docs indexed and cURL generated"
-                  style={{ color: "#38a169" }}
-                >
-                  ✅
-                </span>
-              )}
-            </div>
-            <div style={{ color: "#718096", fontSize: 12 }}>
-              {authenticationOpen ? "Collapse" : "Expand"}
-            </div>
-          </div>
-          <div style={{ display: authenticationOpen ? "block" : "none" }}>
-            <div style={{ marginTop: 12, marginBottom: 16 }}>
-              <label
-                style={{
-                  display: "block",
-                  color: "#4a5568",
-                  fontSize: 13,
-                  marginBottom: 6,
-                }}
-              >
-                Authentication API Document URL (Google Docs or any public page)
-              </label>
-              <input
-                type="url"
-                placeholder="https://docs.google.com/document/d/<DOC_ID>/edit?usp=sharing or https://yourdocs.page"
-                value={authDocUrl}
-                onChange={(e) => setAuthDocUrl(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: 10,
-                  border: "1px solid #d1d5db",
-                  borderRadius: 8,
-                  fontSize: 14,
-                }}
-              />
-
-              <div style={{ marginTop: 10 }}>
-                <label
+              {success && (
+                <div
                   style={{
-                    display: "block",
-                    color: "#4a5568",
-                    fontSize: 13,
-                    marginBottom: 6,
+                    padding: "12px 16px",
+                    borderRadius: "8px",
+                    background: "linear-gradient(135deg, #c6f6d5, #9ae6b4)",
+                    border: "1px solid #68d391",
+                    color: "#22543d",
+                    fontSize: "14px",
+                    marginBottom: "8px",
                   }}
                 >
-                  Or upload a plain text file (.txt or .md)
-                </label>
-                <input
-                  type="file"
-                  accept=".txt,.md"
-                  onChange={handleAuthFileChange}
-                />
-              </div>
-
-              <div style={{ marginTop: 10, display: "flex", gap: 12 }}>
-                <div style={{ flex: 1 }}>
-                  <label
-                    style={{
-                      display: "block",
-                      color: "#4a5568",
-                      fontSize: 13,
-                      marginBottom: 6,
-                    }}
-                  >
-                    Namespace
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="auth"
-                    value={authNamespace}
-                    onChange={(e) => setAuthNamespace(e.target.value)}
-                    style={{
-                      width: "100%",
-                      padding: 10,
-                      border: "1px solid #d1d5db",
-                      borderRadius: 8,
-                      fontSize: 14,
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div style={{ marginTop: 10 }}>
-                <label
-                  style={{
-                    display: "block",
-                    color: "#4a5568",
-                    fontSize: 13,
-                    marginBottom: 6,
-                  }}
-                >
-                  Optional prompt
-                </label>
-                <textarea
-                  placeholder={
-                    "POST /auth/login with JSON {email, password}; include Content-Type header"
-                  }
-                  value={authPrompt}
-                  onChange={(e) => setAuthPrompt(e.target.value)}
-                  rows={3}
-                  style={{
-                    width: "100%",
-                    padding: 10,
-                    border: "1px solid #d1d5db",
-                    borderRadius: 8,
-                    fontSize: 14,
-                    fontFamily: "monospace",
-                  }}
-                />
-              </div>
-
-              <div style={{ marginTop: 10 }}>
-                <button
-                  onClick={indexAuthDocs}
-                  disabled={authIndexing || authGenerating}
-                  style={{
-                    padding: "10px 14px",
-                    background:
-                      authIndexing || authGenerating
-                        ? "#a0aec0"
-                        : "linear-gradient(135deg, #ed8936, #dd6b20)",
-                    color: "white",
-                    border: "none",
-                    borderRadius: 12,
-                    fontSize: 14,
-                    fontWeight: 600,
-                    cursor:
-                      authIndexing || authGenerating
-                        ? "not-allowed"
-                        : "pointer",
-                  }}
-                >
-                  {authIndexing
-                    ? "Indexing…"
-                    : authGenerating
-                    ? "Generating cURL…"
-                    : "Index docs"}
-                </button>
-              </div>
-
-              {authIndexStatus && (
-                <div style={{ color: "#4a5568", fontSize: 12, marginTop: 6 }}>
-                  {authIndexStatus}
+                  {success}
                 </div>
               )}
-              {authGeneratedCurl && (
-                <div style={{ marginTop: 12 }}>
-                  <label
-                    style={{
-                      display: "block",
-                      color: "#4a5568",
-                      fontSize: 13,
-                      marginBottom: 6,
-                    }}
-                  >
-                    Generated authentication cURL
-                  </label>
-                  <textarea
-                    value={authGeneratedCurl}
-                    readOnly
-                    rows={5}
-                    style={{
-                      width: "100%",
-                      padding: 12,
-                      border: "1px solid #d1d5db",
-                      borderRadius: 8,
-                      fontSize: 14,
-                      fontFamily: "monospace",
-                    }}
-                  />
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: 8,
-                      alignItems: "center",
-                      marginTop: 6,
-                    }}
-                  >
-                    <button
-                      onClick={() =>
-                        navigator.clipboard.writeText(authGeneratedCurl)
-                      }
-                      style={{
-                        padding: "8px 12px",
-                        background: "#2d3748",
-                        color: "white",
-                        border: "none",
-                        borderRadius: 8,
-                        fontSize: 13,
-                      }}
-                    >
-                      Copy cURL
-                    </button>
-                    <span style={{ color: "#718096", fontSize: 12 }}>
-                      Context hits: {authHits}
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
 
-            {(settings as any).authParsed && (
+              {/* Registration */}
               <div
-                style={{
-                  marginTop: 12,
-                  padding: 12,
-                  border: "1px solid #e2e8f0",
-                  borderRadius: 8,
+                role="button"
+                tabIndex={0}
+                aria-expanded={registrationOpen}
+                onClick={() => setRegistrationOpen(!registrationOpen)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setRegistrationOpen(!registrationOpen);
+                  }
                 }}
-              >
-                <div
-                  style={{ fontWeight: 600, color: "#2d3748", marginBottom: 8 }}
-                >
-                  Parsed Summary
-                </div>
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: 8,
-                  }}
-                >
-                  <div>Method: {(settings as any).authParsed?.method}</div>
-                  <div>
-                    Content-Type: {(settings as any).authParsed?.contentType}
-                  </div>
-                  <div style={{ gridColumn: "1 / -1" }}>
-                    URL: {(settings as any).authParsed?.url || ""}
-                  </div>
-                  <div style={{ gridColumn: "1 / -1" }}>
-                    Headers:
-                    <div
-                      style={{
-                        marginTop: 6,
-                        display: "flex",
-                        flexWrap: "wrap",
-                        gap: 6,
-                      }}
-                    >
-                      {(
-                        Object.entries(
-                          (settings as any).authParsed?.headersRedacted || {}
-                        ) as [string, string][]
-                      ).map(([k, v]) => (
-                        <span
-                          key={k}
-                          style={{
-                            background: "#edf2f7",
-                            padding: "4px 8px",
-                            borderRadius: 6,
-                            fontSize: 12,
-                          }}
-                        >
-                          {k}: {v}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  <div style={{ gridColumn: "1 / -1" }}>
-                    Body Fields:
-                    <div
-                      style={{
-                        marginTop: 6,
-                        display: "flex",
-                        flexWrap: "wrap",
-                        gap: 6,
-                      }}
-                    >
-                      {((settings as any).authParsed?.bodyKeys || []).map(
-                        (k: string) => (
-                          <span
-                            key={k}
-                            style={{
-                              background: "#eef2ff",
-                              padding: "4px 8px",
-                              borderRadius: 6,
-                              fontSize: 12,
-                            }}
-                          >
-                            {k}
-                          </span>
-                        )
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div style={{ marginTop: 12 }}>
-              <div
                 style={{
                   display: "flex",
-                  justifyContent: "space-between",
                   alignItems: "center",
+                  justifyContent: "space-between",
+                  marginTop: 8,
+                  padding: "12px 14px",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: 12,
+                  background: "#f7fafc",
+                  cursor: "pointer",
                 }}
               >
-                <label
-                  style={{
-                    display: "block",
-                    color: "#4a5568",
-                    fontSize: 13,
-                    marginBottom: 6,
-                  }}
-                >
-                  Authentication Body Fields
-                </label>
-                {
-                  <button
-                    onClick={async () => {
-                      try {
-                        console.groupCollapsed(
-                          "[Onboarding] Regenerate auth spec"
-                        );
-                        console.log({
-                          docsUrl: authDocUrl,
-                          curlCommand: (settings as any).authCurlCommand || "",
-                        });
-                        console.groupEnd();
-                      } catch {}
-                      try {
-                        const res = await fetch(
-                          `/api/admin/onboarding?derive=auth&debug=true&docsUrl=${encodeURIComponent(
-                            authDocUrl || ""
-                          )}&curl=${encodeURIComponent(
-                            (settings as any).authCurlCommand || ""
-                          )}`,
-                          { credentials: "include" }
-                        );
-                        const data = await res.json();
-                        if (res.ok && data.success) {
-                          const spec = data.spec || {
-                            headers: [],
-                            body: [],
-                            response: [],
-                          };
-                          const parsed = {
-                            ...(settings.authParsed || { method: "POST" }),
-                            bodyKeys: (spec.body || []).map((f: any) => f.key),
-                          } as any;
-                          const authBodyKeys = (spec.body || []).map(
-                            (f: any) => f.key
-                          );
-                          const authRespKeys = (spec.response || []).filter(
-                            (k: string) => !authBodyKeys.includes(k)
-                          );
-                          setSettings({
-                            ...(settings as any),
-                            authFields: spec.body,
-                            authHeaders: spec.headers,
-                            authHeaderFields: (spec.headers || []).map(
-                              (h: string) => ({
-                                key: h,
-                                label: h,
-                                required: true,
-                                type: "text",
-                              })
-                            ),
-                            authResponseFields: authRespKeys,
-                            authResponseFieldDefs: authRespKeys.map(
-                              (k: string) => ({
-                                key: k,
-                                label: k,
-                                required: false,
-                                type: "text",
-                              })
-                            ),
-                            authParsed: parsed,
-                          } as any);
-                          try {
-                            console.groupCollapsed(
-                              "[Onboarding] Derived auth spec (ui)"
-                            );
-                            console.log(spec);
-                            if (Array.isArray((data as any).debug)) {
-                              for (const entry of (data as any).debug)
-                                console.log(entry);
-                            }
-                            console.groupEnd();
-                          } catch {}
-                        } else {
-                          alert(data.error || "Failed to derive auth spec");
-                        }
-                      } catch (e: any) {
-                        alert(e?.message || "Failed to derive auth spec");
-                      }
-                    }}
-                    style={{
-                      padding: "6px 10px",
-                      background: "#2d3748",
-                      color: "white",
-                      border: "none",
-                      borderRadius: 8,
-                      fontSize: 12,
-                    }}
-                  >
-                    Regenerate from docs
-                  </button>
-                }
-              </div>
-              <div style={{ display: "grid", gap: 8 }}>
-                {((settings as any).authFields || []).map(
-                  (f: any, idx: number) => (
-                    <div
-                      key={idx}
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns:
-                          "minmax(0,1.2fr) minmax(0,1.2fr) minmax(0,1fr) 110px 90px 80px",
-                        gap: 8,
-                        alignItems: "center",
-                      }}
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontWeight: 600, color: "#2d3748" }}>
+                    {registrationOpen ? "▼" : "▶"} Registration
+                  </span>
+                  {registrationComplete && (
+                    <span
+                      aria-label="complete"
+                      title="Docs indexed and cURL generated"
+                      style={{ color: "#38a169" }}
                     >
-                      <input
-                        value={f.key}
-                        onChange={(e) => {
-                          const arr = [...((settings as any).authFields || [])];
-                          arr[idx] = { ...arr[idx], key: e.target.value };
-                          setSettings({ ...settings, authFields: arr } as any);
-                        }}
-                        style={{
-                          padding: 8,
-                          border: "1px solid #d1d5db",
-                          borderRadius: 8,
-                          fontSize: 13,
-                          minWidth: 0,
-                        }}
-                        placeholder="key"
-                      />
-                      <input
-                        value={f.label}
-                        onChange={(e) => {
-                          const arr = [...((settings as any).authFields || [])];
-                          arr[idx] = { ...arr[idx], label: e.target.value };
-                          setSettings({ ...settings, authFields: arr } as any);
-                        }}
-                        style={{
-                          padding: 8,
-                          border: "1px solid #d1d5db",
-                          borderRadius: 8,
-                          fontSize: 13,
-                          minWidth: 0,
-                        }}
-                        placeholder="label"
-                      />
-                      <input
-                        value={(f as any).defaultValue || ""}
-                        onChange={(e) => {
-                          const arr = [...((settings as any).authFields || [])];
-                          arr[idx] = {
-                            ...arr[idx],
-                            defaultValue: e.target.value,
-                          } as any;
-                          setSettings({ ...settings, authFields: arr } as any);
-                        }}
-                        style={{
-                          padding: 8,
-                          border: "1px solid #d1d5db",
-                          borderRadius: 8,
-                          fontSize: 13,
-                          minWidth: 0,
-                        }}
-                        placeholder="default value"
-                      />
-                      <select
-                        value={f.type}
-                        onChange={(e) => {
-                          const arr = [...((settings as any).authFields || [])];
-                          arr[idx] = { ...arr[idx], type: e.target.value };
-                          setSettings({ ...settings, authFields: arr } as any);
-                        }}
-                        style={{
-                          padding: 8,
-                          border: "1px solid #d1d5db",
-                          borderRadius: 8,
-                          fontSize: 13,
-                          minWidth: 0,
-                        }}
-                      >
-                        <option value="text">text</option>
-                        <option value="email">email</option>
-                        <option value="phone">phone</option>
-                        <option value="select">select</option>
-                        <option value="checkbox">checkbox</option>
-                      </select>
-                      <label
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 6,
-                          color: "#4a5568",
-                          fontSize: 13,
-                        }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={!!f.required}
-                          onChange={(e) => {
-                            const arr = [
-                              ...((settings as any).authFields || []),
-                            ];
-                            arr[idx] = {
-                              ...arr[idx],
-                              required: e.target.checked,
-                            };
-                            setSettings({
-                              ...settings,
-                              authFields: arr,
-                            } as any);
-                          }}
-                        />{" "}
-                        required
-                      </label>
-                      <button
-                        onClick={() => {
-                          const arr = [...((settings as any).authFields || [])];
-                          arr.splice(idx, 1);
-                          setSettings({ ...settings, authFields: arr } as any);
-                        }}
-                        style={{
-                          padding: "6px 10px",
-                          background: "#ef4444",
-                          color: "white",
-                          border: "none",
-                          borderRadius: 8,
-                          fontSize: 12,
-                          justifySelf: "start",
-                        }}
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  )
-                )}
-                <div>
-                  <button
-                    onClick={() => {
-                      const arr = [...((settings as any).authFields || [])];
-                      arr.push({
-                        key: "",
-                        label: "",
-                        required: true,
-                        type: "text",
-                      });
-                      setSettings({ ...settings, authFields: arr } as any);
-                    }}
-                    style={{
-                      padding: "8px 12px",
-                      background: "#2d3748",
-                      color: "white",
-                      border: "none",
-                      borderRadius: 8,
-                      fontSize: 13,
-                    }}
-                  >
-                    Add field
-                  </button>
+                      ✅
+                    </span>
+                  )}
                 </div>
-                <div style={{ marginTop: 10 }}>
-                  <div
-                    style={{ color: "#4a5568", fontSize: 13, marginBottom: 6 }}
-                  >
-                    Auth Headers
-                  </div>
-                  <div style={{ display: "grid", gap: 8 }}>
-                    {((settings as any).authHeaderFields || []).map(
-                      (f: any, i: number) => (
-                        <div
-                          key={(f.key || "") + i}
-                          style={{
-                            display: "grid",
-                            gridTemplateColumns: "1fr 1fr 1fr 120px 140px auto",
-                            gap: 8,
-                            alignItems: "center",
-                          }}
-                        >
-                          <input
-                            value={f.key}
-                            onChange={(e) => {
-                              const arr = [
-                                ...((settings as any).authHeaderFields || []),
-                              ];
-                              arr[i] = { ...arr[i], key: e.target.value };
-                              const keys = arr.map((x: any) => x.key);
-                              setSettings({
-                                ...settings,
-                                authHeaderFields: arr,
-                                authHeaders: keys,
-                              } as any);
-                            }}
-                            style={{
-                              padding: 8,
-                              border: "1px solid #d1d5db",
-                              borderRadius: 8,
-                              fontSize: 13,
-                            }}
-                            placeholder="header key (e.g., authorization)"
-                          />
-                          <input
-                            value={f.label || ""}
-                            onChange={(e) => {
-                              const arr = [
-                                ...((settings as any).authHeaderFields || []),
-                              ];
-                              arr[i] = { ...arr[i], label: e.target.value };
-                              setSettings({
-                                ...settings,
-                                authHeaderFields: arr,
-                              } as any);
-                            }}
-                            style={{
-                              padding: 8,
-                              border: "1px solid #d1d5db",
-                              borderRadius: 8,
-                              fontSize: 13,
-                            }}
-                            placeholder="label"
-                          />
-                          <input
-                            value={(f as any).defaultValue || ""}
-                            onChange={(e) => {
-                              const arr = [
-                                ...((settings as any).authHeaderFields || []),
-                              ];
-                              arr[i] = {
-                                ...arr[i],
-                                defaultValue: e.target.value,
-                              } as any;
-                              setSettings({
-                                ...settings,
-                                authHeaderFields: arr,
-                              } as any);
-                            }}
-                            style={{
-                              padding: 8,
-                              border: "1px solid #d1d5db",
-                              borderRadius: 8,
-                              fontSize: 13,
-                            }}
-                            placeholder="default value"
-                          />
-                          <select
-                            value={f.type || "text"}
-                            onChange={(e) => {
-                              const arr = [
-                                ...((settings as any).authHeaderFields || []),
-                              ];
-                              arr[i] = { ...arr[i], type: e.target.value };
-                              setSettings({
-                                ...settings,
-                                authHeaderFields: arr,
-                              } as any);
-                            }}
-                            style={{
-                              padding: 8,
-                              border: "1px solid #d1d5db",
-                              borderRadius: 8,
-                              fontSize: 13,
-                            }}
-                          >
-                            <option value="text">text</option>
-                          </select>
-
-                          <label
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 6,
-                              color: "#4a5568",
-                              fontSize: 13,
-                            }}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={!!f.required}
-                              onChange={(e) => {
-                                const arr = [
-                                  ...((settings as any).authHeaderFields || []),
-                                ];
-                                arr[i] = {
-                                  ...arr[i],
-                                  required: e.target.checked,
-                                };
-                                setSettings({
-                                  ...settings,
-                                  authHeaderFields: arr,
-                                } as any);
-                              }}
-                            />{" "}
-                            required
-                          </label>
-                          <button
-                            onClick={() => {
-                              const arr = [
-                                ...((settings as any).authHeaderFields || []),
-                              ];
-                              arr.splice(i, 1);
-                              const keys = arr.map((x: any) => x.key);
-                              setSettings({
-                                ...settings,
-                                authHeaderFields: arr,
-                                authHeaders: keys,
-                              } as any);
-                            }}
-                            style={{
-                              padding: "6px 10px",
-                              background: "#ef4444",
-                              color: "white",
-                              border: "none",
-                              borderRadius: 8,
-                              fontSize: 12,
-                            }}
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      )
-                    )}
-                    <div>
-                      <button
-                        onClick={() => {
-                          const arr = [
-                            ...((settings as any).authHeaderFields || []),
-                          ];
-                          arr.push({
-                            key: "",
-                            label: "",
-                            required: true,
-                            type: "text",
-                          });
-                          const keys = arr.map((x: any) => x.key);
-                          setSettings({
-                            ...settings,
-                            authHeaderFields: arr,
-                            authHeaders: keys,
-                          } as any);
-                        }}
-                        style={{
-                          padding: "8px 12px",
-                          background: "#2d3748",
-                          color: "white",
-                          border: "none",
-                          borderRadius: 8,
-                          fontSize: 13,
-                        }}
-                      >
-                        Add header
-                      </button>
-                    </div>
-                  </div>
+              </div>
+              <div style={{ display: registrationOpen ? "block" : "none" }}>
+                {settings.registrationParsed && (
                   <div
                     style={{
-                      marginTop: 10,
+                      marginBottom: 12,
                       padding: 12,
                       border: "1px solid #e2e8f0",
                       borderRadius: 8,
@@ -2571,1171 +856,208 @@ const OnboardingSettingsSection: React.FC = () => {
                         marginBottom: 8,
                       }}
                     >
-                      Map Token / API Key
+                      Parsed Summary
                     </div>
                     <div
                       style={{
                         display: "grid",
                         gridTemplateColumns: "1fr 1fr",
-                        gap: 12,
+                        gap: 8,
                       }}
                     >
+                      <div>Method: {settings.registrationParsed.method}</div>
                       <div>
-                        <label
-                          style={{
-                            display: "block",
-                            color: "#4a5568",
-                            fontSize: 13,
-                            marginBottom: 6,
-                          }}
-                        >
-                          Token Path
-                        </label>
-                        <select
-                          value={
-                            (settings as any).authResponseMappings?.tokenPath ||
-                            ""
-                          }
-                          onChange={(e) => {
-                            const cur =
-                              (settings as any).authResponseMappings || {};
-                            setSettings({
-                              ...(settings as any),
-                              authResponseMappings: {
-                                ...cur,
-                                tokenPath: e.target.value,
-                              },
-                            } as any);
-                          }}
-                          style={{
-                            width: "100%",
-                            padding: 8,
-                            border: "1px solid #d1d5db",
-                            borderRadius: 8,
-                            fontSize: 13,
-                          }}
-                        >
-                          <option value="">Select a response key</option>
-                          {(
-                            ((settings as any).authResponseFieldDefs || []).map(
-                              (f: any) => f.key
-                            ) as string[]
-                          ).map((k) => (
-                            <option key={k} value={k}>
-                              {k}
-                            </option>
-                          ))}
-                          {(
-                            ((settings as any).authResponseFields ||
-                              []) as string[]
-                          )
-                            .filter(Boolean)
-                            .map((k) => (
-                              <option key={k} value={k}>
-                                {k}
-                              </option>
-                            ))}
-                          {(
-                            ["token", "access_token", "authToken"] as string[]
-                          ).map((k) => (
-                            <option key={k} value={k}>
-                              {k}
-                            </option>
-                          ))}
-                        </select>
+                        Content-Type: {settings.registrationParsed.contentType}
                       </div>
-                      <div>
-                        <label
+                      <div style={{ gridColumn: "1 / -1" }}>
+                        URL: {settings.registrationParsed.url || ""}
+                      </div>
+                      <div style={{ gridColumn: "1 / -1" }}>
+                        Headers:
+                        <div
                           style={{
-                            display: "block",
-                            color: "#4a5568",
-                            fontSize: 13,
-                            marginBottom: 6,
+                            marginTop: 6,
+                            display: "flex",
+                            flexWrap: "wrap",
+                            gap: 6,
                           }}
                         >
-                          API Key Path
-                        </label>
-                        <select
-                          value={
-                            (settings as any).authResponseMappings
-                              ?.apiKeyPath || ""
-                          }
-                          onChange={(e) => {
-                            const cur =
-                              (settings as any).authResponseMappings || {};
-                            setSettings({
-                              ...(settings as any),
-                              authResponseMappings: {
-                                ...cur,
-                                apiKeyPath: e.target.value,
-                              },
-                            } as any);
-                          }}
-                          style={{
-                            width: "100%",
-                            padding: 8,
-                            border: "1px solid #d1d5db",
-                            borderRadius: 8,
-                            fontSize: 13,
-                          }}
-                        >
-                          <option value="">Select a response key</option>
                           {(
-                            ((settings as any).authResponseFieldDefs || []).map(
-                              (f: any) => f.key
-                            ) as string[]
-                          ).map((k) => (
-                            <option key={k} value={k}>
-                              {k}
-                            </option>
+                            Object.entries(
+                              settings.registrationParsed.headersRedacted || {}
+                            ) as [string, string][]
+                          ).map(([k, v]) => (
+                            <span
+                              key={k}
+                              style={{
+                                background: "#edf2f7",
+                                padding: "4px 8px",
+                                borderRadius: 6,
+                                fontSize: 12,
+                              }}
+                            >
+                              {k}: {v}
+                            </span>
                           ))}
-                          {(
-                            ((settings as any).authResponseFields ||
-                              []) as string[]
-                          )
-                            .filter(Boolean)
-                            .map((k) => (
-                              <option key={k} value={k}>
-                                {k}
-                              </option>
-                            ))}
-                          {(["apiKey", "api_key", "key"] as string[]).map(
+                        </div>
+                      </div>
+                      <div style={{ gridColumn: "1 / -1" }}>
+                        Body Fields:
+                        <div
+                          style={{
+                            marginTop: 6,
+                            display: "flex",
+                            flexWrap: "wrap",
+                            gap: 6,
+                          }}
+                        >
+                          {(settings.registrationParsed.bodyKeys || []).map(
                             (k) => (
-                              <option key={k} value={k}>
+                              <span
+                                key={k}
+                                style={{
+                                  background: "#eef2ff",
+                                  padding: "4px 8px",
+                                  borderRadius: 6,
+                                  fontSize: 12,
+                                }}
+                              >
                                 {k}
-                              </option>
+                              </span>
                             )
                           )}
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                  <div
-                    style={{
-                      marginTop: 10,
-                      display: "grid",
-                      gridTemplateColumns: "1fr 1fr",
-                      gap: 12,
-                    }}
-                  >
-                    <div>
-                      <label
-                        style={{
-                          display: "block",
-                          color: "#4a5568",
-                          fontSize: 13,
-                          marginBottom: 6,
-                        }}
-                      >
-                        Auth Header Key (token)
-                      </label>
-                      <select
-                        value={settings.authHeaderKey || "Authorization"}
-                        onChange={(e) => {
-                          setSettings({
-                            ...(settings as any),
-                            authHeaderKey: e.target.value,
-                          } as any);
-                        }}
-                        style={{
-                          width: "100%",
-                          padding: 8,
-                          border: "1px solid #d1d5db",
-                          borderRadius: 8,
-                          fontSize: 13,
-                        }}
-                      >
-                        {(
-                          [
-                            "Authorization",
-                            ...((settings as any).authHeaders || []),
-                          ] as string[]
-                        )
-                          .filter((v, i, arr) => arr.indexOf(v) === i)
-                          .map((h) => (
-                            <option key={h} value={h}>
-                              {h}
-                            </option>
-                          ))}
-                      </select>
-                      <div
-                        style={{
-                          color: "#718096",
-                          fontSize: 12,
-                          marginTop: 6,
-                        }}
-                      >
-                        Header name used to send the authentication token in the
-                        initial setup request. If set to Authorization, the
-                        value is formatted as Bearer &lt;token&gt;.
-                      </div>
-                    </div>
-                    <div>
-                      <label
-                        style={{
-                          display: "block",
-                          color: "#4a5568",
-                          fontSize: 13,
-                          marginBottom: 6,
-                        }}
-                      >
-                        API Key Header (optional)
-                      </label>
-                      <select
-                        value={(settings as any).apiKeyHeaderKey || "X-API-Key"}
-                        onChange={(e) => {
-                          setSettings({
-                            ...(settings as any),
-                            apiKeyHeaderKey: e.target.value,
-                          } as any);
-                        }}
-                        style={{
-                          width: "100%",
-                          padding: 8,
-                          border: "1px solid #d1d5db",
-                          borderRadius: 8,
-                          fontSize: 13,
-                        }}
-                      >
-                        {(
-                          [
-                            "X-API-Key",
-                            ...((settings as any).authHeaders || []),
-                            ...((settings as any).initialHeaders || []),
-                          ] as string[]
-                        )
-                          .filter((v, i, arr) => arr.indexOf(v) === i)
-                          .map((h) => (
-                            <option key={h} value={h}>
-                              {h}
-                            </option>
-                          ))}
-                      </select>
-                      <div
-                        style={{
-                          color: "#718096",
-                          fontSize: 12,
-                          marginTop: 6,
-                        }}
-                      >
-                        Header name used to send the API key obtained from the
-                        authentication response. Leave as X-API-Key or choose a
-                        custom header if your API expects a different name.
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div style={{ marginTop: 10 }}>
-                  <div
-                    style={{ color: "#4a5568", fontSize: 13, marginBottom: 6 }}
-                  >
-                    Auth Response Fields
-                  </div>
-                  <div style={{ display: "grid", gap: 8 }}>
-                    {((settings as any).authResponseFieldDefs || [])
-                      .filter(
-                        (f: any) =>
-                          !((settings as any).authFields || []).some(
-                            (bf: any) => bf.key === f.key
-                          )
-                      )
-                      .map((f: any, i: number) => (
-                        <div
-                          key={(f.key || "") + i}
-                          style={{
-                            display: "grid",
-                            gridTemplateColumns: "1fr 1fr 1fr 120px 140px auto",
-                            gap: 8,
-                            alignItems: "center",
-                          }}
-                        >
-                          <input
-                            value={f.key}
-                            onChange={(e) => {
-                              const arr = [
-                                ...((settings as any).authResponseFieldDefs ||
-                                  []),
-                              ];
-                              arr[i] = { ...arr[i], key: e.target.value };
-                              const keys = arr.map((x: any) => x.key);
-                              setSettings({
-                                ...settings,
-                                authResponseFieldDefs: arr,
-                                authResponseFields: keys,
-                              } as any);
-                            }}
-                            style={{
-                              padding: 8,
-                              border: "1px solid #d1d5db",
-                              borderRadius: 8,
-                              fontSize: 13,
-                            }}
-                            placeholder="response key (e.g., token)"
-                          />
-                          <input
-                            value={f.label || ""}
-                            onChange={(e) => {
-                              const arr = [
-                                ...((settings as any).authResponseFieldDefs ||
-                                  []),
-                              ];
-                              arr[i] = { ...arr[i], label: e.target.value };
-                              setSettings({
-                                ...settings,
-                                authResponseFieldDefs: arr,
-                              } as any);
-                            }}
-                            style={{
-                              padding: 8,
-                              border: "1px solid #d1d5db",
-                              borderRadius: 8,
-                              fontSize: 13,
-                            }}
-                            placeholder="label"
-                          />
-                          <input
-                            value={(f as any).defaultValue || ""}
-                            onChange={(e) => {
-                              const arr = [
-                                ...((settings as any).authResponseFieldDefs ||
-                                  []),
-                              ];
-                              arr[i] = {
-                                ...arr[i],
-                                defaultValue: e.target.value,
-                              } as any;
-                              setSettings({
-                                ...settings,
-                                authResponseFieldDefs: arr,
-                              } as any);
-                            }}
-                            style={{
-                              padding: 8,
-                              border: "1px solid #d1d5db",
-                              borderRadius: 8,
-                              fontSize: 13,
-                            }}
-                            placeholder="default value"
-                          />
-                          <select
-                            value={f.type || "text"}
-                            onChange={(e) => {
-                              const arr = [
-                                ...((settings as any).authResponseFieldDefs ||
-                                  []),
-                              ];
-                              arr[i] = { ...arr[i], type: e.target.value };
-                              setSettings({
-                                ...settings,
-                                authResponseFieldDefs: arr,
-                              } as any);
-                            }}
-                            style={{
-                              padding: 8,
-                              border: "1px solid #d1d5db",
-                              borderRadius: 8,
-                              fontSize: 13,
-                            }}
-                          >
-                            <option value="text">text</option>
-                          </select>
-                          <label
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 6,
-                              color: "#4a5568",
-                              fontSize: 13,
-                            }}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={!!f.required}
-                              onChange={(e) => {
-                                const arr = [
-                                  ...((settings as any).authResponseFieldDefs ||
-                                    []),
-                                ];
-                                arr[i] = {
-                                  ...arr[i],
-                                  required: e.target.checked,
-                                };
-                                setSettings({
-                                  ...settings,
-                                  authResponseFieldDefs: arr,
-                                } as any);
-                              }}
-                            />{" "}
-                            required
-                          </label>
-                          <button
-                            onClick={() => {
-                              const arr = [
-                                ...((settings as any).authResponseFieldDefs ||
-                                  []),
-                              ];
-                              arr.splice(i, 1);
-                              const keys = arr.map((x: any) => x.key);
-                              setSettings({
-                                ...settings,
-                                authResponseFieldDefs: arr,
-                                authResponseFields: keys,
-                              } as any);
-                            }}
-                            style={{
-                              padding: "6px 10px",
-                              background: "#ef4444",
-                              color: "white",
-                              border: "none",
-                              borderRadius: 8,
-                              fontSize: 12,
-                            }}
-                          >
-                            Remove
-                          </button>
                         </div>
-                      ))}
-                    <div>
-                      <button
-                        onClick={() => {
-                          const arr = [
-                            ...((settings as any).authResponseFieldDefs || []),
-                          ];
-                          arr.push({
-                            key: "",
-                            label: "",
-                            required: false,
-                            type: "text",
-                          });
-                          const keys = arr.map((x: any) => x.key);
-                          setSettings({
-                            ...settings,
-                            authResponseFieldDefs: arr,
-                            authResponseFields: keys,
-                          } as any);
-                        }}
-                        style={{
-                          padding: "8px 12px",
-                          background: "#2d3748",
-                          color: "white",
-                          border: "none",
-                          borderRadius: 8,
-                          fontSize: 13,
-                        }}
-                      >
-                        Add response field
-                      </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
-            </div>
+                )}
 
-            {/* Canonical authentication cURL command */}
-            <div>
-              <label
-                style={{
-                  display: "block",
-                  color: "#4a5568",
-                  fontSize: 13,
-                  marginBottom: 6,
-                }}
-              >
-                Canonical authentication cURL
-              </label>
-              <textarea
-                placeholder={
-                  'curl -X POST https://api.your-service.com/auth/login \\\n++  -H "Content-Type: application/json" \\\n++  -d "{" + "email":"user@example.com","password":"hunter2"}""'
-                }
-                value={(settings as any).authCurlCommand || ""}
-                onChange={(e) => {
-                  const curl = e.target.value;
-                  let parsed: any = undefined;
-                  try {
-                    const p = parseCurlRegistrationSpec(curl);
-                    const bodyKeys = extractBodyKeysFromCurl(curl);
-                    parsed = {
-                      method: p.method,
-                      url: p.url,
-                      contentType: p.contentType,
-                      headersRedacted: redactHeadersForLog(p.headers),
-                      bodyKeys,
-                    };
-                  } catch {}
-                  const next: any = {
-                    ...(settings as any),
-                    authCurlCommand: curl,
-                    authParsed: parsed,
-                  };
-                  setSettings(next as any);
-                }}
-                rows={6}
-                style={{
-                  width: "100%",
-                  padding: 12,
-                  border: "1px solid #d1d5db",
-                  borderRadius: 8,
-                  fontSize: 14,
-                  fontFamily: "monospace",
-                  whiteSpace: "pre-wrap",
-                }}
-              />
-              <div style={{ color: "#718096", fontSize: 12, marginTop: 6 }}>
-                Paste the exact cURL used to authenticate (e.g., login/token
-                exchange). Method, URL, and headers are derived.
-              </div>
-            </div>
-          </div>
-
-          {/* Initial Setup */}
-          <div
-            role="button"
-            tabIndex={0}
-            aria-expanded={initialSetupOpen}
-            onClick={() => setInitialSetupOpen(!initialSetupOpen)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                setInitialSetupOpen(!initialSetupOpen);
-              }
-            }}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginTop: 24,
-              padding: "12px 14px",
-              border: "1px solid #e2e8f0",
-              borderRadius: 12,
-              background: "#f7fafc",
-              cursor: "pointer",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontWeight: 600, color: "#2d3748" }}>
-                {initialSetupOpen ? "▼" : "▶"} Initial Setup
-              </span>
-              {initialSetupComplete && (
-                <span
-                  aria-label="complete"
-                  title="Docs indexed and cURL generated"
-                  style={{ color: "#38a169" }}
-                >
-                  ✅
-                </span>
-              )}
-            </div>
-            <div style={{ color: "#718096", fontSize: 12 }}>
-              {initialSetupOpen ? "Collapse" : "Expand"}
-            </div>
-          </div>
-          <div style={{ display: initialSetupOpen ? "block" : "none" }}>
-            <div style={{ marginTop: 12, marginBottom: 16 }}>
-              <label
-                style={{
-                  display: "block",
-                  color: "#4a5568",
-                  fontSize: 13,
-                  marginBottom: 6,
-                }}
-              >
-                Initial Setup API Document URL (Google Docs or any public page)
-              </label>
-              <input
-                type="url"
-                placeholder="https://docs.google.com/document/d/<DOC_ID>/edit?usp=sharing or https://yourdocs.page"
-                value={initialDocUrl}
-                onChange={(e) => setInitialDocUrl(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: 10,
-                  border: "1px solid #d1d5db",
-                  borderRadius: 8,
-                  fontSize: 14,
-                }}
-              />
-
-              <div style={{ marginTop: 10 }}>
-                <label
-                  style={{
-                    display: "block",
-                    color: "#4a5568",
-                    fontSize: 13,
-                    marginBottom: 6,
-                  }}
-                >
-                  Or upload a plain text file (.txt or .md)
-                </label>
-                <input
-                  type="file"
-                  accept=".txt,.md"
-                  onChange={handleInitialFileChange}
-                />
-              </div>
-
-              <div style={{ marginTop: 10, display: "flex", gap: 12 }}>
-                <div style={{ flex: 1 }}>
-                  <label
-                    style={{
-                      display: "block",
-                      color: "#4a5568",
-                      fontSize: 13,
-                      marginBottom: 6,
-                    }}
-                  >
-                    Namespace
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="initial-setup"
-                    value={initialNamespace}
-                    onChange={(e) => setInitialNamespace(e.target.value)}
-                    style={{
-                      width: "100%",
-                      padding: 10,
-                      border: "1px solid #d1d5db",
-                      borderRadius: 8,
-                      fontSize: 14,
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div style={{ marginTop: 10 }}>
-                <label
-                  style={{
-                    display: "block",
-                    color: "#4a5568",
-                    fontSize: 13,
-                    marginBottom: 6,
-                  }}
-                >
-                  Optional prompt
-                </label>
-                <textarea
-                  placeholder={
-                    "POST /account/setup with JSON {companyName, timezone, preferences}; include Content-Type header"
-                  }
-                  value={initialPrompt}
-                  onChange={(e) => setInitialPrompt(e.target.value)}
-                  rows={3}
-                  style={{
-                    width: "100%",
-                    padding: 10,
-                    border: "1px solid #d1d5db",
-                    borderRadius: 8,
-                    fontSize: 14,
-                    fontFamily: "monospace",
-                  }}
-                />
-              </div>
-
-              <div style={{ marginTop: 10 }}>
-                <button
-                  onClick={indexInitialDocs}
-                  disabled={initialIndexing || initialGenerating}
-                  style={{
-                    padding: "10px 14px",
-                    background:
-                      initialIndexing || initialGenerating
-                        ? "#a0aec0"
-                        : "linear-gradient(135deg, #805ad5, #6b46c1)",
-                    color: "white",
-                    border: "none",
-                    borderRadius: 12,
-                    fontSize: 14,
-                    fontWeight: 600,
-                    cursor:
-                      initialIndexing || initialGenerating
-                        ? "not-allowed"
-                        : "pointer",
-                  }}
-                >
-                  {initialIndexing
-                    ? "Indexing…"
-                    : initialGenerating
-                    ? "Generating cURL…"
-                    : "Index docs"}
-                </button>
-              </div>
-
-              {initialIndexStatus && (
-                <div style={{ color: "#4a5568", fontSize: 12, marginTop: 6 }}>
-                  {initialIndexStatus}
-                </div>
-              )}
-              {initialGeneratedCurl && (
-                <div style={{ marginTop: 12 }}>
-                  <label
-                    style={{
-                      display: "block",
-                      color: "#4a5568",
-                      fontSize: 13,
-                      marginBottom: 6,
-                    }}
-                  >
-                    Generated initial setup cURL
-                  </label>
-                  <textarea
-                    value={initialGeneratedCurl}
-                    readOnly
-                    rows={5}
-                    style={{
-                      width: "100%",
-                      padding: 12,
-                      border: "1px solid #d1d5db",
-                      borderRadius: 8,
-                      fontSize: 14,
-                      fontFamily: "monospace",
-                    }}
-                  />
+                <div style={{ marginTop: 4 }}>
                   <div
                     style={{
                       display: "flex",
-                      gap: 8,
+                      justifyContent: "space-between",
                       alignItems: "center",
-                      marginTop: 6,
                     }}
                   >
-                    <button
-                      onClick={() =>
-                        navigator.clipboard.writeText(initialGeneratedCurl)
-                      }
+                    <label
                       style={{
-                        padding: "8px 12px",
-                        background: "#2d3748",
-                        color: "white",
-                        border: "none",
-                        borderRadius: 8,
+                        display: "block",
+                        color: "#4a5568",
                         fontSize: 13,
+                        marginBottom: 6,
                       }}
                     >
-                      Copy cURL
-                    </button>
-                    <span style={{ color: "#718096", fontSize: 12 }}>
-                      Context hits: {initialHits}
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {settings.initialParsed && (
-              <div
-                style={{
-                  marginTop: 12,
-                  padding: 12,
-                  border: "1px solid #e2e8f0",
-                  borderRadius: 8,
-                }}
-              >
-                <div
-                  style={{ fontWeight: 600, color: "#2d3748", marginBottom: 8 }}
-                >
-                  Parsed Summary
-                </div>
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: 8,
-                  }}
-                >
-                  <div>Method: {settings.initialParsed.method}</div>
-                  <div>Content-Type: {settings.initialParsed.contentType}</div>
-                  <div style={{ gridColumn: "1 / -1" }}>
-                    URL: {settings.initialParsed.url || ""}
-                  </div>
-                  <div style={{ gridColumn: "1 / -1" }}>
-                    Headers:
-                    <div
-                      style={{
-                        marginTop: 6,
-                        display: "flex",
-                        flexWrap: "wrap",
-                        gap: 6,
-                      }}
-                    >
-                      {(
-                        Object.entries(
-                          settings.initialParsed.headersRedacted || {}
-                        ) as [string, string][]
-                      ).map(([k, v]) => (
-                        <span
-                          key={k}
-                          style={{
-                            background: "#edf2f7",
-                            padding: "4px 8px",
-                            borderRadius: 6,
-                            fontSize: 12,
-                          }}
-                        >
-                          {k}: {v}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  <div style={{ gridColumn: "1 / -1" }}>
-                    Body Fields:
-                    <div
-                      style={{
-                        marginTop: 6,
-                        display: "flex",
-                        flexWrap: "wrap",
-                        gap: 6,
-                      }}
-                    >
-                      {(settings.initialParsed.bodyKeys || []).map((k) => (
-                        <span
-                          key={k}
-                          style={{
-                            background: "#eef2ff",
-                            padding: "4px 8px",
-                            borderRadius: 6,
-                            fontSize: 12,
-                          }}
-                        >
-                          {k}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div style={{ marginTop: 12 }}>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <label
-                  style={{
-                    display: "block",
-                    color: "#4a5568",
-                    fontSize: 13,
-                    marginBottom: 6,
-                  }}
-                >
-                  Initial Setup Body Fields
-                </label>
-                {
-                  <button
-                    onClick={async () => {
-                      try {
-                        console.groupCollapsed(
-                          "[Onboarding] Regenerate initial setup spec"
-                        );
-                        console.log({
-                          docsUrl: initialDocUrl,
-                          curlCommand: settings.initialSetupCurlCommand || "",
-                        });
-                        console.groupEnd();
-                      } catch {}
-                      try {
-                        const res = await fetch(
-                          `/api/admin/onboarding?derive=initial&debug=true&docsUrl=${encodeURIComponent(
-                            initialDocUrl || ""
-                          )}&curl=${encodeURIComponent(
-                            settings.initialSetupCurlCommand || ""
-                          )}`,
-                          { credentials: "include" }
-                        );
-                        const data = await res.json();
-                        if (res.ok && data.success) {
-                          const spec = data.spec || {
-                            headers: [],
-                            body: [],
-                            response: [],
-                          };
-                          const parsed = {
-                            ...(settings.initialParsed || { method: "POST" }),
-                            bodyKeys: (spec.body || []).map((f: any) => f.key),
-                          } as any;
-                          const initBodyKeys = (spec.body || []).map(
-                            (f: any) => f.key
+                      Registration Body Fields
+                    </label>
+                    <button
+                      onClick={async () => {
+                        try {
+                          console.groupCollapsed(
+                            "[Onboarding] Regenerate registration spec"
                           );
-                          const initRespKeys = (spec.response || []).filter(
-                            (k: string) => !initBodyKeys.includes(k)
+                          console.log({
+                            docsUrl: docUrl,
+                            curlCommand: settings.curlCommand || "",
+                          });
+                          console.groupEnd();
+                        } catch {}
+                        try {
+                          const res = await fetch(
+                            `/api/admin/onboarding?derive=registration&debug=true&docsUrl=${encodeURIComponent(
+                              docUrl || ""
+                            )}&curl=${encodeURIComponent(
+                              settings.curlCommand || ""
+                            )}`,
+                            { credentials: "include" }
                           );
-                          setSettings({
-                            ...(settings as any),
-                            initialFields: spec.body,
-                            initialHeaders: spec.headers,
-                            initialHeaderFields: (spec.headers || []).map(
-                              (h: string) => ({
+                          const data = await res.json();
+                          if (res.ok && data.success) {
+                            const spec = data.spec || {
+                              headers: [],
+                              body: [],
+                              response: [],
+                            };
+                            const parsed = {
+                              ...(settings.registrationParsed || {
+                                method: "POST",
+                              }),
+                              bodyKeys: (spec.body || []).map(
+                                (f: any) => f.key
+                              ),
+                            } as any;
+                            const regBodyKeys = (spec.body || []).map(
+                              (f: any) => f.key
+                            );
+                            const regRespKeys = (spec.response || []).filter(
+                              (k: string) => !regBodyKeys.includes(k)
+                            );
+                            setSettings({
+                              ...(settings as any),
+                              registrationFields: spec.body,
+                              registrationHeaders: spec.headers,
+                              registrationHeaderFields: (
+                                spec.headers || []
+                              ).map((h: string) => ({
                                 key: h,
                                 label: h,
                                 required: true,
                                 type: "text",
-                              })
-                            ),
-                            initialResponseFields: initRespKeys,
-                            initialResponseFieldDefs: initRespKeys.map(
-                              (k: string) => ({
-                                key: k,
-                                label: k,
-                                required: false,
-                                type: "text",
-                              })
-                            ),
-                            initialParsed: parsed,
-                          } as any);
-                          try {
-                            console.groupCollapsed(
-                              "[Onboarding] Derived initial setup spec (ui)"
+                              })),
+                              registrationResponseFields: regRespKeys,
+                              registrationResponseFieldDefs: regRespKeys.map(
+                                (k: string) => ({
+                                  key: k,
+                                  label: k,
+                                  required: false,
+                                  type: "text",
+                                })
+                              ),
+                              registrationParsed: parsed,
+                            } as any);
+                            try {
+                              console.groupCollapsed(
+                                "[Onboarding] Derived registration spec (ui)"
+                              );
+                              console.log(spec);
+                              if (Array.isArray((data as any).debug)) {
+                                for (const entry of (data as any).debug)
+                                  console.log(entry);
+                              }
+                              console.groupEnd();
+                            } catch {}
+                          } else {
+                            alert(
+                              data.error || "Failed to derive registration spec"
                             );
-                            console.log(spec);
-                            if (Array.isArray((data as any).debug)) {
-                              for (const entry of (data as any).debug)
-                                console.log(entry);
-                            }
-                            console.groupEnd();
-                          } catch {}
-                        } else {
-                          alert(data.error || "Failed to derive initial spec");
+                          }
+                        } catch (e: any) {
+                          alert(
+                            e?.message || "Failed to derive registration spec"
+                          );
                         }
-                      } catch (e: any) {
-                        alert(e?.message || "Failed to derive initial spec");
-                      }
-                    }}
-                    style={{
-                      padding: "6px 10px",
-                      background: "#2d3748",
-                      color: "white",
-                      border: "none",
-                      borderRadius: 8,
-                      fontSize: 12,
-                    }}
-                  >
-                    Regenerate from docs
-                  </button>
-                }
-              </div>
-              <div style={{ display: "grid", gap: 8 }}>
-                {((settings as any).initialFields || []).map(
-                  (f: any, idx: number) => (
-                    <div
-                      key={idx}
+                      }}
                       style={{
-                        display: "grid",
-                        gridTemplateColumns:
-                          "minmax(0,1.2fr) minmax(0,1.2fr) minmax(0,1fr) 110px 90px 80px",
-                        gap: 8,
-                        alignItems: "center",
+                        padding: "6px 10px",
+                        background: "#2d3748",
+                        color: "white",
+                        border: "none",
+                        borderRadius: 8,
+                        fontSize: 12,
                       }}
                     >
-                      <input
-                        value={f.key}
-                        onChange={(e) => {
-                          const arr = [
-                            ...((settings as any).initialFields || []),
-                          ];
-                          arr[idx] = { ...arr[idx], key: e.target.value };
-                          setSettings({
-                            ...settings,
-                            initialFields: arr,
-                          } as any);
-                        }}
-                        style={{
-                          padding: 8,
-                          border: "1px solid #d1d5db",
-                          borderRadius: 8,
-                          fontSize: 13,
-                          minWidth: 0,
-                        }}
-                        placeholder="key"
-                      />
-                      <input
-                        value={f.label}
-                        onChange={(e) => {
-                          const arr = [
-                            ...((settings as any).initialFields || []),
-                          ];
-                          arr[idx] = { ...arr[idx], label: e.target.value };
-                          setSettings({
-                            ...settings,
-                            initialFields: arr,
-                          } as any);
-                        }}
-                        style={{
-                          padding: 8,
-                          border: "1px solid #d1d5db",
-                          borderRadius: 8,
-                          fontSize: 13,
-                          minWidth: 0,
-                        }}
-                        placeholder="label"
-                      />
-                      <input
-                        value={(f as any).defaultValue || ""}
-                        onChange={(e) => {
-                          const arr = [
-                            ...((settings as any).initialFields || []),
-                          ];
-                          arr[idx] = {
-                            ...arr[idx],
-                            defaultValue: e.target.value,
-                          } as any;
-                          setSettings({
-                            ...settings,
-                            initialFields: arr,
-                          } as any);
-                        }}
-                        style={{
-                          padding: 8,
-                          border: "1px solid #d1d5db",
-                          borderRadius: 8,
-                          fontSize: 13,
-                          minWidth: 0,
-                        }}
-                        placeholder="default value"
-                      />
-                      <select
-                        value={f.type}
-                        onChange={(e) => {
-                          const arr = [
-                            ...((settings as any).initialFields || []),
-                          ];
-                          arr[idx] = { ...arr[idx], type: e.target.value };
-                          setSettings({
-                            ...settings,
-                            initialFields: arr,
-                          } as any);
-                        }}
-                        style={{
-                          padding: 8,
-                          border: "1px solid #d1d5db",
-                          borderRadius: 8,
-                          fontSize: 13,
-                          minWidth: 0,
-                        }}
-                      >
-                        <option value="text">text</option>
-                        <option value="email">email</option>
-                        <option value="phone">phone</option>
-                        <option value="select">select</option>
-                        <option value="checkbox">checkbox</option>
-                      </select>
-                      <label
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 6,
-                          color: "#4a5568",
-                          fontSize: 13,
-                        }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={!!f.required}
-                          onChange={(e) => {
-                            const arr = [
-                              ...((settings as any).initialFields || []),
-                            ];
-                            arr[idx] = {
-                              ...arr[idx],
-                              required: e.target.checked,
-                            };
-                            setSettings({
-                              ...settings,
-                              initialFields: arr,
-                            } as any);
-                          }}
-                        />{" "}
-                        required
-                      </label>
-
-                      <select
-                        value={(f as any).source || "none"}
-                        onChange={(e) => {
-                          const arr = [
-                            ...((settings as any).initialFields || []),
-                          ];
-                          arr[idx] = { ...arr[idx], source: e.target.value };
-                          setSettings({
-                            ...settings,
-                            initialFields: arr,
-                          } as any);
-                        }}
-                        style={{
-                          padding: 8,
-                          border: "1px solid #d1d5db",
-                          borderRadius: 8,
-                          fontSize: 13,
-                        }}
-                      >
-                        <option value="none">value: user-provided</option>
-                        <option value="token">value: auth token</option>
-                        <option value="apiKey">value: auth api key</option>
-                      </select>
-                      <button
-                        onClick={() => {
-                          const arr = [
-                            ...((settings as any).initialFields || []),
-                          ];
-                          arr.splice(idx, 1);
-                          setSettings({
-                            ...settings,
-                            initialFields: arr,
-                          } as any);
-                        }}
-                        style={{
-                          padding: "6px 10px",
-                          background: "#ef4444",
-                          color: "white",
-                          border: "none",
-                          borderRadius: 8,
-                          fontSize: 12,
-                          justifySelf: "start",
-                        }}
-                      >
-                        Remove
-                      </button>
-                    </div>
-                  )
-                )}
-                <div>
-                  <button
-                    onClick={() => {
-                      const arr = [...((settings as any).initialFields || [])];
-                      arr.push({
-                        key: "",
-                        label: "",
-                        required: true,
-                        type: "text",
-                      });
-                      setSettings({ ...settings, initialFields: arr } as any);
-                    }}
-                    style={{
-                      padding: "8px 12px",
-                      background: "#2d3748",
-                      color: "white",
-                      border: "none",
-                      borderRadius: 8,
-                      fontSize: 13,
-                    }}
-                  >
-                    Add field
-                  </button>
-                </div>
-                <div style={{ marginTop: 10 }}>
-                  <div
-                    style={{ color: "#4a5568", fontSize: 13, marginBottom: 6 }}
-                  >
-                    Initial Setup Headers
+                      Regenerate from docs
+                    </button>
                   </div>
                   <div style={{ display: "grid", gap: 8 }}>
-                    {((settings as any).initialHeaderFields || []).map(
-                      (f: any, i: number) => (
+                    {((settings as any).registrationFields || []).map(
+                      (f: any, idx: number) => (
                         <div
-                          key={(f.key || "") + i}
+                          key={idx}
                           style={{
                             display: "grid",
-                            gridTemplateColumns: "1fr 1fr 1fr 120px 140px auto",
+                            gridTemplateColumns:
+                              "minmax(0,1.2fr) minmax(0,1.2fr) minmax(0,1fr) 110px 90px 80px",
                             gap: 8,
                             alignItems: "center",
                           }}
@@ -3744,15 +1066,12 @@ const OnboardingSettingsSection: React.FC = () => {
                             value={f.key}
                             onChange={(e) => {
                               const arr = [
-                                ...((settings as any).initialHeaderFields ||
-                                  []),
+                                ...((settings as any).registrationFields || []),
                               ];
-                              arr[i] = { ...arr[i], key: e.target.value };
-                              const keys = arr.map((x: any) => x.key);
+                              arr[idx] = { ...arr[idx], key: e.target.value };
                               setSettings({
                                 ...settings,
-                                initialHeaderFields: arr,
-                                initialHeaders: keys,
+                                registrationFields: arr,
                               } as any);
                             }}
                             style={{
@@ -3760,20 +1079,20 @@ const OnboardingSettingsSection: React.FC = () => {
                               border: "1px solid #d1d5db",
                               borderRadius: 8,
                               fontSize: 13,
+                              minWidth: 0,
                             }}
-                            placeholder="header key (e.g., x-apikey)"
+                            placeholder="key"
                           />
                           <input
-                            value={f.label || ""}
+                            value={f.label}
                             onChange={(e) => {
                               const arr = [
-                                ...((settings as any).initialHeaderFields ||
-                                  []),
+                                ...((settings as any).registrationFields || []),
                               ];
-                              arr[i] = { ...arr[i], label: e.target.value };
+                              arr[idx] = { ...arr[idx], label: e.target.value };
                               setSettings({
                                 ...settings,
-                                initialHeaderFields: arr,
+                                registrationFields: arr,
                               } as any);
                             }}
                             style={{
@@ -3781,6 +1100,7 @@ const OnboardingSettingsSection: React.FC = () => {
                               border: "1px solid #d1d5db",
                               borderRadius: 8,
                               fontSize: 13,
+                              minWidth: 0,
                             }}
                             placeholder="label"
                           />
@@ -3788,16 +1108,15 @@ const OnboardingSettingsSection: React.FC = () => {
                             value={(f as any).defaultValue || ""}
                             onChange={(e) => {
                               const arr = [
-                                ...((settings as any).initialHeaderFields ||
-                                  []),
+                                ...((settings as any).registrationFields || []),
                               ];
-                              arr[i] = {
-                                ...arr[i],
+                              arr[idx] = {
+                                ...arr[idx],
                                 defaultValue: e.target.value,
                               } as any;
                               setSettings({
                                 ...settings,
-                                initialHeaderFields: arr,
+                                registrationFields: arr,
                               } as any);
                             }}
                             style={{
@@ -3805,20 +1124,20 @@ const OnboardingSettingsSection: React.FC = () => {
                               border: "1px solid #d1d5db",
                               borderRadius: 8,
                               fontSize: 13,
+                              minWidth: 0,
                             }}
                             placeholder="default value"
                           />
                           <select
-                            value={f.type || "text"}
+                            value={f.type}
                             onChange={(e) => {
                               const arr = [
-                                ...((settings as any).initialHeaderFields ||
-                                  []),
+                                ...((settings as any).registrationFields || []),
                               ];
-                              arr[i] = { ...arr[i], type: e.target.value };
+                              arr[idx] = { ...arr[idx], type: e.target.value };
                               setSettings({
                                 ...settings,
-                                initialHeaderFields: arr,
+                                registrationFields: arr,
                               } as any);
                             }}
                             style={{
@@ -3826,33 +1145,14 @@ const OnboardingSettingsSection: React.FC = () => {
                               border: "1px solid #d1d5db",
                               borderRadius: 8,
                               fontSize: 13,
+                              minWidth: 0,
                             }}
                           >
                             <option value="text">text</option>
-                          </select>
-                          <select
-                            value={(f as any).source || "none"}
-                            onChange={(e) => {
-                              const arr = [
-                                ...((settings as any).initialHeaderFields ||
-                                  []),
-                              ];
-                              arr[i] = { ...arr[i], source: e.target.value };
-                              setSettings({
-                                ...settings,
-                                initialHeaderFields: arr,
-                              } as any);
-                            }}
-                            style={{
-                              padding: 8,
-                              border: "1px solid #d1d5db",
-                              borderRadius: 8,
-                              fontSize: 13,
-                            }}
-                          >
-                            <option value="none">value: custom/default</option>
-                            <option value="token">value: auth token</option>
-                            <option value="apiKey">value: auth api key</option>
+                            <option value="email">email</option>
+                            <option value="phone">phone</option>
+                            <option value="select">select</option>
+                            <option value="checkbox">checkbox</option>
                           </select>
                           <label
                             style={{
@@ -3868,16 +1168,16 @@ const OnboardingSettingsSection: React.FC = () => {
                               checked={!!f.required}
                               onChange={(e) => {
                                 const arr = [
-                                  ...((settings as any).initialHeaderFields ||
+                                  ...((settings as any).registrationFields ||
                                     []),
                                 ];
-                                arr[i] = {
-                                  ...arr[i],
+                                arr[idx] = {
+                                  ...arr[idx],
                                   required: e.target.checked,
                                 };
                                 setSettings({
                                   ...settings,
-                                  initialHeaderFields: arr,
+                                  registrationFields: arr,
                                 } as any);
                               }}
                             />{" "}
@@ -3886,24 +1186,22 @@ const OnboardingSettingsSection: React.FC = () => {
                           <button
                             onClick={() => {
                               const arr = [
-                                ...((settings as any).initialHeaderFields ||
-                                  []),
+                                ...((settings as any).registrationFields || []),
                               ];
-                              arr.splice(i, 1);
-                              const keys = arr.map((x: any) => x.key);
+                              arr.splice(idx, 1);
                               setSettings({
                                 ...settings,
-                                initialHeaderFields: arr,
-                                initialHeaders: keys,
+                                registrationFields: arr,
                               } as any);
                             }}
                             style={{
-                              padding: "6px 10px",
+                              padding: "6px 8px",
                               background: "#ef4444",
                               color: "white",
                               border: "none",
                               borderRadius: 8,
                               fontSize: 12,
+                              justifySelf: "start",
                             }}
                           >
                             Remove
@@ -3915,7 +1213,7 @@ const OnboardingSettingsSection: React.FC = () => {
                       <button
                         onClick={() => {
                           const arr = [
-                            ...((settings as any).initialHeaderFields || []),
+                            ...((settings as any).registrationFields || []),
                           ];
                           arr.push({
                             key: "",
@@ -3923,11 +1221,9 @@ const OnboardingSettingsSection: React.FC = () => {
                             required: true,
                             type: "text",
                           });
-                          const keys = arr.map((x: any) => x.key);
                           setSettings({
                             ...settings,
-                            initialHeaderFields: arr,
-                            initialHeaders: keys,
+                            registrationFields: arr,
                           } as any);
                         }}
                         style={{
@@ -3939,31 +1235,1236 @@ const OnboardingSettingsSection: React.FC = () => {
                           fontSize: 13,
                         }}
                       >
-                        Add header
+                        Add field
                       </button>
                     </div>
                   </div>
+                  <div style={{ marginTop: 10 }}>
+                    <div
+                      style={{
+                        color: "#4a5568",
+                        fontSize: 13,
+                        marginBottom: 6,
+                      }}
+                    >
+                      Registration Headers
+                    </div>
+                    <div style={{ display: "grid", gap: 8 }}>
+                      {((settings as any).registrationHeaderFields || []).map(
+                        (f: any, i: number) => (
+                          <div
+                            key={(f.key || "") + i}
+                            style={{
+                              display: "grid",
+                              gridTemplateColumns:
+                                "minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) 100px 90px 80px",
+                              gap: 8,
+                              alignItems: "center",
+                            }}
+                          >
+                            <input
+                              value={f.key}
+                              onChange={(e) => {
+                                const arr = [
+                                  ...((settings as any)
+                                    .registrationHeaderFields || []),
+                                ];
+                                arr[i] = { ...arr[i], key: e.target.value };
+                                const keys = arr.map((x: any) => x.key);
+                                setSettings({
+                                  ...settings,
+                                  registrationHeaderFields: arr,
+                                  registrationHeaders: keys,
+                                } as any);
+                              }}
+                              style={{
+                                padding: 8,
+                                border: "1px solid #d1d5db",
+                                borderRadius: 8,
+                                fontSize: 13,
+                                minWidth: 0,
+                              }}
+                              placeholder="header key (e.g., authorization)"
+                            />
+                            <input
+                              value={f.label || ""}
+                              onChange={(e) => {
+                                const arr = [
+                                  ...((settings as any)
+                                    .registrationHeaderFields || []),
+                                ];
+                                arr[i] = { ...arr[i], label: e.target.value };
+                                setSettings({
+                                  ...settings,
+                                  registrationHeaderFields: arr,
+                                } as any);
+                              }}
+                              style={{
+                                padding: 8,
+                                border: "1px solid #d1d5db",
+                                borderRadius: 8,
+                                fontSize: 13,
+                                minWidth: 0,
+                              }}
+                              placeholder="label"
+                            />
+                            <input
+                              value={(f as any).defaultValue || ""}
+                              onChange={(e) => {
+                                const arr = [
+                                  ...((settings as any)
+                                    .registrationHeaderFields || []),
+                                ];
+                                arr[i] = {
+                                  ...arr[i],
+                                  defaultValue: e.target.value,
+                                } as any;
+                                setSettings({
+                                  ...settings,
+                                  registrationHeaderFields: arr,
+                                } as any);
+                              }}
+                              style={{
+                                padding: 8,
+                                border: "1px solid #d1d5db",
+                                borderRadius: 8,
+                                fontSize: 13,
+                                minWidth: 0,
+                              }}
+                              placeholder="default value"
+                            />
+                            <select
+                              value={f.type || "text"}
+                              onChange={(e) => {
+                                const arr = [
+                                  ...((settings as any)
+                                    .registrationHeaderFields || []),
+                                ];
+                                arr[i] = { ...arr[i], type: e.target.value };
+                                setSettings({
+                                  ...settings,
+                                  registrationHeaderFields: arr,
+                                } as any);
+                              }}
+                              style={{
+                                padding: 8,
+                                border: "1px solid #d1d5db",
+                                borderRadius: 8,
+                                fontSize: 13,
+                                minWidth: 0,
+                              }}
+                            >
+                              <option value="text">text</option>
+                            </select>
+                            <label
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 6,
+                                color: "#4a5568",
+                                fontSize: 13,
+                              }}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={!!f.required}
+                                onChange={(e) => {
+                                  const arr = [
+                                    ...((settings as any)
+                                      .registrationHeaderFields || []),
+                                  ];
+                                  arr[i] = {
+                                    ...arr[i],
+                                    required: e.target.checked,
+                                  };
+                                  setSettings({
+                                    ...settings,
+                                    registrationHeaderFields: arr,
+                                  } as any);
+                                }}
+                              />{" "}
+                              required
+                            </label>
+                            <button
+                              onClick={() => {
+                                const arr = [
+                                  ...((settings as any)
+                                    .registrationHeaderFields || []),
+                                ];
+                                arr.splice(i, 1);
+                                const keys = arr.map((x: any) => x.key);
+                                setSettings({
+                                  ...settings,
+                                  registrationHeaderFields: arr,
+                                  registrationHeaders: keys,
+                                } as any);
+                              }}
+                              style={{
+                                padding: "6px 8px",
+                                background: "#ef4444",
+                                color: "white",
+                                border: "none",
+                                borderRadius: 8,
+                                fontSize: 12,
+                                justifySelf: "start",
+                              }}
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        )
+                      )}
+                      <div>
+                        <button
+                          onClick={() => {
+                            const arr = [
+                              ...((settings as any).registrationHeaderFields ||
+                                []),
+                            ];
+                            arr.push({
+                              key: "",
+                              label: "",
+                              required: true,
+                              type: "text",
+                            });
+                            const keys = arr.map((x: any) => x.key);
+                            setSettings({
+                              ...settings,
+                              registrationHeaderFields: arr,
+                              registrationHeaders: keys,
+                            } as any);
+                          }}
+                          style={{
+                            padding: "8px 12px",
+                            background: "#2d3748",
+                            color: "white",
+                            border: "none",
+                            borderRadius: 8,
+                            fontSize: 13,
+                          }}
+                        >
+                          Add header
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ marginTop: 10 }}>
+                    <div
+                      style={{
+                        color: "#4a5568",
+                        fontSize: 13,
+                        marginBottom: 6,
+                      }}
+                    >
+                      Registration Response Fields
+                    </div>
+                    <div style={{ display: "grid", gap: 8 }}>
+                      {((settings as any).registrationResponseFieldDefs || [])
+                        .filter(
+                          (f: any) =>
+                            !((settings as any).registrationFields || []).some(
+                              (bf: any) => bf.key === f.key
+                            )
+                        )
+                        .map((f: any, i: number) => (
+                          <div
+                            key={(f.key || "") + i}
+                            style={{
+                              display: "grid",
+                              gridTemplateColumns:
+                                "minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) 100px 90px 80px",
+                              gap: 8,
+                              alignItems: "center",
+                            }}
+                          >
+                            <input
+                              value={f.key}
+                              onChange={(e) => {
+                                const arr = [
+                                  ...((settings as any)
+                                    .registrationResponseFieldDefs || []),
+                                ];
+                                arr[i] = { ...arr[i], key: e.target.value };
+                                const keys = arr.map((x: any) => x.key);
+                                setSettings({
+                                  ...settings,
+                                  registrationResponseFieldDefs: arr,
+                                  registrationResponseFields: keys,
+                                } as any);
+                              }}
+                              style={{
+                                padding: 8,
+                                border: "1px solid #d1d5db",
+                                borderRadius: 8,
+                                fontSize: 13,
+                                minWidth: 0,
+                              }}
+                              placeholder="response key (e.g., user.id)"
+                            />
+                            <input
+                              value={f.label || ""}
+                              onChange={(e) => {
+                                const arr = [
+                                  ...((settings as any)
+                                    .registrationResponseFieldDefs || []),
+                                ];
+                                arr[i] = { ...arr[i], label: e.target.value };
+                                setSettings({
+                                  ...settings,
+                                  registrationResponseFieldDefs: arr,
+                                } as any);
+                              }}
+                              style={{
+                                padding: 8,
+                                border: "1px solid #d1d5db",
+                                borderRadius: 8,
+                                fontSize: 13,
+                                minWidth: 0,
+                              }}
+                              placeholder="label"
+                            />
+                            <input
+                              value={(f as any).defaultValue || ""}
+                              onChange={(e) => {
+                                const arr = [
+                                  ...((settings as any)
+                                    .registrationResponseFieldDefs || []),
+                                ];
+                                arr[i] = {
+                                  ...arr[i],
+                                  defaultValue: e.target.value,
+                                } as any;
+                                setSettings({
+                                  ...settings,
+                                  registrationResponseFieldDefs: arr,
+                                } as any);
+                              }}
+                              style={{
+                                padding: 8,
+                                border: "1px solid #d1d5db",
+                                borderRadius: 8,
+                                fontSize: 13,
+                                minWidth: 0,
+                              }}
+                              placeholder="default value"
+                            />
+                            <select
+                              value={f.type || "text"}
+                              onChange={(e) => {
+                                const arr = [
+                                  ...((settings as any)
+                                    .registrationResponseFieldDefs || []),
+                                ];
+                                arr[i] = { ...arr[i], type: e.target.value };
+                                setSettings({
+                                  ...settings,
+                                  registrationResponseFieldDefs: arr,
+                                } as any);
+                              }}
+                              style={{
+                                padding: 8,
+                                border: "1px solid #d1d5db",
+                                borderRadius: 8,
+                                fontSize: 13,
+                                minWidth: 0,
+                              }}
+                            >
+                              <option value="text">text</option>
+                            </select>
+                            <label
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 6,
+                                color: "#4a5568",
+                                fontSize: 13,
+                              }}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={!!f.required}
+                                onChange={(e) => {
+                                  const arr = [
+                                    ...((settings as any)
+                                      .registrationResponseFieldDefs || []),
+                                  ];
+                                  arr[i] = {
+                                    ...arr[i],
+                                    required: e.target.checked,
+                                  };
+                                  setSettings({
+                                    ...settings,
+                                    registrationResponseFieldDefs: arr,
+                                  } as any);
+                                }}
+                              />{" "}
+                              required
+                            </label>
+                            <button
+                              onClick={() => {
+                                const arr = [
+                                  ...((settings as any)
+                                    .registrationResponseFieldDefs || []),
+                                ];
+                                arr.splice(i, 1);
+                                const keys = arr.map((x: any) => x.key);
+                                setSettings({
+                                  ...settings,
+                                  registrationResponseFieldDefs: arr,
+                                  registrationResponseFields: keys,
+                                } as any);
+                              }}
+                              style={{
+                                padding: "6px 8px",
+                                background: "#ef4444",
+                                color: "white",
+                                border: "none",
+                                borderRadius: 8,
+                                fontSize: 12,
+                                justifySelf: "start",
+                              }}
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        ))}
+                      <div>
+                        <button
+                          onClick={() => {
+                            const arr = [
+                              ...((settings as any)
+                                .registrationResponseFieldDefs || []),
+                            ];
+                            arr.push({
+                              key: "",
+                              label: "",
+                              required: false,
+                              type: "text",
+                            });
+                            const keys = arr.map((x: any) => x.key);
+                            setSettings({
+                              ...settings,
+                              registrationResponseFieldDefs: arr,
+                              registrationResponseFields: keys,
+                            } as any);
+                          }}
+                          style={{
+                            padding: "8px 12px",
+                            background: "#2d3748",
+                            color: "white",
+                            border: "none",
+                            borderRadius: 8,
+                            fontSize: 13,
+                          }}
+                        >
+                          Add response field
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div style={{ marginTop: 10 }}>
-                  <div
-                    style={{ color: "#4a5568", fontSize: 13, marginBottom: 6 }}
+                <div style={{ marginBottom: 16 }}>
+                  <label
+                    style={{
+                      display: "block",
+                      color: "#4a5568",
+                      fontSize: 13,
+                      marginBottom: 6,
+                    }}
                   >
-                    Initial Setup Response Fields
+                    Registration API Document URL (Google Docs or any public
+                    page)
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="https://docs.google.com/document/d/<DOC_ID>/edit?usp=sharing or https://yourdocs.page"
+                    value={docUrl}
+                    onChange={(e) => setDocUrl(e.target.value)}
+                    style={{
+                      width: "100%",
+                      padding: 10,
+                      border: "1px solid #d1d5db",
+                      borderRadius: 8,
+                      fontSize: 14,
+                    }}
+                  />
+
+                  <div style={{ marginTop: 10 }}>
+                    <label
+                      style={{
+                        display: "block",
+                        color: "#4a5568",
+                        fontSize: 13,
+                        marginBottom: 6,
+                      }}
+                    >
+                      Or upload a plain text file (.txt or .md)
+                    </label>
+                    <input
+                      type="file"
+                      accept=".txt,.md"
+                      onChange={handleFileChange}
+                    />
+                  </div>
+
+                  <div style={{ marginTop: 10, display: "flex", gap: 12 }}>
+                    <div style={{ flex: 1 }}>
+                      <label
+                        style={{
+                          display: "block",
+                          color: "#4a5568",
+                          fontSize: 13,
+                          marginBottom: 6,
+                        }}
+                      >
+                        Namespace
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="docs"
+                        value={namespace}
+                        onChange={(e) => setNamespace(e.target.value)}
+                        style={{
+                          width: "100%",
+                          padding: 10,
+                          border: "1px solid #d1d5db",
+                          borderRadius: 8,
+                          fontSize: 14,
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: 10 }}>
+                    <label
+                      style={{
+                        display: "block",
+                        color: "#4a5568",
+                        fontSize: 13,
+                        marginBottom: 6,
+                      }}
+                    >
+                      Optional prompt
+                    </label>
+                    <textarea
+                      placeholder={
+                        "POST /users/register with JSON {email, password}; include Content-Type header"
+                      }
+                      value={prompt}
+                      onChange={(e) => setPrompt(e.target.value)}
+                      rows={3}
+                      style={{
+                        width: "100%",
+                        padding: 10,
+                        border: "1px solid #d1d5db",
+                        borderRadius: 8,
+                        fontSize: 14,
+                        fontFamily: "monospace",
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ marginTop: 10 }}>
+                    <button
+                      onClick={indexDocs}
+                      disabled={indexing || generating}
+                      style={{
+                        padding: "10px 14px",
+                        background:
+                          indexing || generating
+                            ? "#a0aec0"
+                            : "linear-gradient(135deg, #4299e1, #3182ce)",
+                        color: "white",
+                        border: "none",
+                        borderRadius: 12,
+                        fontSize: 14,
+                        fontWeight: 600,
+                        cursor:
+                          indexing || generating ? "not-allowed" : "pointer",
+                      }}
+                    >
+                      {indexing
+                        ? "Indexing…"
+                        : generating
+                        ? "Generating cURL…"
+                        : "Index docs"}
+                    </button>
+                  </div>
+
+                  {indexStatus && (
+                    <div
+                      style={{ color: "#4a5568", fontSize: 12, marginTop: 6 }}
+                    >
+                      {indexStatus}
+                    </div>
+                  )}
+                  {generatedCurl && (
+                    <div style={{ marginTop: 12 }}>
+                      <label
+                        style={{
+                          display: "block",
+                          color: "#4a5568",
+                          fontSize: 13,
+                          marginBottom: 6,
+                        }}
+                      >
+                        Generated cURL
+                      </label>
+                      <textarea
+                        value={generatedCurl}
+                        readOnly
+                        rows={5}
+                        style={{
+                          width: "100%",
+                          padding: 12,
+                          border: "1px solid #d1d5db",
+                          borderRadius: 8,
+                          fontSize: 14,
+                          fontFamily: "monospace",
+                        }}
+                      />
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: 8,
+                          alignItems: "center",
+                          marginTop: 6,
+                        }}
+                      >
+                        <button
+                          onClick={() =>
+                            navigator.clipboard.writeText(generatedCurl)
+                          }
+                          style={{
+                            padding: "8px 12px",
+                            background: "#2d3748",
+                            color: "white",
+                            border: "none",
+                            borderRadius: 8,
+                            fontSize: 13,
+                          }}
+                        >
+                          Copy cURL
+                        </button>
+                        <span style={{ color: "#718096", fontSize: 12 }}>
+                          Context hits: {hits}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Canonical registration cURL command */}
+                <div>
+                  <label
+                    style={{
+                      display: "block",
+                      color: "#4a5568",
+                      fontSize: 13,
+                      marginBottom: 6,
+                    }}
+                  >
+                    Canonical registration cURL
+                  </label>
+                  <textarea
+                    placeholder={
+                      'curl -X POST https://api.your-service.com/register \\\n+  -H \'Content-Type: application/json\' \\\n+  -H \'Authorization: Bearer <token>\' \\\n+  -d \'{"email":"user@example.com","firstName":"Jane","lastName":"Doe"}\''
+                    }
+                    value={settings.curlCommand || ""}
+                    onChange={(e) => {
+                      const curl = e.target.value;
+                      let parsed: any = undefined;
+                      try {
+                        const p = parseCurlRegistrationSpec(curl);
+                        const bodyKeys = extractBodyKeysFromCurl(curl);
+                        parsed = {
+                          method: p.method,
+                          url: p.url,
+                          contentType: p.contentType,
+                          headersRedacted: redactHeadersForLog(p.headers),
+                          bodyKeys,
+                        };
+                      } catch {}
+                      const next: any = {
+                        ...(settings as any),
+                        curlCommand: curl,
+                        registrationParsed: parsed,
+                      };
+                      setSettings(next as any);
+                    }}
+                    rows={6}
+                    style={{
+                      width: "100%",
+                      padding: 12,
+                      border: "1px solid #d1d5db",
+                      borderRadius: 8,
+                      fontSize: 14,
+                      fontFamily: "monospace",
+                      whiteSpace: "pre-wrap",
+                    }}
+                  />
+                  <div style={{ color: "#718096", fontSize: 12, marginTop: 6 }}>
+                    Paste the exact cURL used to register a user. We will
+                    auto-derive method, URL, headers, content type, and required
+                    fields from it.
+                  </div>
+                </div>
+              </div>
+
+              {/* Onboarding Widget Embed */}
+              <div
+                role="button"
+                tabIndex={0}
+                aria-expanded={embedOpen}
+                onClick={() => setEmbedOpen(!embedOpen)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setEmbedOpen(!embedOpen);
+                  }
+                }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginTop: 24,
+                  padding: "12px 14px",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: 12,
+                  background: "#f7fafc",
+                  cursor: "pointer",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontWeight: 600, color: "#2d3748" }}>
+                    {embedOpen ? "▼" : "▶"} Onboarding Widget Embed
+                  </span>
+                </div>
+                <div style={{ color: "#718096", fontSize: 12 }}>
+                  {embedOpen ? "Collapse" : "Expand"}
+                </div>
+              </div>
+              <div style={{ display: embedOpen ? "block" : "none" }}>
+                <div style={{ marginTop: 12 }}>
+                  <label
+                    style={{
+                      display: "block",
+                      color: "#4a5568",
+                      fontSize: 13,
+                      marginBottom: 6,
+                    }}
+                  >
+                    Embed snippet
+                  </label>
+                  {(() => {
+                    const origin =
+                      typeof window !== "undefined"
+                        ? window.location.origin
+                        : "";
+                    const apiKey = settings.apiKey || "<YOUR_API_KEY>";
+                    const snippet = `<script src="${origin}/api/widget" data-api-key="${apiKey}" data-theme="green" data-onboarding-only="true"></script>`;
+                    return (
+                      <div>
+                        <textarea
+                          value={snippet}
+                          readOnly
+                          rows={2}
+                          style={{
+                            width: "100%",
+                            padding: 12,
+                            border: "1px solid #d1d5db",
+                            borderRadius: 8,
+                            fontSize: 13,
+                            fontFamily: "monospace",
+                          }}
+                        />
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: 8,
+                            alignItems: "center",
+                            marginTop: 6,
+                          }}
+                        >
+                          <button
+                            onClick={() =>
+                              navigator.clipboard.writeText(snippet)
+                            }
+                            style={{
+                              padding: "8px 12px",
+                              background: "#2d3748",
+                              color: "white",
+                              border: "none",
+                              borderRadius: 8,
+                              fontSize: 13,
+                            }}
+                          >
+                            Copy embed
+                          </button>
+                          <span style={{ color: "#718096", fontSize: 12 }}>
+                            Paste into your site to enable onboarding-only
+                            widget.
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+
+              {/* Authentication */}
+              <div
+                role="button"
+                tabIndex={0}
+                aria-expanded={authenticationOpen}
+                onClick={() => setAuthenticationOpen(!authenticationOpen)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setAuthenticationOpen(!authenticationOpen);
+                  }
+                }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginTop: 24,
+                  padding: "12px 14px",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: 12,
+                  background: "#f7fafc",
+                  cursor: "pointer",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontWeight: 600, color: "#2d3748" }}>
+                    {authenticationOpen ? "▼" : "▶"} Authentication
+                  </span>
+                  {authenticationComplete && (
+                    <span
+                      aria-label="complete"
+                      title="Docs indexed and cURL generated"
+                      style={{ color: "#38a169" }}
+                    >
+                      ✅
+                    </span>
+                  )}
+                </div>
+                <div style={{ color: "#718096", fontSize: 12 }}>
+                  {authenticationOpen ? "Collapse" : "Expand"}
+                </div>
+              </div>
+              <div style={{ display: authenticationOpen ? "block" : "none" }}>
+                <div style={{ marginTop: 12, marginBottom: 16 }}>
+                  <label
+                    style={{
+                      display: "block",
+                      color: "#4a5568",
+                      fontSize: 13,
+                      marginBottom: 6,
+                    }}
+                  >
+                    Authentication API Document URL (Google Docs or any public
+                    page)
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="https://docs.google.com/document/d/<DOC_ID>/edit?usp=sharing or https://yourdocs.page"
+                    value={authDocUrl}
+                    onChange={(e) => setAuthDocUrl(e.target.value)}
+                    style={{
+                      width: "100%",
+                      padding: 10,
+                      border: "1px solid #d1d5db",
+                      borderRadius: 8,
+                      fontSize: 14,
+                    }}
+                  />
+
+                  <div style={{ marginTop: 10 }}>
+                    <label
+                      style={{
+                        display: "block",
+                        color: "#4a5568",
+                        fontSize: 13,
+                        marginBottom: 6,
+                      }}
+                    >
+                      Or upload a plain text file (.txt or .md)
+                    </label>
+                    <input
+                      type="file"
+                      accept=".txt,.md"
+                      onChange={handleAuthFileChange}
+                    />
+                  </div>
+
+                  <div style={{ marginTop: 10, display: "flex", gap: 12 }}>
+                    <div style={{ flex: 1 }}>
+                      <label
+                        style={{
+                          display: "block",
+                          color: "#4a5568",
+                          fontSize: 13,
+                          marginBottom: 6,
+                        }}
+                      >
+                        Namespace
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="auth"
+                        value={authNamespace}
+                        onChange={(e) => setAuthNamespace(e.target.value)}
+                        style={{
+                          width: "100%",
+                          padding: 10,
+                          border: "1px solid #d1d5db",
+                          borderRadius: 8,
+                          fontSize: 14,
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: 10 }}>
+                    <label
+                      style={{
+                        display: "block",
+                        color: "#4a5568",
+                        fontSize: 13,
+                        marginBottom: 6,
+                      }}
+                    >
+                      Optional prompt
+                    </label>
+                    <textarea
+                      placeholder={
+                        "POST /auth/login with JSON {email, password}; include Content-Type header"
+                      }
+                      value={authPrompt}
+                      onChange={(e) => setAuthPrompt(e.target.value)}
+                      rows={3}
+                      style={{
+                        width: "100%",
+                        padding: 10,
+                        border: "1px solid #d1d5db",
+                        borderRadius: 8,
+                        fontSize: 14,
+                        fontFamily: "monospace",
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ marginTop: 10 }}>
+                    <button
+                      onClick={indexAuthDocs}
+                      disabled={authIndexing || authGenerating}
+                      style={{
+                        padding: "10px 14px",
+                        background:
+                          authIndexing || authGenerating
+                            ? "#a0aec0"
+                            : "linear-gradient(135deg, #ed8936, #dd6b20)",
+                        color: "white",
+                        border: "none",
+                        borderRadius: 12,
+                        fontSize: 14,
+                        fontWeight: 600,
+                        cursor:
+                          authIndexing || authGenerating
+                            ? "not-allowed"
+                            : "pointer",
+                      }}
+                    >
+                      {authIndexing
+                        ? "Indexing…"
+                        : authGenerating
+                        ? "Generating cURL…"
+                        : "Index docs"}
+                    </button>
+                  </div>
+
+                  {authIndexStatus && (
+                    <div
+                      style={{ color: "#4a5568", fontSize: 12, marginTop: 6 }}
+                    >
+                      {authIndexStatus}
+                    </div>
+                  )}
+                  {authGeneratedCurl && (
+                    <div style={{ marginTop: 12 }}>
+                      <label
+                        style={{
+                          display: "block",
+                          color: "#4a5568",
+                          fontSize: 13,
+                          marginBottom: 6,
+                        }}
+                      >
+                        Generated authentication cURL
+                      </label>
+                      <textarea
+                        value={authGeneratedCurl}
+                        readOnly
+                        rows={5}
+                        style={{
+                          width: "100%",
+                          padding: 12,
+                          border: "1px solid #d1d5db",
+                          borderRadius: 8,
+                          fontSize: 14,
+                          fontFamily: "monospace",
+                        }}
+                      />
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: 8,
+                          alignItems: "center",
+                          marginTop: 6,
+                        }}
+                      >
+                        <button
+                          onClick={() =>
+                            navigator.clipboard.writeText(authGeneratedCurl)
+                          }
+                          style={{
+                            padding: "8px 12px",
+                            background: "#2d3748",
+                            color: "white",
+                            border: "none",
+                            borderRadius: 8,
+                            fontSize: 13,
+                          }}
+                        >
+                          Copy cURL
+                        </button>
+                        <span style={{ color: "#718096", fontSize: 12 }}>
+                          Context hits: {authHits}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {(settings as any).authParsed && (
+                  <div
+                    style={{
+                      marginTop: 12,
+                      padding: 12,
+                      border: "1px solid #e2e8f0",
+                      borderRadius: 8,
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontWeight: 600,
+                        color: "#2d3748",
+                        marginBottom: 8,
+                      }}
+                    >
+                      Parsed Summary
+                    </div>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: 8,
+                      }}
+                    >
+                      <div>Method: {(settings as any).authParsed?.method}</div>
+                      <div>
+                        Content-Type:{" "}
+                        {(settings as any).authParsed?.contentType}
+                      </div>
+                      <div style={{ gridColumn: "1 / -1" }}>
+                        URL: {(settings as any).authParsed?.url || ""}
+                      </div>
+                      <div style={{ gridColumn: "1 / -1" }}>
+                        Headers:
+                        <div
+                          style={{
+                            marginTop: 6,
+                            display: "flex",
+                            flexWrap: "wrap",
+                            gap: 6,
+                          }}
+                        >
+                          {(
+                            Object.entries(
+                              (settings as any).authParsed?.headersRedacted ||
+                                {}
+                            ) as [string, string][]
+                          ).map(([k, v]) => (
+                            <span
+                              key={k}
+                              style={{
+                                background: "#edf2f7",
+                                padding: "4px 8px",
+                                borderRadius: 6,
+                                fontSize: 12,
+                              }}
+                            >
+                              {k}: {v}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <div style={{ gridColumn: "1 / -1" }}>
+                        Body Fields:
+                        <div
+                          style={{
+                            marginTop: 6,
+                            display: "flex",
+                            flexWrap: "wrap",
+                            gap: 6,
+                          }}
+                        >
+                          {((settings as any).authParsed?.bodyKeys || []).map(
+                            (k: string) => (
+                              <span
+                                key={k}
+                                style={{
+                                  background: "#eef2ff",
+                                  padding: "4px 8px",
+                                  borderRadius: 6,
+                                  fontSize: 12,
+                                }}
+                              >
+                                {k}
+                              </span>
+                            )
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div style={{ marginTop: 12 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <label
+                      style={{
+                        display: "block",
+                        color: "#4a5568",
+                        fontSize: 13,
+                        marginBottom: 6,
+                      }}
+                    >
+                      Authentication Body Fields
+                    </label>
+                    {
+                      <button
+                        onClick={async () => {
+                          try {
+                            console.groupCollapsed(
+                              "[Onboarding] Regenerate auth spec"
+                            );
+                            console.log({
+                              docsUrl: authDocUrl,
+                              curlCommand:
+                                (settings as any).authCurlCommand || "",
+                            });
+                            console.groupEnd();
+                          } catch {}
+                          try {
+                            const res = await fetch(
+                              `/api/admin/onboarding?derive=auth&debug=true&docsUrl=${encodeURIComponent(
+                                authDocUrl || ""
+                              )}&curl=${encodeURIComponent(
+                                (settings as any).authCurlCommand || ""
+                              )}`,
+                              { credentials: "include" }
+                            );
+                            const data = await res.json();
+                            if (res.ok && data.success) {
+                              const spec = data.spec || {
+                                headers: [],
+                                body: [],
+                                response: [],
+                              };
+                              const parsed = {
+                                ...(settings.authParsed || { method: "POST" }),
+                                bodyKeys: (spec.body || []).map(
+                                  (f: any) => f.key
+                                ),
+                              } as any;
+                              const authBodyKeys = (spec.body || []).map(
+                                (f: any) => f.key
+                              );
+                              const authRespKeys = (spec.response || []).filter(
+                                (k: string) => !authBodyKeys.includes(k)
+                              );
+                              setSettings({
+                                ...(settings as any),
+                                authFields: spec.body,
+                                authHeaders: spec.headers,
+                                authHeaderFields: (spec.headers || []).map(
+                                  (h: string) => ({
+                                    key: h,
+                                    label: h,
+                                    required: true,
+                                    type: "text",
+                                  })
+                                ),
+                                authResponseFields: authRespKeys,
+                                authResponseFieldDefs: authRespKeys.map(
+                                  (k: string) => ({
+                                    key: k,
+                                    label: k,
+                                    required: false,
+                                    type: "text",
+                                  })
+                                ),
+                                authParsed: parsed,
+                              } as any);
+                              try {
+                                console.groupCollapsed(
+                                  "[Onboarding] Derived auth spec (ui)"
+                                );
+                                console.log(spec);
+                                if (Array.isArray((data as any).debug)) {
+                                  for (const entry of (data as any).debug)
+                                    console.log(entry);
+                                }
+                                console.groupEnd();
+                              } catch {}
+                            } else {
+                              alert(data.error || "Failed to derive auth spec");
+                            }
+                          } catch (e: any) {
+                            alert(e?.message || "Failed to derive auth spec");
+                          }
+                        }}
+                        style={{
+                          padding: "6px 10px",
+                          background: "#2d3748",
+                          color: "white",
+                          border: "none",
+                          borderRadius: 8,
+                          fontSize: 12,
+                        }}
+                      >
+                        Regenerate from docs
+                      </button>
+                    }
                   </div>
                   <div style={{ display: "grid", gap: 8 }}>
-                    {((settings as any).initialResponseFieldDefs || [])
-                      .filter(
-                        (f: any) =>
-                          !((settings as any).initialFields || []).some(
-                            (bf: any) => bf.key === f.key
-                          )
-                      )
-                      .map((f: any, i: number) => (
+                    {((settings as any).authFields || []).map(
+                      (f: any, idx: number) => (
                         <div
-                          key={(f.key || "") + i}
+                          key={idx}
                           style={{
                             display: "grid",
-                            gridTemplateColumns: "1fr 1fr 1fr 120px 140px auto",
+                            gridTemplateColumns:
+                              "minmax(0,1.2fr) minmax(0,1.2fr) minmax(0,1fr) 110px 90px 80px",
                             gap: 8,
                             alignItems: "center",
                           }}
@@ -3972,15 +2473,12 @@ const OnboardingSettingsSection: React.FC = () => {
                             value={f.key}
                             onChange={(e) => {
                               const arr = [
-                                ...((settings as any)
-                                  .initialResponseFieldDefs || []),
+                                ...((settings as any).authFields || []),
                               ];
-                              arr[i] = { ...arr[i], key: e.target.value };
-                              const keys = arr.map((x: any) => x.key);
+                              arr[idx] = { ...arr[idx], key: e.target.value };
                               setSettings({
                                 ...settings,
-                                initialResponseFieldDefs: arr,
-                                initialResponseFields: keys,
+                                authFields: arr,
                               } as any);
                             }}
                             style={{
@@ -3988,20 +2486,20 @@ const OnboardingSettingsSection: React.FC = () => {
                               border: "1px solid #d1d5db",
                               borderRadius: 8,
                               fontSize: 13,
+                              minWidth: 0,
                             }}
-                            placeholder="response key (e.g., setup.id)"
+                            placeholder="key"
                           />
                           <input
-                            value={f.label || ""}
+                            value={f.label}
                             onChange={(e) => {
                               const arr = [
-                                ...((settings as any)
-                                  .initialResponseFieldDefs || []),
+                                ...((settings as any).authFields || []),
                               ];
-                              arr[i] = { ...arr[i], label: e.target.value };
+                              arr[idx] = { ...arr[idx], label: e.target.value };
                               setSettings({
                                 ...settings,
-                                initialResponseFieldDefs: arr,
+                                authFields: arr,
                               } as any);
                             }}
                             style={{
@@ -4009,6 +2507,7 @@ const OnboardingSettingsSection: React.FC = () => {
                               border: "1px solid #d1d5db",
                               borderRadius: 8,
                               fontSize: 13,
+                              minWidth: 0,
                             }}
                             placeholder="label"
                           />
@@ -4016,16 +2515,15 @@ const OnboardingSettingsSection: React.FC = () => {
                             value={(f as any).defaultValue || ""}
                             onChange={(e) => {
                               const arr = [
-                                ...((settings as any)
-                                  .initialResponseFieldDefs || []),
+                                ...((settings as any).authFields || []),
                               ];
-                              arr[i] = {
-                                ...arr[i],
+                              arr[idx] = {
+                                ...arr[idx],
                                 defaultValue: e.target.value,
                               } as any;
                               setSettings({
                                 ...settings,
-                                initialResponseFieldDefs: arr,
+                                authFields: arr,
                               } as any);
                             }}
                             style={{
@@ -4033,20 +2531,20 @@ const OnboardingSettingsSection: React.FC = () => {
                               border: "1px solid #d1d5db",
                               borderRadius: 8,
                               fontSize: 13,
+                              minWidth: 0,
                             }}
                             placeholder="default value"
                           />
                           <select
-                            value={f.type || "text"}
+                            value={f.type}
                             onChange={(e) => {
                               const arr = [
-                                ...((settings as any)
-                                  .initialResponseFieldDefs || []),
+                                ...((settings as any).authFields || []),
                               ];
-                              arr[i] = { ...arr[i], type: e.target.value };
+                              arr[idx] = { ...arr[idx], type: e.target.value };
                               setSettings({
                                 ...settings,
-                                initialResponseFieldDefs: arr,
+                                authFields: arr,
                               } as any);
                             }}
                             style={{
@@ -4054,9 +2552,14 @@ const OnboardingSettingsSection: React.FC = () => {
                               border: "1px solid #d1d5db",
                               borderRadius: 8,
                               fontSize: 13,
+                              minWidth: 0,
                             }}
                           >
                             <option value="text">text</option>
+                            <option value="email">email</option>
+                            <option value="phone">phone</option>
+                            <option value="select">select</option>
+                            <option value="checkbox">checkbox</option>
                           </select>
                           <label
                             style={{
@@ -4072,16 +2575,15 @@ const OnboardingSettingsSection: React.FC = () => {
                               checked={!!f.required}
                               onChange={(e) => {
                                 const arr = [
-                                  ...((settings as any)
-                                    .initialResponseFieldDefs || []),
+                                  ...((settings as any).authFields || []),
                                 ];
-                                arr[i] = {
-                                  ...arr[i],
+                                arr[idx] = {
+                                  ...arr[idx],
                                   required: e.target.checked,
                                 };
                                 setSettings({
                                   ...settings,
-                                  initialResponseFieldDefs: arr,
+                                  authFields: arr,
                                 } as any);
                               }}
                             />{" "}
@@ -4090,15 +2592,12 @@ const OnboardingSettingsSection: React.FC = () => {
                           <button
                             onClick={() => {
                               const arr = [
-                                ...((settings as any)
-                                  .initialResponseFieldDefs || []),
+                                ...((settings as any).authFields || []),
                               ];
-                              arr.splice(i, 1);
-                              const keys = arr.map((x: any) => x.key);
+                              arr.splice(idx, 1);
                               setSettings({
                                 ...settings,
-                                initialResponseFieldDefs: arr,
-                                initialResponseFields: keys,
+                                authFields: arr,
                               } as any);
                             }}
                             style={{
@@ -4108,30 +2607,1432 @@ const OnboardingSettingsSection: React.FC = () => {
                               border: "none",
                               borderRadius: 8,
                               fontSize: 12,
+                              justifySelf: "start",
                             }}
                           >
                             Remove
                           </button>
                         </div>
-                      ))}
+                      )
+                    )}
+                    <div>
+                      <button
+                        onClick={() => {
+                          const arr = [...((settings as any).authFields || [])];
+                          arr.push({
+                            key: "",
+                            label: "",
+                            required: true,
+                            type: "text",
+                          });
+                          setSettings({ ...settings, authFields: arr } as any);
+                        }}
+                        style={{
+                          padding: "8px 12px",
+                          background: "#2d3748",
+                          color: "white",
+                          border: "none",
+                          borderRadius: 8,
+                          fontSize: 13,
+                        }}
+                      >
+                        Add field
+                      </button>
+                    </div>
+                    <div style={{ marginTop: 10 }}>
+                      <div
+                        style={{
+                          color: "#4a5568",
+                          fontSize: 13,
+                          marginBottom: 6,
+                        }}
+                      >
+                        Auth Headers
+                      </div>
+                      <div style={{ display: "grid", gap: 8 }}>
+                        {((settings as any).authHeaderFields || []).map(
+                          (f: any, i: number) => (
+                            <div
+                              key={(f.key || "") + i}
+                              style={{
+                                display: "grid",
+                                gridTemplateColumns:
+                                  "1fr 1fr 1fr 120px 140px auto",
+                                gap: 8,
+                                alignItems: "center",
+                              }}
+                            >
+                              <input
+                                value={f.key}
+                                onChange={(e) => {
+                                  const arr = [
+                                    ...((settings as any).authHeaderFields ||
+                                      []),
+                                  ];
+                                  arr[i] = { ...arr[i], key: e.target.value };
+                                  const keys = arr.map((x: any) => x.key);
+                                  setSettings({
+                                    ...settings,
+                                    authHeaderFields: arr,
+                                    authHeaders: keys,
+                                  } as any);
+                                }}
+                                style={{
+                                  padding: 8,
+                                  border: "1px solid #d1d5db",
+                                  borderRadius: 8,
+                                  fontSize: 13,
+                                }}
+                                placeholder="header key (e.g., authorization)"
+                              />
+                              <input
+                                value={f.label || ""}
+                                onChange={(e) => {
+                                  const arr = [
+                                    ...((settings as any).authHeaderFields ||
+                                      []),
+                                  ];
+                                  arr[i] = { ...arr[i], label: e.target.value };
+                                  setSettings({
+                                    ...settings,
+                                    authHeaderFields: arr,
+                                  } as any);
+                                }}
+                                style={{
+                                  padding: 8,
+                                  border: "1px solid #d1d5db",
+                                  borderRadius: 8,
+                                  fontSize: 13,
+                                }}
+                                placeholder="label"
+                              />
+                              <input
+                                value={(f as any).defaultValue || ""}
+                                onChange={(e) => {
+                                  const arr = [
+                                    ...((settings as any).authHeaderFields ||
+                                      []),
+                                  ];
+                                  arr[i] = {
+                                    ...arr[i],
+                                    defaultValue: e.target.value,
+                                  } as any;
+                                  setSettings({
+                                    ...settings,
+                                    authHeaderFields: arr,
+                                  } as any);
+                                }}
+                                style={{
+                                  padding: 8,
+                                  border: "1px solid #d1d5db",
+                                  borderRadius: 8,
+                                  fontSize: 13,
+                                }}
+                                placeholder="default value"
+                              />
+                              <select
+                                value={f.type || "text"}
+                                onChange={(e) => {
+                                  const arr = [
+                                    ...((settings as any).authHeaderFields ||
+                                      []),
+                                  ];
+                                  arr[i] = { ...arr[i], type: e.target.value };
+                                  setSettings({
+                                    ...settings,
+                                    authHeaderFields: arr,
+                                  } as any);
+                                }}
+                                style={{
+                                  padding: 8,
+                                  border: "1px solid #d1d5db",
+                                  borderRadius: 8,
+                                  fontSize: 13,
+                                }}
+                              >
+                                <option value="text">text</option>
+                              </select>
+
+                              <label
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 6,
+                                  color: "#4a5568",
+                                  fontSize: 13,
+                                }}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={!!f.required}
+                                  onChange={(e) => {
+                                    const arr = [
+                                      ...((settings as any).authHeaderFields ||
+                                        []),
+                                    ];
+                                    arr[i] = {
+                                      ...arr[i],
+                                      required: e.target.checked,
+                                    };
+                                    setSettings({
+                                      ...settings,
+                                      authHeaderFields: arr,
+                                    } as any);
+                                  }}
+                                />{" "}
+                                required
+                              </label>
+                              <button
+                                onClick={() => {
+                                  const arr = [
+                                    ...((settings as any).authHeaderFields ||
+                                      []),
+                                  ];
+                                  arr.splice(i, 1);
+                                  const keys = arr.map((x: any) => x.key);
+                                  setSettings({
+                                    ...settings,
+                                    authHeaderFields: arr,
+                                    authHeaders: keys,
+                                  } as any);
+                                }}
+                                style={{
+                                  padding: "6px 10px",
+                                  background: "#ef4444",
+                                  color: "white",
+                                  border: "none",
+                                  borderRadius: 8,
+                                  fontSize: 12,
+                                }}
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          )
+                        )}
+                        <div>
+                          <button
+                            onClick={() => {
+                              const arr = [
+                                ...((settings as any).authHeaderFields || []),
+                              ];
+                              arr.push({
+                                key: "",
+                                label: "",
+                                required: true,
+                                type: "text",
+                              });
+                              const keys = arr.map((x: any) => x.key);
+                              setSettings({
+                                ...settings,
+                                authHeaderFields: arr,
+                                authHeaders: keys,
+                              } as any);
+                            }}
+                            style={{
+                              padding: "8px 12px",
+                              background: "#2d3748",
+                              color: "white",
+                              border: "none",
+                              borderRadius: 8,
+                              fontSize: 13,
+                            }}
+                          >
+                            Add header
+                          </button>
+                        </div>
+                      </div>
+                      <div
+                        style={{
+                          marginTop: 10,
+                          padding: 12,
+                          border: "1px solid #e2e8f0",
+                          borderRadius: 8,
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontWeight: 600,
+                            color: "#2d3748",
+                            marginBottom: 8,
+                          }}
+                        >
+                          Map Token / API Key
+                        </div>
+                        <div
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "1fr 1fr",
+                            gap: 12,
+                          }}
+                        >
+                          <div>
+                            <label
+                              style={{
+                                display: "block",
+                                color: "#4a5568",
+                                fontSize: 13,
+                                marginBottom: 6,
+                              }}
+                            >
+                              Token Path
+                            </label>
+                            <select
+                              value={
+                                (settings as any).authResponseMappings
+                                  ?.tokenPath || ""
+                              }
+                              onChange={(e) => {
+                                const cur =
+                                  (settings as any).authResponseMappings || {};
+                                setSettings({
+                                  ...(settings as any),
+                                  authResponseMappings: {
+                                    ...cur,
+                                    tokenPath: e.target.value,
+                                  },
+                                } as any);
+                              }}
+                              style={{
+                                width: "100%",
+                                padding: 8,
+                                border: "1px solid #d1d5db",
+                                borderRadius: 8,
+                                fontSize: 13,
+                              }}
+                            >
+                              <option value="">Select a response key</option>
+                              {(
+                                (
+                                  (settings as any).authResponseFieldDefs || []
+                                ).map((f: any) => f.key) as string[]
+                              ).map((k) => (
+                                <option key={k} value={k}>
+                                  {k}
+                                </option>
+                              ))}
+                              {(
+                                ((settings as any).authResponseFields ||
+                                  []) as string[]
+                              )
+                                .filter(Boolean)
+                                .map((k) => (
+                                  <option key={k} value={k}>
+                                    {k}
+                                  </option>
+                                ))}
+                              {(
+                                [
+                                  "token",
+                                  "access_token",
+                                  "authToken",
+                                ] as string[]
+                              ).map((k) => (
+                                <option key={k} value={k}>
+                                  {k}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label
+                              style={{
+                                display: "block",
+                                color: "#4a5568",
+                                fontSize: 13,
+                                marginBottom: 6,
+                              }}
+                            >
+                              API Key Path
+                            </label>
+                            <select
+                              value={
+                                (settings as any).authResponseMappings
+                                  ?.apiKeyPath || ""
+                              }
+                              onChange={(e) => {
+                                const cur =
+                                  (settings as any).authResponseMappings || {};
+                                setSettings({
+                                  ...(settings as any),
+                                  authResponseMappings: {
+                                    ...cur,
+                                    apiKeyPath: e.target.value,
+                                  },
+                                } as any);
+                              }}
+                              style={{
+                                width: "100%",
+                                padding: 8,
+                                border: "1px solid #d1d5db",
+                                borderRadius: 8,
+                                fontSize: 13,
+                              }}
+                            >
+                              <option value="">Select a response key</option>
+                              {(
+                                (
+                                  (settings as any).authResponseFieldDefs || []
+                                ).map((f: any) => f.key) as string[]
+                              ).map((k) => (
+                                <option key={k} value={k}>
+                                  {k}
+                                </option>
+                              ))}
+                              {(
+                                ((settings as any).authResponseFields ||
+                                  []) as string[]
+                              )
+                                .filter(Boolean)
+                                .map((k) => (
+                                  <option key={k} value={k}>
+                                    {k}
+                                  </option>
+                                ))}
+                              {(["apiKey", "api_key", "key"] as string[]).map(
+                                (k) => (
+                                  <option key={k} value={k}>
+                                    {k}
+                                  </option>
+                                )
+                              )}
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                      <div
+                        style={{
+                          marginTop: 10,
+                          display: "grid",
+                          gridTemplateColumns: "1fr 1fr",
+                          gap: 12,
+                        }}
+                      >
+                        <div>
+                          <label
+                            style={{
+                              display: "block",
+                              color: "#4a5568",
+                              fontSize: 13,
+                              marginBottom: 6,
+                            }}
+                          >
+                            Auth Header Key (token)
+                          </label>
+                          <select
+                            value={settings.authHeaderKey || "Authorization"}
+                            onChange={(e) => {
+                              setSettings({
+                                ...(settings as any),
+                                authHeaderKey: e.target.value,
+                              } as any);
+                            }}
+                            style={{
+                              width: "100%",
+                              padding: 8,
+                              border: "1px solid #d1d5db",
+                              borderRadius: 8,
+                              fontSize: 13,
+                            }}
+                          >
+                            {(
+                              [
+                                "Authorization",
+                                ...((settings as any).authHeaders || []),
+                              ] as string[]
+                            )
+                              .filter((v, i, arr) => arr.indexOf(v) === i)
+                              .map((h) => (
+                                <option key={h} value={h}>
+                                  {h}
+                                </option>
+                              ))}
+                          </select>
+                          <div
+                            style={{
+                              color: "#718096",
+                              fontSize: 12,
+                              marginTop: 6,
+                            }}
+                          >
+                            Header name used to send the authentication token in
+                            the initial setup request. If set to Authorization,
+                            the value is formatted as Bearer &lt;token&gt;.
+                          </div>
+                        </div>
+                        <div>
+                          <label
+                            style={{
+                              display: "block",
+                              color: "#4a5568",
+                              fontSize: 13,
+                              marginBottom: 6,
+                            }}
+                          >
+                            API Key Header (optional)
+                          </label>
+                          <select
+                            value={
+                              (settings as any).apiKeyHeaderKey || "X-API-Key"
+                            }
+                            onChange={(e) => {
+                              setSettings({
+                                ...(settings as any),
+                                apiKeyHeaderKey: e.target.value,
+                              } as any);
+                            }}
+                            style={{
+                              width: "100%",
+                              padding: 8,
+                              border: "1px solid #d1d5db",
+                              borderRadius: 8,
+                              fontSize: 13,
+                            }}
+                          >
+                            {(
+                              [
+                                "X-API-Key",
+                                ...((settings as any).authHeaders || []),
+                                ...((settings as any).initialHeaders || []),
+                              ] as string[]
+                            )
+                              .filter((v, i, arr) => arr.indexOf(v) === i)
+                              .map((h) => (
+                                <option key={h} value={h}>
+                                  {h}
+                                </option>
+                              ))}
+                          </select>
+                          <div
+                            style={{
+                              color: "#718096",
+                              fontSize: 12,
+                              marginTop: 6,
+                            }}
+                          >
+                            Header name used to send the API key obtained from
+                            the authentication response. Leave as X-API-Key or
+                            choose a custom header if your API expects a
+                            different name.
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ marginTop: 10 }}>
+                      <div
+                        style={{
+                          color: "#4a5568",
+                          fontSize: 13,
+                          marginBottom: 6,
+                        }}
+                      >
+                        Auth Response Fields
+                      </div>
+                      <div style={{ display: "grid", gap: 8 }}>
+                        {((settings as any).authResponseFieldDefs || [])
+                          .filter(
+                            (f: any) =>
+                              !((settings as any).authFields || []).some(
+                                (bf: any) => bf.key === f.key
+                              )
+                          )
+                          .map((f: any, i: number) => (
+                            <div
+                              key={(f.key || "") + i}
+                              style={{
+                                display: "grid",
+                                gridTemplateColumns:
+                                  "1fr 1fr 1fr 120px 140px auto",
+                                gap: 8,
+                                alignItems: "center",
+                              }}
+                            >
+                              <input
+                                value={f.key}
+                                onChange={(e) => {
+                                  const arr = [
+                                    ...((settings as any)
+                                      .authResponseFieldDefs || []),
+                                  ];
+                                  arr[i] = { ...arr[i], key: e.target.value };
+                                  const keys = arr.map((x: any) => x.key);
+                                  setSettings({
+                                    ...settings,
+                                    authResponseFieldDefs: arr,
+                                    authResponseFields: keys,
+                                  } as any);
+                                }}
+                                style={{
+                                  padding: 8,
+                                  border: "1px solid #d1d5db",
+                                  borderRadius: 8,
+                                  fontSize: 13,
+                                }}
+                                placeholder="response key (e.g., token)"
+                              />
+                              <input
+                                value={f.label || ""}
+                                onChange={(e) => {
+                                  const arr = [
+                                    ...((settings as any)
+                                      .authResponseFieldDefs || []),
+                                  ];
+                                  arr[i] = { ...arr[i], label: e.target.value };
+                                  setSettings({
+                                    ...settings,
+                                    authResponseFieldDefs: arr,
+                                  } as any);
+                                }}
+                                style={{
+                                  padding: 8,
+                                  border: "1px solid #d1d5db",
+                                  borderRadius: 8,
+                                  fontSize: 13,
+                                }}
+                                placeholder="label"
+                              />
+                              <input
+                                value={(f as any).defaultValue || ""}
+                                onChange={(e) => {
+                                  const arr = [
+                                    ...((settings as any)
+                                      .authResponseFieldDefs || []),
+                                  ];
+                                  arr[i] = {
+                                    ...arr[i],
+                                    defaultValue: e.target.value,
+                                  } as any;
+                                  setSettings({
+                                    ...settings,
+                                    authResponseFieldDefs: arr,
+                                  } as any);
+                                }}
+                                style={{
+                                  padding: 8,
+                                  border: "1px solid #d1d5db",
+                                  borderRadius: 8,
+                                  fontSize: 13,
+                                }}
+                                placeholder="default value"
+                              />
+                              <select
+                                value={f.type || "text"}
+                                onChange={(e) => {
+                                  const arr = [
+                                    ...((settings as any)
+                                      .authResponseFieldDefs || []),
+                                  ];
+                                  arr[i] = { ...arr[i], type: e.target.value };
+                                  setSettings({
+                                    ...settings,
+                                    authResponseFieldDefs: arr,
+                                  } as any);
+                                }}
+                                style={{
+                                  padding: 8,
+                                  border: "1px solid #d1d5db",
+                                  borderRadius: 8,
+                                  fontSize: 13,
+                                }}
+                              >
+                                <option value="text">text</option>
+                              </select>
+                              <label
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 6,
+                                  color: "#4a5568",
+                                  fontSize: 13,
+                                }}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={!!f.required}
+                                  onChange={(e) => {
+                                    const arr = [
+                                      ...((settings as any)
+                                        .authResponseFieldDefs || []),
+                                    ];
+                                    arr[i] = {
+                                      ...arr[i],
+                                      required: e.target.checked,
+                                    };
+                                    setSettings({
+                                      ...settings,
+                                      authResponseFieldDefs: arr,
+                                    } as any);
+                                  }}
+                                />{" "}
+                                required
+                              </label>
+                              <button
+                                onClick={() => {
+                                  const arr = [
+                                    ...((settings as any)
+                                      .authResponseFieldDefs || []),
+                                  ];
+                                  arr.splice(i, 1);
+                                  const keys = arr.map((x: any) => x.key);
+                                  setSettings({
+                                    ...settings,
+                                    authResponseFieldDefs: arr,
+                                    authResponseFields: keys,
+                                  } as any);
+                                }}
+                                style={{
+                                  padding: "6px 10px",
+                                  background: "#ef4444",
+                                  color: "white",
+                                  border: "none",
+                                  borderRadius: 8,
+                                  fontSize: 12,
+                                }}
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          ))}
+                        <div>
+                          <button
+                            onClick={() => {
+                              const arr = [
+                                ...((settings as any).authResponseFieldDefs ||
+                                  []),
+                              ];
+                              arr.push({
+                                key: "",
+                                label: "",
+                                required: false,
+                                type: "text",
+                              });
+                              const keys = arr.map((x: any) => x.key);
+                              setSettings({
+                                ...settings,
+                                authResponseFieldDefs: arr,
+                                authResponseFields: keys,
+                              } as any);
+                            }}
+                            style={{
+                              padding: "8px 12px",
+                              background: "#2d3748",
+                              color: "white",
+                              border: "none",
+                              borderRadius: 8,
+                              fontSize: 13,
+                            }}
+                          >
+                            Add response field
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Canonical authentication cURL command */}
+                <div>
+                  <label
+                    style={{
+                      display: "block",
+                      color: "#4a5568",
+                      fontSize: 13,
+                      marginBottom: 6,
+                    }}
+                  >
+                    Canonical authentication cURL
+                  </label>
+                  <textarea
+                    placeholder={
+                      'curl -X POST https://api.your-service.com/auth/login \\\n++  -H "Content-Type: application/json" \\\n++  -d "{" + "email":"user@example.com","password":"hunter2"}""'
+                    }
+                    value={(settings as any).authCurlCommand || ""}
+                    onChange={(e) => {
+                      const curl = e.target.value;
+                      let parsed: any = undefined;
+                      try {
+                        const p = parseCurlRegistrationSpec(curl);
+                        const bodyKeys = extractBodyKeysFromCurl(curl);
+                        parsed = {
+                          method: p.method,
+                          url: p.url,
+                          contentType: p.contentType,
+                          headersRedacted: redactHeadersForLog(p.headers),
+                          bodyKeys,
+                        };
+                      } catch {}
+                      const next: any = {
+                        ...(settings as any),
+                        authCurlCommand: curl,
+                        authParsed: parsed,
+                      };
+                      setSettings(next as any);
+                    }}
+                    rows={6}
+                    style={{
+                      width: "100%",
+                      padding: 12,
+                      border: "1px solid #d1d5db",
+                      borderRadius: 8,
+                      fontSize: 14,
+                      fontFamily: "monospace",
+                      whiteSpace: "pre-wrap",
+                    }}
+                  />
+                  <div style={{ color: "#718096", fontSize: 12, marginTop: 6 }}>
+                    Paste the exact cURL used to authenticate (e.g., login/token
+                    exchange). Method, URL, and headers are derived.
+                  </div>
+                </div>
+              </div>
+
+              {/* Initial Setup */}
+              <div
+                role="button"
+                tabIndex={0}
+                aria-expanded={initialSetupOpen}
+                onClick={() => setInitialSetupOpen(!initialSetupOpen)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setInitialSetupOpen(!initialSetupOpen);
+                  }
+                }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginTop: 24,
+                  padding: "12px 14px",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: 12,
+                  background: "#f7fafc",
+                  cursor: "pointer",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontWeight: 600, color: "#2d3748" }}>
+                    {initialSetupOpen ? "▼" : "▶"} Initial Setup
+                  </span>
+                  {initialSetupComplete && (
+                    <span
+                      aria-label="complete"
+                      title="Docs indexed and cURL generated"
+                      style={{ color: "#38a169" }}
+                    >
+                      ✅
+                    </span>
+                  )}
+                </div>
+                <div style={{ color: "#718096", fontSize: 12 }}>
+                  {initialSetupOpen ? "Collapse" : "Expand"}
+                </div>
+              </div>
+              <div style={{ display: initialSetupOpen ? "block" : "none" }}>
+                <div style={{ marginTop: 12, marginBottom: 16 }}>
+                  <label
+                    style={{
+                      display: "block",
+                      color: "#4a5568",
+                      fontSize: 13,
+                      marginBottom: 6,
+                    }}
+                  >
+                    Initial Setup API Document URL (Google Docs or any public
+                    page)
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="https://docs.google.com/document/d/<DOC_ID>/edit?usp=sharing or https://yourdocs.page"
+                    value={initialDocUrl}
+                    onChange={(e) => setInitialDocUrl(e.target.value)}
+                    style={{
+                      width: "100%",
+                      padding: 10,
+                      border: "1px solid #d1d5db",
+                      borderRadius: 8,
+                      fontSize: 14,
+                    }}
+                  />
+
+                  <div style={{ marginTop: 10 }}>
+                    <label
+                      style={{
+                        display: "block",
+                        color: "#4a5568",
+                        fontSize: 13,
+                        marginBottom: 6,
+                      }}
+                    >
+                      Or upload a plain text file (.txt or .md)
+                    </label>
+                    <input
+                      type="file"
+                      accept=".txt,.md"
+                      onChange={handleInitialFileChange}
+                    />
+                  </div>
+
+                  <div style={{ marginTop: 10, display: "flex", gap: 12 }}>
+                    <div style={{ flex: 1 }}>
+                      <label
+                        style={{
+                          display: "block",
+                          color: "#4a5568",
+                          fontSize: 13,
+                          marginBottom: 6,
+                        }}
+                      >
+                        Namespace
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="initial-setup"
+                        value={initialNamespace}
+                        onChange={(e) => setInitialNamespace(e.target.value)}
+                        style={{
+                          width: "100%",
+                          padding: 10,
+                          border: "1px solid #d1d5db",
+                          borderRadius: 8,
+                          fontSize: 14,
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: 10 }}>
+                    <label
+                      style={{
+                        display: "block",
+                        color: "#4a5568",
+                        fontSize: 13,
+                        marginBottom: 6,
+                      }}
+                    >
+                      Optional prompt
+                    </label>
+                    <textarea
+                      placeholder={
+                        "POST /account/setup with JSON {companyName, timezone, preferences}; include Content-Type header"
+                      }
+                      value={initialPrompt}
+                      onChange={(e) => setInitialPrompt(e.target.value)}
+                      rows={3}
+                      style={{
+                        width: "100%",
+                        padding: 10,
+                        border: "1px solid #d1d5db",
+                        borderRadius: 8,
+                        fontSize: 14,
+                        fontFamily: "monospace",
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ marginTop: 10 }}>
+                    <button
+                      onClick={indexInitialDocs}
+                      disabled={initialIndexing || initialGenerating}
+                      style={{
+                        padding: "10px 14px",
+                        background:
+                          initialIndexing || initialGenerating
+                            ? "#a0aec0"
+                            : "linear-gradient(135deg, #805ad5, #6b46c1)",
+                        color: "white",
+                        border: "none",
+                        borderRadius: 12,
+                        fontSize: 14,
+                        fontWeight: 600,
+                        cursor:
+                          initialIndexing || initialGenerating
+                            ? "not-allowed"
+                            : "pointer",
+                      }}
+                    >
+                      {initialIndexing
+                        ? "Indexing…"
+                        : initialGenerating
+                        ? "Generating cURL…"
+                        : "Index docs"}
+                    </button>
+                  </div>
+
+                  {initialIndexStatus && (
+                    <div
+                      style={{ color: "#4a5568", fontSize: 12, marginTop: 6 }}
+                    >
+                      {initialIndexStatus}
+                    </div>
+                  )}
+                  {initialGeneratedCurl && (
+                    <div style={{ marginTop: 12 }}>
+                      <label
+                        style={{
+                          display: "block",
+                          color: "#4a5568",
+                          fontSize: 13,
+                          marginBottom: 6,
+                        }}
+                      >
+                        Generated initial setup cURL
+                      </label>
+                      <textarea
+                        value={initialGeneratedCurl}
+                        readOnly
+                        rows={5}
+                        style={{
+                          width: "100%",
+                          padding: 12,
+                          border: "1px solid #d1d5db",
+                          borderRadius: 8,
+                          fontSize: 14,
+                          fontFamily: "monospace",
+                        }}
+                      />
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: 8,
+                          alignItems: "center",
+                          marginTop: 6,
+                        }}
+                      >
+                        <button
+                          onClick={() =>
+                            navigator.clipboard.writeText(initialGeneratedCurl)
+                          }
+                          style={{
+                            padding: "8px 12px",
+                            background: "#2d3748",
+                            color: "white",
+                            border: "none",
+                            borderRadius: 8,
+                            fontSize: 13,
+                          }}
+                        >
+                          Copy cURL
+                        </button>
+                        <span style={{ color: "#718096", fontSize: 12 }}>
+                          Context hits: {initialHits}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {settings.initialParsed && (
+                  <div
+                    style={{
+                      marginTop: 12,
+                      padding: 12,
+                      border: "1px solid #e2e8f0",
+                      borderRadius: 8,
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontWeight: 600,
+                        color: "#2d3748",
+                        marginBottom: 8,
+                      }}
+                    >
+                      Parsed Summary
+                    </div>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: 8,
+                      }}
+                    >
+                      <div>Method: {settings.initialParsed.method}</div>
+                      <div>
+                        Content-Type: {settings.initialParsed.contentType}
+                      </div>
+                      <div style={{ gridColumn: "1 / -1" }}>
+                        URL: {settings.initialParsed.url || ""}
+                      </div>
+                      <div style={{ gridColumn: "1 / -1" }}>
+                        Headers:
+                        <div
+                          style={{
+                            marginTop: 6,
+                            display: "flex",
+                            flexWrap: "wrap",
+                            gap: 6,
+                          }}
+                        >
+                          {(
+                            Object.entries(
+                              settings.initialParsed.headersRedacted || {}
+                            ) as [string, string][]
+                          ).map(([k, v]) => (
+                            <span
+                              key={k}
+                              style={{
+                                background: "#edf2f7",
+                                padding: "4px 8px",
+                                borderRadius: 6,
+                                fontSize: 12,
+                              }}
+                            >
+                              {k}: {v}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <div style={{ gridColumn: "1 / -1" }}>
+                        Body Fields:
+                        <div
+                          style={{
+                            marginTop: 6,
+                            display: "flex",
+                            flexWrap: "wrap",
+                            gap: 6,
+                          }}
+                        >
+                          {(settings.initialParsed.bodyKeys || []).map((k) => (
+                            <span
+                              key={k}
+                              style={{
+                                background: "#eef2ff",
+                                padding: "4px 8px",
+                                borderRadius: 6,
+                                fontSize: 12,
+                              }}
+                            >
+                              {k}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div style={{ marginTop: 12 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                    }}
+                  >
+                    <label
+                      style={{
+                        display: "block",
+                        color: "#4a5568",
+                        fontSize: 13,
+                        marginBottom: 6,
+                      }}
+                    >
+                      Initial Setup Body Fields
+                    </label>
+                    {
+                      <button
+                        onClick={async () => {
+                          try {
+                            console.groupCollapsed(
+                              "[Onboarding] Regenerate initial setup spec"
+                            );
+                            console.log({
+                              docsUrl: initialDocUrl,
+                              curlCommand:
+                                settings.initialSetupCurlCommand || "",
+                            });
+                            console.groupEnd();
+                          } catch {}
+                          try {
+                            const res = await fetch(
+                              `/api/admin/onboarding?derive=initial&debug=true&docsUrl=${encodeURIComponent(
+                                initialDocUrl || ""
+                              )}&curl=${encodeURIComponent(
+                                settings.initialSetupCurlCommand || ""
+                              )}`,
+                              { credentials: "include" }
+                            );
+                            const data = await res.json();
+                            if (res.ok && data.success) {
+                              const spec = data.spec || {
+                                headers: [],
+                                body: [],
+                                response: [],
+                              };
+                              const parsed = {
+                                ...(settings.initialParsed || {
+                                  method: "POST",
+                                }),
+                                bodyKeys: (spec.body || []).map(
+                                  (f: any) => f.key
+                                ),
+                              } as any;
+                              const initBodyKeys = (spec.body || []).map(
+                                (f: any) => f.key
+                              );
+                              const initRespKeys = (spec.response || []).filter(
+                                (k: string) => !initBodyKeys.includes(k)
+                              );
+                              setSettings({
+                                ...(settings as any),
+                                initialFields: spec.body,
+                                initialHeaders: spec.headers,
+                                initialHeaderFields: (spec.headers || []).map(
+                                  (h: string) => ({
+                                    key: h,
+                                    label: h,
+                                    required: true,
+                                    type: "text",
+                                  })
+                                ),
+                                initialResponseFields: initRespKeys,
+                                initialResponseFieldDefs: initRespKeys.map(
+                                  (k: string) => ({
+                                    key: k,
+                                    label: k,
+                                    required: false,
+                                    type: "text",
+                                  })
+                                ),
+                                initialParsed: parsed,
+                              } as any);
+                              try {
+                                console.groupCollapsed(
+                                  "[Onboarding] Derived initial setup spec (ui)"
+                                );
+                                console.log(spec);
+                                if (Array.isArray((data as any).debug)) {
+                                  for (const entry of (data as any).debug)
+                                    console.log(entry);
+                                }
+                                console.groupEnd();
+                              } catch {}
+                            } else {
+                              alert(
+                                data.error || "Failed to derive initial spec"
+                              );
+                            }
+                          } catch (e: any) {
+                            alert(
+                              e?.message || "Failed to derive initial spec"
+                            );
+                          }
+                        }}
+                        style={{
+                          padding: "6px 10px",
+                          background: "#2d3748",
+                          color: "white",
+                          border: "none",
+                          borderRadius: 8,
+                          fontSize: 12,
+                        }}
+                      >
+                        Regenerate from docs
+                      </button>
+                    }
+                  </div>
+                  <div style={{ display: "grid", gap: 8 }}>
+                    {((settings as any).initialFields || []).map(
+                      (f: any, idx: number) => (
+                        <div
+                          key={idx}
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns:
+                              "minmax(0,1.2fr) minmax(0,1.2fr) minmax(0,1fr) 110px 90px 80px",
+                            gap: 8,
+                            alignItems: "center",
+                          }}
+                        >
+                          <input
+                            value={f.key}
+                            onChange={(e) => {
+                              const arr = [
+                                ...((settings as any).initialFields || []),
+                              ];
+                              arr[idx] = { ...arr[idx], key: e.target.value };
+                              setSettings({
+                                ...settings,
+                                initialFields: arr,
+                              } as any);
+                            }}
+                            style={{
+                              padding: 8,
+                              border: "1px solid #d1d5db",
+                              borderRadius: 8,
+                              fontSize: 13,
+                              minWidth: 0,
+                            }}
+                            placeholder="key"
+                          />
+                          <input
+                            value={f.label}
+                            onChange={(e) => {
+                              const arr = [
+                                ...((settings as any).initialFields || []),
+                              ];
+                              arr[idx] = { ...arr[idx], label: e.target.value };
+                              setSettings({
+                                ...settings,
+                                initialFields: arr,
+                              } as any);
+                            }}
+                            style={{
+                              padding: 8,
+                              border: "1px solid #d1d5db",
+                              borderRadius: 8,
+                              fontSize: 13,
+                              minWidth: 0,
+                            }}
+                            placeholder="label"
+                          />
+                          <input
+                            value={(f as any).defaultValue || ""}
+                            onChange={(e) => {
+                              const arr = [
+                                ...((settings as any).initialFields || []),
+                              ];
+                              arr[idx] = {
+                                ...arr[idx],
+                                defaultValue: e.target.value,
+                              } as any;
+                              setSettings({
+                                ...settings,
+                                initialFields: arr,
+                              } as any);
+                            }}
+                            style={{
+                              padding: 8,
+                              border: "1px solid #d1d5db",
+                              borderRadius: 8,
+                              fontSize: 13,
+                              minWidth: 0,
+                            }}
+                            placeholder="default value"
+                          />
+                          <select
+                            value={f.type}
+                            onChange={(e) => {
+                              const arr = [
+                                ...((settings as any).initialFields || []),
+                              ];
+                              arr[idx] = { ...arr[idx], type: e.target.value };
+                              setSettings({
+                                ...settings,
+                                initialFields: arr,
+                              } as any);
+                            }}
+                            style={{
+                              padding: 8,
+                              border: "1px solid #d1d5db",
+                              borderRadius: 8,
+                              fontSize: 13,
+                              minWidth: 0,
+                            }}
+                          >
+                            <option value="text">text</option>
+                            <option value="email">email</option>
+                            <option value="phone">phone</option>
+                            <option value="select">select</option>
+                            <option value="checkbox">checkbox</option>
+                          </select>
+                          <label
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 6,
+                              color: "#4a5568",
+                              fontSize: 13,
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={!!f.required}
+                              onChange={(e) => {
+                                const arr = [
+                                  ...((settings as any).initialFields || []),
+                                ];
+                                arr[idx] = {
+                                  ...arr[idx],
+                                  required: e.target.checked,
+                                };
+                                setSettings({
+                                  ...settings,
+                                  initialFields: arr,
+                                } as any);
+                              }}
+                            />{" "}
+                            required
+                          </label>
+
+                          <select
+                            value={(f as any).source || "none"}
+                            onChange={(e) => {
+                              const arr = [
+                                ...((settings as any).initialFields || []),
+                              ];
+                              arr[idx] = {
+                                ...arr[idx],
+                                source: e.target.value,
+                              };
+                              setSettings({
+                                ...settings,
+                                initialFields: arr,
+                              } as any);
+                            }}
+                            style={{
+                              padding: 8,
+                              border: "1px solid #d1d5db",
+                              borderRadius: 8,
+                              fontSize: 13,
+                            }}
+                          >
+                            <option value="none">value: user-provided</option>
+                            <option value="token">value: auth token</option>
+                            <option value="apiKey">value: auth api key</option>
+                          </select>
+                          <button
+                            onClick={() => {
+                              const arr = [
+                                ...((settings as any).initialFields || []),
+                              ];
+                              arr.splice(idx, 1);
+                              setSettings({
+                                ...settings,
+                                initialFields: arr,
+                              } as any);
+                            }}
+                            style={{
+                              padding: "6px 10px",
+                              background: "#ef4444",
+                              color: "white",
+                              border: "none",
+                              borderRadius: 8,
+                              fontSize: 12,
+                              justifySelf: "start",
+                            }}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      )
+                    )}
                     <div>
                       <button
                         onClick={() => {
                           const arr = [
-                            ...((settings as any).initialResponseFieldDefs ||
-                              []),
+                            ...((settings as any).initialFields || []),
                           ];
                           arr.push({
                             key: "",
                             label: "",
-                            required: false,
+                            required: true,
                             type: "text",
                           });
-                          const keys = arr.map((x: any) => x.key);
                           setSettings({
                             ...settings,
-                            initialResponseFieldDefs: arr,
-                            initialResponseFields: keys,
+                            initialFields: arr,
                           } as any);
                         }}
                         style={{
@@ -4143,92 +4044,536 @@ const OnboardingSettingsSection: React.FC = () => {
                           fontSize: 13,
                         }}
                       >
-                        Add response field
+                        Add field
                       </button>
+                    </div>
+                    <div style={{ marginTop: 10 }}>
+                      <div
+                        style={{
+                          color: "#4a5568",
+                          fontSize: 13,
+                          marginBottom: 6,
+                        }}
+                      >
+                        Initial Setup Headers
+                      </div>
+                      <div style={{ display: "grid", gap: 8 }}>
+                        {((settings as any).initialHeaderFields || []).map(
+                          (f: any, i: number) => (
+                            <div
+                              key={(f.key || "") + i}
+                              style={{
+                                display: "grid",
+                                gridTemplateColumns:
+                                  "1fr 1fr 1fr 120px 140px auto",
+                                gap: 8,
+                                alignItems: "center",
+                              }}
+                            >
+                              <input
+                                value={f.key}
+                                onChange={(e) => {
+                                  const arr = [
+                                    ...((settings as any).initialHeaderFields ||
+                                      []),
+                                  ];
+                                  arr[i] = { ...arr[i], key: e.target.value };
+                                  const keys = arr.map((x: any) => x.key);
+                                  setSettings({
+                                    ...settings,
+                                    initialHeaderFields: arr,
+                                    initialHeaders: keys,
+                                  } as any);
+                                }}
+                                style={{
+                                  padding: 8,
+                                  border: "1px solid #d1d5db",
+                                  borderRadius: 8,
+                                  fontSize: 13,
+                                }}
+                                placeholder="header key (e.g., x-apikey)"
+                              />
+                              <input
+                                value={f.label || ""}
+                                onChange={(e) => {
+                                  const arr = [
+                                    ...((settings as any).initialHeaderFields ||
+                                      []),
+                                  ];
+                                  arr[i] = { ...arr[i], label: e.target.value };
+                                  setSettings({
+                                    ...settings,
+                                    initialHeaderFields: arr,
+                                  } as any);
+                                }}
+                                style={{
+                                  padding: 8,
+                                  border: "1px solid #d1d5db",
+                                  borderRadius: 8,
+                                  fontSize: 13,
+                                }}
+                                placeholder="label"
+                              />
+                              <input
+                                value={(f as any).defaultValue || ""}
+                                onChange={(e) => {
+                                  const arr = [
+                                    ...((settings as any).initialHeaderFields ||
+                                      []),
+                                  ];
+                                  arr[i] = {
+                                    ...arr[i],
+                                    defaultValue: e.target.value,
+                                  } as any;
+                                  setSettings({
+                                    ...settings,
+                                    initialHeaderFields: arr,
+                                  } as any);
+                                }}
+                                style={{
+                                  padding: 8,
+                                  border: "1px solid #d1d5db",
+                                  borderRadius: 8,
+                                  fontSize: 13,
+                                }}
+                                placeholder="default value"
+                              />
+                              <select
+                                value={f.type || "text"}
+                                onChange={(e) => {
+                                  const arr = [
+                                    ...((settings as any).initialHeaderFields ||
+                                      []),
+                                  ];
+                                  arr[i] = { ...arr[i], type: e.target.value };
+                                  setSettings({
+                                    ...settings,
+                                    initialHeaderFields: arr,
+                                  } as any);
+                                }}
+                                style={{
+                                  padding: 8,
+                                  border: "1px solid #d1d5db",
+                                  borderRadius: 8,
+                                  fontSize: 13,
+                                }}
+                              >
+                                <option value="text">text</option>
+                              </select>
+                              <select
+                                value={(f as any).source || "none"}
+                                onChange={(e) => {
+                                  const arr = [
+                                    ...((settings as any).initialHeaderFields ||
+                                      []),
+                                  ];
+                                  arr[i] = {
+                                    ...arr[i],
+                                    source: e.target.value,
+                                  };
+                                  setSettings({
+                                    ...settings,
+                                    initialHeaderFields: arr,
+                                  } as any);
+                                }}
+                                style={{
+                                  padding: 8,
+                                  border: "1px solid #d1d5db",
+                                  borderRadius: 8,
+                                  fontSize: 13,
+                                }}
+                              >
+                                <option value="none">
+                                  value: custom/default
+                                </option>
+                                <option value="token">value: auth token</option>
+                                <option value="apiKey">
+                                  value: auth api key
+                                </option>
+                              </select>
+                              <label
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 6,
+                                  color: "#4a5568",
+                                  fontSize: 13,
+                                }}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={!!f.required}
+                                  onChange={(e) => {
+                                    const arr = [
+                                      ...((settings as any)
+                                        .initialHeaderFields || []),
+                                    ];
+                                    arr[i] = {
+                                      ...arr[i],
+                                      required: e.target.checked,
+                                    };
+                                    setSettings({
+                                      ...settings,
+                                      initialHeaderFields: arr,
+                                    } as any);
+                                  }}
+                                />{" "}
+                                required
+                              </label>
+                              <button
+                                onClick={() => {
+                                  const arr = [
+                                    ...((settings as any).initialHeaderFields ||
+                                      []),
+                                  ];
+                                  arr.splice(i, 1);
+                                  const keys = arr.map((x: any) => x.key);
+                                  setSettings({
+                                    ...settings,
+                                    initialHeaderFields: arr,
+                                    initialHeaders: keys,
+                                  } as any);
+                                }}
+                                style={{
+                                  padding: "6px 10px",
+                                  background: "#ef4444",
+                                  color: "white",
+                                  border: "none",
+                                  borderRadius: 8,
+                                  fontSize: 12,
+                                }}
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          )
+                        )}
+                        <div>
+                          <button
+                            onClick={() => {
+                              const arr = [
+                                ...((settings as any).initialHeaderFields ||
+                                  []),
+                              ];
+                              arr.push({
+                                key: "",
+                                label: "",
+                                required: true,
+                                type: "text",
+                              });
+                              const keys = arr.map((x: any) => x.key);
+                              setSettings({
+                                ...settings,
+                                initialHeaderFields: arr,
+                                initialHeaders: keys,
+                              } as any);
+                            }}
+                            style={{
+                              padding: "8px 12px",
+                              background: "#2d3748",
+                              color: "white",
+                              border: "none",
+                              borderRadius: 8,
+                              fontSize: 13,
+                            }}
+                          >
+                            Add header
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ marginTop: 10 }}>
+                      <div
+                        style={{
+                          color: "#4a5568",
+                          fontSize: 13,
+                          marginBottom: 6,
+                        }}
+                      >
+                        Initial Setup Response Fields
+                      </div>
+                      <div style={{ display: "grid", gap: 8 }}>
+                        {((settings as any).initialResponseFieldDefs || [])
+                          .filter(
+                            (f: any) =>
+                              !((settings as any).initialFields || []).some(
+                                (bf: any) => bf.key === f.key
+                              )
+                          )
+                          .map((f: any, i: number) => (
+                            <div
+                              key={(f.key || "") + i}
+                              style={{
+                                display: "grid",
+                                gridTemplateColumns:
+                                  "1fr 1fr 1fr 120px 140px auto",
+                                gap: 8,
+                                alignItems: "center",
+                              }}
+                            >
+                              <input
+                                value={f.key}
+                                onChange={(e) => {
+                                  const arr = [
+                                    ...((settings as any)
+                                      .initialResponseFieldDefs || []),
+                                  ];
+                                  arr[i] = { ...arr[i], key: e.target.value };
+                                  const keys = arr.map((x: any) => x.key);
+                                  setSettings({
+                                    ...settings,
+                                    initialResponseFieldDefs: arr,
+                                    initialResponseFields: keys,
+                                  } as any);
+                                }}
+                                style={{
+                                  padding: 8,
+                                  border: "1px solid #d1d5db",
+                                  borderRadius: 8,
+                                  fontSize: 13,
+                                }}
+                                placeholder="response key (e.g., setup.id)"
+                              />
+                              <input
+                                value={f.label || ""}
+                                onChange={(e) => {
+                                  const arr = [
+                                    ...((settings as any)
+                                      .initialResponseFieldDefs || []),
+                                  ];
+                                  arr[i] = { ...arr[i], label: e.target.value };
+                                  setSettings({
+                                    ...settings,
+                                    initialResponseFieldDefs: arr,
+                                  } as any);
+                                }}
+                                style={{
+                                  padding: 8,
+                                  border: "1px solid #d1d5db",
+                                  borderRadius: 8,
+                                  fontSize: 13,
+                                }}
+                                placeholder="label"
+                              />
+                              <input
+                                value={(f as any).defaultValue || ""}
+                                onChange={(e) => {
+                                  const arr = [
+                                    ...((settings as any)
+                                      .initialResponseFieldDefs || []),
+                                  ];
+                                  arr[i] = {
+                                    ...arr[i],
+                                    defaultValue: e.target.value,
+                                  } as any;
+                                  setSettings({
+                                    ...settings,
+                                    initialResponseFieldDefs: arr,
+                                  } as any);
+                                }}
+                                style={{
+                                  padding: 8,
+                                  border: "1px solid #d1d5db",
+                                  borderRadius: 8,
+                                  fontSize: 13,
+                                }}
+                                placeholder="default value"
+                              />
+                              <select
+                                value={f.type || "text"}
+                                onChange={(e) => {
+                                  const arr = [
+                                    ...((settings as any)
+                                      .initialResponseFieldDefs || []),
+                                  ];
+                                  arr[i] = { ...arr[i], type: e.target.value };
+                                  setSettings({
+                                    ...settings,
+                                    initialResponseFieldDefs: arr,
+                                  } as any);
+                                }}
+                                style={{
+                                  padding: 8,
+                                  border: "1px solid #d1d5db",
+                                  borderRadius: 8,
+                                  fontSize: 13,
+                                }}
+                              >
+                                <option value="text">text</option>
+                              </select>
+                              <label
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 6,
+                                  color: "#4a5568",
+                                  fontSize: 13,
+                                }}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={!!f.required}
+                                  onChange={(e) => {
+                                    const arr = [
+                                      ...((settings as any)
+                                        .initialResponseFieldDefs || []),
+                                    ];
+                                    arr[i] = {
+                                      ...arr[i],
+                                      required: e.target.checked,
+                                    };
+                                    setSettings({
+                                      ...settings,
+                                      initialResponseFieldDefs: arr,
+                                    } as any);
+                                  }}
+                                />{" "}
+                                required
+                              </label>
+                              <button
+                                onClick={() => {
+                                  const arr = [
+                                    ...((settings as any)
+                                      .initialResponseFieldDefs || []),
+                                  ];
+                                  arr.splice(i, 1);
+                                  const keys = arr.map((x: any) => x.key);
+                                  setSettings({
+                                    ...settings,
+                                    initialResponseFieldDefs: arr,
+                                    initialResponseFields: keys,
+                                  } as any);
+                                }}
+                                style={{
+                                  padding: "6px 10px",
+                                  background: "#ef4444",
+                                  color: "white",
+                                  border: "none",
+                                  borderRadius: 8,
+                                  fontSize: 12,
+                                }}
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          ))}
+                        <div>
+                          <button
+                            onClick={() => {
+                              const arr = [
+                                ...((settings as any)
+                                  .initialResponseFieldDefs || []),
+                              ];
+                              arr.push({
+                                key: "",
+                                label: "",
+                                required: false,
+                                type: "text",
+                              });
+                              const keys = arr.map((x: any) => x.key);
+                              setSettings({
+                                ...settings,
+                                initialResponseFieldDefs: arr,
+                                initialResponseFields: keys,
+                              } as any);
+                            }}
+                            style={{
+                              padding: "8px 12px",
+                              background: "#2d3748",
+                              color: "white",
+                              border: "none",
+                              borderRadius: 8,
+                              fontSize: 13,
+                            }}
+                          >
+                            Add response field
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
+
+                {/* Canonical initial setup cURL command */}
+                <div>
+                  <label
+                    style={{
+                      display: "block",
+                      color: "#4a5568",
+                      fontSize: 13,
+                      marginBottom: 6,
+                    }}
+                  >
+                    Canonical initial setup cURL
+                  </label>
+                  <textarea
+                    placeholder={
+                      'curl -X POST https://api.your-service.com/setup \\n+  -H \'Content-Type: application/json\' \\n+  -H \'Authorization: Bearer <token>\' \\n+  -d \'{"companyName":"ACME","timezone":"America/New_York"}\''
+                    }
+                    value={(settings as any).initialSetupCurlCommand || ""}
+                    onChange={(e) => {
+                      const curl = e.target.value;
+                      let parsed: any = undefined;
+                      try {
+                        const p = parseCurlRegistrationSpec(curl);
+                        const bodyKeys = extractBodyKeysFromCurl(curl);
+                        parsed = {
+                          method: p.method,
+                          url: p.url,
+                          contentType: p.contentType,
+                          headersRedacted: redactHeadersForLog(p.headers),
+                          bodyKeys,
+                        };
+                      } catch {}
+                      const next: any = {
+                        ...(settings as any),
+                        initialSetupCurlCommand: curl,
+                        initialParsed: parsed,
+                      };
+                      setSettings(next as any);
+                    }}
+                    rows={6}
+                    style={{
+                      width: "100%",
+                      padding: 12,
+                      border: "1px solid #d1d5db",
+                      borderRadius: 8,
+                      fontSize: 14,
+                      fontFamily: "monospace",
+                      whiteSpace: "pre-wrap",
+                    }}
+                  />
+                  <div style={{ color: "#718096", fontSize: 12, marginTop: 6 }}>
+                    Paste the exact cURL used for initial setup. We derive
+                    method, URL, headers, and fields.
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ marginTop: 8 }}>
+                <button
+                  onClick={save}
+                  disabled={saving}
+                  style={{
+                    padding: "12px 16px",
+                    background: saving
+                      ? "#a0aec0"
+                      : "linear-gradient(135deg, #48bb78, #38a169)",
+                    color: "white",
+                    border: "none",
+                    borderRadius: 12,
+                    fontSize: 14,
+                    fontWeight: 600,
+                    cursor: saving ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {saving ? "Saving…" : "Save Onboarding Settings"}
+                </button>
               </div>
             </div>
-
-            {/* Canonical initial setup cURL command */}
-            <div>
-              <label
-                style={{
-                  display: "block",
-                  color: "#4a5568",
-                  fontSize: 13,
-                  marginBottom: 6,
-                }}
-              >
-                Canonical initial setup cURL
-              </label>
-              <textarea
-                placeholder={
-                  'curl -X POST https://api.your-service.com/setup \\n+  -H \'Content-Type: application/json\' \\n+  -H \'Authorization: Bearer <token>\' \\n+  -d \'{"companyName":"ACME","timezone":"America/New_York"}\''
-                }
-                value={(settings as any).initialSetupCurlCommand || ""}
-                onChange={(e) => {
-                  const curl = e.target.value;
-                  let parsed: any = undefined;
-                  try {
-                    const p = parseCurlRegistrationSpec(curl);
-                    const bodyKeys = extractBodyKeysFromCurl(curl);
-                    parsed = {
-                      method: p.method,
-                      url: p.url,
-                      contentType: p.contentType,
-                      headersRedacted: redactHeadersForLog(p.headers),
-                      bodyKeys,
-                    };
-                  } catch {}
-                  const next: any = {
-                    ...(settings as any),
-                    initialSetupCurlCommand: curl,
-                    initialParsed: parsed,
-                  };
-                  setSettings(next as any);
-                }}
-                rows={6}
-                style={{
-                  width: "100%",
-                  padding: 12,
-                  border: "1px solid #d1d5db",
-                  borderRadius: 8,
-                  fontSize: 14,
-                  fontFamily: "monospace",
-                  whiteSpace: "pre-wrap",
-                }}
-              />
-              <div style={{ color: "#718096", fontSize: 12, marginTop: 6 }}>
-                Paste the exact cURL used for initial setup. We derive method,
-                URL, headers, and fields.
-              </div>
-            </div>
-          </div>
-
-          <div style={{ marginTop: 8 }}>
-            <button
-              onClick={save}
-              disabled={saving}
-              style={{
-                padding: "12px 16px",
-                background: saving
-                  ? "#a0aec0"
-                  : "linear-gradient(135deg, #48bb78, #38a169)",
-                color: "white",
-                border: "none",
-                borderRadius: 12,
-                fontSize: 14,
-                fontWeight: 600,
-                cursor: saving ? "not-allowed" : "pointer",
-              }}
-            >
-              {saving ? "Saving…" : "Save Onboarding Settings"}
-            </button>
-          </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 };

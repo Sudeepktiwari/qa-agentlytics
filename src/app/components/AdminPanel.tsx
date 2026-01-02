@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
+import { Users, FileText, Database, Activity } from "lucide-react";
 import DocumentUploader from "./DocumentUploader";
-import Chatbot from "./Chatbot";
+import Sidebar from "./admin/Sidebar";
 
 // Import admin section components
 import AuthSection from "./admin/AuthSection";
@@ -60,6 +61,7 @@ const AdminPanel: React.FC = () => {
     sessionId: string;
     latestContent: string | { mainText: string };
     latestRole: string;
+    requirements?: string;
   }
   const [leads, setLeads] = useState<Lead[]>([]);
   const [leadsLoading, setLeadsLoading] = useState(false);
@@ -76,6 +78,7 @@ const AdminPanel: React.FC = () => {
   interface Document {
     filename: string;
     count: number;
+    hasStructuredSummary?: boolean;
   }
   const [documents, setDocuments] = useState<Document[]>([]);
   const [documentsLoading, setDocumentsLoading] = useState(false);
@@ -83,11 +86,6 @@ const AdminPanel: React.FC = () => {
   const [documentsExpanded, setDocumentsExpanded] = useState(true);
 
   // Crawled pages management state
-  const [crawledPages, setCrawledPages] = useState<CrawledPage[]>([]);
-  const [crawledPagesLoading, setCrawledPagesLoading] = useState(false);
-  const [crawledPagesError, setCrawledPagesError] = useState("");
-
-  // Summary modal state
   interface CrawledPage {
     _id: string;
     url: string;
@@ -96,7 +94,13 @@ const AdminPanel: React.FC = () => {
     text?: string;
     summary?: string;
     structuredSummary?: Record<string, unknown>;
+    chunksCount?: number;
   }
+  const [crawledPages, setCrawledPages] = useState<CrawledPage[]>([]);
+  const [crawledPagesLoading, setCrawledPagesLoading] = useState(false);
+  const [crawledPagesError, setCrawledPagesError] = useState("");
+
+  // Summary modal state
   const [showSummaryModal, setShowSummaryModal] = useState(false);
   const [selectedPageForSummary, setSelectedPageForSummary] =
     useState<CrawledPage | null>(null);
@@ -124,9 +128,6 @@ const AdminPanel: React.FC = () => {
     autoOpenProactive: true,
   });
 
-  // Customer persona section state
-  const [personasExpanded, setPersonasExpanded] = useState(false);
-
   // Toast state
   const [toast, setToast] = useState<null | {
     message: string;
@@ -139,6 +140,9 @@ const AdminPanel: React.FC = () => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
   };
+
+  // Navigation state
+  const [activeSection, setActiveSection] = useState("overview");
 
   // Check authentication on mount
   useEffect(() => {
@@ -781,60 +785,220 @@ const AdminPanel: React.FC = () => {
     }
   }, [apiKey, auth]);
 
-  return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)",
-        padding: "20px",
-        fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-      }}
-    >
-      <AuthSection
-        auth={auth}
-        authError={authError}
-        authLoading={authLoading}
-        form={form}
-        onFormChange={setForm}
-        onAuth={handleAuth}
-        onLogout={handleLogout}
-      />
+  // Render content based on active section
+  const renderContent = () => {
+    switch (activeSection) {
+      case "overview":
+        return (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {/* Leads Card */}
+              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-blue-50 text-blue-600 rounded-lg">
+                    <Users size={24} />
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-500 font-medium">
+                      Total Leads
+                    </p>
+                    <h3 className="text-2xl font-bold text-slate-800">
+                      {leadsTotal}
+                    </h3>
+                  </div>
+                </div>
+              </div>
 
-      {auth && (
-        <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-          <ContentCrawlingSection
-            sitemapUrl={sitemapUrl}
-            sitemapStatus={sitemapStatus}
-            sitemapLoading={sitemapLoading}
-            autoContinue={autoContinue}
-            continueCrawling={continueCrawling}
-            totalProcessed={totalProcessed}
-            totalRemaining={totalRemaining}
-            onSitemapUrlChange={setSitemapUrl}
-            onSitemapSubmit={handleSitemapSubmit}
-            onAutoContinueChange={setAutoContinue}
-            onContinueCrawling={handleContinueCrawling}
-            onStopCrawling={handleStopCrawling}
-          />
+              {/* Documents Card */}
+              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-indigo-50 text-indigo-600 rounded-lg">
+                    <FileText size={24} />
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-500 font-medium">
+                      Documents
+                    </p>
+                    <h3 className="text-2xl font-bold text-slate-800">
+                      {documents.length}
+                    </h3>
+                  </div>
+                </div>
+              </div>
 
-          <ApiKeyManagementSection
-            apiKey={apiKey}
-            apiKeyLoading={apiKeyLoading}
-            apiKeyError={apiKeyError}
-            showApiKey={showApiKey}
-            apiKeyCreated={apiKeyCreated}
-            onGenerateApiKey={generateApiKey}
-            onToggleShowApiKey={() => setShowApiKey(!showApiKey)}
-            onCopyToClipboard={copyToClipboard}
-          />
+              {/* Crawled Pages Card */}
+              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-emerald-50 text-emerald-600 rounded-lg">
+                    <Database size={24} />
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-500 font-medium">
+                      Crawled Pages
+                    </p>
+                    <h3 className="text-2xl font-bold text-slate-800">
+                      {crawledPages.length}
+                    </h3>
+                  </div>
+                </div>
+              </div>
 
-          <WidgetConfiguratorSection
-            apiKey={apiKey}
-            widgetConfig={widgetConfig}
-            onWidgetConfigChange={setWidgetConfig}
-            onCopyToClipboard={copyToClipboard}
-          />
+              {/* API Status Card */}
+              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-amber-50 text-amber-600 rounded-lg">
+                    <Activity size={24} />
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-500 font-medium">
+                      API Status
+                    </p>
+                    <h3 className="text-lg font-bold text-slate-800">
+                      {apiKey ? "Active" : "Not Configured"}
+                    </h3>
+                  </div>
+                </div>
+              </div>
+            </div>
 
+            {/* Quick Actions / Recent Activity Placeholder */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                <h3 className="text-lg font-semibold text-slate-800 mb-4">
+                  Quick Actions
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <button
+                    onClick={() => setActiveSection("knowledge")}
+                    className="p-4 border border-slate-100 rounded-lg hover:bg-slate-50 text-left transition-colors"
+                  >
+                    <span className="block font-medium text-slate-700 mb-1">
+                      Update Knowledge Base
+                    </span>
+                    <span className="text-xs text-slate-500">
+                      Crawl new pages or upload docs
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => setActiveSection("leads")}
+                    className="p-4 border border-slate-100 rounded-lg hover:bg-slate-50 text-left transition-colors"
+                  >
+                    <span className="block font-medium text-slate-700 mb-1">
+                      View Leads
+                    </span>
+                    <span className="text-xs text-slate-500">
+                      Check recent conversations
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                <h3 className="text-lg font-semibold text-slate-800 mb-4">
+                  System Status
+                </h3>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center py-2 border-b border-slate-50">
+                    <span className="text-slate-600 text-sm">Auth System</span>
+                    <span className="px-2 py-1 bg-green-50 text-green-700 text-xs rounded-full font-medium">
+                      Operational
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b border-slate-50">
+                    <span className="text-slate-600 text-sm">
+                      Database Connection
+                    </span>
+                    <span className="px-2 py-1 bg-green-50 text-green-700 text-xs rounded-full font-medium">
+                      Connected
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center py-2">
+                    <span className="text-slate-600 text-sm">
+                      Crawler Service
+                    </span>
+                    <span className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded-full font-medium">
+                      Ready
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+
+      case "live-preview":
+        return (
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden min-h-[600px]">
+            <TestingSection
+              auth={auth}
+              sitemapUrls={sitemapUrls}
+              selectedPageUrl={selectedPageUrl}
+              onSelectedPageUrlChange={setSelectedPageUrl}
+            />
+          </div>
+        );
+
+      case "knowledge":
+        return (
+          <div className="space-y-8">
+            <ContentCrawlingSection
+              sitemapUrl={sitemapUrl}
+              sitemapStatus={sitemapStatus}
+              sitemapLoading={sitemapLoading}
+              autoContinue={autoContinue}
+              continueCrawling={continueCrawling}
+              totalProcessed={totalProcessed}
+              totalRemaining={totalRemaining}
+              onSitemapUrlChange={setSitemapUrl}
+              onSitemapSubmit={handleSitemapSubmit}
+              onAutoContinueChange={setAutoContinue}
+              onContinueCrawling={handleContinueCrawling}
+              onStopCrawling={handleStopCrawling}
+            />
+            <CrawledPagesSection
+              crawledPages={crawledPages}
+              crawledPagesLoading={crawledPagesLoading}
+              crawledPagesError={crawledPagesError}
+              onRefreshCrawledPages={fetchCrawledPages}
+              onViewPageSummary={(page) => viewSummary(page.url)}
+              onDeleteCrawledPage={deleteCrawledPage}
+            />
+          </div>
+        );
+
+      case "documents":
+        return (
+          <div className="space-y-8">
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+              <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                <FileText size={20} className="text-blue-600" />
+                Upload Documents
+              </h3>
+              <DocumentUploader
+                onUploadDone={() => {
+                  fetchDocuments();
+                }}
+              />
+            </div>
+            <DocumentManagementSection
+              documents={documents}
+              documentsLoading={documentsLoading}
+              documentsError={documentsError}
+              documentsExpanded={documentsExpanded}
+              urlSummaryStatus={urlSummaryStatus}
+              urlExistsInCrawledPages={urlExistsInCrawledPages}
+              onToggleDocumentsExpanded={() =>
+                setDocumentsExpanded(!documentsExpanded)
+              }
+              onRefreshDocuments={fetchDocuments}
+              onDeleteDocument={deleteDocumentFile}
+              onViewSummary={viewSummary}
+            />
+          </div>
+        );
+
+      case "leads":
+        return (
           <LeadsManagementSection
             leads={leads}
             leadsLoading={leadsLoading}
@@ -864,137 +1028,121 @@ const AdminPanel: React.FC = () => {
             }}
             onCopyToClipboard={copyToClipboard}
           />
+        );
 
-          <CustomerPersonaSection
-            expanded={personasExpanded}
-            onToggleExpanded={() => setPersonasExpanded(!personasExpanded)}
-          />
+      case "bookings":
+        return <BookingManagementSection adminId={auth?.adminId} />;
 
-          <CustomerProfilesSection />
-
-          <BookingManagementSection adminId={auth?.adminId} />
-
-          {/* API Setup & Docs */}
-          <div
-            style={{
-              background: "rgba(255, 255, 255, 0.95)",
-              backdropFilter: "blur(10px)",
-              borderRadius: "20px",
-              padding: "24px",
-              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
-              border: "1px solid rgba(255, 255, 255, 0.2)",
-              marginBottom: "24px",
-            }}
-          >
-            <h3
-              style={{
-                margin: "0 0 8px 0",
-                fontSize: "20px",
-                fontWeight: "700",
-                color: "#2d3748",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-              }}
-            >
-              📘 API Setup & Docs
-            </h3>
-            <p
-              style={{
-                color: "#718096",
-                fontSize: "14px",
-                margin: "0 0 16px 0",
-              }}
-            >
-              Index your API docs and generate a canonical registration cURL.
-              Use the quick setup buttons in the chat below to guide the initial
-              configuration.
-            </p>
-            <OnboardingSettingsSection />
+      case "configuration":
+        return (
+          <div className="space-y-8">
+            <WidgetConfiguratorSection
+              apiKey={apiKey}
+              widgetConfig={widgetConfig}
+              onWidgetConfigChange={setWidgetConfig}
+              onCopyToClipboard={copyToClipboard}
+            />
+            <ApiKeyManagementSection
+              apiKey={apiKey}
+              apiKeyLoading={apiKeyLoading}
+              apiKeyError={apiKeyError}
+              showApiKey={showApiKey}
+              apiKeyCreated={apiKeyCreated}
+              onGenerateApiKey={generateApiKey}
+              onToggleShowApiKey={() => setShowApiKey(!showApiKey)}
+              onCopyToClipboard={copyToClipboard}
+            />
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+              <h3 className="text-lg font-semibold text-slate-800 mb-4">
+                Global Settings
+              </h3>
+              <AdminSettingsSection />
+            </div>
           </div>
+        );
 
-          {/* Admin Settings Section */}
-          <div
-            style={{
-              background: "rgba(255, 255, 255, 0.95)",
-              backdropFilter: "blur(10px)",
-              borderRadius: "20px",
-              padding: "24px",
-              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
-              border: "1px solid rgba(255, 255, 255, 0.2)",
-              marginBottom: "24px",
-            }}
-          >
-            <h3
-              style={{
-                margin: "0 0 16px 0",
-                fontSize: "20px",
-                fontWeight: "700",
-                color: "#2d3748",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-              }}
-            >
-              ⚙️ Admin Settings & Feature Flags
-            </h3>
-            <AdminSettingsSection />
-          </div>
-
-          <TestingSection
-            auth={auth}
-            sitemapUrls={sitemapUrls}
-            selectedPageUrl={selectedPageUrl}
-            onSelectedPageUrlChange={setSelectedPageUrl}
-          />
-
-          {/* Document Upload */}
-          <div
-            style={{
-              background: "rgba(255, 255, 255, 0.95)",
-              backdropFilter: "blur(10px)",
-              borderRadius: "20px",
-              padding: "24px",
-              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
-              border: "1px solid rgba(255, 255, 255, 0.2)",
-              marginBottom: "24px",
-            }}
-          >
-            <h3
-              style={{
-                margin: "0 0 16px 0",
-                fontSize: "20px",
-                fontWeight: "700",
-                color: "#2d3748",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-              }}
-            >
-              📎 Document Upload
-            </h3>
-            <DocumentUploader
-              onUploadDone={() => {
-                // Refresh documents list after upload
-                fetchDocuments();
-              }}
+      case "testing":
+        // Duplicate of live-preview but kept for explicit sidebar item
+        return (
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden min-h-[600px]">
+            <TestingSection
+              auth={auth}
+              sitemapUrls={sitemapUrls}
+              selectedPageUrl={selectedPageUrl}
+              onSelectedPageUrlChange={setSelectedPageUrl}
             />
           </div>
+        );
 
-          <DocumentManagementSection
-            documents={documents}
-            documentsLoading={documentsLoading}
-            documentsError={documentsError}
-            documentsExpanded={documentsExpanded}
-            urlSummaryStatus={urlSummaryStatus}
-            urlExistsInCrawledPages={urlExistsInCrawledPages}
-            onToggleDocumentsExpanded={() =>
-              setDocumentsExpanded(!documentsExpanded)
-            }
-            onRefreshDocuments={fetchDocuments}
-            onDeleteDocument={deleteDocumentFile}
-            onViewSummary={viewSummary}
+      case "customers":
+        return (
+          <div className="space-y-8">
+            <CustomerPersonaSection
+              expanded={true} // Always expanded in dedicated view
+              onToggleExpanded={() => {}}
+            />
+            <CustomerProfilesSection />
+          </div>
+        );
+
+      case "onboarding":
+        return (
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+            <h3 className="text-lg font-semibold text-slate-800 mb-4">
+              Onboarding Analytics & Setup
+            </h3>
+            <OnboardingSettingsSection />
+          </div>
+        );
+
+      default:
+        return <div>Select a section from the sidebar</div>;
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
+      {!auth ? (
+        <AuthSection
+          auth={auth}
+          authError={authError}
+          authLoading={authLoading}
+          form={form}
+          onFormChange={setForm}
+          onAuth={handleAuth}
+          onLogout={handleLogout}
+        />
+      ) : (
+        <div className="flex h-screen overflow-hidden">
+          {/* Sidebar */}
+          <Sidebar
+            activeSection={activeSection}
+            onNavigate={setActiveSection}
+            onLogout={handleLogout}
           />
+
+          {/* Main Content */}
+          <main className="flex-1 overflow-y-auto bg-slate-50 p-8">
+            <div className="max-w-7xl mx-auto">
+              <header className="mb-8 flex justify-between items-center">
+                <div>
+                  <h1 className="text-2xl font-bold text-slate-900 capitalize">
+                    {activeSection.replace("-", " ")}
+                  </h1>
+                  <p className="text-slate-500 text-sm mt-1">
+                    Manage your chatbot and data
+                  </p>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="px-3 py-1 bg-white border border-slate-200 rounded-full text-xs font-medium text-slate-600 shadow-sm">
+                    Logged in as: {auth.email}
+                  </div>
+                </div>
+              </header>
+
+              {renderContent()}
+            </div>
+          </main>
         </div>
       )}
 
@@ -1012,22 +1160,11 @@ const AdminPanel: React.FC = () => {
       {/* Toast */}
       {toast && (
         <div
-          style={{
-            position: "fixed",
-            right: 20,
-            bottom: 20,
-            background:
-              toast.type === "success"
-                ? "linear-gradient(135deg, #48bb78, #38a169)"
-                : "linear-gradient(135deg, #f56565, #e53e3e)",
-            color: "white",
-            padding: "12px 16px",
-            borderRadius: 12,
-            boxShadow: "0 8px 25px rgba(0,0,0,0.2)",
-            zIndex: 2000,
-            fontSize: 14,
-            fontWeight: 600,
-          }}
+          className={`fixed right-5 bottom-5 px-4 py-3 rounded-xl shadow-lg z-50 text-white font-medium text-sm transition-all transform duration-300 ${
+            toast.type === "success"
+              ? "bg-gradient-to-br from-green-500 to-emerald-600"
+              : "bg-gradient-to-br from-red-500 to-rose-600"
+          }`}
         >
           {toast.message}
         </div>

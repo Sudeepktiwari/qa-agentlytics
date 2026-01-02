@@ -1,6 +1,31 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
+import {
+  Search,
+  RefreshCw,
+  Download,
+  Copy,
+  Trash2,
+  ChevronLeft,
+  ChevronRight,
+  Filter,
+  MoreHorizontal,
+  Mail,
+  Calendar,
+  MessageSquare,
+  User,
+  Bot,
+  Target,
+  X,
+  Clock,
+  CheckCircle2,
+  ArrowUpRight,
+  Briefcase,
+  DollarSign,
+  Hourglass,
+  ShieldAlert,
+} from "lucide-react";
 
 interface Lead {
   email: string;
@@ -44,7 +69,6 @@ const LeadsManagementSection: React.FC<LeadsManagementSectionProps> = ({
   leadsSearch,
   leadsSortBy,
   leadsSortOrder,
-  LEADS_PAGE_SIZE,
   onLeadsSearch,
   onLeadsSearchSubmit,
   onLeadsSortByChange,
@@ -54,543 +78,305 @@ const LeadsManagementSection: React.FC<LeadsManagementSectionProps> = ({
   onLeadsPageChange,
   onCopyToClipboard,
 }) => {
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+
+  // Helper to format date relative or absolute
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return new Intl.DateTimeFormat("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "numeric",
+    }).format(date);
+  };
+
+  // Helper to get latest message text
+  const getLatestMessage = (lead: Lead) => {
+    if (typeof lead.latestContent === "string") return lead.latestContent;
+    if (
+      lead.latestContent &&
+      typeof lead.latestContent === "object" &&
+      "mainText" in lead.latestContent
+    ) {
+      return lead.latestContent.mainText;
+    }
+    return "";
+  };
+
   return (
-    <div
-      style={{
-        background: "rgba(255, 255, 255, 0.95)",
-        backdropFilter: "blur(10px)",
-        borderRadius: "20px",
-        padding: "32px",
-        marginBottom: "24px",
-        boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
-        border: "1px solid rgba(255, 255, 255, 0.2)",
-      }}
-    >
-      <div style={{ marginBottom: "24px" }}>
-        <h2
-          style={{
-            margin: "0 0 8px 0",
-            fontSize: "24px",
-            fontWeight: "700",
-            color: "#2d3748",
-            display: "flex",
-            alignItems: "center",
-            gap: "12px",
-          }}
-        >
-          📧 Lead Management
-        </h2>
-        <p style={{ color: "#718096", fontSize: "16px", margin: 0 }}>
-          Track and manage leads generated from chatbot conversations
-        </p>
-      </div>
-
-      {/* Search and Controls */}
-      <div
-        style={{
-          background: "linear-gradient(135deg, #f7fafc10, #edf2f710)",
-          borderRadius: "16px",
-          padding: "20px",
-          marginBottom: "24px",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            gap: "12px",
-            alignItems: "center",
-            flexWrap: "wrap",
-            marginBottom: "16px",
-          }}
-        >
-          <form
-            onSubmit={onLeadsSearchSubmit}
-            style={{ display: "flex", gap: "8px", flex: "1 1 300px" }}
-          >
-            <input
-              type="text"
-              placeholder="Search by email or message..."
-              value={leadsSearch}
-              onChange={(e) => onLeadsSearch(e.target.value)}
-              style={{
-                flex: 1,
-                padding: "12px 16px",
-                border: "2px solid #e2e8f0",
-                borderRadius: "8px",
-                fontSize: "14px",
-                color: "#2d3748",
-                background: "white",
-                outline: "none",
-              }}
-            />
-            <button
-              type="submit"
-              style={{
-                padding: "12px 20px",
-                background: "linear-gradient(135deg, #4299e1 0%, #3182ce 100%)",
-                color: "white",
-                border: "none",
-                borderRadius: "8px",
-                fontSize: "14px",
-                fontWeight: "600",
-                cursor: "pointer",
-                whiteSpace: "nowrap",
-              }}
-            >
-              🔍 Search
-            </button>
-          </form>
-
-          <select
-            value={leadsSortBy}
-            onChange={(e) => onLeadsSortByChange(e.target.value)}
-            style={{
-              padding: "12px 16px",
-              border: "2px solid #e2e8f0",
-              borderRadius: "8px",
-              fontSize: "14px",
-              background: "white",
-              color: "#2d3748",
-            }}
-          >
-            <option value="lastSeen">Sort by Last Seen</option>
-            <option value="firstSeen">Sort by First Seen</option>
-            <option value="email">Sort by Email</option>
-            <option value="messageCount">Sort by Message Count</option>
-          </select>
-
-          <select
-            value={leadsSortOrder}
-            onChange={(e) => onLeadsSortOrderChange(e.target.value)}
-            style={{
-              padding: "12px 16px",
-              border: "2px solid #e2e8f0",
-              borderRadius: "8px",
-              fontSize: "14px",
-              background: "white",
-              color: "#2d3748",
-            }}
-          >
-            <option value="desc">↓ Descending</option>
-            <option value="asc">↑ Ascending</option>
-          </select>
-
+    <div className="space-y-6">
+      {/* Header & Controls */}
+      <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+        <div>
+          <h2 className="text-xl font-bold text-slate-900">Leads & CRM</h2>
+          <p className="text-sm text-slate-500 mt-1">
+            Manage and track your potential customers
+          </p>
+        </div>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
           <button
             onClick={onRefreshLeads}
             disabled={leadsLoading}
-            style={{
-              padding: "12px 20px",
-              background: leadsLoading
-                ? "#a0aec0"
-                : "linear-gradient(135deg, #48bb78 0%, #38a169 100%)",
-              color: "white",
-              border: "none",
-              borderRadius: "8px",
-              fontSize: "14px",
-              fontWeight: "600",
-              cursor: leadsLoading ? "not-allowed" : "pointer",
-              whiteSpace: "nowrap",
-            }}
+            className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-all border border-transparent hover:border-slate-200"
+            title="Refresh list"
           >
-            {leadsLoading ? "⏳ Loading..." : "🔄 Refresh"}
+            <RefreshCw
+              size={18}
+              className={leadsLoading ? "animate-spin" : ""}
+            />
           </button>
-        </div>
-
-        {/* Stats */}
-        <div
-          style={{
-            padding: "16px 20px",
-            background: "rgba(255, 255, 255, 0.7)",
-            borderRadius: "12px",
-            border: "1px solid rgba(255, 255, 255, 0.4)",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "16px",
-              flexWrap: "wrap",
+          <div className="h-6 w-px bg-slate-200 mx-1" />
+          <button
+            onClick={() => {
+              const emailList = leads.map((lead) => lead.email).join(", ");
+              onCopyToClipboard(emailList);
             }}
+            className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm"
           >
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <span style={{ fontSize: "20px" }}>📊</span>
-              <strong style={{ color: "#2d3748" }}>
-                Total Leads: {leadsTotal}
-              </strong>
-            </div>
-            {leadsTotal > 0 && (
-              <span style={{ color: "#718096", fontSize: "14px" }}>
-                Showing {(leadsPage - 1) * LEADS_PAGE_SIZE + 1} -{" "}
-                {Math.min(leadsPage * LEADS_PAGE_SIZE, leadsTotal)} of{" "}
-                {leadsTotal}
-              </span>
-            )}
-          </div>
+            <Copy size={16} />
+            <span className="hidden sm:inline">Copy Emails</span>
+          </button>
+          <button
+            onClick={() => {
+              const csvContent = [
+                [
+                  "Email",
+                  "First Contact",
+                  "Last Activity",
+                  "Message Count",
+                  "Latest Message",
+                  "Requirements",
+                ].join(","),
+                ...leads.map((lead) =>
+                  [
+                    `"${lead.email}"`,
+                    `"${new Date(lead.firstSeen).toLocaleString()}"`,
+                    `"${new Date(lead.lastSeen).toLocaleString()}"`,
+                    lead.messageCount,
+                    `"${getLatestMessage(lead).replace(/"/g, '""')}"`,
+                    `"${(lead.requirements || "").replace(/"/g, '""')}"`,
+                  ].join(",")
+                ),
+              ].join("\n");
+
+              const blob = new Blob([csvContent], { type: "text/csv" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `leads-${
+                new Date().toISOString().split("T")[0]
+              }.csv`;
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+            className="flex items-center gap-2 px-3 py-2 bg-slate-900 text-white rounded-lg text-sm font-medium hover:bg-slate-800 transition-all shadow-sm"
+          >
+            <Download size={16} />
+            <span className="hidden sm:inline">Export CSV</span>
+          </button>
         </div>
       </div>
 
-      {/* Error Display */}
-      {leadsError && (
-        <div
-          style={{
-            padding: "16px 20px",
-            borderRadius: "12px",
-            background: "linear-gradient(135deg, #fed7d7, #feb2b2)",
-            border: "1px solid #fc8181",
-            color: "#742a2a",
-            marginBottom: "24px",
-          }}
-        >
-          {leadsError}
+      {/* Filters Bar */}
+      <div className="bg-white p-1 rounded-xl border border-slate-200 shadow-sm mb-6 flex flex-col lg:flex-row gap-2">
+        <div className="relative flex-1 group">
+          <Search
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors"
+            size={16}
+          />
+          <form onSubmit={onLeadsSearchSubmit} className="w-full">
+            <input
+              type="text"
+              placeholder="Search by email, requirements..."
+              value={leadsSearch}
+              onChange={(e) => onLeadsSearch(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 bg-transparent border-none text-sm focus:outline-none focus:ring-0 placeholder:text-slate-400 h-9"
+            />
+          </form>
         </div>
-      )}
 
-      {/* Leads Content */}
-      {leadsLoading ? (
-        <div
-          style={{
-            textAlign: "center",
-            padding: "60px 20px",
-            color: "#718096",
-            fontSize: "16px",
-          }}
-        >
-          <div style={{ fontSize: "40px", marginBottom: "16px" }}>⏳</div>
-          Loading leads...
-        </div>
-      ) : leads.length === 0 ? (
-        <div
-          style={{
-            textAlign: "center",
-            padding: "60px 20px",
-            color: "#718096",
-          }}
-        >
-          <div style={{ fontSize: "40px", marginBottom: "16px" }}>📭</div>
-          <h3 style={{ margin: "0 0 8px 0", color: "#4a5568" }}>
-            No leads found
-          </h3>
-          <p style={{ margin: 0, fontSize: "16px" }}>
-            Start promoting your chatbot to collect leads!
-          </p>
-        </div>
-      ) : (
-        <div
-          style={{
-            background: "white",
-            borderRadius: "16px",
-            overflow: "hidden",
-            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
-            border: "1px solid #e2e8f0",
-          }}
-        >
-          <div style={{ overflowX: "auto" }}>
-            <table
-              style={{
-                width: "100%",
-                borderCollapse: "collapse",
-                fontSize: "14px",
-              }}
+        <div className="h-9 w-px bg-slate-100 hidden lg:block" />
+
+        <div className="flex items-center gap-2 px-2">
+          <div className="flex items-center bg-slate-50 rounded-lg p-0.5 border border-slate-200">
+            <select
+              value={leadsSortBy}
+              onChange={(e) => onLeadsSortByChange(e.target.value)}
+              className="bg-transparent border-none text-slate-600 text-xs font-medium py-1.5 pl-2 pr-6 focus:ring-0 cursor-pointer hover:text-slate-900 transition-colors"
             >
+              <option value="lastSeen">Last Activity</option>
+              <option value="firstSeen">First Seen</option>
+              <option value="email">Email</option>
+              <option value="messageCount">Engagement</option>
+            </select>
+          </div>
+
+          <button
+            onClick={() =>
+              onLeadsSortOrderChange(leadsSortOrder === "asc" ? "desc" : "asc")
+            }
+            className="p-2 bg-white border border-slate-200 text-slate-500 rounded-lg hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-all shadow-sm"
+            title={leadsSortOrder === "asc" ? "Ascending" : "Descending"}
+          >
+            {leadsSortOrder === "asc" ? (
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider">
+                  Asc
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider">
+                  Desc
+                </span>
+              </div>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Leads Table */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        {leadsError && (
+          <div className="p-4 bg-red-50 border-b border-red-100 text-red-700 text-sm flex items-center gap-2">
+            <X size={16} />
+            {leadsError}
+          </div>
+        )}
+
+        {leadsLoading ? (
+          <div className="p-12 text-center text-slate-400">
+            <RefreshCw className="animate-spin mx-auto mb-3" size={32} />
+            <p className="text-sm font-medium">Loading leads...</p>
+          </div>
+        ) : leads.length === 0 ? (
+          <div className="p-16 text-center">
+            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <User size={32} className="text-slate-300" />
+            </div>
+            <h3 className="text-slate-900 font-medium mb-1">No leads found</h3>
+            <p className="text-slate-500 text-sm">
+              Try adjusting your search or filters
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
               <thead>
-                <tr
-                  style={{
-                    background: "linear-gradient(135deg, #f7fafc, #edf2f7)",
-                  }}
-                >
-                  <th
-                    style={{
-                      padding: "16px 20px",
-                      textAlign: "left",
-                      borderBottom: "2px solid #e2e8f0",
-                      color: "#4a5568",
-                      fontWeight: "600",
-                    }}
-                  >
-                    📧 Email
+                <tr className="bg-slate-50/50 border-b border-slate-200">
+                  <th className="px-5 py-3 font-semibold text-slate-500 text-[11px] uppercase tracking-wider w-[28%] pl-6">
+                    Lead Identity
                   </th>
-                  <th
-                    style={{
-                      padding: "16px 20px",
-                      textAlign: "left",
-                      borderBottom: "2px solid #e2e8f0",
-                      color: "#4a5568",
-                      fontWeight: "600",
-                    }}
-                  >
-                    🆕 First Contact
+                  <th className="px-5 py-3 font-semibold text-slate-500 text-[11px] uppercase tracking-wider">
+                    Intent & BANT
                   </th>
-                  <th
-                    style={{
-                      padding: "16px 20px",
-                      textAlign: "left",
-                      borderBottom: "2px solid #e2e8f0",
-                      color: "#4a5568",
-                      fontWeight: "600",
-                    }}
-                  >
-                    ⏰ Last Activity
+                  <th className="px-5 py-3 font-semibold text-slate-500 text-[11px] uppercase tracking-wider">
+                    Engagement
                   </th>
-                  <th
-                    style={{
-                      padding: "16px 20px",
-                      textAlign: "center",
-                      borderBottom: "2px solid #e2e8f0",
-                      color: "#4a5568",
-                      fontWeight: "600",
-                    }}
-                  >
-                    💬 Messages
+                  <th className="px-5 py-3 font-semibold text-slate-500 text-[11px] uppercase tracking-wider">
+                    Timeline
                   </th>
-                  <th
-                    style={{
-                      padding: "16px 20px",
-                      textAlign: "left",
-                      borderBottom: "2px solid #e2e8f0",
-                      color: "#4a5568",
-                      fontWeight: "600",
-                    }}
-                  >
-                    📝 Latest Message
-                  </th>
-                  <th
-                    style={{
-                      padding: "16px 20px",
-                      textAlign: "left",
-                      borderBottom: "2px solid #e2e8f0",
-                      color: "#4a5568",
-                      fontWeight: "600",
-                    }}
-                  >
-                    🎯 Requirements
-                  </th>
-                  <th
-                    style={{
-                      padding: "16px 20px",
-                      textAlign: "center",
-                      borderBottom: "2px solid #e2e8f0",
-                      color: "#4a5568",
-                      fontWeight: "600",
-                    }}
-                  >
-                    ⚡ Actions
+                  <th className="px-5 py-3 font-semibold text-slate-500 text-[11px] uppercase tracking-wider text-right pr-6">
+                    Actions
                   </th>
                 </tr>
               </thead>
-              <tbody>
-                {leads.map((lead, index) => (
+              <tbody className="divide-y divide-slate-100">
+                {leads.map((lead) => (
                   <tr
                     key={lead.email}
-                    style={{
-                      backgroundColor: index % 2 === 0 ? "#fff" : "#f8fafc",
-                      transition: "background-color 0.2s ease",
-                    }}
-                    onMouseEnter={(e) => {
-                      const target = e.currentTarget as HTMLTableRowElement;
-                      target.style.backgroundColor = "#f1f5f9";
-                    }}
-                    onMouseLeave={(e) => {
-                      const target = e.currentTarget as HTMLTableRowElement;
-                      target.style.backgroundColor =
-                        index % 2 === 0 ? "#fff" : "#f8fafc";
-                    }}
+                    onClick={() => setSelectedLead(lead)}
+                    className="group hover:bg-blue-50/30 transition-colors cursor-pointer"
                   >
-                    <td
-                      style={{
-                        padding: "16px 20px",
-                        borderBottom: "1px solid #e2e8f0",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                        }}
-                      >
-                        <span style={{ fontSize: "16px" }}>📧</span>
-                        <strong
-                          style={{
-                            color: "#2d3748",
-                            fontSize: "14px",
-                            wordBreak: "break-word",
-                          }}
-                        >
-                          {lead.email}
-                        </strong>
+                    <td className="px-5 py-3 pl-6">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-white border border-slate-200 flex items-center justify-center text-xs font-bold text-slate-600 shadow-sm group-hover:border-blue-200 group-hover:text-blue-600 transition-colors">
+                          {lead.email.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <div className="font-semibold text-slate-900 text-sm group-hover:text-blue-700 transition-colors">
+                            {lead.email}
+                          </div>
+                          <div className="text-[10px] text-slate-400 mt-0.5 flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                            Active
+                          </div>
+                        </div>
                       </div>
                     </td>
-                    <td
-                      style={{
-                        padding: "16px 20px",
-                        borderBottom: "1px solid #e2e8f0",
-                        color: "#4a5568",
-                        fontSize: "13px",
-                      }}
-                    >
-                      {new Date(lead.firstSeen).toLocaleString()}
-                    </td>
-                    <td
-                      style={{
-                        padding: "16px 20px",
-                        borderBottom: "1px solid #e2e8f0",
-                        color: "#4a5568",
-                        fontSize: "13px",
-                      }}
-                    >
-                      {new Date(lead.lastSeen).toLocaleString()}
-                    </td>
-                    <td
-                      style={{
-                        padding: "16px 20px",
-                        borderBottom: "1px solid #e2e8f0",
-                        textAlign: "center",
-                      }}
-                    >
-                      <span
-                        style={{
-                          background:
-                            "linear-gradient(135deg, #667eea20, #764ba220)",
-                          color: "#667eea",
-                          padding: "4px 12px",
-                          borderRadius: "20px",
-                          fontSize: "12px",
-                          fontWeight: "600",
-                        }}
-                      >
-                        {lead.messageCount}
-                      </span>
-                    </td>
-                    <td
-                      style={{
-                        padding: "16px 20px",
-                        borderBottom: "1px solid #e2e8f0",
-                        maxWidth: "300px",
-                      }}
-                    >
-                      <div
-                        style={{
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                          color:
-                            lead.latestRole === "user" ? "#2d3748" : "#718096",
-                          fontSize: "13px",
-                        }}
-                      >
-                        <span
-                          style={{
-                            fontSize: "12px",
-                            fontWeight: "600",
-                            marginRight: "4px",
-                          }}
-                        >
-                          {lead.latestRole === "user" ? "👤" : "🤖"}
-                        </span>
-                        {typeof lead.latestContent === "string"
-                          ? lead.latestContent
-                          : lead.latestContent &&
-                            typeof lead.latestContent === "object" &&
-                            "mainText" in lead.latestContent
-                          ? lead.latestContent.mainText
-                          : "No content"}
-                      </div>
-                    </td>
-                    <td
-                      style={{
-                        padding: "16px 20px",
-                        borderBottom: "1px solid #e2e8f0",
-                        maxWidth: "250px",
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontSize: "13px",
-                          color: lead.requirements ? "#4a5568" : "#a0aec0",
-                          lineHeight: "1.4",
-                        }}
-                      >
-                        {lead.requirements ? (
-                          <div
-                            style={{
-                              background:
-                                "linear-gradient(135deg, #e6fffa, #f0fff4)",
-                              padding: "8px 12px",
-                              borderRadius: "8px",
-                              border: "1px solid #b2f5ea",
-                            }}
+                    <td className="px-5 py-3">
+                      {lead.requirements ? (
+                        <div className="flex flex-col items-start gap-1">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded border border-emerald-100 text-[10px] font-bold uppercase tracking-wide">
+                            High Intent
+                          </span>
+                          <span
+                            className="text-xs text-slate-600 line-clamp-1 max-w-[200px]"
+                            title={lead.requirements}
                           >
-                            <span
-                              style={{ fontSize: "12px", marginRight: "6px" }}
-                            >
-                              🎯
-                            </span>
                             {lead.requirements}
-                          </div>
-                        ) : (
-                          <div
-                            style={{
-                              fontStyle: "italic",
-                              color: "#a0aec0",
-                              fontSize: "12px",
-                            }}
-                          >
-                            No specific requirements detected
-                          </div>
-                        )}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-50 text-slate-500 rounded border border-slate-100 text-[10px] font-medium">
+                          No Signal
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-5 py-3">
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-medium text-slate-700">
+                            {lead.messageCount} messages
+                          </span>
+                          {lead.messageCount > 5 && (
+                            <span
+                              className="w-1.5 h-1.5 rounded-full bg-blue-500"
+                              title="Highly engaged"
+                            ></span>
+                          )}
+                        </div>
+                        <div className="text-[11px] text-slate-400 truncate max-w-[160px] italic">
+                          "{getLatestMessage(lead)}"
+                        </div>
                       </div>
                     </td>
-                    <td
-                      style={{
-                        padding: "16px 20px",
-                        borderBottom: "1px solid #e2e8f0",
-                        textAlign: "center",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: "8px",
-                          justifyContent: "center",
-                        }}
-                      >
+                    <td className="px-5 py-3">
+                      <div className="text-xs font-medium text-slate-700">
+                        {formatDate(lead.lastSeen)}
+                      </div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">
+                        First: {formatDate(lead.firstSeen)}
+                      </div>
+                    </td>
+                    <td className="px-5 py-3 text-right pr-6">
+                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
                         <button
-                          onClick={() => onCopyToClipboard(lead.email)}
-                          style={{
-                            background:
-                              "linear-gradient(135deg, #48bb78, #38a169)",
-                            color: "white",
-                            border: "none",
-                            borderRadius: "6px",
-                            padding: "6px 12px",
-                            fontSize: "12px",
-                            fontWeight: "600",
-                            cursor: "pointer",
-                            transition: "all 0.2s ease",
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onCopyToClipboard(lead.email);
                           }}
+                          className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
                           title="Copy email"
                         >
-                          📋
+                          <Copy size={14} />
                         </button>
                         <button
-                          onClick={() => onDeleteLead(lead.email)}
-                          style={{
-                            background:
-                              "linear-gradient(135deg, #f56565, #e53e3e)",
-                            color: "white",
-                            border: "none",
-                            borderRadius: "6px",
-                            padding: "6px 12px",
-                            fontSize: "12px",
-                            fontWeight: "600",
-                            cursor: "pointer",
-                            transition: "all 0.2s ease",
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDeleteLead(lead.email);
                           }}
+                          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-all"
                           title="Delete lead"
                         >
-                          🗑️
+                          <Trash2 size={14} />
                         </button>
+                        <div className="w-px h-3 bg-slate-200 mx-0.5"></div>
+                        <ChevronRight
+                          size={16}
+                          className="text-slate-300 group-hover:text-blue-400"
+                        />
                       </div>
                     </td>
                   </tr>
@@ -598,209 +384,227 @@ const LeadsManagementSection: React.FC<LeadsManagementSectionProps> = ({
               </tbody>
             </table>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Pagination */}
-      {leadsTotalPages > 1 && (
-        <div
-          style={{
-            marginTop: "24px",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            gap: "8px",
-            flexWrap: "wrap",
-          }}
-        >
-          <button
-            onClick={() => onLeadsPageChange(1)}
-            disabled={leadsPage === 1}
-            style={{
-              padding: "8px 16px",
-              background:
-                leadsPage === 1
-                  ? "#e2e8f0"
-                  : "linear-gradient(135deg, #4299e1, #3182ce)",
-              color: leadsPage === 1 ? "#a0aec0" : "white",
-              border: "none",
-              borderRadius: "8px",
-              fontSize: "14px",
-              cursor: leadsPage === 1 ? "not-allowed" : "pointer",
-            }}
-          >
-            ⏮️ First
-          </button>
-          <button
-            onClick={() => onLeadsPageChange(leadsPage - 1)}
-            disabled={leadsPage === 1}
-            style={{
-              padding: "8px 16px",
-              background:
-                leadsPage === 1
-                  ? "#e2e8f0"
-                  : "linear-gradient(135deg, #4299e1, #3182ce)",
-              color: leadsPage === 1 ? "#a0aec0" : "white",
-              border: "none",
-              borderRadius: "8px",
-              fontSize: "14px",
-              cursor: leadsPage === 1 ? "not-allowed" : "pointer",
-            }}
-          >
-            ⬅️ Previous
-          </button>
-          <span
-            style={{
-              padding: "8px 16px",
-              background: "linear-gradient(135deg, #f7fafc, #edf2f7)",
-              borderRadius: "8px",
-              fontSize: "14px",
-              fontWeight: "600",
-              color: "#4a5568",
-            }}
-          >
-            Page {leadsPage} of {leadsTotalPages}
-          </span>
-          <button
-            onClick={() => onLeadsPageChange(leadsPage + 1)}
-            disabled={leadsPage === leadsTotalPages}
-            style={{
-              padding: "8px 16px",
-              background:
-                leadsPage === leadsTotalPages
-                  ? "#e2e8f0"
-                  : "linear-gradient(135deg, #4299e1, #3182ce)",
-              color: leadsPage === leadsTotalPages ? "#a0aec0" : "white",
-              border: "none",
-              borderRadius: "8px",
-              fontSize: "14px",
-              cursor: leadsPage === leadsTotalPages ? "not-allowed" : "pointer",
-            }}
-          >
-            Next ➡️
-          </button>
-          <button
-            onClick={() => onLeadsPageChange(leadsTotalPages)}
-            disabled={leadsPage === leadsTotalPages}
-            style={{
-              padding: "8px 16px",
-              background:
-                leadsPage === leadsTotalPages
-                  ? "#e2e8f0"
-                  : "linear-gradient(135deg, #4299e1, #3182ce)",
-              color: leadsPage === leadsTotalPages ? "#a0aec0" : "white",
-              border: "none",
-              borderRadius: "8px",
-              fontSize: "14px",
-              cursor: leadsPage === leadsTotalPages ? "not-allowed" : "pointer",
-            }}
-          >
-            Last ⏭️
-          </button>
-        </div>
-      )}
+        {/* Pagination Footer */}
+        {leadsTotalPages > 1 && (
+          <div className="bg-slate-50 px-6 py-4 border-t border-slate-200 flex items-center justify-between">
+            <div className="text-sm text-slate-500">
+              Showing page <span className="font-medium">{leadsPage}</span> of{" "}
+              <span className="font-medium">{leadsTotalPages}</span>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => onLeadsPageChange(leadsPage - 1)}
+                disabled={leadsPage === 1}
+                className="p-2 bg-white border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <button
+                onClick={() => onLeadsPageChange(leadsPage + 1)}
+                disabled={leadsPage === leadsTotalPages}
+                className="p-2 bg-white border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
 
-      {/* Export Options */}
-      {leads.length > 0 && (
-        <div
-          style={{
-            marginTop: "24px",
-            background: "linear-gradient(135deg, #e6fffa10, #b2f5ea10)",
-            borderRadius: "16px",
-            padding: "20px",
-          }}
-        >
-          <h4
-            style={{
-              margin: "0 0 16px 0",
-              color: "#4a5568",
-              fontSize: "16px",
-              fontWeight: "600",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-            }}
-          >
-            📊 Export Options
-          </h4>
-          <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-            <button
-              onClick={() => {
-                const csvContent = [
-                  [
-                    "Email",
-                    "First Contact",
-                    "Last Activity",
-                    "Message Count",
-                    "Latest Message",
-                  ].join(","),
-                  ...leads.map((lead) =>
-                    [
-                      `"${lead.email}"`,
-                      `"${new Date(lead.firstSeen).toLocaleString()}"`,
-                      `"${new Date(lead.lastSeen).toLocaleString()}"`,
-                      lead.messageCount,
-                      `"${(typeof lead.latestContent === "string"
-                        ? lead.latestContent
-                        : lead.latestContent &&
-                          typeof lead.latestContent === "object" &&
-                          "mainText" in lead.latestContent
-                        ? lead.latestContent.mainText
-                        : ""
-                      ).replace(/"/g, '""')}"`,
-                    ].join(",")
-                  ),
-                ].join("\n");
+      {/* CRM Drawer (Slide-over) */}
+      {selectedLead && (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm transition-opacity"
+            onClick={() => setSelectedLead(null)}
+          />
 
-                const blob = new Blob([csvContent], { type: "text/csv" });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = `leads-${
-                  new Date().toISOString().split("T")[0]
-                }.csv`;
-                a.click();
-                URL.revokeObjectURL(url);
-              }}
-              style={{
-                background: "linear-gradient(135deg, #38b2ac, #319795)",
-                color: "white",
-                border: "none",
-                padding: "12px 20px",
-                borderRadius: "12px",
-                fontSize: "14px",
-                fontWeight: "600",
-                cursor: "pointer",
-                transition: "all 0.2s ease",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-              }}
-            >
-              📥 Export as CSV
-            </button>
-            <button
-              onClick={() => {
-                const emailList = leads.map((lead) => lead.email).join(", ");
-                onCopyToClipboard(emailList);
-              }}
-              style={{
-                background: "linear-gradient(135deg, #805ad5, #6b46c1)",
-                color: "white",
-                border: "none",
-                padding: "12px 20px",
-                borderRadius: "12px",
-                fontSize: "14px",
-                fontWeight: "600",
-                cursor: "pointer",
-                transition: "all 0.2s ease",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-              }}
-            >
-              📋 Copy All Emails
-            </button>
+          {/* Drawer Panel */}
+          <div className="relative w-full max-w-xl bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+            {/* Drawer Header */}
+            <div className="p-6 border-b border-slate-100 flex justify-between items-start bg-slate-50/50">
+              <div className="flex items-start gap-4">
+                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center text-xl font-bold shadow-lg shadow-blue-500/20 ring-4 ring-white">
+                  {selectedLead.email.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-slate-900">
+                    {selectedLead.email.split("@")[0]}
+                  </h3>
+                  <div className="flex items-center gap-2 text-sm text-slate-500 mt-0.5 font-mono">
+                    {selectedLead.email}
+                    <button
+                      onClick={() => onCopyToClipboard(selectedLead.email)}
+                      className="text-slate-400 hover:text-blue-500 transition-colors"
+                      title="Copy email"
+                    >
+                      <Copy size={12} />
+                    </button>
+                  </div>
+                  <div className="flex gap-2 mt-2">
+                    <span className="px-2 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold uppercase tracking-wider rounded-full border border-blue-100">
+                      New Lead
+                    </span>
+                    <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-bold uppercase tracking-wider rounded-full border border-slate-200">
+                      {selectedLead.messageCount} Messages
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedLead(null)}
+                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-all"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Drawer Content */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-8">
+              {/* BANT Score Card (Rule 5 Premium Visualization) */}
+              <div className="bg-gradient-to-br from-indigo-50/50 to-blue-50/50 rounded-2xl p-1 border border-indigo-100/50 shadow-sm">
+                <div className="bg-white/60 backdrop-blur-sm rounded-xl p-5">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center">
+                      <Target size={18} />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-900 text-sm">
+                        Qualification Score
+                      </h4>
+                      <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wide">
+                        BANT Framework
+                      </p>
+                    </div>
+                    <div className="ml-auto flex items-center gap-1 text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md border border-indigo-100">
+                      <span>High Intent</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    {/* Budget */}
+                    <div className="p-3 bg-white rounded-lg border border-slate-100 shadow-sm">
+                      <div className="flex items-center gap-2 text-slate-400 mb-1">
+                        <DollarSign size={14} />
+                        <span className="text-[10px] font-bold uppercase tracking-wider">
+                          Budget
+                        </span>
+                      </div>
+                      <p className="text-sm font-medium text-slate-900">
+                        Unknown
+                      </p>
+                    </div>
+
+                    {/* Authority */}
+                    <div className="p-3 bg-white rounded-lg border border-slate-100 shadow-sm">
+                      <div className="flex items-center gap-2 text-slate-400 mb-1">
+                        <Briefcase size={14} />
+                        <span className="text-[10px] font-bold uppercase tracking-wider">
+                          Authority
+                        </span>
+                      </div>
+                      <p className="text-sm font-medium text-slate-900">
+                        Decision Maker
+                      </p>
+                    </div>
+
+                    {/* Need */}
+                    <div className="col-span-2 p-3 bg-white rounded-lg border border-emerald-100 shadow-sm ring-1 ring-emerald-50">
+                      <div className="flex items-center gap-2 text-emerald-600 mb-1">
+                        <ShieldAlert size={14} />
+                        <span className="text-[10px] font-bold uppercase tracking-wider">
+                          Need (Identified)
+                        </span>
+                      </div>
+                      <p className="text-sm font-medium text-slate-900 leading-relaxed">
+                        {selectedLead.requirements ||
+                          "No specific requirements identified yet."}
+                      </p>
+                    </div>
+
+                    {/* Timeline */}
+                    <div className="col-span-2 p-3 bg-white rounded-lg border border-slate-100 shadow-sm">
+                      <div className="flex items-center gap-2 text-slate-400 mb-1">
+                        <Hourglass size={14} />
+                        <span className="text-[10px] font-bold uppercase tracking-wider">
+                          Timeline
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-slate-900">
+                          Active recently
+                        </p>
+                        <span className="text-xs text-slate-500">
+                          Last seen {formatDate(selectedLead.lastSeen)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Engagement Timeline */}
+              <div>
+                <h4 className="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
+                  <Clock size={16} className="text-slate-400" />
+                  Activity Timeline
+                </h4>
+                <div className="relative pl-4 border-l-2 border-slate-100 space-y-6">
+                  {/* Latest Action */}
+                  <div className="relative">
+                    <div className="absolute -left-[21px] top-1 w-3 h-3 rounded-full bg-blue-500 border-2 border-white shadow-sm" />
+                    <div className="text-xs text-slate-500 mb-0.5">
+                      {formatDate(selectedLead.lastSeen)}
+                    </div>
+                    <p className="text-sm font-medium text-slate-900">
+                      Latest Interaction
+                    </p>
+                    <div className="mt-2 p-3 bg-slate-50 rounded-lg border border-slate-200 text-sm text-slate-600 italic">
+                      "{getLatestMessage(selectedLead)}"
+                    </div>
+                  </div>
+
+                  {/* First Seen */}
+                  <div className="relative">
+                    <div className="absolute -left-[21px] top-1 w-3 h-3 rounded-full bg-slate-300 border-2 border-white shadow-sm" />
+                    <div className="text-xs text-slate-500 mb-0.5">
+                      {formatDate(selectedLead.firstSeen)}
+                    </div>
+                    <p className="text-sm font-medium text-slate-900">
+                      First Contact
+                    </p>
+                    <p className="text-sm text-slate-500">
+                      Started a new session
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Drawer Actions */}
+            <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex gap-3">
+              <button
+                onClick={() =>
+                  (window.location.href = `mailto:${selectedLead.email}`)
+                }
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-all shadow-sm shadow-blue-200"
+              >
+                <Mail size={18} />
+                Send Email
+              </button>
+              <button
+                onClick={() => {
+                  onDeleteLead(selectedLead.email);
+                  setSelectedLead(null);
+                }}
+                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-red-600 rounded-xl font-medium hover:bg-red-50 hover:border-red-200 transition-all"
+              >
+                <Trash2 size={18} />
+              </button>
+            </div>
           </div>
         </div>
       )}
