@@ -35,6 +35,12 @@
     "remotion": "^4.0.365",
     "turndown": "^7.2.2"
   },
+  "overrides": {
+    "react-quill": {
+      "react": "$react",
+      "react-dom": "$react-dom"
+    }
+  },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
