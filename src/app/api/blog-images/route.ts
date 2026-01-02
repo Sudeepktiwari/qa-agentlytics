@@ -17,12 +17,19 @@ export async function POST(req: Request) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    const filename = `${Date.now()}-${file.name.replace(/\s/g, '-')}`;
+    // Sanitize filename to prevent issues
+    const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+    const filename = `${Date.now()}-${safeName}`;
     
     // Ensure upload directory exists
     const uploadDir = path.join(process.cwd(), 'public/uploads');
     if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
+      try {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      } catch (mkdirErr) {
+        console.error('Failed to create upload directory:', mkdirErr);
+        return NextResponse.json({ error: 'Server configuration error: cannot create upload directory' }, { status: 500 });
+      }
     }
 
     const filePath = path.join(uploadDir, filename);
@@ -32,8 +39,11 @@ export async function POST(req: Request) {
     const publicUrl = `/uploads/${filename}`;
     
     return NextResponse.json({ url: publicUrl });
-  } catch (e) {
+  } catch (e: any) {
     console.error('Upload error:', e);
-    return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Upload failed', 
+      details: e.message 
+    }, { status: 500 });
   }
 }

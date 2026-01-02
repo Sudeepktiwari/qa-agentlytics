@@ -43,7 +43,6 @@ export default function CreateBlogPage() {
     "strike",
     "blockquote",
     "list",
-    "bullet",
     "link",
     "image",
     "code-block",
