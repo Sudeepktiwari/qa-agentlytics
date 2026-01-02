@@ -1,9 +1,8 @@
 import React from "react";
 import Link from "next/link";
 import GlobalHeader from "@/app/components/GlobalHeader";
-import ReactMarkdown from "react-markdown";
+import parse, { DOMNode, Element } from "html-react-parser";
 import { getPostsCollection } from "@/lib/mongo";
-import rehypeRaw from "rehype-raw";
 import { WithId, Document } from "mongodb";
 
 // Define Post interface
@@ -92,28 +91,29 @@ export default async function BlogPost({ params }: Props) {
           </header>
 
           <div className="prose prose-lg prose-slate mx-auto">
-            {/* Use rehypeRaw to support HTML content (like our Base64 images) inside Markdown */}
-            <ReactMarkdown
-              rehypePlugins={[rehypeRaw]}
-              components={{
-                img: ({ node, ...props }) => (
-                  <span className="block my-8">
-                    <img
-                      {...props}
-                      className="rounded-lg shadow-md w-full object-cover max-h-[500px]"
-                      alt={props.alt || "Blog image"}
-                    />
-                    {props.alt && (
-                      <span className="block text-center text-sm text-slate-500 mt-2 italic">
-                        {props.alt}
-                      </span>
-                    )}
-                  </span>
-                ),
-              }}
-            >
-              {post.content}
-            </ReactMarkdown>
+            {parse(post.content, {
+              replace: (domNode) => {
+                if (domNode instanceof Element && domNode.name === "img") {
+                  const { src, alt, width, height } = domNode.attribs;
+                  return (
+                    <span className="block my-8">
+                      <img
+                        src={src}
+                        alt={alt || "Blog image"}
+                        width={width}
+                        height={height}
+                        className="rounded-lg shadow-md w-full object-cover max-h-[500px]"
+                      />
+                      {alt && (
+                        <span className="block text-center text-sm text-slate-500 mt-2 italic">
+                          {alt}
+                        </span>
+                      )}
+                    </span>
+                  );
+                }
+              },
+            })}
           </div>
         </article>
       </main>
