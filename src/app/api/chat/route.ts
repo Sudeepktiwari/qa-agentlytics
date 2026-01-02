@@ -268,8 +268,9 @@ function filterButtonsBasedOnBooking(buttons: string[], bookingStatus: any) {
     return !bookingKeywords.some((keyword) => lowerButton.includes(keyword));
   });
 
-  // Add booking management buttons if we have few remaining buttons
-  if (filteredButtons.length < 2) {
+  // Add booking management buttons if we have few remaining buttons AND we filtered some out
+  // This prevents adding booking buttons to unrelated topics (like "Setup Help") that just happen to have few buttons
+  if (filteredButtons.length < buttons.length && filteredButtons.length < 2) {
     const managementButtons = [
       "View Full Details",
       "Reschedule",
@@ -3678,9 +3679,7 @@ export async function POST(req: NextRequest) {
           message: "User profile updated successfully",
           profileData: profileUpdateData,
           followUpMessage: followUpMessage,
-          mainText:
-            (followUpMessage && followUpMessage.text) ||
-            "Your profile has been updated.",
+          mainText: (followUpMessage && followUpMessage.text) || "",
           buttons: (followUpMessage && followUpMessage.buttons) || [],
           emailPrompt: (followUpMessage && followUpMessage.emailPrompt) || "",
           botMode: "sales",
@@ -4545,10 +4544,39 @@ Keep the response conversational and helpful, focusing on providing value before
   }
 
   // 🔥 PHASE 1: CHECK BOOKING STATUS
-  const bookingStatus = await getSessionBookingStatus(
+  let bookingStatus = await getSessionBookingStatus(
     sessionId,
     adminId || undefined
   );
+
+  // Patch booking status if we just confirmed a booking in this request (fixes race condition)
+  if (bookingConfirmed) {
+    bookingStatus = {
+      hasActiveBooking: true,
+      currentBooking: {
+        _id: "temp_confirm",
+        requestType: bookingType || "Appointment",
+        preferredDate: bookingDate || new Date().toISOString(),
+        preferredTime: bookingTime || "00:00",
+        confirmationNumber: confirmationNumber || "NEW",
+        status: "confirmed",
+        email: profileUserEmail || "",
+      },
+      canBookAgain: false,
+      allBookings: [],
+      bookingDetails: {
+        type: bookingType || "Appointment",
+        date: bookingDate || new Date().toISOString(),
+        time: bookingTime || "00:00",
+        confirmation: confirmationNumber || "NEW",
+        status: "confirmed",
+      },
+    } as any;
+    console.log(
+      `[Chat API ${requestId}] 🟢 Overriding booking status due to immediate confirmation.`
+    );
+  }
+
   console.log(
     `[Chat API ${requestId}] Booking status for session ${sessionId}:`,
     {
