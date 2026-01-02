@@ -5,8 +5,40 @@ import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import Card from "@/app/components/Card";
 import GlobalHeader from "@/app/components/GlobalHeader";
-import TurndownService from "turndown";
 import "react-quill-new/dist/quill.snow.css";
+
+// Helper to compress images
+const compressImage = async (
+  base64Str: string,
+  maxWidth = 1024,
+  quality = 0.8
+): Promise<string> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.src = base64Str;
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      let width = img.width;
+      let height = img.height;
+
+      if (width > maxWidth) {
+        height = Math.round((height * maxWidth) / width);
+        width = maxWidth;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      } else {
+        resolve(base64Str);
+      }
+    };
+    img.onerror = () => resolve(base64Str); // Fail safe
+  });
+};
 
 // Dynamic import for ReactQuill to avoid SSR issues
 const ReactQuill = dynamic(() => import("react-quill-new"), {
@@ -59,23 +91,51 @@ export default function CreateBlogPage() {
     setIsSubmitting(true);
 
     try {
-      // Direct submission - images are already embedded as Base64 in 'content'
-      const turndownService = new TurndownService({
-        headingStyle: "atx",
-        codeBlockStyle: "fenced",
-      });
+      // Process content to convert blob URLs to Base64 and compress large images
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(content, "text/html");
+      const images = doc.querySelectorAll("img");
 
-      // We keep the HTML content as is for now because Turndown might mess up Base64 images if not careful.
-      // Or we can just store the HTML directly since we are using MongoDB now.
-      // Let's store the HTML content directly to preserve the rich text structure and images perfectly.
-      // The API expects 'content' to be the body.
+      for (const img of Array.from(images)) {
+        let src = img.getAttribute("src");
+
+        // Convert Blob to Base64
+        if (src?.startsWith("blob:")) {
+          try {
+            const response = await fetch(src);
+            const blob = await response.blob();
+            src = await new Promise<string>((resolve) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result as string);
+              reader.readAsDataURL(blob);
+            });
+          } catch (e) {
+            console.error("Failed to convert blob to base64", e);
+            continue;
+          }
+        }
+
+        // Compress Base64 images to reduce payload size
+        if (src?.startsWith("data:image")) {
+          try {
+            const compressed = await compressImage(src);
+            img.setAttribute("src", compressed);
+          } catch (e) {
+            console.error("Failed to compress image", e);
+            // Keep original if compression fails, but update src if it was a blob
+            if (src) img.setAttribute("src", src);
+          }
+        }
+      }
+
+      const processedContent = doc.body.innerHTML;
 
       const res = await fetch("/api/blogs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title,
-          content, // Sending HTML with embedded Base64 images
+          content: processedContent,
           author,
         }),
       });
@@ -84,7 +144,8 @@ export default function CreateBlogPage() {
         const data = await res.json();
         router.push(`/blogs/${data.slug}`);
       } else {
-        alert("Failed to create post");
+        const errorData = await res.json().catch(() => ({}));
+        alert(`Failed to create post: ${errorData.error || "Unknown error"}`);
       }
     } catch (err) {
       console.error(err);
