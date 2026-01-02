@@ -3184,6 +3184,15 @@ function detectIntent({
   if (lowerQ.includes("features") || lowerQ.includes("capabilities")) {
     return "exploring features";
   }
+  if (
+    lowerQ.includes("case study") ||
+    lowerQ.includes("case studies") ||
+    lowerQ.includes("testimonial") ||
+    lowerQ.includes("success stor") ||
+    lowerQ.includes("example")
+  ) {
+    return "viewing case studies";
+  }
   if (lowerQ.includes("contact") || lowerQ.includes("talk")) {
     return "wanting to connect";
   }
@@ -10251,6 +10260,11 @@ What specific information are you looking for? I'm here to help guide you throug
     mentionsNeeds ||
     hasTimeline;
 
+  const isCaseStudyIntent =
+    /\b(case\s*stud|testimonial|success\s*stor|example\s*of|customer\s*stor|examples)\b/i.test(
+      lowerQuestion
+    ) || /testimonial/.test((pageUrl || "").toLowerCase());
+
   const bantStage = isBantIntent
     ? hasTimeline
       ? "timeline"
@@ -10302,6 +10316,30 @@ STRICT:
 - Ask exactly ONE clarifying question
 - Buttons should be clarifying options, not generic actions
 - NEVER put JSON or buttons in mainText.`;
+    } else if (isCaseStudyIntent) {
+      systemPrompt = `You are a helpful sales assistant. The user wants to see specific case studies, testimonials, or success stories.
+
+      CRITICAL INSTRUCTION:
+      - Do NOT explain "why" case studies are important.
+      - Do NOT list the "benefits" of reading case studies.
+      - INSTEAD, provide ACTUAL summaries of success stories or testimonials found in the context below.
+      - If the context contains testimonials or case studies, summarize 1-2 of them using this format: "Client Name: [Name]\nChallenge: [Problem]\nSolution: [Solution]\nResult: [Outcome]".
+      - If NO specific case studies are found in the context, clearly state: "I don't have specific case studies for this section handy right now, but I can tell you about how we've helped companies in [Industry]..." and ask for their industry.
+      - NEVER generate generic content about the value of case studies.
+
+      Return ONLY valid JSON:
+      {
+        "mainText": "<The actual case study/testimonial content. Use \\n\\n for spacing.>",
+        "buttons": ["More Success Stories", "Schedule a Demo", "View All Case Studies"],
+        "emailPrompt": "<Offer to send the full case study PDF to their email>"
+      }
+
+      Context:
+      Page Context:
+      ${pageContext}
+
+      General Context:
+      ${context}`;
     } else if (isBantIntent) {
       systemPrompt = `You are a BANT-based qualification assistant (sales-qualified). Return ONLY valid JSON: {"mainText":"...","buttons":[...],"emailPrompt":"..."}.
 
@@ -10438,6 +10476,30 @@ STRICT:
 - Ask exactly ONE clarifying question
 - Buttons should be clarifying options, not generic actions
 - NEVER put JSON or buttons in mainText.`;
+    } else if (isCaseStudyIntent) {
+      systemPrompt = `You are a helpful lead-generation assistant. The user wants to see specific case studies, testimonials, or success stories.
+
+      CRITICAL INSTRUCTION:
+      - Do NOT explain "why" case studies are important.
+      - Do NOT list the "benefits" of reading case studies.
+      - INSTEAD, provide ACTUAL summaries of success stories or testimonials found in the context below.
+      - If the context contains testimonials or case studies, summarize 1-2 of them using this format: "Client Name: [Name]\nChallenge: [Problem]\nSolution: [Solution]\nResult: [Outcome]".
+      - If NO specific case studies are found in the context, clearly state: "I don't have specific case studies for this section handy right now, but I can tell you about how we've helped companies in [Industry]..." and ask for their industry.
+      - NEVER generate generic content about the value of case studies.
+
+      Return ONLY valid JSON:
+      {
+        "mainText": "<The actual case study/testimonial content. Use \\n\\n for spacing.>",
+        "buttons": ["More Success Stories", "Schedule a Demo", "View All Case Studies"],
+        "emailPrompt": "<Create a conversational contact prompt inviting name and email to send the full case study PDF.>"
+      }
+
+      Context:
+      Page Context:
+      ${pageContext}
+
+      General Context:
+      ${context}`;
     } else {
       systemPrompt = `You are a helpful lead-generation assistant. The user has not provided contact details yet. Keep the conversation human-like and smooth.
 
