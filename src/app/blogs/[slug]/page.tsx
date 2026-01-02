@@ -1,18 +1,38 @@
 import React from "react";
 import Link from "next/link";
-import fs from 'fs';
-import path from 'path';
 import GlobalHeader from "@/app/components/GlobalHeader";
 import ReactMarkdown from "react-markdown";
+import { getPostsCollection } from "@/lib/mongo";
+import rehypeRaw from "rehype-raw";
+import { WithId, Document } from "mongodb";
+
+// Define Post interface
+interface Post extends WithId<Document> {
+  title: string;
+  content: string;
+  author: string;
+  date: string;
+  readTime: string;
+  category: string;
+  slug: string;
+}
 
 // Helper to get post by slug (Server-side)
-async function getPostBySlug(slug: string) {
-  const filePath = path.join(process.cwd(), 'src/data/posts.json');
-  if (!fs.existsSync(filePath)) return null;
-  
-  const fileContent = fs.readFileSync(filePath, 'utf-8');
-  const posts = JSON.parse(fileContent);
-  return posts.find((p: any) => p.slug === slug);
+async function getPostBySlug(slug: string): Promise<Post | null> {
+  try {
+    const postsCollection = await getPostsCollection();
+    const post = await postsCollection.findOne<Post>({ slug });
+    if (post) {
+      return {
+        ...post,
+        _id: post._id,
+      };
+    }
+    return null;
+  } catch (e) {
+    console.error("Failed to fetch post from Mongo:", e);
+    return null;
+  }
 }
 
 // In Next.js 15, params is a Promise
@@ -29,8 +49,12 @@ export default async function BlogPost({ params }: Props) {
       <div className="min-h-screen bg-white">
         <GlobalHeader />
         <div className="max-w-3xl mx-auto px-6 py-16 text-center">
-          <h1 className="text-4xl font-bold text-slate-900 mb-4">Post Not Found</h1>
-          <p className="text-slate-600 mb-8">The blog post you are looking for does not exist.</p>
+          <h1 className="text-4xl font-bold text-slate-900 mb-4">
+            Post Not Found
+          </h1>
+          <p className="text-slate-600 mb-8">
+            The blog post you are looking for does not exist.
+          </p>
           <Link href="/blogs" className="text-blue-600 hover:underline">
             ← Back to Blogs
           </Link>
@@ -53,7 +77,7 @@ export default async function BlogPost({ params }: Props) {
         <article>
           <header className="mb-10 text-center">
             <div className="text-sm font-medium text-blue-600 mb-3">
-              {post.category || 'Blog Post'}
+              {post.category || "Blog Post"}
             </div>
             <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-4 leading-tight">
               {post.title}
@@ -68,26 +92,28 @@ export default async function BlogPost({ params }: Props) {
           </header>
 
           <div className="prose prose-lg prose-slate mx-auto">
-             <ReactMarkdown 
-               components={{
-                 img: ({node, ...props}) => (
-                   <span className="block my-8">
-                     <img 
-                       {...props} 
-                       className="rounded-lg shadow-md w-full object-cover max-h-[500px]"
-                       alt={props.alt || "Blog image"}
-                     />
-                     {props.alt && (
-                       <span className="block text-center text-sm text-slate-500 mt-2 italic">
-                         {props.alt}
-                       </span>
-                     )}
-                   </span>
-                 )
-               }}
-             >
-               {post.content}
-             </ReactMarkdown>
+            {/* Use rehypeRaw to support HTML content (like our Base64 images) inside Markdown */}
+            <ReactMarkdown
+              rehypePlugins={[rehypeRaw]}
+              components={{
+                img: ({ node, ...props }) => (
+                  <span className="block my-8">
+                    <img
+                      {...props}
+                      className="rounded-lg shadow-md w-full object-cover max-h-[500px]"
+                      alt={props.alt || "Blog image"}
+                    />
+                    {props.alt && (
+                      <span className="block text-center text-sm text-slate-500 mt-2 italic">
+                        {props.alt}
+                      </span>
+                    )}
+                  </span>
+                ),
+              }}
+            >
+              {post.content}
+            </ReactMarkdown>
           </div>
         </article>
       </main>

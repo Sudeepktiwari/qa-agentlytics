@@ -54,6 +54,11 @@ export async function getBlockedDatesCollection() {
   return db.collection("blocked_dates");
 }
 
+export async function getPostsCollection() {
+  const db = await getDb();
+  return db.collection("posts");
+}
+
 // Test connection function
 export async function testConnection(): Promise<boolean> {
   try {

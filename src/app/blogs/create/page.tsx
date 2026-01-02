@@ -49,11 +49,8 @@ export default function CreateBlogPage() {
   ];
 
   // Helper to convert base64 to blob
-  const base64ToBlob = async (base64Data: string) => {
-    const base64Response = await fetch(base64Data);
-    const blob = await base64Response.blob();
-    return blob;
-  };
+  // Note: We no longer need to upload images to the server separately because we are storing them as Base64 in the content.
+  // This avoids issues with Vercel's read-only filesystem.
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,64 +59,25 @@ export default function CreateBlogPage() {
     setIsSubmitting(true);
 
     try {
-      // Process content to handle base64 images
-      // We create a temporary DOM element to traverse and modify images
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(content, "text/html");
-      const images = doc.querySelectorAll("img");
-      const uploads: Promise<void>[] = [];
-
-      images.forEach((img) => {
-        const src = img.getAttribute("src");
-        if (src && (src.startsWith("data:image") || src.startsWith("blob:"))) {
-          // It's a base64 or blob image, needs upload
-          const uploadTask = async () => {
-            try {
-              const blob = await base64ToBlob(src);
-              const file = new File([blob], "image.png", { type: blob.type });
-              const formData = new FormData();
-              formData.append("file", file);
-
-              const res = await fetch("/api/blog-images", {
-                method: "POST",
-                body: formData,
-              });
-
-              if (res.ok) {
-                const data = await res.json();
-                img.setAttribute("src", data.url);
-              }
-            } catch (err) {
-              console.error("Failed to upload image", err);
-            }
-          };
-          uploads.push(uploadTask());
-        }
-      });
-
-      // Wait for all image uploads to complete
-      await Promise.all(uploads);
-
-      // Convert the processed HTML to Markdown
+      // Direct submission - images are already embedded as Base64 in 'content'
       const turndownService = new TurndownService({
         headingStyle: "atx",
         codeBlockStyle: "fenced",
       });
 
-      // Ensure code blocks are handled correctly
-      turndownService.addRule("codeBlock", {
-        filter: "pre",
-        replacement: function (content) {
-          return "```\n" + content + "\n```";
-        },
-      });
-
-      const markdownContent = turndownService.turndown(doc.body.innerHTML);
+      // We keep the HTML content as is for now because Turndown might mess up Base64 images if not careful.
+      // Or we can just store the HTML directly since we are using MongoDB now.
+      // Let's store the HTML content directly to preserve the rich text structure and images perfectly.
+      // The API expects 'content' to be the body.
 
       const res = await fetch("/api/blogs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, content: markdownContent, author }),
+        body: JSON.stringify({
+          title,
+          content, // Sending HTML with embedded Base64 images
+          author,
+        }),
       });
 
       if (res.ok) {
