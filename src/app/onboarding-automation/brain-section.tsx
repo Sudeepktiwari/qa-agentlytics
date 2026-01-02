@@ -119,7 +119,7 @@ export default function OnboardingBrainSection({
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.4 }}
               transition={{ delay: i * 0.08, duration: 0.45, ease: "easeOut" }}
-              className="rounded-2xl border bg-white p-6 shadow-sm hover:shadow-md"
+              className="rounded-2xl border bg-white p-4 md:p-6 shadow-sm hover:shadow-md"
               style={{ borderColor: "var(--border-subtle)" }}
             >
               <div

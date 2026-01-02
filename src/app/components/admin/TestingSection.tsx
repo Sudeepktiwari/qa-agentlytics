@@ -20,53 +20,21 @@ const TestingSection: React.FC<TestingSectionProps> = ({
   }
 
   return (
-    <div
-      style={{
-        background: "rgba(255, 255, 255, 0.95)",
-        backdropFilter: "blur(10px)",
-        borderRadius: "20px",
-        padding: "32px",
-        marginBottom: "24px",
-        boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
-        border: "1px solid rgba(255, 255, 255, 0.2)",
-      }}
-    >
-      <div style={{ marginBottom: "20px" }}>
-        <h2
-          style={{
-            margin: "0 0 8px 0",
-            fontSize: "24px",
-            fontWeight: "700",
-            color: "#2d3748",
-            display: "flex",
-            alignItems: "center",
-            gap: "12px",
-          }}
-        >
-          🧪 Chatbot Testing
+    <div className="p-4 md:p-6">
+      <div className="mb-6">
+        <h2 className="mb-2 text-2xl font-bold text-slate-800 flex items-center gap-3">
+          <span className="text-2xl">🧪</span>
+          Chatbot Testing
         </h2>
-        <p style={{ color: "#718096", fontSize: "16px", margin: 0 }}>
+        <p className="text-slate-500 text-base m-0">
           Test your chatbot as if a user is on a specific page
         </p>
       </div>
 
-      <div
-        style={{
-          background: "linear-gradient(135deg, #edf2f710, #e2e8f010)",
-          borderRadius: "16px",
-          padding: "20px",
-          marginBottom: "20px",
-        }}
-      >
+      <div className="bg-slate-50 rounded-2xl p-5 border border-slate-200">
         <label
           htmlFor="sitemap-url-dropdown"
-          style={{
-            display: "block",
-            color: "#4a5568",
-            fontSize: "16px",
-            fontWeight: "600",
-            marginBottom: "12px",
-          }}
+          className="block text-slate-700 text-base font-semibold mb-3"
         >
           🌐 Simulate User on Page:
         </label>
@@ -74,16 +42,7 @@ const TestingSection: React.FC<TestingSectionProps> = ({
           id="sitemap-url-dropdown"
           value={selectedPageUrl}
           onChange={(e) => onSelectedPageUrlChange(e.target.value)}
-          style={{
-            width: "100%",
-            padding: "12px 16px",
-            border: "2px solid #e2e8f0",
-            borderRadius: "12px",
-            fontSize: "14px",
-            color: "#2d3748",
-            background: "white",
-            outline: "none",
-          }}
+          className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-sm text-slate-800 bg-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all appearance-none cursor-pointer"
         >
           <option value="">(Select a page URL to test)</option>
           {Array.from(new Map(sitemapUrls.map((u) => [u.url, u])).values()).map(
@@ -94,6 +53,9 @@ const TestingSection: React.FC<TestingSectionProps> = ({
             )
           )}
         </select>
+        <div className="mt-2 text-xs text-slate-400">
+          Select a page to simulate the chatbot context for that specific URL.
+        </div>
       </div>
     </div>
   );

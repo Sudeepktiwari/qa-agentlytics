@@ -45,7 +45,7 @@ export default function TestimonialsSection() {
           return (
             <figure
               key={i}
-              className="group relative overflow-hidden rounded-2xl bg-white p-6 shadow-sm ring-1 ring-blue-50 transition hover:shadow-md"
+              className="group relative overflow-hidden rounded-2xl bg-white p-4 md:p-6 shadow-sm ring-1 ring-blue-50 transition hover:shadow-md"
             >
               <div
                 className="pointer-events-none absolute inset-px rounded-2xl opacity-0 blur-xl transition-opacity duration-300 group-hover:opacity-100"

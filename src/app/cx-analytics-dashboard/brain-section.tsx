@@ -66,7 +66,7 @@ export default function BrainSection() {
                 duration: 0.45,
                 ease: easeOutBezier,
               }}
-              className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-50"
+              className="rounded-2xl bg-white p-4 md:p-6 shadow-sm ring-1 ring-slate-50"
             >
               <div className="mb-3 grid h-10 w-10 place-items-center rounded-xl bg-blue-50 text-sm font-bold text-blue-700">
                 {b.k}

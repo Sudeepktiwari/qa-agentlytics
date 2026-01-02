@@ -109,7 +109,7 @@ export default function ProactiveBrainSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.4 }}
               transition={{ delay: i * 0.08, duration: 0.45, ease: "easeOut" }}
-              className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm hover:shadow-md"
+              className="rounded-2xl border border-slate-100 bg-white p-4 md:p-6 shadow-sm hover:shadow-md"
               style={{ borderColor: "rgba(2,6,23,0.06)" }}
             >
               <div

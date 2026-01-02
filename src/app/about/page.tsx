@@ -14,7 +14,7 @@ export default function AboutPage() {
           About Our Company
         </h1>
 
-        <div className="bg-white rounded-lg shadow-md p-8 mb-8">
+        <div className="bg-white rounded-lg shadow-md p-4 md:p-8 mb-8">
           <h2 className="text-2xl font-semibold text-gray-800 mb-4">
             Our Story
           </h2>
@@ -35,7 +35,7 @@ export default function AboutPage() {
           </p>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-8 mb-8">
+        <div className="bg-white rounded-lg shadow-md p-4 md:p-8 mb-8">
           <h2 className="text-2xl font-semibold text-gray-800 mb-4">
             Our Mission
           </h2>
@@ -156,7 +156,7 @@ export default function AboutPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-8">
+        <div className="bg-white rounded-lg shadow-md p-4 md:p-8">
           <h2 className="text-2xl font-semibold text-gray-800 mb-4">
             Awards & Recognition
           </h2>

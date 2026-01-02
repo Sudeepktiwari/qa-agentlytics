@@ -213,7 +213,7 @@ export default function HowItWorksFlow() {
           />
 
           <div
-            className="relative overflow-hidden rounded-3xl border bg-white p-6 shadow-xl"
+            className="relative overflow-hidden rounded-3xl border bg-white p-4 md:p-6 shadow-xl"
             style={{ borderColor: "var(--border-subtle)" }}
             onMouseEnter={() => setPaused(true)}
             onMouseLeave={() => setPaused(false)}

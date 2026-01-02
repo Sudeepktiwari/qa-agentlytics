@@ -85,7 +85,7 @@ export default function FeaturesSection() {
             viewport={{ once: true, amount: 0.18 }}
             custom={idx}
             variants={itemVariant as any}
-            className="relative overflow-hidden rounded-2xl border border-slate-100 bg-white p-6 shadow-sm transition-transform will-change-transform"
+            className="relative overflow-hidden rounded-2xl border border-slate-100 bg-white p-4 md:p-6 shadow-sm transition-transform will-change-transform"
             style={{
               borderColor: "rgba(2,6,23,0.06)",
             }}

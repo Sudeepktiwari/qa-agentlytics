@@ -56,7 +56,7 @@ export default function BuiltInSchedulingPage() {
         </div>
 
         {/* Illustration */}
-        <div className="mx-auto max-w-xl mt-10 p-6 border border-slate-200 bg-white rounded-3xl shadow-sm">
+        <div className="mx-auto max-w-xl mt-10 p-4 md:p-6 border border-slate-200 bg-white rounded-3xl shadow-sm">
           <SchedulerCanvas />
         </div>
       </section>
@@ -91,7 +91,7 @@ export default function BuiltInSchedulingPage() {
           {testimonials.map((t, i) => (
             <div
               key={i}
-              className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm h-full flex flex-col"
+              className="rounded-3xl border border-slate-200 bg-white p-4 md:p-6 shadow-sm h-full flex flex-col"
             >
               <div className="flex items-center gap-3">
                 <div className="size-10 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-white grid place-items-center text-sm font-semibold">
@@ -120,7 +120,7 @@ export default function BuiltInSchedulingPage() {
           {benefits.map((b, i) => (
             <div
               key={i}
-              className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
+              className="rounded-3xl border border-slate-200 bg-white p-4 md:p-6 shadow-sm"
             >
               <div className="flex items-center gap-3 mb-3">
                 {b.icon}

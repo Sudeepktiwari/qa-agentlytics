@@ -88,7 +88,7 @@ export default function FeaturesLeadSection({
           <article
             key={f.title}
             tabIndex={0}
-            className="group relative overflow-hidden rounded-2xl bg-white p-6 shadow-sm focus:outline-none focus:ring-4 focus:ring-[--brand-primary]/20 hover:shadow-lg transition transform-gpu"
+            className="group relative overflow-hidden rounded-2xl bg-white p-4 md:p-6 shadow-sm focus:outline-none focus:ring-4 focus:ring-[--brand-primary]/20 hover:shadow-lg transition transform-gpu"
             style={{ borderRadius: "1rem" }}
             aria-labelledby={`feature-${i}`}
           >

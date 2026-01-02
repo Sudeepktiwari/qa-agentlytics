@@ -170,25 +170,53 @@ export default function MultiPersonaAIPage() {
         </h3>
         <div className="flex flex-wrap justify-center items-center gap-8 opacity-80">
           {/* React Icons – trusted by logos */}
-          <span title="Google" aria-label="Google" className="inline-flex items-center justify-center">
+          <span
+            title="Google"
+            aria-label="Google"
+            className="inline-flex items-center justify-center"
+          >
             <SiGoogle className="size-8 text-slate-500" />
           </span>
-          <span title="Microsoft" aria-label="Microsoft" className="inline-flex items-center justify-center">
+          <span
+            title="Microsoft"
+            aria-label="Microsoft"
+            className="inline-flex items-center justify-center"
+          >
             <TfiMicrosoftAlt className="size-8 text-slate-500" />
           </span>
-          <span title="AWS" aria-label="AWS" className="inline-flex items-center justify-center">
+          <span
+            title="AWS"
+            aria-label="AWS"
+            className="inline-flex items-center justify-center"
+          >
             <FaAws className="size-8 text-slate-500" />
           </span>
-          <span title="Slack" aria-label="Slack" className="inline-flex items-center justify-center">
+          <span
+            title="Slack"
+            aria-label="Slack"
+            className="inline-flex items-center justify-center"
+          >
             <SiSlack className="size-8 text-slate-500" />
           </span>
-          <span title="Stripe" aria-label="Stripe" className="inline-flex items-center justify-center">
+          <span
+            title="Stripe"
+            aria-label="Stripe"
+            className="inline-flex items-center justify-center"
+          >
             <SiStripe className="size-8 text-slate-500" />
           </span>
-          <span title="HubSpot" aria-label="HubSpot" className="inline-flex items-center justify-center">
+          <span
+            title="HubSpot"
+            aria-label="HubSpot"
+            className="inline-flex items-center justify-center"
+          >
             <SiHubspot className="size-8 text-slate-500" />
           </span>
-          <span title="Salesforce" aria-label="Salesforce" className="inline-flex items-center justify-center">
+          <span
+            title="Salesforce"
+            aria-label="Salesforce"
+            className="inline-flex items-center justify-center"
+          >
             <SiSalesforce className="size-8 text-slate-500" />
           </span>
         </div>
@@ -209,7 +237,7 @@ export default function MultiPersonaAIPage() {
           onboarding, and support.
         </p>
         <div className="mt-8 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6 shadow-sm">
             <p className="italic text-slate-700">
               “Agentlytics instantly understood our customer context. Hand‑offs
               disappeared and satisfaction scores went up.”
@@ -273,7 +301,7 @@ export default function MultiPersonaAIPage() {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: i * 0.08 }}
               viewport={{ once: true }}
-              className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
+              className="rounded-3xl border border-slate-200 bg-white p-4 md:p-6 shadow-sm"
             >
               <div className="flex items-center gap-3">
                 {s.icon}
@@ -409,7 +437,7 @@ export default function MultiPersonaAIPage() {
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
-              className="rounded-3xl bg-white/10 p-6"
+              className="rounded-3xl bg-white/10 p-4 md:p-6"
             >
               <div className="grid grid-cols-2 gap-4">
                 <MiniStat

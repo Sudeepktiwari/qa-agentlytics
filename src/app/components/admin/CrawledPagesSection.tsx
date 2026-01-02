@@ -30,66 +30,24 @@ const CrawledPagesSection: React.FC<CrawledPagesSectionProps> = ({
   onDeleteCrawledPage,
 }) => {
   return (
-    <div
-      style={{
-        background: "rgba(255, 255, 255, 0.95)",
-        backdropFilter: "blur(10px)",
-        borderRadius: "20px",
-        padding: "32px",
-        boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)",
-        border: "1px solid rgba(255, 255, 255, 0.2)",
-        marginBottom: "24px",
-      }}
-    >
-      <h2
-        style={{
-          margin: "0 0 24px 0",
-          fontSize: "24px",
-          fontWeight: "700",
-          color: "#2d3748",
-          display: "flex",
-          alignItems: "center",
-          gap: "12px",
-        }}
-      >
+    <div className="bg-white/95 backdrop-blur-md rounded-2xl p-4 md:p-8 shadow-lg border border-white/20 mb-6 transition-all">
+      <h2 className="mb-4 md:mb-6 text-xl md:text-2xl font-bold text-slate-800 flex items-center gap-3 flex-wrap">
         📚 Crawled Pages Library
-        <span
-          style={{
-            background: "linear-gradient(135deg, #667eea20, #764ba220)",
-            color: "#667eea",
-            padding: "2px 8px",
-            borderRadius: "12px",
-            fontSize: "12px",
-            fontWeight: "600",
-          }}
-        >
+        <span className="bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap">
           {crawledPages.length} pages
         </span>
       </h2>
 
       {/* Refresh Button */}
-      <div style={{ marginBottom: "24px" }}>
+      <div className="mb-6">
         <button
           onClick={onRefreshCrawledPages}
           disabled={crawledPagesLoading}
-          style={{
-            padding: "12px 20px",
-            background: crawledPagesLoading
-              ? "#a0aec0"
-              : "linear-gradient(135deg, #48bb78 0%, #38a169 100%)",
-            color: "white",
-            border: "none",
-            borderRadius: "12px",
-            fontSize: "14px",
-            fontWeight: "600",
-            cursor: crawledPagesLoading ? "not-allowed" : "pointer",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            boxShadow: crawledPagesLoading
-              ? "none"
-              : "0 4px 12px rgba(72, 187, 120, 0.3)",
-          }}
+          className={`w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold text-white transition-all shadow-md active:scale-95 ${
+            crawledPagesLoading
+              ? "bg-slate-400 cursor-not-allowed"
+              : "bg-gradient-to-br from-emerald-500 to-green-600 hover:shadow-lg hover:-translate-y-0.5"
+          }`}
         >
           {crawledPagesLoading ? "⏳ Loading..." : "🔄 Refresh Pages"}
         </button>
@@ -97,167 +55,62 @@ const CrawledPagesSection: React.FC<CrawledPagesSectionProps> = ({
 
       {/* Error Display */}
       {crawledPagesError && (
-        <div
-          style={{
-            padding: "16px 20px",
-            borderRadius: "12px",
-            background: "linear-gradient(135deg, #fed7d7, #feb2b2)",
-            border: "1px solid #fc8181",
-            color: "#742a2a",
-            marginBottom: "24px",
-          }}
-        >
+        <div className="p-4 mb-6 rounded-xl bg-red-50 border border-red-200 text-red-800 font-medium">
           {crawledPagesError}
         </div>
       )}
 
       {/* Content */}
       {crawledPagesLoading ? (
-        <div
-          style={{
-            textAlign: "center",
-            padding: "60px 20px",
-            color: "#718096",
-            fontSize: "16px",
-          }}
-        >
-          <div style={{ fontSize: "40px", marginBottom: "16px" }}>⏳</div>
-          Loading crawled pages...
+        <div className="text-center py-16 text-slate-500">
+          <div className="text-4xl mb-4">⏳</div>
+          <p>Loading crawled pages...</p>
         </div>
       ) : crawledPages.length === 0 ? (
-        <div
-          style={{
-            textAlign: "center",
-            padding: "60px 20px",
-            color: "#718096",
-          }}
-        >
-          <div style={{ fontSize: "40px", marginBottom: "16px" }}>📭</div>
-          <h3 style={{ margin: "0 0 8px 0", color: "#4a5568" }}>
+        <div className="text-center py-16 text-slate-500">
+          <div className="text-4xl mb-4">📭</div>
+          <h3 className="text-lg font-semibold text-slate-700 mb-2">
             No pages crawled yet
           </h3>
-          <p style={{ margin: 0, fontSize: "16px" }}>
-            Start crawling your website above to see pages here!
-          </p>
+          <p>Start crawling your website above to see pages here!</p>
         </div>
       ) : (
-        <div
-          style={{
-            display: "grid",
-            gap: "16px",
-          }}
-        >
+        <div className="grid gap-4">
           {crawledPages.map((page) => (
             <div
               key={page._id}
-              style={{
-                background: "white",
-                borderRadius: "12px",
-                padding: "20px",
-                border: "1px solid #e2e8f0",
-                boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)",
-                transition: "all 0.2s ease",
-              }}
-              onMouseEnter={(e) => {
-                const target = e.currentTarget as HTMLDivElement;
-                target.style.boxShadow = "0 4px 16px rgba(0, 0, 0, 0.1)";
-                target.style.transform = "translateY(-2px)";
-              }}
-              onMouseLeave={(e) => {
-                const target = e.currentTarget as HTMLDivElement;
-                target.style.boxShadow = "0 2px 8px rgba(0, 0, 0, 0.05)";
-                target.style.transform = "translateY(0)";
-              }}
+              className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5"
             >
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "flex-start",
-                  gap: "16px",
-                }}
-              >
-                <div style={{ flex: 1 }}>
-                  <div
-                    style={{
-                      fontSize: "16px",
-                      fontWeight: "600",
-                      color: "#2d3748",
-                      marginBottom: "8px",
-                      wordBreak: "break-all",
-                    }}
-                  >
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="text-base font-semibold text-slate-800 mb-2 break-all">
                     {page.url}
                   </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "12px",
-                      marginBottom: "16px",
-                    }}
-                  >
+                  <div className="flex flex-wrap items-center gap-3 mb-4">
                     <span
-                      style={{
-                        fontSize: "12px",
-                        padding: "4px 8px",
-                        borderRadius: "6px",
-                        background: page.hasStructuredSummary
-                          ? "linear-gradient(135deg, #48bb7820, #38a16920)"
-                          : "linear-gradient(135deg, #ed8f3620, #dd696820)",
-                        color: page.hasStructuredSummary
-                          ? "#38a169"
-                          : "#dd6968",
-                        fontWeight: "600",
-                      }}
+                      className={`px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wide ${
+                        page.hasStructuredSummary
+                          ? "bg-green-50 text-green-600"
+                          : "bg-orange-50 text-orange-600"
+                      }`}
                     >
                       {page.hasStructuredSummary
                         ? "✅ Has Summary"
                         : "⚡ Needs Summary"}
                     </span>
-                    <span
-                      style={{
-                        fontSize: "12px",
-                        color: "#718096",
-                      }}
-                    >
+                    <span className="text-xs text-slate-500">
                       {new Date(page.createdAt).toLocaleDateString()}
                     </span>
                   </div>
                 </div>
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "8px",
-                    alignItems: "flex-start",
-                  }}
-                >
+                <div className="flex gap-2 w-full sm:w-auto">
                   <button
                     onClick={() => onViewPageSummary(page)}
-                    style={{
-                      background: page.hasStructuredSummary
-                        ? "linear-gradient(135deg, #48bb78 0%, #38a169 100%)"
-                        : "linear-gradient(135deg, #ed8f36 0%, #dd6968 100%)",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "8px",
-                      padding: "8px 16px",
-                      fontSize: "12px",
-                      fontWeight: "600",
-                      cursor: "pointer",
-                      transition: "all 0.2s ease",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "4px",
-                    }}
-                    onMouseEnter={(e) => {
-                      const target = e.target as HTMLButtonElement;
-                      target.style.transform = "translateY(-1px)";
-                    }}
-                    onMouseLeave={(e) => {
-                      const target = e.target as HTMLButtonElement;
-                      target.style.transform = "translateY(0)";
-                    }}
+                    className={`flex-1 sm:flex-none flex items-center justify-center gap-1 px-4 py-2 rounded-lg text-xs font-bold text-white transition-all shadow-sm hover:-translate-y-0.5 ${
+                      page.hasStructuredSummary
+                        ? "bg-gradient-to-br from-emerald-500 to-green-600"
+                        : "bg-gradient-to-br from-orange-400 to-red-500"
+                    }`}
                   >
                     {page.hasStructuredSummary
                       ? "👁️ View Summary"
@@ -265,26 +118,7 @@ const CrawledPagesSection: React.FC<CrawledPagesSectionProps> = ({
                   </button>
                   <button
                     onClick={() => onDeleteCrawledPage(page)}
-                    style={{
-                      background:
-                        "linear-gradient(135deg, #f56565 0%, #e53e3e 100%)",
-                      color: "white",
-                      border: "none",
-                      borderRadius: "8px",
-                      padding: "8px 12px",
-                      fontSize: "12px",
-                      fontWeight: "600",
-                      cursor: "pointer",
-                      transition: "all 0.2s ease",
-                    }}
-                    onMouseEnter={(e) => {
-                      const target = e.target as HTMLButtonElement;
-                      target.style.transform = "translateY(-1px)";
-                    }}
-                    onMouseLeave={(e) => {
-                      const target = e.target as HTMLButtonElement;
-                      target.style.transform = "translateY(0)";
-                    }}
+                    className="flex-none px-3 py-2 rounded-lg text-xs font-bold text-white bg-gradient-to-br from-red-500 to-rose-600 transition-all shadow-sm hover:-translate-y-0.5"
                   >
                     🗑️
                   </button>

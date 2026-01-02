@@ -179,7 +179,7 @@ const LeadsManagementSection: React.FC<LeadsManagementSectionProps> = ({
       </div>
 
       {/* Filters Bar */}
-      <div className="bg-white p-1 rounded-xl border border-slate-200 shadow-sm mb-6 flex flex-col lg:flex-row gap-2">
+      <div className="bg-white p-4 md:p-6 rounded-xl border border-slate-200 shadow-sm mb-6 flex flex-col lg:flex-row gap-3 md:gap-2">
         <div className="relative flex-1 group">
           <Search
             className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors"
@@ -191,19 +191,19 @@ const LeadsManagementSection: React.FC<LeadsManagementSectionProps> = ({
               placeholder="Search by email, requirements..."
               value={leadsSearch}
               onChange={(e) => onLeadsSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-transparent border-none text-sm focus:outline-none focus:ring-0 placeholder:text-slate-400 h-9"
+              className="w-full pl-9 pr-4 py-2 bg-transparent border-slate-200 md:border-none rounded-lg md:rounded-none border md:border-0 text-sm focus:outline-none focus:ring-0 placeholder:text-slate-400 h-10 md:h-9"
             />
           </form>
         </div>
 
         <div className="h-9 w-px bg-slate-100 hidden lg:block" />
 
-        <div className="flex items-center gap-2 px-2">
-          <div className="flex items-center bg-slate-50 rounded-lg p-0.5 border border-slate-200">
+        <div className="flex flex-row items-center gap-2 px-0 md:px-2 w-full lg:w-auto">
+          <div className="flex-1 lg:flex-none flex items-center bg-slate-50 rounded-lg p-0.5 border border-slate-200 h-10 md:h-auto">
             <select
               value={leadsSortBy}
               onChange={(e) => onLeadsSortByChange(e.target.value)}
-              className="bg-transparent border-none text-slate-600 text-xs font-medium py-1.5 pl-2 pr-6 focus:ring-0 cursor-pointer hover:text-slate-900 transition-colors"
+              className="w-full bg-transparent border-none text-slate-600 text-xs font-medium py-1.5 pl-2 pr-6 focus:ring-0 cursor-pointer hover:text-slate-900 transition-colors"
             >
               <option value="lastSeen">Last Activity</option>
               <option value="firstSeen">First Seen</option>
@@ -216,20 +216,22 @@ const LeadsManagementSection: React.FC<LeadsManagementSectionProps> = ({
             onClick={() =>
               onLeadsSortOrderChange(leadsSortOrder === "asc" ? "desc" : "asc")
             }
-            className="p-2 bg-white border border-slate-200 text-slate-500 rounded-lg hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-all shadow-sm"
+            className="flex-none p-2 h-10 md:h-auto bg-white border border-slate-200 text-slate-500 rounded-lg hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-all shadow-sm flex items-center justify-center min-w-[40px]"
             title={leadsSortOrder === "asc" ? "Ascending" : "Descending"}
           >
             {leadsSortOrder === "asc" ? (
               <div className="flex items-center gap-1">
-                <span className="text-[10px] font-bold uppercase tracking-wider">
+                <span className="text-[10px] font-bold uppercase tracking-wider hidden md:inline">
                   Asc
                 </span>
+                <span className="md:hidden">↑</span>
               </div>
             ) : (
               <div className="flex items-center gap-1">
-                <span className="text-[10px] font-bold uppercase tracking-wider">
+                <span className="text-[10px] font-bold uppercase tracking-wider hidden md:inline">
                   Desc
                 </span>
+                <span className="md:hidden">↓</span>
               </div>
             )}
           </button>
@@ -265,19 +267,19 @@ const LeadsManagementSection: React.FC<LeadsManagementSectionProps> = ({
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="bg-slate-50/50 border-b border-slate-200">
-                  <th className="px-5 py-3 font-semibold text-slate-500 text-[11px] uppercase tracking-wider w-[28%] pl-6">
+                  <th className="px-5 py-3 font-semibold text-slate-500 text-[11px] uppercase tracking-wider min-w-[220px] pl-6">
                     Lead Identity
                   </th>
-                  <th className="px-5 py-3 font-semibold text-slate-500 text-[11px] uppercase tracking-wider">
+                  <th className="px-5 py-3 font-semibold text-slate-500 text-[11px] uppercase tracking-wider min-w-[180px]">
                     Intent & BANT
                   </th>
-                  <th className="px-5 py-3 font-semibold text-slate-500 text-[11px] uppercase tracking-wider">
+                  <th className="px-5 py-3 font-semibold text-slate-500 text-[11px] uppercase tracking-wider min-w-[160px]">
                     Engagement
                   </th>
-                  <th className="px-5 py-3 font-semibold text-slate-500 text-[11px] uppercase tracking-wider">
+                  <th className="px-5 py-3 font-semibold text-slate-500 text-[11px] uppercase tracking-wider min-w-[140px]">
                     Timeline
                   </th>
-                  <th className="px-5 py-3 font-semibold text-slate-500 text-[11px] uppercase tracking-wider text-right pr-6">
+                  <th className="px-5 py-3 font-semibold text-slate-500 text-[11px] uppercase tracking-wider text-right pr-6 min-w-[100px]">
                     Actions
                   </th>
                 </tr>
@@ -418,27 +420,29 @@ const LeadsManagementSection: React.FC<LeadsManagementSectionProps> = ({
         <div className="fixed inset-0 z-50 flex justify-end">
           {/* Backdrop */}
           <div
-            className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm transition-opacity"
+            className="absolute inset-0 bg-slate-900/30 backdrop-blur-sm transition-opacity"
             onClick={() => setSelectedLead(null)}
           />
 
           {/* Drawer Panel */}
-          <div className="relative w-full max-w-xl bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+          <div className="relative w-full md:max-w-xl bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
             {/* Drawer Header */}
-            <div className="p-6 border-b border-slate-100 flex justify-between items-start bg-slate-50/50">
-              <div className="flex items-start gap-4">
-                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center text-xl font-bold shadow-lg shadow-blue-500/20 ring-4 ring-white">
+            <div className="p-4 md:p-6 border-b border-slate-100 flex justify-between items-start bg-slate-50/50">
+              <div className="flex items-start gap-3 md:gap-4">
+                <div className="w-10 h-10 md:w-14 md:h-14 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center text-lg md:text-xl font-bold shadow-lg shadow-blue-500/20 ring-2 md:ring-4 ring-white shrink-0">
                   {selectedLead.email.charAt(0).toUpperCase()}
                 </div>
-                <div>
-                  <h3 className="text-xl font-bold text-slate-900">
+                <div className="min-w-0">
+                  <h3 className="text-lg md:text-xl font-bold text-slate-900 truncate">
                     {selectedLead.email.split("@")[0]}
                   </h3>
-                  <div className="flex items-center gap-2 text-sm text-slate-500 mt-0.5 font-mono">
-                    {selectedLead.email}
+                  <div className="flex items-center gap-2 text-xs md:text-sm text-slate-500 mt-0.5 font-mono">
+                    <span className="truncate max-w-[150px] md:max-w-none">
+                      {selectedLead.email}
+                    </span>
                     <button
                       onClick={() => onCopyToClipboard(selectedLead.email)}
-                      className="text-slate-400 hover:text-blue-500 transition-colors"
+                      className="text-slate-400 hover:text-blue-500 transition-colors shrink-0"
                       title="Copy email"
                     >
                       <Copy size={12} />
@@ -463,7 +467,7 @@ const LeadsManagementSection: React.FC<LeadsManagementSectionProps> = ({
             </div>
 
             {/* Drawer Content */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-8">
+            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-8">
               {/* BANT Score Card (Rule 5 Premium Visualization) */}
               <div className="bg-gradient-to-br from-indigo-50/50 to-blue-50/50 rounded-2xl p-1 border border-indigo-100/50 shadow-sm">
                 <div className="bg-white/60 backdrop-blur-sm rounded-xl p-5">

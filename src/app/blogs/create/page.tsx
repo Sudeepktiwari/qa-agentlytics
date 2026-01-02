@@ -210,7 +210,7 @@ export default function CreateBlogPage() {
           Create a New Blog Post
         </h1>
 
-        <Card className="p-8 mb-12">
+        <Card className="p-4 md:p-8 mb-12">
           <form onSubmit={handleCreate} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
@@ -277,7 +277,7 @@ export default function CreateBlogPage() {
             {posts.map((post) => (
               <Card
                 key={post.id}
-                className="p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
+                className="p-4 md:p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
               >
                 <div>
                   <h3 className="text-lg font-semibold text-slate-900">

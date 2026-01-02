@@ -164,7 +164,7 @@ export default function HowItWorksSection() {
             }}
             aria-hidden
           />
-          <div className="relative overflow-hidden rounded-3xl border border-[#e6f3ff] bg-white p-6 shadow-xl">
+          <div className="relative overflow-hidden rounded-3xl border border-[#e6f3ff] bg-white p-4 md:p-6 shadow-xl">
             <div className="min-h-[40px]">
               <AnimatePresence initial={false} mode="popLayout">
                 <div

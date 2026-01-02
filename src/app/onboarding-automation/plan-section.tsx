@@ -63,7 +63,7 @@ export default function PlanSection() {
             initial={prefersReducedMotion ? undefined : "hidden"}
             whileInView={prefersReducedMotion ? undefined : "show"}
             viewport={{ once: true, amount: 0.3 }}
-            className="group relative overflow-hidden rounded-2xl border bg-white p-6 text-center shadow-sm transition-transform duration-300 hover:-translate-y-1 hover:shadow-lg"
+            className="group relative overflow-hidden rounded-2xl border bg-white p-4 md:p-6 text-center shadow-sm transition-transform duration-300 hover:-translate-y-1 hover:shadow-lg"
             style={{ borderColor: "var(--border-subtle)" }}
           >
             {/* Glow on hover */}

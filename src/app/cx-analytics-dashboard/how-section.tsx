@@ -134,7 +134,7 @@ export default function HowSectionPolished() {
             aria-hidden
           />
 
-          <div className="relative overflow-hidden rounded-3xl bg-white p-6 shadow-lg ring-1 ring-blue-50">
+          <div className="relative overflow-hidden rounded-3xl bg-white p-4 md:p-6 shadow-lg ring-1 ring-blue-50">
             {/* Stage 1: Signals rolling */}
             <div className="min-h-[44px]">
               <AnimatePresence initial={false}>

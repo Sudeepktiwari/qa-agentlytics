@@ -88,7 +88,7 @@ export default function HeroSection() {
           />
 
           {/* device card */}
-          <div className="relative h-full w-full rounded-3xl bg-white p-6 shadow-[0_10px_30px_rgba(14,30,60,0.08)]">
+          <div className="relative h-full w-full rounded-3xl bg-white p-4 md:p-6 shadow-[0_10px_30px_rgba(14,30,60,0.08)]">
             {/* top header */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">

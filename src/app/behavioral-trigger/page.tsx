@@ -127,7 +127,7 @@
 //               viewport={{ once: true }}
 //               className="relative"
 //             >
-//               <div className="relative mx-auto w-full max-w-xl rounded-3xl border border-slate-200 bg-white p-6 shadow-xl">
+//               <div className="relative mx-auto w-full max-w-xl rounded-3xl border border-slate-200 bg-white p-4 md:p-6 shadow-xl">
 //                 {/* mock page */}
 //                 <div className="h-64 rounded-2xl bg-gradient-to-b from-slate-50 to-white border border-slate-200 p-4 relative overflow-hidden">
 //                   {/* header dots */}
@@ -264,7 +264,7 @@
 //           ].map((k, i) => (
 //             <div
 //               key={i}
-//               className="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm"
+//               className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6 text-center shadow-sm"
 //             >
 //               <div className="text-3xl font-extrabold tracking-tight">
 //                 {k.kpi}

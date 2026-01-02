@@ -352,7 +352,7 @@ export default function GlobalHeader() {
               </svg>
             </button>
             <div
-              className={`absolute left-0 top-full pt-3 z-[100] rounded-2xl border border-slate-200 bg-white shadow-[0_12px_34px_rgba(2,6,23,.10)] p-6 ${
+              className={`absolute left-0 top-full pt-3 z-[100] rounded-2xl border border-slate-200 bg-white shadow-[0_12px_34px_rgba(2,6,23,.10)] p-4 md:p-6 ${
                 hoveredDropdown === "platforms"
                   ? "opacity-100 pointer-events-auto"
                   : "opacity-0 pointer-events-none"

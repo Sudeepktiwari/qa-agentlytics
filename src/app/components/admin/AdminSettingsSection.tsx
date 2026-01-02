@@ -137,7 +137,9 @@ export const AdminSettingsSection: React.FC = () => {
 
       if (data.success) {
         setSettings(data.data);
-        setSuccess(`Feature ${feature} ${enabled ? "enabled" : "disabled"} successfully`);
+        setSuccess(
+          `Feature ${feature} ${enabled ? "enabled" : "disabled"} successfully`
+        );
         setTimeout(() => setSuccess(null), 3000);
       } else {
         setError(data.error || "Failed to update feature");
@@ -150,7 +152,9 @@ export const AdminSettingsSection: React.FC = () => {
     }
   };
 
-  const updatePreferences = async (preferences: Partial<AdminSettings["preferences"]>) => {
+  const updatePreferences = async (
+    preferences: Partial<AdminSettings["preferences"]>
+  ) => {
     if (!settings) return;
 
     try {
@@ -185,7 +189,7 @@ export const AdminSettingsSection: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="bg-white p-6 rounded-lg shadow">
+      <div className="bg-white p-4 md:p-6 rounded-lg shadow">
         <div className="animate-pulse">
           <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
           <div className="space-y-3">
@@ -200,7 +204,7 @@ export const AdminSettingsSection: React.FC = () => {
 
   if (error) {
     return (
-      <div className="bg-white p-6 rounded-lg shadow">
+      <div className="bg-white p-4 md:p-6 rounded-lg shadow">
         <div className="text-red-600 text-center">
           <p className="font-medium">Error loading admin settings</p>
           <p className="text-sm mt-1">{error}</p>
@@ -217,7 +221,7 @@ export const AdminSettingsSection: React.FC = () => {
 
   if (!settings) {
     return (
-      <div className="bg-white p-6 rounded-lg shadow">
+      <div className="bg-white p-4 md:p-6 rounded-lg shadow">
         <p className="text-center text-gray-500">No admin settings found</p>
       </div>
     );
@@ -226,7 +230,7 @@ export const AdminSettingsSection: React.FC = () => {
   const featureDescriptions = {
     // Core features (always enabled) - not shown in toggles
     bookingDetection: "Automatically detect booking intent in user messages",
-    calendarWidget: "Enable calendar widget for appointment scheduling", 
+    calendarWidget: "Enable calendar widget for appointment scheduling",
     formSubmission: "Allow form submissions and lead capture",
     // Optional features that can be toggled
     emailIntegration: "Enable email notifications and integrations",
@@ -236,8 +240,8 @@ export const AdminSettingsSection: React.FC = () => {
   };
 
   // Core features that are always enabled (don't show toggles for these)
-  const coreFeatures = ['bookingDetection', 'calendarWidget', 'formSubmission'];
-  
+  const coreFeatures = ["bookingDetection", "calendarWidget", "formSubmission"];
+
   // Optional features that can be toggled
   const toggleableFeatures = Object.entries(settings.features).filter(
     ([feature]) => !coreFeatures.includes(feature)
@@ -250,8 +254,16 @@ export const AdminSettingsSection: React.FC = () => {
         <div className="bg-green-50 border border-green-200 rounded-md p-4">
           <div className="flex">
             <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              <svg
+                className="h-5 w-5 text-green-400"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clipRule="evenodd"
+                />
               </svg>
             </div>
             <div className="ml-3">
@@ -265,8 +277,16 @@ export const AdminSettingsSection: React.FC = () => {
         <div className="bg-red-50 border border-red-200 rounded-md p-4">
           <div className="flex">
             <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              <svg
+                className="h-5 w-5 text-red-400"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                  clipRule="evenodd"
+                />
               </svg>
             </div>
             <div className="ml-3">
@@ -277,21 +297,31 @@ export const AdminSettingsSection: React.FC = () => {
       )}
 
       {/* Feature Flags Section */}
-      <div className="bg-white p-6 rounded-lg shadow">
+      <div className="bg-white p-4 md:p-6 rounded-lg shadow">
         <h2 className="text-lg font-medium text-gray-900 mb-4">Feature Configuration</h2>
         
         {/* Core Features (Always Enabled) */}
         <div className="mb-6">
-          <h3 className="text-md font-medium text-gray-700 mb-3">Core Features (Always Enabled)</h3>
+          <h3 className="text-md font-medium text-gray-700 mb-3">
+            Core Features (Always Enabled)
+          </h3>
           <div className="space-y-3">
             {coreFeatures.map((feature) => (
-              <div key={feature} className="flex items-center justify-between p-3 border rounded-lg bg-green-50 border-green-200">
+              <div
+                key={feature}
+                className="flex items-center justify-between p-3 border rounded-lg bg-green-50 border-green-200"
+              >
                 <div className="flex-1">
                   <h4 className="font-medium text-green-900">
-                    {feature.charAt(0).toUpperCase() + feature.slice(1).replace(/([A-Z])/g, ' $1')}
+                    {feature.charAt(0).toUpperCase() +
+                      feature.slice(1).replace(/([A-Z])/g, " $1")}
                   </h4>
                   <p className="text-sm text-green-700 mt-1">
-                    {featureDescriptions[feature as keyof typeof featureDescriptions]}
+                    {
+                      featureDescriptions[
+                        feature as keyof typeof featureDescriptions
+                      ]
+                    }
                   </p>
                 </div>
                 <div className="ml-4">
@@ -306,13 +336,22 @@ export const AdminSettingsSection: React.FC = () => {
 
         {/* Optional Features (Toggleable) */}
         <div>
-          <h3 className="text-md font-medium text-gray-700 mb-3">Optional Features</h3>
+          <h3 className="text-md font-medium text-gray-700 mb-3">
+            Optional Features
+          </h3>
           <div className="space-y-4">
             {toggleableFeatures.map(([feature, enabled]) => (
               <FeatureToggle
                 key={feature}
-                label={feature.charAt(0).toUpperCase() + feature.slice(1).replace(/([A-Z])/g, ' $1')}
-                description={featureDescriptions[feature as keyof typeof featureDescriptions]}
+                label={
+                  feature.charAt(0).toUpperCase() +
+                  feature.slice(1).replace(/([A-Z])/g, " $1")
+                }
+                description={
+                  featureDescriptions[
+                    feature as keyof typeof featureDescriptions
+                  ]
+                }
                 enabled={enabled}
                 onToggle={(newEnabled) => updateFeature(feature, newEnabled)}
                 loading={updating === feature}
@@ -323,7 +362,7 @@ export const AdminSettingsSection: React.FC = () => {
       </div>
 
       {/* Preferences Section */}
-      <div className="bg-white p-6 rounded-lg shadow">
+      <div className="bg-white p-4 md:p-6 rounded-lg shadow">
         <h2 className="text-lg font-medium text-gray-900 mb-4">Preferences</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
@@ -332,7 +371,11 @@ export const AdminSettingsSection: React.FC = () => {
             </label>
             <select
               value={settings.preferences.theme}
-              onChange={(e) => updatePreferences({ theme: e.target.value as "light" | "dark" | "auto" })}
+              onChange={(e) =>
+                updatePreferences({
+                  theme: e.target.value as "light" | "dark" | "auto",
+                })
+              }
               className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               disabled={updating === "preferences"}
             >
@@ -367,9 +410,14 @@ export const AdminSettingsSection: React.FC = () => {
             <input
               type="time"
               value={settings.preferences.businessHours.start}
-              onChange={(e) => updatePreferences({
-                businessHours: { ...settings.preferences.businessHours, start: e.target.value }
-              })}
+              onChange={(e) =>
+                updatePreferences({
+                  businessHours: {
+                    ...settings.preferences.businessHours,
+                    start: e.target.value,
+                  },
+                })
+              }
               className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               disabled={updating === "preferences"}
             />
@@ -382,9 +430,14 @@ export const AdminSettingsSection: React.FC = () => {
             <input
               type="time"
               value={settings.preferences.businessHours.end}
-              onChange={(e) => updatePreferences({
-                businessHours: { ...settings.preferences.businessHours, end: e.target.value }
-              })}
+              onChange={(e) =>
+                updatePreferences({
+                  businessHours: {
+                    ...settings.preferences.businessHours,
+                    end: e.target.value,
+                  },
+                })
+              }
               className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               disabled={updating === "preferences"}
             />
@@ -396,7 +449,9 @@ export const AdminSettingsSection: React.FC = () => {
             label="Auto Responses"
             description="Automatically respond to common questions"
             enabled={settings.preferences.autoResponses}
-            onToggle={(enabled) => updatePreferences({ autoResponses: enabled })}
+            onToggle={(enabled) =>
+              updatePreferences({ autoResponses: enabled })
+            }
             loading={updating === "preferences"}
           />
 
@@ -411,13 +466,25 @@ export const AdminSettingsSection: React.FC = () => {
       </div>
 
       {/* Admin Info */}
-      <div className="bg-gray-50 p-6 rounded-lg">
-        <h3 className="text-sm font-medium text-gray-700 mb-2">Admin Information</h3>
+      <div className="bg-gray-50 p-4 md:p-6 rounded-lg">
+        <h3 className="text-sm font-medium text-gray-700 mb-2">
+          Admin Information
+        </h3>
         <div className="text-sm text-gray-600 space-y-1">
-          <p><span className="font-medium">Admin ID:</span> {settings.adminId}</p>
-          <p><span className="font-medium">Email:</span> {settings.email}</p>
-          <p><span className="font-medium">Last Updated:</span> {new Date(settings.updatedAt).toLocaleString()}</p>
-          <p><span className="font-medium">Updated By:</span> {settings.updatedBy}</p>
+          <p>
+            <span className="font-medium">Admin ID:</span> {settings.adminId}
+          </p>
+          <p>
+            <span className="font-medium">Email:</span> {settings.email}
+          </p>
+          <p>
+            <span className="font-medium">Last Updated:</span>{" "}
+            {new Date(settings.updatedAt).toLocaleString()}
+          </p>
+          <p>
+            <span className="font-medium">Updated By:</span>{" "}
+            {settings.updatedBy}
+          </p>
         </div>
       </div>
     </div>

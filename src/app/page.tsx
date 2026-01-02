@@ -644,7 +644,7 @@ export default function Page() {
             {/* 3-column bar layout – light theme */}
             <div className="mt-12 grid gap-6 md:grid-cols-3">
               {/* Column 1 */}
-              <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-6 flex flex-col h-full">
+              <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4 md:p-6 flex flex-col h-full">
                 <div className="h-1 w-12 rounded-full bg-blue-500 mb-4" />
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 mb-2">
                   Problem #1
@@ -663,7 +663,7 @@ export default function Page() {
               </div>
 
               {/* Column 2 */}
-              <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-6 flex flex-col h-full">
+              <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-4 md:p-6 flex flex-col h-full">
                 <div className="h-1 w-12 rounded-full bg-blue-500 mb-4" />
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 mb-2">
                   Problem #2
@@ -1103,7 +1103,7 @@ export default function Page() {
               </ol>
 
               <div className="lg:col-span-7">
-                <div className="relative rounded-2xl border border-slate-200 bg-white shadow-[0_12px_34px_rgba(2,6,23,.08)] overflow-hidden p-6 min-h-[420px]">
+                <div className="relative rounded-2xl border border-slate-200 bg-white shadow-[0_12px_34px_rgba(2,6,23,.08)] overflow-hidden p-4 md:p-6 min-h-[420px]">
                   <div className="pointer-events-none absolute -top-24 -right-24 w-96 h-96 bg-blue-50 rounded-full blur-3xl opacity-70" />
                   <div className="pointer-events-none absolute -bottom-24 -left-24 w-[28rem] h-[28rem] bg-sky-50 rounded-full blur-3xl opacity-70" />
 
@@ -1333,7 +1333,7 @@ export default function Page() {
               {/* cards preserved exactly */}
               <a
                 href="/behavioral-trigger"
-                className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-card transition-all hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(2,6,23,.10)] reveal"
+                className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 md:p-6 shadow-card transition-all hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(2,6,23,.10)] reveal"
               >
                 <div
                   className="absolute -top-8 -left-8 size-24 rounded-full bg-blue-100/50 blur-2xl"
@@ -1364,7 +1364,7 @@ export default function Page() {
 
               <a
                 href="/multipersona"
-                className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-card transition-all hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(2,6,23,.10)] reveal"
+                className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 md:p-6 shadow-card transition-all hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(2,6,23,.10)] reveal"
               >
                 <div
                   className="absolute -top-8 -right-8 size-24 rounded-full bg-sky-100/50 blur-2xl"
@@ -1393,7 +1393,7 @@ export default function Page() {
 
               <a
                 href="/bant-based-qualification"
-                className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-card transition-all hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(2,6,23,.10)] reveal"
+                className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 md:p-6 shadow-card transition-all hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(2,6,23,.10)] reveal"
               >
                 <div className="size-10 rounded-xl bg-blue-50 grid place-items-center text-brand-blue">
                   ✅
@@ -1417,7 +1417,7 @@ export default function Page() {
 
               <a
                 href="/built-in-scheduling"
-                className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-card transition-all hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(2,6,23,.10)] reveal"
+                className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 md:p-6 shadow-card transition-all hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(2,6,23,.10)] reveal"
               >
                 <div
                   className="absolute -bottom-10 -left-8 size-24 rounded-full bg-blue-100/50 blur-2xl"
@@ -1570,7 +1570,7 @@ export default function Page() {
                   Start Free Trial
                 </a>
               </article>
-              <article className="rounded-xl border border-slate-200 bg-white p-6 shadow-[0_12px_34px_rgba(2,6,23,.08)] reveal">
+              <article className="rounded-xl border border-slate-200 bg-white p-4 md:p-6 shadow-[0_12px_34px_rgba(2,6,23,.08)] reveal">
                 <h3 className="font-semibold text-xl">Enterprise</h3>
                 <p className="text-slate-700 text-sm">
                   Unlimited agents, SSO, SOC-2 on request.

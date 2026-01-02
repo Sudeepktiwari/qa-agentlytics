@@ -290,7 +290,7 @@ const CustomerPersonaSection: React.FC<CustomerPersonaSectionProps> = ({
       </div>
 
       {expanded && (
-        <div className="p-6 bg-slate-50/30">
+        <div className="p-4 md:p-6 bg-slate-50/30">
           {/* Action Buttons */}
           <div className="flex flex-wrap items-center gap-3 mb-8">
             <button
@@ -625,7 +625,7 @@ const PersonaForm: React.FC<{
         </div>
 
         {/* Modal Body */}
-        <div className="p-6 overflow-y-auto custom-scrollbar">
+        <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
           <form id="persona-form" onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1.5">

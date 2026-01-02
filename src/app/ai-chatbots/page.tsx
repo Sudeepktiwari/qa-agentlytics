@@ -720,7 +720,7 @@ export default function ProactiveAIPage() {
           {/* Hero Demo Card */}
           <div className="relative reveal">
             <div className="absolute inset-0 md:-inset-0.5 rounded-3xl bg-gradient-to-br from-[--brand-blue]/20 to-[--brand-sky]/20 blur animate-pulseGlow" />
-            <div className="relative rounded-3xl border border-slate-200 bg-white p-6 shadow-xl">
+            <div className="relative rounded-3xl border border-slate-200 bg-white p-4 md:p-6 shadow-xl">
               <div className="mb-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="h-8 w-8 rounded-full bg-[--brand-blue]" />
@@ -835,7 +835,7 @@ export default function ProactiveAIPage() {
 
       {/* METRICS */}
       <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
-        <div className="grid grid-cols-2 gap-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-6 rounded-3xl border border-slate-200 bg-white p-4 md:p-6 shadow-sm sm:grid-cols-4">
           {[
             { k: "2.8x", v: "More Leads" },
             { k: "40%", v: "Faster Onboarding" },
@@ -855,30 +855,58 @@ export default function ProactiveAIPage() {
         id="proof"
         className="mx-auto max-w-7xl px-4 py-10 sm:px-6 scroll-mt-24"
       >
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm reveal">
+        <div className="rounded-3xl border border-slate-200 bg-white p-4 md:p-6 shadow-sm reveal">
           <p className="text-center text-xs font-semibold tracking-wide text-slate-500">
             TRUSTED BY TEAMS AT
           </p>
           <div className="mt-4 grid grid-cols-3 sm:grid-cols-7 place-items-center gap-6 text-slate-500">
-            <span title="Google" aria-label="Google" className="inline-flex items-center justify-center">
+            <span
+              title="Google"
+              aria-label="Google"
+              className="inline-flex items-center justify-center"
+            >
               <SiGoogle className="size-6" />
             </span>
-            <span title="Microsoft" aria-label="Microsoft" className="inline-flex items-center justify-center">
+            <span
+              title="Microsoft"
+              aria-label="Microsoft"
+              className="inline-flex items-center justify-center"
+            >
               <TfiMicrosoftAlt className="size-6" />
             </span>
-            <span title="AWS" aria-label="AWS" className="inline-flex items-center justify-center">
+            <span
+              title="AWS"
+              aria-label="AWS"
+              className="inline-flex items-center justify-center"
+            >
               <FaAws className="size-6" />
             </span>
-            <span title="Slack" aria-label="Slack" className="inline-flex items-center justify-center">
+            <span
+              title="Slack"
+              aria-label="Slack"
+              className="inline-flex items-center justify-center"
+            >
               <SiSlack className="size-6" />
             </span>
-            <span title="Stripe" aria-label="Stripe" className="inline-flex items-center justify-center">
+            <span
+              title="Stripe"
+              aria-label="Stripe"
+              className="inline-flex items-center justify-center"
+            >
               <SiStripe className="size-6" />
             </span>
-            <span title="HubSpot" aria-label="HubSpot" className="inline-flex items-center justify-center">
+            <span
+              title="HubSpot"
+              aria-label="HubSpot"
+              className="inline-flex items-center justify-center"
+            >
               <SiHubspot className="size-6" />
             </span>
-            <span title="Salesforce" aria-label="Salesforce" className="inline-flex items-center justify-center">
+            <span
+              title="Salesforce"
+              aria-label="Salesforce"
+              className="inline-flex items-center justify-center"
+            >
               <SiSalesforce className="size-6" />
             </span>
           </div>
@@ -944,7 +972,7 @@ export default function ProactiveAIPage() {
 
         <div className="mt-8 grid gap-6 md:grid-cols-2">
           {/* Reactive card */}
-          <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-md">
+          <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 md:p-6 shadow-sm transition hover:shadow-md">
             <div className="absolute right-0 top-0 h-24 w-24 -translate-y-1/2 translate-x-1/2 rounded-full bg-slate-100 blur-2xl" />
             <h3 className="flex items-center gap-2 text-lg font-semibold">
               <span className="grid h-8 w-8 place-items-center rounded-lg bg-slate-100 text-slate-700">
@@ -988,7 +1016,7 @@ export default function ProactiveAIPage() {
           </div>
 
           {/* Proactive card */}
-          <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_8px_30px_rgba(0,106,255,0.08)] transition hover:shadow-[0_10px_40px_rgba(0,106,255,0.15)]">
+          <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 md:p-6 shadow-[0_8px_30px_rgba(0,106,255,0.08)] transition hover:shadow-[0_10px_40px_rgba(0,106,255,0.15)]">
             <div className="absolute left-1/2 top-0 h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[--brand-blue]/15 blur-2xl animate-pingSoft" />
             <h3 className="flex items-center gap-2 text-lg font-semibold text-[--brand-blue]">
               <span className="grid h-8 w-8 place-items-center rounded-lg bg-[--brand-blue]/10 text-[--brand-blue]">
@@ -1208,7 +1236,7 @@ export default function ProactiveAIPage() {
             ))}
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm reveal">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6 shadow-sm reveal">
             <h4 className="text-sm font-semibold text-slate-700">
               Signal → Intent → Prompt → Outcome
             </h4>

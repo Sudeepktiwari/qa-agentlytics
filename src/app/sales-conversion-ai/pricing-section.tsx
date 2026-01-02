@@ -102,7 +102,7 @@ export default function PricingSection() {
       aria-label="Pricing"
     >
       <div
-        className="rounded-3xl border p-6 sm:p-10"
+        className="rounded-3xl border p-4 sm:p-10"
         style={{
           borderColor: "var(--border-subtle)",
           background: "white",
@@ -173,7 +173,7 @@ export default function PricingSection() {
                   prefersReducedMotion ? undefined : { opacity: 1, y: 0 }
                 }
                 transition={{ duration: 0.45, ease: "easeOut" }}
-                className={`relative overflow-hidden rounded-2xl border bg-[--surface] p-6 focus-within:ring-2`}
+                className={`relative overflow-hidden rounded-2xl border bg-[--surface] p-4 md:p-6 focus-within:ring-2`}
                 style={{
                   borderColor: isPro
                     ? "rgba(0,107,255,0.14)"

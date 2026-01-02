@@ -23,7 +23,7 @@ export default function SecurityTrustCard() {
       aria-label="Security and compliance"
     >
       <motion.div
-        className="rounded-3xl border bg-white p-6 sm:p-8"
+        className="rounded-3xl border bg-white p-4 sm:p-8"
         style={{
           borderColor: "var(--border-subtle)",
           background: "var(--surface)",

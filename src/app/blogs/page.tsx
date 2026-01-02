@@ -103,7 +103,7 @@ export default function BlogsPage() {
                     {/* Try to extract first image from content if possible, else show icon */}
                     <span className="text-4xl">📝</span>
                   </div>
-                  <div className="p-6 flex-1 flex flex-col">
+                  <div className="p-4 md:p-6 flex-1 flex flex-col">
                     <div className="flex items-center justify-between text-sm text-slate-500 mb-3">
                       <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
                         {post.category}

@@ -596,15 +596,15 @@ const OnboardingSettingsSection: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 md:space-y-8">
       {/* Analytics Storytelling Section (Rule 6) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         {/* KPIs */}
         <div className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-3 gap-4">
           {analytics.kpis.map((kpi, idx) => (
             <div
               key={idx}
-              className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-start justify-between"
+              className="bg-white p-4 md:p-5 rounded-xl border border-slate-200 shadow-sm flex items-start justify-between"
             >
               <div>
                 <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">
@@ -634,7 +634,7 @@ const OnboardingSettingsSection: React.FC = () => {
         </div>
 
         {/* Funnel & Insights */}
-        <div className="lg:col-span-2 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+        <div className="lg:col-span-2 bg-white p-4 md:p-6 rounded-xl border border-slate-200 shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <h4 className="text-slate-900 font-bold text-lg">
               Onboarding Funnel
@@ -751,7 +751,7 @@ const OnboardingSettingsSection: React.FC = () => {
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex items-center gap-3">
+        <div className="p-4 md:p-6 border-b border-slate-100 bg-slate-50/50 flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center shadow-sm text-slate-600">
             <Settings size={18} />
           </div>
@@ -764,7 +764,7 @@ const OnboardingSettingsSection: React.FC = () => {
             </p>
           </div>
         </div>
-        <div className="p-6">
+        <div className="p-4 md:p-6">
           {loading ? (
             <div style={{ color: "#718096" }}>Loading onboarding settings…</div>
           ) : (

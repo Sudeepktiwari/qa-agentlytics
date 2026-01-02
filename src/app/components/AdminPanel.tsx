@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
-import { Users, FileText, Database, Activity } from "lucide-react";
+import { Users, FileText, Database, Activity, Menu } from "lucide-react";
 import DocumentUploader from "./DocumentUploader";
 import Sidebar from "./admin/Sidebar";
 
@@ -143,6 +143,7 @@ const AdminPanel: React.FC = () => {
 
   // Navigation state
   const [activeSection, setActiveSection] = useState("overview");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Check authentication on mount
   useEffect(() => {
@@ -793,7 +794,7 @@ const AdminPanel: React.FC = () => {
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {/* Leads Card */}
-              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+              <div className="bg-white p-4 md:p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex items-center gap-4">
                   <div className="p-3 bg-blue-50 text-blue-600 rounded-lg">
                     <Users size={24} />
@@ -810,7 +811,7 @@ const AdminPanel: React.FC = () => {
               </div>
 
               {/* Documents Card */}
-              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+              <div className="bg-white p-4 md:p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex items-center gap-4">
                   <div className="p-3 bg-indigo-50 text-indigo-600 rounded-lg">
                     <FileText size={24} />
@@ -827,7 +828,7 @@ const AdminPanel: React.FC = () => {
               </div>
 
               {/* Crawled Pages Card */}
-              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+              <div className="bg-white p-4 md:p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex items-center gap-4">
                   <div className="p-3 bg-emerald-50 text-emerald-600 rounded-lg">
                     <Database size={24} />
@@ -844,7 +845,7 @@ const AdminPanel: React.FC = () => {
               </div>
 
               {/* API Status Card */}
-              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+              <div className="bg-white p-4 md:p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex items-center gap-4">
                   <div className="p-3 bg-amber-50 text-amber-600 rounded-lg">
                     <Activity size={24} />
@@ -863,11 +864,11 @@ const AdminPanel: React.FC = () => {
 
             {/* Quick Actions / Recent Activity Placeholder */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+              <div className="bg-white p-4 md:p-6 rounded-xl border border-slate-200 shadow-sm">
                 <h3 className="text-lg font-semibold text-slate-800 mb-4">
                   Quick Actions
                 </h3>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <button
                     onClick={() => setActiveSection("knowledge")}
                     className="p-4 border border-slate-100 rounded-lg hover:bg-slate-50 text-left transition-colors"
@@ -893,7 +894,7 @@ const AdminPanel: React.FC = () => {
                 </div>
               </div>
 
-              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+              <div className="bg-white p-4 md:p-6 rounded-xl border border-slate-200 shadow-sm">
                 <h3 className="text-lg font-semibold text-slate-800 mb-4">
                   System Status
                 </h3>
@@ -969,7 +970,7 @@ const AdminPanel: React.FC = () => {
       case "documents":
         return (
           <div className="space-y-8">
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 md:p-6">
               <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
                 <FileText size={20} className="text-blue-600" />
                 Upload Documents
@@ -1052,7 +1053,7 @@ const AdminPanel: React.FC = () => {
               onToggleShowApiKey={() => setShowApiKey(!showApiKey)}
               onCopyToClipboard={copyToClipboard}
             />
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 md:p-6">
               <h3 className="text-lg font-semibold text-slate-800 mb-4">
                 Global Settings
               </h3>
@@ -1087,7 +1088,7 @@ const AdminPanel: React.FC = () => {
 
       case "onboarding":
         return (
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 md:p-6">
             <h3 className="text-lg font-semibold text-slate-800 mb-4">
               Onboarding Analytics & Setup
             </h3>
@@ -1119,12 +1120,33 @@ const AdminPanel: React.FC = () => {
             activeSection={activeSection}
             onNavigate={setActiveSection}
             onLogout={handleLogout}
+            isOpen={isSidebarOpen}
+            onClose={() => setIsSidebarOpen(false)}
           />
 
           {/* Main Content */}
-          <main className="flex-1 overflow-y-auto bg-slate-50 p-8">
-            <div className="max-w-7xl mx-auto">
-              <header className="mb-8 flex justify-between items-center">
+          <main className="flex-1 overflow-y-auto bg-slate-50 w-full relative">
+            {/* Mobile Header */}
+            <div className="md:hidden bg-white/80 backdrop-blur-md border-b border-slate-200 p-4 flex items-center justify-between sticky top-0 z-30 transition-all duration-200">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold shadow-sm shadow-blue-200">
+                  A
+                </div>
+                <span className="font-semibold text-slate-800 text-lg tracking-tight">
+                  Admin Panel
+                </span>
+              </div>
+              <button
+                onClick={() => setIsSidebarOpen(true)}
+                className="p-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900 rounded-lg transition-all active:scale-95"
+                aria-label="Open sidebar"
+              >
+                <Menu size={24} />
+              </button>
+            </div>
+
+            <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-6">
+              <header className="mb-6 md:mb-8 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
                 <div>
                   <h1 className="text-2xl font-bold text-slate-900 capitalize">
                     {activeSection.replace("-", " ")}
@@ -1134,7 +1156,7 @@ const AdminPanel: React.FC = () => {
                   </p>
                 </div>
                 <div className="flex items-center gap-4">
-                  <div className="px-3 py-1 bg-white border border-slate-200 rounded-full text-xs font-medium text-slate-600 shadow-sm">
+                  <div className="px-3 py-1 bg-white border border-slate-200 rounded-full text-xs font-medium text-slate-600 shadow-sm whitespace-nowrap overflow-hidden text-ellipsis max-w-[200px]">
                     Logged in as: {auth.email}
                   </div>
                 </div>

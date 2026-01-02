@@ -15,7 +15,7 @@ export default function ServicesPage() {
         </h1>
 
         <div className="space-y-8">
-          <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="bg-white rounded-lg shadow-md p-4 md:p-6">
             <h2 className="text-2xl font-semibold text-gray-800 mb-4">
               1. Custom Chatbot Development
             </h2>
@@ -34,7 +34,7 @@ export default function ServicesPage() {
             </ul>
           </div>
 
-          <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="bg-white rounded-lg shadow-md p-4 md:p-6">
             <h2 className="text-2xl font-semibold text-gray-800 mb-4">
               2. AI Integration Services
             </h2>
@@ -52,7 +52,7 @@ export default function ServicesPage() {
             </ul>
           </div>
 
-          <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="bg-white rounded-lg shadow-md p-4 md:p-6">
             <h2 className="text-2xl font-semibold text-gray-800 mb-4">
               3. Voice Assistant Development
             </h2>
@@ -87,7 +87,7 @@ export default function ServicesPage() {
             </ul>
           </div>
 
-          <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="bg-white rounded-lg shadow-md p-4 md:p-6">
             <h2 className="text-2xl font-semibold text-gray-800 mb-4">
               5. 24/7 Technical Support
             </h2>

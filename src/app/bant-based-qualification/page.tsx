@@ -205,7 +205,7 @@ export default function BANTQualificationPage() {
               viewport={{ once: true }}
               className="relative"
             >
-              <div className="relative mx-auto w-full max-w-xl rounded-3xl border border-slate-200 bg-white p-6 shadow-xl">
+              <div className="relative mx-auto w-full max-w-xl rounded-3xl border border-slate-200 bg-white p-4 md:p-6 shadow-xl">
                 <BANTCanvas />
 
                 {/* Animated scorecard */}
@@ -271,7 +271,7 @@ export default function BANTQualificationPage() {
 
       {/* QUALIFICATION PLAYS */}
       <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4">
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="rounded-3xl border border-slate-200 bg-white p-4 md:p-6 shadow-sm">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <h2 className="text-2xl font-bold tracking-tight">
               AI Qualification Flow (Examples)
@@ -313,7 +313,7 @@ export default function BANTQualificationPage() {
           ].map((k, i) => (
             <div
               key={i}
-              className="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm"
+              className="rounded-2xl border border-slate-200 bg-white p-4 md:p-6 text-center shadow-sm"
             >
               <div className="text-3xl font-extrabold tracking-tight">
                 {k.kpi}
@@ -410,7 +410,7 @@ export default function BANTQualificationPage() {
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true }}
-              className="rounded-3xl bg-white/10 p-6"
+              className="rounded-3xl bg-white/10 p-4 md:p-6"
             >
               <div className="grid grid-cols-2 gap-4">
                 <MiniStat
@@ -589,25 +589,53 @@ function TrustLogos() {
         Trusted by GTM teams at
       </p>
       <div className="flex flex-wrap gap-6 items-center">
-        <span title="Google" aria-label="Google" className="inline-flex items-center justify-center">
+        <span
+          title="Google"
+          aria-label="Google"
+          className="inline-flex items-center justify-center"
+        >
           <SiGoogle className="size-6 text-slate-500" />
         </span>
-        <span title="Microsoft" aria-label="Microsoft" className="inline-flex items-center justify-center">
+        <span
+          title="Microsoft"
+          aria-label="Microsoft"
+          className="inline-flex items-center justify-center"
+        >
           <TfiMicrosoftAlt className="size-6 text-slate-500" />
         </span>
-        <span title="AWS" aria-label="AWS" className="inline-flex items-center justify-center">
+        <span
+          title="AWS"
+          aria-label="AWS"
+          className="inline-flex items-center justify-center"
+        >
           <FaAws className="size-6 text-slate-500" />
         </span>
-        <span title="Slack" aria-label="Slack" className="inline-flex items-center justify-center">
+        <span
+          title="Slack"
+          aria-label="Slack"
+          className="inline-flex items-center justify-center"
+        >
           <SiSlack className="size-6 text-slate-500" />
         </span>
-        <span title="Stripe" aria-label="Stripe" className="inline-flex items-center justify-center">
+        <span
+          title="Stripe"
+          aria-label="Stripe"
+          className="inline-flex items-center justify-center"
+        >
           <SiStripe className="size-6 text-slate-500" />
         </span>
-        <span title="HubSpot" aria-label="HubSpot" className="inline-flex items-center justify-center">
+        <span
+          title="HubSpot"
+          aria-label="HubSpot"
+          className="inline-flex items-center justify-center"
+        >
           <SiHubspot className="size-6 text-slate-500" />
         </span>
-        <span title="Salesforce" aria-label="Salesforce" className="inline-flex items-center justify-center">
+        <span
+          title="Salesforce"
+          aria-label="Salesforce"
+          className="inline-flex items-center justify-center"
+        >
           <SiSalesforce className="size-6 text-slate-500" />
         </span>
       </div>

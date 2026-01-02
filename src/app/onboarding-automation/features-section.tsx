@@ -82,7 +82,7 @@ export default function FeaturesSection() {
             viewport={{ once: true, amount: 0.18 }}
             custom={idx}
             variants={itemVariant as any}
-            className="relative overflow-hidden rounded-2xl border bg-white p-6 shadow-sm transition-transform will-change-transform"
+            className="relative overflow-hidden rounded-2xl border bg-white p-4 md:p-6 shadow-sm transition-transform will-change-transform"
             style={{ borderColor: "var(--border-subtle)" }}
             whileHover={
               prefersReducedMotion

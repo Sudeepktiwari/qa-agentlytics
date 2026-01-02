@@ -97,7 +97,7 @@ export default function TestimonialsSection() {
               viewport={{ once: true, amount: 0.18 }}
               variants={cardVariants}
               custom={i}
-              className="group relative overflow-hidden rounded-2xl border bg-white p-6 shadow-sm transition hover:shadow-lg"
+              className="group relative overflow-hidden rounded-2xl border bg-white p-4 md:p-6 shadow-sm transition hover:shadow-lg"
               style={{ borderColor: "var(--border-subtle)" }}
             >
               {/* subtle hover glow (behind content) */}

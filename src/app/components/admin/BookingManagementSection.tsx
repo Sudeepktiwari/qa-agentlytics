@@ -399,7 +399,7 @@ const BookingManagementSection: React.FC<BookingManagementSectionProps> = ({
 
       {/* Bookings List */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="p-6">
+        <div className="p-4 md:p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">
             Recent Bookings
           </h3>

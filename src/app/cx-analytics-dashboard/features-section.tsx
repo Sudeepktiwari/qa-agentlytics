@@ -37,7 +37,7 @@ export default function FeaturesSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.25 }}
             transition={{ delay: i * 0.06 }}
-            className="group relative rounded-2xl bg-white p-6 shadow-sm ring-1 ring-blue-50 hover:shadow-md transition-transform duration-200 hover:-translate-y-1"
+            className="group relative rounded-2xl bg-white p-4 md:p-6 shadow-sm ring-1 ring-blue-50 hover:shadow-md transition-transform duration-200 hover:-translate-y-1"
           >
             <div className="flex items-start gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-700">

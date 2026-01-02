@@ -60,7 +60,7 @@ const ContentCrawlingSection: React.FC<ContentCrawlingSectionProps> = ({
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
       {/* Header Section */}
-      <div className="border-b border-slate-100 bg-slate-50/50 p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="border-b border-slate-100 bg-slate-50/50 p-4 md:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 bg-white rounded-xl border border-slate-200 shadow-sm flex items-center justify-center text-blue-600">
             <Database size={24} />
@@ -80,7 +80,7 @@ const ContentCrawlingSection: React.FC<ContentCrawlingSectionProps> = ({
         </div>
       </div>
 
-      <div className="p-6 sm:p-8">
+      <div className="p-4 sm:p-8">
         {!isActive ? (
           /* Step 1: Input Selection (Guided Flow) */
           <div className="max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">

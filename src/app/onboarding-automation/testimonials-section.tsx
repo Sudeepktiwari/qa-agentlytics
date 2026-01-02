@@ -76,7 +76,7 @@ export default function TestimonialsSectionStatic() {
         {testimonials.map((t, i) => (
           <figure
             key={t.name}
-            className="relative overflow-hidden rounded-2xl border bg-white p-6 shadow-sm"
+            className="relative overflow-hidden rounded-2xl border bg-white p-4 md:p-6 shadow-sm"
             style={{ borderColor: "var(--border-subtle)" }}
             aria-labelledby={`tm-${i}-name`}
             role="article"

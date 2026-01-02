@@ -18,7 +18,7 @@ export default function PricingPage() {
 
         <div className="grid md:grid-cols-3 gap-8">
           {/* Starter Plan */}
-          <div className="bg-white rounded-lg shadow-lg p-8 border-2 border-gray-200">
+          <div className="bg-white rounded-lg shadow-lg p-4 md:p-8 border-2 border-gray-200">
             <div className="text-center">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">
                 Starter Plan
@@ -62,7 +62,7 @@ export default function PricingPage() {
           </div>
 
           {/* Professional Plan */}
-          <div className="bg-white rounded-lg shadow-lg p-8 border-2 border-blue-500 relative">
+          <div className="bg-white rounded-lg shadow-lg p-4 md:p-8 border-2 border-blue-500 relative">
             <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
               <span className="bg-blue-500 text-white px-4 py-1 rounded-full text-sm font-semibold">
                 Most Popular
@@ -116,7 +116,7 @@ export default function PricingPage() {
           </div>
 
           {/* Enterprise Plan */}
-          <div className="bg-white rounded-lg shadow-lg p-8 border-2 border-gray-200">
+          <div className="bg-white rounded-lg shadow-lg p-4 md:p-8 border-2 border-gray-200">
             <div className="text-center">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">
                 Enterprise Plan
@@ -164,7 +164,7 @@ export default function PricingPage() {
           </div>
         </div>
 
-        <div className="mt-16 bg-white rounded-lg shadow-md p-8">
+        <div className="mt-16 bg-white rounded-lg shadow-md p-4 md:p-8">
           <h3 className="text-2xl font-bold text-gray-900 mb-6 text-center">
             All Plans Include
           </h3>
