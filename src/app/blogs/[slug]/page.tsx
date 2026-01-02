@@ -99,7 +99,9 @@ export default async function BlogPost({ params }: Props) {
                 <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
                   {post.author.charAt(0).toUpperCase()}
                 </div>
-                <span className="font-medium text-slate-900">{post.author}</span>
+                <span className="font-medium text-slate-900">
+                  {post.author}
+                </span>
               </div>
               <span className="hidden sm:inline">•</span>
               <div className="flex items-center gap-4 sm:gap-2">
@@ -114,13 +116,15 @@ export default async function BlogPost({ params }: Props) {
             {parse(post.content, {
               replace: (domNode) => {
                 if (domNode instanceof Element && domNode.name === "img") {
-                  const { src, alt } = domNode.attribs;
+                  const { src, alt, width, height } = domNode.attribs;
                   return (
-                    <span className="block my-10">
+                    <span className="block my-10 flex justify-center">
                       <img
                         src={src}
                         alt={alt || "Blog image"}
-                        className="rounded-xl shadow-lg w-full h-auto object-cover"
+                        width={width}
+                        height={height}
+                        className="rounded-lg shadow-md max-w-full h-auto"
                         loading="lazy"
                       />
                       {alt && (
