@@ -66,7 +66,7 @@ export default function CreateBlogPage() {
             const formData = new FormData();
             formData.append("file", upload.file);
 
-            const res = await fetch("/api/upload", {
+            const res = await fetch("/api/blog-images", {
               method: "POST",
               body: formData,
             });
