@@ -7,6 +7,7 @@ import {
   Users,
   Settings,
   Cpu,
+  CreditCard,
   BookOpen,
   Zap,
   LogOut,
@@ -55,6 +56,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       items: [
         { id: "configuration", label: "Configuration", icon: Settings },
         { id: "testing", label: "Testing", icon: Cpu },
+        { id: "subscription", label: "Subscription", icon: CreditCard },
       ],
     },
     {

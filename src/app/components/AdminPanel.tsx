@@ -17,6 +17,7 @@ import CrawledPagesSection from "./admin/CrawledPagesSection";
 import CustomerPersonaSection from "./admin/CustomerPersonaSection";
 import CustomerProfilesSection from "./admin/CustomerProfilesSection";
 import BookingManagementSection from "./admin/BookingManagementSection";
+import SubscriptionSection from "./admin/SubscriptionSection";
 import { AdminSettingsSection } from "./admin/AdminSettingsSection";
 import OnboardingSettingsSection from "./admin/OnboardingSettingsSection";
 import SummaryModal from "./admin/SummaryModal";
@@ -1074,6 +1075,9 @@ const AdminPanel: React.FC = () => {
             />
           </div>
         );
+
+      case "subscription":
+        return <SubscriptionSection email={auth?.email} />;
 
       case "customers":
         return (
