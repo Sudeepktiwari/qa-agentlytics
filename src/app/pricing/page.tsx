@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 /**
  * Agentlytics Pricing Page (Base plans only)
  * - Free / Growth / Scale
- * - Visitors are TOTAL visitors (lifetime allocation per plan)
+ * - Leads are TOTAL leads (lifetime allocation per plan)
  * - Credits refresh monthly
  * - Credits explanation sits under ROI header for correct buyer psychology
  */
@@ -19,7 +19,7 @@ const PRICING = {
     name: "Free",
     price: "$0",
     cadence: "",
-    totalVisitors: 20,
+    totalLeads: 20,
     creditsPerMonth: 500,
     websites: 1,
   },
@@ -27,7 +27,7 @@ const PRICING = {
     name: "Growth",
     price: "$49",
     cadence: "month",
-    totalVisitors: 25_000,
+    totalLeads: 25_000,
     creditsPerMonth: 7_000,
     websites: 1,
   },
@@ -35,7 +35,7 @@ const PRICING = {
     name: "Scale",
     price: "$99",
     cadence: "month",
-    totalVisitors: 100_000,
+    totalLeads: 100_000,
     creditsPerMonth: 16_000,
     websites: 3,
   },
@@ -512,17 +512,14 @@ function formatCell(v: boolean | string) {
 // Minimal self-checks (lightweight “tests”)
 // -----------------------------
 function assertPricingInvariants() {
+  console.assert(PRICING.free.totalLeads > 0, "Free totalLeads must be > 0");
   console.assert(
-    PRICING.free.totalVisitors > 0,
-    "Free totalVisitors must be > 0"
+    PRICING.growth.totalLeads > PRICING.free.totalLeads,
+    "Growth leads must exceed Free"
   );
   console.assert(
-    PRICING.growth.totalVisitors > PRICING.free.totalVisitors,
-    "Growth visitors must exceed Free"
-  );
-  console.assert(
-    PRICING.scale.totalVisitors > PRICING.growth.totalVisitors,
-    "Scale visitors must exceed Growth"
+    PRICING.scale.totalLeads > PRICING.growth.totalLeads,
+    "Scale leads must exceed Growth"
   );
 
   console.assert(
@@ -566,16 +563,14 @@ export default function PricingPage() {
   // ROI blocks (illustrative, as confirmed)
   const roi = useMemo(() => {
     const growth = {
-      visitors: PRICING.growth.totalVisitors,
-      engagementRate: 0.02,
+      leads: PRICING.growth.totalLeads,
       qualifyRate: 0.1,
       conversions: 2,
       dealValue: 500,
       planPrice: 49,
     };
     const scale = {
-      visitors: PRICING.scale.totalVisitors,
-      engagementRate: 0.02,
+      leads: PRICING.scale.totalLeads,
       qualifyRate: 0.1,
       conversions: 5,
       dealValue: 1000,
@@ -583,18 +578,16 @@ export default function PricingPage() {
     };
 
     const compute = (x: {
-      visitors: number;
-      engagementRate: number;
+      leads: number;
       qualifyRate: number;
       conversions: number;
       dealValue: number;
       planPrice: number;
     }) => {
-      const conversations = Math.round(x.visitors * x.engagementRate);
-      const leads = Math.round(conversations * x.qualifyRate);
+      const qualifiedLeads = Math.round(x.leads * x.qualifyRate);
       const revenue = x.conversions * x.dealValue;
       const roiMultiple = revenue / x.planPrice;
-      return { conversations, leads, revenue, roiMultiple };
+      return { qualifiedLeads, revenue, roiMultiple };
     };
 
     return {
@@ -656,7 +649,7 @@ export default function PricingPage() {
             <div className="flex flex-wrap items-center justify-center gap-2">
               <Badge variant="secondary">Base Plans</Badge>
               <Badge variant="outline">Proactive AI</Badge>
-              <Badge variant="outline">Engaged visitors + credits</Badge>
+              <Badge variant="outline">Leads + credits</Badge>
             </div>
 
             <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-5xl">
@@ -665,8 +658,8 @@ export default function PricingPage() {
 
             <p className="mt-4 text-sm text-muted-foreground sm:text-base">
               Agentlytics pricing is based on{" "}
-              <span className="font-medium">engaged visitors</span> and{" "}
-              <span className="font-medium">AI credits</span>. Only visitors who
+              <span className="font-medium">leads</span> and{" "}
+              <span className="font-medium">AI credits</span>. Only leads who
               interact with the widget are counted. Advanced AI actions consume
               credits.
             </p>
@@ -707,7 +700,7 @@ export default function PricingPage() {
         <SectionHeader
           eyebrow="Plans"
           title="Free, Growth, and Scale"
-          subtitle="Locked, clean pricing. Choose based on engaged visitors (total allocation) and how much AI reasoning you want to run."
+          subtitle="Locked, clean pricing. Choose based on leads (total allocation) and how much AI reasoning you want to run."
         />
 
         <motion.div
@@ -724,8 +717,8 @@ export default function PricingPage() {
             cta="Start Free"
             details={[
               {
-                label: "Engaged visitors",
-                value: formatNumber(PRICING.free.totalVisitors),
+                label: "Leads",
+                value: formatNumber(PRICING.free.totalLeads),
                 icon: "Users",
               },
               {
@@ -754,8 +747,8 @@ export default function PricingPage() {
             variant="highlight"
             details={[
               {
-                label: "Engaged visitors",
-                value: formatNumber(PRICING.growth.totalVisitors),
+                label: "Leads",
+                value: formatNumber(PRICING.growth.totalLeads),
                 icon: "Users",
               },
               {
@@ -783,8 +776,8 @@ export default function PricingPage() {
             cta="Go Scale"
             details={[
               {
-                label: "Engaged visitors",
-                value: formatNumber(PRICING.scale.totalVisitors),
+                label: "Leads",
+                value: formatNumber(PRICING.scale.totalLeads),
                 icon: "Users",
               },
               {
@@ -874,7 +867,7 @@ export default function PricingPage() {
 
           <div className="mt-4 text-xs text-muted-foreground">
             Credits represent AI effort, not infrastructure cost. Credits
-            refresh monthly; total visitors do not.
+            refresh monthly; total leads do not.
           </div>
         </div>
 
@@ -883,22 +876,14 @@ export default function PricingPage() {
             <CardHeader>
               <CardTitle>Growth ROI Example</CardTitle>
               <div className="mt-2 text-sm text-muted-foreground">
-                25,000 site visitors • 2% engagement • 10% qualification • $500
-                deal value
+                25,000 leads • 10% qualification • $500 deal value
               </div>
             </CardHeader>
             <CardContent className="space-y-2 text-sm text-muted-foreground">
               <p>
-                {formatNumber(PRICING.growth.totalVisitors)} visitors × 2% ={" "}
+                {formatNumber(PRICING.growth.totalLeads)} leads × 10% ={" "}
                 <span className="font-medium text-foreground">
-                  {formatNumber(roi.growth.conversations)}
-                </span>{" "}
-                conversations
-              </p>
-              <p>
-                {formatNumber(roi.growth.conversations)} × 10% ={" "}
-                <span className="font-medium text-foreground">
-                  {formatNumber(roi.growth.leads)}
+                  {formatNumber(roi.growth.qualifiedLeads)}
                 </span>{" "}
                 qualified leads
               </p>
@@ -926,22 +911,14 @@ export default function PricingPage() {
             <CardHeader>
               <CardTitle>Scale ROI Example</CardTitle>
               <div className="mt-2 text-sm text-muted-foreground">
-                100,000 site visitors • 2% engagement • 10% qualification •
-                $1,000 deal value
+                100,000 leads • 10% qualification • $1,000 deal value
               </div>
             </CardHeader>
             <CardContent className="space-y-2 text-sm text-muted-foreground">
               <p>
-                {formatNumber(PRICING.scale.totalVisitors)} visitors × 2% ={" "}
+                {formatNumber(PRICING.scale.totalLeads)} leads × 10% ={" "}
                 <span className="font-medium text-foreground">
-                  {formatNumber(roi.scale.conversations)}
-                </span>{" "}
-                conversations
-              </p>
-              <p>
-                {formatNumber(roi.scale.conversations)} × 10% ={" "}
-                <span className="font-medium text-foreground">
-                  {formatNumber(roi.scale.leads)}
+                  {formatNumber(roi.scale.qualifiedLeads)}
                 </span>{" "}
                 qualified leads
               </p>
@@ -1058,14 +1035,12 @@ export default function PricingPage() {
                 onClick={() => setOpenFaq(openFaq === "q6" ? null : "q6")}
                 isOpen={openFaq === "q6"}
               >
-                If I delete a visitor/lead, does it reduce my engaged visitor
-                usage?
+                If I delete a lead, does it reduce my lead usage?
               </AccordionTrigger>
               <AccordionContent isOpen={openFaq === "q6"}>
-                No. Deleting a visitor/lead does not change your plan usage.
-                Engaged visitor limits are based on unique engaged visitors
-                processed, not on records stored. Deletions only affect your
-                dashboard history.
+                No. Deleting a lead does not change your plan usage. Lead limits
+                are based on unique leads processed, not on records stored.
+                Deletions only affect your dashboard history.
               </AccordionContent>
             </AccordionItem>
 
@@ -1074,11 +1049,11 @@ export default function PricingPage() {
                 onClick={() => setOpenFaq(openFaq === "q1" ? null : "q1")}
                 isOpen={openFaq === "q1"}
               >
-                Do engaged visitors reset?
+                Do leads reset?
               </AccordionTrigger>
               <AccordionContent isOpen={openFaq === "q1"}>
-                No. Engaged visitors are a lifetime allocation for your plan.
-                When you reach the limit, you upgrade to the next plan.
+                No. Leads are a lifetime allocation for your plan. When you
+                reach the limit, you upgrade to the next plan.
               </AccordionContent>
             </AccordionItem>
 
@@ -1129,9 +1104,8 @@ export default function PricingPage() {
               Start Free. Upgrade when you reach the limit.
             </div>
             <div className="mt-1 text-sm text-muted-foreground">
-              Free includes {formatNumber(PRICING.free.totalVisitors)} engaged
-              visitors and {formatNumber(PRICING.free.creditsPerMonth)}{" "}
-              credits/month.
+              Free includes {formatNumber(PRICING.free.totalLeads)} leads and{" "}
+              {formatNumber(PRICING.free.creditsPerMonth)} credits/month.
             </div>
           </div>
           <div className="flex gap-2">

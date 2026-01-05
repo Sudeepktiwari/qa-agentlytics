@@ -21,7 +21,7 @@ const PRICING = {
     price: "$0",
     id: "free",
     amount: 0,
-    totalVisitors: 20,
+    totalLeads: 20,
     creditsPerMonth: 500,
   },
   growth: {
@@ -29,7 +29,7 @@ const PRICING = {
     price: "$49",
     id: "growth",
     amount: 49,
-    totalVisitors: 25_000,
+    totalLeads: 25_000,
     creditsPerMonth: 7_000,
     razorpayPlanId: process.env.NEXT_PUBLIC_RAZORPAY_PLAN_GROWTH,
   },
@@ -38,7 +38,7 @@ const PRICING = {
     price: "$99",
     id: "scale",
     amount: 99,
-    totalVisitors: 100_000,
+    totalLeads: 100_000,
     creditsPerMonth: 16_000,
     razorpayPlanId: process.env.NEXT_PUBLIC_RAZORPAY_PLAN_SCALE,
   },
@@ -244,7 +244,7 @@ export default function SubscriptionSection({ email }: { email?: string }) {
               <div className="space-y-3 mb-6">
                 <div className="flex items-center gap-2 text-sm text-gray-600">
                   <Icon name="Users" />
-                  <span>{plan.totalVisitors.toLocaleString()} Visitors</span>
+                  <span>{plan.totalLeads.toLocaleString()} Leads</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-600">
                   <Icon name="Sparkles" />
