@@ -10,12 +10,20 @@ export async function POST(req: Request) {
     const {
       razorpay_order_id,
       razorpay_payment_id,
+      razorpay_subscription_id,
       razorpay_signature,
       email,
       planId,
     } = await req.json();
 
-    const body = razorpay_order_id + "|" + razorpay_payment_id;
+    let body = "";
+    if (razorpay_subscription_id) {
+      // Subscription verification: payment_id + "|" + subscription_id
+      body = razorpay_payment_id + "|" + razorpay_subscription_id;
+    } else {
+      // Order verification: order_id + "|" + payment_id
+      body = razorpay_order_id + "|" + razorpay_payment_id;
+    }
 
     const expectedSignature = crypto
       .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET || "")
@@ -34,17 +42,20 @@ export async function POST(req: Request) {
         planId,
         razorpay_order_id,
         razorpay_payment_id,
+        razorpay_subscription_id,
         status: "active",
+        type: razorpay_subscription_id ? "subscription" : "one-time",
         createdAt: new Date(),
       });
 
-      // Update user subscription status (optional, depending on your user model)
+      // Update user subscription status
       await db.collection("users").updateOne(
         { email },
         {
           $set: {
             subscriptionPlan: planId,
             subscriptionStatus: "active",
+            subscriptionId: razorpay_subscription_id,
           },
         }
       );
@@ -54,17 +65,11 @@ export async function POST(req: Request) {
         message: "Payment verified and subscription activated",
       });
     } else {
-      return NextResponse.json(
-        { error: "Invalid signature" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
     }
   } catch (error) {
     console.error("Error verifying payment:", error);
-    return NextResponse.json(
-      { error: "Verification failed" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Verification failed" }, { status: 500 });
   } finally {
     await client.close();
   }

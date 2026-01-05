@@ -31,6 +31,7 @@ const PRICING = {
     amount: 49,
     totalVisitors: 25_000,
     creditsPerMonth: 7_000,
+    razorpayPlanId: process.env.NEXT_PUBLIC_RAZORPAY_PLAN_GROWTH,
   },
   scale: {
     name: "Scale",
@@ -39,6 +40,7 @@ const PRICING = {
     amount: 99,
     totalVisitors: 100_000,
     creditsPerMonth: 16_000,
+    razorpayPlanId: process.env.NEXT_PUBLIC_RAZORPAY_PLAN_SCALE,
   },
 } as const;
 
@@ -127,28 +129,30 @@ export default function SubscriptionSection({ email }: { email?: string }) {
     }
 
     setLoading(true);
-    const plan = PRICING[planKey];
+    const plan = PRICING[planKey] as any;
 
     try {
-      // 1. Create Order
-      const res = await fetch("/api/admin/subscription/create-order", {
+      if (!plan.razorpayPlanId) {
+        throw new Error("Subscription plan ID not configured");
+      }
+
+      // 1. Create Subscription
+      const res = await fetch("/api/admin/subscription/create-subscription", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: plan.amount }),
+        body: JSON.stringify({ planId: plan.razorpayPlanId }),
       });
 
-      const order = await res.json();
+      const subscription = await res.json();
 
-      if (!res.ok) throw new Error(order.error);
+      if (!res.ok) throw new Error(subscription.error);
 
       // 2. Open Razorpay
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-        amount: order.amount,
-        currency: order.currency,
+        subscription_id: subscription.id,
         name: "Agentlytics",
         description: `${plan.name} Plan Subscription`,
-        order_id: order.id,
         modal: {
           ondismiss: function () {
             setLoading(false);
