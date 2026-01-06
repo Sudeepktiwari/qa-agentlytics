@@ -24,10 +24,10 @@ export async function checkLeadLimit(adminId: string): Promise<{
     const plan = PRICING[planId] || PRICING.free;
     const limit = plan.totalLeads;
 
-    // 2. Count existing leads
-    const currentLeads = await db
-      .collection("leads")
-      .countDocuments({ adminId });
+    // 2. Count unique leads by email
+    const currentLeads = (
+      await db.collection("leads").distinct("email", { adminId })
+    ).length;
 
     return {
       limitReached: currentLeads >= limit,

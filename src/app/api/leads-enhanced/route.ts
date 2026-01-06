@@ -103,8 +103,8 @@ export async function GET(req: NextRequest) {
       .limit(pageSize)
       .toArray();
 
-    // Get total count for pagination
-    const total = await leads.countDocuments(query);
+    // Get total count (unique emails)
+    const total = (await leads.distinct("email", query)).length;
 
     // Format leads for response
     const formattedLeads = leadsResult.map((lead) => ({
