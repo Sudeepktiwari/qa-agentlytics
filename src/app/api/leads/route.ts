@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/mongo";
 import { verifyApiKey } from "@/lib/auth";
 import jwt from "jsonwebtoken";
+import { escapeRegex } from "@/lib/validators";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
 
@@ -60,11 +61,18 @@ export async function GET(req: NextRequest) {
 
     // Get URL parameters for pagination and filtering
     const url = new URL(req.url);
-    const page = parseInt(url.searchParams.get("page") || "1");
-    const pageSize = parseInt(url.searchParams.get("pageSize") || "10");
-    const sortBy = url.searchParams.get("sortBy") || "createdAt";
-    const sortOrder = url.searchParams.get("sortOrder") === "asc" ? 1 : -1;
-    const search = url.searchParams.get("search") || "";
+    const pageRaw = url.searchParams.get("page") || "1";
+    const pageSizeRaw = url.searchParams.get("pageSize") || "10";
+    const sortByRaw = url.searchParams.get("sortBy") || "createdAt";
+    const sortOrderRaw = url.searchParams.get("sortOrder") || "desc";
+    const searchRaw = url.searchParams.get("search") || "";
+
+    const page = Math.min(Math.max(parseInt(pageRaw), 1), 1000);
+    const pageSize = Math.min(Math.max(parseInt(pageSizeRaw), 1), 100);
+    const allowedSortBy = new Set(["createdAt", "lastSeen", "email", "messageCount"]);
+    const sortBy = allowedSortBy.has(sortByRaw) ? sortByRaw : "createdAt";
+    const sortOrder = sortOrderRaw === "asc" ? 1 : -1;
+    const safeSearch = searchRaw ? searchRaw.slice(0, 128) : "";
 
     // Build query to find leads (messages with email addresses)
     const query: Record<string, unknown> = {
@@ -72,10 +80,10 @@ export async function GET(req: NextRequest) {
       email: { $exists: true, $ne: null, $not: { $eq: "" } },
     };
 
-    if (search) {
+    if (safeSearch) {
       query.$or = [
-        { email: { $regex: search, $options: "i" } },
-        { content: { $regex: search, $options: "i" } },
+        { email: { $regex: escapeRegex(safeSearch), $options: "i" } },
+        { content: { $regex: escapeRegex(safeSearch), $options: "i" } },
       ];
     }
 

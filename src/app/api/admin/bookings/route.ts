@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { bookingService } from "@/services/bookingService";
 import { verifyAdminAccessFromCookie } from "@/lib/auth";
 import type { BookingFilters } from "@/services/bookingService";
+import { z } from "zod";
+import { assertBodyConstraints } from "@/lib/validators";
 
 /**
  * Admin API for managing bookings
@@ -13,20 +15,23 @@ import type { BookingFilters } from "@/services/bookingService";
 export async function GET(request: NextRequest) {
   try {
     console.log("📋 Admin Bookings - GET request received");
-    
+
     // Verify admin authentication
     const authResult = verifyAdminAccessFromCookie(request);
     console.log("🔍 Admin Bookings - Auth result:", authResult);
-    
+
     if (!authResult.isValid) {
-      console.log("❌ Admin Bookings - Authentication failed:", authResult.error);
-      return NextResponse.json(
-        { error: authResult.error },
-        { status: 401 }
+      console.log(
+        "❌ Admin Bookings - Authentication failed:",
+        authResult.error
       );
+      return NextResponse.json({ error: authResult.error }, { status: 401 });
     }
 
-    console.log("✅ Admin Bookings - Authentication successful for admin:", authResult.adminId);
+    console.log(
+      "✅ Admin Bookings - Authentication successful for admin:",
+      authResult.adminId
+    );
 
     const authenticatedAdminId = authResult.adminId!;
 
@@ -36,24 +41,39 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "20");
 
-    const allowedStatus = ["pending", "confirmed", "completed", "cancelled"] as const;
-    const allowedRequestTypes = ["demo", "call", "support", "consultation"] as const;
+    const allowedStatus = [
+      "pending",
+      "confirmed",
+      "completed",
+      "cancelled",
+    ] as const;
+    const allowedRequestTypes = [
+      "demo",
+      "call",
+      "support",
+      "consultation",
+    ] as const;
     const allowedPriority = ["low", "medium", "high", "urgent"] as const;
 
     const rawStatus = searchParams.get("status");
-    const status = rawStatus && (allowedStatus as readonly string[]).includes(rawStatus)
-      ? (rawStatus as (typeof allowedStatus)[number])
-      : undefined;
+    const status =
+      rawStatus && (allowedStatus as readonly string[]).includes(rawStatus)
+        ? (rawStatus as (typeof allowedStatus)[number])
+        : undefined;
 
     const rawRequestType = searchParams.get("requestType");
-    const requestType = rawRequestType && (allowedRequestTypes as readonly string[]).includes(rawRequestType)
-      ? (rawRequestType as (typeof allowedRequestTypes)[number])
-      : undefined;
+    const requestType =
+      rawRequestType &&
+      (allowedRequestTypes as readonly string[]).includes(rawRequestType)
+        ? (rawRequestType as (typeof allowedRequestTypes)[number])
+        : undefined;
 
     const rawPriority = searchParams.get("priority");
-    const priority = rawPriority && (allowedPriority as readonly string[]).includes(rawPriority)
-      ? (rawPriority as (typeof allowedPriority)[number])
-      : undefined;
+    const priority =
+      rawPriority &&
+      (allowedPriority as readonly string[]).includes(rawPriority)
+        ? (rawPriority as (typeof allowedPriority)[number])
+        : undefined;
 
     const searchTerm = searchParams.get("search") || undefined;
 
@@ -129,7 +149,24 @@ export async function PUT(request: NextRequest) {
     const authenticatedAdminId = authResult.adminId!;
 
     const body = await request.json();
-    const { bookingId, updates } = body;
+    assertBodyConstraints(body, { maxBytes: 64 * 1024, maxDepth: 6 });
+    const BodySchema = z
+      .object({
+        bookingId: z.string().min(1).max(64),
+        updates: z
+          .object({
+            status: z.string().min(1).max(32).optional(),
+            notes: z.string().min(0).max(2000).optional(),
+            priority: z.string().min(1).max(16).optional(),
+          })
+          .passthrough(),
+      })
+      .strict();
+    const parsed = BodySchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+    }
+    const { bookingId, updates } = parsed.data;
 
     if (!bookingId) {
       return NextResponse.json(
@@ -156,17 +193,42 @@ export async function PUT(request: NextRequest) {
     }
 
     // Check if booking belongs to authenticated admin
-    if (existingBooking.adminId && existingBooking.adminId !== authenticatedAdminId) {
+    if (
+      existingBooking.adminId &&
+      existingBooking.adminId !== authenticatedAdminId
+    ) {
       return NextResponse.json(
-        { success: false, error: "Access denied: You can only modify your own bookings" },
+        {
+          success: false,
+          error: "Access denied: You can only modify your own bookings",
+        },
         { status: 403 }
       );
     }
 
-    // Add authenticated admin ID to updates
+    const allowedStatus = [
+      "pending",
+      "confirmed",
+      "completed",
+      "cancelled",
+    ] as const;
+    const allowedPriority = ["low", "medium", "high", "urgent"] as const;
+    const sanitizedStatus =
+      updates.status &&
+      (allowedStatus as readonly string[]).includes(updates.status)
+        ? (updates.status as (typeof allowedStatus)[number])
+        : undefined;
+    const sanitizedPriority =
+      updates.priority &&
+      (allowedPriority as readonly string[]).includes(updates.priority)
+        ? (updates.priority as (typeof allowedPriority)[number])
+        : undefined;
+
     const secureUpdates = {
-      ...updates,
-      adminId: authenticatedAdminId // Ensure booking is assigned to authenticated admin
+      adminId: authenticatedAdminId,
+      status: sanitizedStatus,
+      priority: sanitizedPriority,
+      adminNotes: updates.notes,
     };
 
     const updatedBooking = await bookingService.updateBookingWithAdminNotes(
@@ -232,9 +294,15 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Check if booking belongs to authenticated admin
-    if (existingBooking.adminId && existingBooking.adminId !== authenticatedAdminId) {
+    if (
+      existingBooking.adminId &&
+      existingBooking.adminId !== authenticatedAdminId
+    ) {
       return NextResponse.json(
-        { success: false, error: "Access denied: You can only delete your own bookings" },
+        {
+          success: false,
+          error: "Access denied: You can only delete your own bookings",
+        },
         { status: 403 }
       );
     }

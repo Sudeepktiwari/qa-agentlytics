@@ -2,6 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/mongo";
 import { verifyApiKey } from "@/lib/auth";
 import { getLeadAnalytics, updateLeadStatus } from "@/lib/leads";
+import {
+  UpdateLeadSchema,
+  assertBodyConstraints,
+  escapeRegex,
+} from "@/lib/validators";
 import { ObjectId } from "mongodb";
 import jwt from "jsonwebtoken";
 
@@ -66,7 +71,7 @@ export async function GET(req: NextRequest) {
     const pageSize = parseInt(url.searchParams.get("pageSize") || "10");
     const sortBy = url.searchParams.get("sortBy") || "createdAt";
     const sortOrder = url.searchParams.get("sortOrder") === "asc" ? 1 : -1;
-    const search = url.searchParams.get("search") || "";
+    const searchRaw = url.searchParams.get("search") || "";
     const status = url.searchParams.get("status") || "";
     const analytics = url.searchParams.get("analytics") === "true";
 
@@ -82,12 +87,13 @@ export async function GET(req: NextRequest) {
     // Build query to find leads for this admin
     const query: Record<string, unknown> = { adminId };
 
-    if (search) {
+    const safeSearch = searchRaw ? searchRaw.slice(0, 128) : "";
+    if (safeSearch) {
       query.$or = [
-        { email: { $regex: search, $options: "i" } },
-        { requirements: { $regex: search, $options: "i" } },
-        { firstMessage: { $regex: search, $options: "i" } },
-        { notes: { $regex: search, $options: "i" } },
+        { email: { $regex: escapeRegex(safeSearch), $options: "i" } },
+        { requirements: { $regex: escapeRegex(safeSearch), $options: "i" } },
+        { firstMessage: { $regex: escapeRegex(safeSearch), $options: "i" } },
+        { notes: { $regex: escapeRegex(safeSearch), $options: "i" } },
       ];
     }
 
@@ -181,7 +187,16 @@ export async function PUT(req: NextRequest) {
   }
 
   try {
-    const { leadId, status, notes, value, tags } = await req.json();
+    const body = await req.json();
+    assertBodyConstraints(body);
+    const parsed = UpdateLeadSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Invalid payload", details: parsed.error.flatten() },
+        { status: 400, headers: corsHeaders }
+      );
+    }
+    const { leadId, status, notes, value, tags } = parsed.data;
 
     if (!leadId) {
       return NextResponse.json(

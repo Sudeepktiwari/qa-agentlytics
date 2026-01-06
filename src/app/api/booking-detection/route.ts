@@ -7,6 +7,7 @@ import {
 } from "@/services/bookingDetection";
 import { ResponseValidator, FeatureFlags } from "@/lib/javascriptSafety";
 import { verifyApiKey } from "@/lib/auth";
+import { assertBodyConstraints } from "@/lib/validators";
 
 // CORS headers for cross-origin requests
 const corsHeaders = {
@@ -53,8 +54,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Parse request body
+  // Parse request body
     const body = await req.json();
+    assertBodyConstraints(body, { maxBytes: 128 * 1024, maxDepth: 8 });
     const {
       message,
       conversationHistory = [],

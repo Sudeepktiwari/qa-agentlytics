@@ -4,6 +4,8 @@ import { verifyApiKey } from "@/lib/auth";
 import { ObjectId } from "mongodb";
 import jwt from "jsonwebtoken";
 import OpenAI from "openai";
+import { z } from "zod";
+import { assertBodyConstraints } from "@/lib/validators";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -378,9 +380,13 @@ export async function GET(req: NextRequest) {
 
   try {
     const url = new URL(req.url);
-    const sessionId = url.searchParams.get("sessionId");
-    const email = url.searchParams.get("email");
+    const sessionIdRaw = url.searchParams.get("sessionId");
+    const emailRaw = url.searchParams.get("email");
     const getAllProfiles = url.searchParams.get("all") === "true";
+
+    const sessionId =
+      sessionIdRaw && sessionIdRaw.length <= 128 ? sessionIdRaw : null;
+    const email = emailRaw && emailRaw.length <= 256 ? emailRaw : null;
 
     if (!sessionId && !email && !getAllProfiles) {
       return NextResponse.json(
@@ -405,7 +411,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const query: any = { adminId };
+    const query: Record<string, unknown> = { adminId };
     if (sessionId) query.sessionIds = sessionId;
     if (email) query.email = email;
 
@@ -460,6 +466,66 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const body = await req.json();
+    assertBodyConstraints(body, { maxBytes: 128 * 1024, maxDepth: 8 });
+
+    const ConversationMessageSchema = z
+      .object({
+        role: z.string().min(1).max(32),
+        content: z.string().min(1).max(5000),
+      })
+      .strict();
+
+    const BodySchema = z
+      .object({
+        sessionId: z.string().min(1).max(128),
+        email: z.string().email().max(256).optional(),
+        conversation: z
+          .union([
+            z.string().max(20000),
+            z.array(ConversationMessageSchema).max(200),
+          ])
+          .optional(),
+        messageCount: z.number().int().min(0).max(10000).optional(),
+        timeInSession: z
+          .number()
+          .int()
+          .min(0)
+          .max(24 * 60 * 60)
+          .optional(),
+        pageTransitions: z
+          .array(z.string().min(1).max(2048))
+          .max(500)
+          .optional(),
+        pageUrl: z.string().url().max(2048).optional(),
+        trigger: z
+          .enum([
+            "email_detection",
+            "periodic_update",
+            "budget_mention",
+            "technical_discussion",
+            "company_sizing",
+            "decision_authority",
+            "page_transition",
+            "extended_session",
+            "intent_shift",
+            "feature_inquiry",
+            "contact_request",
+            "integration_discussion",
+            "bant_complete",
+          ])
+          .optional(),
+      })
+      .strict();
+
+    const parsed = BodySchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Invalid payload", details: parsed.error.flatten() },
+        { status: 400, headers: corsHeaders }
+      );
+    }
+
     const {
       sessionId,
       email,
@@ -469,7 +535,7 @@ export async function POST(req: NextRequest) {
       pageTransitions,
       pageUrl,
       trigger,
-    } = await req.json();
+    } = parsed.data;
 
     if (!sessionId) {
       return NextResponse.json(
@@ -561,7 +627,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Analyze profile sections based on trigger
-    let updates: any = {};
+    let updates: Record<string, unknown> = {};
 
     if (updateTrigger === "email_detection" || !existingProfile) {
       // Comprehensive analysis for new profiles or email detection
@@ -685,6 +751,25 @@ export async function POST(req: NextRequest) {
     };
 
     // Merge updates with existing profile
+    const companyUpdates =
+      updates.companyProfile && typeof updates.companyProfile === "object"
+        ? (updates.companyProfile as Record<string, unknown>)
+        : {};
+    const behaviorUpdates =
+      updates.behaviorProfile && typeof updates.behaviorProfile === "object"
+        ? (updates.behaviorProfile as Record<string, unknown>)
+        : {};
+    const requirementsUpdates =
+      updates.requirementsProfile &&
+      typeof updates.requirementsProfile === "object"
+        ? (updates.requirementsProfile as Record<string, unknown>)
+        : {};
+    const intelligenceUpdates =
+      updates.intelligenceProfile &&
+      typeof updates.intelligenceProfile === "object"
+        ? (updates.intelligenceProfile as Record<string, unknown>)
+        : {};
+
     const updatedProfile = {
       ...baseProfile,
       name: resolvedName || (baseProfile as any).name,
@@ -693,15 +778,15 @@ export async function POST(req: NextRequest) {
       sessionIds: [...new Set([...(baseProfile.sessionIds || []), sessionId])],
       companyProfile: {
         ...baseProfile.companyProfile,
-        ...updates.companyProfile,
+        ...companyUpdates,
       },
       behaviorProfile: {
         ...baseProfile.behaviorProfile,
-        ...updates.behaviorProfile,
+        ...behaviorUpdates,
       },
       requirementsProfile: {
         ...baseProfile.requirementsProfile,
-        ...updates.requirementsProfile,
+        ...requirementsUpdates,
       },
       engagementProfile: {
         ...baseProfile.engagementProfile,
@@ -722,22 +807,22 @@ export async function POST(req: NextRequest) {
       },
       intelligenceProfile: {
         ...baseProfile.intelligenceProfile,
-        ...updates.intelligenceProfile,
+        ...intelligenceUpdates,
       },
       profileMeta: {
         confidenceScore: calculateConfidenceScore({
           ...baseProfile,
           companyProfile: {
             ...baseProfile.companyProfile,
-            ...updates.companyProfile,
+            ...companyUpdates,
           },
           behaviorProfile: {
             ...baseProfile.behaviorProfile,
-            ...updates.behaviorProfile,
+            ...behaviorUpdates,
           },
           requirementsProfile: {
             ...baseProfile.requirementsProfile,
-            ...updates.requirementsProfile,
+            ...requirementsUpdates,
           },
           engagementProfile: baseProfile.engagementProfile,
         }),
@@ -916,7 +1001,21 @@ export async function DELETE(req: NextRequest) {
   }
 
   try {
-    const { profileId } = await req.json();
+    const body = await req.json();
+    assertBodyConstraints(body, { maxBytes: 64 * 1024, maxDepth: 4 });
+    const DeleteSchema = z
+      .object({
+        profileId: z.string().min(1).max(64),
+      })
+      .strict();
+    const parsed = DeleteSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "Invalid payload", details: parsed.error.flatten() },
+        { status: 400, headers: corsHeaders }
+      );
+    }
+    const { profileId } = parsed.data;
 
     if (!profileId) {
       return NextResponse.json(

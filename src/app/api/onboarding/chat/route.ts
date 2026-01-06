@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { assertBodyConstraints } from "@/lib/validators";
 import { verifyApiKey } from "@/lib/auth";
 import { createOrUpdateLead } from "@/lib/leads";
 import { getAdminSettings } from "@/lib/adminSettings";
@@ -111,7 +113,8 @@ export async function POST(request: NextRequest) {
         const sessionId = String(
           (payload as any)?.__sessionId || `onboarding_${Date.now()}`
         );
-        if (email) {
+        const EmailSchema = z.string().email().max(254);
+        if (email && EmailSchema.safeParse(email).success) {
           await createOrUpdateLead(
             adminId,
             email,

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ChatBodySchema, assertBodyConstraints } from "@/lib/validators";
 import OpenAI from "openai";
 import { querySimilarChunks } from "@/lib/chroma";
 import { getDb } from "@/lib/mongo";
@@ -3204,6 +3205,18 @@ function detectIntent({
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
+  try {
+    assertBodyConstraints(body, { maxBytes: 128 * 1024, maxDepth: 8 });
+    const parsed = ChatBodySchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+    }
+  } catch (e) {
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : "Invalid request" },
+      { status: 400 }
+    );
+  }
   const {
     question,
     sessionId,

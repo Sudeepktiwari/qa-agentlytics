@@ -3,6 +3,8 @@ import { MongoClient } from "mongodb";
 import { Pinecone } from "@pinecone-database/pinecone";
 import OpenAI from "openai";
 import { verifyApiKey } from "@/lib/auth";
+import { z } from "zod";
+import { assertBodyConstraints } from "@/lib/validators";
 
 const pc = new Pinecone({ apiKey: process.env.PINECONE_KEY! });
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
@@ -81,7 +83,19 @@ export async function POST(request: NextRequest) {
     const adminId = verification.adminId;
     console.log("[API] API key verified for adminId:", adminId);
 
-    const { url, regenerate } = await request.json();
+    const body = await request.json();
+    assertBodyConstraints(body, { maxBytes: 256 * 1024, maxDepth: 10 });
+    const Schema = z
+      .object({
+        url: z.string().url().max(2048),
+        regenerate: z.boolean().optional(),
+      })
+      .strict();
+    const parsed = Schema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+    }
+    const { url, regenerate } = parsed.data;
     console.log("[API] Request data:", { url, regenerate });
 
     console.log("[API] Connecting to MongoDB...");
@@ -245,7 +259,14 @@ export async function DELETE(request: NextRequest) {
     }
 
     const adminId = verification.adminId;
-    const { url } = await request.json();
+    const body = await request.json();
+    assertBodyConstraints(body, { maxBytes: 64 * 1024, maxDepth: 6 });
+    const DeleteSchema = z.object({ url: z.string().url().max(2048) }).strict();
+    const parsedDelete = DeleteSchema.safeParse(body);
+    if (!parsedDelete.success) {
+      return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+    }
+    const { url } = parsedDelete.data;
 
     client = new MongoClient(process.env.MONGODB_URI!);
     await client.connect();
