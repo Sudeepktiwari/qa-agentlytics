@@ -8505,7 +8505,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
         if (
           !preferMessageBased &&
           followupTopic !== "general" &&
-          !(userHasEmail && followupCount === 2)
+          followupCount !== 2
         ) {
           console.log(
             `[FOLLOWUP] Generating topic-based followup for: ${followupTopic}`
@@ -8522,7 +8522,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
           !preferMessageBased &&
           detectedPersona &&
           pageChunks.length > 0 &&
-          !(userHasEmail && followupCount === 2)
+          followupCount !== 2
         ) {
           console.log(
             `[Persona] Generating persona-based followup for: ${
