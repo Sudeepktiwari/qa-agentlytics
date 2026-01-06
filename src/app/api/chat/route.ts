@@ -8423,13 +8423,21 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
         // Detect intent from last user message or pageUrl
         const detectedIntent = detectIntent({ question, pageUrl });
         // Use followupCount from request body to determine follow-up stage
+        const rawFollowupCount = body.followupCount;
         const followupCount =
-          typeof body.followupCount === "number" ? body.followupCount : 0;
+          typeof rawFollowupCount === "number"
+            ? rawFollowupCount
+            : typeof rawFollowupCount === "string" &&
+              !isNaN(Number(rawFollowupCount))
+            ? Number(rawFollowupCount)
+            : 0;
         const followupTopic = body.followupTopic || "general";
 
         console.log(
           "[FOLLOWUP] Generating followup message for topic:",
-          followupTopic
+          followupTopic,
+          "Count:",
+          followupCount
         );
 
         // Check if user already has email (sales mode)
@@ -9474,6 +9482,15 @@ ${previousQnA}
             // Continue with original response if booking detection fails
           }
 
+          // Force empty buttons for 3rd followup (ghost closure)
+          if (followupCount === 2) {
+            console.log(
+              "[Ghost Closure] Enforcing empty buttons for followupCount 2"
+            );
+            enhancedFollowup.buttons = [];
+            enhancedFollowup.showBookingCalendar = false;
+          }
+
           const botMode =
             resolvedUserEmail || bookingStatus.hasActiveBooking
               ? "sales"
@@ -9818,8 +9835,14 @@ What specific information are you looking for? I'm here to help guide you throug
       } catch (e) {
         // Continue generic followup if gating check fails
       }
+      const rawFollowupCount = body.followupCount;
       const followupCount =
-        typeof body.followupCount === "number" ? body.followupCount : 0;
+        typeof rawFollowupCount === "number"
+          ? rawFollowupCount
+          : typeof rawFollowupCount === "string" &&
+            !isNaN(Number(rawFollowupCount))
+          ? Number(rawFollowupCount)
+          : 0;
 
       if (followupCount < 3) {
         // Generate contextual followup based on URL or previous conversation
