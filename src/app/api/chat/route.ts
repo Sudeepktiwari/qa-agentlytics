@@ -3265,6 +3265,27 @@ export async function POST(req: NextRequest) {
   // Add request ID for debugging
   const requestId = Math.random().toString(36).substring(7);
 
+  // SPAM PROTECTION
+  if (question && typeof question === "string" && question.trim().length > 0) {
+    const spamCheck = await checkSpam(req, question);
+    if (spamCheck.action === "block") {
+      return NextResponse.json(
+        { error: spamCheck.message || "Access blocked" },
+        { status: 403, headers: corsHeaders }
+      );
+    }
+    if (spamCheck.action === "warn") {
+      return NextResponse.json(
+        {
+          mainText: spamCheck.message || "please dont spam",
+          buttons: [],
+          emailPrompt: "",
+        },
+        { status: 200, headers: corsHeaders }
+      );
+    }
+  }
+
   // Fetch customer profile for BANT logic
   let customerProfile = null;
   if (sessionId) {

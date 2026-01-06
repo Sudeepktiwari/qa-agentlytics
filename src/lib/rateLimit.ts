@@ -30,67 +30,54 @@ export async function checkSpam(
   const spamTracking = db.collection("spam_tracking");
   const blocks = db.collection("blocks");
 
-  // Use content directly for comparison
   const contentHash = content.trim();
   const now = new Date();
 
-  // Find tracking record for this IP
-  const record = await spamTracking.findOne({ ip });
-
-  if (record && record.lastContent === contentHash) {
-    // Duplicate message
-    const newCount = (record.count || 0) + 1;
-
-    // Update count
-    await spamTracking.updateOne(
-      { ip },
-      {
-        $set: { count: newCount, lastSeen: now },
-      }
-    );
-
-    if (newCount === 3) {
-      // Third time: Warn
-      await spamTracking.updateOne({ ip }, { $set: { warned: true } });
-      return { action: "warn", message: "please dont spam" };
-    } else if (newCount > 3) {
-      // More than 3 times: Block if previously warned
-      if (record.warned) {
-        // Block IP
-        await blocks.updateOne(
-          { type: "ip", value: ip },
-          {
-            $set: {
-              type: "ip",
-              value: ip,
-              blocked: true,
-              reason: "spam_repetition",
-              createdAt: now,
-              updatedAt: now,
-              expiresAt: null, // Permanent block
-            },
-          },
-          { upsert: true }
-        );
-        return { action: "block", message: "IP blocked due to spam" };
-      }
-      // If somehow reached >3 without warning flag, warn now
-      return { action: "warn", message: "please dont spam" };
-    }
-  } else {
-    // New message or different content -> Reset counter
-    await spamTracking.updateOne(
-      { ip },
+  // Atomic update:
+  // 1. If content matches lastContent, increment count.
+  // 2. If content differs, reset count to 1 and update lastContent.
+  // 3. Upsert if not exists.
+  const record = await spamTracking.findOneAndUpdate(
+    { ip },
+    [
       {
         $set: {
           lastContent: contentHash,
-          count: 1,
-          warned: false,
           lastSeen: now,
+          count: {
+            $cond: {
+              if: { $eq: ["$lastContent", contentHash] },
+              then: { $add: [{ $ifNull: ["$count", 0] }, 1] },
+              else: 1,
+            },
+          },
         },
       },
-      { upsert: true }
-    );
+    ],
+    { upsert: true, returnDocument: "after" }
+  );
+
+  if (record) {
+    const count = record.count;
+
+    if (count === 3) {
+      return { action: "warn", message: "please dont spam" };
+    } else if (count > 3) {
+      await blocks.updateOne(
+        { type: "ip", value: ip },
+        {
+          $set: {
+            blocked: true,
+            reason: "spam_repetition",
+            createdAt: now,
+            updatedAt: now,
+            expiresAt: null,
+          },
+        },
+        { upsert: true }
+      );
+      return { action: "block", message: "IP blocked due to spam" };
+    }
   }
 
   return { action: "allow" };
