@@ -6,6 +6,7 @@ import jwt from "jsonwebtoken";
 import OpenAI from "openai";
 import { z } from "zod";
 import { assertBodyConstraints } from "@/lib/validators";
+import { rateLimit } from "@/lib/rateLimit";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -345,6 +346,13 @@ Provide actionable insights based on conversation patterns and profile data.`,
 
 // Get customer profile
 export async function GET(req: NextRequest) {
+  const rl = await rateLimit(req, "auth");
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Rate limit exceeded" },
+      { status: 429, headers: corsHeaders }
+    );
+  }
   let adminId: string | null = null;
 
   // Check authentication
@@ -432,6 +440,13 @@ export async function GET(req: NextRequest) {
 
 // Create or update customer profile
 export async function POST(req: NextRequest) {
+  const rl = await rateLimit(req, "auth");
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Rate limit exceeded" },
+      { status: 429, headers: corsHeaders }
+    );
+  }
   let adminId: string | null = null;
 
   // Check authentication
@@ -967,6 +982,13 @@ export async function POST(req: NextRequest) {
 
 // Delete customer profile
 export async function DELETE(req: NextRequest) {
+  const rl = await rateLimit(req, "auth");
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Rate limit exceeded" },
+      { status: 429, headers: corsHeaders }
+    );
+  }
   let adminId: string | null = null;
 
   // Check authentication

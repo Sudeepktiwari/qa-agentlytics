@@ -15,6 +15,7 @@ import { bookingService } from "@/services/bookingService";
 import { onboardingService } from "@/services/onboardingService";
 import { getAdminSettings, OnboardingSettings } from "@/lib/adminSettings";
 import { deriveOnboardingFieldsFromCurl } from "@/lib/curl";
+import { rateLimit } from "@/lib/rateLimit";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -3204,12 +3205,19 @@ function detectIntent({
 }
 
 export async function POST(req: NextRequest) {
+  const rl = await rateLimit(req, "public");
+  if (!rl.allowed) {
+    return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
+  }
   const body = await req.json();
   try {
     assertBodyConstraints(body, { maxBytes: 128 * 1024, maxDepth: 8 });
     const parsed = ChatBodySchema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Invalid request body" },
+        { status: 400 }
+      );
     }
   } catch (e) {
     return NextResponse.json(

@@ -3,6 +3,7 @@ import { getDb } from "@/lib/mongo";
 import { verifyApiKey } from "@/lib/auth";
 import jwt from "jsonwebtoken";
 import { escapeRegex } from "@/lib/validators";
+import { rateLimit } from "@/lib/rateLimit";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
 
@@ -23,6 +24,10 @@ export async function OPTIONS() {
 }
 
 export async function GET(req: NextRequest) {
+  const rl = await rateLimit(req, "auth");
+  if (!rl.allowed) {
+    return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
+  }
   // Get leads for authenticated admin
   let adminId: string | null = null;
 
@@ -69,7 +74,12 @@ export async function GET(req: NextRequest) {
 
     const page = Math.min(Math.max(parseInt(pageRaw), 1), 1000);
     const pageSize = Math.min(Math.max(parseInt(pageSizeRaw), 1), 100);
-    const allowedSortBy = new Set(["createdAt", "lastSeen", "email", "messageCount"]);
+    const allowedSortBy = new Set([
+      "createdAt",
+      "lastSeen",
+      "email",
+      "messageCount",
+    ]);
     const sortBy = allowedSortBy.has(sortByRaw) ? sortByRaw : "createdAt";
     const sortOrder = sortOrderRaw === "asc" ? 1 : -1;
     const safeSearch = searchRaw ? searchRaw.slice(0, 128) : "";
@@ -147,6 +157,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  const rl = await rateLimit(req, "auth");
+  if (!rl.allowed) {
+    return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
+  }
   // Delete a lead (all messages for a specific email)
   let adminId: string | null = null;
 

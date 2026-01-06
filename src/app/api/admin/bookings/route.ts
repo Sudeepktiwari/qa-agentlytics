@@ -4,6 +4,7 @@ import { verifyAdminAccessFromCookie } from "@/lib/auth";
 import type { BookingFilters } from "@/services/bookingService";
 import { z } from "zod";
 import { assertBodyConstraints } from "@/lib/validators";
+import { rateLimit } from "@/lib/rateLimit";
 
 /**
  * Admin API for managing bookings
@@ -14,6 +15,13 @@ import { assertBodyConstraints } from "@/lib/validators";
 
 export async function GET(request: NextRequest) {
   try {
+    const rl = await rateLimit(request, "auth");
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded" },
+        { status: 429 }
+      );
+    }
     console.log("📋 Admin Bookings - GET request received");
 
     // Verify admin authentication
@@ -137,6 +145,13 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    const rl = await rateLimit(request, "auth");
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded" },
+        { status: 429 }
+      );
+    }
     // Verify admin authentication
     const authResult = verifyAdminAccessFromCookie(request);
     if (!authResult.isValid) {

@@ -9,6 +9,7 @@ import {
 } from "@/lib/validators";
 import { ObjectId } from "mongodb";
 import jwt from "jsonwebtoken";
+import { rateLimit } from "@/lib/rateLimit";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
 
@@ -29,6 +30,13 @@ export async function OPTIONS() {
 }
 
 export async function GET(req: NextRequest) {
+  const rl = await rateLimit(req, "auth");
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Rate limit exceeded" },
+      { status: 429, headers: corsHeaders }
+    );
+  }
   // Get leads for authenticated admin
   let adminId: string | null = null;
 
@@ -152,6 +160,13 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
+  const rl = await rateLimit(req, "auth");
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Rate limit exceeded" },
+      { status: 429, headers: corsHeaders }
+    );
+  }
   // Update lead status, notes, value, tags
   let adminId: string | null = null;
 
@@ -235,6 +250,13 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  const rl = await rateLimit(req, "auth");
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "Rate limit exceeded" },
+      { status: 429, headers: corsHeaders }
+    );
+  }
   // Delete a lead
   let adminId: string | null = null;
 

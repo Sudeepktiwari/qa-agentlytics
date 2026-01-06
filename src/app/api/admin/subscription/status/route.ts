@@ -1,9 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminAccessFromCookie } from "@/lib/auth";
 import { checkLeadLimit } from "@/lib/leads";
+import { rateLimit } from "@/lib/rateLimit";
 
 export async function GET(req: NextRequest) {
   try {
+    const rl = await rateLimit(req, "auth");
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded" },
+        { status: 429 }
+      );
+    }
     const auth = await verifyAdminAccessFromCookie(req);
     if (!auth || !auth.adminId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

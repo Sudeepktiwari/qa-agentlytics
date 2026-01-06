@@ -8,6 +8,7 @@ import {
 import { ResponseValidator, FeatureFlags } from "@/lib/javascriptSafety";
 import { verifyApiKey } from "@/lib/auth";
 import { assertBodyConstraints } from "@/lib/validators";
+import { rateLimit } from "@/lib/rateLimit";
 
 // CORS headers for cross-origin requests
 const corsHeaders = {
@@ -28,6 +29,13 @@ export async function OPTIONS() {
 
 export async function POST(req: NextRequest) {
   try {
+    const rl = await rateLimit(req, "public");
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded" },
+        { status: 429, headers: corsHeaders }
+      );
+    }
     console.log("[BookingDetectionAPI] Processing booking detection request");
 
     // Check if feature is enabled
@@ -54,7 +62,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-  // Parse request body
+    // Parse request body
     const body = await req.json();
     assertBodyConstraints(body, { maxBytes: 128 * 1024, maxDepth: 8 });
     const {
@@ -63,7 +71,7 @@ export async function POST(req: NextRequest) {
       pageContext,
       sessionId,
       mode = "detect", // 'detect', 'generate', or 'enhance'
-      adminId = "default"
+      adminId = "default",
     } = body;
 
     // Validate required fields
