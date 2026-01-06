@@ -1,5 +1,46 @@
 import { getDb } from "@/lib/mongo";
 import { ObjectId } from "mongodb";
+import { PRICING } from "@/config/pricing";
+
+// Check if admin has reached lead limit
+export async function checkLeadLimit(adminId: string): Promise<{
+  limitReached: boolean;
+  currentLeads: number;
+  limit: number;
+  plan: string;
+}> {
+  try {
+    const db = await getDb();
+
+    // 1. Get admin's plan
+    const user = await db.collection("users").findOne({
+      $or: [
+        { _id: new ObjectId(adminId) },
+        { apiKey: adminId }, // Fallback if adminId is actually apiKey
+      ],
+    });
+
+    const planId = (user?.subscriptionPlan || "free") as keyof typeof PRICING;
+    const plan = PRICING[planId] || PRICING.free;
+    const limit = plan.totalLeads;
+
+    // 2. Count existing leads
+    const currentLeads = await db
+      .collection("leads")
+      .countDocuments({ adminId });
+
+    return {
+      limitReached: currentLeads >= limit,
+      currentLeads,
+      limit,
+      plan: planId,
+    };
+  } catch (error) {
+    console.error("[LeadGen] Error checking lead limit:", error);
+    // Fail safe: assume limit not reached to avoid blocking legitimate users on error
+    return { limitReached: false, currentLeads: 0, limit: 100, plan: "error" };
+  }
+}
 
 // Enhanced lead storage - create dedicated lead when email is captured
 export async function createOrUpdateLead(
@@ -35,7 +76,6 @@ export async function createOrUpdateLead(
         pageContext?: any;
         lastDetectedIntent?: string;
         lastDetectedVertical?: string;
-        $push?: { sessionIds: string };
       } = {
         lastContact: new Date(),
         lastSessionId: sessionId,
@@ -68,6 +108,16 @@ export async function createOrUpdateLead(
       console.log(`[LeadGen] Updated existing lead: ${email}`);
       return existingLead._id;
     } else {
+      // Check lead limit before creating new lead
+      const { limitReached, limit, plan } = await checkLeadLimit(adminId);
+
+      if (limitReached) {
+        console.warn(
+          `[LeadGen] Lead limit reached for admin ${adminId} (Plan: ${plan}, Limit: ${limit}). Lead not created.`
+        );
+        return null;
+      }
+
       // Create new lead
       const newLead = {
         adminId,

@@ -15,34 +15,22 @@ declare global {
 // -----------------------------
 // Pricing Configuration (Mirrors /pricing)
 // -----------------------------
-const PRICING = {
-  free: {
-    name: "Free",
-    price: "$0",
-    id: "free",
-    amount: 0,
-    totalLeads: 20,
-    creditsPerMonth: 500,
-  },
-  growth: {
-    name: "Growth",
-    price: "$49",
-    id: "growth",
-    amount: 49,
-    totalLeads: 25_000,
-    creditsPerMonth: 7_000,
-    razorpayPlanId: process.env.NEXT_PUBLIC_RAZORPAY_PLAN_GROWTH,
-  },
-  scale: {
-    name: "Scale",
-    price: "$99",
-    id: "scale",
-    amount: 99,
-    totalLeads: 100_000,
-    creditsPerMonth: 16_000,
-    razorpayPlanId: process.env.NEXT_PUBLIC_RAZORPAY_PLAN_SCALE,
-  },
-} as const;
+import { PRICING } from "@/config/pricing";
+
+interface SubscriptionSectionProps {
+  subscription: {
+    planId: string;
+    status: string;
+    currentPeriodEnd?: string;
+    cancelAtPeriodEnd?: boolean;
+    razorpaySubscriptionId?: string;
+  };
+  usage: {
+    leads: number;
+    credits: number;
+    websites: number;
+  };
+}
 
 // -----------------------------
 // Icons
@@ -119,7 +107,25 @@ function Card({ children, className = "" }: any) {
 
 export default function SubscriptionSection({ email }: { email?: string }) {
   const [loading, setLoading] = useState(false);
-  const [currentPlan, setCurrentPlan] = useState("free"); // In a real app, fetch this from API
+  const [currentPlan, setCurrentPlan] = useState("free");
+  const [usage, setUsage] = useState<{
+    leads: number;
+    leadsLimit: number;
+    limitReached: boolean;
+    credits: number;
+  } | null>(null);
+
+  React.useEffect(() => {
+    fetch("/api/admin/subscription/status")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.usage) setUsage(data.usage);
+        if (data.plan) setCurrentPlan(data.plan);
+      })
+      .catch((err) =>
+        console.error("Failed to fetch subscription status:", err)
+      );
+  }, []);
 
   const handleSubscribe = async (planKey: keyof typeof PRICING) => {
     if (planKey === "free") return;
@@ -205,6 +211,145 @@ export default function SubscriptionSection({ email }: { email?: string }) {
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 md:p-6">
       <Script src="https://checkout.razorpay.com/v1/checkout.js" />
 
+      {usage && (
+        <>
+          {!usage.limitReached &&
+            usage.leadsLimit > 0 &&
+            usage.leads / usage.leadsLimit >= 0.8 && (
+              <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-800">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold">
+                    Approaching your lead limit
+                  </p>
+                  <Button
+                    variant="primary"
+                    className="h-8 px-3 text-xs"
+                    onClick={() =>
+                      handleSubscribe(
+                        currentPlan === "free" ? "growth" : "scale"
+                      )
+                    }
+                  >
+                    Upgrade
+                  </Button>
+                </div>
+                <p className="mt-1 text-xs">
+                  {usage.leads.toLocaleString()} of{" "}
+                  {usage.leadsLimit.toLocaleString()} lifetime leads used
+                </p>
+              </div>
+            )}
+          {usage.limitReached && (
+            <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-red-800">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold">Lead limit reached</p>
+                <Button
+                  variant="primary"
+                  className="h-8 px-3 text-xs"
+                  onClick={() =>
+                    handleSubscribe(currentPlan === "free" ? "growth" : "scale")
+                  }
+                >
+                  Upgrade
+                </Button>
+              </div>
+              <p className="mt-1 text-xs">Upgrade to capture more leads</p>
+            </div>
+          )}
+        </>
+      )}
+
+      {usage && (
+        <div className="mb-8 p-6 bg-slate-50 rounded-xl border border-slate-200">
+          <h2 className="text-lg font-semibold text-slate-800 mb-4">
+            Current Usage
+          </h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            {/* Leads Usage */}
+            <div>
+              <div className="flex justify-between text-sm mb-2">
+                <span className="font-medium text-slate-700">
+                  Lifetime Leads
+                </span>
+                <span
+                  className={
+                    usage.limitReached
+                      ? "text-red-600 font-bold"
+                      : "text-slate-600"
+                  }
+                >
+                  {usage.leads.toLocaleString()} /{" "}
+                  {usage.leadsLimit.toLocaleString()}
+                </span>
+              </div>
+              <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full ${
+                    usage.limitReached ? "bg-red-500" : "bg-blue-600"
+                  }`}
+                  style={{
+                    width: `${Math.min(
+                      (usage.leads / usage.leadsLimit) * 100,
+                      100
+                    )}%`,
+                  }}
+                />
+              </div>
+              {usage.limitReached && (
+                <p className="text-xs text-red-600 mt-2 font-medium">
+                  Limit reached. Upgrade to capture more leads.
+                </p>
+              )}
+            </div>
+
+            {/* Credits Usage */}
+            <div>
+              <div className="flex justify-between text-sm mb-2">
+                <span className="font-medium text-slate-700">Credits</span>
+                <span className="text-slate-600">
+                  {usage.credits.toLocaleString()} /{" "}
+                  {PRICING[
+                    currentPlan as keyof typeof PRICING
+                  ].creditsPerMonth.toLocaleString()}
+                </span>
+              </div>
+              <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-emerald-600"
+                  style={{
+                    width: `${Math.min(
+                      (usage.credits /
+                        PRICING[currentPlan as keyof typeof PRICING]
+                          .creditsPerMonth) *
+                        100,
+                      100
+                    )}%`,
+                  }}
+                />
+              </div>
+              <p className="text-xs text-slate-500 mt-2 font-medium">
+                Advanced AI actions consume credits monthly
+              </p>
+            </div>
+
+            {/* Plan Info */}
+            <div>
+              <div className="flex justify-between text-sm mb-2">
+                <span className="font-medium text-slate-700">Plan Status</span>
+                <span className="text-slate-600 capitalize font-semibold">
+                  {currentPlan}
+                </span>
+              </div>
+              <p className="text-sm text-slate-500">
+                {currentPlan === "free"
+                  ? "Upgrade to increase your lifetime lead limit."
+                  : "Your leads never expire. Upgrade when you need more capacity."}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="mb-8">
         <h2 className="text-lg font-semibold text-slate-800 mb-1">
           Subscription Plan
@@ -244,7 +389,7 @@ export default function SubscriptionSection({ email }: { email?: string }) {
               <div className="space-y-3 mb-6">
                 <div className="flex items-center gap-2 text-sm text-gray-600">
                   <Icon name="Users" />
-                  <span>{plan.totalLeads.toLocaleString()} Leads</span>
+                  <span>{plan.totalLeads.toLocaleString()} Lifetime Leads</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-600">
                   <Icon name="Sparkles" />

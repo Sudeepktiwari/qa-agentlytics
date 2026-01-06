@@ -21,6 +21,7 @@ import SubscriptionSection from "./admin/SubscriptionSection";
 import { AdminSettingsSection } from "./admin/AdminSettingsSection";
 import OnboardingSettingsSection from "./admin/OnboardingSettingsSection";
 import SummaryModal from "./admin/SummaryModal";
+import { PRICING } from "@/config/pricing";
 
 const AdminPanel: React.FC = () => {
   // Authentication state
@@ -145,6 +146,15 @@ const AdminPanel: React.FC = () => {
   // Navigation state
   const [activeSection, setActiveSection] = useState("overview");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [subscriptionUsage, setSubscriptionUsage] = useState<null | {
+    plan: string;
+    usage: {
+      leads: number;
+      leadsLimit: number;
+      limitReached: boolean;
+      credits: number;
+    };
+  }>(null);
 
   // Check authentication on mount
   useEffect(() => {
@@ -770,6 +780,12 @@ const AdminPanel: React.FC = () => {
       fetchApiKey();
       fetchLeads();
       fetchCrawledPages();
+      fetch("/api/admin/subscription/status", { credentials: "include" })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && data.usage) setSubscriptionUsage(data);
+        })
+        .catch(() => {});
     }
   }, [auth, fetchLeads]);
 
@@ -793,6 +809,43 @@ const AdminPanel: React.FC = () => {
       case "overview":
         return (
           <div className="space-y-6">
+            {subscriptionUsage &&
+              subscriptionUsage.usage.leadsLimit > 0 &&
+              (subscriptionUsage.usage.limitReached ||
+                subscriptionUsage.usage.leads /
+                  subscriptionUsage.usage.leadsLimit >=
+                  0.8) && (
+                <div
+                  className={
+                    subscriptionUsage.usage.limitReached
+                      ? "rounded-xl border border-red-200 bg-red-50 p-4 text-red-800"
+                      : "rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-800"
+                  }
+                >
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-semibold">
+                      {subscriptionUsage.usage.limitReached
+                        ? "Lead limit reached"
+                        : "Approaching your lead limit"}
+                    </p>
+                    <button
+                      onClick={() => setActiveSection("subscription")}
+                      className={
+                        subscriptionUsage.usage.limitReached
+                          ? "h-8 px-3 text-xs rounded-md bg-red-600 text-white"
+                          : "h-8 px-3 text-xs rounded-md bg-amber-600 text-white"
+                      }
+                    >
+                      Upgrade
+                    </button>
+                  </div>
+                  <p className="mt-1 text-xs">
+                    {subscriptionUsage.usage.leads.toLocaleString()} of{" "}
+                    {subscriptionUsage.usage.leadsLimit.toLocaleString()}{" "}
+                    lifetime leads used
+                  </p>
+                </div>
+              )}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {/* Leads Card */}
               <div className="bg-white p-4 md:p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
@@ -806,6 +859,30 @@ const AdminPanel: React.FC = () => {
                     </p>
                     <h3 className="text-2xl font-bold text-slate-800">
                       {leadsTotal}
+                    </h3>
+                  </div>
+                </div>
+              </div>
+
+              {/* Credits Card */}
+              <div className="bg-white p-4 md:p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-emerald-50 text-emerald-600 rounded-lg">
+                    <Activity size={24} />
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-500 font-medium">
+                      Credits
+                    </p>
+                    <h3 className="text-2xl font-bold text-slate-800">
+                      {subscriptionUsage
+                        ? `${subscriptionUsage.usage.credits.toLocaleString()} / ${
+                            (subscriptionUsage.plan &&
+                              (PRICING as any)[subscriptionUsage.plan]
+                                ?.creditsPerMonth) ||
+                            0
+                          }`
+                        : "-"}
                     </h3>
                   </div>
                 </div>

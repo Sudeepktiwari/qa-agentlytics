@@ -2,6 +2,7 @@
 
 import React, { useMemo } from "react";
 import { motion } from "framer-motion";
+import { PRICING } from "@/config/pricing";
 
 /**
  * Agentlytics Pricing Page (Base plans only)
@@ -14,32 +15,7 @@ import { motion } from "framer-motion";
 // -----------------------------
 // Locked Pricing Configuration
 // -----------------------------
-const PRICING = {
-  free: {
-    name: "Free",
-    price: "$0",
-    cadence: "",
-    totalLeads: 20,
-    creditsPerMonth: 500,
-    websites: 1,
-  },
-  growth: {
-    name: "Growth",
-    price: "$49",
-    cadence: "month",
-    totalLeads: 25_000,
-    creditsPerMonth: 7_000,
-    websites: 1,
-  },
-  scale: {
-    name: "Scale",
-    price: "$99",
-    cadence: "month",
-    totalLeads: 100_000,
-    creditsPerMonth: 16_000,
-    websites: 3,
-  },
-} as const;
+// PRICING is imported from @/config/pricing
 
 type IconName =
   | "ArrowRight"
@@ -1062,11 +1038,11 @@ export default function PricingPage() {
                 onClick={() => setOpenFaq(openFaq === "q2" ? null : "q2")}
                 isOpen={openFaq === "q2"}
               >
-                What happens if I exceed my engaged visitor limit?
+                What happens if I exceed my lead limit?
               </AccordionTrigger>
               <AccordionContent isOpen={openFaq === "q2"}>
-                You upgrade to the next plan for higher engaged visitor
-                capacity. This keeps limits aligned with your growth.
+                You upgrade to the next plan for higher lead capacity. This
+                keeps limits aligned with your growth.
               </AccordionContent>
             </AccordionItem>
 
