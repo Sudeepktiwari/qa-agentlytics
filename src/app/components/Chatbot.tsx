@@ -650,6 +650,9 @@ const Chatbot: React.FC<ChatbotProps> = ({
             },
           ]);
           setFollowupCount((c) => c + 1);
+        })
+        .catch((err) => {
+          console.error("❌ [Chatbot] Error fetching followup:", err);
         });
     }
     // Cleanup on unmount
@@ -685,8 +688,13 @@ const Chatbot: React.FC<ChatbotProps> = ({
     });
 
     if (!data) {
-      console.log("❌ [PARSE] No data provided, returning empty response");
-      return { mainText: "", buttons: [], emailPrompt: "" };
+      console.error("❌ [PARSE] No followup content received from api");
+      return {
+        mainText:
+          "I'm here if you need anything else! Feel free to ask me anything.",
+        buttons: ["Menu", "Contact Support"],
+        emailPrompt: "",
+      };
     }
 
     // If data is a string, try to parse as JSON, else treat as plain text

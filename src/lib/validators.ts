@@ -9,7 +9,10 @@ export function clampNumber(n: number, min: number, max: number) {
   return Math.min(Math.max(n, min), max);
 }
 
-export function computeDepth(value: unknown, visited = new Set<object>()): number {
+export function computeDepth(
+  value: unknown,
+  visited = new Set<object>()
+): number {
   if (value === null || typeof value !== "object") return 0;
   const obj = value as Record<string, unknown>;
   if (visited.has(obj)) return 0;
@@ -21,7 +24,10 @@ export function computeDepth(value: unknown, visited = new Set<object>()): numbe
   return depth;
 }
 
-export function assertBodyConstraints(body: unknown, opts?: { maxBytes?: number; maxDepth?: number }) {
+export function assertBodyConstraints(
+  body: unknown,
+  opts?: { maxBytes?: number; maxDepth?: number }
+) {
   const maxBytes = opts?.maxBytes ?? 128 * 1024;
   const maxDepth = opts?.maxDepth ?? 8;
   const json = JSON.stringify(body);
@@ -51,7 +57,7 @@ export const ChatBodySchema = z
     sessionId: z.string().min(1).max(128).optional(),
     pageUrl: z.string().url().max(2048).optional(),
     adminId: z.string().min(1).max(128).optional(),
-    followup: z.number().int().min(0).max(5).optional(),
+    followup: z.union([z.boolean(), z.number().int().min(0).max(5)]).optional(),
     proactive: z.boolean().optional(),
   })
   .passthrough();
@@ -61,4 +67,3 @@ export function sanitizeSearchTerm(search?: string, maxLen = 128) {
   const s = String(search).slice(0, maxLen);
   return new RegExp(escapeRegex(s), "i");
 }
-
