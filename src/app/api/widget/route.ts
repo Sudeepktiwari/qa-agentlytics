@@ -4046,41 +4046,45 @@ export async function GET(request: Request) {
         followupType: (data.type || null),
         sources: Array.isArray(data.sources) ? data.sources : []
       };
-      messages.push(botMessage);
-      console.log('[Widget] Bot message added with sources:', botMessage.sources);
-      botResponse = botMessage.content;
-      console.log('[Widget] Bot response received, starting followup timer');
-      if (!ONBOARDING_ONLY) startFollowupTimer();
-      if (data.secondary && data.secondary.mainText) {
-        const secondaryMessage = {
-          role: 'assistant',
-          content: data.secondary.mainText,
-          buttons: data.secondary.buttons || [],
-          emailPrompt: data.secondary.emailPrompt || '',
-          followupType: data.secondary.type || null
-        };
-        const typeLower = String(secondaryMessage.followupType || '').toLowerCase();
-        const isImmediateType = typeLower === 'bant' || typeLower === 'probe' || typeLower === 'probing';
+      if (data.silent) {
+        console.log('[Widget] Silent response received, skipping message display.');
+      } else {
+        messages.push(botMessage);
+        console.log('[Widget] Bot message added with sources:', botMessage.sources);
+        botResponse = botMessage.content;
+        console.log('[Widget] Bot response received, starting followup timer');
+        if (!ONBOARDING_ONLY) startFollowupTimer();
+        if (data.secondary && data.secondary.mainText) {
+          const secondaryMessage = {
+            role: 'assistant',
+            content: data.secondary.mainText,
+            buttons: data.secondary.buttons || [],
+            emailPrompt: data.secondary.emailPrompt || '',
+            followupType: data.secondary.type || null
+          };
+          const typeLower = String(secondaryMessage.followupType || '').toLowerCase();
+          const isImmediateType = typeLower === 'bant' || typeLower === 'probe' || typeLower === 'probing';
 
-        if (isImmediateType) {
-          console.log('⚡ [WIDGET FOLLOWUP] Immediate secondary message for type:', typeLower);
-          messages.push(secondaryMessage);
-          renderMessages();
-          scrollToBottom();
-        } else {
-          const words = String(botResponse || '')
-            .replace(/<[^>]+>/g, ' ')
-            .trim()
-            .split(/\s+/)
-            .filter(Boolean).length;
-          const delayMs = Math.max(4000, Math.min(words * 350, 20000));
-          const totalDelayMs = delayMs + 120000;
-          console.log('⏳ [WIDGET FOLLOWUP] Total followup delay (ms):', totalDelayMs, 'readerDelayMs:', delayMs, 'wordCount:', words);
-          setTimeout(() => {
+          if (isImmediateType) {
+            console.log('⚡ [WIDGET FOLLOWUP] Immediate secondary message for type:', typeLower);
             messages.push(secondaryMessage);
             renderMessages();
             scrollToBottom();
-          }, totalDelayMs);
+          } else {
+            const words = String(botResponse || '')
+              .replace(/<[^>]+>/g, ' ')
+              .trim()
+              .split(/\s+/)
+              .filter(Boolean).length;
+            const delayMs = Math.max(4000, Math.min(words * 350, 20000));
+            const totalDelayMs = delayMs + 120000;
+            console.log('⏳ [WIDGET FOLLOWUP] Total followup delay (ms):', totalDelayMs, 'readerDelayMs:', delayMs, 'wordCount:', words);
+            setTimeout(() => {
+              messages.push(secondaryMessage);
+              renderMessages();
+              scrollToBottom();
+            }, totalDelayMs);
+          }
         }
       }
     }

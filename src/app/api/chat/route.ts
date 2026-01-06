@@ -3286,6 +3286,7 @@ export async function POST(req: NextRequest) {
           mainText: spamCheck.message || "please dont spam",
           buttons: [],
           emailPrompt: "",
+          silent: true,
         },
         { status: 200, headers: corsHeaders }
       );
