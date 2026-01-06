@@ -59,24 +59,30 @@ export async function checkSpam(
 
   if (record) {
     const count = record.count;
+    const isWarned = record.warned === true;
 
-    if (count === 3) {
-      return { action: "warn", message: "please dont spam" };
-    } else if (count > 3) {
-      await blocks.updateOne(
-        { type: "ip", value: ip },
-        {
-          $set: {
-            blocked: true,
-            reason: "spam_repetition",
-            createdAt: now,
-            updatedAt: now,
-            expiresAt: null,
+    if (count >= 3) {
+      if (isWarned) {
+        // Already warned (either from this content or previous content) -> Block
+        await blocks.updateOne(
+          { type: "ip", value: ip },
+          {
+            $set: {
+              blocked: true,
+              reason: "spam_repetition",
+              createdAt: now,
+              updatedAt: now,
+              expiresAt: null,
+            },
           },
-        },
-        { upsert: true }
-      );
-      return { action: "block", message: "IP blocked due to spam" };
+          { upsert: true }
+        );
+        return { action: "block", message: "IP blocked due to spam" };
+      } else {
+        // First time reaching spam threshold -> Warn
+        await spamTracking.updateOne({ ip }, { $set: { warned: true } });
+        return { action: "warn", message: "please dont spam" };
+      }
     }
   }
 
