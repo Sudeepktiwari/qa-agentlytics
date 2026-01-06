@@ -111,7 +111,7 @@ export async function rateLimit(
 ): Promise<{
   allowed: boolean;
   headers: Record<string, string>;
-  blocked?: { type: string; value: string } | null;
+  blocked?: { type: string; value: string; reason?: string } | null;
 }> {
   const cfg = DEFAULTS[scope];
   const now = Date.now();
@@ -167,6 +167,7 @@ export async function rateLimit(
         blocked: {
           type: String(blockedDoc.type),
           value: String(blockedDoc.value),
+          reason: blockedDoc.reason ? String(blockedDoc.reason) : undefined,
         },
       };
     }

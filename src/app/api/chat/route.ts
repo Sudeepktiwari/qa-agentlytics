@@ -3207,6 +3207,12 @@ function detectIntent({
 export async function POST(req: NextRequest) {
   const rl = await rateLimit(req, "public");
   if (!rl.allowed) {
+    if (rl.blocked && rl.blocked.reason === "spam_repetition") {
+      return NextResponse.json(
+        { error: "IP blocked due to spam" },
+        { status: 403, headers: corsHeaders }
+      );
+    }
     return NextResponse.json(
       { error: "Rate limit exceeded" },
       { status: 429, headers: corsHeaders }
