@@ -15,7 +15,7 @@ import { bookingService } from "@/services/bookingService";
 import { onboardingService } from "@/services/onboardingService";
 import { getAdminSettings, OnboardingSettings } from "@/lib/adminSettings";
 import { deriveOnboardingFieldsFromCurl } from "@/lib/curl";
-import { rateLimit } from "@/lib/rateLimit";
+import { rateLimit, checkSpam } from "@/lib/rateLimit";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 

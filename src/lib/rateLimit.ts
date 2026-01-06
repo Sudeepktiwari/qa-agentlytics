@@ -15,10 +15,85 @@ const DEFAULTS = {
   },
 };
 
-function getIp(req: NextRequest) {
+export function getIp(req: NextRequest) {
   const xf = req.headers.get("x-forwarded-for") || "";
   const ip = xf.split(",")[0].trim();
   return ip || "unknown";
+}
+
+export async function checkSpam(
+  req: NextRequest,
+  content: string
+): Promise<{ action: "allow" | "warn" | "block"; message?: string }> {
+  const ip = getIp(req);
+  const db = await getDb();
+  const spamTracking = db.collection("spam_tracking");
+  const blocks = db.collection("blocks");
+
+  // Use content directly for comparison
+  const contentHash = content.trim();
+  const now = new Date();
+
+  // Find tracking record for this IP
+  const record = await spamTracking.findOne({ ip });
+
+  if (record && record.lastContent === contentHash) {
+    // Duplicate message
+    const newCount = (record.count || 0) + 1;
+
+    // Update count
+    await spamTracking.updateOne(
+      { ip },
+      {
+        $set: { count: newCount, lastSeen: now },
+      }
+    );
+
+    if (newCount === 3) {
+      // Third time: Warn
+      await spamTracking.updateOne({ ip }, { $set: { warned: true } });
+      return { action: "warn", message: "please dont spam" };
+    } else if (newCount > 3) {
+      // More than 3 times: Block if previously warned
+      if (record.warned) {
+        // Block IP
+        await blocks.updateOne(
+          { type: "ip", value: ip },
+          {
+            $set: {
+              type: "ip",
+              value: ip,
+              blocked: true,
+              reason: "spam_repetition",
+              createdAt: now,
+              updatedAt: now,
+              expiresAt: null, // Permanent block
+            },
+          },
+          { upsert: true }
+        );
+        return { action: "block", message: "IP blocked due to spam" };
+      }
+      // If somehow reached >3 without warning flag, warn now
+      return { action: "warn", message: "please dont spam" };
+    }
+  } else {
+    // New message or different content -> Reset counter
+    await spamTracking.updateOne(
+      { ip },
+      {
+        $set: {
+          lastContent: contentHash,
+          count: 1,
+          warned: false,
+          lastSeen: now,
+        },
+      },
+      { upsert: true }
+    );
+  }
+
+  return { action: "allow" };
 }
 
 async function resolveIdentity(req: NextRequest, scope: Scope) {
