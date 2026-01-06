@@ -3207,7 +3207,10 @@ function detectIntent({
 export async function POST(req: NextRequest) {
   const rl = await rateLimit(req, "public");
   if (!rl.allowed) {
-    return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429, headers: corsHeaders });
+    return NextResponse.json(
+      { error: "Rate limit exceeded" },
+      { status: 429, headers: corsHeaders }
+    );
   }
   const body = await req.json();
   try {
@@ -9129,31 +9132,43 @@ Guidelines:
 - Do not include JSON inside mainText.`;
             followupUserPrompt = `Summarize the conversation in 3–4 short lines and close by offering help. Do NOT generate any buttons. Only output the JSON format as instructed.`;
           } else {
-            // User hasn't provided email yet - final summary offer (moved from 4th followup to 3rd)
+            // User hasn't provided email yet - ghost closure (same as sales bot)
             followupSystemPrompt = `
-You are a helpful sales assistant. The user has not provided an email yet and has not responded to several nudges.
+You are a helpful sales assistant. The user has not provided an email yet.
 
-You will receive page and general context, the detected intent, and the previous conversation. Always generate your response in the following JSON format:
+CRITICAL: This is FOLLOWUP #3 (followupCount=2). Provide a short 3–4 line summary of the conversation and close the chat while offering help.
+
+Summary Requirements:
+- Line 1–2: Reflect key points the user shared (needs, goals, page context).
+- Line 3: Reference any key features or benefits they explored.
+- Line 4: A friendly closure that offers help and next step.
+- CRITICAL: Use standard Markdown newlines (\\n\\n) to separate these lines. Do NOT combine them into one paragraph.
+
+Buttons:
+- CRITICAL: Do NOT generate any buttons. The array must be empty.
+
+Output JSON ONLY:
 {
-  "mainText": "<Looks like you stepped away. I've saved all your options! Want a quick summary emailed? 📧 STRICT LIMITS: Maximum 30 words total. Be friendly.>",
-  "buttons": ["Yes Email Me", "No Thanks", "Keep Browsing"],
-  "emailPrompt": "If you'd like a summary or more help, I can email it to you."
+  "mainText": "<3–4 lines. Each line is a short sentence separated by \\n\\n. End with a friendly offer to help.>",
+  "buttons": [],
+  "emailPrompt": ""
 }
+
 Context:
-Page Context:
-${pageChunks.slice(0, 10).join("\n---\n")}
+Page Context (summary-first if available):
+${pageContextForPrompt}
 General Context:
 ${pageChunks.join(" ")}
 Detected Intent:
 ${detectedIntent}
 Previous Conversation:
 ${previousQnA}
-- Only use the above JSON format.
-- Do not answer in any other way.
-- Respond with ONLY valid JSON - no additional text before or after
-- NEVER include JSON objects or button arrays within the mainText field
-- Your mainText must summarize the user's journey and offer to email a summary. Be natural and avoid formulaic language.`;
-            followupUserPrompt = `Offer to email the user a summary of their options, summarizing their last few actions or options in a friendly way. Only output the JSON format as instructed.`;
+
+Guidelines:
+- Use consultative tone; be specific, not generic.
+- Avoid repeating earlier followups; use fresh details.
+- Do not include JSON inside mainText.`;
+            followupUserPrompt = `Summarize the conversation in 3–4 short lines and close by offering help. Do NOT generate any buttons. Only output the JSON format as instructed.`;
           }
         } else if (followupCount === 3) {
           // Final nudge: aggressive conversion attempt for sales mode
