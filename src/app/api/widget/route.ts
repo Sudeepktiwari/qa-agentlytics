@@ -3734,7 +3734,7 @@ export async function GET(request: Request) {
     console.log("🔄 [WIDGET API] Normalizing response format");
     
     // Ensure we always have mainText field
-    const mainText = responseData.mainText || responseData.answer || responseData.text || responseData.message || '';
+    const mainText = responseData.mainText || responseData.answer || responseData.text || responseData.message || responseData.error || '';
     
     if (!responseData.mainText && (responseData.answer || responseData.text || responseData.message)) {
       console.log("⚠️ [WIDGET API] Converting legacy field to mainText:", {
@@ -3746,6 +3746,8 @@ export async function GET(request: Request) {
     
     const normalized = {
       mainText: mainText,
+      // Pass through error if present so the caller knows it failed
+      error: responseData.error || null,
       buttons: responseData.buttons || [],
       emailPrompt: responseData.emailPrompt || '',
       botMode: responseData.botMode || 'lead_generation',
