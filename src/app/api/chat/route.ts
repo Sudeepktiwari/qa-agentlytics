@@ -3207,7 +3207,7 @@ function detectIntent({
 export async function POST(req: NextRequest) {
   const rl = await rateLimit(req, "public");
   if (!rl.allowed) {
-    return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
+    return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429, headers: corsHeaders });
   }
   const body = await req.json();
   try {
@@ -3216,13 +3216,13 @@ export async function POST(req: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json(
         { error: "Invalid request body" },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
   } catch (e) {
     return NextResponse.json(
       { error: e instanceof Error ? e.message : "Invalid request" },
-      { status: 400 }
+      { status: 400, headers: corsHeaders }
     );
   }
   const {

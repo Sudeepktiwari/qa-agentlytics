@@ -26,7 +26,10 @@ export async function OPTIONS() {
 export async function GET(req: NextRequest) {
   const rl = await rateLimit(req, "auth");
   if (!rl.allowed) {
-    return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
+    return NextResponse.json(
+      { error: "Rate limit exceeded" },
+      { status: 429, headers: corsHeaders }
+    );
   }
   // Get leads for authenticated admin
   let adminId: string | null = null;
@@ -57,7 +60,10 @@ export async function GET(req: NextRequest) {
   }
 
   if (!adminId) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    return NextResponse.json(
+      { error: "Not authenticated" },
+      { status: 401, headers: corsHeaders }
+    );
   }
 
   try {
