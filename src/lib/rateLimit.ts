@@ -63,24 +63,36 @@ export async function checkSpam(
 
     if (count >= 3) {
       if (isWarned) {
-        // Already warned (either from this content or previous content) -> Block
-        await blocks.updateOne(
-          { type: "ip", value: ip },
-          {
-            $set: {
-              blocked: true,
-              reason: "spam_repetition",
-              createdAt: now,
-              updatedAt: now,
-              expiresAt: null,
+        // If count is exactly 3, it means a NEW sequence has hit the limit.
+        // (Because if it was the same sequence, count would be > 3).
+        // So this is the "second time" spamming -> Block.
+        if (count === 3) {
+          await blocks.updateOne(
+            { type: "ip", value: ip },
+            {
+              $set: {
+                blocked: true,
+                reason: "spam_repetition",
+                createdAt: now,
+                updatedAt: now,
+                expiresAt: null,
+              },
             },
-          },
-          { upsert: true }
-        );
-        return { action: "block", message: "IP blocked due to spam" };
+            { upsert: true }
+          );
+          return { action: "block", message: "IP blocked due to spam" };
+        } else {
+          // count > 3. This means user is continuing the SAME spam sequence that already triggered a warning.
+          // We don't block yet (per user request "not on 4th identical message").
+          // Just keep warning.
+          return { action: "warn", message: "please dont spam" };
+        }
       } else {
         // First time reaching spam threshold -> Warn
-        await spamTracking.updateOne({ ip }, { $set: { warned: true } });
+        // Only set warned flag at exactly 3 to avoid redundant writes, though safe to do always.
+        if (count === 3) {
+          await spamTracking.updateOne({ ip }, { $set: { warned: true } });
+        }
         return { action: "warn", message: "please dont spam" };
       }
     }
