@@ -49,8 +49,8 @@ export async function POST(req: Request) {
       });
 
       // Update user subscription status
-      await db.collection("users").updateOne(
-        { email },
+      const updateResult = await db.collection("users").updateOne(
+        { email: { $regex: new RegExp(`^${email}$`, "i") } },
         {
           $set: {
             subscriptionPlan: planId,
@@ -58,6 +58,10 @@ export async function POST(req: Request) {
             subscriptionId: razorpay_subscription_id,
           },
         }
+      );
+
+      console.log(
+        `[Subscription Verify] Updated user ${email} to plan ${planId}. Matched: ${updateResult.matchedCount}, Modified: ${updateResult.modifiedCount}`
       );
 
       return NextResponse.json({
