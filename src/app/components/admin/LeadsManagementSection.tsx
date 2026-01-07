@@ -97,6 +97,9 @@ interface Lead {
   latestContent: string | { mainText: string };
   latestRole: string;
   visibilityRestricted?: boolean;
+  confidenceScore?: number;
+  bantScore?: number;
+  buyingReadiness?: string;
 }
 
 interface LeadsManagementSectionProps {
@@ -364,7 +367,7 @@ const LeadsManagementSection: React.FC<LeadsManagementSectionProps> = ({
                     Lead Identity
                   </th>
                   <th className="px-5 py-3 font-semibold text-slate-500 text-[11px] uppercase tracking-wider min-w-[180px]">
-                    Intent & BANT
+                    Scores
                   </th>
                   <th className="px-5 py-3 font-semibold text-slate-500 text-[11px] uppercase tracking-wider min-w-[160px]">
                     Engagement
@@ -401,23 +404,43 @@ const LeadsManagementSection: React.FC<LeadsManagementSectionProps> = ({
                       </div>
                     </td>
                     <td className="px-5 py-3">
-                      {lead.requirements ? (
-                        <div className="flex flex-col items-start gap-1">
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded border border-emerald-100 text-[10px] font-bold uppercase tracking-wide">
-                            High Intent
+                      <div className="flex flex-col gap-1.5 items-start">
+                        {/* Confidence Score */}
+                        {lead.confidenceScore !== undefined &&
+                        lead.confidenceScore > 0 ? (
+                          <span className="px-2 py-0.5 rounded-md bg-amber-500 text-white text-[10px] font-bold shadow-sm">
+                            {(lead.confidenceScore * 100).toFixed(0)}%
+                            Confidence
                           </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-500 text-[10px] font-bold">
+                            No Confidence Score
+                          </span>
+                        )}
+
+                        {/* BANT Score */}
+                        {lead.bantScore !== undefined && lead.bantScore > 0 && (
+                          <span className="px-2 py-0.5 rounded-md bg-blue-600 text-white text-[10px] font-bold shadow-sm">
+                            BANT {lead.bantScore}
+                          </span>
+                        )}
+
+                        {/* Readiness */}
+                        {lead.buyingReadiness && (
                           <span
-                            className="text-xs text-slate-600 line-clamp-1 max-w-[200px]"
-                            title={lead.requirements}
+                            className={`px-2 py-0.5 rounded-md text-white text-[10px] font-bold shadow-sm ${
+                              lead.buyingReadiness === "high" ||
+                              lead.buyingReadiness === "very_high"
+                                ? "bg-emerald-500"
+                                : lead.buyingReadiness === "medium"
+                                ? "bg-blue-400"
+                                : "bg-red-500"
+                            }`}
                           >
-                            {lead.requirements}
+                            {lead.buyingReadiness.replace("_", " ")} readiness
                           </span>
-                        </div>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-50 text-slate-500 rounded border border-slate-100 text-[10px] font-medium">
-                          No Signal
-                        </span>
-                      )}
+                        )}
+                      </div>
                     </td>
                     <td className="px-5 py-3">
                       <div className="flex flex-col gap-1">

@@ -133,6 +133,51 @@ export async function GET(req: NextRequest) {
       { $sort: { [sortBy === "email" ? "email" : sortBy]: sortOrder } },
       { $skip: (page - 1) * pageSize },
       { $limit: pageSize },
+      {
+        $lookup: {
+          from: "customer_profiles",
+          let: { leadEmail: "$email" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$email", "$$leadEmail"] },
+                    { $eq: ["$adminId", adminId] },
+                  ],
+                },
+              },
+            },
+            {
+              $project: {
+                _id: 0,
+                confidenceScore: "$profileMeta.confidenceScore",
+                bantScore: "$bant.score",
+                buyingReadiness: "$intelligenceProfile.buyingReadiness",
+              },
+            },
+          ],
+          as: "profileData",
+        },
+      },
+      {
+        $unwind: {
+          path: "$profileData",
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $addFields: {
+          confidenceScore: "$profileData.confidenceScore",
+          bantScore: "$profileData.bantScore",
+          buyingReadiness: "$profileData.buyingReadiness",
+        },
+      },
+      {
+        $project: {
+          profileData: 0,
+        },
+      },
     ];
 
     const leads = await chats.aggregate(pipeline).toArray();
