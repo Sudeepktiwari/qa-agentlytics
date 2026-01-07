@@ -15,7 +15,7 @@ declare global {
 // -----------------------------
 // Pricing Configuration (Mirrors /pricing)
 // -----------------------------
-import { PRICING, CREDIT_ADDONS } from "@/config/pricing";
+import { PRICING, CREDIT_ADDONS, LEAD_ADDONS } from "@/config/pricing";
 
 // -----------------------------
 // Icons
@@ -100,10 +100,33 @@ export default function SubscriptionSection({ email }: { email?: string }) {
     credits: number;
   } | null>(null);
 
-  // Add-on State
-  const [addonAmount, setAddonAmount] = useState(0); // $0 to $300
-  const addonCredits =
-    (addonAmount / CREDIT_ADDONS.UNIT_PRICE_USD) * CREDIT_ADDONS.UNIT_CREDITS;
+  // Add-on State per plan
+  const [planAddons, setPlanAddons] = useState<
+    Record<string, { creditAmount: number; leadAmount: number }>
+  >({});
+
+  const getAddons = (planKey: string) => {
+    return (
+      planAddons[planKey] || {
+        creditAmount: 0,
+        leadAmount: 0,
+      }
+    );
+  };
+
+  const updateAddon = (
+    planKey: string,
+    type: "creditAmount" | "leadAmount",
+    value: number
+  ) => {
+    setPlanAddons((prev) => ({
+      ...prev,
+      [planKey]: {
+        ...getAddons(planKey),
+        [type]: value,
+      },
+    }));
+  };
 
   React.useEffect(() => {
     fetch("/api/admin/subscription/status")
@@ -128,10 +151,15 @@ export default function SubscriptionSection({ email }: { email?: string }) {
     const plan = PRICING[planKey] as any;
 
     // Calculate Add-on Quantity (if any)
+    const { creditAmount, leadAmount } = getAddons(planKey);
+
     const addonQuantity =
-      addonAmount > 0
-        ? Math.floor(addonAmount / CREDIT_ADDONS.UNIT_PRICE_USD)
+      creditAmount > 0
+        ? Math.floor(creditAmount / CREDIT_ADDONS.UNIT_PRICE_USD)
         : 0;
+
+    const leadAddonQuantity =
+      leadAmount > 0 ? Math.floor(leadAmount / LEAD_ADDONS.UNIT_PRICE_USD) : 0;
 
     try {
       if (!plan.razorpayPlanId) {
@@ -145,6 +173,7 @@ export default function SubscriptionSection({ email }: { email?: string }) {
         body: JSON.stringify({
           planId: plan.razorpayPlanId,
           addonQuantity: addonQuantity,
+          leadAddonQuantity: leadAddonQuantity,
         }),
       });
 
@@ -153,16 +182,24 @@ export default function SubscriptionSection({ email }: { email?: string }) {
       if (!res.ok) throw new Error(subscription.error);
 
       // 2. Open Razorpay
+      const descriptionParts = [`${plan.name} Plan`];
+      if (addonQuantity > 0) {
+        descriptionParts.push(
+          `+ ${addonQuantity * CREDIT_ADDONS.UNIT_CREDITS} Credits`
+        );
+      }
+      if (leadAddonQuantity > 0) {
+        descriptionParts.push(
+          `+ ${leadAddonQuantity * LEAD_ADDONS.UNIT_LEADS} Leads`
+        );
+      }
+
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         subscription_id: subscription.id,
         name: "Agentlytics",
         image: window.location.origin + "/globe.svg",
-        description: `${plan.name} Plan ${
-          addonQuantity > 0
-            ? `+ ${addonQuantity * CREDIT_ADDONS.UNIT_CREDITS} Credits`
-            : ""
-        }`,
+        description: descriptionParts.join(", "),
         modal: {
           ondismiss: function () {
             setLoading(false);
@@ -179,6 +216,7 @@ export default function SubscriptionSection({ email }: { email?: string }) {
                 planId: plan.id,
                 email: email,
                 addonQuantity: addonQuantity,
+                leadAddonQuantity: leadAddonQuantity,
               }),
             });
 
@@ -186,7 +224,10 @@ export default function SubscriptionSection({ email }: { email?: string }) {
             if (verifyRes.ok) {
               alert("Subscription successful!");
               setCurrentPlan(planKey);
-              setAddonAmount(0); // Reset slider
+              setPlanAddons((prev) => ({
+                ...prev,
+                [planKey]: { creditAmount: 0, leadAmount: 0 },
+              })); // Reset sliders
             } else {
               alert("Verification failed: " + verifyData.error);
             }
@@ -305,43 +346,7 @@ export default function SubscriptionSection({ email }: { email?: string }) {
       )}
 
       {/* --- Credit Add-on Slider --- */}
-      <Card className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-100 mb-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h3 className="text-lg font-semibold text-blue-900">
-              Add Extra Monthly Credits
-            </h3>
-            <p className="text-sm text-blue-700">
-              Boost your plan with auto-renewing credit packs.
-            </p>
-          </div>
-          <div className="text-right">
-            <div className="text-2xl font-bold text-blue-900">
-              +{addonCredits.toLocaleString()} Credits
-            </div>
-            <div className="text-sm font-medium text-blue-700">
-              +${addonAmount}/mo
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-6">
-          <input
-            type="range"
-            min="0"
-            max={CREDIT_ADDONS.MAX_AMOUNT_USD}
-            step={CREDIT_ADDONS.UNIT_PRICE_USD}
-            value={addonAmount}
-            onChange={(e) => setAddonAmount(Number(e.target.value))}
-            className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-          />
-          <div className="flex justify-between mt-2 text-xs text-blue-600 font-medium">
-            <span>0</span>
-            <span>$150</span>
-            <span>${CREDIT_ADDONS.MAX_AMOUNT_USD}</span>
-          </div>
-        </div>
-      </Card>
+      {/* REMOVED GLOBAL SLIDER */}
 
       <div className="mb-8">
         <h2 className="text-lg font-semibold text-slate-800 mb-1">
@@ -356,6 +361,12 @@ export default function SubscriptionSection({ email }: { email?: string }) {
         {(Object.keys(PRICING) as Array<keyof typeof PRICING>).map((key) => {
           const plan = PRICING[key];
           const isCurrent = currentPlan === key;
+          const { creditAmount, leadAmount } = getAddons(key);
+          const creditAddons =
+            (creditAmount / CREDIT_ADDONS.UNIT_PRICE_USD) *
+            CREDIT_ADDONS.UNIT_CREDITS;
+          const leadAddons =
+            (leadAmount / LEAD_ADDONS.UNIT_PRICE_USD) * LEAD_ADDONS.UNIT_LEADS;
 
           return (
             <Card
@@ -382,15 +393,78 @@ export default function SubscriptionSection({ email }: { email?: string }) {
               <div className="space-y-3 mb-6">
                 <div className="flex items-center gap-2 text-sm text-gray-600">
                   <Icon name="Users" />
-                  <span>{plan.totalLeads.toLocaleString()} Lifetime Leads</span>
+                  <span>
+                    {(plan.totalLeads + leadAddons).toLocaleString()} Lifetime
+                    Leads
+                  </span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-600">
                   <Icon name="Sparkles" />
                   <span>
-                    {plan.creditsPerMonth.toLocaleString()} Credits/mo
+                    {(plan.creditsPerMonth + creditAddons).toLocaleString()}{" "}
+                    Credits/mo
                   </span>
                 </div>
               </div>
+
+              {/* Sliders for Paid Plans */}
+              {key !== "free" && (
+                <div className="mb-6 space-y-4 pt-4 border-t border-gray-100">
+                  {/* Credits Slider */}
+                  <div>
+                    <div className="flex justify-between text-xs mb-2">
+                      <span className="font-medium text-gray-700">
+                        Extra Credits
+                      </span>
+                      <span className="text-blue-600 font-bold">
+                        +{creditAddons.toLocaleString()}
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max={CREDIT_ADDONS.MAX_AMOUNT_USD}
+                      step={CREDIT_ADDONS.UNIT_PRICE_USD}
+                      value={creditAmount}
+                      onChange={(e) =>
+                        updateAddon(key, "creditAmount", Number(e.target.value))
+                      }
+                      className="w-full h-2 bg-blue-100 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                    />
+                    <div className="text-right text-xs text-gray-500 mt-1">
+                      +${creditAmount}/mo
+                    </div>
+                  </div>
+
+                  {/* Leads Slider (Scale Only) */}
+                  {key === "scale" && (
+                    <div>
+                      <div className="flex justify-between text-xs mb-2">
+                        <span className="font-medium text-gray-700">
+                          Extra Leads
+                        </span>
+                        <span className="text-green-600 font-bold">
+                          +{leadAddons.toLocaleString()}
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max={LEAD_ADDONS.MAX_AMOUNT_USD}
+                        step={LEAD_ADDONS.UNIT_PRICE_USD}
+                        value={leadAmount}
+                        onChange={(e) =>
+                          updateAddon(key, "leadAmount", Number(e.target.value))
+                        }
+                        className="w-full h-2 bg-green-100 rounded-lg appearance-none cursor-pointer accent-green-600"
+                      />
+                      <div className="text-right text-xs text-gray-500 mt-1">
+                        +${leadAmount}/one-time
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <Button
                 variant={isCurrent ? "outline" : "primary"}

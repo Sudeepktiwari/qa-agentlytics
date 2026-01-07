@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { MongoClient } from "mongodb";
 import { resetMonthlyCredits } from "@/lib/credits";
-import { PRICING, CREDIT_ADDONS } from "@/config/pricing";
+import { PRICING, CREDIT_ADDONS, LEAD_ADDONS } from "@/config/pricing";
 
 const uri = process.env.MONGODB_URI || "";
 const client = new MongoClient(uri);
@@ -17,6 +17,7 @@ export async function POST(req: Request) {
       email,
       planId,
       addonQuantity,
+      leadAddonQuantity,
     } = await req.json();
 
     let body = "";
@@ -44,6 +45,7 @@ export async function POST(req: Request) {
         email,
         planId,
         addonQuantity,
+        leadAddonQuantity,
         razorpay_order_id,
         razorpay_payment_id,
         razorpay_subscription_id,
@@ -58,6 +60,12 @@ export async function POST(req: Request) {
         .findOne({ email: { $regex: new RegExp(`^${email}$`, "i") } });
 
       if (user) {
+        // Calculate extra leads
+        let extraLeads = 0;
+        if (leadAddonQuantity && typeof leadAddonQuantity === "number") {
+          extraLeads = leadAddonQuantity * LEAD_ADDONS.UNIT_LEADS;
+        }
+
         // Update user subscription status
         const updateResult = await db.collection("users").updateOne(
           { _id: user._id },
@@ -66,6 +74,7 @@ export async function POST(req: Request) {
               subscriptionPlan: planId,
               subscriptionStatus: "active",
               subscriptionId: razorpay_subscription_id,
+              extraLeads: extraLeads,
             },
           }
         );
@@ -81,7 +90,7 @@ export async function POST(req: Request) {
         await resetMonthlyCredits(user._id.toString(), totalCredits);
 
         console.log(
-          `[Subscription Verify] Updated user ${email} to plan ${planId} with limit ${totalCredits}. Matched: ${updateResult.matchedCount}, Modified: ${updateResult.modifiedCount}`
+          `[Subscription Verify] Updated user ${email} to plan ${planId} with limit ${totalCredits} and extra leads ${extraLeads}. Matched: ${updateResult.matchedCount}, Modified: ${updateResult.modifiedCount}`
         );
       } else {
         console.warn(`[Subscription Verify] User not found for email ${email}`);
