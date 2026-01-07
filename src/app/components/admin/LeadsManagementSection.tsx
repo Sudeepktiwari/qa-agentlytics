@@ -854,6 +854,50 @@ const LeadsManagementSection: React.FC<LeadsManagementSectionProps> = ({
                               </span>
                             </div>
                           )}
+                          {customerProfile.requirementsProfile
+                            .specificFeatures &&
+                            customerProfile.requirementsProfile.specificFeatures
+                              .length > 0 && (
+                              <div className="pt-2">
+                                <span className="text-slate-500 text-xs block mb-1.5">
+                                  Specific Features
+                                </span>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {customerProfile.requirementsProfile.specificFeatures.map(
+                                    (feat, i) => (
+                                      <span
+                                        key={i}
+                                        className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded text-[10px] font-medium border border-slate-200"
+                                      >
+                                        {feat}
+                                      </span>
+                                    )
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          {customerProfile.requirementsProfile
+                            .integrationNeeds &&
+                            customerProfile.requirementsProfile.integrationNeeds
+                              .length > 0 && (
+                              <div className="pt-2">
+                                <span className="text-slate-500 text-xs block mb-1.5">
+                                  Integration Needs
+                                </span>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {customerProfile.requirementsProfile.integrationNeeds.map(
+                                    (need, i) => (
+                                      <span
+                                        key={i}
+                                        className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-[10px] font-medium border border-indigo-100"
+                                      >
+                                        {need}
+                                      </span>
+                                    )
+                                  )}
+                                </div>
+                              </div>
+                            )}
                         </div>
                       </div>
 
@@ -1008,6 +1052,29 @@ const LeadsManagementSection: React.FC<LeadsManagementSectionProps> = ({
                             )}
                         </div>
 
+                        {/* Topics Discussed */}
+                        {customerProfile.intelligenceProfile.topicsDiscussed &&
+                          customerProfile.intelligenceProfile.topicsDiscussed
+                            .length > 0 && (
+                            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                              <h6 className="text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-2">
+                                Topics Discussed
+                              </h6>
+                              <div className="flex flex-wrap gap-1.5">
+                                {customerProfile.intelligenceProfile.topicsDiscussed.map(
+                                  (topic, i) => (
+                                    <span
+                                      key={i}
+                                      className="px-2 py-0.5 bg-violet-50 text-violet-700 rounded text-[10px] font-medium border border-violet-100"
+                                    >
+                                      {topic}
+                                    </span>
+                                  )
+                                )}
+                              </div>
+                            </div>
+                          )}
+
                         {/* Next Steps */}
                         {customerProfile.intelligenceProfile
                           .recommendedNextSteps &&
@@ -1064,8 +1131,7 @@ const LeadsManagementSection: React.FC<LeadsManagementSectionProps> = ({
                           </div>
                           {customerProfile.profileMeta.updateTriggers.length >
                             0 && (
-                            <>
-                              <div className="w-px h-3 bg-slate-300" />
+                            <div className="flex flex-col gap-2 w-full">
                               <div className="flex items-center gap-1.5">
                                 <span className="text-slate-400">
                                   Latest Trigger:
@@ -1077,7 +1143,38 @@ const LeadsManagementSection: React.FC<LeadsManagementSectionProps> = ({
                                   ].replace(/_/g, " ")}
                                 </span>
                               </div>
-                            </>
+                              <div className="flex items-start gap-2">
+                                <span className="text-slate-400 shrink-0 mt-0.5">
+                                  Update History:
+                                </span>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {customerProfile.profileMeta.updateTriggers.map(
+                                    (trig, i) => (
+                                      <span
+                                        key={i}
+                                        className="px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded text-[10px] font-medium border border-slate-200 uppercase tracking-wide"
+                                      >
+                                        {trig.replace(/_/g, " ")}
+                                      </span>
+                                    )
+                                  )}
+                                </div>
+                              </div>
+                              {customerProfile.profileMeta
+                                .nextScheduledUpdate && (
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-slate-400">
+                                    Next Scheduled:
+                                  </span>
+                                  <span className="px-1.5 py-0.5 bg-white border border-slate-200 rounded text-[10px] font-medium uppercase tracking-wide">
+                                    {customerProfile.profileMeta.nextScheduledUpdate.replace(
+                                      /_/g,
+                                      " "
+                                    )}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
                           )}
                         </div>
                       </div>
