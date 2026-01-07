@@ -79,11 +79,19 @@ interface CustomerProfile {
     riskFactors?: string[];
     strengths?: string[];
   };
+  bant?: {
+    score?: number;
+    budget?: string;
+    authority?: string;
+    need?: string;
+    timeline?: string;
+  };
   profileMeta: {
     confidenceScore: number;
     lastUpdated: string;
     updateTriggers: string[];
     totalUpdates: number;
+    nextScheduledUpdate?: string;
   };
 }
 
@@ -609,7 +617,7 @@ const LeadsManagementSection: React.FC<LeadsManagementSectionProps> = ({
 
             {/* Drawer Content */}
             <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-8">
-              {/* BANT Score Card (Rule 5 Premium Visualization) */}
+              {/* BANT Score Card */}
               <div className="bg-gradient-to-br from-indigo-50/50 to-blue-50/50 rounded-2xl p-1 border border-indigo-100/50 shadow-sm">
                 <div className="bg-white/60 backdrop-blur-sm rounded-xl p-5">
                   <div className="flex items-center gap-2 mb-4">
@@ -625,7 +633,13 @@ const LeadsManagementSection: React.FC<LeadsManagementSectionProps> = ({
                       </p>
                     </div>
                     <div className="ml-auto flex items-center gap-1 text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md border border-indigo-100">
-                      <span>High Intent</span>
+                      <span>
+                        {customerProfile?.bant?.score
+                          ? `Score: ${customerProfile.bant.score}`
+                          : selectedLead.bantScore
+                          ? `Score: ${selectedLead.bantScore}`
+                          : "Calculating..."}
+                      </span>
                     </div>
                   </div>
 
@@ -638,8 +652,10 @@ const LeadsManagementSection: React.FC<LeadsManagementSectionProps> = ({
                           Budget
                         </span>
                       </div>
-                      <p className="text-sm font-medium text-slate-900">
-                        Unknown
+                      <p className="text-sm font-medium text-slate-900 truncate">
+                        {customerProfile?.requirementsProfile?.budgetRange ||
+                          customerProfile?.bant?.budget ||
+                          "Unknown"}
                       </p>
                     </div>
 
@@ -651,8 +667,10 @@ const LeadsManagementSection: React.FC<LeadsManagementSectionProps> = ({
                           Authority
                         </span>
                       </div>
-                      <p className="text-sm font-medium text-slate-900">
-                        Decision Maker
+                      <p className="text-sm font-medium text-slate-900 truncate">
+                        {customerProfile?.behaviorProfile?.decisionMaker
+                          ? "Decision Maker"
+                          : customerProfile?.bant?.authority || "Unknown"}
                       </p>
                     </div>
 
@@ -665,7 +683,9 @@ const LeadsManagementSection: React.FC<LeadsManagementSectionProps> = ({
                         </span>
                       </div>
                       <p className="text-sm font-medium text-slate-900 leading-relaxed">
-                        {selectedLead.requirements ||
+                        {customerProfile?.requirementsProfile?.primaryUseCase ||
+                          customerProfile?.bant?.need ||
+                          selectedLead.requirements ||
                           "No specific requirements identified yet."}
                       </p>
                     </div>
@@ -680,7 +700,9 @@ const LeadsManagementSection: React.FC<LeadsManagementSectionProps> = ({
                       </div>
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-medium text-slate-900">
-                          Active recently
+                          {customerProfile?.requirementsProfile?.timeline ||
+                            customerProfile?.bant?.timeline ||
+                            "Not specified"}
                         </p>
                         <span className="text-xs text-slate-500">
                           Last seen {formatDate(selectedLead.lastSeen)}
@@ -875,33 +897,190 @@ const LeadsManagementSection: React.FC<LeadsManagementSectionProps> = ({
                         </div>
                       </div>
 
-                      {/* AI Insights */}
-                      {customerProfile.intelligenceProfile
-                        .recommendedNextSteps &&
-                        customerProfile.intelligenceProfile.recommendedNextSteps
-                          .length > 0 && (
-                          <div className="col-span-1 md:col-span-2 bg-gradient-to-r from-violet-50 to-fuchsia-50 p-4 rounded-xl border border-violet-100 shadow-sm">
-                            <div className="flex items-center gap-2 mb-3 text-violet-700">
-                              <Zap size={16} />
-                              <h5 className="text-xs font-bold uppercase tracking-wider">
-                                Recommended Next Steps
-                              </h5>
+                      {/* AI Intelligence */}
+                      <div className="col-span-1 md:col-span-2 space-y-3">
+                        <div className="flex items-center gap-2 text-violet-700 mb-1">
+                          <Zap size={16} />
+                          <h5 className="text-xs font-bold uppercase tracking-wider">
+                            AI Intelligence
+                          </h5>
+                        </div>
+
+                        {/* Readiness & Probability */}
+                        <div className="grid grid-cols-2 gap-3 mb-3">
+                          <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                              Buying Readiness
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <div
+                                className={`h-2 w-2 rounded-full ${
+                                  customerProfile.intelligenceProfile
+                                    .buyingReadiness === "very_high" ||
+                                  customerProfile.intelligenceProfile
+                                    .buyingReadiness === "high"
+                                    ? "bg-emerald-500"
+                                    : customerProfile.intelligenceProfile
+                                        .buyingReadiness === "medium"
+                                    ? "bg-amber-500"
+                                    : "bg-slate-300"
+                                }`}
+                              />
+                              <span className="font-bold text-slate-900 capitalize">
+                                {(
+                                  customerProfile.intelligenceProfile
+                                    .buyingReadiness || "Unknown"
+                                ).replace("_", " ")}
+                              </span>
                             </div>
-                            <ul className="space-y-2">
-                              {customerProfile.intelligenceProfile.recommendedNextSteps.map(
-                                (step, i) => (
-                                  <li
-                                    key={i}
-                                    className="flex items-start gap-2 text-sm text-violet-900"
-                                  >
-                                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-violet-400 shrink-0" />
-                                    {step}
-                                  </li>
-                                )
-                              )}
-                            </ul>
                           </div>
-                        )}
+                          <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                              Conversion Prob.
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-blue-600 rounded-full"
+                                  style={{
+                                    width: `${
+                                      (customerProfile.intelligenceProfile
+                                        .conversionProbability || 0) * 100
+                                    }%`,
+                                  }}
+                                />
+                              </div>
+                              <span className="font-bold text-slate-900 text-xs">
+                                {(
+                                  (customerProfile.intelligenceProfile
+                                    .conversionProbability || 0) * 100
+                                ).toFixed(0)}
+                                %
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Strengths & Risks */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {customerProfile.intelligenceProfile.strengths &&
+                            customerProfile.intelligenceProfile.strengths
+                              .length > 0 && (
+                              <div className="bg-emerald-50/50 p-3 rounded-xl border border-emerald-100">
+                                <h6 className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider mb-2 flex items-center gap-1">
+                                  <CheckCircle2 size={12} /> Strengths
+                                </h6>
+                                <ul className="space-y-1.5">
+                                  {customerProfile.intelligenceProfile.strengths.map(
+                                    (item, i) => (
+                                      <li
+                                        key={i}
+                                        className="text-xs text-emerald-900 leading-snug"
+                                      >
+                                        • {item}
+                                      </li>
+                                    )
+                                  )}
+                                </ul>
+                              </div>
+                            )}
+
+                          {customerProfile.intelligenceProfile.riskFactors &&
+                            customerProfile.intelligenceProfile.riskFactors
+                              .length > 0 && (
+                              <div className="bg-red-50/50 p-3 rounded-xl border border-red-100">
+                                <h6 className="text-[10px] font-bold text-red-700 uppercase tracking-wider mb-2 flex items-center gap-1">
+                                  <ShieldAlert size={12} /> Risk Factors
+                                </h6>
+                                <ul className="space-y-1.5">
+                                  {customerProfile.intelligenceProfile.riskFactors.map(
+                                    (item, i) => (
+                                      <li
+                                        key={i}
+                                        className="text-xs text-red-900 leading-snug"
+                                      >
+                                        • {item}
+                                      </li>
+                                    )
+                                  )}
+                                </ul>
+                              </div>
+                            )}
+                        </div>
+
+                        {/* Next Steps */}
+                        {customerProfile.intelligenceProfile
+                          .recommendedNextSteps &&
+                          customerProfile.intelligenceProfile
+                            .recommendedNextSteps.length > 0 && (
+                            <div className="bg-gradient-to-r from-violet-50 to-fuchsia-50 p-4 rounded-xl border border-violet-100 shadow-sm">
+                              <h6 className="text-[10px] font-bold text-violet-700 uppercase tracking-wider mb-2">
+                                Recommended Next Steps
+                              </h6>
+                              <ul className="space-y-2">
+                                {customerProfile.intelligenceProfile.recommendedNextSteps.map(
+                                  (step, i) => (
+                                    <li
+                                      key={i}
+                                      className="flex items-start gap-2 text-sm text-violet-900"
+                                    >
+                                      <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-violet-400 shrink-0" />
+                                      {step}
+                                    </li>
+                                  )
+                                )}
+                              </ul>
+                            </div>
+                          )}
+                      </div>
+
+                      {/* Profile Updates */}
+                      <div className="col-span-1 md:col-span-2 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <div className="flex items-center gap-2 mb-3 text-slate-500">
+                          <Clock size={16} />
+                          <h5 className="text-xs font-bold uppercase tracking-wider">
+                            Profile Updates
+                          </h5>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-4 text-xs text-slate-600">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-slate-400">
+                              Last Updated:
+                            </span>
+                            <span className="font-medium text-slate-900">
+                              {formatDate(
+                                customerProfile.profileMeta.lastUpdated
+                              )}
+                            </span>
+                          </div>
+                          <div className="w-px h-3 bg-slate-300" />
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-slate-400">
+                              Total Updates:
+                            </span>
+                            <span className="font-medium text-slate-900">
+                              {customerProfile.profileMeta.totalUpdates}
+                            </span>
+                          </div>
+                          {customerProfile.profileMeta.updateTriggers.length >
+                            0 && (
+                            <>
+                              <div className="w-px h-3 bg-slate-300" />
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-slate-400">
+                                  Latest Trigger:
+                                </span>
+                                <span className="px-1.5 py-0.5 bg-white border border-slate-200 rounded text-[10px] font-medium uppercase tracking-wide">
+                                  {customerProfile.profileMeta.updateTriggers[
+                                    customerProfile.profileMeta.updateTriggers
+                                      .length - 1
+                                  ].replace(/_/g, " ")}
+                                </span>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   ) : (
                     <div className="text-center p-8 bg-slate-50 rounded-xl border border-slate-200 border-dashed">
