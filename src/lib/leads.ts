@@ -22,7 +22,10 @@ export async function checkLeadLimit(adminId: string): Promise<{
 
     const planId = (user?.subscriptionPlan || "free") as keyof typeof PRICING;
     const plan = PRICING[planId] || PRICING.free;
-    const limit = plan.totalLeads;
+
+    // Add extra leads from add-ons if available
+    const extraLeads = (user?.extraLeads as number) || 0;
+    const limit = plan.totalLeads + extraLeads;
 
     // 2. Count unique leads by email
     const currentLeads = (

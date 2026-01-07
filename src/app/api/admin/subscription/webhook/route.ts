@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { MongoClient } from "mongodb";
 import { resetMonthlyCredits } from "@/lib/credits";
-import { PRICING, CREDIT_ADDONS } from "@/config/pricing";
+import { PRICING, CREDIT_ADDONS, LEAD_ADDONS } from "@/config/pricing";
 
 const uri = process.env.MONGODB_URI || "";
 const client = new MongoClient(uri);
@@ -55,11 +55,8 @@ export async function POST(req: Request) {
         const baseCredits = PRICING[userPlanId]?.creditsPerMonth || 0;
 
         // 2. Add-on Credits
-        // Check 'quantity' of the add-on item in the subscription entity if available
-        // OR rely on 'notes.addonQuantity' if we stored it there (simple but less robust if changed later)
-        // Robust way: iterate over subscriptionEntity.addons if present
-
         let addonCredits = 0;
+        let extraLeads = 0;
 
         // Method A: From Notes (Simplest for now)
         if (notes.addonQuantity) {
@@ -69,19 +66,28 @@ export async function POST(req: Request) {
           }
         }
 
+        if (notes.leadAddonQuantity) {
+          const qty = parseInt(notes.leadAddonQuantity, 10);
+          if (!isNaN(qty)) {
+            extraLeads = qty * LEAD_ADDONS.UNIT_LEADS;
+          }
+        }
+
         // Method B: Check active add-ons in payload (Better if Razorpay sends it)
         // if (subscriptionEntity.addons) { ... }
 
         const totalCredits = baseCredits + addonCredits;
 
-        // Reset credits and set the new limit for this month
-        // We need to pass the 'totalCredits' to be stored as the limit for this month
-        // effectively "resetting" usage to 0 and defining the new ceiling.
+        // Update User's Extra Leads (Sync)
+        await db
+          .collection("users")
+          .updateOne({ _id: user._id }, { $set: { extraLeads: extraLeads } });
 
+        // Reset credits and set the new limit for this month
         await resetMonthlyCredits(adminId, totalCredits);
 
         console.log(
-          `[Webhook] Subscription charged for ${adminId}. Reset limit to ${totalCredits}`
+          `[Webhook] Subscription charged for ${adminId}. Reset limit to ${totalCredits}, Extra Leads: ${extraLeads}`
         );
       }
     }

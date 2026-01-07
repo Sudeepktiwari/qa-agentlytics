@@ -459,7 +459,7 @@ export default function SubscriptionSection({ email }: { email?: string }) {
                         className="w-full h-2 bg-green-100 rounded-lg appearance-none cursor-pointer accent-green-600"
                       />
                       <div className="text-right text-xs text-gray-500 mt-1">
-                        +${leadAmount}/one-time
+                        +${leadAmount}/mo
                       </div>
                     </div>
                   )}
