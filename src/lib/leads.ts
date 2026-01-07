@@ -108,15 +108,7 @@ export async function createOrUpdateLead(
       console.log(`[LeadGen] Updated existing lead: ${email}`);
       return existingLead._id;
     } else {
-      // Check lead limit before creating new lead
       const { limitReached, limit, plan } = await checkLeadLimit(adminId);
-
-      if (limitReached) {
-        console.warn(
-          `[LeadGen] Lead limit reached for admin ${adminId} (Plan: ${plan}, Limit: ${limit}). Lead not created.`
-        );
-        return null;
-      }
 
       // Create new lead
       const newLead = {
@@ -148,6 +140,7 @@ export async function createOrUpdateLead(
         priority: "medium", // low, medium, high
         createdAt: new Date(),
         updatedAt: new Date(),
+        visibilityRestricted: limitReached,
       };
 
       const result = await leads.insertOne(newLead);

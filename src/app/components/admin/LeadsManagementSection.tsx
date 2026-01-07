@@ -36,6 +36,7 @@ interface Lead {
   requirements?: string;
   latestContent: string | { mainText: string };
   latestRole: string;
+  visibilityRestricted?: boolean;
 }
 
 interface LeadsManagementSectionProps {
@@ -298,7 +299,7 @@ const LeadsManagementSection: React.FC<LeadsManagementSectionProps> = ({
                         </div>
                         <div>
                           <div className="font-semibold text-slate-900 text-sm group-hover:text-blue-700 transition-colors">
-                            {lead.email}
+                            {lead.visibilityRestricted ? "***" : lead.email}
                           </div>
                           <div className="text-[10px] text-slate-400 mt-0.5 flex items-center gap-1">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
@@ -357,7 +358,7 @@ const LeadsManagementSection: React.FC<LeadsManagementSectionProps> = ({
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            onCopyToClipboard(lead.email);
+                            onCopyToClipboard(lead.visibilityRestricted ? "***" : lead.email);
                           }}
                           className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
                           title="Copy email"
@@ -434,20 +435,35 @@ const LeadsManagementSection: React.FC<LeadsManagementSectionProps> = ({
                 </div>
                 <div className="min-w-0">
                   <h3 className="text-lg md:text-xl font-bold text-slate-900 truncate">
-                    {selectedLead.email.split("@")[0]}
+                    {selectedLead.visibilityRestricted ? "***" : selectedLead.email.split("@")[0]}
                   </h3>
                   <div className="flex items-center gap-2 text-xs md:text-sm text-slate-500 mt-0.5 font-mono">
                     <span className="truncate max-w-[150px] md:max-w-none">
-                      {selectedLead.email}
+                      {selectedLead.visibilityRestricted ? "***" : selectedLead.email}
                     </span>
                     <button
-                      onClick={() => onCopyToClipboard(selectedLead.email)}
+                      onClick={() =>
+                        onCopyToClipboard(
+                          selectedLead.visibilityRestricted ? "***" : selectedLead.email
+                        )
+                      }
                       className="text-slate-400 hover:text-blue-500 transition-colors shrink-0"
                       title="Copy email"
                     >
                       <Copy size={12} />
                     </button>
                   </div>
+                  {selectedLead.visibilityRestricted && (
+                    <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-amber-800 flex items-center justify-between">
+                      <span className="text-xs">Please upgrade to make contact visible</span>
+                      <button
+                        onClick={() => (window.location.href = "/pricing")}
+                        className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs hover:bg-blue-700"
+                      >
+                        Upgrade
+                      </button>
+                    </div>
+                  )}
                   <div className="flex gap-2 mt-2">
                     <span className="px-2 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold uppercase tracking-wider rounded-full border border-blue-100">
                       New Lead

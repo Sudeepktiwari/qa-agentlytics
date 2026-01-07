@@ -43,6 +43,7 @@ const AdminPanel: React.FC = () => {
     sessionId: string;
     latestContent: string | { mainText: string };
     latestRole: string;
+    visibilityRestricted?: boolean;
   }
   const [leads, setLeads] = useState<Lead[]>([]);
   const [leadsLoading, setLeadsLoading] = useState(false);

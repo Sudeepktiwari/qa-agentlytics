@@ -4,6 +4,7 @@ import { verifyApiKey } from "@/lib/auth";
 import jwt from "jsonwebtoken";
 import { escapeRegex } from "@/lib/validators";
 import { rateLimit } from "@/lib/rateLimit";
+import { checkLeadLimit } from "@/lib/leads";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
 
@@ -146,8 +147,37 @@ export async function GET(req: NextRequest) {
     const totalResult = await chats.aggregate(totalPipeline).toArray();
     const total = totalResult.length > 0 ? totalResult[0].total : 0;
 
+    // Determine which emails are visible under the plan limit
+    const { limit } = await checkLeadLimit(adminId);
+    let visibleEmailsSet: Set<string> = new Set();
+    if (typeof limit === "number" && limit > 0) {
+      const visibleEmails = await chats
+        .aggregate([
+          { $match: query },
+          {
+            $group: {
+              _id: "$email",
+              firstSeen: { $min: "$createdAt" },
+            },
+          },
+          { $sort: { firstSeen: 1 } },
+          { $limit: limit },
+          { $project: { _id: 0, email: "$_id" } },
+        ])
+        .toArray();
+      visibleEmails.forEach((e: any) => {
+        if (e && e.email) visibleEmailsSet.add(String(e.email));
+      });
+    }
+
+    // Attach visibilityRestricted flag for admin-side masking
+    const leadsWithVisibility = leads.map((l: any) => ({
+      ...l,
+      visibilityRestricted: !visibleEmailsSet.has(String(l.email || "")),
+    }));
+
     return NextResponse.json({
-      leads,
+      leads: leadsWithVisibility,
       page,
       pageSize,
       total,
