@@ -153,12 +153,11 @@ export default function SubscriptionSection({ email }: { email?: string }) {
       if (!res.ok) throw new Error(subscription.error);
 
       // 2. Open Razorpay
-      const isMobile = window.innerWidth < 768;
       const options = {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         subscription_id: subscription.id,
         name: "Agentlytics",
-        image: !isMobile ? window.location.origin + "/globe.svg" : undefined,
+        image: window.location.origin + "/globe.svg",
         description: `${plan.name} Plan ${
           addonQuantity > 0
             ? `+ ${addonQuantity * CREDIT_ADDONS.UNIT_CREDITS} Credits`
