@@ -25,7 +25,67 @@ import {
   DollarSign,
   Hourglass,
   ShieldAlert,
+  Brain,
+  Building2,
+  Zap,
+  BarChart,
+  Globe,
+  MessageCircle,
 } from "lucide-react";
+
+interface CustomerProfile {
+  _id: string;
+  name?: string;
+  email: string;
+  sessionIds: string[];
+  firstContact: string;
+  lastContact: string;
+  totalSessions: number;
+  companyProfile: {
+    size?: string;
+    industry?: string;
+    revenue?: string;
+    techStack?: string[];
+    currentTools?: string[];
+  };
+  behaviorProfile: {
+    technicalLevel?: string;
+    decisionMaker?: boolean;
+    researchPhase?: string;
+    urgency?: string;
+    communicationStyle?: string;
+  };
+  requirementsProfile: {
+    primaryUseCase?: string;
+    specificFeatures?: string[];
+    integrationNeeds?: string[];
+    budgetRange?: string;
+    timeline?: string;
+    scalingNeeds?: string[];
+  };
+  engagementProfile: {
+    questionsAsked: number;
+    pagesVisited: string[];
+    timeOnSite: number;
+    returnVisits: number;
+    conversionSignals: string[];
+    objections: string[];
+  };
+  intelligenceProfile: {
+    buyingReadiness?: string;
+    conversionProbability?: number;
+    topicsDiscussed?: string[];
+    recommendedNextSteps?: string[];
+    riskFactors?: string[];
+    strengths?: string[];
+  };
+  profileMeta: {
+    confidenceScore: number;
+    lastUpdated: string;
+    updateTriggers: string[];
+    totalUpdates: number;
+  };
+}
 
 interface Lead {
   email: string;
@@ -80,6 +140,38 @@ const LeadsManagementSection: React.FC<LeadsManagementSectionProps> = ({
   onCopyToClipboard,
 }) => {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [customerProfile, setCustomerProfile] =
+    useState<CustomerProfile | null>(null);
+  const [profileLoading, setProfileLoading] = useState(false);
+
+  React.useEffect(() => {
+    if (selectedLead?.email) {
+      const fetchProfile = async () => {
+        setProfileLoading(true);
+        try {
+          const response = await fetch(
+            `/api/customer-profiles?email=${encodeURIComponent(
+              selectedLead.email
+            )}`
+          );
+          if (response.ok) {
+            const data = await response.json();
+            setCustomerProfile(data.profile);
+          } else {
+            setCustomerProfile(null);
+          }
+        } catch (error) {
+          console.error("Error fetching customer profile:", error);
+          setCustomerProfile(null);
+        } finally {
+          setProfileLoading(false);
+        }
+      };
+      fetchProfile();
+    } else {
+      setCustomerProfile(null);
+    }
+  }, [selectedLead]);
 
   // Helper to format date relative or absolute
   const formatDate = (dateStr: string) => {
@@ -358,7 +450,9 @@ const LeadsManagementSection: React.FC<LeadsManagementSectionProps> = ({
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            onCopyToClipboard(lead.visibilityRestricted ? "***" : lead.email);
+                            onCopyToClipboard(
+                              lead.visibilityRestricted ? "***" : lead.email
+                            );
                           }}
                           className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
                           title="Copy email"
@@ -435,16 +529,22 @@ const LeadsManagementSection: React.FC<LeadsManagementSectionProps> = ({
                 </div>
                 <div className="min-w-0">
                   <h3 className="text-lg md:text-xl font-bold text-slate-900 truncate">
-                    {selectedLead.visibilityRestricted ? "***" : selectedLead.email.split("@")[0]}
+                    {selectedLead.visibilityRestricted
+                      ? "***"
+                      : selectedLead.email.split("@")[0]}
                   </h3>
                   <div className="flex items-center gap-2 text-xs md:text-sm text-slate-500 mt-0.5 font-mono">
                     <span className="truncate max-w-[150px] md:max-w-none">
-                      {selectedLead.visibilityRestricted ? "***" : selectedLead.email}
+                      {selectedLead.visibilityRestricted
+                        ? "***"
+                        : selectedLead.email}
                     </span>
                     <button
                       onClick={() =>
                         onCopyToClipboard(
-                          selectedLead.visibilityRestricted ? "***" : selectedLead.email
+                          selectedLead.visibilityRestricted
+                            ? "***"
+                            : selectedLead.email
                         )
                       }
                       className="text-slate-400 hover:text-blue-500 transition-colors shrink-0"
@@ -455,7 +555,9 @@ const LeadsManagementSection: React.FC<LeadsManagementSectionProps> = ({
                   </div>
                   {selectedLead.visibilityRestricted && (
                     <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-amber-800 flex items-center justify-between">
-                      <span className="text-xs">Please upgrade to make contact visible</span>
+                      <span className="text-xs">
+                        Please upgrade to make contact visible
+                      </span>
                       <button
                         onClick={() => (window.location.href = "/pricing")}
                         className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs hover:bg-blue-700"
@@ -565,6 +667,236 @@ const LeadsManagementSection: React.FC<LeadsManagementSectionProps> = ({
                   </div>
                 </div>
               </div>
+
+              {/* Customer Intelligence Profile */}
+              {(customerProfile || profileLoading) && (
+                <div className="space-y-4">
+                  <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                    <Brain size={16} className="text-purple-500" />
+                    Customer Intelligence
+                  </h4>
+
+                  {profileLoading ? (
+                    <div className="flex justify-center p-8 bg-slate-50 rounded-xl border border-slate-100">
+                      <RefreshCw
+                        className="animate-spin text-slate-400"
+                        size={24}
+                      />
+                    </div>
+                  ) : customerProfile ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Company Profile */}
+                      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                        <div className="flex items-center gap-2 mb-3 text-slate-500">
+                          <Building2 size={16} className="text-blue-500" />
+                          <h5 className="text-xs font-bold uppercase tracking-wider">
+                            Company
+                          </h5>
+                        </div>
+                        <div className="space-y-2.5">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-slate-500">Size</span>
+                            <span className="font-medium text-slate-900">
+                              {customerProfile.companyProfile.size || "Unknown"}
+                            </span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-slate-500">Industry</span>
+                            <span className="font-medium text-slate-900">
+                              {customerProfile.companyProfile.industry ||
+                                "Unknown"}
+                            </span>
+                          </div>
+                          {customerProfile.companyProfile.techStack &&
+                            customerProfile.companyProfile.techStack.length >
+                              0 && (
+                              <div className="pt-1">
+                                <span className="text-slate-500 text-xs block mb-1.5">
+                                  Tech Stack
+                                </span>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {customerProfile.companyProfile.techStack.map(
+                                    (tech, i) => (
+                                      <span
+                                        key={i}
+                                        className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[10px] font-medium border border-slate-200"
+                                      >
+                                        {tech}
+                                      </span>
+                                    )
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                        </div>
+                      </div>
+
+                      {/* Behavior Profile */}
+                      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                        <div className="flex items-center gap-2 mb-3 text-slate-500">
+                          <Zap size={16} className="text-amber-500" />
+                          <h5 className="text-xs font-bold uppercase tracking-wider">
+                            Behavior
+                          </h5>
+                        </div>
+                        <div className="space-y-2.5">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-slate-500">Role</span>
+                            <span className="font-medium text-slate-900">
+                              {customerProfile.behaviorProfile.decisionMaker
+                                ? "Decision Maker"
+                                : "Influencer/User"}
+                            </span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-slate-500">Tech Level</span>
+                            <span className="font-medium text-slate-900 capitalize">
+                              {customerProfile.behaviorProfile.technicalLevel ||
+                                "Unknown"}
+                            </span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-slate-500">Urgency</span>
+                            <span
+                              className={`font-medium capitalize ${
+                                customerProfile.behaviorProfile.urgency ===
+                                "urgent"
+                                  ? "text-red-600"
+                                  : customerProfile.behaviorProfile.urgency ===
+                                    "high"
+                                  ? "text-orange-600"
+                                  : "text-slate-900"
+                              }`}
+                            >
+                              {customerProfile.behaviorProfile.urgency ||
+                                "Unknown"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Requirements Profile */}
+                      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                        <div className="flex items-center gap-2 mb-3 text-slate-500">
+                          <Target size={16} className="text-emerald-500" />
+                          <h5 className="text-xs font-bold uppercase tracking-wider">
+                            Requirements
+                          </h5>
+                        </div>
+                        <div className="space-y-2.5">
+                          {customerProfile.requirementsProfile
+                            .primaryUseCase && (
+                            <div>
+                              <span className="text-slate-500 text-xs block mb-1">
+                                Primary Use Case
+                              </span>
+                              <p className="text-sm font-medium text-slate-900 leading-snug">
+                                {
+                                  customerProfile.requirementsProfile
+                                    .primaryUseCase
+                                }
+                              </p>
+                            </div>
+                          )}
+                          {customerProfile.requirementsProfile.budgetRange && (
+                            <div className="flex justify-between text-sm pt-1">
+                              <span className="text-slate-500">Budget</span>
+                              <span className="font-medium text-slate-900">
+                                {
+                                  customerProfile.requirementsProfile
+                                    .budgetRange
+                                }
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Engagement Stats */}
+                      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                        <div className="flex items-center gap-2 mb-3 text-slate-500">
+                          <BarChart size={16} className="text-indigo-500" />
+                          <h5 className="text-xs font-bold uppercase tracking-wider">
+                            Engagement
+                          </h5>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="bg-slate-50 p-2 rounded-lg text-center">
+                            <div className="text-lg font-bold text-slate-900">
+                              {customerProfile.engagementProfile.questionsAsked}
+                            </div>
+                            <div className="text-[10px] text-slate-500 uppercase">
+                              Questions
+                            </div>
+                          </div>
+                          <div className="bg-slate-50 p-2 rounded-lg text-center">
+                            <div className="text-lg font-bold text-slate-900">
+                              {customerProfile.engagementProfile.timeOnSite}s
+                            </div>
+                            <div className="text-[10px] text-slate-500 uppercase">
+                              Time
+                            </div>
+                          </div>
+                          <div className="col-span-2 bg-slate-50 p-2 rounded-lg flex justify-between items-center px-3">
+                            <span className="text-xs text-slate-500">
+                              Confidence Score
+                            </span>
+                            <span className="font-bold text-blue-600">
+                              {(
+                                customerProfile.profileMeta.confidenceScore *
+                                100
+                              ).toFixed(0)}
+                              %
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* AI Insights */}
+                      {customerProfile.intelligenceProfile
+                        .recommendedNextSteps &&
+                        customerProfile.intelligenceProfile.recommendedNextSteps
+                          .length > 0 && (
+                          <div className="col-span-1 md:col-span-2 bg-gradient-to-r from-violet-50 to-fuchsia-50 p-4 rounded-xl border border-violet-100 shadow-sm">
+                            <div className="flex items-center gap-2 mb-3 text-violet-700">
+                              <Zap size={16} />
+                              <h5 className="text-xs font-bold uppercase tracking-wider">
+                                Recommended Next Steps
+                              </h5>
+                            </div>
+                            <ul className="space-y-2">
+                              {customerProfile.intelligenceProfile.recommendedNextSteps.map(
+                                (step, i) => (
+                                  <li
+                                    key={i}
+                                    className="flex items-start gap-2 text-sm text-violet-900"
+                                  >
+                                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-violet-400 shrink-0" />
+                                    {step}
+                                  </li>
+                                )
+                              )}
+                            </ul>
+                          </div>
+                        )}
+                    </div>
+                  ) : (
+                    <div className="text-center p-8 bg-slate-50 rounded-xl border border-slate-200 border-dashed">
+                      <Brain
+                        size={32}
+                        className="text-slate-300 mx-auto mb-3"
+                      />
+                      <p className="text-slate-500 text-sm font-medium">
+                        No detailed intelligence profile available yet.
+                      </p>
+                      <p className="text-slate-400 text-xs mt-1">
+                        Profiles are generated automatically as the conversation
+                        progresses.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Engagement Timeline */}
               <div>
