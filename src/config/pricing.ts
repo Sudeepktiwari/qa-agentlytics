@@ -33,3 +33,19 @@ export const PRICING = {
     razorpayPlanId: process.env.NEXT_PUBLIC_RAZORPAY_PLAN_SCALE,
   },
 } as const;
+
+export const CREDIT_ADDONS = {
+  // We can define steps for the slider. 
+  // Each step maps to a Razorpay Add-on Item ID (or plan ID if structured differently).
+  // For simplicity, we assume we create a single "1,000 Credits Add-on" item in Razorpay 
+  // and just change the quantity.
+  // 1 unit = 1,000 credits = $5 (example)
+  
+  UNIT_CREDITS: 1000,
+  UNIT_PRICE_USD: 5, // $5 per 1k credits
+  MAX_AMOUNT_USD: 300,
+  
+  // If using specific plan IDs for different tiers (optional, but quantity is easier)
+  // For this implementation, we will use quantity of a single "base" add-on item.
+  RAZORPAY_ADDON_ITEM_ID: process.env.NEXT_PUBLIC_RAZORPAY_ADDON_CREDITS_ID
+} as const;

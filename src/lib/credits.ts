@@ -41,9 +41,8 @@ export async function checkCreditLimit(adminId: string): Promise<{
 
     const planId = (user?.subscriptionPlan || "free") as keyof typeof PRICING;
     const plan = PRICING[planId] || PRICING.free;
-    const limit = plan.creditsPerMonth;
 
-    // 2. Get current month's usage
+    // 2. Get current month's usage & Custom Limit (if any)
     const now = new Date();
     const monthKey = `${now.getFullYear()}-${now.getMonth() + 1}`; // e.g. "2024-10"
 
@@ -54,11 +53,14 @@ export async function checkCreditLimit(adminId: string): Promise<{
 
     const creditsUsed = usageDoc?.totalCredits || 0;
 
+    // Check if a custom limit (base + add-ons) was set for this month via webhook/renewal
+    const effectiveLimit = usageDoc?.monthlyLimit ?? plan.creditsPerMonth;
+
     return {
-      limitReached: creditsUsed >= limit,
-      approachingLimit: creditsUsed >= limit * 0.8,
+      limitReached: creditsUsed >= effectiveLimit,
+      approachingLimit: creditsUsed >= effectiveLimit * 0.8,
       creditsUsed,
-      limit,
+      limit: effectiveLimit,
       plan: planId,
     };
   } catch (error) {
@@ -182,23 +184,36 @@ export async function attemptAutoRecharge(adminId: string): Promise<boolean> {
 /**
  * Resets the monthly credit usage for an admin.
  * Call this when a subscription is renewed or upgraded.
+ * @param customLimit Optional new limit (base + add-ons) for the month
  */
-export async function resetMonthlyCredits(adminId: string): Promise<boolean> {
+export async function resetMonthlyCredits(
+  adminId: string,
+  customLimit?: number
+): Promise<boolean> {
   try {
     const db = await getDb();
     const now = new Date();
     const monthKey = `${now.getFullYear()}-${now.getMonth() + 1}`;
 
+    const update: any = {
+      $set: { totalCredits: 0 },
+    };
+
+    if (customLimit !== undefined) {
+      update.$set.monthlyLimit = customLimit;
+    }
+
     // Reset usage to 0 for the current month
     await db.collection("credit_usage").updateOne(
       { adminId, monthKey },
-      {
-        $set: { totalCredits: 0 },
-      }
+      update,
+      { upsert: true } // Create if not exists (e.g. first charge of month)
     );
 
     console.log(
-      `[Credits] Reset credits for admin ${adminId} (month: ${monthKey})`
+      `[Credits] Reset credits for admin ${adminId} (month: ${monthKey}). Limit: ${
+        customLimit || "Default"
+      }`
     );
     return true;
   } catch (error) {

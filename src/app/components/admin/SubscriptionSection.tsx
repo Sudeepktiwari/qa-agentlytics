@@ -15,22 +15,7 @@ declare global {
 // -----------------------------
 // Pricing Configuration (Mirrors /pricing)
 // -----------------------------
-import { PRICING } from "@/config/pricing";
-
-interface SubscriptionSectionProps {
-  subscription: {
-    planId: string;
-    status: string;
-    currentPeriodEnd?: string;
-    cancelAtPeriodEnd?: boolean;
-    razorpaySubscriptionId?: string;
-  };
-  usage: {
-    leads: number;
-    credits: number;
-    websites: number;
-  };
-}
+import { PRICING, CREDIT_ADDONS } from "@/config/pricing";
 
 // -----------------------------
 // Icons
@@ -115,6 +100,11 @@ export default function SubscriptionSection({ email }: { email?: string }) {
     credits: number;
   } | null>(null);
 
+  // Add-on State
+  const [addonAmount, setAddonAmount] = useState(0); // $0 to $300
+  const addonCredits =
+    (addonAmount / CREDIT_ADDONS.UNIT_PRICE_USD) * CREDIT_ADDONS.UNIT_CREDITS;
+
   React.useEffect(() => {
     fetch("/api/admin/subscription/status")
       .then((res) => res.json())
@@ -137,6 +127,12 @@ export default function SubscriptionSection({ email }: { email?: string }) {
     setLoading(true);
     const plan = PRICING[planKey] as any;
 
+    // Calculate Add-on Quantity (if any)
+    const addonQuantity =
+      addonAmount > 0
+        ? Math.floor(addonAmount / CREDIT_ADDONS.UNIT_PRICE_USD)
+        : 0;
+
     try {
       if (!plan.razorpayPlanId) {
         throw new Error("Subscription plan ID not configured");
@@ -146,7 +142,10 @@ export default function SubscriptionSection({ email }: { email?: string }) {
       const res = await fetch("/api/admin/subscription/create-subscription", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planId: plan.razorpayPlanId }),
+        body: JSON.stringify({
+          planId: plan.razorpayPlanId,
+          addonQuantity: addonQuantity,
+        }),
       });
 
       const subscription = await res.json();
@@ -158,7 +157,11 @@ export default function SubscriptionSection({ email }: { email?: string }) {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         subscription_id: subscription.id,
         name: "Agentlytics",
-        description: `${plan.name} Plan Subscription`,
+        description: `${plan.name} Plan ${
+          addonQuantity > 0
+            ? `+ ${addonQuantity * CREDIT_ADDONS.UNIT_CREDITS} Credits`
+            : ""
+        }`,
         modal: {
           ondismiss: function () {
             setLoading(false);
@@ -181,6 +184,7 @@ export default function SubscriptionSection({ email }: { email?: string }) {
             if (verifyRes.ok) {
               alert("Subscription successful!");
               setCurrentPlan(planKey);
+              setAddonAmount(0); // Reset slider
             } else {
               alert("Verification failed: " + verifyData.error);
             }
@@ -260,95 +264,82 @@ export default function SubscriptionSection({ email }: { email?: string }) {
       )}
 
       {usage && (
-        <div className="mb-8 p-6 bg-slate-50 rounded-xl border border-slate-200">
-          <h2 className="text-lg font-semibold text-slate-800 mb-4">
-            Current Usage
-          </h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            {/* Leads Usage */}
-            <div>
-              <div className="flex justify-between text-sm mb-2">
-                <span className="font-medium text-slate-700">
-                  Lifetime Leads
-                </span>
-                <span
-                  className={
-                    usage.limitReached
-                      ? "text-red-600 font-bold"
-                      : "text-slate-600"
-                  }
-                >
-                  {usage.leads.toLocaleString()} /{" "}
-                  {usage.leadsLimit.toLocaleString()}
-                </span>
-              </div>
-              <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
-                <div
-                  className={`h-full rounded-full ${
-                    usage.limitReached ? "bg-red-500" : "bg-blue-600"
-                  }`}
-                  style={{
-                    width: `${Math.min(
-                      (usage.leads / usage.leadsLimit) * 100,
-                      100
-                    )}%`,
-                  }}
-                />
-              </div>
-              {usage.limitReached && (
-                <p className="text-xs text-red-600 mt-2 font-medium">
-                  Limit reached. Upgrade to capture more leads.
-                </p>
-              )}
+        <div className="grid gap-4 md:grid-cols-2 mb-8">
+          <Card className="p-6">
+            <h3 className="text-sm font-medium text-gray-500">
+              Leads Generated
+            </h3>
+            <div className="mt-2 flex items-baseline gap-2">
+              <span className="text-3xl font-bold text-gray-900">
+                {usage.leads}
+              </span>
+              <span className="text-sm text-gray-500">
+                / {usage.leadsLimit === Infinity ? "∞" : usage.leadsLimit}
+              </span>
             </div>
+            {usage.limitReached && (
+              <p className="mt-2 text-sm text-red-600">Lead limit reached</p>
+            )}
+          </Card>
 
-            {/* Credits Usage */}
-            <div>
-              <div className="flex justify-between text-sm mb-2">
-                <span className="font-medium text-slate-700">Credits</span>
-                <span className="text-slate-600">
-                  {usage.credits.toLocaleString()} /{" "}
-                  {PRICING[
-                    currentPlan as keyof typeof PRICING
-                  ].creditsPerMonth.toLocaleString()}
-                </span>
-              </div>
-              <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-emerald-600"
-                  style={{
-                    width: `${Math.min(
-                      (usage.credits /
-                        PRICING[currentPlan as keyof typeof PRICING]
-                          .creditsPerMonth) *
-                        100,
-                      100
-                    )}%`,
-                  }}
-                />
-              </div>
-              <p className="text-xs text-slate-500 mt-2 font-medium">
-                Advanced AI actions consume credits monthly
-              </p>
+          <Card className="p-6">
+            <h3 className="text-sm font-medium text-gray-500">Credit Usage</h3>
+            <div className="mt-2 flex items-baseline gap-2">
+              <span className="text-3xl font-bold text-gray-900">
+                {usage.credits}
+              </span>
+              <span className="text-sm text-gray-500">used this month</span>
             </div>
+            <p className="mt-1 text-xs text-gray-400">
+              Reset on{" "}
+              {new Date(
+                new Date().getFullYear(),
+                new Date().getMonth() + 1,
+                1
+              ).toLocaleDateString()}
+            </p>
+          </Card>
+        </div>
+      )}
 
-            {/* Plan Info */}
-            <div>
-              <div className="flex justify-between text-sm mb-2">
-                <span className="font-medium text-slate-700">Plan Status</span>
-                <span className="text-slate-600 capitalize font-semibold">
-                  {currentPlan}
-                </span>
-              </div>
-              <p className="text-sm text-slate-500">
-                {currentPlan === "free"
-                  ? "Upgrade to increase your lifetime lead limit."
-                  : "Your leads never expire. Upgrade when you need more capacity."}
-              </p>
+      {/* --- Credit Add-on Slider --- */}
+      <Card className="p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-100 mb-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-semibold text-blue-900">
+              Add Extra Monthly Credits
+            </h3>
+            <p className="text-sm text-blue-700">
+              Boost your plan with auto-renewing credit packs.
+            </p>
+          </div>
+          <div className="text-right">
+            <div className="text-2xl font-bold text-blue-900">
+              +{addonCredits.toLocaleString()} Credits
+            </div>
+            <div className="text-sm font-medium text-blue-700">
+              +${addonAmount}/mo
             </div>
           </div>
         </div>
-      )}
+
+        <div className="mt-6">
+          <input
+            type="range"
+            min="0"
+            max={CREDIT_ADDONS.MAX_AMOUNT_USD}
+            step={CREDIT_ADDONS.UNIT_PRICE_USD}
+            value={addonAmount}
+            onChange={(e) => setAddonAmount(Number(e.target.value))}
+            className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+          />
+          <div className="flex justify-between mt-2 text-xs text-blue-600 font-medium">
+            <span>0</span>
+            <span>$150</span>
+            <span>${CREDIT_ADDONS.MAX_AMOUNT_USD}</span>
+          </div>
+        </div>
+      </Card>
 
       <div className="mb-8">
         <h2 className="text-lg font-semibold text-slate-800 mb-1">
