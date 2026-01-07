@@ -35,9 +35,12 @@ export async function checkCreditLimit(adminId: string): Promise<{
     const db = await getDb();
 
     // 1. Get admin's plan
-    const user = await db.collection("users").findOne({
-      $or: [{ _id: new ObjectId(adminId) }, { apiKey: adminId }],
-    });
+    let query: any = { apiKey: adminId };
+    if (ObjectId.isValid(adminId)) {
+      query = { $or: [{ _id: new ObjectId(adminId) }, { apiKey: adminId }] };
+    }
+
+    const user = await db.collection("users").findOne(query);
 
     const planId = (user?.subscriptionPlan || "free") as keyof typeof PRICING;
     const plan = PRICING[planId] || PRICING.free;

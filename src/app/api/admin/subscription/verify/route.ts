@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { MongoClient } from "mongodb";
+import { resetMonthlyCredits } from "@/lib/credits";
+import { PRICING, CREDIT_ADDONS } from "@/config/pricing";
 
 const uri = process.env.MONGODB_URI || "";
 const client = new MongoClient(uri);
@@ -14,6 +16,7 @@ export async function POST(req: Request) {
       razorpay_signature,
       email,
       planId,
+      addonQuantity,
     } = await req.json();
 
     let body = "";
@@ -40,6 +43,7 @@ export async function POST(req: Request) {
       await db.collection("subscriptions").insertOne({
         email,
         planId,
+        addonQuantity,
         razorpay_order_id,
         razorpay_payment_id,
         razorpay_subscription_id,
@@ -48,21 +52,40 @@ export async function POST(req: Request) {
         createdAt: new Date(),
       });
 
-      // Update user subscription status
-      const updateResult = await db.collection("users").updateOne(
-        { email: { $regex: new RegExp(`^${email}$`, "i") } },
-        {
-          $set: {
-            subscriptionPlan: planId,
-            subscriptionStatus: "active",
-            subscriptionId: razorpay_subscription_id,
-          },
-        }
-      );
+      // Find user to get ID and update
+      const user = await db
+        .collection("users")
+        .findOne({ email: { $regex: new RegExp(`^${email}$`, "i") } });
 
-      console.log(
-        `[Subscription Verify] Updated user ${email} to plan ${planId}. Matched: ${updateResult.matchedCount}, Modified: ${updateResult.modifiedCount}`
-      );
+      if (user) {
+        // Update user subscription status
+        const updateResult = await db.collection("users").updateOne(
+          { _id: user._id },
+          {
+            $set: {
+              subscriptionPlan: planId,
+              subscriptionStatus: "active",
+              subscriptionId: razorpay_subscription_id,
+            },
+          }
+        );
+
+        // Calculate total credits (Plan Base + Add-ons)
+        const plan = PRICING[planId as keyof typeof PRICING] || PRICING.free;
+        let totalCredits = plan.creditsPerMonth;
+        if (addonQuantity && typeof addonQuantity === "number") {
+          totalCredits += addonQuantity * CREDIT_ADDONS.UNIT_CREDITS;
+        }
+
+        // Reset usage and set new limit immediately
+        await resetMonthlyCredits(user._id.toString(), totalCredits);
+
+        console.log(
+          `[Subscription Verify] Updated user ${email} to plan ${planId} with limit ${totalCredits}. Matched: ${updateResult.matchedCount}, Modified: ${updateResult.modifiedCount}`
+        );
+      } else {
+        console.warn(`[Subscription Verify] User not found for email ${email}`);
+      }
 
       return NextResponse.json({
         success: true,

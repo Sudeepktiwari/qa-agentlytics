@@ -178,6 +178,7 @@ export default function SubscriptionSection({ email }: { email?: string }) {
                 ...response,
                 planId: plan.id,
                 email: email,
+                addonQuantity: addonQuantity,
               }),
             });
 
