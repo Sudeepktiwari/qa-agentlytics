@@ -16,6 +16,7 @@ import { onboardingService } from "@/services/onboardingService";
 import { getAdminSettings, OnboardingSettings } from "@/lib/adminSettings";
 import { deriveOnboardingFieldsFromCurl } from "@/lib/curl";
 import { rateLimit, checkSpam } from "@/lib/rateLimit";
+import { checkCreditLimit, deductCredits } from "@/lib/credits";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -10698,6 +10699,36 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
     }
   }
 
+  // 🛡️ CHECK CREDIT LIMIT
+  const { limitReached, approachingLimit, creditsUsed, limit } =
+    await checkCreditLimit(adminId || "default-admin");
+
+  // Proactive Recharge Check (80% or 100%)
+  if (limitReached || approachingLimit) {
+    const { attemptAutoRecharge } = await import("@/lib/credits");
+    // Fire and forget - don't block the request
+    attemptAutoRecharge(adminId || "default-admin").catch((e) =>
+      console.error("[Chat API] Auto-recharge check failed:", e)
+    );
+  }
+
+  if (limitReached) {
+    console.warn(
+      `[Chat API] Credit limit reached for admin ${
+        adminId || "default-admin"
+      } (${creditsUsed}/${limit})`
+    );
+    return NextResponse.json(
+      {
+        mainText:
+          "I'm sorry, but this chatbot has reached its monthly AI credit limit. Please contact the administrator to upgrade their plan.",
+        buttons: ["Contact Support"],
+        emailPrompt: "",
+      },
+      { status: 200 } // Return 200 so the chatbot displays the message gracefully
+    );
+  }
+
   const chatResp = await openai.chat.completions.create({
     model: "gpt-4o-mini",
     messages: [
@@ -10715,6 +10746,23 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
     max_tokens: 1000,
   });
   const answer = chatResp.choices[0].message.content;
+
+  // 💰 DEDUCT CREDITS
+  if (chatResp.usage) {
+    const usage = chatResp.usage;
+    const totalPromptTokens = usage.prompt_tokens || 0;
+    // Check for cached tokens (gpt-4o-mini support)
+    const cachedTokens =
+      (usage as any).prompt_tokens_details?.cached_tokens || 0;
+    const freshInputTokens = Math.max(0, totalPromptTokens - cachedTokens);
+    const outputTokens = usage.completion_tokens || 0;
+
+    await deductCredits(adminId || "default-admin", {
+      inputTokens: freshInputTokens,
+      cachedTokens,
+      outputTokens,
+    });
+  }
 
   // Use robust parsing to handle multiple JSON objects and formats
   console.log("[DEBUG] Raw AI response:", answer);

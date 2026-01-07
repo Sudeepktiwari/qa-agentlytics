@@ -2,20 +2,43 @@
 
 import React, { useMemo } from "react";
 import { motion } from "framer-motion";
-import { PRICING } from "@/config/pricing";
 
 /**
  * Agentlytics Pricing Page (Base plans only)
  * - Free / Growth / Scale
- * - Leads are TOTAL leads (lifetime allocation per plan)
- * - Credits refresh monthly
- * - Credits explanation sits under ROI header for correct buyer psychology
+ * - Lead limit is TOTAL (lifetime allocation per plan)
+ * - AI credits refresh monthly
+ * - Features are NOT restricted by plan
+ * - After lead limit: new lead contact details are masked until upgrade
+ * - Customer-facing language avoids provider pricing/tokens
  */
 
 // -----------------------------
 // Locked Pricing Configuration
 // -----------------------------
-// PRICING is imported from @/config/pricing
+const PRICING = {
+  free: {
+    name: "Free",
+    price: "$0",
+    cadence: "",
+    leadsTotal: 20,
+    creditsPerMonth: 500,
+  },
+  growth: {
+    name: "Growth",
+    price: "$49",
+    cadence: "month",
+    leadsTotal: 25_000,
+    creditsPerMonth: 7_000,
+  },
+  scale: {
+    name: "Scale",
+    price: "$99",
+    cadence: "month",
+    leadsTotal: 100_000,
+    creditsPerMonth: 16_000,
+  },
+} as const;
 
 type IconName =
   | "ArrowRight"
@@ -28,7 +51,8 @@ type IconName =
   | "Bot"
   | "BarChart3"
   | "Brain"
-  | "Calculator";
+  | "Calculator"
+  | "Lock";
 
 function Icon({
   name,
@@ -128,6 +152,12 @@ function Icon({
         <path {...common} d="M8 15h2" />
         <path {...common} d="M12 15h2" />
         <path {...common} d="M8 19h8" />
+      </>
+    ),
+    Lock: (
+      <>
+        <path {...common} d="M7 11V8a5 5 0 0 1 10 0v3" />
+        <path {...common} d="M6 11h12v10H6z" />
       </>
     ),
   };
@@ -254,7 +284,9 @@ function CardTitle({
   className?: string;
 }) {
   return (
-    <div className={cn("text-base font-semibold", className)}>{children}</div>
+    <div className={cn("text-base font-semibold text-[#0B1F3B]", className)}>
+      {children}
+    </div>
   );
 }
 
@@ -269,7 +301,11 @@ function Accordion({
 }
 
 function AccordionItem({ children }: { children: React.ReactNode }) {
-  return <div className="rounded-2xl border bg-background">{children}</div>;
+  return (
+    <div className="rounded-2xl border border-[#D7E3F3] bg-white">
+      {children}
+    </div>
+  );
 }
 
 function AccordionTrigger({
@@ -284,7 +320,7 @@ function AccordionTrigger({
   return (
     <button
       onClick={onClick}
-      className="flex w-full items-center justify-between gap-4 px-4 py-3 text-left text-sm font-medium"
+      className="flex w-full items-center justify-between gap-4 px-4 py-3 text-left text-sm font-medium text-[#0B1F3B]"
     >
       <span>{children}</span>
       <span className={cn("transition", isOpen ? "rotate-90" : "rotate-0")}>
@@ -303,10 +339,7 @@ function AccordionContent({
 }) {
   return (
     <div
-      className={cn(
-        "px-4 pb-4 text-sm text-muted-foreground",
-        !isOpen && "hidden"
-      )}
+      className={cn("px-4 pb-4 text-sm text-slate-600", !isOpen && "hidden")}
     >
       {children}
     </div>
@@ -341,11 +374,11 @@ function SectionHeader(props: {
           <Badge variant="secondary">{props.eyebrow}</Badge>
         </div>
       ) : null}
-      <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+      <h2 className="text-2xl font-semibold tracking-tight text-[#0B1F3B] sm:text-3xl">
         {props.title}
       </h2>
       {props.subtitle ? (
-        <p className="mx-auto mt-3 max-w-3xl text-sm text-muted-foreground sm:text-base">
+        <p className="mx-auto mt-3 max-w-3xl text-sm text-slate-600 sm:text-base">
           {props.subtitle}
         </p>
       ) : null}
@@ -355,9 +388,9 @@ function SectionHeader(props: {
 
 function Pill(props: { icon: React.ReactNode; label: string }) {
   return (
-    <div className="inline-flex items-center gap-2 rounded-full border bg-background px-3 py-1 text-sm">
-      <span className="text-muted-foreground">{props.icon}</span>
-      <span className="font-medium">{props.label}</span>
+    <div className="inline-flex items-center gap-2 rounded-full border border-[#D7E3F3] bg-white px-3 py-1 text-sm">
+      <span className="text-slate-500">{props.icon}</span>
+      <span className="font-medium text-[#0B1F3B]">{props.label}</span>
     </div>
   );
 }
@@ -367,8 +400,8 @@ function BulletList({ items }: { items: string[] }) {
     <ul className="space-y-2 text-sm">
       {items.map((b) => (
         <li key={b} className="flex gap-2">
-          <Icon name="Check" className="mt-0.5 h-4 w-4" />
-          <span className="text-muted-foreground">{b}</span>
+          <Icon name="Check" className="mt-0.5 h-4 w-4 text-[#006BFF]" />
+          <span className="text-slate-600">{b}</span>
         </li>
       ))}
     </ul>
@@ -421,18 +454,16 @@ function PriceCard(props: {
                   <Badge variant="secondary">{props.badge}</Badge>
                 ) : null}
               </div>
-              <div className="mt-2 text-sm text-muted-foreground">
-                {props.tagline}
-              </div>
+              <div className="mt-2 text-sm text-slate-600">{props.tagline}</div>
             </div>
           </div>
 
           <div className="flex items-end gap-2">
-            <div className="text-4xl font-semibold tracking-tight">
+            <div className="text-4xl font-semibold tracking-tight text-[#0B1F3B]">
               {props.price}
             </div>
             {props.cadence ? (
-              <div className="pb-1 text-sm text-muted-foreground">
+              <div className="pb-1 text-sm text-slate-600">
                 /{props.cadence}
               </div>
             ) : null}
@@ -447,9 +478,7 @@ function PriceCard(props: {
           </Button>
 
           {props.footnote ? (
-            <div className="text-xs text-muted-foreground">
-              {props.footnote}
-            </div>
+            <div className="text-xs text-slate-600">{props.footnote}</div>
           ) : null}
         </CardHeader>
 
@@ -458,19 +487,25 @@ function PriceCard(props: {
             {props.details.map((d) => (
               <div
                 key={d.label}
-                className="flex items-center justify-between rounded-2xl border bg-muted/20 px-4 py-3"
+                className="flex items-center justify-between rounded-2xl border border-[#D7E3F3] bg-[#F7FAFF] px-4 py-3"
               >
                 <div className="flex items-center gap-2 text-sm">
-                  {d.icon ? <Icon name={d.icon} className="h-4 w-4" /> : null}
-                  <span className="text-muted-foreground">{d.label}</span>
+                  {d.icon ? (
+                    <Icon name={d.icon} className="h-4 w-4 text-[#0B1F3B]" />
+                  ) : null}
+                  <span className="text-slate-600">{d.label}</span>
                 </div>
-                <div className="text-sm font-medium">{d.value}</div>
+                <div className="text-sm font-medium text-[#0B1F3B]">
+                  {d.value}
+                </div>
               </div>
             ))}
           </div>
 
           <div>
-            <div className="mb-3 text-sm font-medium">Includes</div>
+            <div className="mb-3 text-sm font-medium text-[#0B1F3B]">
+              Includes
+            </div>
             <BulletList items={props.bullets} />
           </div>
         </CardContent>
@@ -479,22 +514,17 @@ function PriceCard(props: {
   );
 }
 
-function formatCell(v: boolean | string) {
-  if (typeof v === "string") return v;
-  return v ? "✓" : "—";
-}
-
 // -----------------------------
 // Minimal self-checks (lightweight “tests”)
 // -----------------------------
 function assertPricingInvariants() {
-  console.assert(PRICING.free.totalLeads > 0, "Free totalLeads must be > 0");
+  console.assert(PRICING.free.leadsTotal > 0, "Free leadsTotal must be > 0");
   console.assert(
-    PRICING.growth.totalLeads > PRICING.free.totalLeads,
+    PRICING.growth.leadsTotal > PRICING.free.leadsTotal,
     "Growth leads must exceed Free"
   );
   console.assert(
-    PRICING.scale.totalLeads > PRICING.growth.totalLeads,
+    PRICING.scale.leadsTotal > PRICING.growth.leadsTotal,
     "Scale leads must exceed Growth"
   );
 
@@ -511,13 +541,6 @@ function assertPricingInvariants() {
     "Scale credits must exceed Growth"
   );
 
-  console.assert(PRICING.free.websites >= 1, "Websites must be >= 1");
-  console.assert(
-    PRICING.scale.websites >= PRICING.growth.websites,
-    "Scale websites must be >= Growth websites"
-  );
-
-  // Price strings should be "$" prefixed
   console.assert(
     PRICING.growth.price.startsWith("$"),
     "Growth price format should start with $"
@@ -529,41 +552,38 @@ function assertPricingInvariants() {
 }
 
 export default function PricingPage() {
-  const [openFaq, setOpenFaq] = React.useState<string | null>("q3");
+  const [openFaq, setOpenFaq] = React.useState<string | null>("q_lead_def");
 
   // Run lightweight checks only in dev
   if (typeof window !== "undefined" && process.env.NODE_ENV !== "production") {
     assertPricingInvariants();
   }
 
-  // ROI blocks (illustrative, as confirmed)
+  // ROI blocks (illustrative and conservative)
   const roi = useMemo(() => {
     const growth = {
-      leads: PRICING.growth.totalLeads,
-      qualifyRate: 0.1,
-      conversions: 2,
+      traffic: 25_000,
+      engagementRate: 0.02,
+      leadCaptureRate: 0.15,
+      closedDeals: 1,
       dealValue: 500,
       planPrice: 49,
     };
     const scale = {
-      leads: PRICING.scale.totalLeads,
-      qualifyRate: 0.1,
-      conversions: 5,
+      traffic: 100_000,
+      engagementRate: 0.02,
+      leadCaptureRate: 0.15,
+      closedDeals: 3,
       dealValue: 1000,
       planPrice: 99,
     };
 
-    const compute = (x: {
-      leads: number;
-      qualifyRate: number;
-      conversions: number;
-      dealValue: number;
-      planPrice: number;
-    }) => {
-      const qualifiedLeads = Math.round(x.leads * x.qualifyRate);
-      const revenue = x.conversions * x.dealValue;
+    const compute = (x: typeof growth) => {
+      const engaged = Math.round(x.traffic * x.engagementRate);
+      const leads = Math.round(engaged * x.leadCaptureRate);
+      const revenue = x.closedDeals * x.dealValue;
       const roiMultiple = revenue / x.planPrice;
-      return { qualifiedLeads, revenue, roiMultiple };
+      return { engaged, leads, revenue, roiMultiple };
     };
 
     return {
@@ -579,11 +599,13 @@ export default function PricingPage() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2">
             <div className="inline-flex h-9 w-9 items-center justify-center rounded-2xl border border-[#D7E3F3] bg-white">
-              <Icon name="Sparkles" className="h-4 w-4" />
+              <Icon name="Sparkles" className="h-4 w-4 text-[#006BFF]" />
             </div>
             <div className="leading-tight">
-              <div className="text-sm font-semibold">Agentlytics</div>
-              <div className="text-xs text-muted-foreground">Pricing</div>
+              <div className="text-sm font-semibold text-[#0B1F3B]">
+                Agentlytics
+              </div>
+              <div className="text-xs text-slate-600">Pricing</div>
             </div>
           </div>
 
@@ -628,16 +650,14 @@ export default function PricingPage() {
               <Badge variant="outline">Leads + credits</Badge>
             </div>
 
-            <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-5xl">
-              Simple pricing that scales with traffic
+            <h1 className="mt-4 text-3xl font-semibold tracking-tight text-[#0B1F3B] sm:text-5xl">
+              Pricing that matches outcomes
             </h1>
 
-            <p className="mt-4 text-sm text-muted-foreground sm:text-base">
-              Agentlytics pricing is based on{" "}
-              <span className="font-medium">leads</span> and{" "}
-              <span className="font-medium">AI credits</span>. Only leads who
-              interact with the widget are counted. Advanced AI actions consume
-              credits.
+            <p className="mt-4 text-sm text-slate-600 sm:text-base">
+              All plans include the full Agentlytics experience. You only pay
+              more when you capture more demand (lead capacity) and run more AI
+              work (monthly credits).
             </p>
 
             <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
@@ -668,17 +688,52 @@ export default function PricingPage() {
         </motion.div>
       </section>
 
-      {/* PRICING CARDS */}
+      {/* PLANS */}
       <section
-        className="mx-auto max-w-6xl px-4 pt-14 pb-14 sm:pt-20 sm:pb-20"
+        className="mx-auto max-w-6xl px-4 pt-14 pb-14 sm:pt-20 sm:pb-24"
         id="plans"
       >
         <SectionHeader
           eyebrow="Plans"
-          title="Free, Growth, and Scale"
-          subtitle="Locked, clean pricing. Choose based on leads (total allocation) and how much AI reasoning you want to run."
+          title="Same product power. Different lead capacity."
+          subtitle="Lead limits are a total allocation (they do not reset monthly). Monthly AI credits refresh each billing cycle. When you reach your lead limit, new lead contact details are masked until you upgrade."
         />
 
+        {/* Clarity strip */}
+        <div className="mt-8 rounded-3xl border border-[#D7E3F3] bg-white p-6 shadow-sm sm:p-8">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="rounded-2xl border border-[#D7E3F3] bg-[#F5FAFF] p-4">
+              <div className="text-sm font-semibold text-[#0B1F3B]">
+                Lead definition
+              </div>
+              <div className="mt-1 text-sm text-slate-600">
+                A <span className="font-medium text-[#0B1F3B]">lead</span> is
+                counted only when a visitor engages and shares contact details
+                (email/phone).
+              </div>
+            </div>
+            <div className="rounded-2xl border border-[#D7E3F3] bg-[#F5FAFF] p-4">
+              <div className="text-sm font-semibold text-[#0B1F3B]">
+                What happens at the limit
+              </div>
+              <div className="mt-1 text-sm text-slate-600">
+                Agentlytics still qualifies new leads and shows intent +
+                summaries, but new contact details are masked until you upgrade.
+              </div>
+            </div>
+            <div className="rounded-2xl border border-[#D7E3F3] bg-[#F5FAFF] p-4">
+              <div className="text-sm font-semibold text-[#0B1F3B]">
+                Deletion rule
+              </div>
+              <div className="mt-1 text-sm text-slate-600">
+                Deleting a visitor/lead does not reduce usage. Limits are based
+                on unique leads captured.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Plan cards */}
         <motion.div
           variants={container}
           initial="hidden"
@@ -687,14 +742,14 @@ export default function PricingPage() {
           className="mt-10 grid grid-cols-1 gap-4 lg:grid-cols-3"
         >
           <PriceCard
-            name={PRICING.free.name}
+            name="Free"
             price={PRICING.free.price}
             tagline="Launch fast and validate demand"
             cta="Start Free"
             details={[
               {
                 label: "Leads",
-                value: formatNumber(PRICING.free.totalLeads),
+                value: `${formatNumber(PRICING.free.leadsTotal)} total`,
                 icon: "Users",
               },
               {
@@ -704,17 +759,19 @@ export default function PricingPage() {
               },
             ]}
             bullets={[
-              "Proactive widget + greeting",
-              "Basic intent capture",
-              "Lead capture form",
-              "Conversation history",
+              "Proactive widget + smart greeting",
+              "Behavior triggers (scroll, dwell, exit)",
+              "AI qualification (intent + key questions)",
+              "Lead summary (need, timeline, budget signal, use-case)",
+              "Conversation transcript (PII redacted)",
               "Basic analytics view",
+              "After limit: new lead contact details are masked",
             ]}
             footnote="No credit card required"
           />
 
           <PriceCard
-            name={PRICING.growth.name}
+            name="Growth"
             price={PRICING.growth.price}
             cadence={PRICING.growth.cadence}
             tagline="Convert traffic into qualified demand"
@@ -724,7 +781,7 @@ export default function PricingPage() {
             details={[
               {
                 label: "Leads",
-                value: formatNumber(PRICING.growth.totalLeads),
+                value: `${formatNumber(PRICING.growth.leadsTotal)} total`,
                 icon: "Users",
               },
               {
@@ -736,16 +793,19 @@ export default function PricingPage() {
               },
             ]}
             bullets={[
-              "Behavior triggers (scroll/dwell/exit)",
-              "AI-powered qualification",
-              "Lead summaries (intent + key details)",
+              "Proactive widget + smart greeting",
+              "Behavior triggers (scroll, dwell, exit)",
+              "AI qualification (intent + key questions)",
+              "Lead summary (need, timeline, budget signal, use-case)",
+              "Conversation transcript (PII redacted)",
               "Analytics dashboard",
+              "After limit: new lead contact details are masked",
             ]}
             footnote="Optimized for ROI-driven growth teams"
           />
 
           <PriceCard
-            name={PRICING.scale.name}
+            name="Scale"
             price={PRICING.scale.price}
             cadence={PRICING.scale.cadence}
             tagline="Max ROI on high-volume traffic"
@@ -753,7 +813,7 @@ export default function PricingPage() {
             details={[
               {
                 label: "Leads",
-                value: formatNumber(PRICING.scale.totalLeads),
+                value: `${formatNumber(PRICING.scale.leadsTotal)} total`,
                 icon: "Users",
               },
               {
@@ -763,10 +823,13 @@ export default function PricingPage() {
               },
             ]}
             bullets={[
-              "Advanced qualification flows",
-              "Higher throughput limits",
+              "Proactive widget + smart greeting",
+              "Behavior triggers (scroll, dwell, exit)",
+              "AI qualification (intent + key questions)",
+              "Lead summary (need, timeline, budget signal, use-case)",
+              "Conversation transcript (PII redacted)",
               "Advanced analytics",
-              "Priority processing",
+              "After limit: new lead contact details are masked",
             ]}
             footnote="Built for teams optimizing cost vs conversion"
           />
@@ -780,149 +843,178 @@ export default function PricingPage() {
       >
         <SectionHeader
           eyebrow="ROI"
-          title="See what one extra lead pays for"
-          subtitle="Conservative examples to help you estimate impact—results vary by industry and traffic quality."
+          title="Conservative math that’s easy to believe"
+          subtitle="Small conversion wins outweigh plan cost quickly. These examples assume modest engagement and lead capture."
         />
-
-        {/* AI Usage / Credits (Customer-facing, provider-agnostic) */}
-        <div
-          id="credits"
-          className="mt-6 rounded-3xl border bg-background p-6 shadow-sm sm:p-8"
-        >
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <div className="text-sm font-semibold">
-                How AI credits are used
-              </div>
-              <div className="mt-1 text-sm text-muted-foreground">
-                A simple, predictable meter for AI effort (not provider
-                pricing).
-              </div>
-            </div>
-            <Badge variant="outline">Simple &amp; Predictable</Badge>
-          </div>
-
-          <div className="mt-5 overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="text-muted-foreground">
-                <tr>
-                  <th className="py-2 pr-4">AI activity</th>
-                  <th className="py-2 pr-4">What happens</th>
-                  <th className="py-2">Credits used</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-t">
-                  <td className="py-3 pr-4 font-medium">AI input processing</td>
-                  <td className="py-3 pr-4 text-muted-foreground">
-                    User message is analyzed and understood
-                  </td>
-                  <td className="py-3">Low</td>
-                </tr>
-                <tr className="border-t">
-                  <td className="py-3 pr-4 font-medium">
-                    Cached AI processing
-                  </td>
-                  <td className="py-3 pr-4 text-muted-foreground">
-                    Previously processed context is reused
-                  </td>
-                  <td className="py-3">Very low</td>
-                </tr>
-                <tr className="border-t">
-                  <td className="py-3 pr-4 font-medium">
-                    AI output generation
-                  </td>
-                  <td className="py-3 pr-4 text-muted-foreground">
-                    AI generates a response, summary, or qualification
-                  </td>
-                  <td className="py-3">Moderate</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div className="mt-4 text-xs text-muted-foreground">
-            Credits represent AI effort, not infrastructure cost. Credits
-            refresh monthly; total leads do not.
-          </div>
-        </div>
 
         <div className="mt-10 grid grid-cols-1 gap-4 lg:grid-cols-2">
           <Card>
-            <CardHeader>
-              <CardTitle>Growth ROI Example</CardTitle>
-              <div className="mt-2 text-sm text-muted-foreground">
-                25,000 leads • 10% qualification • $500 deal value
+            <CardHeader className="space-y-3">
+              <div className="flex items-center justify-between">
+                <CardTitle>Growth example</CardTitle>
+                <Badge variant="outline">${PRICING.growth.price}/mo plan</Badge>
+              </div>
+              <div className="text-sm text-slate-600">
+                On {formatNumber(roi.growth.traffic)} site visitors, at{" "}
+                {Math.round(roi.growth.engagementRate * 100)}% engagement and{" "}
+                {Math.round(roi.growth.leadCaptureRate * 100)}% lead capture.
               </div>
             </CardHeader>
-            <CardContent className="space-y-2 text-sm text-muted-foreground">
-              <p>
-                {formatNumber(PRICING.growth.totalLeads)} leads × 10% ={" "}
-                <span className="font-medium text-foreground">
-                  {formatNumber(roi.growth.qualifiedLeads)}
-                </span>{" "}
-                qualified leads
-              </p>
-              <p>
-                2 conversions × $500 ={" "}
-                <span className="font-medium text-foreground">
-                  {formatMoney(roi.growth.revenue)}
-                </span>{" "}
-                revenue
-              </p>
-              <div className="mt-3 rounded-2xl border bg-muted/20 p-4 text-sm">
-                <div className="font-semibold text-foreground">
-                  $49 plan {"→"} ~{roi.growth.roiMultiple.toFixed(0)}
-                  {"×"} ROI
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div className="rounded-2xl border border-[#D7E3F3] bg-[#F7FAFF] p-4">
+                  <div className="text-xs text-slate-600">Engaged visitors</div>
+                  <div className="mt-1 text-lg font-semibold text-[#0B1F3B]">
+                    {formatNumber(roi.growth.engaged)}
+                  </div>
                 </div>
-                <div className="mt-1 text-muted-foreground">
-                  Examples only. Actual results depend on traffic quality,
-                  offer, and conversion funnel.
+                <div className="rounded-2xl border border-[#D7E3F3] bg-[#F7FAFF] p-4">
+                  <div className="text-xs text-slate-600">Leads captured</div>
+                  <div className="mt-1 text-lg font-semibold text-[#0B1F3B]">
+                    {formatNumber(roi.growth.leads)}
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-[#D7E3F3] bg-[#F7FAFF] p-4">
+                  <div className="text-xs text-slate-600">Revenue impact</div>
+                  <div className="mt-1 text-lg font-semibold text-[#0B1F3B]">
+                    {formatMoney(roi.growth.revenue)}
+                  </div>
+                </div>
+              </div>
+              <div className="rounded-2xl border border-[#D7E3F3] bg-white p-4">
+                <div className="flex items-center gap-2">
+                  <Icon name="Calculator" className="h-4 w-4 text-[#006BFF]" />
+                  <div className="text-sm font-medium text-[#0B1F3B]">
+                    Approx ROI multiple: ~{roi.growth.roiMultiple.toFixed(0)}x
+                  </div>
+                </div>
+                <div className="mt-1 text-sm text-slate-600">
+                  Example assumption: {roi.growth.closedDeals} closed deal(s) at{" "}
+                  {formatMoney(roi.growth.dealValue)} each.
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle>Scale ROI Example</CardTitle>
-              <div className="mt-2 text-sm text-muted-foreground">
-                100,000 leads • 10% qualification • $1,000 deal value
+            <CardHeader className="space-y-3">
+              <div className="flex items-center justify-between">
+                <CardTitle>Scale example</CardTitle>
+                <Badge variant="outline">${PRICING.scale.price}/mo plan</Badge>
+              </div>
+              <div className="text-sm text-slate-600">
+                On {formatNumber(roi.scale.traffic)} site visitors, at{" "}
+                {Math.round(roi.scale.engagementRate * 100)}% engagement and{" "}
+                {Math.round(roi.scale.leadCaptureRate * 100)}% lead capture.
               </div>
             </CardHeader>
-            <CardContent className="space-y-2 text-sm text-muted-foreground">
-              <p>
-                {formatNumber(PRICING.scale.totalLeads)} leads × 10% ={" "}
-                <span className="font-medium text-foreground">
-                  {formatNumber(roi.scale.qualifiedLeads)}
-                </span>{" "}
-                qualified leads
-              </p>
-              <p>
-                5 conversions × $1,000 ={" "}
-                <span className="font-medium text-foreground">
-                  {formatMoney(roi.scale.revenue)}
-                </span>{" "}
-                revenue
-              </p>
-              <div className="mt-3 rounded-2xl border bg-muted/20 p-4 text-sm">
-                <div className="font-semibold text-foreground">
-                  $99 plan {"→"} ~{roi.scale.roiMultiple.toFixed(0)}
-                  {"×"} ROI
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div className="rounded-2xl border border-[#D7E3F3] bg-[#F7FAFF] p-4">
+                  <div className="text-xs text-slate-600">Engaged visitors</div>
+                  <div className="mt-1 text-lg font-semibold text-[#0B1F3B]">
+                    {formatNumber(roi.scale.engaged)}
+                  </div>
                 </div>
-                <div className="mt-1 text-muted-foreground">
-                  Examples only. Actual results depend on traffic quality,
-                  offer, and conversion funnel.
+                <div className="rounded-2xl border border-[#D7E3F3] bg-[#F7FAFF] p-4">
+                  <div className="text-xs text-slate-600">Leads captured</div>
+                  <div className="mt-1 text-lg font-semibold text-[#0B1F3B]">
+                    {formatNumber(roi.scale.leads)}
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-[#D7E3F3] bg-[#F7FAFF] p-4">
+                  <div className="text-xs text-slate-600">Revenue impact</div>
+                  <div className="mt-1 text-lg font-semibold text-[#0B1F3B]">
+                    {formatMoney(roi.scale.revenue)}
+                  </div>
+                </div>
+              </div>
+              <div className="rounded-2xl border border-[#D7E3F3] bg-white p-4">
+                <div className="flex items-center gap-2">
+                  <Icon name="Calculator" className="h-4 w-4 text-[#006BFF]" />
+                  <div className="text-sm font-medium text-[#0B1F3B]">
+                    Approx ROI multiple: ~{roi.scale.roiMultiple.toFixed(0)}x
+                  </div>
+                </div>
+                <div className="mt-1 text-sm text-slate-600">
+                  Example assumption: {roi.scale.closedDeals} closed deal(s) at{" "}
+                  {formatMoney(roi.scale.dealValue)} each.
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        <div className="mt-6 text-center">
-          <Button variant="outline" onClick={() => scrollToId("plans")}>
-            Back to plans <Icon name="ChevronRight" className="ml-1 h-4 w-4" />
-          </Button>
+        {/* Credits explanation placed directly under ROI */}
+        <div className="mt-10" id="credits">
+          <SectionHeader
+            eyebrow="Credits"
+            title="What credits mean"
+            subtitle="Credits measure AI effort (not infrastructure cost). This keeps pricing predictable and independent of underlying AI providers."
+          />
+
+          <div className="mt-8 rounded-3xl border border-[#D7E3F3] bg-white p-6 shadow-sm sm:p-8">
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b border-[#D7E3F3]">
+                    <th className="py-3 pr-4 font-semibold text-[#0B1F3B]">
+                      AI activity
+                    </th>
+                    <th className="py-3 pr-4 font-semibold text-[#0B1F3B]">
+                      What happens
+                    </th>
+                    <th className="py-3 font-semibold text-[#0B1F3B]">
+                      Credits used
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b border-[#D7E3F3]">
+                    <td className="py-3 pr-4 text-[#0B1F3B]">
+                      AI input processing
+                    </td>
+                    <td className="py-3 pr-4 text-slate-600">
+                      User message is analyzed and understood
+                    </td>
+                    <td className="py-3 text-slate-600">Low</td>
+                  </tr>
+                  <tr className="border-b border-[#D7E3F3]">
+                    <td className="py-3 pr-4 text-[#0B1F3B]">
+                      Cached AI processing
+                    </td>
+                    <td className="py-3 pr-4 text-slate-600">
+                      Previously processed context is reused
+                    </td>
+                    <td className="py-3 text-slate-600">Very low</td>
+                  </tr>
+                  <tr>
+                    <td className="py-3 pr-4 text-[#0B1F3B]">
+                      AI output generation
+                    </td>
+                    <td className="py-3 pr-4 text-slate-600">
+                      Agentlytics generates a response, summary, or
+                      qualification
+                    </td>
+                    <td className="py-3 text-slate-600">Moderate</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div className="mt-6 rounded-2xl border border-[#D7E3F3] bg-[#F7FAFF] p-4">
+              <div className="flex items-center gap-2">
+                <Icon name="Brain" className="h-4 w-4 text-[#006BFF]" />
+                <div className="text-sm font-medium text-[#0B1F3B]">
+                  Credits refresh monthly
+                </div>
+              </div>
+              <div className="mt-1 text-sm text-slate-600">
+                Lead limits are a total allocation for your plan. Credits
+                refresh monthly so you can forecast usage reliably as you grow.
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -933,47 +1025,66 @@ export default function PricingPage() {
       >
         <SectionHeader
           eyebrow="Comparison"
-          title="What’s included in each plan"
-          subtitle="Base Agentlytics only (no human handover, no agent mode, no coaching, no 9-metric analytics)."
+          title="What changes by plan"
+          subtitle="Features are not restricted by plan. Plans only differ by total lead capacity and monthly AI credits."
         />
 
-        <div className="mt-10 rounded-3xl border bg-background p-4 shadow-sm sm:p-8">
-          <div className="grid grid-cols-1 gap-3 rounded-2xl border bg-muted/20 p-4 sm:grid-cols-4 sm:items-center">
-            <div className="text-sm font-medium">Feature</div>
-            <div className="text-sm text-muted-foreground">Free</div>
-            <div className="text-sm text-muted-foreground">Growth</div>
-            <div className="text-sm text-muted-foreground">Scale</div>
+        <div className="mt-10 rounded-3xl border border-[#D7E3F3] bg-white p-4 shadow-sm sm:p-8">
+          <div className="grid grid-cols-1 gap-3 rounded-2xl border border-[#D7E3F3] bg-[#F7FAFF] p-4 sm:grid-cols-4 sm:items-center">
+            <div className="text-sm font-medium text-[#0B1F3B]">Item</div>
+            <div className="text-sm text-slate-600">Free</div>
+            <div className="text-sm text-slate-600">Growth</div>
+            <div className="text-sm text-slate-600">Scale</div>
           </div>
 
           {[
-            { f: "Proactive widget + greeting", a: true, b: true, c: true },
             {
-              f: "Behavior triggers (scroll/dwell/exit)",
-              a: false,
-              b: true,
-              c: true,
+              label: "Proactive widget + triggers + qualification",
+              free: "Included",
+              growth: "Included",
+              scale: "Included",
             },
-            { f: "AI qualification", a: "Basic", b: true, c: true },
-            { f: "Custom questions", a: false, b: true, c: true },
-            { f: "Lead summaries", a: false, b: true, c: true },
-            { f: "Analytics dashboard", a: "Basic", b: true, c: "Advanced" },
-            { f: "Multiple websites", a: false, b: false, c: true },
-            { f: "Priority processing", a: false, b: false, c: true },
+            {
+              label: "Lead summaries + transcripts (PII redacted)",
+              free: "Included",
+              growth: "Included",
+              scale: "Included",
+            },
+            {
+              label: "Analytics",
+              free: "Included",
+              growth: "Included",
+              scale: "Included",
+            },
+            {
+              label: "Total lead capacity",
+              free: `${formatNumber(PRICING.free.leadsTotal)} total`,
+              growth: `${formatNumber(PRICING.growth.leadsTotal)} total`,
+              scale: `${formatNumber(PRICING.scale.leadsTotal)} total`,
+            },
+            {
+              label: "Monthly AI credits",
+              free: `${formatNumber(PRICING.free.creditsPerMonth)} / month`,
+              growth: `${formatNumber(PRICING.growth.creditsPerMonth)} / month`,
+              scale: `${formatNumber(PRICING.scale.creditsPerMonth)} / month`,
+            },
+            {
+              label: "After lead limit",
+              free: "New contact details masked",
+              growth: "New contact details masked",
+              scale: "New contact details masked",
+            },
           ].map((row) => (
             <div
-              key={row.f}
-              className="mt-3 grid grid-cols-1 gap-3 rounded-2xl border bg-background p-4 sm:grid-cols-4 sm:items-center"
+              key={row.label}
+              className="mt-3 grid grid-cols-1 gap-3 rounded-2xl border border-[#D7E3F3] bg-white p-4 sm:grid-cols-4 sm:items-center"
             >
-              <div className="text-sm font-medium">{row.f}</div>
-              <div className="text-sm text-muted-foreground">
-                {formatCell(row.a)}
+              <div className="text-sm font-medium text-[#0B1F3B]">
+                {row.label}
               </div>
-              <div className="text-sm text-muted-foreground">
-                {formatCell(row.b)}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                {formatCell(row.c)}
-              </div>
+              <div className="text-sm text-slate-600">{row.free}</div>
+              <div className="text-sm text-slate-600">{row.growth}</div>
+              <div className="text-sm text-slate-600">{row.scale}</div>
             </div>
           ))}
         </div>
@@ -990,98 +1101,97 @@ export default function PricingPage() {
           subtitle="Clear answers reduce friction and increase upgrades."
         />
 
-        <div className="mt-10 rounded-3xl border bg-background p-4 shadow-sm sm:p-8">
+        <div className="mt-10 rounded-3xl border border-[#D7E3F3] bg-white p-4 shadow-sm sm:p-8">
           <Accordion>
             <AccordionItem>
               <AccordionTrigger
-                onClick={() => setOpenFaq(openFaq === "q3" ? null : "q3")}
-                isOpen={openFaq === "q3"}
+                onClick={() =>
+                  setOpenFaq(openFaq === "q_lead_def" ? null : "q_lead_def")
+                }
+                isOpen={openFaq === "q_lead_def"}
               >
-                How do AI credits work?
+                What counts as a lead?
               </AccordionTrigger>
-              <AccordionContent isOpen={openFaq === "q3"}>
-                Credits are consumed only for advanced AI reasoning (intent,
-                qualification, summaries). Credits refresh monthly. If credits
-                run low, you can fall back to Lite mode until they renew.
+              <AccordionContent isOpen={openFaq === "q_lead_def"}>
+                A lead is counted only when a visitor engages and shares contact
+                details (email and/or phone). Passive traffic and chats without
+                contact details do not count.
               </AccordionContent>
             </AccordionItem>
 
             <AccordionItem>
               <AccordionTrigger
-                onClick={() => setOpenFaq(openFaq === "q6" ? null : "q6")}
-                isOpen={openFaq === "q6"}
+                onClick={() =>
+                  setOpenFaq(openFaq === "q_limit" ? null : "q_limit")
+                }
+                isOpen={openFaq === "q_limit"}
               >
-                If I delete a lead, does it reduce my lead usage?
+                Do lead limits reset monthly?
               </AccordionTrigger>
-              <AccordionContent isOpen={openFaq === "q6"}>
-                No. Deleting a lead does not change your plan usage. Lead limits
-                are based on unique leads processed, not on records stored.
-                Deletions only affect your dashboard history.
-              </AccordionContent>
-            </AccordionItem>
-
-            <AccordionItem>
-              <AccordionTrigger
-                onClick={() => setOpenFaq(openFaq === "q1" ? null : "q1")}
-                isOpen={openFaq === "q1"}
-              >
-                Do leads reset?
-              </AccordionTrigger>
-              <AccordionContent isOpen={openFaq === "q1"}>
-                No. Leads are a lifetime allocation for your plan. When you
+              <AccordionContent isOpen={openFaq === "q_limit"}>
+                No. Lead limits are a total allocation for your plan. When you
                 reach the limit, you upgrade to the next plan.
               </AccordionContent>
             </AccordionItem>
 
             <AccordionItem>
               <AccordionTrigger
-                onClick={() => setOpenFaq(openFaq === "q2" ? null : "q2")}
-                isOpen={openFaq === "q2"}
+                onClick={() =>
+                  setOpenFaq(openFaq === "q_mask" ? null : "q_mask")
+                }
+                isOpen={openFaq === "q_mask"}
               >
-                What happens if I exceed my lead limit?
+                What happens after I hit my lead limit?
               </AccordionTrigger>
-              <AccordionContent isOpen={openFaq === "q2"}>
-                You upgrade to the next plan for higher lead capacity. This
-                keeps limits aligned with your growth.
+              <AccordionContent isOpen={openFaq === "q_mask"}>
+                Agentlytics keeps qualifying new leads and showing intent +
+                summaries, but new lead contact details (name, email, phone) are
+                masked until you upgrade.
               </AccordionContent>
             </AccordionItem>
 
             <AccordionItem>
               <AccordionTrigger
-                onClick={() => setOpenFaq(openFaq === "q4" ? null : "q4")}
-                isOpen={openFaq === "q4"}
+                onClick={() =>
+                  setOpenFaq(openFaq === "q_delete" ? null : "q_delete")
+                }
+                isOpen={openFaq === "q_delete"}
               >
-                Does this pricing include human handover or 9-metric coaching?
+                If I delete a visitor/lead, does it reduce my usage?
               </AccordionTrigger>
-              <AccordionContent isOpen={openFaq === "q4"}>
-                No. This page covers base Agentlytics only. Human handover and
-                coaching are separate modules and will be priced separately.
+              <AccordionContent isOpen={openFaq === "q_delete"}>
+                No. Deleting a visitor/lead does not reduce usage. Limits are
+                based on unique leads captured, not on records stored.
               </AccordionContent>
             </AccordionItem>
 
             <AccordionItem>
               <AccordionTrigger
-                onClick={() => setOpenFaq(openFaq === "q5" ? null : "q5")}
-                isOpen={openFaq === "q5"}
+                onClick={() =>
+                  setOpenFaq(openFaq === "q_credits" ? null : "q_credits")
+                }
+                isOpen={openFaq === "q_credits"}
               >
-                Can I upgrade anytime?
+                How do monthly AI credits work?
               </AccordionTrigger>
-              <AccordionContent isOpen={openFaq === "q5"}>
-                Yes. You can upgrade whenever your traffic grows. Upgrading
-                ensures you don’t hit capacity limits.
+              <AccordionContent isOpen={openFaq === "q_credits"}>
+                Credits are consumed for AI work (understanding, summarizing,
+                qualifying). Credits refresh monthly. If you run out, you can
+                wait for renewal or upgrade for a higher monthly credit
+                allowance.
               </AccordionContent>
             </AccordionItem>
           </Accordion>
         </div>
 
-        <div className="mx-auto mt-10 flex max-w-6xl flex-col items-center justify-between gap-4 rounded-3xl border bg-background p-6 shadow-sm sm:flex-row">
+        <div className="mx-auto mt-10 flex max-w-6xl flex-col items-center justify-between gap-4 rounded-3xl border border-[#D7E3F3] bg-white p-6 shadow-sm sm:flex-row">
           <div>
-            <div className="text-base font-semibold">
-              Start Free. Upgrade when you reach the limit.
+            <div className="text-base font-semibold text-[#0B1F3B]">
+              Start Free. Upgrade when you hit the limit.
             </div>
-            <div className="mt-1 text-sm text-muted-foreground">
-              Free includes {formatNumber(PRICING.free.totalLeads)} leads and{" "}
-              {formatNumber(PRICING.free.creditsPerMonth)} credits/month.
+            <div className="mt-1 text-sm text-slate-600">
+              Free includes {formatNumber(PRICING.free.leadsTotal)} total leads
+              and {formatNumber(PRICING.free.creditsPerMonth)} credits/month.
             </div>
           </div>
           <div className="flex gap-2">
@@ -1095,16 +1205,18 @@ export default function PricingPage() {
         </div>
       </section>
 
-      <footer className="border-t bg-background/80">
+      <footer className="border-t border-[#D7E3F3] bg-white/80">
         <div className="mx-auto max-w-6xl px-4 py-10">
           <div className="flex flex-col justify-between gap-4 sm:flex-row">
             <div>
-              <div className="text-sm font-semibold">Agentlytics</div>
-              <div className="mt-1 text-sm text-muted-foreground">
+              <div className="text-sm font-semibold text-[#0B1F3B]">
+                Agentlytics
+              </div>
+              <div className="mt-1 text-sm text-slate-600">
                 Proactive AI pricing — Free, Growth, Scale.
               </div>
             </div>
-            <div className="text-sm text-muted-foreground">
+            <div className="text-sm text-slate-600">
               © {new Date().getFullYear()} Agentlytics
             </div>
           </div>

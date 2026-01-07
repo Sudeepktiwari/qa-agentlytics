@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminAccessFromCookie } from "@/lib/auth";
 import { checkLeadLimit } from "@/lib/leads";
+import { checkCreditLimit } from "@/lib/credits";
 import { rateLimit } from "@/lib/rateLimit";
 
 export async function GET(req: NextRequest) {
@@ -17,13 +18,25 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { limitReached, currentLeads, limit, plan } = await checkLeadLimit(
-      auth.adminId
-    );
+    const [leadStatus, creditStatus] = await Promise.all([
+      checkLeadLimit(auth.adminId),
+      checkCreditLimit(auth.adminId),
+    ]);
 
-    // In a real app, you might also fetch credits usage here
-    // For now, we'll return a placeholder or calculate if available
-    const credits = 0; // Placeholder
+    const {
+      limitReached,
+      currentLeads,
+      limit,
+      plan: leadPlan,
+    } = leadStatus;
+
+    const {
+      creditsUsed,
+      limit: creditLimit,
+    } = creditStatus;
+
+    // Use the plan from leadStatus or creditStatus (should be consistent)
+    const plan = leadPlan;
 
     return NextResponse.json({
       plan,
@@ -31,7 +44,8 @@ export async function GET(req: NextRequest) {
         leads: currentLeads,
         leadsLimit: limit,
         limitReached,
-        credits,
+        credits: creditsUsed,
+        creditsLimit: creditLimit,
       },
     });
   } catch (error) {
