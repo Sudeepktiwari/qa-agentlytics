@@ -327,6 +327,39 @@ export default function SubscriptionSection({ email }: { email?: string }) {
     }
   };
 
+  const handleCancelSubscription = async () => {
+    if (
+      !confirm(
+        "Are you sure you want to cancel your subscription? You will lose access to premium features at the end of the current billing cycle."
+      )
+    ) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin/subscription/cancel", {
+        method: "POST",
+      });
+
+      if (res.ok) {
+        alert("Subscription cancelled successfully.");
+        // Refresh status
+        window.location.reload();
+      } else {
+        const data = await res.json();
+        alert(
+          "Failed to cancel subscription: " + (data.error || "Unknown error")
+        );
+      }
+    } catch (error) {
+      console.error("Cancellation error:", error);
+      alert("An error occurred while cancelling subscription.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 md:p-6">
       <Script src="https://checkout.razorpay.com/v1/checkout.js" />
@@ -557,15 +590,31 @@ export default function SubscriptionSection({ email }: { email?: string }) {
               <Button
                 variant={isCurrent ? "outline" : "primary"}
                 className="w-full"
-                disabled={isCurrent || loading}
+                disabled={
+                  (isCurrent &&
+                    totalPrice === plan.amount &&
+                    creditAmount === 0 &&
+                    leadAmount === 0) ||
+                  loading
+                }
                 onClick={() => handleSubscribe(key)}
               >
                 {isCurrent
-                  ? "Active Plan"
+                  ? "Update Plan"
                   : loading
                   ? "Processing..."
                   : `Upgrade to ${plan.name}`}
               </Button>
+
+              {isCurrent && key !== "free" && (
+                <button
+                  onClick={handleCancelSubscription}
+                  disabled={loading}
+                  className="w-full mt-3 text-sm text-red-600 hover:text-red-700 font-medium disabled:opacity-50"
+                >
+                  {loading ? "Processing..." : "Cancel Subscription"}
+                </button>
+              )}
             </Card>
           );
         })}

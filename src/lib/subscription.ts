@@ -152,3 +152,66 @@ export async function processSubscriptionUpdate({
     throw error;
   }
 }
+
+/**
+ * Handle subscription cancellation
+ */
+export async function handleSubscriptionCancellation(payload: any) {
+  const logPrefix = `[CancelSubscription ${Date.now()}]`;
+  console.log(`${logPrefix} Starting cancellation processing`);
+
+  const subscription = payload.subscription.entity;
+  const razorpay_subscription_id = subscription.id;
+
+  if (!razorpay_subscription_id) {
+    throw new Error("Missing subscription ID in payload");
+  }
+
+  const db = await getDb();
+
+  // Find user by subscription ID
+  const user = await db.collection("users").findOne({
+    subscriptionId: razorpay_subscription_id,
+  });
+
+  if (!user) {
+    console.error(
+      `${logPrefix} User not found for subscription: ${razorpay_subscription_id}`
+    );
+    // If user not found, we can't update them.
+    return { success: false, error: "User not found" };
+  }
+
+  const adminId = user._id.toString();
+  console.log(`${logPrefix} Found user: ${adminId} (${user.email})`);
+
+  // Update User Profile
+  // We mark the status as cancelled.
+  const userUpdate = await db.collection("users").updateOne(
+    { _id: user._id },
+    {
+      $set: {
+        subscriptionStatus: "cancelled",
+        cancelledAt: new Date(),
+      },
+    }
+  );
+
+  // Update Subscription Records (Current and Future)
+  const subUpdate = await db.collection("subscriptions").updateMany(
+    { adminId: adminId, subscriptionId: razorpay_subscription_id },
+    {
+      $set: {
+        status: "cancelled",
+        cancelledAt: new Date(),
+        razorpayStatus: subscription.status,
+      },
+    }
+  );
+
+  console.log(
+    `${logPrefix} Cancellation complete. User updated: ${userUpdate.modifiedCount}, Subs updated: ${subUpdate.modifiedCount}`
+  );
+
+  return { success: true, adminId };
+}
