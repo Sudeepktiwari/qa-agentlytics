@@ -46,9 +46,11 @@ export async function GET(req: NextRequest) {
     const leadsLimit = subscription?.limits?.leadTotalLimit || 0;
     const currentLeads = subscription?.usage?.leadsUsed || 0;
     const limitReached = leadsLimit > 0 ? currentLeads >= leadsLimit : false;
+    const addons = subscription?.addons || { creditsUnits: 0, leadsUnits: 0 };
 
     return NextResponse.json({
       plan,
+      addons,
       usage: {
         leads: currentLeads,
         leadsLimit: leadsLimit,

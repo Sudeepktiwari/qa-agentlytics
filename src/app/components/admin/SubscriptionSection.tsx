@@ -133,7 +133,32 @@ export default function SubscriptionSection({ email }: { email?: string }) {
       .then((res) => res.json())
       .then((data) => {
         if (data.usage) setUsage(data.usage);
-        if (data.plan) setCurrentPlan(data.plan);
+        if (data.plan) {
+          setCurrentPlan(data.plan);
+
+          // Set initial slider values based on active subscription
+          if (data.addons && data.plan !== "free") {
+            const planKey = data.plan as keyof typeof PRICING;
+            const planConfig = PRICING[planKey];
+
+            if (planConfig) {
+              const creditPrice = planConfig.addons?.credits?.price || 0;
+              const leadPrice = planConfig.addons?.leads?.price || 0;
+
+              const creditAmount =
+                (data.addons.creditsUnits || 0) * creditPrice;
+              const leadAmount = (data.addons.leadsUnits || 0) * leadPrice;
+
+              setPlanAddons((prev) => ({
+                ...prev,
+                [planKey]: {
+                  creditAmount,
+                  leadAmount,
+                },
+              }));
+            }
+          }
+        }
       })
       .catch((err) =>
         console.error("Failed to fetch subscription status:", err)
@@ -254,13 +279,28 @@ export default function SubscriptionSection({ email }: { email?: string }) {
                 if (statusRes.ok) {
                   const statusData = await statusRes.json();
                   if (statusData.usage) setUsage(statusData.usage);
-                  if (statusData.plan) setCurrentPlan(statusData.plan);
+                  if (statusData.plan) {
+                    setCurrentPlan(statusData.plan);
+
+                    // Update sliders to reflect purchased add-ons
+                    if (statusData.addons && statusData.plan !== "free") {
+                      const pk = statusData.plan as keyof typeof PRICING;
+                      const pc = PRICING[pk];
+                      if (pc) {
+                        const cP = pc.addons?.credits?.price || 0;
+                        const lP = pc.addons?.leads?.price || 0;
+                        const cA = (statusData.addons.creditsUnits || 0) * cP;
+                        const lA = (statusData.addons.leadsUnits || 0) * lP;
+
+                        setPlanAddons((prev) => ({
+                          ...prev,
+                          [pk]: { creditAmount: cA, leadAmount: lA },
+                        }));
+                      }
+                    }
+                  }
                 }
               } catch {}
-              setPlanAddons((prev) => ({
-                ...prev,
-                [planKey]: { creditAmount: 0, leadAmount: 0 },
-              })); // Reset sliders
             } else {
               alert("Verification failed: " + verifyData.error);
             }
