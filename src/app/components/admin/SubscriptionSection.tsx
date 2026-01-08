@@ -328,11 +328,7 @@ export default function SubscriptionSection({ email }: { email?: string }) {
   };
 
   const handleCancelSubscription = async () => {
-    if (
-      !confirm(
-        "Are you sure you want to cancel your subscription? You will lose access to premium features at the end of the current billing cycle."
-      )
-    ) {
+    if (!confirm("Are you sure you want to cancel your subscription? You will lose access to premium features immediately.")) {
       return;
     }
 
