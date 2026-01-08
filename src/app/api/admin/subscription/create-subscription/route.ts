@@ -1,13 +1,14 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import Razorpay from "razorpay";
 import { PRICING } from "@/config/pricing";
+import { verifyAdminAccessFromCookie } from "@/lib/auth";
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID || "",
   key_secret: process.env.RAZORPAY_KEY_SECRET || "",
 });
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const {
       planId,
@@ -23,6 +24,17 @@ export async function POST(req: Request) {
         { error: "Plan ID is required" },
         { status: 400 }
       );
+    }
+
+    // Resolve Admin ID from Cookie
+    let adminId = "";
+    try {
+      const auth = verifyAdminAccessFromCookie(req);
+      if (auth.isValid && auth.adminId) {
+        adminId = auth.adminId;
+      }
+    } catch (e) {
+      console.warn("Failed to resolve admin ID from cookie during subscription creation:", e);
     }
 
     const plan = PRICING[internalPlanId as keyof typeof PRICING];
@@ -48,6 +60,7 @@ export async function POST(req: Request) {
         planId: internalPlanId, // Store internal ID for webhook
         addonQuantity: addonQuantity, // Credit Add-on Units
         leadAddonQuantity: leadAddonQuantity, // Lead Add-on Units
+        adminId: adminId, // Store Admin ID for robust webhook tracking
       },
     };
 

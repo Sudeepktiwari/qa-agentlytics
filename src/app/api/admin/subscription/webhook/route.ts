@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
-import { MongoClient } from "mongodb";
-import { resetMonthlyCredits } from "@/lib/credits";
-import { PRICING, CREDIT_ADDONS, LEAD_ADDONS } from "@/config/pricing";
+import { MongoClient, ObjectId } from "mongodb";
+import { processSubscriptionUpdate } from "@/lib/subscription";
+import { PRICING } from "@/config/pricing";
 
 const uri = process.env.MONGODB_URI || "";
 const client = new MongoClient(uri);
@@ -35,110 +35,74 @@ export async function POST(req: Request) {
       const subscriptionEntity = payload.payload.subscription.entity;
       const subscriptionId = subscriptionEntity.id;
       const notes = subscriptionEntity.notes || {};
-
-      // Determine Plan
-      // Mapping Razorpay Plan ID back to our internal plan key is needed if not stored in notes.
-      // Ideally, we store 'planKey' in notes during creation.
-      // Fallback: Check user's current plan in DB.
+      const razorpay_payment_id = payload.payload.payment?.entity?.id;
 
       await client.connect();
       const db = client.db("sample-chatbot");
-      const user = await db.collection("users").findOne({ subscriptionId });
+
+      // Robust User Lookup:
+      // 1. Try resolving via adminId from notes (immutable ID)
+      // 2. Fallback to subscriptionId lookup (legacy)
+      let user = null;
+      let adminId = notes.adminId;
+
+      if (adminId) {
+        try {
+          user = await db
+            .collection("users")
+            .findOne({ _id: new ObjectId(adminId) });
+        } catch (e) {
+          console.warn("[Webhook] Invalid adminId in notes:", adminId);
+        }
+      }
+
+      if (!user) {
+        user = await db.collection("users").findOne({ subscriptionId });
+      }
 
       if (user) {
-        const adminId = user._id.toString();
+        adminId = user._id.toString();
 
-        // Calculate Total Credits
-        // 1. Base Plan Credits
-        // Prefer planId from notes (set during creation), fallback to user profile
         const planKey = (notes.planId ||
           user.subscriptionPlan ||
           "free") as keyof typeof PRICING;
-        const planConfig = PRICING[planKey];
-        const baseCredits = planConfig?.creditsPerMonth || 0;
 
-        // 2. Add-on Credits
-        let addonCredits = 0;
-        let extraLeads = 0;
-
-        // Method A: From Notes
-        if (notes.addonQuantity) {
-          const qty = parseInt(notes.addonQuantity, 10);
-          // Use plan-specific add-on amount if available, else fallback to 0 (or legacy)
-          const unitCredits = planConfig?.addons?.credits?.amount || 0;
-          if (!isNaN(qty)) {
-            addonCredits = qty * unitCredits;
-          }
-        }
-
-        if (notes.leadAddonQuantity) {
-          const qty = parseInt(notes.leadAddonQuantity, 10);
-          const unitLeads = planConfig?.addons?.leads?.amount || 0;
-          if (!isNaN(qty)) {
-            extraLeads = qty * unitLeads;
-          }
-        }
-
-        // Method B: Check active add-ons in payload (Better if Razorpay sends it)
-        // if (subscriptionEntity.addons) { ... }
-
-        const totalCredits = baseCredits + addonCredits;
-
-        const now = new Date();
-        const monthKey = `${now.getFullYear()}-${now.getMonth() + 1}`;
-        const creditsUnits = notes.addonQuantity
+        const addonQuantity = notes.addonQuantity
           ? parseInt(notes.addonQuantity, 10)
           : 0;
-        const leadsUnits = notes.leadAddonQuantity
+        const leadAddonQuantity = notes.leadAddonQuantity
           ? parseInt(notes.leadAddonQuantity, 10)
           : 0;
 
-        await db.collection("subscriptions").updateOne(
-          { subscriptionId },
-          {
-            $set: {
-              adminId,
-              email: user.email,
-              planKey: planKey,
-              status: "active",
-              type: "subscription",
-              cycleMonthKey: monthKey,
-              lastRenewedAt: new Date(),
-              addons: { creditsUnits, leadsUnits },
-              limits: {
-                creditMonthlyLimit: totalCredits,
-                leadExtraLeads: extraLeads,
-                leadTotalLimit:
-                  (PRICING[planKey]?.totalLeads || 0) + extraLeads,
-              },
-              usage: {
-                creditsUsed: 0,
-                leadsUsed:
-                  (
-                    await db.collection("leads").distinct("email", { adminId })
-                  ).length || 0,
-              },
-            },
-          },
-          { upsert: true }
+        // Use shared logic to update subscription
+        // This ensures consistency with verify route and handles upsert/history correctly
+        // And tracks subscription by adminId as requested
+        await processSubscriptionUpdate({
+          adminId,
+          email: user.email,
+          planId: planKey,
+          razorpay_subscription_id: subscriptionId,
+          razorpay_payment_id,
+          addonQuantity,
+          leadAddonQuantity,
+        });
+
+        return NextResponse.json({ status: "ok" });
+      } else {
+        console.warn(
+          `[Webhook] User not found for subscription: ${subscriptionId}`
         );
-
-        await db
-          .collection("users")
-          .updateOne({ _id: user._id }, { $set: { extraLeads: extraLeads } });
-
-        await resetMonthlyCredits(adminId, totalCredits);
-
-        console.log(
-          `[Webhook] Subscription charged for ${adminId}. Reset limit to ${totalCredits}, Extra Leads: ${extraLeads}`
-        );
+        return NextResponse.json({ status: "ignored" });
       }
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ status: "ignored" });
   } catch (error) {
-    console.error("[Webhook] Error processing webhook:", error);
-    return NextResponse.json({ error: "Webhook failed" }, { status: 500 });
+    console.error("Error handling webhook:", error);
+    return NextResponse.json(
+      { error: "Webhook handler failed" },
+      { status: 500 }
+    );
   } finally {
     await client.close();
   }

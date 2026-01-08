@@ -210,7 +210,6 @@ export async function resetMonthlyCredits(
         $setOnInsert: {
           createdAt: new Date(),
           status: "active",
-          type: "subscription",
         },
       },
       { upsert: true }
@@ -260,7 +259,6 @@ export async function deductCredits(
         $setOnInsert: {
           createdAt: new Date(),
           status: "active",
-          type: "subscription",
         },
       },
       { upsert: true, returnDocument: "after" }

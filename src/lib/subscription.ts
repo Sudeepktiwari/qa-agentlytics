@@ -83,7 +83,6 @@ export async function processSubscriptionUpdate({
           planKey: validatedPlanId,
           subscriptionId: razorpay_subscription_id,
           status: "active",
-          type: razorpay_subscription_id ? "subscription" : "one-time",
           razorpay_order_id,
           razorpay_payment_id,
           addons: {

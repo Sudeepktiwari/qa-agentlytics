@@ -163,7 +163,6 @@ export async function createOrUpdateLead(
           await db.collection("subscriptions").insertOne({
             adminId,
             status: "active",
-            type: "subscription",
             createdAt: new Date(),
             usage: { leadsUsed: 1 },
           });

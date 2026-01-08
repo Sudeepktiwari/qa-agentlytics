@@ -9,14 +9,14 @@ const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
 export async function POST(req: NextRequest) {
   const { action, email, password } = await req.json();
   console.log("🔐 Auth POST - Action:", action, "Email:", email);
-  
+
   if (!email || !password || !action) {
     console.log("❌ Auth POST - Missing fields");
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
   }
-  
+
   const users = await getUsersCollection();
-  
+
   if (action === "register") {
     console.log("📝 Auth POST - Registering new user:", email);
     const existing = await users.findOne({ email });
@@ -55,7 +55,6 @@ export async function POST(req: NextRequest) {
         email,
         planKey: "free",
         status: "active",
-        type: "free",
         createdAt: new Date(),
         cycleMonthKey: monthKey,
         addons: { creditsUnits: 0, leadsUnits: 0 },
@@ -70,7 +69,10 @@ export async function POST(req: NextRequest) {
         },
       });
     } catch (initErr) {
-      console.error("[Auth/Register] Failed to init free subscription defaults", initErr);
+      console.error(
+        "[Auth/Register] Failed to init free subscription defaults",
+        initErr
+      );
     }
     const res = NextResponse.json({ token, adminId });
     res.cookies.set("auth_token", token, {
@@ -80,8 +82,16 @@ export async function POST(req: NextRequest) {
       sameSite: "lax",
       maxAge: 60 * 60 * 24, // 1 day
     });
-    console.log("✅ Auth POST - User registered successfully:", email, "AdminID:", adminId);
-    console.log("🍪 Auth POST - Cookie set for token:", "***" + token.slice(-10));
+    console.log(
+      "✅ Auth POST - User registered successfully:",
+      email,
+      "AdminID:",
+      adminId
+    );
+    console.log(
+      "🍪 Auth POST - Cookie set for token:",
+      "***" + token.slice(-10)
+    );
     return res;
   } else if (action === "login") {
     console.log("🔑 Auth POST - Logging in user:", email);
@@ -112,8 +122,16 @@ export async function POST(req: NextRequest) {
       sameSite: "lax",
       maxAge: 60 * 60 * 24, // 1 day
     });
-    console.log("✅ Auth POST - User logged in successfully:", email, "AdminID:", adminId);
-    console.log("🍪 Auth POST - Cookie set for token:", "***" + token.slice(-10));
+    console.log(
+      "✅ Auth POST - User logged in successfully:",
+      email,
+      "AdminID:",
+      adminId
+    );
+    console.log(
+      "🍪 Auth POST - Cookie set for token:",
+      "***" + token.slice(-10)
+    );
     return res;
   } else {
     console.log("❌ Auth POST - Invalid action:", action);

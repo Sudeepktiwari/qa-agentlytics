@@ -51,13 +51,18 @@ export async function POST(req: NextRequest) {
         `[Subscription Verify] Processing for Email: ${email}, AuthAdminId: ${authAdminId}`
       );
 
+      // Escape regex special characters to prevent errors with emails containing +, ., etc.
+      const escapeRegExp = (string: string) => {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      };
+
       let user =
         (email &&
-          (await db
-            .collection("users")
-            .findOne({
-              email: { $regex: new RegExp(`^${email.trim()}$`, "i") },
-            }))) ||
+          (await db.collection("users").findOne({
+            email: {
+              $regex: new RegExp(`^${escapeRegExp(email.trim())}$`, "i"),
+            },
+          }))) ||
         (authAdminId &&
           (await db
             .collection("users")

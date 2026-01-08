@@ -190,6 +190,7 @@ export default function SubscriptionSection({ email }: { email?: string }) {
       const res = await fetch("/api/admin/subscription/create-subscription", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           planId: selectedPlanId,
           internalPlanId: plan.id, // Pass internal ID (growth, scale)
