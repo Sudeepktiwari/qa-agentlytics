@@ -224,6 +224,15 @@ export default function SubscriptionSection({ email }: { email?: string }) {
             if (verifyRes.ok) {
               alert("Subscription successful!");
               setCurrentPlan(planKey);
+              // Refresh status to reflect new limits/usage
+              try {
+                const statusRes = await fetch("/api/admin/subscription/status");
+                if (statusRes.ok) {
+                  const statusData = await statusRes.json();
+                  if (statusData.usage) setUsage(statusData.usage);
+                  if (statusData.plan) setCurrentPlan(statusData.plan);
+                }
+              } catch {}
               setPlanAddons((prev) => ({
                 ...prev,
                 [planKey]: { creditAmount: 0, leadAmount: 0 },

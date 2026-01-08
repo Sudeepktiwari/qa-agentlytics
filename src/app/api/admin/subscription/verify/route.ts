@@ -1,13 +1,14 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
-import { MongoClient } from "mongodb";
-import { resetMonthlyCredits } from "@/lib/credits";
 import { PRICING, CREDIT_ADDONS, LEAD_ADDONS } from "@/config/pricing";
+import { resetMonthlyCredits } from "@/lib/credits";
+import { verifyAdminAccessFromCookie } from "@/lib/auth";
+import { MongoClient, ObjectId } from "mongodb";
 
-const uri = process.env.MONGODB_URI || "";
+const uri = process.env.MONGODB_URI || "mongodb://localhost:27017";
 const client = new MongoClient(uri);
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const {
       razorpay_order_id,
@@ -40,12 +41,22 @@ export async function POST(req: Request) {
       await client.connect();
       const db = client.db("sample-chatbot");
 
-      // Defer subscription record creation until limits are computed
+      // Resolve admin via cookie as primary, email as fallback
+      let authAdminId: string | null = null;
+      try {
+        const auth = verifyAdminAccessFromCookie(req);
+        if (auth.isValid && auth.adminId) authAdminId = auth.adminId;
+      } catch {}
 
-      // Find user to get ID and update
-      const user = await db
-        .collection("users")
-        .findOne({ email: { $regex: new RegExp(`^${email}$`, "i") } });
+      let user =
+        (email &&
+          (await db
+            .collection("users")
+            .findOne({ email: { $regex: new RegExp(`^${email}$`, "i") } }))) ||
+        (authAdminId &&
+          (await db
+            .collection("users")
+            .findOne({ _id: new ObjectId(authAdminId) })));
 
       if (user) {
         // Calculate extra leads
@@ -116,14 +127,20 @@ export async function POST(req: Request) {
         console.log(
           `[Subscription Verify] Updated user ${email} to plan ${planId} with limit ${totalCredits} and extra leads ${extraLeads}. Matched: ${updateResult.matchedCount}, Modified: ${updateResult.modifiedCount}`
         );
+        return NextResponse.json({
+          success: true,
+          plan: planId,
+          limits: {
+            creditsLimit: totalCredits,
+            leadsLimit: (plan.totalLeads || 0) + extraLeads,
+          },
+        });
       } else {
-        console.warn(`[Subscription Verify] User not found for email ${email}`);
+        console.warn(
+          `[Subscription Verify] User not found (email: ${email}, adminId: ${authAdminId})`
+        );
+        return NextResponse.json({ error: "User not found" }, { status: 404 });
       }
-
-      return NextResponse.json({
-        success: true,
-        message: "Payment verified and subscription activated",
-      });
     } else {
       return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
     }
