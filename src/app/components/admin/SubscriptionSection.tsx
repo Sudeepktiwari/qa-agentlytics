@@ -387,6 +387,8 @@ export default function SubscriptionSection({ email }: { email?: string }) {
                 plan.addons.leads.amount
               : 0;
 
+          const totalPrice = plan.amount + creditAmount + leadAmount;
+
           return (
             <Card
               key={key}
@@ -396,7 +398,7 @@ export default function SubscriptionSection({ email }: { email?: string }) {
                 <div>
                   <h3 className="font-semibold text-lg">{plan.name}</h3>
                   <div className="text-3xl font-bold mt-2">
-                    {plan.price}
+                    ${totalPrice}
                     <span className="text-sm font-normal text-gray-500">
                       /mo
                     </span>
@@ -456,7 +458,7 @@ export default function SubscriptionSection({ email }: { email?: string }) {
                         className="w-full h-2 bg-blue-100 rounded-lg appearance-none cursor-pointer accent-blue-600"
                       />
                       <div className="text-right text-xs text-gray-500 mt-1">
-                        +${creditAmount}/mo
+                        + ${creditAmount}
                       </div>
                     </div>
                   )}
@@ -484,7 +486,7 @@ export default function SubscriptionSection({ email }: { email?: string }) {
                         className="w-full h-2 bg-green-100 rounded-lg appearance-none cursor-pointer accent-green-600"
                       />
                       <div className="text-right text-xs text-gray-500 mt-1">
-                        +${leadAmount}/mo
+                        + ${leadAmount}
                       </div>
                     </div>
                   )}
