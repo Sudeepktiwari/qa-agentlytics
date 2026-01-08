@@ -3,9 +3,7 @@ import crypto from "crypto";
 import { verifyAdminAccessFromCookie } from "@/lib/auth";
 import { MongoClient, ObjectId } from "mongodb";
 import { processSubscriptionUpdate } from "@/lib/subscription";
-
-const uri = process.env.MONGODB_URI || "mongodb://localhost:27017";
-const client = new MongoClient(uri);
+import { getDb } from "@/lib/mongo";
 
 export async function POST(req: NextRequest) {
   const logPrefix = `[Subscription Verify ${Date.now()}]`;
@@ -73,8 +71,7 @@ export async function POST(req: NextRequest) {
     const isAuthentic = expectedSignature === razorpay_signature;
 
     if (isAuthentic) {
-      await client.connect();
-      const db = client.db("sample-chatbot");
+      const db = await getDb();
 
       // Resolve admin via cookie as primary, email as fallback
       let authAdminId: string | null = null;
@@ -137,7 +134,5 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error(`${logPrefix} Error verifying payment:`, error);
     return NextResponse.json({ error: "Verification failed" }, { status: 500 });
-  } finally {
-    await client.close();
   }
 }

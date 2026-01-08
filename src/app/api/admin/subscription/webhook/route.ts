@@ -3,9 +3,7 @@ import crypto from "crypto";
 import { MongoClient, ObjectId } from "mongodb";
 import { processSubscriptionUpdate } from "@/lib/subscription";
 import { PRICING } from "@/config/pricing";
-
-const uri = process.env.MONGODB_URI || "";
-const client = new MongoClient(uri);
+import { getDb } from "@/lib/mongo";
 
 export async function POST(req: Request) {
   try {
@@ -38,8 +36,7 @@ export async function POST(req: Request) {
       const notes = subscriptionEntity.notes || {};
       const razorpay_payment_id = payload.payload.payment?.entity?.id;
 
-      await client.connect();
-      const db = client.db("sample-chatbot");
+      const db = await getDb();
 
       // Robust User Lookup:
       // 1. Try resolving via adminId from notes (immutable ID)
@@ -105,7 +102,5 @@ export async function POST(req: Request) {
       { error: "Webhook handler failed" },
       { status: 500 }
     );
-  } finally {
-    await client.close();
   }
 }

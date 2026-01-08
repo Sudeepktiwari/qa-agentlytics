@@ -1,20 +1,6 @@
 import { MongoClient, ObjectId } from "mongodb";
 import { PRICING, CREDIT_ADDONS, LEAD_ADDONS } from "@/config/pricing";
-
-// Connect to MongoDB
-const uri = process.env.MONGODB_URI || "mongodb://localhost:27017";
-const client = new MongoClient(uri);
-
-let dbInstance: any = null;
-
-async function getDb() {
-  if (dbInstance) return dbInstance;
-  if (!client.connect) {
-    await client.connect();
-  }
-  dbInstance = client.db("sample-chatbot");
-  return dbInstance;
-}
+import { getDb } from "@/lib/mongo";
 
 interface SubscriptionUpdateParams {
   adminId: string;
@@ -43,15 +29,19 @@ export async function processSubscriptionUpdate({
   leadAddonQuantity = 0,
 }: SubscriptionUpdateParams) {
   const logPrefix = `[ProcessSubscription ${Date.now()}]`;
-  console.log(`${logPrefix} Starting update for Admin: ${adminId}, Email: ${email}`);
-  
+  console.log(
+    `${logPrefix} Starting update for Admin: ${adminId}, Email: ${email}`
+  );
+
   try {
     const db = await getDb();
 
     // 1. Validate Plan
     const plan = PRICING[planId as keyof typeof PRICING] || PRICING.free;
     const validatedPlanId = plan.id;
-    console.log(`${logPrefix} Validated Plan: ${validatedPlanId} (Requested: ${planId})`);
+    console.log(
+      `${logPrefix} Validated Plan: ${validatedPlanId} (Requested: ${planId})`
+    );
 
     // 2. Calculate Limits
     // Use plan-specific add-on values
@@ -67,8 +57,12 @@ export async function processSubscriptionUpdate({
     if (addonQuantity > 0) {
       totalCredits += addonQuantity * creditUnit;
     }
-    
-    console.log(`${logPrefix} Limits Calculated: Credits=${totalCredits}, ExtraLeads=${extraLeads}, TotalLeads=${(plan.totalLeads || 0) + extraLeads}`);
+
+    console.log(
+      `${logPrefix} Limits Calculated: Credits=${totalCredits}, ExtraLeads=${extraLeads}, TotalLeads=${
+        (plan.totalLeads || 0) + extraLeads
+      }`
+    );
 
     const now = new Date();
     const monthKey = `${now.getFullYear()}-${now.getMonth() + 1}`;
@@ -77,7 +71,7 @@ export async function processSubscriptionUpdate({
     const currentLeads =
       (await db.collection("leads").distinct("email", { adminId: adminId }))
         .length || 0;
-    
+
     console.log(`${logPrefix} Current Leads Usage: ${currentLeads}`);
 
     // 4. Update/Create Subscription for Current Month
@@ -117,8 +111,11 @@ export async function processSubscriptionUpdate({
       },
       { upsert: true }
     );
-    
-    console.log(`${logPrefix} Subscription Update Result:`, JSON.stringify(updateResult));
+
+    console.log(
+      `${logPrefix} Subscription Update Result:`,
+      JSON.stringify(updateResult)
+    );
 
     // 5. Update User Profile (Legacy/Redundant but good for quick lookups)
     const userUpdateResult = await db.collection("users").updateOne(
@@ -132,8 +129,11 @@ export async function processSubscriptionUpdate({
         },
       }
     );
-    
-    console.log(`${logPrefix} User Update Result:`, JSON.stringify(userUpdateResult));
+
+    console.log(
+      `${logPrefix} User Update Result:`,
+      JSON.stringify(userUpdateResult)
+    );
 
     console.log(
       `${logPrefix} SUCCESS for ${email} (Admin: ${adminId}). Plan: ${validatedPlanId}, RazorpayPlan: ${razorpay_plan_id}`

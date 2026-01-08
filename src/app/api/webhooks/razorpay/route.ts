@@ -3,20 +3,7 @@ import crypto from "crypto";
 import { MongoClient, ObjectId } from "mongodb";
 import { processSubscriptionUpdate } from "@/lib/subscription";
 import { PRICING } from "@/config/pricing";
-
-// Connect to MongoDB
-const uri = process.env.MONGODB_URI || "mongodb://localhost:27017";
-const client = new MongoClient(uri);
-
-let dbInstance: any = null;
-async function getDb() {
-  if (dbInstance) return dbInstance;
-  if (!client.connect) {
-    await client.connect();
-  }
-  dbInstance = client.db("sample-chatbot");
-  return dbInstance;
-}
+import { getDb } from "@/lib/mongo";
 
 export async function POST(req: NextRequest) {
   const logPrefix = `[Razorpay Webhook ${Date.now()}]`;
