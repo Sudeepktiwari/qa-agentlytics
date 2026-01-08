@@ -47,11 +47,17 @@ export async function POST(req: NextRequest) {
         if (auth.isValid && auth.adminId) authAdminId = auth.adminId;
       } catch {}
 
+      console.log(
+        `[Subscription Verify] Processing for Email: ${email}, AuthAdminId: ${authAdminId}`
+      );
+
       let user =
         (email &&
           (await db
             .collection("users")
-            .findOne({ email: { $regex: new RegExp(`^${email}$`, "i") } }))) ||
+            .findOne({
+              email: { $regex: new RegExp(`^${email.trim()}$`, "i") },
+            }))) ||
         (authAdminId &&
           (await db
             .collection("users")

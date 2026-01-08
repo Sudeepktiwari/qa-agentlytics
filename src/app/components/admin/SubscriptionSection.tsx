@@ -232,6 +232,7 @@ export default function SubscriptionSection({ email }: { email?: string }) {
             const verifyRes = await fetch("/api/admin/subscription/verify", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
+              credentials: "include",
               body: JSON.stringify({
                 ...response,
                 planId: plan.id,
