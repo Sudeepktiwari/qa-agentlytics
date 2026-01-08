@@ -40,19 +40,7 @@ export async function POST(req: Request) {
       await client.connect();
       const db = client.db("sample-chatbot");
 
-      // Save subscription details
-      await db.collection("subscriptions").insertOne({
-        email,
-        planId,
-        addonQuantity,
-        leadAddonQuantity,
-        razorpay_order_id,
-        razorpay_payment_id,
-        razorpay_subscription_id,
-        status: "active",
-        type: razorpay_subscription_id ? "subscription" : "one-time",
-        createdAt: new Date(),
-      });
+      // Defer subscription record creation until limits are computed
 
       // Find user to get ID and update
       const user = await db
@@ -86,7 +74,43 @@ export async function POST(req: Request) {
           totalCredits += addonQuantity * CREDIT_ADDONS.UNIT_CREDITS;
         }
 
-        // Reset usage and set new limit immediately
+        const now = new Date();
+        const monthKey = `${now.getFullYear()}-${now.getMonth() + 1}`;
+
+        // Compute current lifetime leads used (unique emails)
+        const currentLeads =
+          (
+            await db
+              .collection("leads")
+              .distinct("email", { adminId: user._id.toString() })
+          ).length || 0;
+
+        await db.collection("subscriptions").insertOne({
+          adminId: user._id.toString(),
+          email,
+          planKey: planId,
+          subscriptionId: razorpay_subscription_id,
+          status: "active",
+          type: razorpay_subscription_id ? "subscription" : "one-time",
+          razorpay_order_id,
+          razorpay_payment_id,
+          createdAt: new Date(),
+          cycleMonthKey: monthKey,
+          addons: {
+            creditsUnits: addonQuantity || 0,
+            leadsUnits: leadAddonQuantity || 0,
+          },
+          limits: {
+            creditMonthlyLimit: totalCredits,
+            leadExtraLeads: extraLeads,
+            leadTotalLimit: (plan.totalLeads || 0) + extraLeads,
+          },
+          usage: {
+            creditsUsed: 0,
+            leadsUsed: currentLeads,
+          },
+        });
+
         await resetMonthlyCredits(user._id.toString(), totalCredits);
 
         console.log(

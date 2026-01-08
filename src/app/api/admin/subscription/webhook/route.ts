@@ -78,12 +78,49 @@ export async function POST(req: Request) {
 
         const totalCredits = baseCredits + addonCredits;
 
-        // Update User's Extra Leads (Sync)
+        const now = new Date();
+        const monthKey = `${now.getFullYear()}-${now.getMonth() + 1}`;
+        const creditsUnits = notes.addonQuantity
+          ? parseInt(notes.addonQuantity, 10)
+          : 0;
+        const leadsUnits = notes.leadAddonQuantity
+          ? parseInt(notes.leadAddonQuantity, 10)
+          : 0;
+
+        await db.collection("subscriptions").updateOne(
+          { subscriptionId },
+          {
+            $set: {
+              adminId,
+              email: user.email,
+              planKey: userPlanId,
+              status: "active",
+              type: "subscription",
+              cycleMonthKey: monthKey,
+              lastRenewedAt: new Date(),
+              addons: { creditsUnits, leadsUnits },
+              limits: {
+                creditMonthlyLimit: totalCredits,
+                leadExtraLeads: extraLeads,
+                leadTotalLimit:
+                  (PRICING[userPlanId]?.totalLeads || 0) + extraLeads,
+              },
+              usage: {
+                creditsUsed: 0,
+                leadsUsed:
+                  (
+                    await db.collection("leads").distinct("email", { adminId })
+                  ).length || 0,
+              },
+            },
+          },
+          { upsert: true }
+        );
+
         await db
           .collection("users")
           .updateOne({ _id: user._id }, { $set: { extraLeads: extraLeads } });
 
-        // Reset credits and set the new limit for this month
         await resetMonthlyCredits(adminId, totalCredits);
 
         console.log(

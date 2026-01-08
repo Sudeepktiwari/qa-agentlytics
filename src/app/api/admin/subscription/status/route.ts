@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminAccessFromCookie } from "@/lib/auth";
-import { checkLeadLimit } from "@/lib/leads";
-import { checkCreditLimit } from "@/lib/credits";
+import { getDb } from "@/lib/mongo";
 import { rateLimit } from "@/lib/rateLimit";
 
 export const dynamic = "force-dynamic";
@@ -20,23 +19,39 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const [leadStatus, creditStatus] = await Promise.all([
-      checkLeadLimit(auth.adminId),
-      checkCreditLimit(auth.adminId),
-    ]);
+    const db = await getDb();
+    const now = new Date();
+    const monthKey = `${now.getFullYear()}-${now.getMonth() + 1}`;
 
-    const { limitReached, currentLeads, limit, plan: leadPlan } = leadStatus;
+    // Read current cycle subscription record
+    const subs = await db.collection("subscriptions").findOne({
+      adminId: auth.adminId,
+      cycleMonthKey: monthKey,
+    });
 
-    const { creditsUsed, limit: creditLimit } = creditStatus;
+    // Fallback to most recent subscription if current cycle missing
+    const subscription =
+      subs ||
+      (await db
+        .collection("subscriptions")
+        .find({ adminId: auth.adminId })
+        .sort({ createdAt: -1 })
+        .limit(1)
+        .toArray()
+        .then((arr) => arr[0]));
 
-    // Use the plan from leadStatus or creditStatus (should be consistent)
-    const plan = leadPlan;
+    const plan = subscription?.planKey || "free";
+    const creditLimit = subscription?.limits?.creditMonthlyLimit || 0;
+    const creditsUsed = subscription?.usage?.creditsUsed || 0;
+    const leadsLimit = subscription?.limits?.leadTotalLimit || 0;
+    const currentLeads = subscription?.usage?.leadsUsed || 0;
+    const limitReached = leadsLimit > 0 ? currentLeads >= leadsLimit : false;
 
     return NextResponse.json({
       plan,
       usage: {
         leads: currentLeads,
-        leadsLimit: limit,
+        leadsLimit: leadsLimit,
         limitReached,
         credits: creditsUsed,
         creditsLimit: creditLimit,

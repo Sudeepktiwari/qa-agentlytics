@@ -34,30 +34,25 @@ export async function checkCreditLimit(adminId: string): Promise<{
   try {
     const db = await getDb();
 
-    // 1. Get admin's plan
-    let query: any = { apiKey: adminId };
-    if (ObjectId.isValid(adminId)) {
-      query = { $or: [{ _id: new ObjectId(adminId) }, { apiKey: adminId }] };
-    }
-
-    const user = await db.collection("users").findOne(query);
-
-    const planId = (user?.subscriptionPlan || "free") as keyof typeof PRICING;
-    const plan = PRICING[planId] || PRICING.free;
-
-    // 2. Get current month's usage & Custom Limit (if any)
     const now = new Date();
-    const monthKey = `${now.getFullYear()}-${now.getMonth() + 1}`; // e.g. "2024-10"
-
-    const usageDoc = await db.collection("credit_usage").findOne({
+    const monthKey = `${now.getFullYear()}-${now.getMonth() + 1}`;
+    const subs = await db.collection("subscriptions").findOne({
       adminId,
-      monthKey,
+      cycleMonthKey: monthKey,
     });
+    const subscription =
+      subs ||
+      (await db
+        .collection("subscriptions")
+        .find({ adminId })
+        .sort({ createdAt: -1 })
+        .limit(1)
+        .toArray()
+        .then((arr) => arr[0]));
 
-    const creditsUsed = usageDoc?.totalCredits || 0;
-
-    // Check if a custom limit (base + add-ons) was set for this month via webhook/renewal
-    const effectiveLimit = usageDoc?.monthlyLimit ?? plan.creditsPerMonth;
+    const planId = subscription?.planKey || "free";
+    const creditsUsed = subscription?.usage?.creditsUsed || 0;
+    const effectiveLimit = subscription?.limits?.creditMonthlyLimit || 0;
 
     return {
       limitReached: creditsUsed >= effectiveLimit,
@@ -199,18 +194,26 @@ export async function resetMonthlyCredits(
     const monthKey = `${now.getFullYear()}-${now.getMonth() + 1}`;
 
     const update: any = {
-      $set: { totalCredits: 0 },
+      $set: {
+        usage: {
+          creditsUsed: 0,
+        },
+      },
     };
-
     if (customLimit !== undefined) {
-      update.$set.monthlyLimit = customLimit;
+      update.$set["limits.creditMonthlyLimit"] = customLimit;
     }
-
-    // Reset usage to 0 for the current month
-    await db.collection("credit_usage").updateOne(
-      { adminId, monthKey },
-      update,
-      { upsert: true } // Create if not exists (e.g. first charge of month)
+    await db.collection("subscriptions").updateOne(
+      { adminId, cycleMonthKey: monthKey },
+      {
+        ...update,
+        $setOnInsert: {
+          createdAt: new Date(),
+          status: "active",
+          type: "subscription",
+        },
+      },
+      { upsert: true }
     );
 
     console.log(
@@ -250,20 +253,21 @@ export async function deductCredits(
     const now = new Date();
     const monthKey = `${now.getFullYear()}-${now.getMonth() + 1}`; // e.g. "2024-10"
 
-    // Upsert usage document
-    const result = await db.collection("credit_usage").findOneAndUpdate(
-      { adminId, monthKey },
+    const res = await db.collection("subscriptions").findOneAndUpdate(
+      { adminId, cycleMonthKey: monthKey },
       {
-        $inc: { totalCredits: cost, requestCount: 1 },
+        $inc: { "usage.creditsUsed": cost },
         $setOnInsert: {
           createdAt: new Date(),
-          updatedAt: new Date(),
+          status: "active",
+          type: "subscription",
         },
       },
       { upsert: true, returnDocument: "after" }
     );
 
-    const newBalance = result?.totalCredits || cost;
+    const newBalance =
+      (res?.value?.usage?.creditsUsed as number) ?? (cost as number);
 
     return {
       success: true,

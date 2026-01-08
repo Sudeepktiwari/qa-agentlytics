@@ -1,6 +1,5 @@
 import { getDb } from "@/lib/mongo";
 import { ObjectId } from "mongodb";
-import { PRICING } from "@/config/pricing";
 
 // Check if admin has reached lead limit
 export async function checkLeadLimit(adminId: string): Promise<{
@@ -12,25 +11,18 @@ export async function checkLeadLimit(adminId: string): Promise<{
   try {
     const db = await getDb();
 
-    // 1. Get admin's plan
-    const user = await db.collection("users").findOne({
-      $or: [
-        { _id: new ObjectId(adminId) },
-        { apiKey: adminId }, // Fallback if adminId is actually apiKey
-      ],
-    });
+    // Read from subscriptions only
+    const subsLatest = await db
+      .collection("subscriptions")
+      .find({ adminId })
+      .sort({ createdAt: -1 })
+      .limit(1)
+      .toArray()
+      .then((arr) => arr[0]);
 
-    const planId = (user?.subscriptionPlan || "free") as keyof typeof PRICING;
-    const plan = PRICING[planId] || PRICING.free;
-
-    // Add extra leads from add-ons if available
-    const extraLeads = (user?.extraLeads as number) || 0;
-    const limit = plan.totalLeads + extraLeads;
-
-    // 2. Count unique leads by email
-    const currentLeads = (
-      await db.collection("leads").distinct("email", { adminId })
-    ).length;
+    const planId = subsLatest?.planKey || "free";
+    const limit = subsLatest?.limits?.leadTotalLimit || 0;
+    const currentLeads = subsLatest?.usage?.leadsUsed || 0;
 
     return {
       limitReached: currentLeads >= limit,
@@ -111,7 +103,7 @@ export async function createOrUpdateLead(
       console.log(`[LeadGen] Updated existing lead: ${email}`);
       return existingLead._id;
     } else {
-      const { limitReached, limit, plan } = await checkLeadLimit(adminId);
+      const { limitReached } = await checkLeadLimit(adminId);
 
       // Create new lead
       const newLead = {
@@ -150,6 +142,38 @@ export async function createOrUpdateLead(
       console.log(
         `[LeadGen] Created new lead: ${email} with ID: ${result.insertedId}`
       );
+
+      try {
+        const subsLatest = await db
+          .collection("subscriptions")
+          .find({ adminId })
+          .sort({ createdAt: -1 })
+          .limit(1)
+          .toArray()
+          .then((arr) => arr[0]);
+        if (subsLatest?._id) {
+          await db.collection("subscriptions").updateOne(
+            { _id: subsLatest._id },
+            {
+              $inc: { "usage.leadsUsed": 1 },
+              $setOnInsert: { createdAt: new Date() },
+            }
+          );
+        } else {
+          await db.collection("subscriptions").insertOne({
+            adminId,
+            status: "active",
+            type: "subscription",
+            createdAt: new Date(),
+            usage: { leadsUsed: 1 },
+          });
+        }
+      } catch (incErr) {
+        console.error(
+          "[LeadGen] Failed to increment leadsUsed in subscriptions",
+          incErr
+        );
+      }
       return result.insertedId;
     }
   } catch (error) {

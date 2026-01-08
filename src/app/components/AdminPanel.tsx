@@ -154,6 +154,7 @@ const AdminPanel: React.FC = () => {
       leadsLimit: number;
       limitReached: boolean;
       credits: number;
+      creditsLimit: number;
     };
   }>(null);
 
@@ -879,12 +880,9 @@ const AdminPanel: React.FC = () => {
                     </p>
                     <h3 className="text-2xl font-bold text-slate-800">
                       {subscriptionUsage
-                        ? `${subscriptionUsage.usage.credits.toLocaleString()} / ${
-                            (subscriptionUsage.plan &&
-                              (PRICING as any)[subscriptionUsage.plan]
-                                ?.creditsPerMonth) ||
-                            0
-                          }`
+                        ? `${subscriptionUsage.usage.credits.toLocaleString()} / ${(
+                            subscriptionUsage.usage.creditsLimit || 0
+                          ).toLocaleString()}`
                         : "-"}
                     </h3>
                   </div>
