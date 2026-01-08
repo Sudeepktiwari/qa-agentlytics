@@ -11,6 +11,7 @@ export async function POST(req: Request) {
   try {
     const {
       planId,
+      internalPlanId, // The friendly ID (growth, scale)
       total_count = 120,
       quantity = 1,
       addonQuantity = 0,
@@ -38,6 +39,7 @@ export async function POST(req: Request) {
       quantity,
       customer_notify: 1,
       notes: {
+        planId: internalPlanId, // Store internal ID for webhook
         addonQuantity: addonQuantity, // Credit Add-on
         leadAddonQuantity: leadAddonQuantity, // Lead Add-on
       },

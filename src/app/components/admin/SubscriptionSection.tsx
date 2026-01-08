@@ -172,6 +172,7 @@ export default function SubscriptionSection({ email }: { email?: string }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           planId: plan.razorpayPlanId,
+          internalPlanId: plan.id, // Pass internal ID (growth, scale)
           addonQuantity: addonQuantity,
           leadAddonQuantity: leadAddonQuantity,
         }),

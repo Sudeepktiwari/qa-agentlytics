@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
-import { PRICING, CREDIT_ADDONS, LEAD_ADDONS } from "@/config/pricing";
 import { verifyAdminAccessFromCookie } from "@/lib/auth";
 import { MongoClient, ObjectId } from "mongodb";
+import { processSubscriptionUpdate } from "@/lib/subscription";
 
 const uri = process.env.MONGODB_URI || "mongodb://localhost:27017";
 const client = new MongoClient(uri);
@@ -58,93 +58,19 @@ export async function POST(req: NextRequest) {
             .findOne({ _id: new ObjectId(authAdminId) })));
 
       if (user) {
-        // Calculate extra leads
-        let extraLeads = 0;
-        if (leadAddonQuantity && typeof leadAddonQuantity === "number") {
-          extraLeads = leadAddonQuantity * LEAD_ADDONS.UNIT_LEADS;
-        }
-
-        // Calculate total credits (Plan Base + Add-ons)
-        const plan = PRICING[planId as keyof typeof PRICING] || PRICING.free;
-        const validatedPlanId = plan.id;
-
-        let totalCredits = plan.creditsPerMonth;
-        if (addonQuantity && typeof addonQuantity === "number") {
-          totalCredits += addonQuantity * CREDIT_ADDONS.UNIT_CREDITS;
-        }
-
-        const now = new Date();
-        const monthKey = `${now.getFullYear()}-${now.getMonth() + 1}`;
-
-        // Compute current lifetime leads used (unique emails)
-        const currentLeads =
-          (
-            await db
-              .collection("leads")
-              .distinct("email", { adminId: user._id.toString() })
-          ).length || 0;
-
-        // Upsert subscription for the current month
-        await db.collection("subscriptions").updateOne(
-          {
-            adminId: user._id.toString(),
-            cycleMonthKey: monthKey,
-          },
-          {
-            $set: {
-              email: user.email || email,
-              planKey: validatedPlanId,
-              subscriptionId: razorpay_subscription_id,
-              status: "active",
-              type: razorpay_subscription_id ? "subscription" : "one-time",
-              razorpay_order_id,
-              razorpay_payment_id,
-              addons: {
-                creditsUnits: addonQuantity || 0,
-                leadsUnits: leadAddonQuantity || 0,
-              },
-              limits: {
-                creditMonthlyLimit: totalCredits,
-                leadExtraLeads: extraLeads,
-                leadTotalLimit: (plan.totalLeads || 0) + extraLeads,
-              },
-              usage: {
-                creditsUsed: 0, // Reset credits on upgrade/new sub
-                leadsUsed: currentLeads,
-              },
-              updatedAt: new Date(),
-            },
-            $setOnInsert: {
-              createdAt: new Date(),
-            },
-          },
-          { upsert: true }
-        );
-
-        // Update user profile (legacy support)
-        await db.collection("users").updateOne(
-          { _id: user._id },
-          {
-            $set: {
-              subscriptionPlan: validatedPlanId,
-              subscriptionStatus: "active",
-              subscriptionId: razorpay_subscription_id,
-              extraLeads: extraLeads,
-            },
-          }
-        );
-
-        console.log(
-          `[Subscription Verify] Updated user ${email} to plan ${validatedPlanId} with limit ${totalCredits} and extra leads ${extraLeads}.`
-        );
-        return NextResponse.json({
-          success: true,
-          plan: validatedPlanId,
-          limits: {
-            creditsLimit: totalCredits,
-            leadsLimit: (plan.totalLeads || 0) + extraLeads,
-          },
+        // Use shared logic to update subscription
+        const result = await processSubscriptionUpdate({
+          adminId: user._id.toString(),
+          email: user.email || email,
+          planId,
+          razorpay_subscription_id,
+          razorpay_order_id,
+          razorpay_payment_id,
+          addonQuantity: Number(addonQuantity) || 0,
+          leadAddonQuantity: Number(leadAddonQuantity) || 0,
         });
+
+        return NextResponse.json(result);
       } else {
         console.warn(
           `[Subscription Verify] User not found (email: ${email}, adminId: ${authAdminId})`
