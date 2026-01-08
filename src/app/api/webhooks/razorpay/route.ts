@@ -19,13 +19,16 @@ async function getDb() {
 }
 
 export async function POST(req: NextRequest) {
+  const logPrefix = `[Razorpay Webhook ${Date.now()}]`;
+  console.log(`${logPrefix} Received request`);
+
   try {
     const rawBody = await req.text();
     const signature = req.headers.get("x-razorpay-signature");
     const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
 
     if (!webhookSecret) {
-      console.error("[Webhook] RAZORPAY_WEBHOOK_SECRET is not set");
+      console.error(`${logPrefix} RAZORPAY_WEBHOOK_SECRET is not set`);
       return NextResponse.json(
         { error: "Configuration error" },
         { status: 500 }
@@ -33,6 +36,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (!signature) {
+      console.error(`${logPrefix} Missing signature`);
       return NextResponse.json({ error: "Missing signature" }, { status: 400 });
     }
 
@@ -43,12 +47,17 @@ export async function POST(req: NextRequest) {
       .digest("hex");
 
     if (signature !== expectedSignature) {
-      console.error("[Webhook] Invalid signature");
+      console.error(
+        `${logPrefix} Invalid signature. Exp: ${expectedSignature}, Rec: ${signature}`
+      );
       return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
     }
 
     const event = JSON.parse(rawBody);
-    console.log(`[Webhook] Received event: ${event.event}`);
+    console.log(
+      `${logPrefix} Event: ${event.event}`,
+      JSON.stringify(event.payload)
+    );
 
     const db = await getDb();
 
@@ -65,6 +74,12 @@ export async function POST(req: NextRequest) {
       const notes = subscription.notes || {};
       const planId = subscription.plan_id; // Razorpay Plan ID
 
+      console.log(`${logPrefix} Processing Subscription:`, {
+        razorpay_subscription_id,
+        planId,
+        notes,
+      });
+
       // We need to map Razorpay Plan ID back to our internal Plan ID
       // Or rely on notes if we stored it there.
       // But typically we can find the user by subscription_id or email
@@ -77,9 +92,11 @@ export async function POST(req: NextRequest) {
         ],
       });
 
+      console.log(`${logPrefix} User Found:`, user ? user._id : "NO");
+
       if (!user) {
         console.error(
-          `[Webhook] User not found for subscription ${razorpay_subscription_id}`
+          `${logPrefix} User not found for subscription ${razorpay_subscription_id}`
         );
         return NextResponse.json({ error: "User not found" }, { status: 404 });
       }
@@ -99,8 +116,17 @@ export async function POST(req: NextRequest) {
         internalPlanId = notes.planId;
       }
 
+      // Also try to find variant ID from PRICING if possible, or iterate
+      // But we already have the variant ID in 'planId' variable.
+
       const addonQuantity = Number(notes.addonQuantity) || 0;
       const leadAddonQuantity = Number(notes.leadAddonQuantity) || 0;
+
+      console.log(`${logPrefix} Update Params:`, {
+        internalPlanId,
+        addonQuantity,
+        leadAddonQuantity,
+      });
 
       await processSubscriptionUpdate({
         adminId: user._id.toString(),
@@ -113,36 +139,14 @@ export async function POST(req: NextRequest) {
         leadAddonQuantity,
       });
 
-      console.log(
-        `[Webhook] Successfully processed subscription ${event.event}`
-      );
-    }
-    // Handle Order Paid (One-time) if needed
-    else if (event.event === "order.paid") {
-      // Similar logic for one-time payments
-      const order = event.payload.order.entity;
-      const payment = event.payload.payment.entity;
-      const notes = order.notes || {};
-
-      const user = await db
-        .collection("users")
-        .findOne({ email: payment.email });
-      if (user && notes.planId) {
-        await processSubscriptionUpdate({
-          adminId: user._id.toString(),
-          email: user.email,
-          planId: notes.planId,
-          razorpay_order_id: order.id,
-          razorpay_payment_id: payment.id,
-          addonQuantity: Number(notes.addonQuantity) || 0,
-          leadAddonQuantity: Number(notes.leadAddonQuantity) || 0,
-        });
-      }
+      console.log(`${logPrefix} Update Success`);
+    } else {
+      console.log(`${logPrefix} Unhandled event type`);
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ status: "ok" });
   } catch (error) {
-    console.error("[Webhook] Error processing event:", error);
+    console.error(`[Razorpay Webhook] Error:`, error);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 }

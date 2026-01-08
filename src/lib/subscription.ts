@@ -42,12 +42,16 @@ export async function processSubscriptionUpdate({
   addonQuantity = 0,
   leadAddonQuantity = 0,
 }: SubscriptionUpdateParams) {
+  const logPrefix = `[ProcessSubscription ${Date.now()}]`;
+  console.log(`${logPrefix} Starting update for Admin: ${adminId}, Email: ${email}`);
+  
   try {
     const db = await getDb();
 
     // 1. Validate Plan
     const plan = PRICING[planId as keyof typeof PRICING] || PRICING.free;
     const validatedPlanId = plan.id;
+    console.log(`${logPrefix} Validated Plan: ${validatedPlanId} (Requested: ${planId})`);
 
     // 2. Calculate Limits
     // Use plan-specific add-on values
@@ -63,6 +67,8 @@ export async function processSubscriptionUpdate({
     if (addonQuantity > 0) {
       totalCredits += addonQuantity * creditUnit;
     }
+    
+    console.log(`${logPrefix} Limits Calculated: Credits=${totalCredits}, ExtraLeads=${extraLeads}, TotalLeads=${(plan.totalLeads || 0) + extraLeads}`);
 
     const now = new Date();
     const monthKey = `${now.getFullYear()}-${now.getMonth() + 1}`;
@@ -71,6 +77,8 @@ export async function processSubscriptionUpdate({
     const currentLeads =
       (await db.collection("leads").distinct("email", { adminId: adminId }))
         .length || 0;
+    
+    console.log(`${logPrefix} Current Leads Usage: ${currentLeads}`);
 
     // 4. Update/Create Subscription for Current Month
     // We use updateOne with upsert to ensure we don't create duplicates for the same month
@@ -109,9 +117,11 @@ export async function processSubscriptionUpdate({
       },
       { upsert: true }
     );
+    
+    console.log(`${logPrefix} Subscription Update Result:`, JSON.stringify(updateResult));
 
     // 5. Update User Profile (Legacy/Redundant but good for quick lookups)
-    await db.collection("users").updateOne(
+    const userUpdateResult = await db.collection("users").updateOne(
       { _id: new ObjectId(adminId) },
       {
         $set: {
@@ -122,11 +132,11 @@ export async function processSubscriptionUpdate({
         },
       }
     );
+    
+    console.log(`${logPrefix} User Update Result:`, JSON.stringify(userUpdateResult));
 
     console.log(
-      `[Subscription] Processed update for ${email} (Admin: ${adminId}). Plan: ${validatedPlanId}, RazorpayPlan: ${razorpay_plan_id}, Credits: ${totalCredits}, Leads: ${
-        (plan.totalLeads || 0) + extraLeads
-      }`
+      `${logPrefix} SUCCESS for ${email} (Admin: ${adminId}). Plan: ${validatedPlanId}, RazorpayPlan: ${razorpay_plan_id}`
     );
 
     return {
@@ -138,7 +148,7 @@ export async function processSubscriptionUpdate({
       },
     };
   } catch (error) {
-    console.error("[Subscription] Error processing update:", error);
+    console.error(`${logPrefix} Error processing update:`, error);
     throw error;
   }
 }
