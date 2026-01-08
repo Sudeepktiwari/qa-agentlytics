@@ -242,7 +242,7 @@ export async function PATCH(request: NextRequest) {
     const adminIdInput =
       typeof body.adminId === "string" ? body.adminId.trim() : "";
     const emailInput = typeof body.email === "string" ? body.email.trim() : "";
-    const planKeyInput =
+    const planKeyInputRaw =
       typeof body.planKey === "string" ? body.planKey.trim() : "";
     const creditsUnits =
       typeof body.creditsUnits === "number" && body.creditsUnits >= 0
@@ -253,9 +253,6 @@ export async function PATCH(request: NextRequest) {
         ? body.leadsUnits
         : 0;
 
-    if (!planKeyInput || !(planKeyInput in PRICING)) {
-      return NextResponse.json({ error: "Invalid planKey" }, { status: 400 });
-    }
     if (!adminIdInput && !emailInput) {
       return NextResponse.json(
         { error: "adminId or email required" },
@@ -288,7 +285,19 @@ export async function PATCH(request: NextRequest) {
     const adminId = String(user._id);
     const email = user.email || emailInput || "";
 
-    const plan = PRICING[planKeyInput as keyof typeof PRICING];
+    // Resolve target plan: if planKey not provided, use latest subscription or free
+    let selectedPlanKey = planKeyInputRaw as keyof typeof PRICING;
+    if (!selectedPlanKey || !(selectedPlanKey in PRICING)) {
+      const latestSub = await db
+        .collection("subscriptions")
+        .find({ adminId })
+        .sort({ createdAt: -1 })
+        .limit(1)
+        .toArray()
+        .then((arr) => arr[0]);
+      selectedPlanKey = (latestSub?.planKey || "free") as keyof typeof PRICING;
+    }
+    const plan = PRICING[selectedPlanKey];
     const addonCredits = creditsUnits * CREDIT_ADDONS.UNIT_CREDITS;
     const extraLeads = leadsUnits * LEAD_ADDONS.UNIT_LEADS;
     const totalCredits = plan.creditsPerMonth + addonCredits;
@@ -306,7 +315,7 @@ export async function PATCH(request: NextRequest) {
         $set: {
           adminId,
           email,
-          planKey: planKeyInput,
+          planKey: selectedPlanKey,
           status: "active",
           type: "subscription",
           createdAt: new Date(),
@@ -330,7 +339,7 @@ export async function PATCH(request: NextRequest) {
       { _id: new ObjectId(adminId) },
       {
         $set: {
-          subscriptionPlan: planKeyInput,
+          subscriptionPlan: selectedPlanKey,
           subscriptionStatus: "active",
           extraLeads: extraLeads,
         },
@@ -342,7 +351,7 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({
       success: true,
       adminId,
-      plan: planKeyInput,
+      plan: selectedPlanKey,
       addons: { creditsUnits, leadsUnits },
       limits: { creditsPerMonth: totalCredits, totalLeads: leadTotalLimit },
     });
