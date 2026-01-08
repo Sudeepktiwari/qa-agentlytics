@@ -107,6 +107,7 @@ export async function POST(req: NextRequest) {
         email: user.email,
         planId: internalPlanId,
         razorpay_subscription_id,
+        razorpay_plan_id: planId, // Pass the Razorpay Plan ID (variant)
         razorpay_payment_id,
         addonQuantity,
         leadAddonQuantity,

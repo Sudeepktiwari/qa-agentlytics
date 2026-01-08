@@ -306,6 +306,17 @@ export async function PATCH(request: NextRequest) {
     const totalCredits = plan.creditsPerMonth + addonCredits;
     const leadTotalLimit = plan.totalLeads + extraLeads;
 
+    // Resolve Razorpay Plan ID (Variant)
+    let razorpayPlanId = plan.razorpayPlanId;
+    if (creditsUnits > 0 || leadsUnits > 0) {
+      const variantKey = `${creditsUnits}_${leadsUnits}`;
+      // @ts-ignore - variantIds is not in the base interface but exists on specific plans
+      if (plan.variantIds && plan.variantIds[variantKey]) {
+        // @ts-ignore
+        razorpayPlanId = plan.variantIds[variantKey];
+      }
+    }
+
     const now = new Date();
     const monthKey = `${now.getFullYear()}-${now.getMonth() + 1}`;
 
@@ -319,6 +330,7 @@ export async function PATCH(request: NextRequest) {
           adminId,
           email,
           planKey: selectedPlanKey,
+          razorpayPlanId, // Store specific Razorpay Plan ID (variant)
           status: "active",
           createdAt: new Date(),
           cycleMonthKey: monthKey,

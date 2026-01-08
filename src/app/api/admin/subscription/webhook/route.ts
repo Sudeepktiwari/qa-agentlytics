@@ -34,6 +34,7 @@ export async function POST(req: Request) {
     if (event === "subscription.charged") {
       const subscriptionEntity = payload.payload.subscription.entity;
       const subscriptionId = subscriptionEntity.id;
+      const razorpay_plan_id = subscriptionEntity.plan_id;
       const notes = subscriptionEntity.notes || {};
       const razorpay_payment_id = payload.payload.payment?.entity?.id;
 
@@ -82,6 +83,7 @@ export async function POST(req: Request) {
           email: user.email,
           planId: planKey,
           razorpay_subscription_id: subscriptionId,
+          razorpay_plan_id,
           razorpay_payment_id,
           addonQuantity,
           leadAddonQuantity,

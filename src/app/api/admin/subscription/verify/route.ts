@@ -16,6 +16,7 @@ export async function POST(req: NextRequest) {
       razorpay_signature,
       email,
       planId,
+      razorpay_plan_id,
       addonQuantity,
       leadAddonQuantity,
     } = await req.json();
@@ -75,6 +76,7 @@ export async function POST(req: NextRequest) {
           email: user.email || email,
           planId,
           razorpay_subscription_id,
+          razorpay_plan_id,
           razorpay_order_id,
           razorpay_payment_id,
           addonQuantity: Number(addonQuantity) || 0,

@@ -237,6 +237,7 @@ export default function SubscriptionSection({ email }: { email?: string }) {
               body: JSON.stringify({
                 ...response,
                 planId: plan.id,
+                razorpay_plan_id: selectedPlanId,
                 email: email,
                 addonQuantity: addonQuantity,
                 leadAddonQuantity: leadAddonQuantity,

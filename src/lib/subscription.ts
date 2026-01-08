@@ -21,6 +21,7 @@ interface SubscriptionUpdateParams {
   email: string;
   planId: string;
   razorpay_subscription_id?: string;
+  razorpay_plan_id?: string;
   razorpay_order_id?: string;
   razorpay_payment_id?: string;
   addonQuantity?: number;
@@ -35,6 +36,7 @@ export async function processSubscriptionUpdate({
   email,
   planId,
   razorpay_subscription_id,
+  razorpay_plan_id,
   razorpay_order_id,
   razorpay_payment_id,
   addonQuantity = 0,
@@ -82,6 +84,7 @@ export async function processSubscriptionUpdate({
           email: email,
           planKey: validatedPlanId,
           subscriptionId: razorpay_subscription_id,
+          razorpayPlanId: razorpay_plan_id, // Store the specific Razorpay Plan ID (variant)
           status: "active",
           razorpay_order_id,
           razorpay_payment_id,
@@ -121,7 +124,7 @@ export async function processSubscriptionUpdate({
     );
 
     console.log(
-      `[Subscription] Processed update for ${email} (Admin: ${adminId}). Plan: ${validatedPlanId}, Credits: ${totalCredits}, Leads: ${
+      `[Subscription] Processed update for ${email} (Admin: ${adminId}). Plan: ${validatedPlanId}, RazorpayPlan: ${razorpay_plan_id}, Credits: ${totalCredits}, Leads: ${
         (plan.totalLeads || 0) + extraLeads
       }`
     );
