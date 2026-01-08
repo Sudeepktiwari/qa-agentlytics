@@ -163,8 +163,26 @@ export default function SubscriptionSection({ email }: { email?: string }) {
         ? Math.floor(leadAmount / plan.addons.leads.price)
         : 0;
 
+    // Resolve Dynamic Plan ID based on variant
+    let selectedPlanId = plan.razorpayPlanId;
+    if (addonQuantity > 0 || leadAddonQuantity > 0) {
+      const variantKey = `${addonQuantity}_${leadAddonQuantity}`;
+      if (plan.variantIds && plan.variantIds[variantKey]) {
+        selectedPlanId = plan.variantIds[variantKey];
+      } else {
+        // Fallback or Alert?
+        // If strict separate plans are required, we should block here.
+        // For now, we will warn but try base plan (which might be wrong price)
+        console.warn(
+          `No separate plan configured for variant ${variantKey} in ${planKey}. Using base plan.`
+        );
+        // alert("Configuration missing for this specific combination. Please contact support.");
+        // return;
+      }
+    }
+
     try {
-      if (!plan.razorpayPlanId) {
+      if (!selectedPlanId) {
         throw new Error("Subscription plan ID not configured");
       }
 
@@ -173,7 +191,7 @@ export default function SubscriptionSection({ email }: { email?: string }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          planId: plan.razorpayPlanId,
+          planId: selectedPlanId,
           internalPlanId: plan.id, // Pass internal ID (growth, scale)
           addonQuantity: addonQuantity,
           leadAddonQuantity: leadAddonQuantity,

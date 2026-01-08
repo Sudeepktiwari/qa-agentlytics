@@ -298,8 +298,12 @@ export async function PATCH(request: NextRequest) {
       selectedPlanKey = (latestSub?.planKey || "free") as keyof typeof PRICING;
     }
     const plan = PRICING[selectedPlanKey];
-    const addonCredits = creditsUnits * CREDIT_ADDONS.UNIT_CREDITS;
-    const extraLeads = leadsUnits * LEAD_ADDONS.UNIT_LEADS;
+    // Use plan-specific add-on values
+    const unitCredits = plan.addons?.credits?.amount || 0;
+    const unitLeads = plan.addons?.leads?.amount || 0;
+
+    const addonCredits = creditsUnits * unitCredits;
+    const extraLeads = leadsUnits * unitLeads;
     const totalCredits = plan.creditsPerMonth + addonCredits;
     const leadTotalLimit = plan.totalLeads + extraLeads;
 

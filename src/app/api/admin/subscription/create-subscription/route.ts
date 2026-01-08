@@ -36,8 +36,9 @@ export async function POST(req: Request) {
     // For now, we assume the env var is set or we skip if not present (but log warning).
 
     // SIMPLIFIED APPROACH:
-    // Dynamic add-ons in Razorpay Subscriptions often require pre-created Item IDs.
-    // If we have one:
+    // We use separate Plan IDs for each variant, so we do NOT attach add-ons here.
+    // The price is determined by the plan_id itself.
+    // We pass the units in 'notes' so the webhook knows how much to credit.
     let subscriptionPayload: any = {
       plan_id: planId,
       total_count,
@@ -45,44 +46,20 @@ export async function POST(req: Request) {
       customer_notify: 1,
       notes: {
         planId: internalPlanId, // Store internal ID for webhook
-        addonQuantity: addonQuantity, // Credit Add-on
-        leadAddonQuantity: leadAddonQuantity, // Lead Add-on
+        addonQuantity: addonQuantity, // Credit Add-on Units
+        leadAddonQuantity: leadAddonQuantity, // Lead Add-on Units
       },
     };
 
+    // REMOVED: Add-ons logic (user requested separate subscriptions)
+    /*
     const addons = [];
-
     const creditAddonId = plan.addons?.credits?.razorpayItemId;
-    if (addonQuantity > 0 && creditAddonId) {
-      addons.push({
-        item: {
-          id: creditAddonId,
-        },
-        quantity: addonQuantity,
-      });
-    } else if (addonQuantity > 0) {
-      console.warn(
-        `Add-on quantity requested for ${internalPlanId} but no credit RAZORPAY_ADDON_ITEM_ID configured.`
-      );
-    }
-
-    const leadAddonId = plan.addons?.leads?.razorpayItemId;
-    if (leadAddonQuantity > 0 && leadAddonId) {
-      addons.push({
-        item: {
-          id: leadAddonId,
-        },
-        quantity: leadAddonQuantity,
-      });
-    } else if (leadAddonQuantity > 0) {
-      console.warn(
-        `Lead Add-on quantity requested for ${internalPlanId} but no lead RAZORPAY_ADDON_ITEM_ID configured.`
-      );
-    }
-
+    ...
     if (addons.length > 0) {
       subscriptionPayload.addons = addons;
     }
+    */
 
     const subscription = await razorpay.subscriptions.create(
       subscriptionPayload

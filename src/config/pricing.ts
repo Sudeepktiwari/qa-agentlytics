@@ -34,12 +34,20 @@ export const PRICING = {
     creditsPerMonth: 7_000,
     websites: 1,
     razorpayPlanId: process.env.NEXT_PUBLIC_RAZORPAY_PLAN_GROWTH,
+    // Map specific add-on combinations to separate Razorpay Plan IDs
+    // Format: "${creditUnits}_${leadUnits}" => "plan_id"
+    // 1 unit of credits = 7,000 credits
+    variantIds: {
+      "1_0": process.env.NEXT_PUBLIC_RAZORPAY_PLAN_GROWTH_1C || "", // +$50
+      "2_0": process.env.NEXT_PUBLIC_RAZORPAY_PLAN_GROWTH_2C || "", // +$100
+      "3_0": process.env.NEXT_PUBLIC_RAZORPAY_PLAN_GROWTH_3C || "", // +$150
+    },
     addons: {
       credits: {
         price: 50,
         amount: 7000,
         maxPrice: 150,
-        razorpayItemId: process.env.NEXT_PUBLIC_RAZORPAY_ADDON_CREDITS_ID, // Reusing existing ID for Growth
+        razorpayItemId: null, // Not using Add-on items
       },
       leads: {
         price: 0, // No lead add-ons for Growth
@@ -59,22 +67,45 @@ export const PRICING = {
     creditsPerMonth: 16_000,
     websites: 3,
     razorpayPlanId: process.env.NEXT_PUBLIC_RAZORPAY_PLAN_SCALE,
+    // 1 unit credits = 16k, 1 unit leads = 100k
+    variantIds: {
+      // Credits Only
+      "1_0": process.env.NEXT_PUBLIC_RAZORPAY_PLAN_SCALE_1C || "", // +$100
+      "2_0": process.env.NEXT_PUBLIC_RAZORPAY_PLAN_SCALE_2C || "", // +$200
+      "3_0": process.env.NEXT_PUBLIC_RAZORPAY_PLAN_SCALE_3C || "", // +$300
+
+      // Leads Only
+      "0_1": process.env.NEXT_PUBLIC_RAZORPAY_PLAN_SCALE_1L || "", // +$100
+      "0_2": process.env.NEXT_PUBLIC_RAZORPAY_PLAN_SCALE_2L || "", // +$200
+      "0_3": process.env.NEXT_PUBLIC_RAZORPAY_PLAN_SCALE_3L || "", // +$300
+
+      // Mixed: 1 Credit Unit + X Leads
+      "1_1": process.env.NEXT_PUBLIC_RAZORPAY_PLAN_SCALE_1C_1L || "", // +$200
+      "1_2": process.env.NEXT_PUBLIC_RAZORPAY_PLAN_SCALE_1C_2L || "", // +$300
+      "1_3": process.env.NEXT_PUBLIC_RAZORPAY_PLAN_SCALE_1C_3L || "", // +$400
+
+      // Mixed: 2 Credit Units + X Leads
+      "2_1": process.env.NEXT_PUBLIC_RAZORPAY_PLAN_SCALE_2C_1L || "", // +$300
+      "2_2": process.env.NEXT_PUBLIC_RAZORPAY_PLAN_SCALE_2C_2L || "", // +$400
+      "2_3": process.env.NEXT_PUBLIC_RAZORPAY_PLAN_SCALE_2C_3L || "", // +$500
+
+      // Mixed: 3 Credit Units + X Leads
+      "3_1": process.env.NEXT_PUBLIC_RAZORPAY_PLAN_SCALE_3C_1L || "", // +$400
+      "3_2": process.env.NEXT_PUBLIC_RAZORPAY_PLAN_SCALE_3C_2L || "", // +$500
+      "3_3": process.env.NEXT_PUBLIC_RAZORPAY_PLAN_SCALE_3C_3L || "", // +$600
+    },
     addons: {
       credits: {
         price: 100,
         amount: 16000,
         maxPrice: 300,
-        razorpayItemId:
-          process.env.NEXT_PUBLIC_RAZORPAY_ADDON_CREDITS_SCALE_ID ||
-          process.env.NEXT_PUBLIC_RAZORPAY_ADDON_CREDITS_ID, // Fallback if not set
+        razorpayItemId: null,
       },
       leads: {
         price: 100,
         amount: 100000,
         maxPrice: 300,
-        razorpayItemId:
-          process.env.NEXT_PUBLIC_RAZORPAY_ADDON_LEADS_SCALE_ID ||
-          process.env.NEXT_PUBLIC_RAZORPAY_ADDON_LEADS_ID, // Fallback
+        razorpayItemId: null,
       },
     },
   },

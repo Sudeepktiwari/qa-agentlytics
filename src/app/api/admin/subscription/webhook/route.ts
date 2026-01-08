@@ -50,26 +50,32 @@ export async function POST(req: Request) {
 
         // Calculate Total Credits
         // 1. Base Plan Credits
-        const userPlanId = (user.subscriptionPlan ||
+        // Prefer planId from notes (set during creation), fallback to user profile
+        const planKey = (notes.planId ||
+          user.subscriptionPlan ||
           "free") as keyof typeof PRICING;
-        const baseCredits = PRICING[userPlanId]?.creditsPerMonth || 0;
+        const planConfig = PRICING[planKey];
+        const baseCredits = planConfig?.creditsPerMonth || 0;
 
         // 2. Add-on Credits
         let addonCredits = 0;
         let extraLeads = 0;
 
-        // Method A: From Notes (Simplest for now)
+        // Method A: From Notes
         if (notes.addonQuantity) {
           const qty = parseInt(notes.addonQuantity, 10);
+          // Use plan-specific add-on amount if available, else fallback to 0 (or legacy)
+          const unitCredits = planConfig?.addons?.credits?.amount || 0;
           if (!isNaN(qty)) {
-            addonCredits = qty * CREDIT_ADDONS.UNIT_CREDITS;
+            addonCredits = qty * unitCredits;
           }
         }
 
         if (notes.leadAddonQuantity) {
           const qty = parseInt(notes.leadAddonQuantity, 10);
+          const unitLeads = planConfig?.addons?.leads?.amount || 0;
           if (!isNaN(qty)) {
-            extraLeads = qty * LEAD_ADDONS.UNIT_LEADS;
+            extraLeads = qty * unitLeads;
           }
         }
 
@@ -93,7 +99,7 @@ export async function POST(req: Request) {
             $set: {
               adminId,
               email: user.email,
-              planKey: userPlanId,
+              planKey: planKey,
               status: "active",
               type: "subscription",
               cycleMonthKey: monthKey,
@@ -103,7 +109,7 @@ export async function POST(req: Request) {
                 creditMonthlyLimit: totalCredits,
                 leadExtraLeads: extraLeads,
                 leadTotalLimit:
-                  (PRICING[userPlanId]?.totalLeads || 0) + extraLeads,
+                  (PRICING[planKey]?.totalLeads || 0) + extraLeads,
               },
               usage: {
                 creditsUsed: 0,
