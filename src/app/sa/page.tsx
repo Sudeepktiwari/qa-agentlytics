@@ -13,6 +13,7 @@ import {
   LogOut,
   Search,
 } from "lucide-react";
+import { PRICING } from "@/config/pricing";
 
 export default function SaPage() {
   const [email, setEmail] = useState("");
@@ -30,6 +31,17 @@ export default function SaPage() {
   >([]);
   const [authorized, setAuthorized] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [planForms, setPlanForms] = useState<
+    Record<
+      string,
+      {
+        planKey: keyof typeof PRICING;
+        creditsUnits: number;
+        leadsUnits: number;
+        saving: boolean;
+      }
+    >
+  >({});
 
   const fetchAccounts = async () => {
     setLoading(true);
@@ -53,6 +65,87 @@ export default function SaPage() {
     }
   };
 
+  const setFormValue = (
+    adminId: string,
+    values: Partial<{
+      planKey: keyof typeof PRICING;
+      creditsUnits: number;
+      leadsUnits: number;
+      saving: boolean;
+    }>
+  ) => {
+    setPlanForms((prev) => {
+      const base = prev[adminId] || {
+        planKey: "free",
+        creditsUnits: 0,
+        leadsUnits: 0,
+        saving: false,
+      };
+      return { ...prev, [adminId]: { ...base, ...values } };
+    });
+  };
+
+  const applyPlan = async (adminId: string) => {
+    const form = planForms[adminId] || {
+      planKey: "free" as keyof typeof PRICING,
+      creditsUnits: 0,
+      leadsUnits: 0,
+      saving: false,
+    };
+    setFormValue(adminId, { saving: true });
+    setError("");
+    try {
+      const res = await fetch("/api/sa/accounts", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          adminId,
+          planKey: form.planKey,
+          creditsUnits: form.creditsUnits,
+          leadsUnits: form.leadsUnits,
+        }),
+      });
+      if (res.ok) {
+        await fetchAccounts();
+      } else {
+        const data = await res.json();
+        setError(data.error || "Plan update failed");
+      }
+    } catch {
+      setError("Plan update failed");
+    } finally {
+      setFormValue(adminId, { saving: false });
+    }
+  };
+
+  const setFreePlan = async (adminId: string) => {
+    setFormValue(adminId, {
+      saving: true,
+      planKey: "free",
+      creditsUnits: 0,
+      leadsUnits: 0,
+    });
+    setError("");
+    try {
+      const res = await fetch("/api/sa/accounts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ adminId }),
+      });
+      if (res.ok) {
+        await fetchAccounts();
+      } else {
+        const data = await res.json();
+        setError(data.error || "Set free failed");
+      }
+    } catch {
+      setError("Set free failed");
+    } finally {
+      setFormValue(adminId, { saving: false });
+    }
+  };
   useEffect(() => {
     fetchAccounts();
   }, []);
@@ -395,6 +488,76 @@ export default function SaPage() {
                                   </button>
                                 ))}
                             </div>
+                            <div className="mt-3 flex items-center justify-end gap-2">
+                              <select
+                                className="border border-slate-200 rounded-lg px-2 py-1 text-xs"
+                                value={
+                                  (planForms[a.id]?.planKey as string) || "free"
+                                }
+                                onChange={(e) =>
+                                  setFormValue(a.id, {
+                                    planKey: e.target
+                                      .value as keyof typeof PRICING,
+                                  })
+                                }
+                              >
+                                {(
+                                  Object.keys(PRICING) as Array<
+                                    keyof typeof PRICING
+                                  >
+                                ).map((k) => (
+                                  <option key={k} value={k}>
+                                    {PRICING[k].name}
+                                  </option>
+                                ))}
+                              </select>
+                              <input
+                                type="number"
+                                min={0}
+                                className="w-20 border border-slate-200 rounded-lg px-2 py-1 text-xs"
+                                placeholder="Cred x1k"
+                                value={planForms[a.id]?.creditsUnits ?? 0}
+                                onChange={(e) =>
+                                  setFormValue(a.id, {
+                                    creditsUnits: Math.max(
+                                      0,
+                                      Number(e.target.value) || 0
+                                    ),
+                                  })
+                                }
+                              />
+                              <input
+                                type="number"
+                                min={0}
+                                className="w-20 border border-slate-200 rounded-lg px-2 py-1 text-xs"
+                                placeholder="Leads x1k"
+                                value={planForms[a.id]?.leadsUnits ?? 0}
+                                onChange={(e) =>
+                                  setFormValue(a.id, {
+                                    leadsUnits: Math.max(
+                                      0,
+                                      Number(e.target.value) || 0
+                                    ),
+                                  })
+                                }
+                              />
+                              <button
+                                onClick={() => applyPlan(a.id)}
+                                disabled={planForms[a.id]?.saving}
+                                className="px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-60"
+                              >
+                                {planForms[a.id]?.saving
+                                  ? "Saving..."
+                                  : "Apply Plan"}
+                              </button>
+                              <button
+                                onClick={() => setFreePlan(a.id)}
+                                disabled={planForms[a.id]?.saving}
+                                className="px-3 py-1.5 text-xs font-medium bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50"
+                              >
+                                Set Free
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -501,6 +664,69 @@ export default function SaPage() {
                               <Key className="w-4 h-4" /> Disable Key
                             </button>
                           ))}
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 pt-2">
+                        <select
+                          className="border border-slate-200 rounded-lg px-2 py-2 text-sm"
+                          value={(planForms[a.id]?.planKey as string) || "free"}
+                          onChange={(e) =>
+                            setFormValue(a.id, {
+                              planKey: e.target.value as keyof typeof PRICING,
+                            })
+                          }
+                        >
+                          {(
+                            Object.keys(PRICING) as Array<keyof typeof PRICING>
+                          ).map((k) => (
+                            <option key={k} value={k}>
+                              {PRICING[k].name}
+                            </option>
+                          ))}
+                        </select>
+                        <input
+                          type="number"
+                          min={0}
+                          className="border border-slate-200 rounded-lg px-2 py-2 text-sm"
+                          placeholder="Credits x1k"
+                          value={planForms[a.id]?.creditsUnits ?? 0}
+                          onChange={(e) =>
+                            setFormValue(a.id, {
+                              creditsUnits: Math.max(
+                                0,
+                                Number(e.target.value) || 0
+                              ),
+                            })
+                          }
+                        />
+                        <input
+                          type="number"
+                          min={0}
+                          className="border border-slate-200 rounded-lg px-2 py-2 text-sm"
+                          placeholder="Leads x1k"
+                          value={planForms[a.id]?.leadsUnits ?? 0}
+                          onChange={(e) =>
+                            setFormValue(a.id, {
+                              leadsUnits: Math.max(
+                                0,
+                                Number(e.target.value) || 0
+                              ),
+                            })
+                          }
+                        />
+                        <button
+                          onClick={() => applyPlan(a.id)}
+                          disabled={planForms[a.id]?.saving}
+                          className="px-3 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-60"
+                        >
+                          {planForms[a.id]?.saving ? "Saving..." : "Apply Plan"}
+                        </button>
+                        <button
+                          onClick={() => setFreePlan(a.id)}
+                          disabled={planForms[a.id]?.saving}
+                          className="px-3 py-2 text-sm font-medium bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50"
+                        >
+                          Set Free
+                        </button>
                       </div>
                     </div>
                   ))}
