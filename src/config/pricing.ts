@@ -9,6 +9,20 @@ export const PRICING = {
     creditsPerMonth: 500,
     websites: 1,
     razorpayPlanId: null,
+    addons: {
+      credits: {
+        price: 0,
+        amount: 0,
+        maxPrice: 0,
+        razorpayItemId: null,
+      },
+      leads: {
+        price: 0,
+        amount: 0,
+        maxPrice: 0,
+        razorpayItemId: null,
+      },
+    },
   },
   growth: {
     id: "growth",
@@ -20,6 +34,20 @@ export const PRICING = {
     creditsPerMonth: 7_000,
     websites: 1,
     razorpayPlanId: process.env.NEXT_PUBLIC_RAZORPAY_PLAN_GROWTH,
+    addons: {
+      credits: {
+        price: 50,
+        amount: 7000,
+        maxPrice: 150,
+        razorpayItemId: process.env.NEXT_PUBLIC_RAZORPAY_ADDON_CREDITS_ID, // Reusing existing ID for Growth
+      },
+      leads: {
+        price: 0, // No lead add-ons for Growth
+        amount: 0,
+        maxPrice: 0,
+        razorpayItemId: null,
+      },
+    },
   },
   scale: {
     id: "scale",
@@ -31,28 +59,38 @@ export const PRICING = {
     creditsPerMonth: 16_000,
     websites: 3,
     razorpayPlanId: process.env.NEXT_PUBLIC_RAZORPAY_PLAN_SCALE,
+    addons: {
+      credits: {
+        price: 100,
+        amount: 16000,
+        maxPrice: 300,
+        razorpayItemId:
+          process.env.NEXT_PUBLIC_RAZORPAY_ADDON_CREDITS_SCALE_ID ||
+          process.env.NEXT_PUBLIC_RAZORPAY_ADDON_CREDITS_ID, // Fallback if not set
+      },
+      leads: {
+        price: 100,
+        amount: 100000,
+        maxPrice: 300,
+        razorpayItemId:
+          process.env.NEXT_PUBLIC_RAZORPAY_ADDON_LEADS_SCALE_ID ||
+          process.env.NEXT_PUBLIC_RAZORPAY_ADDON_LEADS_ID, // Fallback
+      },
+    },
   },
 } as const;
 
+// LEGACY CONSTANTS - To be removed after refactoring all usages
 export const CREDIT_ADDONS = {
-  // We can define steps for the slider.
-  // Each step maps to a Razorpay Add-on Item ID (or plan ID if structured differently).
-  // For simplicity, we assume we create a single "1,000 Credits Add-on" item in Razorpay
-  // and just change the quantity.
-  // 1 unit = 1,000 credits = $5 (example)
-
-  UNIT_CREDITS: 1000,
-  UNIT_PRICE_USD: 5, // $5 per 1k credits
-  MAX_AMOUNT_USD: 300,
-
-  // If using specific plan IDs for different tiers (optional, but quantity is easier)
-  // For this implementation, we will use quantity of a single "base" add-on item.
+  UNIT_CREDITS: 7000,
+  UNIT_PRICE_USD: 50,
+  MAX_AMOUNT_USD: 150,
   RAZORPAY_ADDON_ITEM_ID: process.env.NEXT_PUBLIC_RAZORPAY_ADDON_CREDITS_ID,
 } as const;
 
 export const LEAD_ADDONS = {
   UNIT_LEADS: 1000,
-  UNIT_PRICE_USD: 10, // $10 per 1k leads
+  UNIT_PRICE_USD: 10,
   MAX_AMOUNT_USD: 500,
   RAZORPAY_ADDON_ITEM_ID: process.env.NEXT_PUBLIC_RAZORPAY_ADDON_LEADS_ID,
 } as const;

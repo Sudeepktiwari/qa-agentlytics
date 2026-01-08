@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import Razorpay from "razorpay";
-import { CREDIT_ADDONS, LEAD_ADDONS } from "@/config/pricing";
+import { PRICING } from "@/config/pricing";
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID || "",
@@ -25,6 +25,11 @@ export async function POST(req: Request) {
       );
     }
 
+    const plan = PRICING[internalPlanId as keyof typeof PRICING];
+    if (!plan) {
+      return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
+    }
+
     // Construct Add-ons Array
     // Note: We need the Razorpay Item ID for the credit add-on.
     // If you haven't created it in Razorpay dashboard yet, this part will fail or need a dummy ID.
@@ -47,29 +52,31 @@ export async function POST(req: Request) {
 
     const addons = [];
 
-    if (addonQuantity > 0 && CREDIT_ADDONS.RAZORPAY_ADDON_ITEM_ID) {
+    const creditAddonId = plan.addons?.credits?.razorpayItemId;
+    if (addonQuantity > 0 && creditAddonId) {
       addons.push({
         item: {
-          id: CREDIT_ADDONS.RAZORPAY_ADDON_ITEM_ID,
+          id: creditAddonId,
         },
         quantity: addonQuantity,
       });
     } else if (addonQuantity > 0) {
       console.warn(
-        "Add-on quantity requested but no RAZORPAY_ADDON_ITEM_ID configured."
+        `Add-on quantity requested for ${internalPlanId} but no credit RAZORPAY_ADDON_ITEM_ID configured.`
       );
     }
 
-    if (leadAddonQuantity > 0 && LEAD_ADDONS.RAZORPAY_ADDON_ITEM_ID) {
+    const leadAddonId = plan.addons?.leads?.razorpayItemId;
+    if (leadAddonQuantity > 0 && leadAddonId) {
       addons.push({
         item: {
-          id: LEAD_ADDONS.RAZORPAY_ADDON_ITEM_ID,
+          id: leadAddonId,
         },
         quantity: leadAddonQuantity,
       });
     } else if (leadAddonQuantity > 0) {
       console.warn(
-        "Lead Add-on quantity requested but no RAZORPAY_ADDON_LEADS_ID configured."
+        `Lead Add-on quantity requested for ${internalPlanId} but no lead RAZORPAY_ADDON_ITEM_ID configured.`
       );
     }
 

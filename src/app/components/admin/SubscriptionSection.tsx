@@ -154,12 +154,14 @@ export default function SubscriptionSection({ email }: { email?: string }) {
     const { creditAmount, leadAmount } = getAddons(planKey);
 
     const addonQuantity =
-      creditAmount > 0
-        ? Math.floor(creditAmount / CREDIT_ADDONS.UNIT_PRICE_USD)
+      creditAmount > 0 && plan.addons.credits.price > 0
+        ? Math.floor(creditAmount / plan.addons.credits.price)
         : 0;
 
     const leadAddonQuantity =
-      leadAmount > 0 ? Math.floor(leadAmount / LEAD_ADDONS.UNIT_PRICE_USD) : 0;
+      leadAmount > 0 && plan.addons.leads.price > 0
+        ? Math.floor(leadAmount / plan.addons.leads.price)
+        : 0;
 
     try {
       if (!plan.razorpayPlanId) {
@@ -186,12 +188,12 @@ export default function SubscriptionSection({ email }: { email?: string }) {
       const descriptionParts = [`${plan.name} Plan`];
       if (addonQuantity > 0) {
         descriptionParts.push(
-          `+ ${addonQuantity * CREDIT_ADDONS.UNIT_CREDITS} Credits`
+          `+ ${addonQuantity * plan.addons.credits.amount} Credits`
         );
       }
       if (leadAddonQuantity > 0) {
         descriptionParts.push(
-          `+ ${leadAddonQuantity * LEAD_ADDONS.UNIT_LEADS} Leads`
+          `+ ${leadAddonQuantity * plan.addons.leads.amount} Leads`
         );
       }
 
@@ -372,11 +374,18 @@ export default function SubscriptionSection({ email }: { email?: string }) {
           const plan = PRICING[key];
           const isCurrent = currentPlan === key;
           const { creditAmount, leadAmount } = getAddons(key);
+
           const creditAddons =
-            (creditAmount / CREDIT_ADDONS.UNIT_PRICE_USD) *
-            CREDIT_ADDONS.UNIT_CREDITS;
+            plan.addons.credits.price > 0
+              ? (creditAmount / plan.addons.credits.price) *
+                plan.addons.credits.amount
+              : 0;
+
           const leadAddons =
-            (leadAmount / LEAD_ADDONS.UNIT_PRICE_USD) * LEAD_ADDONS.UNIT_LEADS;
+            plan.addons.leads.price > 0
+              ? (leadAmount / plan.addons.leads.price) *
+                plan.addons.leads.amount
+              : 0;
 
           return (
             <Card
@@ -421,33 +430,39 @@ export default function SubscriptionSection({ email }: { email?: string }) {
               {key !== "free" && (
                 <div className="mb-6 space-y-4 pt-4 border-t border-gray-100">
                   {/* Credits Slider */}
-                  <div>
-                    <div className="flex justify-between text-xs mb-2">
-                      <span className="font-medium text-gray-700">
-                        Extra Credits
-                      </span>
-                      <span className="text-blue-600 font-bold">
-                        +{creditAddons.toLocaleString()}
-                      </span>
+                  {plan.addons.credits.price > 0 && (
+                    <div>
+                      <div className="flex justify-between text-xs mb-2">
+                        <span className="font-medium text-gray-700">
+                          Extra Credits
+                        </span>
+                        <span className="text-blue-600 font-bold">
+                          +{creditAddons.toLocaleString()}
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max={plan.addons.credits.maxPrice}
+                        step={plan.addons.credits.price}
+                        value={creditAmount}
+                        onChange={(e) =>
+                          updateAddon(
+                            key,
+                            "creditAmount",
+                            Number(e.target.value)
+                          )
+                        }
+                        className="w-full h-2 bg-blue-100 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                      />
+                      <div className="text-right text-xs text-gray-500 mt-1">
+                        +${creditAmount}/mo
+                      </div>
                     </div>
-                    <input
-                      type="range"
-                      min="0"
-                      max={CREDIT_ADDONS.MAX_AMOUNT_USD}
-                      step={CREDIT_ADDONS.UNIT_PRICE_USD}
-                      value={creditAmount}
-                      onChange={(e) =>
-                        updateAddon(key, "creditAmount", Number(e.target.value))
-                      }
-                      className="w-full h-2 bg-blue-100 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                    />
-                    <div className="text-right text-xs text-gray-500 mt-1">
-                      +${creditAmount}/mo
-                    </div>
-                  </div>
+                  )}
 
-                  {/* Leads Slider (Scale Only) */}
-                  {key === "scale" && (
+                  {/* Leads Slider (Scale Only - or Config Driven) */}
+                  {plan.addons.leads.price > 0 && (
                     <div>
                       <div className="flex justify-between text-xs mb-2">
                         <span className="font-medium text-gray-700">
@@ -460,8 +475,8 @@ export default function SubscriptionSection({ email }: { email?: string }) {
                       <input
                         type="range"
                         min="0"
-                        max={LEAD_ADDONS.MAX_AMOUNT_USD}
-                        step={LEAD_ADDONS.UNIT_PRICE_USD}
+                        max={plan.addons.leads.maxPrice}
+                        step={plan.addons.leads.price}
                         value={leadAmount}
                         onChange={(e) =>
                           updateAddon(key, "leadAmount", Number(e.target.value))

@@ -48,14 +48,18 @@ export async function processSubscriptionUpdate({
     const validatedPlanId = plan.id;
 
     // 2. Calculate Limits
+    // Use plan-specific add-on values
+    const creditUnit = plan.addons?.credits?.amount || 0;
+    const leadUnit = plan.addons?.leads?.amount || 0;
+
     let extraLeads = 0;
     if (leadAddonQuantity > 0) {
-      extraLeads = leadAddonQuantity * LEAD_ADDONS.UNIT_LEADS;
+      extraLeads = leadAddonQuantity * leadUnit;
     }
 
     let totalCredits = plan.creditsPerMonth;
     if (addonQuantity > 0) {
-      totalCredits += addonQuantity * CREDIT_ADDONS.UNIT_CREDITS;
+      totalCredits += addonQuantity * creditUnit;
     }
 
     const now = new Date();
@@ -63,11 +67,8 @@ export async function processSubscriptionUpdate({
 
     // 3. Get Current Usage (to preserve leads used)
     const currentLeads =
-      (
-        await db
-          .collection("leads")
-          .distinct("email", { adminId: adminId })
-      ).length || 0;
+      (await db.collection("leads").distinct("email", { adminId: adminId }))
+        .length || 0;
 
     // 4. Update/Create Subscription for Current Month
     // We use updateOne with upsert to ensure we don't create duplicates for the same month
@@ -121,7 +122,9 @@ export async function processSubscriptionUpdate({
     );
 
     console.log(
-      `[Subscription] Processed update for ${email} (Admin: ${adminId}). Plan: ${validatedPlanId}, Credits: ${totalCredits}, Leads: ${(plan.totalLeads || 0) + extraLeads}`
+      `[Subscription] Processed update for ${email} (Admin: ${adminId}). Plan: ${validatedPlanId}, Credits: ${totalCredits}, Leads: ${
+        (plan.totalLeads || 0) + extraLeads
+      }`
     );
 
     return {

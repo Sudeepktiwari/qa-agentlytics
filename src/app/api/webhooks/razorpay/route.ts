@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { MongoClient, ObjectId } from "mongodb";
 import { processSubscriptionUpdate } from "@/lib/subscription";
+import { PRICING } from "@/config/pricing";
 
 // Connect to MongoDB
 const uri = process.env.MONGODB_URI || "mongodb://localhost:27017";
@@ -58,7 +59,7 @@ export async function POST(req: NextRequest) {
     ) {
       const subscription = event.payload.subscription.entity;
       const payment = event.payload.payment?.entity;
-      
+
       const razorpay_subscription_id = subscription.id;
       const razorpay_payment_id = payment?.id;
       const notes = subscription.notes || {};
@@ -67,17 +68,19 @@ export async function POST(req: NextRequest) {
       // We need to map Razorpay Plan ID back to our internal Plan ID
       // Or rely on notes if we stored it there.
       // But typically we can find the user by subscription_id or email
-      
+
       let user = await db.collection("users").findOne({
         $or: [
           { subscriptionId: razorpay_subscription_id },
           { email: payment?.email },
-          { email: notes.email } // If we stored email in notes
-        ]
+          { email: notes.email }, // If we stored email in notes
+        ],
       });
 
       if (!user) {
-        console.error(`[Webhook] User not found for subscription ${razorpay_subscription_id}`);
+        console.error(
+          `[Webhook] User not found for subscription ${razorpay_subscription_id}`
+        );
         return NextResponse.json({ error: "User not found" }, { status: 404 });
       }
 
@@ -85,9 +88,11 @@ export async function POST(req: NextRequest) {
       // This is tricky if we don't have a direct mapping in code.
       // But we can check our PRICING config env vars.
       let internalPlanId = "free";
-      if (planId === process.env.NEXT_PUBLIC_RAZORPAY_PLAN_GROWTH) internalPlanId = "growth";
-      else if (planId === process.env.NEXT_PUBLIC_RAZORPAY_PLAN_SCALE) internalPlanId = "scale";
-      
+      if (planId === process.env.NEXT_PUBLIC_RAZORPAY_PLAN_GROWTH)
+        internalPlanId = "growth";
+      else if (planId === process.env.NEXT_PUBLIC_RAZORPAY_PLAN_SCALE)
+        internalPlanId = "scale";
+
       // If we can't find it, maybe fallback to user's current plan or "growth" default?
       // Better to trust the notes if available
       if (notes.planId) {
@@ -107,32 +112,39 @@ export async function POST(req: NextRequest) {
         leadAddonQuantity,
       });
 
-      console.log(`[Webhook] Successfully processed subscription ${event.event}`);
-    } 
+      console.log(
+        `[Webhook] Successfully processed subscription ${event.event}`
+      );
+    }
     // Handle Order Paid (One-time) if needed
     else if (event.event === "order.paid") {
-       // Similar logic for one-time payments
-       const order = event.payload.order.entity;
-       const payment = event.payload.payment.entity;
-       const notes = order.notes || {};
-       
-       const user = await db.collection("users").findOne({ email: payment.email });
-       if (user && notes.planId) {
-          await processSubscriptionUpdate({
-            adminId: user._id.toString(),
-            email: user.email,
-            planId: notes.planId,
-            razorpay_order_id: order.id,
-            razorpay_payment_id: payment.id,
-            addonQuantity: Number(notes.addonQuantity) || 0,
-            leadAddonQuantity: Number(notes.leadAddonQuantity) || 0,
-          });
-       }
+      // Similar logic for one-time payments
+      const order = event.payload.order.entity;
+      const payment = event.payload.payment.entity;
+      const notes = order.notes || {};
+
+      const user = await db
+        .collection("users")
+        .findOne({ email: payment.email });
+      if (user && notes.planId) {
+        await processSubscriptionUpdate({
+          adminId: user._id.toString(),
+          email: user.email,
+          planId: notes.planId,
+          razorpay_order_id: order.id,
+          razorpay_payment_id: payment.id,
+          addonQuantity: Number(notes.addonQuantity) || 0,
+          leadAddonQuantity: Number(notes.leadAddonQuantity) || 0,
+        });
+      }
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("[Webhook] Error processing event:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }
