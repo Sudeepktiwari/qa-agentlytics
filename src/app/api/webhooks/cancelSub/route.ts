@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
   try {
     const rawBody = await req.text();
     const signature = req.headers.get("x-razorpay-signature");
-
+    
     // Use the main webhook secret, or fallback to a specific one if you configure a separate secret
     const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
 
@@ -49,6 +49,7 @@ export async function POST(req: NextRequest) {
 
     // Return 200 for other events to acknowledge receipt
     return NextResponse.json({ message: "Event ignored" });
+
   } catch (error) {
     console.error(`${logPrefix} Error:`, error);
     return NextResponse.json(
