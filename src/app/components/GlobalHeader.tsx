@@ -327,6 +327,10 @@ export default function GlobalHeader() {
             </div>
           </div>
 
+          <Link href="/blogs" className="hover:text-slate-900">
+            Blogs
+          </Link>
+
           {/* Platforms & Partners dropdown */}
           <div
             className="relative"
@@ -923,6 +927,12 @@ export default function GlobalHeader() {
                     className="block px-2 py-1 rounded hover:bg-slate-50"
                   >
                     Pricing
+                  </Link>
+                  <Link
+                    href="/blogs"
+                    className="block px-2 py-1 rounded hover:bg-slate-50"
+                  >
+                    Blogs
                   </Link>
                 </div>
               </details>

@@ -7,6 +7,23 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  async rewrites() {
+    const wordpressBlogsBaseUrl =
+      process.env.WORDPRESS_BLOGS_BASE_URL?.replace(/\/$/, "");
+
+    if (!wordpressBlogsBaseUrl) return [];
+
+    return [
+      {
+        source: "/blogs",
+        destination: wordpressBlogsBaseUrl,
+      },
+      {
+        source: "/blogs/:path*",
+        destination: `${wordpressBlogsBaseUrl}/:path*`,
+      },
+    ];
+  },
   webpack: (config, { isServer }) => {
     if (!isServer) {
       // Exclude problematic MongoDB modules from client bundle
