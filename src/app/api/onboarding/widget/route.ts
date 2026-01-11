@@ -273,7 +273,7 @@ export async function GET(request: Request) {
   if (state.step === 'registration' && state.reg && state.reg.name && state.reg.email && state.reg.password) { renderRegistrationConfirm(); }
   else if (state.step === 'setup_collect' || state.step === 'setup_confirm') { fetch(API_BASE + '/api/onboarding/chat', { method:'POST', headers:{ 'Content-Type': 'application/json', 'x-api-key': apiKey }, body: JSON.stringify({ action:'get_initial_fields' }) }).then(function(r){ return r.json(); }).then(function(d){ 
       state.additionalSteps = d.additionalSteps || []; saveState();
-      var fs = Array.isArray(d.fields)? d.fields: []; var onlyReq = fs.filter(function(f){ return !!f && (f.required === true || f.required === 'true'); }); if (state.step === 'setup_confirm') { renderInitialConfirm(onlyReq); } else { renderInitialSetup(onlyReq); } }).catch(function(){ renderInitialSetup([]); }); }
+      var fs = Array.isArray(d.fields)? d.fields: []; if (state.step === 'setup_confirm') { renderInitialConfirm(fs); } else { renderInitialSetup(fs); } }).catch(function(){ renderInitialSetup([]); }); }
   else if (state.step === 'additional_step_collect') {
        fetch(API_BASE + '/api/onboarding/chat', { method:'POST', headers:{ 'Content-Type': 'application/json', 'x-api-key': apiKey }, body: JSON.stringify({ action:'get_initial_fields' }) }).then(function(r){ return r.json(); }).then(function(d){ 
           state.additionalSteps = d.additionalSteps || []; saveState();
