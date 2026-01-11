@@ -14,7 +14,7 @@ import {
   Users,
   Zap,
 } from "lucide-react";
-import { OnboardingSettings } from "@/lib/adminSettings";
+import { OnboardingSettings, OnboardingStep } from "@/lib/adminSettings";
 import {
   parseCurlRegistrationSpec,
   redactHeadersForLog,
@@ -67,6 +67,27 @@ const OnboardingSettingsSection: React.FC = () => {
   const [initialGeneratedCurl, setInitialGeneratedCurl] = useState<string>("");
   const [initialHits, setInitialHits] = useState<number>(0);
   const [regenInitial, setRegenInitial] = useState<boolean>(false);
+
+  // Dynamic steps state
+  const [expandedSteps, setExpandedSteps] = useState<Record<string, boolean>>(
+    {}
+  );
+  const [stepStates, setStepStates] = useState<
+    Record<
+      string,
+      {
+        indexing?: boolean;
+        generating?: boolean;
+        error?: string | null;
+        success?: string | null;
+        indexStatus?: string;
+        hits?: number;
+        generatedCurl?: string;
+        docFile?: File | null;
+        prompt?: string;
+      }
+    >
+  >({});
 
   // Collapsible sections state
   const [registrationOpen, setRegistrationOpen] = useState<boolean>(false);
@@ -540,6 +561,141 @@ const OnboardingSettingsSection: React.FC = () => {
       setError(e?.message || "Failed to generate authentication cURL");
     } finally {
       setAuthGenerating(false);
+    }
+  };
+
+  const handleStepFileChange = (
+    stepId: string,
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const files = e.target.files;
+    const file = files && files[0] ? files[0] : null;
+    setStepStates((prev) => ({
+      ...prev,
+      [stepId]: { ...(prev[stepId] || {}), docFile: file },
+    }));
+  };
+
+  const indexStepDocs = async (
+    stepId: string,
+    docsUrl: string,
+    namespace: string
+  ) => {
+    const currentState = stepStates[stepId] || {};
+    try {
+      setStepStates((prev) => ({
+        ...prev,
+        [stepId]: {
+          ...currentState,
+          indexing: true,
+          error: null,
+          success: null,
+          generatedCurl: "",
+          indexStatus: "",
+          hits: 0,
+        },
+      }));
+
+      const form = new FormData();
+      if (docsUrl && docsUrl.trim()) form.append("url", docsUrl.trim());
+      if (currentState.docFile) form.append("file", currentState.docFile);
+      form.append("namespace", namespace || `step-${stepId}`);
+
+      const indexRes = await fetch("/api/index", {
+        method: "POST",
+        body: form,
+        credentials: "include",
+      });
+      const indexJson = await indexRes.json();
+      if (!indexRes.ok || !indexJson.ok) {
+        throw new Error(indexJson.error || "Failed to index docs");
+      }
+
+      setStepStates((prev) => ({
+        ...prev,
+        [stepId]: {
+          ...prev[stepId],
+          indexing: false,
+          indexStatus: `Indexed ${indexJson.count} chunks from ${indexJson.source}`,
+        },
+      }));
+    } catch (e: any) {
+      setStepStates((prev) => ({
+        ...prev,
+        [stepId]: {
+          ...prev[stepId],
+          indexing: false,
+          error: e?.message || "Failed to index docs",
+        },
+      }));
+      return;
+    }
+
+    // Auto-trigger generation
+    try {
+      setStepStates((prev) => ({
+        ...prev,
+        [stepId]: { ...prev[stepId], generating: true },
+      }));
+
+      const genRes = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          prompt:
+            currentState.prompt ||
+            "Generate a canonical cURL command for this step",
+          namespace: namespace || `step-${stepId}`,
+          topK: 5,
+        }),
+      });
+      const genJson = await genRes.json();
+      if (!genRes.ok || !genJson.success) {
+        throw new Error(genJson.error || "Failed to generate cURL");
+      }
+
+      setStepStates((prev) => ({
+        ...prev,
+        [stepId]: {
+          ...prev[stepId],
+          generating: false,
+          generatedCurl: genJson.curl || "",
+          hits: genJson.hits || 0,
+          success: "Generated cURL from docs. Review and save it.",
+        },
+      }));
+
+      // Update the step in settings
+      setSettings((prev) => {
+        const steps = [...(prev.additionalSteps || [])];
+        const idx = steps.findIndex((s) => s.id === stepId);
+        if (idx >= 0) {
+          steps[idx] = {
+            ...steps[idx],
+            curlCommand: genJson.curl || steps[idx].curlCommand,
+            parsed: (genJson.parsed || steps[idx].parsed) as any,
+          };
+          return { ...prev, additionalSteps: steps };
+        }
+        return prev;
+      });
+
+      setTimeout(() => {
+        setStepStates((prev) => ({
+          ...prev,
+          [stepId]: { ...prev[stepId], success: null },
+        }));
+      }, 3000);
+    } catch (e: any) {
+      setStepStates((prev) => ({
+        ...prev,
+        [stepId]: {
+          ...prev[stepId],
+          generating: false,
+          error: e?.message || "Failed to generate cURL",
+        },
+      }));
     }
   };
 
@@ -1911,6 +2067,454 @@ const OnboardingSettingsSection: React.FC = () => {
                 </div>
               </div>
 
+              {/* Additional Steps */}
+              <div style={{ marginTop: 24, marginBottom: 12 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <div style={{ fontWeight: 600, color: "#2d3748" }}>
+                    Additional Steps
+                  </div>
+                  <button
+                    onClick={() => {
+                      const newStep: OnboardingStep = {
+                        id: `step_${Date.now()}`,
+                        name: "New Step",
+                        fields: [],
+                        headers: [],
+                        headerFields: [],
+                        responseFields: [],
+                        responseFieldDefs: [],
+                      };
+                      setSettings({
+                        ...(settings as any),
+                        additionalSteps: [
+                          ...((settings.additionalSteps as OnboardingStep[]) ||
+                            []),
+                          newStep,
+                        ],
+                      });
+                    }}
+                    style={{
+                      padding: "6px 12px",
+                      background: "#3182ce",
+                      color: "white",
+                      border: "none",
+                      borderRadius: 8,
+                      fontSize: 13,
+                      cursor: "pointer",
+                    }}
+                  >
+                    + Add Step
+                  </button>
+                </div>
+              </div>
+
+              {((settings.additionalSteps as OnboardingStep[]) || []).map(
+                (step, stepIndex) => {
+                  const stepId = step.id;
+                  const isExpanded = expandedSteps[stepId] || false;
+                  const stepState = stepStates[stepId] || {};
+
+                  const updateStep = (updates: Partial<OnboardingStep>) => {
+                    const newSteps = [
+                      ...((settings.additionalSteps as OnboardingStep[]) || []),
+                    ];
+                    newSteps[stepIndex] = { ...step, ...updates };
+                    setSettings({
+                      ...(settings as any),
+                      additionalSteps: newSteps,
+                    });
+                  };
+
+                  const removeStep = () => {
+                    if (
+                      !confirm(
+                        "Are you sure you want to remove this step? This cannot be undone."
+                      )
+                    )
+                      return;
+                    const newSteps = [
+                      ...((settings.additionalSteps as OnboardingStep[]) || []),
+                    ];
+                    newSteps.splice(stepIndex, 1);
+                    setSettings({
+                      ...(settings as any),
+                      additionalSteps: newSteps,
+                    });
+                  };
+
+                  return (
+                    <div
+                      key={stepId}
+                      style={{
+                        marginTop: 12,
+                        border: "1px solid #e2e8f0",
+                        borderRadius: 12,
+                        background: "#fff",
+                        overflow: "hidden",
+                      }}
+                    >
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        onClick={() =>
+                          setExpandedSteps((prev) => ({
+                            ...prev,
+                            [stepId]: !isExpanded,
+                          }))
+                        }
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          padding: "12px 14px",
+                          background: "#f7fafc",
+                          cursor: "pointer",
+                          borderBottom: isExpanded
+                            ? "1px solid #e2e8f0"
+                            : "none",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                          }}
+                        >
+                          <span style={{ fontWeight: 600, color: "#2d3748" }}>
+                            {isExpanded ? "▼" : "▶"}{" "}
+                            {step.name || "Untitled Step"}
+                          </span>
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeStep();
+                          }}
+                          style={{
+                            padding: "4px 8px",
+                            background: "#feb2b2",
+                            color: "#c53030",
+                            border: "none",
+                            borderRadius: 4,
+                            fontSize: 11,
+                            cursor: "pointer",
+                          }}
+                        >
+                          Remove
+                        </button>
+                      </div>
+
+                      {isExpanded && (
+                        <div style={{ padding: 14 }}>
+                          <div style={{ marginBottom: 12 }}>
+                            <label
+                              style={{
+                                display: "block",
+                                fontSize: 13,
+                                marginBottom: 4,
+                                color: "#4a5568",
+                              }}
+                            >
+                              Step Name
+                            </label>
+                            <input
+                              type="text"
+                              value={step.name}
+                              onChange={(e) =>
+                                updateStep({ name: e.target.value })
+                              }
+                              style={{
+                                width: "100%",
+                                padding: 8,
+                                borderRadius: 6,
+                                border: "1px solid #cbd5e0",
+                              }}
+                            />
+                          </div>
+
+                          <div style={{ marginBottom: 12 }}>
+                            <label
+                              style={{
+                                display: "block",
+                                fontSize: 13,
+                                marginBottom: 4,
+                                color: "#4a5568",
+                              }}
+                            >
+                              Documentation URL
+                            </label>
+                            <input
+                              type="url"
+                              value={step.docsUrl || ""}
+                              onChange={(e) =>
+                                updateStep({ docsUrl: e.target.value })
+                              }
+                              placeholder="https://docs.example.com/api"
+                              style={{
+                                width: "100%",
+                                padding: 8,
+                                borderRadius: 6,
+                                border: "1px solid #cbd5e0",
+                              }}
+                            />
+                          </div>
+
+                          <div style={{ marginBottom: 12 }}>
+                            <label
+                              style={{
+                                display: "block",
+                                fontSize: 13,
+                                marginBottom: 4,
+                                color: "#4a5568",
+                              }}
+                            >
+                              Or upload file (.txt, .md)
+                            </label>
+                            <input
+                              type="file"
+                              accept=".txt,.md"
+                              onChange={(e) => handleStepFileChange(stepId, e)}
+                            />
+                          </div>
+
+                          <div style={{ marginBottom: 12 }}>
+                            <button
+                              onClick={() =>
+                                indexStepDocs(
+                                  stepId,
+                                  step.docsUrl || "",
+                                  `step-${stepId}`
+                                )
+                              }
+                              disabled={
+                                stepState.indexing || stepState.generating
+                              }
+                              style={{
+                                padding: "8px 12px",
+                                background: stepState.indexing
+                                  ? "#a0aec0"
+                                  : "#667eea",
+                                color: "white",
+                                border: "none",
+                                borderRadius: 6,
+                                cursor: stepState.indexing
+                                  ? "not-allowed"
+                                  : "pointer",
+                              }}
+                            >
+                              {stepState.indexing
+                                ? "Indexing..."
+                                : stepState.generating
+                                ? "Generating..."
+                                : "Index Docs & Generate Spec"}
+                            </button>
+                          </div>
+
+                          {stepState.error && (
+                            <div
+                              style={{
+                                color: "red",
+                                marginBottom: 12,
+                                fontSize: 13,
+                              }}
+                            >
+                              {stepState.error}
+                            </div>
+                          )}
+                          {stepState.success && (
+                            <div
+                              style={{
+                                color: "green",
+                                marginBottom: 12,
+                                fontSize: 13,
+                              }}
+                            >
+                              {stepState.success}
+                            </div>
+                          )}
+
+                          {stepState.generatedCurl && (
+                            <div style={{ marginBottom: 12 }}>
+                              <label style={{ fontSize: 13, fontWeight: 600 }}>
+                                Generated cURL
+                              </label>
+                              <textarea
+                                readOnly
+                                value={stepState.generatedCurl}
+                                rows={4}
+                                style={{
+                                  width: "100%",
+                                  fontSize: 12,
+                                  fontFamily: "monospace",
+                                }}
+                              />
+                            </div>
+                          )}
+
+                          <div style={{ marginBottom: 12 }}>
+                            <label
+                              style={{
+                                display: "block",
+                                fontSize: 13,
+                                marginBottom: 4,
+                                color: "#4a5568",
+                              }}
+                            >
+                              Canonical cURL Command
+                            </label>
+                            <textarea
+                              value={step.curlCommand || ""}
+                              onChange={(e) => {
+                                const curl = e.target.value;
+                                let parsed: any = undefined;
+                                try {
+                                  const p = parseCurlRegistrationSpec(curl);
+                                  const bodyKeys =
+                                    extractBodyKeysFromCurl(curl);
+                                  parsed = {
+                                    method: p.method,
+                                    url: p.url,
+                                    contentType: p.contentType,
+                                    headersRedacted: redactHeadersForLog(
+                                      p.headers
+                                    ),
+                                    bodyKeys,
+                                  };
+                                } catch {}
+                                updateStep({ curlCommand: curl, parsed });
+                              }}
+                              rows={4}
+                              style={{
+                                width: "100%",
+                                padding: 8,
+                                borderRadius: 6,
+                                border: "1px solid #cbd5e0",
+                                fontFamily: "monospace",
+                                fontSize: 12,
+                              }}
+                            />
+                          </div>
+
+                          <button
+                            onClick={async () => {
+                              try {
+                                const res = await fetch(
+                                  `/api/admin/onboarding?derive=${stepId}&docsUrl=${encodeURIComponent(
+                                    step.docsUrl || ""
+                                  )}&curl=${encodeURIComponent(
+                                    step.curlCommand || ""
+                                  )}`,
+                                  { credentials: "include" }
+                                );
+                                const data = await res.json();
+                                if (res.ok && data.success) {
+                                  const spec = data.spec;
+                                  updateStep({
+                                    fields: spec.body,
+                                    headerFields: (spec.headers || []).map(
+                                      (h: string) => ({
+                                        key: h,
+                                        label: h,
+                                        required: true,
+                                        type: "text",
+                                      })
+                                    ),
+                                    responseFieldDefs: (
+                                      spec.response || []
+                                    ).map((k: string) => ({
+                                      key: k,
+                                      label: k,
+                                      required: false,
+                                      type: "text",
+                                    })),
+                                    parsed: {
+                                      method: step.parsed?.method || "POST",
+                                      bodyKeys: (spec.body || []).map(
+                                        (f: any) => f.key
+                                      ),
+                                    },
+                                  });
+                                } else {
+                                  alert(data.error || "Failed to derive spec");
+                                }
+                              } catch (e: any) {
+                                alert(e.message);
+                              }
+                            }}
+                            style={{
+                              marginBottom: 12,
+                              padding: "6px 10px",
+                              fontSize: 12,
+                              background: "#2d3748",
+                              color: "white",
+                              border: "none",
+                              borderRadius: 4,
+                            }}
+                          >
+                            Regenerate Spec from Docs
+                          </button>
+
+                          {/* Body Fields */}
+                          <div style={{ marginBottom: 12 }}>
+                            <div
+                              style={{
+                                fontWeight: 600,
+                                fontSize: 13,
+                                marginBottom: 4,
+                              }}
+                            >
+                              Body Fields
+                            </div>
+                            {(step.fields || []).map((f, i) => (
+                              <div
+                                key={i}
+                                style={{
+                                  display: "flex",
+                                  gap: 8,
+                                  marginBottom: 4,
+                                }}
+                              >
+                                <input
+                                  value={f.key}
+                                  readOnly
+                                  style={{
+                                    background: "#f7fafc",
+                                    border: "1px solid #e2e8f0",
+                                    padding: 4,
+                                    fontSize: 12,
+                                    width: "150px",
+                                  }}
+                                />
+                                <span
+                                  style={{ fontSize: 12, color: "#718096" }}
+                                >
+                                  {f.type}
+                                </span>
+                                <label style={{ fontSize: 12 }}>
+                                  <input
+                                    type="checkbox"
+                                    checked={f.required}
+                                    readOnly
+                                  />{" "}
+                                  Req
+                                </label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+              )}
+
               {/* Onboarding Widget Embed */}
               <div
                 role="button"
@@ -1962,7 +2566,7 @@ const OnboardingSettingsSection: React.FC = () => {
                         ? window.location.origin
                         : "";
                     const apiKey = settings.apiKey || "<YOUR_API_KEY>";
-                    const snippet = `<script src="${origin}/api/widget" data-api-key="${apiKey}" data-theme="green" data-onboarding-only="true"></script>`;
+                    const snippet = `<script src="${origin}/api/widget/onboarding" data-api-key="${apiKey}"></script>`;
                     return (
                       <div>
                         <textarea

@@ -11,7 +11,10 @@ import {
   redactHeadersForLog,
 } from "@/lib/curl";
 import { verifyAdminAccessFromCookie } from "@/lib/auth";
-import { deriveFieldsFromDocsForAdmin, deriveSpecFromDocsForAdmin } from "@/services/onboardingService";
+import {
+  deriveFieldsFromDocsForAdmin,
+  deriveSpecFromDocsForAdmin,
+} from "@/services/onboardingService";
 
 // CORS headers for admin onboarding config
 const corsHeaders = {
@@ -55,7 +58,10 @@ export async function GET(request: NextRequest) {
     const sanitize = (s?: string) => {
       if (!s || typeof s !== "string") return s;
       const t = s.trim();
-      return t.replace(/^`+|`+$/g, "").replace(/^"+|"+$/g, "").replace(/^'+|'+$/g, "");
+      return t
+        .replace(/^`+|`+$/g, "")
+        .replace(/^"+|"+$/g, "")
+        .replace(/^'+|'+$/g, "");
     };
     const docsUrlQ = sanitize(urlObj.searchParams.get("docsUrl") || undefined);
     const curlQ = sanitize(urlObj.searchParams.get("curl") || undefined);
@@ -66,20 +72,51 @@ export async function GET(request: NextRequest) {
     const authCurlSan = sanitize((onboarding as any).authCurlCommand);
     const initialCurlSan = sanitize(onboarding.initialSetupCurlCommand);
     if (debug) {
-      debugTrace.push({ step: "inputs", registration: { docsUrl: docsUrlSan }, auth: { docsUrl: authDocsUrlSan }, initial: { docsUrl: initialDocsUrlSan } });
+      debugTrace.push({
+        step: "inputs",
+        registration: { docsUrl: docsUrlSan },
+        auth: { docsUrl: authDocsUrlSan },
+        initial: { docsUrl: initialDocsUrlSan },
+      });
     }
 
     // Derive-only mode: return spec for requested section without persisting
-    if (derive === "registration" || derive === "auth" || derive === "initial") {
+    if (derive) {
       try {
         const spec = await deriveSpecFromDocsForAdmin(
           adminId,
-          derive === "registration" ? (docsUrlQ || docsUrlSan) : derive === "auth" ? (docsUrlQ || authDocsUrlSan) : (docsUrlQ || initialDocsUrlSan),
-          derive as any,
-          derive === "registration" ? (curlQ || curlSan) : derive === "auth" ? (curlQ || (authCurlSan as any)) : (curlQ || initialCurlSan)
+          derive === "registration"
+            ? docsUrlQ || docsUrlSan
+            : derive === "auth"
+            ? docsUrlQ || authDocsUrlSan
+            : derive === "initial"
+            ? docsUrlQ || initialDocsUrlSan
+            : docsUrlQ || "",
+          derive,
+          derive === "registration"
+            ? curlQ || curlSan
+            : derive === "auth"
+            ? curlQ || (authCurlSan as any)
+            : derive === "initial"
+            ? curlQ || initialCurlSan
+            : curlQ || ""
         );
         if (debug) {
-          debugTrace.push({ step: `derive_${derive}`, docsUrl: derive === "registration" ? (docsUrlQ || docsUrlSan) : derive === "auth" ? (docsUrlQ || authDocsUrlSan) : (docsUrlQ || initialDocsUrlSan), bodyCount: spec.body.length, headersCount: spec.headers.length, responseCount: spec.response.length, previewBody: spec.body.slice(0, 5) });
+          debugTrace.push({
+            step: `derive_${derive}`,
+            docsUrl:
+              derive === "registration"
+                ? docsUrlQ || docsUrlSan
+                : derive === "auth"
+                ? docsUrlQ || authDocsUrlSan
+                : derive === "initial"
+                ? docsUrlQ || initialDocsUrlSan
+                : docsUrlQ || "",
+            bodyCount: spec.body.length,
+            headersCount: spec.headers.length,
+            responseCount: spec.response.length,
+            previewBody: spec.body.slice(0, 5),
+          });
         }
         return NextResponse.json(
           { success: true, spec, ...(debug ? { debug: debugTrace } : {}) },
@@ -87,7 +124,11 @@ export async function GET(request: NextRequest) {
         );
       } catch (e) {
         return NextResponse.json(
-          { success: false, error: "Failed to derive spec", ...(debug ? { debug: debugTrace } : {}) },
+          {
+            success: false,
+            error: "Failed to derive spec",
+            ...(debug ? { debug: debugTrace } : {}),
+          },
           { status: 500, headers: corsHeaders }
         );
       }
@@ -110,14 +151,31 @@ export async function GET(request: NextRequest) {
           bodyKeys,
         };
       }
-      if (!withParsed.registrationParsed?.bodyKeys || withParsed.registrationParsed.bodyKeys.length === 0) {
+      if (
+        !withParsed.registrationParsed?.bodyKeys ||
+        withParsed.registrationParsed.bodyKeys.length === 0
+      ) {
         let keysFromDocs: string[] = [];
         if ((withParsed.registrationFields || []).length > 0) {
-          keysFromDocs = (withParsed.registrationFields || []).map((f) => f.key);
+          keysFromDocs = (withParsed.registrationFields || []).map(
+            (f) => f.key
+          );
         } else {
-          const spec = await deriveSpecFromDocsForAdmin(adminId, docsUrlSan, "registration", withParsed.curlCommand);
+          const spec = await deriveSpecFromDocsForAdmin(
+            adminId,
+            docsUrlSan,
+            "registration",
+            withParsed.curlCommand
+          );
           if (debug) {
-            debugTrace.push({ step: "derive_registration", docsUrl: docsUrlSan, bodyCount: spec.body.length, headersCount: spec.headers.length, responseCount: spec.response.length, previewBody: spec.body.slice(0, 5) });
+            debugTrace.push({
+              step: "derive_registration",
+              docsUrl: docsUrlSan,
+              bodyCount: spec.body.length,
+              headersCount: spec.headers.length,
+              responseCount: spec.response.length,
+              previewBody: spec.body.slice(0, 5),
+            });
           }
           keysFromDocs = spec.body.map((f) => f.key);
         }
@@ -129,25 +187,64 @@ export async function GET(request: NextRequest) {
       // Derive registration fields only when undefined (first-run)
       {
         const needBody = typeof withParsed.registrationFields === "undefined";
-        const needHeaders = typeof (withParsed as any).registrationHeaders === "undefined";
-        const needResp = typeof (withParsed as any).registrationResponseFields === "undefined";
+        const needHeaders =
+          typeof (withParsed as any).registrationHeaders === "undefined";
+        const needResp =
+          typeof (withParsed as any).registrationResponseFields === "undefined";
         if (needBody || needHeaders || needResp) {
-          const spec = await deriveSpecFromDocsForAdmin(adminId, docsUrlSan, "registration", withParsed.curlCommand);
+          const spec = await deriveSpecFromDocsForAdmin(
+            adminId,
+            docsUrlSan,
+            "registration",
+            withParsed.curlCommand
+          );
           if (needBody) withParsed.registrationFields = spec.body;
-          if (needHeaders) (withParsed as any).registrationHeaders = spec.headers;
+          if (needHeaders)
+            (withParsed as any).registrationHeaders = spec.headers;
           const regBodyKeys = (spec.body || []).map((f: any) => f.key);
-          const regRespKeys = (spec.response || []).filter((k: string) => !regBodyKeys.includes(k));
-          if (needResp) (withParsed as any).registrationResponseFields = regRespKeys;
+          const regRespKeys = (spec.response || []).filter(
+            (k: string) => !regBodyKeys.includes(k)
+          );
+          if (needResp)
+            (withParsed as any).registrationResponseFields = regRespKeys;
           if (!(withParsed as any).registrationHeaderFields) {
-            (withParsed as any).registrationHeaderFields = (spec.headers || []).map((h: string) => ({ key: h, label: h.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), required: true, type: "text" }));
+            (withParsed as any).registrationHeaderFields = (
+              spec.headers || []
+            ).map((h: string) => ({
+              key: h,
+              label: h
+                .replace(/_/g, " ")
+                .replace(/\b\w/g, (c) => c.toUpperCase()),
+              required: true,
+              type: "text",
+            }));
           }
           if (!(withParsed as any).registrationResponseFieldDefs) {
-            (withParsed as any).registrationResponseFieldDefs = regRespKeys.map((k: string) => ({ key: k, label: k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), required: false, type: "text" }));
+            (withParsed as any).registrationResponseFieldDefs = regRespKeys.map(
+              (k: string) => ({
+                key: k,
+                label: k
+                  .replace(/_/g, " ")
+                  .replace(/\b\w/g, (c) => c.toUpperCase()),
+                required: false,
+                type: "text",
+              })
+            );
           }
           if (debug) {
-            debugTrace.push({ step: "fill_registration_first_run", docsUrl: docsUrlSan, bodyCount: spec.body.length, headersCount: spec.headers.length, responseCount: spec.response.length });
+            debugTrace.push({
+              step: "fill_registration_first_run",
+              docsUrl: docsUrlSan,
+              bodyCount: spec.body.length,
+              headersCount: spec.headers.length,
+              responseCount: spec.response.length,
+            });
           }
-          if (withParsed.registrationParsed && (!withParsed.registrationParsed.bodyKeys || withParsed.registrationParsed.bodyKeys.length === 0)) {
+          if (
+            withParsed.registrationParsed &&
+            (!withParsed.registrationParsed.bodyKeys ||
+              withParsed.registrationParsed.bodyKeys.length === 0)
+          ) {
             withParsed.registrationParsed = {
               ...withParsed.registrationParsed,
               bodyKeys: spec.body.map((f) => f.key),
@@ -170,14 +267,29 @@ export async function GET(request: NextRequest) {
           bodyKeys,
         };
       }
-      if (!withParsed.authParsed?.bodyKeys || withParsed.authParsed.bodyKeys.length === 0) {
+      if (
+        !withParsed.authParsed?.bodyKeys ||
+        withParsed.authParsed.bodyKeys.length === 0
+      ) {
         let keysFromDocs: string[] = [];
         if ((withParsed.authFields || []).length > 0) {
           keysFromDocs = (withParsed.authFields || []).map((f) => f.key);
         } else {
-          const spec = await deriveSpecFromDocsForAdmin(adminId, authDocsUrlSan, "auth", (withParsed as any).authCurlCommand as string);
+          const spec = await deriveSpecFromDocsForAdmin(
+            adminId,
+            authDocsUrlSan,
+            "auth",
+            (withParsed as any).authCurlCommand as string
+          );
           if (debug) {
-            debugTrace.push({ step: "derive_auth", docsUrl: authDocsUrlSan, bodyCount: spec.body.length, headersCount: spec.headers.length, responseCount: spec.response.length, previewBody: spec.body.slice(0, 5) });
+            debugTrace.push({
+              step: "derive_auth",
+              docsUrl: authDocsUrlSan,
+              bodyCount: spec.body.length,
+              headersCount: spec.headers.length,
+              responseCount: spec.response.length,
+              previewBody: spec.body.slice(0, 5),
+            });
           }
           keysFromDocs = spec.body.map((f) => f.key);
         }
@@ -188,25 +300,62 @@ export async function GET(request: NextRequest) {
       }
       {
         const needBody = typeof withParsed.authFields === "undefined";
-        const needHeaders = typeof (withParsed as any).authHeaders === "undefined";
-        const needResp = typeof (withParsed as any).authResponseFields === "undefined";
+        const needHeaders =
+          typeof (withParsed as any).authHeaders === "undefined";
+        const needResp =
+          typeof (withParsed as any).authResponseFields === "undefined";
         if (needBody || needHeaders || needResp) {
-          const spec = await deriveSpecFromDocsForAdmin(adminId, authDocsUrlSan, "auth", (withParsed as any).authCurlCommand as string);
+          const spec = await deriveSpecFromDocsForAdmin(
+            adminId,
+            authDocsUrlSan,
+            "auth",
+            (withParsed as any).authCurlCommand as string
+          );
           if (needBody) withParsed.authFields = spec.body;
           if (needHeaders) (withParsed as any).authHeaders = spec.headers;
           const authBodyKeys = (spec.body || []).map((f: any) => f.key);
-          const authRespKeys = (spec.response || []).filter((k: string) => !authBodyKeys.includes(k));
+          const authRespKeys = (spec.response || []).filter(
+            (k: string) => !authBodyKeys.includes(k)
+          );
           if (needResp) (withParsed as any).authResponseFields = authRespKeys;
           if (!(withParsed as any).authHeaderFields) {
-            (withParsed as any).authHeaderFields = (spec.headers || []).map((h: string) => ({ key: h, label: h.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), required: true, type: "text" }));
+            (withParsed as any).authHeaderFields = (spec.headers || []).map(
+              (h: string) => ({
+                key: h,
+                label: h
+                  .replace(/_/g, " ")
+                  .replace(/\b\w/g, (c) => c.toUpperCase()),
+                required: true,
+                type: "text",
+              })
+            );
           }
           if (!(withParsed as any).authResponseFieldDefs) {
-            (withParsed as any).authResponseFieldDefs = authRespKeys.map((k: string) => ({ key: k, label: k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), required: false, type: "text" }));
+            (withParsed as any).authResponseFieldDefs = authRespKeys.map(
+              (k: string) => ({
+                key: k,
+                label: k
+                  .replace(/_/g, " ")
+                  .replace(/\b\w/g, (c) => c.toUpperCase()),
+                required: false,
+                type: "text",
+              })
+            );
           }
           if (debug) {
-            debugTrace.push({ step: "fill_auth_first_run", docsUrl: authDocsUrlSan, bodyCount: spec.body.length, headersCount: spec.headers.length, responseCount: spec.response.length });
+            debugTrace.push({
+              step: "fill_auth_first_run",
+              docsUrl: authDocsUrlSan,
+              bodyCount: spec.body.length,
+              headersCount: spec.headers.length,
+              responseCount: spec.response.length,
+            });
           }
-          if (withParsed.authParsed && (!withParsed.authParsed.bodyKeys || withParsed.authParsed.bodyKeys.length === 0)) {
+          if (
+            withParsed.authParsed &&
+            (!withParsed.authParsed.bodyKeys ||
+              withParsed.authParsed.bodyKeys.length === 0)
+          ) {
             withParsed.authParsed = {
               ...withParsed.authParsed,
               bodyKeys: spec.body.map((f) => f.key),
@@ -227,14 +376,29 @@ export async function GET(request: NextRequest) {
           bodyKeys,
         };
       }
-      if (!withParsed.initialParsed?.bodyKeys || withParsed.initialParsed.bodyKeys.length === 0) {
+      if (
+        !withParsed.initialParsed?.bodyKeys ||
+        withParsed.initialParsed.bodyKeys.length === 0
+      ) {
         let keysFromDocs: string[] = [];
         if ((withParsed.initialFields || []).length > 0) {
           keysFromDocs = (withParsed.initialFields || []).map((f) => f.key);
         } else {
-          const spec = await deriveSpecFromDocsForAdmin(adminId, initialDocsUrlSan, "initial", withParsed.initialSetupCurlCommand);
+          const spec = await deriveSpecFromDocsForAdmin(
+            adminId,
+            initialDocsUrlSan,
+            "initial",
+            withParsed.initialSetupCurlCommand
+          );
           if (debug) {
-            debugTrace.push({ step: "derive_initial", docsUrl: initialDocsUrlSan, bodyCount: spec.body.length, headersCount: spec.headers.length, responseCount: spec.response.length, previewBody: spec.body.slice(0, 5) });
+            debugTrace.push({
+              step: "derive_initial",
+              docsUrl: initialDocsUrlSan,
+              bodyCount: spec.body.length,
+              headersCount: spec.headers.length,
+              responseCount: spec.response.length,
+              previewBody: spec.body.slice(0, 5),
+            });
           }
           keysFromDocs = spec.body.map((f) => f.key);
         }
@@ -245,25 +409,63 @@ export async function GET(request: NextRequest) {
       }
       {
         const needBody = typeof withParsed.initialFields === "undefined";
-        const needHeaders = typeof (withParsed as any).initialHeaders === "undefined";
-        const needResp = typeof (withParsed as any).initialResponseFields === "undefined";
+        const needHeaders =
+          typeof (withParsed as any).initialHeaders === "undefined";
+        const needResp =
+          typeof (withParsed as any).initialResponseFields === "undefined";
         if (needBody || needHeaders || needResp) {
-          const spec = await deriveSpecFromDocsForAdmin(adminId, initialDocsUrlSan, "initial", withParsed.initialSetupCurlCommand);
+          const spec = await deriveSpecFromDocsForAdmin(
+            adminId,
+            initialDocsUrlSan,
+            "initial",
+            withParsed.initialSetupCurlCommand
+          );
           if (needBody) withParsed.initialFields = spec.body;
           if (needHeaders) (withParsed as any).initialHeaders = spec.headers;
           const initBodyKeys = (spec.body || []).map((f: any) => f.key);
-          const initRespKeys = (spec.response || []).filter((k: string) => !initBodyKeys.includes(k));
-          if (needResp) (withParsed as any).initialResponseFields = initRespKeys;
+          const initRespKeys = (spec.response || []).filter(
+            (k: string) => !initBodyKeys.includes(k)
+          );
+          if (needResp)
+            (withParsed as any).initialResponseFields = initRespKeys;
           if (!(withParsed as any).initialHeaderFields) {
-            (withParsed as any).initialHeaderFields = (spec.headers || []).map((h: string) => ({ key: h, label: h.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), required: true, type: "text" }));
+            (withParsed as any).initialHeaderFields = (spec.headers || []).map(
+              (h: string) => ({
+                key: h,
+                label: h
+                  .replace(/_/g, " ")
+                  .replace(/\b\w/g, (c) => c.toUpperCase()),
+                required: true,
+                type: "text",
+              })
+            );
           }
           if (!(withParsed as any).initialResponseFieldDefs) {
-            (withParsed as any).initialResponseFieldDefs = initRespKeys.map((k: string) => ({ key: k, label: k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), required: false, type: "text" }));
+            (withParsed as any).initialResponseFieldDefs = initRespKeys.map(
+              (k: string) => ({
+                key: k,
+                label: k
+                  .replace(/_/g, " ")
+                  .replace(/\b\w/g, (c) => c.toUpperCase()),
+                required: false,
+                type: "text",
+              })
+            );
           }
           if (debug) {
-            debugTrace.push({ step: "fill_initial_first_run", docsUrl: initialDocsUrlSan, bodyCount: spec.body.length, headersCount: spec.headers.length, responseCount: spec.response.length });
+            debugTrace.push({
+              step: "fill_initial_first_run",
+              docsUrl: initialDocsUrlSan,
+              bodyCount: spec.body.length,
+              headersCount: spec.headers.length,
+              responseCount: spec.response.length,
+            });
           }
-          if (withParsed.initialParsed && (!withParsed.initialParsed.bodyKeys || withParsed.initialParsed.bodyKeys.length === 0)) {
+          if (
+            withParsed.initialParsed &&
+            (!withParsed.initialParsed.bodyKeys ||
+              withParsed.initialParsed.bodyKeys.length === 0)
+          ) {
             withParsed.initialParsed = {
               ...withParsed.initialParsed,
               bodyKeys: spec.body.map((f) => f.key),
@@ -274,7 +476,11 @@ export async function GET(request: NextRequest) {
     } catch {}
 
     return NextResponse.json(
-      { success: true, onboarding: withParsed, ...(debug ? { debug: debugTrace } : {}) },
+      {
+        success: true,
+        onboarding: withParsed,
+        ...(debug ? { debug: debugTrace } : {}),
+      },
       { status: 200, headers: corsHeaders }
     );
   } catch (error) {
@@ -306,12 +512,17 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const onboardingUpdates: Partial<OnboardingSettings> =
       body.onboarding || body;
-    const debugFlag = Boolean((body && body.debug) || (onboardingUpdates as any).debug || debugQuery);
+    const debugFlag = Boolean(
+      (body && body.debug) || (onboardingUpdates as any).debug || debugQuery
+    );
     const debugTrace: any[] = [];
     const sanitize = (s?: string) => {
       if (!s || typeof s !== "string") return s;
       const t = s.trim();
-      return t.replace(/^`+|`+$/g, "").replace(/^"+|"+$/g, "").replace(/^'+|'+$/g, "");
+      return t
+        .replace(/^`+|`+$/g, "")
+        .replace(/^"+|"+$/g, "")
+        .replace(/^'+|'+$/g, "");
     };
 
     // Allow minimal updates: if any cURL is provided, auto-enable onboarding
@@ -342,7 +553,26 @@ export async function PUT(request: NextRequest) {
     (merged as any).authCurlCommand = sanitize((merged as any).authCurlCommand);
     merged.initialSetupCurlCommand = sanitize(merged.initialSetupCurlCommand);
     if (debugFlag) {
-      debugTrace.push({ step: "inputs", registration: { docsUrl: merged.docsUrl, curlCommand: merged.curlCommand }, auth: { docsUrl: (merged as any).authDocsUrl, curlCommand: (merged as any).authCurlCommand }, initial: { docsUrl: merged.initialSetupDocsUrl, curlCommand: merged.initialSetupCurlCommand }, flags: { regenRegistration: (onboardingUpdates as any).regenRegistration, regenAuth: (onboardingUpdates as any).regenAuth, regenInitial: (onboardingUpdates as any).regenInitial } });
+      debugTrace.push({
+        step: "inputs",
+        registration: {
+          docsUrl: merged.docsUrl,
+          curlCommand: merged.curlCommand,
+        },
+        auth: {
+          docsUrl: (merged as any).authDocsUrl,
+          curlCommand: (merged as any).authCurlCommand,
+        },
+        initial: {
+          docsUrl: merged.initialSetupDocsUrl,
+          curlCommand: merged.initialSetupCurlCommand,
+        },
+        flags: {
+          regenRegistration: (onboardingUpdates as any).regenRegistration,
+          regenAuth: (onboardingUpdates as any).regenAuth,
+          regenInitial: (onboardingUpdates as any).regenInitial,
+        },
+      });
     }
 
     // Explicit regeneration flags: force re-derivation of body fields
@@ -419,35 +649,84 @@ export async function PUT(request: NextRequest) {
 
       // Fill fields from docs only when undefined (first-run) or when explicitly requested via regen flags
       {
-        const needBody = !Array.isArray(merged.registrationFields) || (merged.registrationFields || []).length === 0;
-        const needHeaders = !Array.isArray((merged as any).registrationHeaders) || (((merged as any).registrationHeaders || []).length === 0);
-        const needResp = !Array.isArray((merged as any).registrationResponseFields) || (((merged as any).registrationResponseFields || []).length === 0);
+        const needBody =
+          !Array.isArray(merged.registrationFields) ||
+          (merged.registrationFields || []).length === 0;
+        const needHeaders =
+          !Array.isArray((merged as any).registrationHeaders) ||
+          ((merged as any).registrationHeaders || []).length === 0;
+        const needResp =
+          !Array.isArray((merged as any).registrationResponseFields) ||
+          ((merged as any).registrationResponseFields || []).length === 0;
         const flags = onboardingUpdates as any;
-        const explicit = flags?.regenRegistration === true || flags?.regenAuth === true || flags?.regenInitial === true;
-        const shouldDerive = explicit ? flags?.regenRegistration === true : (needBody || needHeaders || needResp);
+        const explicit =
+          flags?.regenRegistration === true ||
+          flags?.regenAuth === true ||
+          flags?.regenInitial === true;
+        const shouldDerive = explicit
+          ? flags?.regenRegistration === true
+          : needBody || needHeaders || needResp;
         if (shouldDerive) {
           try {
-            const spec = await deriveSpecFromDocsForAdmin(adminId, merged.docsUrl, "registration", merged.curlCommand);
+            const spec = await deriveSpecFromDocsForAdmin(
+              adminId,
+              merged.docsUrl,
+              "registration",
+              merged.curlCommand
+            );
             if (needBody) merged.registrationFields = spec.body;
             if (needHeaders) (merged as any).registrationHeaders = spec.headers;
             const regBodyKeys2 = (spec.body || []).map((f: any) => f.key);
-            const regRespKeys2 = (spec.response || []).filter((k: string) => !regBodyKeys2.includes(k));
-            if (needResp) (merged as any).registrationResponseFields = regRespKeys2;
+            const regRespKeys2 = (spec.response || []).filter(
+              (k: string) => !regBodyKeys2.includes(k)
+            );
+            if (needResp)
+              (merged as any).registrationResponseFields = regRespKeys2;
             if (!(merged as any).registrationHeaderFields) {
-              (merged as any).registrationHeaderFields = (spec.headers || []).map((h: string) => ({ key: h, label: h.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), required: true, type: "text" }));
+              (merged as any).registrationHeaderFields = (
+                spec.headers || []
+              ).map((h: string) => ({
+                key: h,
+                label: h
+                  .replace(/_/g, " ")
+                  .replace(/\b\w/g, (c) => c.toUpperCase()),
+                required: true,
+                type: "text",
+              }));
             }
             if (!(merged as any).registrationResponseFieldDefs) {
-              (merged as any).registrationResponseFieldDefs = (spec.response || []).map((k: string) => ({ key: k, label: k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), required: false, type: "text" }));
+              (merged as any).registrationResponseFieldDefs = (
+                spec.response || []
+              ).map((k: string) => ({
+                key: k,
+                label: k
+                  .replace(/_/g, " ")
+                  .replace(/\b\w/g, (c) => c.toUpperCase()),
+                required: false,
+                type: "text",
+              }));
             }
             if (debugFlag) {
-              debugTrace.push({ step: "derive_registration", docsUrl: merged.docsUrl, curlCommand: merged.curlCommand, bodyCount: spec.body.length, headersCount: spec.headers.length, responseCount: spec.response.length, previewBody: spec.body.slice(0, 5) });
+              debugTrace.push({
+                step: "derive_registration",
+                docsUrl: merged.docsUrl,
+                curlCommand: merged.curlCommand,
+                bodyCount: spec.body.length,
+                headersCount: spec.headers.length,
+                responseCount: spec.response.length,
+                previewBody: spec.body.slice(0, 5),
+              });
             }
             if (flags?.regenRegistration === true) {
               merged.registrationParsed = {
                 ...(merged.registrationParsed || { method: "POST" }),
                 bodyKeys: spec.body.map((f) => f.key),
               };
-            } else if (merged.registrationParsed && (!merged.registrationParsed.bodyKeys || merged.registrationParsed.bodyKeys.length === 0)) {
+            } else if (
+              merged.registrationParsed &&
+              (!merged.registrationParsed.bodyKeys ||
+                merged.registrationParsed.bodyKeys.length === 0)
+            ) {
               merged.registrationParsed = {
                 ...merged.registrationParsed,
                 bodyKeys: spec.body.map((f) => f.key),
@@ -455,39 +734,90 @@ export async function PUT(request: NextRequest) {
             }
           } catch {}
         } else if (debugFlag) {
-          debugTrace.push({ step: "skip_registration", reason: explicit ? "explicit_regen_other_section" : "not_needed" });
+          debugTrace.push({
+            step: "skip_registration",
+            reason: explicit ? "explicit_regen_other_section" : "not_needed",
+          });
         }
       }
       {
-        const needBody = !Array.isArray(merged.authFields) || ((merged.authFields || []).length === 0);
-        const needHeaders = !Array.isArray((merged as any).authHeaders) || (((merged as any).authHeaders || []).length === 0);
-        const needResp = !Array.isArray((merged as any).authResponseFields) || (((merged as any).authResponseFields || []).length === 0);
+        const needBody =
+          !Array.isArray(merged.authFields) ||
+          (merged.authFields || []).length === 0;
+        const needHeaders =
+          !Array.isArray((merged as any).authHeaders) ||
+          ((merged as any).authHeaders || []).length === 0;
+        const needResp =
+          !Array.isArray((merged as any).authResponseFields) ||
+          ((merged as any).authResponseFields || []).length === 0;
         const flags2 = onboardingUpdates as any;
-        const explicit2 = flags2?.regenRegistration === true || flags2?.regenAuth === true || flags2?.regenInitial === true;
-        const shouldDerive2 = explicit2 ? flags2?.regenAuth === true : (needBody || needHeaders || needResp);
+        const explicit2 =
+          flags2?.regenRegistration === true ||
+          flags2?.regenAuth === true ||
+          flags2?.regenInitial === true;
+        const shouldDerive2 = explicit2
+          ? flags2?.regenAuth === true
+          : needBody || needHeaders || needResp;
         if (shouldDerive2) {
           try {
-            const spec = await deriveSpecFromDocsForAdmin(adminId, (merged as any).authDocsUrl, "auth", (merged as any).authCurlCommand as string);
+            const spec = await deriveSpecFromDocsForAdmin(
+              adminId,
+              (merged as any).authDocsUrl,
+              "auth",
+              (merged as any).authCurlCommand as string
+            );
             if (needBody) merged.authFields = spec.body;
             if (needHeaders) (merged as any).authHeaders = spec.headers;
             const authBodyKeys2 = (spec.body || []).map((f: any) => f.key);
-            const authRespKeys2 = (spec.response || []).filter((k: string) => !authBodyKeys2.includes(k));
+            const authRespKeys2 = (spec.response || []).filter(
+              (k: string) => !authBodyKeys2.includes(k)
+            );
             if (needResp) (merged as any).authResponseFields = authRespKeys2;
             if (!(merged as any).authHeaderFields) {
-              (merged as any).authHeaderFields = (spec.headers || []).map((h: string) => ({ key: h, label: h.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), required: true, type: "text" }));
+              (merged as any).authHeaderFields = (spec.headers || []).map(
+                (h: string) => ({
+                  key: h,
+                  label: h
+                    .replace(/_/g, " ")
+                    .replace(/\b\w/g, (c) => c.toUpperCase()),
+                  required: true,
+                  type: "text",
+                })
+              );
             }
             if (!(merged as any).authResponseFieldDefs) {
-              (merged as any).authResponseFieldDefs = (spec.response || []).map((k: string) => ({ key: k, label: k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), required: false, type: "text" }));
+              (merged as any).authResponseFieldDefs = (spec.response || []).map(
+                (k: string) => ({
+                  key: k,
+                  label: k
+                    .replace(/_/g, " ")
+                    .replace(/\b\w/g, (c) => c.toUpperCase()),
+                  required: false,
+                  type: "text",
+                })
+              );
             }
             if (debugFlag) {
-              debugTrace.push({ step: "derive_auth", docsUrl: (merged as any).authDocsUrl, curlCommand: (merged as any).authCurlCommand, bodyCount: spec.body.length, headersCount: spec.headers.length, responseCount: spec.response.length, previewBody: spec.body.slice(0, 5) });
+              debugTrace.push({
+                step: "derive_auth",
+                docsUrl: (merged as any).authDocsUrl,
+                curlCommand: (merged as any).authCurlCommand,
+                bodyCount: spec.body.length,
+                headersCount: spec.headers.length,
+                responseCount: spec.response.length,
+                previewBody: spec.body.slice(0, 5),
+              });
             }
             if (flags2?.regenAuth === true) {
               merged.authParsed = {
                 ...(merged.authParsed || { method: "POST" }),
                 bodyKeys: spec.body.map((f) => f.key),
               } as any;
-            } else if (merged.authParsed && (!merged.authParsed.bodyKeys || merged.authParsed.bodyKeys.length === 0)) {
+            } else if (
+              merged.authParsed &&
+              (!merged.authParsed.bodyKeys ||
+                merged.authParsed.bodyKeys.length === 0)
+            ) {
               merged.authParsed = {
                 ...merged.authParsed,
                 bodyKeys: spec.body.map((f) => f.key),
@@ -495,39 +825,90 @@ export async function PUT(request: NextRequest) {
             }
           } catch {}
         } else if (debugFlag) {
-          debugTrace.push({ step: "skip_auth", reason: explicit2 ? "explicit_regen_other_section" : "not_needed" });
+          debugTrace.push({
+            step: "skip_auth",
+            reason: explicit2 ? "explicit_regen_other_section" : "not_needed",
+          });
         }
       }
       {
-        const needBody = !Array.isArray(merged.initialFields) || ((merged.initialFields || []).length === 0);
-        const needHeaders = !Array.isArray((merged as any).initialHeaders) || (((merged as any).initialHeaders || []).length === 0);
-        const needResp = !Array.isArray((merged as any).initialResponseFields) || (((merged as any).initialResponseFields || []).length === 0);
+        const needBody =
+          !Array.isArray(merged.initialFields) ||
+          (merged.initialFields || []).length === 0;
+        const needHeaders =
+          !Array.isArray((merged as any).initialHeaders) ||
+          ((merged as any).initialHeaders || []).length === 0;
+        const needResp =
+          !Array.isArray((merged as any).initialResponseFields) ||
+          ((merged as any).initialResponseFields || []).length === 0;
         const flags3 = onboardingUpdates as any;
-        const explicit3 = flags3?.regenRegistration === true || flags3?.regenAuth === true || flags3?.regenInitial === true;
-        const shouldDerive3 = explicit3 ? flags3?.regenInitial === true : (needBody || needHeaders || needResp);
+        const explicit3 =
+          flags3?.regenRegistration === true ||
+          flags3?.regenAuth === true ||
+          flags3?.regenInitial === true;
+        const shouldDerive3 = explicit3
+          ? flags3?.regenInitial === true
+          : needBody || needHeaders || needResp;
         if (shouldDerive3) {
           try {
-            const spec = await deriveSpecFromDocsForAdmin(adminId, merged.initialSetupDocsUrl, "initial", merged.initialSetupCurlCommand);
+            const spec = await deriveSpecFromDocsForAdmin(
+              adminId,
+              merged.initialSetupDocsUrl,
+              "initial",
+              merged.initialSetupCurlCommand
+            );
             if (needBody) merged.initialFields = spec.body;
             if (needHeaders) (merged as any).initialHeaders = spec.headers;
             const initBodyKeys2 = (spec.body || []).map((f: any) => f.key);
-            const initRespKeys2 = (spec.response || []).filter((k: string) => !initBodyKeys2.includes(k));
+            const initRespKeys2 = (spec.response || []).filter(
+              (k: string) => !initBodyKeys2.includes(k)
+            );
             if (needResp) (merged as any).initialResponseFields = initRespKeys2;
             if (!(merged as any).initialHeaderFields) {
-              (merged as any).initialHeaderFields = (spec.headers || []).map((h: string) => ({ key: h, label: h.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), required: true, type: "text" }));
+              (merged as any).initialHeaderFields = (spec.headers || []).map(
+                (h: string) => ({
+                  key: h,
+                  label: h
+                    .replace(/_/g, " ")
+                    .replace(/\b\w/g, (c) => c.toUpperCase()),
+                  required: true,
+                  type: "text",
+                })
+              );
             }
             if (!(merged as any).initialResponseFieldDefs) {
-              (merged as any).initialResponseFieldDefs = (spec.response || []).map((k: string) => ({ key: k, label: k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), required: false, type: "text" }));
+              (merged as any).initialResponseFieldDefs = (
+                spec.response || []
+              ).map((k: string) => ({
+                key: k,
+                label: k
+                  .replace(/_/g, " ")
+                  .replace(/\b\w/g, (c) => c.toUpperCase()),
+                required: false,
+                type: "text",
+              }));
             }
             if (debugFlag) {
-              debugTrace.push({ step: "derive_initial", docsUrl: merged.initialSetupDocsUrl, curlCommand: merged.initialSetupCurlCommand, bodyCount: spec.body.length, headersCount: spec.headers.length, responseCount: spec.response.length, previewBody: spec.body.slice(0, 5) });
+              debugTrace.push({
+                step: "derive_initial",
+                docsUrl: merged.initialSetupDocsUrl,
+                curlCommand: merged.initialSetupCurlCommand,
+                bodyCount: spec.body.length,
+                headersCount: spec.headers.length,
+                responseCount: spec.response.length,
+                previewBody: spec.body.slice(0, 5),
+              });
             }
             if (flags3?.regenInitial === true) {
               merged.initialParsed = {
                 ...(merged.initialParsed || { method: "POST" }),
                 bodyKeys: spec.body.map((f) => f.key),
               };
-            } else if (merged.initialParsed && (!merged.initialParsed.bodyKeys || merged.initialParsed.bodyKeys.length === 0)) {
+            } else if (
+              merged.initialParsed &&
+              (!merged.initialParsed.bodyKeys ||
+                merged.initialParsed.bodyKeys.length === 0)
+            ) {
               merged.initialParsed = {
                 ...merged.initialParsed,
                 bodyKeys: spec.body.map((f) => f.key),
@@ -535,10 +916,102 @@ export async function PUT(request: NextRequest) {
             }
           } catch {}
         } else if (debugFlag) {
-          debugTrace.push({ step: "skip_initial", reason: explicit3 ? "explicit_regen_other_section" : "not_needed" });
+          debugTrace.push({
+            step: "skip_initial",
+            reason: explicit3 ? "explicit_regen_other_section" : "not_needed",
+          });
         }
       }
     } catch {}
+
+    // Handle additional dynamic steps
+    if (Array.isArray(merged.additionalSteps)) {
+      for (let i = 0; i < merged.additionalSteps.length; i++) {
+        const step = merged.additionalSteps[i];
+        step.docsUrl = sanitize(step.docsUrl);
+        step.curlCommand = sanitize(step.curlCommand);
+
+        // Parse cURL
+        if (step.curlCommand) {
+          const p = parseCurlRegistrationSpec(step.curlCommand);
+          const bodyKeys = extractBodyKeysFromCurl(step.curlCommand);
+          step.parsed = {
+            method: p.method,
+            url: p.url,
+            contentType: p.contentType,
+            headersRedacted: redactHeadersForLog(p.headers),
+            bodyKeys,
+          };
+        }
+
+        // Derive fields
+        const needBody =
+          !Array.isArray(step.fields) || step.fields.length === 0;
+        const needHeaders =
+          !Array.isArray(step.headers) || step.headers.length === 0;
+        const needResp =
+          !Array.isArray(step.responseFields) ||
+          step.responseFields.length === 0;
+        const flags = onboardingUpdates as any;
+        const explicit = flags?.regenStep === step.id;
+        const shouldDerive = explicit || needBody || needHeaders || needResp;
+
+        if (shouldDerive && step.docsUrl) {
+          try {
+            const spec = await deriveSpecFromDocsForAdmin(
+              adminId,
+              step.docsUrl,
+              step.name || step.id,
+              step.curlCommand
+            );
+            if (needBody || explicit) step.fields = spec.body;
+            if (needHeaders || explicit) step.headers = spec.headers;
+            const stepBodyKeys = (spec.body || []).map((f: any) => f.key);
+            const stepRespKeys = (spec.response || []).filter(
+              (k: string) => !stepBodyKeys.includes(k)
+            );
+            if (needResp || explicit) step.responseFields = stepRespKeys;
+
+            if (!step.headerFields || explicit) {
+              step.headerFields = (spec.headers || []).map((h: string) => ({
+                key: h,
+                label: h
+                  .replace(/_/g, " ")
+                  .replace(/\b\w/g, (c) => c.toUpperCase()),
+                required: true,
+                type: "text",
+              }));
+            }
+            if (!step.responseFieldDefs || explicit) {
+              step.responseFieldDefs = stepRespKeys.map((k: string) => ({
+                key: k,
+                label: k
+                  .replace(/_/g, " ")
+                  .replace(/\b\w/g, (c) => c.toUpperCase()),
+                required: false,
+                type: "text",
+              }));
+            }
+
+            if (explicit) {
+              step.parsed = {
+                ...(step.parsed || { method: "POST" }),
+                bodyKeys: spec.body.map((f) => f.key),
+              };
+            } else if (
+              step.parsed &&
+              (!step.parsed.bodyKeys || step.parsed.bodyKeys.length === 0)
+            ) {
+              step.parsed = {
+                ...step.parsed,
+                bodyKeys: spec.body.map((f) => f.key),
+              };
+            }
+          } catch {}
+        }
+        merged.additionalSteps[i] = step;
+      }
+    }
 
     const updated = await updateAdminSettings(
       adminId,
@@ -547,10 +1020,32 @@ export async function PUT(request: NextRequest) {
     );
 
     if (debugFlag) {
-      debugTrace.push({ step: "final_put_state", registration: { body: (updated.onboarding as any).registrationFields || [], headers: (updated.onboarding as any).registrationHeaders || [], response: (updated.onboarding as any).registrationResponseFields || [] }, auth: { body: (updated.onboarding as any).authFields || [], headers: (updated.onboarding as any).authHeaders || [], response: (updated.onboarding as any).authResponseFields || [] }, initial: { body: (updated.onboarding as any).initialFields || [], headers: (updated.onboarding as any).initialHeaders || [], response: (updated.onboarding as any).initialResponseFields || [] } });
+      debugTrace.push({
+        step: "final_put_state",
+        registration: {
+          body: (updated.onboarding as any).registrationFields || [],
+          headers: (updated.onboarding as any).registrationHeaders || [],
+          response:
+            (updated.onboarding as any).registrationResponseFields || [],
+        },
+        auth: {
+          body: (updated.onboarding as any).authFields || [],
+          headers: (updated.onboarding as any).authHeaders || [],
+          response: (updated.onboarding as any).authResponseFields || [],
+        },
+        initial: {
+          body: (updated.onboarding as any).initialFields || [],
+          headers: (updated.onboarding as any).initialHeaders || [],
+          response: (updated.onboarding as any).initialResponseFields || [],
+        },
+      });
     }
     return NextResponse.json(
-      { success: true, onboarding: updated.onboarding, ...(debugFlag ? { debug: debugTrace } : {}) },
+      {
+        success: true,
+        onboarding: updated.onboarding,
+        ...(debugFlag ? { debug: debugTrace } : {}),
+      },
       { status: 200, headers: corsHeaders }
     );
   } catch (error) {

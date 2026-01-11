@@ -247,6 +247,172 @@ function getValueByPath(obj: any, path: string): any {
 }
 
 export const onboardingService = {
+  async executeAdditionalStep(
+    stepId: string,
+    data: Record<string, any>,
+    adminId: string
+  ): Promise<{
+    success: boolean;
+    error?: string;
+    status?: number;
+    responseBody?: any;
+    debug?: any;
+  }> {
+    const settings = await getAdminSettings(adminId);
+    const onboarding = settings.onboarding;
+    const step = (onboarding?.additionalSteps || []).find(
+      (s) => s.id === stepId
+    );
+
+    if (!step) {
+      return { success: false, error: "Step not found", status: 404 };
+    }
+
+    const redactKeys = [
+      "password",
+      "pass",
+      "secret",
+      "token",
+      "apikey",
+      "api_key",
+      "key",
+    ];
+
+    let url: string | undefined;
+    let method = step.method || "POST";
+    let headers: Record<string, string> = {};
+    let payload: Record<string, any> = { ...data };
+
+    // Parse cURL if available
+    if (step.curlCommand && step.curlCommand.trim().length > 0) {
+      const parsed = parseCurlRegistrationSpec(step.curlCommand);
+      if (parsed.url) {
+        url = parsed.url;
+        method = (parsed.method as any) || method;
+        headers = { ...parsed.headers };
+        const contentType = (parsed.contentType as any) || "application/json";
+        headers["Content-Type"] = contentType;
+
+        // Map body fields from cURL
+        const { body } = buildBodyFromCurl(parsed, { ...data });
+        // If parsed body is valid JSON, use it, otherwise fallback to data
+        try {
+          payload = JSON.parse(body);
+        } catch {
+          // If body is not JSON (e.g. form-urlencoded), keep payload as is for now
+          // or rely on buildBodyFromCurl logic if it handles non-JSON
+        }
+      }
+    }
+
+    // Fallback to manual configuration if cURL didn't provide URL
+    if (!url) {
+      url = step.endpoint;
+    }
+
+    if (!url) {
+      return { success: false, error: "Endpoint not configured", status: 400 };
+    }
+
+    // Auth injection
+    const tokenFromFlow = (data as any).__authToken as string | undefined;
+    const apiKeyFromFlow = (data as any).__apiKey as string | undefined;
+    const headerKey = (onboarding as any).authHeaderKey || "Authorization";
+    const apiKeyHeaderKey = (onboarding as any).apiKeyHeaderKey || "X-API-Key";
+
+    if (tokenFromFlow) {
+      headers[headerKey] =
+        headerKey.toLowerCase() === "authorization"
+          ? `Bearer ${tokenFromFlow}`
+          : tokenFromFlow;
+    }
+    if (apiKeyFromFlow) {
+      headers[apiKeyHeaderKey] = apiKeyFromFlow;
+    }
+
+    // Filter payload to only include fields defined in the step (security/cleanliness)
+    const allowedKeys = new Set(
+      (step.fields || []).map((f: any) => String(f.key || ""))
+    );
+    // Also allow keys found in cURL body if any
+    if ((step as any).parsed?.bodyKeys) {
+      ((step as any).parsed.bodyKeys || []).forEach((k: any) =>
+        allowedKeys.add(k)
+      );
+    }
+
+    const filtered: Record<string, any> = {};
+    for (const [k, v] of Object.entries(payload)) {
+      if (allowedKeys.has(String(k))) filtered[k] = v;
+    }
+
+    const safePayloadForLog = Object.fromEntries(
+      Object.entries(filtered).map(([k, v]) => {
+        const kl = k.toLowerCase();
+        const isSensitive = redactKeys.some((rk) => kl.includes(rk));
+        return [k, isSensitive ? "***" : v];
+      })
+    );
+
+    console.log(
+      `[Onboarding] Executing additional step ${step.name} (${step.id})`,
+      {
+        url,
+        method,
+        payload: safePayloadForLog,
+      }
+    );
+
+    try {
+      const bodyStr = JSON.stringify(filtered);
+      const res = await fetch(url, { method, headers, body: bodyStr });
+      const bodyText = await res.text();
+      let parsedResp: any = null;
+      try {
+        parsedResp = JSON.parse(bodyText);
+      } catch {
+        parsedResp = bodyText;
+      }
+
+      if (!res.ok) {
+        const errorMessage =
+          (parsedResp as any)?.error ||
+          (parsedResp as any)?.message ||
+          "Step execution failed";
+
+        console.error(`[Onboarding] ❌ Step ${step.name} failed`, {
+          status: res.status,
+          error: errorMessage,
+          response: parsedResp,
+        });
+
+        return {
+          success: false,
+          error: errorMessage,
+          status: res.status,
+          responseBody: parsedResp,
+        };
+      }
+
+      console.log(`[Onboarding] ✅ Step ${step.name} succeeded`, {
+        status: res.status,
+      });
+
+      return {
+        success: true,
+        status: res.status,
+        responseBody: parsedResp,
+      };
+    } catch (error: any) {
+      console.error(`[Onboarding] ❌ Step ${step.name} execution error`, error);
+      return {
+        success: false,
+        error: error.message || "Execution error",
+        status: 500,
+      };
+    }
+  },
+
   async authenticate(
     data: Record<string, any>,
     adminId: string
@@ -1454,7 +1620,7 @@ export const onboardingService = {
 export async function deriveFieldsFromDocsForAdmin(
   adminId: string,
   docsUrl?: string,
-  mode?: "registration" | "auth" | "initial"
+  mode?: "registration" | "auth" | "initial" | string
 ): Promise<OnboardingField[]> {
   let chunks: string[] = [];
   try {
@@ -1571,7 +1737,7 @@ export async function deriveFieldsFromDocsForAdmin(
 export async function deriveSpecFromDocsForAdmin(
   adminId: string,
   docsUrl?: string,
-  mode?: "registration" | "auth" | "initial",
+  mode?: "registration" | "auth" | "initial" | string,
   curlCommand?: string
 ): Promise<{ headers: string[]; body: OnboardingField[]; response: string[] }> {
   let chunks: string[] = [];
@@ -1737,7 +1903,13 @@ export async function deriveSpecFromDocsForAdmin(
           )}\nALLOWED_HEADERS: ${allowedHeaders.join(
             ","
           )}\nALLOWED_RESPONSE_KEYS: ${Array.from(respAllowedSeed).join(",")}`
-        : `From the documentation chunks provided, extract ONLY the initial setup request spec in strict JSON: headers[], body[{key,label,required,type}], response[]. Prefer nested keys (e.g., crisp.websiteId). Use only the given chunks; do not invent fields. Only use keys from ALLOWED_KEYS. Only use headers from ALLOWED_HEADERS. Only use response keys from ALLOWED_RESPONSE_KEYS. ALLOWED_KEYS: ${allowedKeys.join(
+        : mode === "initial"
+        ? `From the documentation chunks provided, extract ONLY the initial setup request spec in strict JSON: headers[], body[{key,label,required,type}], response[]. Prefer nested keys (e.g., crisp.websiteId). Use only the given chunks; do not invent fields. Only use keys from ALLOWED_KEYS. Only use headers from ALLOWED_HEADERS. Only use response keys from ALLOWED_RESPONSE_KEYS. ALLOWED_KEYS: ${allowedKeys.join(
+            ","
+          )}\nALLOWED_HEADERS: ${allowedHeaders.join(
+            ","
+          )}\nALLOWED_RESPONSE_KEYS: ${Array.from(respAllowedSeed).join(",")}`
+        : `From the documentation chunks provided, extract ONLY the request spec for ${mode} in strict JSON: headers[], body[{key,label,required,type}], response[]. Prefer nested keys. Use only the given chunks; do not invent fields. Only use keys from ALLOWED_KEYS. Only use headers from ALLOWED_HEADERS. Only use response keys from ALLOWED_RESPONSE_KEYS. ALLOWED_KEYS: ${allowedKeys.join(
             ","
           )}\nALLOWED_HEADERS: ${allowedHeaders.join(
             ","

@@ -29,6 +29,21 @@ export interface ParsedCurlSummary {
   bodyKeys?: string[];
 }
 
+export interface OnboardingStep {
+  id: string;
+  name: string;
+  docsUrl?: string;
+  curlCommand?: string;
+  endpoint?: string;
+  method?: "POST" | "PUT" | "PATCH" | "GET" | "DELETE";
+  fields?: OnboardingField[];
+  headers?: string[];
+  headerFields?: OnboardingField[];
+  responseFields?: string[];
+  responseFieldDefs?: OnboardingField[];
+  parsed?: ParsedCurlSummary;
+}
+
 export interface OnboardingSettings {
   enabled: boolean;
   apiBaseUrl?: string;
@@ -68,6 +83,8 @@ export interface OnboardingSettings {
   initialParsed?: ParsedCurlSummary;
   rateLimit?: { perMinute: number };
   idempotencyKeyField?: string;
+  // Additional dynamic steps
+  additionalSteps?: OnboardingStep[];
 }
 
 // Admin settings interface

@@ -30,7 +30,7 @@ export async function GET(request: Request) {
 
   var state = (function() {
     const raw = localStorage.getItem('onboarding_state');
-    try { return raw ? JSON.parse(raw) : { step: 'registration', reg: {}, authToken: null, authApiKey: null, init: {} }; } catch { return { step: 'registration', reg: {}, authToken: null, authApiKey: null, init: {} }; }
+    try { return raw ? JSON.parse(raw) : { step: 'registration', reg: {}, authToken: null, authApiKey: null, init: {}, additionalSteps: [], stepIdx: 0, stepData: {} }; } catch { return { step: 'registration', reg: {}, authToken: null, authApiKey: null, init: {}, additionalSteps: [], stepIdx: 0, stepData: {} }; }
   })();
   function saveState() { localStorage.setItem('onboarding_state', JSON.stringify(state)); }
   var sid = (function(){ var s = localStorage.getItem('onboarding_sid'); if (!s) { s = 'sess_' + Math.random().toString(36).slice(2); localStorage.setItem('onboarding_sid', s); } return s; })();
@@ -97,7 +97,9 @@ export async function GET(request: Request) {
     const res = await fetch(API_BASE + '/api/onboarding/chat', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey }, body: JSON.stringify({ action: 'register', payload: regPayload }) });
     const data = await res.json();
     if (!data.success) { addBubble('bot', 'Registration failed: ' + (data.error || '')); addAction('Edit Details', function(){ renderRegistrationIntro(); }); return; }
-    state.authToken = data.authToken || null; state.authApiKey = data.authApiKey || null; saveState();
+    state.authToken = data.authToken || null; state.authApiKey = data.authApiKey || null; 
+    state.additionalSteps = Array.isArray(data.additionalSteps) ? data.additionalSteps : [];
+    saveState();
     var fields = Array.isArray(data.initialFields) ? data.initialFields : [];
     renderInitialSetup(fields);
   }
@@ -118,7 +120,15 @@ export async function GET(request: Request) {
     });
     saveState();
   } catch {}
-  if (!setupFieldsCache || setupFieldsCache.length === 0) { addBubble('bot', 'Registration complete. No initial setup required.'); clearActions(); addAction('Close', function(){ container.remove(); }); state.step = 'complete'; saveState(); return; }
+  if (!setupFieldsCache || setupFieldsCache.length === 0) { 
+    // No initial setup fields, check for additional steps
+    if (state.additionalSteps && state.additionalSteps.length > 0) {
+      startAdditionalSteps();
+    } else {
+      addBubble('bot', 'Registration complete. No initial setup required.'); clearActions(); addAction('Close', function(){ container.remove(); }); state.step = 'complete'; saveState(); 
+    }
+    return; 
+  }
   addBubble('bot', "Let's complete your initial setup.");
     state.step = 'setup_collect'; saveState();
     askNextSetupField();
@@ -147,19 +157,129 @@ export async function GET(request: Request) {
     const res = await fetch(API_BASE + '/api/onboarding/chat', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey }, body: JSON.stringify({ action: 'initial_setup', payload }) });
     const data = await res.json();
     if (!data.success) { addBubble('bot', 'Initial setup failed: ' + (data.error || '')); addAction('Edit Details', function(){ renderInitialSetup(fields); }); return; }
-    addBubble('bot', 'Onboarding complete.');
-    clearActions(); addAction('Close', function(){ container.remove(); });
-    state.step = 'complete'; saveState();
+    
+    if (state.additionalSteps && state.additionalSteps.length > 0) {
+      startAdditionalSteps();
+    } else {
+      addBubble('bot', 'Onboarding complete.');
+      clearActions(); addAction('Close', function(){ container.remove(); });
+      state.step = 'complete'; saveState();
+    }
+  }
+
+  function startAdditionalSteps() {
+    state.stepIdx = 0;
+    saveState();
+    renderAdditionalStep();
+  }
+
+  function renderAdditionalStep() {
+    if (!state.additionalSteps || state.stepIdx >= state.additionalSteps.length) {
+      addBubble('bot', 'All steps complete. You are ready to go!');
+      clearActions(); addAction('Close', function(){ container.remove(); });
+      state.step = 'complete'; saveState();
+      return;
+    }
+    var step = state.additionalSteps[state.stepIdx];
+    messages.innerHTML = ''; 
+    clearActions();
+    addBubble('bot', "Step " + (state.stepIdx + 1) + ": " + (step.name || 'Next Step'));
+    
+    state.step = 'additional_step_collect';
+    state.stepData = {};
+    saveState();
+    
+    var fields = Array.isArray(step.fields) ? step.fields : [];
+    if (fields.length === 0) {
+       addAction('Proceed', function() { submitAdditionalStep(); });
+    } else {
+       askNextAdditionalField();
+    }
+  }
+
+  function askNextAdditionalField() {
+    var step = state.additionalSteps[state.stepIdx];
+    var fields = Array.isArray(step.fields) ? step.fields : [];
+    var pending = fields.find(function(f){ return !state.stepData[f.key]; });
+    if (!pending) {
+      renderAdditionalConfirm();
+      return;
+    }
+    addBubble('bot', (pending.label || pending.key) + ':');
+    clearActions();
+  }
+
+  function renderAdditionalConfirm() {
+     messages.innerHTML = '';
+     clearActions();
+     var step = state.additionalSteps[state.stepIdx];
+     addBubble('bot', 'Review ' + step.name + ':');
+     var fields = Array.isArray(step.fields) ? step.fields : [];
+     fields.forEach(function(f){ addBubble('bot', (f.label || f.key) + ': ' + (state.stepData[f.key] || '')); });
+     addAction('Confirm', submitAdditionalStep);
+     addAction('Edit', function(){ 
+         state.stepData = {}; saveState(); renderAdditionalStep();
+     });
+  }
+
+  async function submitAdditionalStep() {
+    clearActions(); addBubble('bot', 'Processing step...');
+    var step = state.additionalSteps[state.stepIdx];
+    var payload = Object.assign(
+      {},
+      state.stepData,
+      state.authToken ? { __authToken: state.authToken } : {},
+      state.authApiKey ? { __apiKey: state.authApiKey } : {},
+      { __sessionId: sid }
+    );
+    const res = await fetch(API_BASE + '/api/onboarding/chat', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey }, body: JSON.stringify({ action: 'additional_step', stepId: step.id, payload }) });
+    const data = await res.json();
+    if (!data.success) { 
+        addBubble('bot', 'Step failed: ' + (data.error || '')); 
+        addAction('Retry', function(){ submitAdditionalStep(); });
+        addAction('Edit', function(){ state.stepData = {}; saveState(); renderAdditionalStep(); }); 
+        return; 
+    }
+    addBubble('bot', 'Step completed.');
+    state.stepIdx++;
+    saveState();
+    renderAdditionalStep();
   }
 
   function parseRegFromText(t) { var out = { name: state.reg.name || '', email: state.reg.email || '', password: state.reg.password || '' }; var lower = t.toLowerCase(); function extractAfter(label) { var idx = lower.indexOf(label); if (idx < 0) return null; var rest = t.slice(idx + label.length); var j = 0; while (j < rest.length && (rest[j] === ':' || rest[j] === '-' || rest[j] === ' ')) j++; rest = rest.slice(j); var endComma = rest.indexOf(','); var endNl = rest.indexOf('\\\\n'); var end = -1; if (endComma >= 0 && endNl >= 0) end = Math.min(endComma, endNl); else end = endComma >= 0 ? endComma : endNl; var value = end >= 0 ? rest.slice(0, end) : rest; return value.trim(); } function extractEmail(txt) { var best = null; var token = ''; for (var i = 0; i < txt.length; i++) { var ch = txt[i]; if (ch === ' ' || ch === ',' || ch === '\\\\n') { if (token) { if (token.indexOf('@') >= 0 && token.indexOf('.') >= 0) { best = token; } token = ''; } } else { token += ch; } } if (!best && token && token.indexOf('@') >= 0 && token.indexOf('.') >= 0) best = token; return best ? best.trim() : null; } var nm = extractAfter('name'); if (nm) out.name = nm; var em = extractEmail(t); if (em) out.email = em; var pw = extractAfter('password'); if (pw) out.password = pw; if (!out.name && lower.indexOf('email') === -1 && lower.indexOf('password') === -1) { out.name = t.trim(); } return out; }
+  
   function askNextSetupField() { var pending = setupFieldsCache.find(function(f){ return !state.init[f.key]; }); if (!pending) { renderInitialConfirm(setupFieldsCache); return; } addBubble('bot', (pending.label || pending.key) + ':'); clearActions(); }
-  function handleUserMessage(text) { addBubble('user', text); if (state.step === 'reg_collect') { var next = parseRegFromText(text); state.reg = next; saveState(); var missing = []; if (!state.reg.name) missing.push('name'); if (!state.reg.email) missing.push('email'); if (!state.reg.password || String(state.reg.password).length < 8) missing.push('password'); if (missing.length === 0) { renderRegistrationConfirm(); } else { addBubble('bot', 'Missing: ' + missing.join(', ') + '.'); } return; } if (state.step === 'setup_collect') { var f = setupFieldsCache.find(function(ff){ return !state.init[ff.key]; }); if (f) { state.init[f.key] = text.trim(); saveState(); askNextSetupField(); return; } } }
+  
+  function handleUserMessage(text) { 
+    addBubble('user', text); 
+    if (state.step === 'reg_collect') { var next = parseRegFromText(text); state.reg = next; saveState(); var missing = []; if (!state.reg.name) missing.push('name'); if (!state.reg.email) missing.push('email'); if (!state.reg.password || String(state.reg.password).length < 8) missing.push('password'); if (missing.length === 0) { renderRegistrationConfirm(); } else { addBubble('bot', 'Missing: ' + missing.join(', ') + '.'); } return; } 
+    if (state.step === 'setup_collect') { var f = setupFieldsCache.find(function(ff){ return !state.init[ff.key]; }); if (f) { state.init[f.key] = text.trim(); saveState(); askNextSetupField(); return; } } 
+    if (state.step === 'additional_step_collect') {
+        var step = state.additionalSteps[state.stepIdx];
+        var fields = Array.isArray(step.fields) ? step.fields : [];
+        var f = fields.find(function(ff){ return !state.stepData[ff.key]; });
+        if (f) {
+            state.stepData[f.key] = text.trim();
+            saveState();
+            askNextAdditionalField();
+            return;
+        }
+    }
+  }
+  
   sendBtn.onclick = function(){ var t = input.value.trim(); if (!t) return; input.value = ''; handleUserMessage(t); };
   input.addEventListener('keydown', function(e){ if (e.key === 'Enter') { e.preventDefault(); sendBtn.click(); } });
 
   if (state.step === 'registration' && state.reg && state.reg.name && state.reg.email && state.reg.password) { renderRegistrationConfirm(); }
-  else if (state.step === 'setup_collect' || state.step === 'setup_confirm') { fetch(API_BASE + '/api/onboarding/chat', { method:'POST', headers:{ 'Content-Type': 'application/json', 'x-api-key': apiKey }, body: JSON.stringify({ action:'get_initial_fields' }) }).then(function(r){ return r.json(); }).then(function(d){ var fs = Array.isArray(d.fields)? d.fields: []; var onlyReq = fs.filter(function(f){ return !!f && (f.required === true || f.required === 'true'); }); if (state.step === 'setup_confirm') { renderInitialConfirm(onlyReq); } else { renderInitialSetup(onlyReq); } }).catch(function(){ renderInitialSetup([]); }); }
+  else if (state.step === 'setup_collect' || state.step === 'setup_confirm') { fetch(API_BASE + '/api/onboarding/chat', { method:'POST', headers:{ 'Content-Type': 'application/json', 'x-api-key': apiKey }, body: JSON.stringify({ action:'get_initial_fields' }) }).then(function(r){ return r.json(); }).then(function(d){ 
+      state.additionalSteps = d.additionalSteps || []; saveState();
+      var fs = Array.isArray(d.fields)? d.fields: []; var onlyReq = fs.filter(function(f){ return !!f && (f.required === true || f.required === 'true'); }); if (state.step === 'setup_confirm') { renderInitialConfirm(onlyReq); } else { renderInitialSetup(onlyReq); } }).catch(function(){ renderInitialSetup([]); }); }
+  else if (state.step === 'additional_step_collect') {
+       fetch(API_BASE + '/api/onboarding/chat', { method:'POST', headers:{ 'Content-Type': 'application/json', 'x-api-key': apiKey }, body: JSON.stringify({ action:'get_initial_fields' }) }).then(function(r){ return r.json(); }).then(function(d){ 
+          state.additionalSteps = d.additionalSteps || []; saveState();
+          renderAdditionalStep();
+       });
+  }
   else { renderRegistrationIntro(); }
 })();
 `;

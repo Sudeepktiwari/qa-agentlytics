@@ -37,10 +37,67 @@ export async function POST(request: NextRequest) {
     if (action === "get_initial_fields") {
       const settings = await getAdminSettings(adminId);
       const fields = (settings.onboarding as any)?.initialFields || [];
+      const additionalSteps = settings.onboarding?.additionalSteps || [];
       return NextResponse.json(
-        { success: true, fields },
+        { success: true, fields, additionalSteps },
         { status: 200, headers: corsHeaders }
       );
+    }
+
+    if (action === "additional_step") {
+      const stepId = String(body.stepId || "");
+      if (!stepId) {
+        return NextResponse.json(
+          { success: false, error: "stepId required" },
+          { status: 400, headers: corsHeaders }
+        );
+      }
+      const result = await onboardingService.executeAdditionalStep(
+        stepId,
+        payload,
+        adminId
+      );
+
+      if (result.success) {
+        try {
+          const { __authToken, __apiKey, __sessionId, ...safePayload } =
+            payload;
+          const sessionId = String(
+            (payload as any)?.__sessionId || `onboarding_${Date.now()}`
+          );
+          const db = await (await import("@/lib/mongo")).getDb();
+          const sessions = db.collection("onboardingSessions");
+          await sessions.updateOne(
+            { sessionId },
+            {
+              $push: {
+                stepsExecuted: {
+                  stepId,
+                  timestamp: new Date(),
+                  payload: safePayload,
+                  response: result.responseBody,
+                },
+              } as any,
+              $set: {
+                updatedAt: new Date(),
+              },
+              $setOnInsert: {
+                createdAt: new Date(),
+                adminId,
+                status: "in_progress",
+              },
+            },
+            { upsert: true }
+          );
+        } catch (e) {
+          console.error("[Onboarding] Failed to persist additional step", e);
+        }
+      }
+
+      return NextResponse.json(result, {
+        status: result.status || 200,
+        headers: corsHeaders,
+      });
     }
 
     if (action === "register") {
@@ -72,6 +129,7 @@ export async function POST(request: NextRequest) {
       }
 
       const initialFields = (settings.onboarding as any)?.initialFields || [];
+      const additionalSteps = settings.onboarding?.additionalSteps || [];
       return NextResponse.json(
         {
           success: true,
@@ -80,6 +138,7 @@ export async function POST(request: NextRequest) {
           authType: authType || null,
           authDebug: hasAuth && authRes?.debug ? authRes.debug : null,
           initialFields,
+          additionalSteps,
         },
         { status: 200, headers: corsHeaders }
       );
