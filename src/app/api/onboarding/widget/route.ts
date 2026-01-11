@@ -106,30 +106,34 @@ export async function GET(request: Request) {
 
   var setupFieldsCache = [];
   function renderInitialSetup(fields) {
+    setupFieldsCache = Array.isArray(fields) ? fields.filter(function(f){ return !!f; }) : [];
+    if (!setupFieldsCache || setupFieldsCache.length === 0) { 
+      // No initial setup fields, check for additional steps
+      if (state.additionalSteps && state.additionalSteps.length > 0) {
+        messages.innerHTML = ''; clearActions();
+        addBubble('bot', 'Registration successful.');
+        addBubble('bot', 'No initial setup fields configured. Moving to additional steps...');
+        setTimeout(function(){ startAdditionalSteps(); }, 2000);
+      } else {
+        messages.innerHTML = ''; clearActions();
+        addBubble('bot', 'Registration complete. No initial setup required.'); clearActions(); addAction('Close', function(){ container.remove(); }); state.step = 'complete'; saveState(); 
+      }
+      return; 
+    }
     messages.innerHTML = '';
     clearActions();
-  setupFieldsCache = Array.isArray(fields) ? fields.filter(function(f){ return !!f && (f.required === true || f.required === 'true'); }) : [];
-  try {
-    setupFieldsCache.forEach(function(f){
-      var key = String(f.key || '');
-      var lk = key.toLowerCase();
-      if (!state.init[key]) {
-        if (lk.includes('email') && state.reg.email) { state.init[key] = state.reg.email; }
-        else if (lk.includes('name') && state.reg.name) { state.init[key] = state.reg.name; }
-      }
-    });
-    saveState();
-  } catch {}
-  if (!setupFieldsCache || setupFieldsCache.length === 0) { 
-    // No initial setup fields, check for additional steps
-    if (state.additionalSteps && state.additionalSteps.length > 0) {
-      startAdditionalSteps();
-    } else {
-      addBubble('bot', 'Registration complete. No initial setup required.'); clearActions(); addAction('Close', function(){ container.remove(); }); state.step = 'complete'; saveState(); 
-    }
-    return; 
-  }
-  addBubble('bot', "Let's complete your initial setup.");
+    try {
+      setupFieldsCache.forEach(function(f){
+        var key = String(f.key || '');
+        var lk = key.toLowerCase();
+        if (!state.init[key]) {
+          if (lk.includes('email') && state.reg.email) { state.init[key] = state.reg.email; }
+          else if (lk.includes('name') && state.reg.name) { state.init[key] = state.reg.name; }
+        }
+      });
+      saveState();
+    } catch {}
+    addBubble('bot', "Let's complete your initial setup.");
     state.step = 'setup_collect'; saveState();
     askNextSetupField();
   }
