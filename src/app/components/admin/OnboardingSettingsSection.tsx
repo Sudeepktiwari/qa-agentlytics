@@ -996,6 +996,196 @@ const OnboardingSettingsSection: React.FC = () => {
                 </div>
               </div>
               <div style={{ display: registrationOpen ? "block" : "none" }}>
+                <div style={{ marginBottom: 16 }}>
+                  <label
+                    style={{
+                      display: "block",
+                      color: "#4a5568",
+                      fontSize: 13,
+                      marginBottom: 6,
+                    }}
+                  >
+                    Registration API Document URL (Google Docs or any public
+                    page)
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="https://docs.google.com/document/d/<DOC_ID>/edit?usp=sharing or https://yourdocs.page"
+                    value={docUrl}
+                    onChange={(e) => setDocUrl(e.target.value)}
+                    style={{
+                      width: "100%",
+                      padding: 10,
+                      border: "1px solid #d1d5db",
+                      borderRadius: 8,
+                      fontSize: 14,
+                    }}
+                  />
+
+                  <div style={{ marginTop: 10 }}>
+                    <label
+                      style={{
+                        display: "block",
+                        color: "#4a5568",
+                        fontSize: 13,
+                        marginBottom: 6,
+                      }}
+                    >
+                      Or upload a plain text file (.txt or .md)
+                    </label>
+                    <input
+                      type="file"
+                      accept=".txt,.md"
+                      onChange={handleFileChange}
+                    />
+                  </div>
+
+                  <div style={{ marginTop: 10, display: "flex", gap: 12 }}>
+                    <div style={{ flex: 1 }}>
+                      <label
+                        style={{
+                          display: "block",
+                          color: "#4a5568",
+                          fontSize: 13,
+                          marginBottom: 6,
+                        }}
+                      >
+                        Namespace
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="docs"
+                        value={namespace}
+                        onChange={(e) => setNamespace(e.target.value)}
+                        style={{
+                          width: "100%",
+                          padding: 10,
+                          border: "1px solid #d1d5db",
+                          borderRadius: 8,
+                          fontSize: 14,
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: 10 }}>
+                    <label
+                      style={{
+                        display: "block",
+                        color: "#4a5568",
+                        fontSize: 13,
+                        marginBottom: 6,
+                      }}
+                    >
+                      Optional prompt
+                    </label>
+                    <textarea
+                      placeholder={
+                        "POST /users/register with JSON {email, password}; include Content-Type header"
+                      }
+                      value={prompt}
+                      onChange={(e) => setPrompt(e.target.value)}
+                      rows={3}
+                      style={{
+                        width: "100%",
+                        padding: 10,
+                        border: "1px solid #d1d5db",
+                        borderRadius: 8,
+                        fontSize: 14,
+                        fontFamily: "monospace",
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ marginTop: 10 }}>
+                    <button
+                      onClick={indexDocs}
+                      disabled={indexing || generating}
+                      style={{
+                        padding: "10px 14px",
+                        background:
+                          indexing || generating
+                            ? "#a0aec0"
+                            : "linear-gradient(135deg, #4299e1, #3182ce)",
+                        color: "white",
+                        border: "none",
+                        borderRadius: 12,
+                        fontSize: 14,
+                        fontWeight: 600,
+                        cursor:
+                          indexing || generating ? "not-allowed" : "pointer",
+                      }}
+                    >
+                      {indexing
+                        ? "Indexing…"
+                        : generating
+                        ? "Generating cURL…"
+                        : "Index docs"}
+                    </button>
+                  </div>
+
+                  {indexStatus && (
+                    <div
+                      style={{ color: "#4a5568", fontSize: 12, marginTop: 6 }}
+                    >
+                      {indexStatus}
+                    </div>
+                  )}
+                  {generatedCurl && (
+                    <div style={{ marginTop: 12 }}>
+                      <label
+                        style={{
+                          display: "block",
+                          color: "#4a5568",
+                          fontSize: 13,
+                          marginBottom: 6,
+                        }}
+                      >
+                        Generated cURL
+                      </label>
+                      <textarea
+                        value={generatedCurl}
+                        readOnly
+                        rows={5}
+                        style={{
+                          width: "100%",
+                          padding: 12,
+                          border: "1px solid #d1d5db",
+                          borderRadius: 8,
+                          fontSize: 14,
+                          fontFamily: "monospace",
+                        }}
+                      />
+                      <div
+                        style={{
+                          display: "flex",
+                          gap: 8,
+                          alignItems: "center",
+                          marginTop: 6,
+                        }}
+                      >
+                        <button
+                          onClick={() =>
+                            navigator.clipboard.writeText(generatedCurl)
+                          }
+                          style={{
+                            padding: "8px 12px",
+                            background: "#2d3748",
+                            color: "white",
+                            border: "none",
+                            borderRadius: 8,
+                            fontSize: 13,
+                          }}
+                        >
+                          Copy cURL
+                        </button>
+                        <span style={{ color: "#718096", fontSize: 12 }}>
+                          Context hits: {hits}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
                 {settings.registrationParsed && (
                   <div
                     style={{
@@ -1087,7 +1277,6 @@ const OnboardingSettingsSection: React.FC = () => {
                     </div>
                   </div>
                 )}
-
                 <div style={{ marginTop: 4 }}>
                   <div
                     style={{
@@ -1819,197 +2008,6 @@ const OnboardingSettingsSection: React.FC = () => {
                     </div>
                   </div>
                 </div>
-                <div style={{ marginBottom: 16 }}>
-                  <label
-                    style={{
-                      display: "block",
-                      color: "#4a5568",
-                      fontSize: 13,
-                      marginBottom: 6,
-                    }}
-                  >
-                    Registration API Document URL (Google Docs or any public
-                    page)
-                  </label>
-                  <input
-                    type="url"
-                    placeholder="https://docs.google.com/document/d/<DOC_ID>/edit?usp=sharing or https://yourdocs.page"
-                    value={docUrl}
-                    onChange={(e) => setDocUrl(e.target.value)}
-                    style={{
-                      width: "100%",
-                      padding: 10,
-                      border: "1px solid #d1d5db",
-                      borderRadius: 8,
-                      fontSize: 14,
-                    }}
-                  />
-
-                  <div style={{ marginTop: 10 }}>
-                    <label
-                      style={{
-                        display: "block",
-                        color: "#4a5568",
-                        fontSize: 13,
-                        marginBottom: 6,
-                      }}
-                    >
-                      Or upload a plain text file (.txt or .md)
-                    </label>
-                    <input
-                      type="file"
-                      accept=".txt,.md"
-                      onChange={handleFileChange}
-                    />
-                  </div>
-
-                  <div style={{ marginTop: 10, display: "flex", gap: 12 }}>
-                    <div style={{ flex: 1 }}>
-                      <label
-                        style={{
-                          display: "block",
-                          color: "#4a5568",
-                          fontSize: 13,
-                          marginBottom: 6,
-                        }}
-                      >
-                        Namespace
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="docs"
-                        value={namespace}
-                        onChange={(e) => setNamespace(e.target.value)}
-                        style={{
-                          width: "100%",
-                          padding: 10,
-                          border: "1px solid #d1d5db",
-                          borderRadius: 8,
-                          fontSize: 14,
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  <div style={{ marginTop: 10 }}>
-                    <label
-                      style={{
-                        display: "block",
-                        color: "#4a5568",
-                        fontSize: 13,
-                        marginBottom: 6,
-                      }}
-                    >
-                      Optional prompt
-                    </label>
-                    <textarea
-                      placeholder={
-                        "POST /users/register with JSON {email, password}; include Content-Type header"
-                      }
-                      value={prompt}
-                      onChange={(e) => setPrompt(e.target.value)}
-                      rows={3}
-                      style={{
-                        width: "100%",
-                        padding: 10,
-                        border: "1px solid #d1d5db",
-                        borderRadius: 8,
-                        fontSize: 14,
-                        fontFamily: "monospace",
-                      }}
-                    />
-                  </div>
-
-                  <div style={{ marginTop: 10 }}>
-                    <button
-                      onClick={indexDocs}
-                      disabled={indexing || generating}
-                      style={{
-                        padding: "10px 14px",
-                        background:
-                          indexing || generating
-                            ? "#a0aec0"
-                            : "linear-gradient(135deg, #4299e1, #3182ce)",
-                        color: "white",
-                        border: "none",
-                        borderRadius: 12,
-                        fontSize: 14,
-                        fontWeight: 600,
-                        cursor:
-                          indexing || generating ? "not-allowed" : "pointer",
-                      }}
-                    >
-                      {indexing
-                        ? "Indexing…"
-                        : generating
-                        ? "Generating cURL…"
-                        : "Index docs"}
-                    </button>
-                  </div>
-
-                  {indexStatus && (
-                    <div
-                      style={{ color: "#4a5568", fontSize: 12, marginTop: 6 }}
-                    >
-                      {indexStatus}
-                    </div>
-                  )}
-                  {generatedCurl && (
-                    <div style={{ marginTop: 12 }}>
-                      <label
-                        style={{
-                          display: "block",
-                          color: "#4a5568",
-                          fontSize: 13,
-                          marginBottom: 6,
-                        }}
-                      >
-                        Generated cURL
-                      </label>
-                      <textarea
-                        value={generatedCurl}
-                        readOnly
-                        rows={5}
-                        style={{
-                          width: "100%",
-                          padding: 12,
-                          border: "1px solid #d1d5db",
-                          borderRadius: 8,
-                          fontSize: 14,
-                          fontFamily: "monospace",
-                        }}
-                      />
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: 8,
-                          alignItems: "center",
-                          marginTop: 6,
-                        }}
-                      >
-                        <button
-                          onClick={() =>
-                            navigator.clipboard.writeText(generatedCurl)
-                          }
-                          style={{
-                            padding: "8px 12px",
-                            background: "#2d3748",
-                            color: "white",
-                            border: "none",
-                            borderRadius: 8,
-                            fontSize: 13,
-                          }}
-                        >
-                          Copy cURL
-                        </button>
-                        <span style={{ color: "#718096", fontSize: 12 }}>
-                          Context hits: {hits}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
                 {/* Canonical registration cURL command */}
                 <div>
                   <label
