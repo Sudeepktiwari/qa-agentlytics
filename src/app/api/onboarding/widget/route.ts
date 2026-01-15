@@ -145,6 +145,13 @@ export async function GET(request: Request) {
     fields.forEach(function(f){ addBubble('bot', (f.label || f.key) + ': ' + (state.init[f.key] || '')); });
     addAction('Confirm and Submit', function(){ submitInitialSetup(fields); });
     addAction('Edit Details', function(){ renderInitialSetup(fields); });
+    addAction('Skip Initial Setup', function(){ 
+      if (state.additionalSteps && state.additionalSteps.length > 0) {
+        startAdditionalSteps();
+      } else {
+        addBubble('bot', 'No additional steps are configured.');
+      }
+    });
     state.step = 'setup_confirm'; saveState();
   }
 
@@ -253,6 +260,26 @@ export async function GET(request: Request) {
   function parseRegFromText(t) { var out = { name: state.reg.name || '', email: state.reg.email || '', password: state.reg.password || '' }; var lower = t.toLowerCase(); function extractAfter(label) { var idx = lower.indexOf(label); if (idx < 0) return null; var rest = t.slice(idx + label.length); var j = 0; while (j < rest.length && (rest[j] === ':' || rest[j] === '-' || rest[j] === ' ')) j++; rest = rest.slice(j); var endComma = rest.indexOf(','); var endNl = rest.indexOf('\\\\n'); var end = -1; if (endComma >= 0 && endNl >= 0) end = Math.min(endComma, endNl); else end = endComma >= 0 ? endComma : endNl; var value = end >= 0 ? rest.slice(0, end) : rest; return value.trim(); } function extractEmail(txt) { var best = null; var token = ''; for (var i = 0; i < txt.length; i++) { var ch = txt[i]; if (ch === ' ' || ch === ',' || ch === '\\\\n') { if (token) { if (token.indexOf('@') >= 0 && token.indexOf('.') >= 0) { best = token; } token = ''; } } else { token += ch; } } if (!best && token && token.indexOf('@') >= 0 && token.indexOf('.') >= 0) best = token; return best ? best.trim() : null; } var nm = extractAfter('name'); if (nm) out.name = nm; var em = extractEmail(t); if (em) out.email = em; var pw = extractAfter('password'); if (pw) out.password = pw; if (!out.name && lower.indexOf('email') === -1 && lower.indexOf('password') === -1) { out.name = t.trim(); } return out; }
   
   function askNextSetupField() { var pending = setupFieldsCache.find(function(f){ return !state.init[f.key]; }); if (!pending) { renderInitialConfirm(setupFieldsCache); return; } addBubble('bot', (pending.label || pending.key) + ':'); clearActions(); }
+  
+  // Add a persistent option to skip initial setup and proceed directly to additional steps
+  // This ensures additional APIs can work even if initial steps are not completed.
+  addAction('Skip Initial Setup', function(){ 
+    if (state.additionalSteps && state.additionalSteps.length > 0) {
+      startAdditionalSteps();
+    } else {
+      // Fetch latest steps in case they were not loaded yet
+      fetch(API_BASE + '/api/onboarding/chat', { method:'POST', headers:{ 'Content-Type': 'application/json', 'x-api-key': apiKey }, body: JSON.stringify({ action:'get_initial_fields' }) })
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+          state.additionalSteps = d.additionalSteps || [];
+          saveState();
+          if (state.additionalSteps.length > 0) { startAdditionalSteps(); }
+          else { addBubble('bot', 'No additional steps are configured.'); }
+        }).catch(function(){
+          addBubble('bot', 'Could not load additional steps.');
+        });
+    }
+  });
   
   function handleUserMessage(text) { 
     addBubble('user', text); 
