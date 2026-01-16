@@ -35,16 +35,17 @@ const AuthSection: React.FC<AuthSectionProps> = ({
     }
     const scriptSrc =
       "https://agentlytics.advancelytics.com/api/widget/onboarding";
-    const existingScript = document.querySelector(
-      `script[src="${scriptSrc}"]`
-    );
+    const existingScript = document.querySelector(`script[src="${scriptSrc}"]`);
     if (existingScript) {
       return;
     }
     const script = document.createElement("script");
     script.src = scriptSrc;
     script.async = true;
-    script.setAttribute("data-api-key", "<YOUR_API_KEY>");
+    script.setAttribute(
+      "data-api-key",
+      "ak_ed1d712d17eb4de4201139ae22936abde730cf95372dc5fffe3a891216ae136e"
+    );
     document.body.appendChild(script);
   };
 
