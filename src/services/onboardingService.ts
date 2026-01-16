@@ -104,6 +104,35 @@ function resolveInitialSetupUrl(settings: OnboardingSettings): string | null {
   return null;
 }
 
+function applyRegistrationFieldDefaults(
+  payload: Record<string, any>,
+  settings: OnboardingSettings
+): Record<string, any> {
+  const fields = (settings.registrationFields || []) as OnboardingField[];
+  if (!fields || fields.length === 0) {
+    return payload;
+  }
+  const next: Record<string, any> = { ...payload };
+  for (const field of fields) {
+    const key = field.key;
+    if (!key) continue;
+    const hasDefault =
+      typeof field.defaultValue === "string" &&
+      field.defaultValue.trim().length > 0;
+    if (!hasDefault) continue;
+    if (field.required) continue;
+    const current = next[key];
+    const hasValue =
+      current !== undefined &&
+      current !== null &&
+      (typeof current !== "string" || current.trim().length > 0);
+    if (!hasValue) {
+      next[key] = field.defaultValue;
+    }
+  }
+  return next;
+}
+
 function extractDocKeys(chunks: string[]): string[] {
   const keys = new Set<string>();
   for (const chunk of chunks) {
@@ -1262,6 +1291,10 @@ export const onboardingService = {
     let contentType: "application/json" | "application/x-www-form-urlencoded" =
       "application/json";
     let payload: Record<string, any> = { ...data };
+    payload = applyRegistrationFieldDefaults(payload, onboarding);
+    if (!payload.action) {
+      payload.action = "register";
+    }
     const fn1 =
       payload.firstName ||
       payload.firstname ||
@@ -1442,6 +1475,7 @@ export const onboardingService = {
     }
 
     payload = applyFieldMappings(data, fieldMappings);
+    payload = applyRegistrationFieldDefaults(payload, onboarding);
     const fn2 =
       payload.firstName ||
       payload.firstname ||
