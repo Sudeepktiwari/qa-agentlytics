@@ -29,6 +29,25 @@ const AuthSection: React.FC<AuthSectionProps> = ({
   onAuth,
   onLogout,
 }) => {
+  const handleOnboardingRegisterClick = () => {
+    if (typeof window === "undefined" || typeof document === "undefined") {
+      return;
+    }
+    const scriptSrc =
+      "https://agentlytics.advancelytics.com/api/widget/onboarding";
+    const existingScript = document.querySelector(
+      `script[src="${scriptSrc}"]`
+    );
+    if (existingScript) {
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = scriptSrc;
+    script.async = true;
+    script.setAttribute("data-api-key", "<YOUR_API_KEY>");
+    document.body.appendChild(script);
+  };
+
   if (authLoading) {
     return (
       <div
@@ -307,6 +326,33 @@ const AuthSection: React.FC<AuthSectionProps> = ({
                 : form.action === "login"
                 ? "🚀 Sign In"
                 : "✨ Create Account"}
+            </button>
+            <button
+              type="button"
+              onClick={handleOnboardingRegisterClick}
+              style={{
+                width: "100%",
+                marginTop: "12px",
+                padding: "12px 20px",
+                background: "white",
+                color: "#4a5568",
+                border: "1px solid #cbd5e0",
+                borderRadius: "12px",
+                fontSize: "14px",
+                fontWeight: "500",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+              }}
+              onMouseEnter={(e) => {
+                const target = e.target as HTMLButtonElement;
+                target.style.backgroundColor = "#f7fafc";
+              }}
+              onMouseLeave={(e) => {
+                const target = e.target as HTMLButtonElement;
+                target.style.backgroundColor = "white";
+              }}
+            >
+              ✨ Register with onboarding bot
             </button>
           </form>
         </div>
