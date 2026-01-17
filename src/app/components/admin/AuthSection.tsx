@@ -228,63 +228,6 @@ const AuthSection: React.FC<AuthSectionProps> = ({
               />
             </div>
 
-            <div style={{ marginBottom: "24px" }}>
-              <div
-                style={{
-                  display: "flex",
-                  gap: "16px",
-                  background: "linear-gradient(135deg, #f7fafc10, #edf2f710)",
-                  padding: "16px",
-                  borderRadius: "12px",
-                }}
-              >
-                <label
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    cursor: "pointer",
-                    fontSize: "14px",
-                    fontWeight: "500",
-                    color: "#4a5568",
-                  }}
-                >
-                  <input
-                    type="radio"
-                    value="login"
-                    checked={form.action === "login"}
-                    onChange={(e) =>
-                      onFormChange({ ...form, action: e.target.value })
-                    }
-                    style={{ cursor: "pointer" }}
-                  />
-                  🔑 Login
-                </label>
-                <label
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    cursor: "pointer",
-                    fontSize: "14px",
-                    fontWeight: "500",
-                    color: "#4a5568",
-                  }}
-                >
-                  <input
-                    type="radio"
-                    value="register"
-                    checked={form.action === "register"}
-                    onChange={(e) =>
-                      onFormChange({ ...form, action: e.target.value })
-                    }
-                    style={{ cursor: "pointer" }}
-                  />
-                  📝 Register
-                </label>
-              </div>
-            </div>
-
             <button
               type="submit"
               disabled={authLoading}
