@@ -133,6 +133,35 @@ function applyRegistrationFieldDefaults(
   return next;
 }
 
+function applyInitialFieldDefaults(
+  payload: Record<string, any>,
+  settings: OnboardingSettings
+): Record<string, any> {
+  const fields = (settings.initialFields || []) as OnboardingField[];
+  if (!fields || fields.length === 0) {
+    return payload;
+  }
+  const next: Record<string, any> = { ...payload };
+  for (const field of fields) {
+    const key = field.key;
+    if (!key) continue;
+    const hasDefault =
+      typeof field.defaultValue === "string" &&
+      field.defaultValue.trim().length > 0;
+    if (!hasDefault) continue;
+    if (field.required) continue;
+    const current = next[key];
+    const hasValue =
+      current !== undefined &&
+      current !== null &&
+      (typeof current !== "string" || current.trim().length > 0);
+    if (!hasValue) {
+      next[key] = field.defaultValue;
+    }
+  }
+  return next;
+}
+
 function extractDocKeys(chunks: string[]): string[] {
   const keys = new Set<string>();
   for (const chunk of chunks) {
@@ -779,7 +808,8 @@ export const onboardingService = {
     let headers: Record<string, string> = {};
     let contentType: "application/json" | "application/x-www-form-urlencoded" =
       "application/json";
-    const payload: Record<string, any> = { ...data };
+    let payload: Record<string, any> = { ...data };
+    payload = applyInitialFieldDefaults(payload, onboarding);
 
     if (hasCurl) {
       const parsed = parseCurlRegistrationSpec(
