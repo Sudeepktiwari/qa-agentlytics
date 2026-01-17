@@ -21,7 +21,7 @@ function ensureDataDirectory() {
 
 // Default settings
 const DEFAULT_SETTINGS = {
-  voiceEnabled: true,
+  voiceEnabled: false,
   voiceGender: "female",
   autoOpenProactive: true,
   updatedAt: new Date().toISOString(),
