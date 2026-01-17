@@ -46,6 +46,7 @@ const AuthSection: React.FC<AuthSectionProps> = ({
       "data-api-key",
       "ak_ed1d712d17eb4de4201139ae22936abde730cf95372dc5fffe3a891216ae136e"
     );
+    script.setAttribute("data-theme", "blue");
     document.body.appendChild(script);
   };
 
