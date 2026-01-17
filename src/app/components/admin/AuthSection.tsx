@@ -33,20 +33,27 @@ const AuthSection: React.FC<AuthSectionProps> = ({
     if (typeof window === "undefined" || typeof document === "undefined") {
       return;
     }
-    const scriptSrc =
-      "https://agentlytics.advancelytics.com/api/widget/onboarding";
-    const existingScript = document.querySelector(`script[src="${scriptSrc}"]`);
+
+    const existingScript = document.querySelector(
+      'script[data-onboarding-widget="true"]'
+    );
     if (existingScript) {
       return;
     }
+
     const script = document.createElement("script");
-    script.src = scriptSrc;
+    script.src = `/api/widget?cb=${Date.now()}`;
     script.async = true;
+    script.setAttribute("data-onboarding-widget", "true");
     script.setAttribute(
       "data-api-key",
       "ak_ed1d712d17eb4de4201139ae22936abde730cf95372dc5fffe3a891216ae136e"
     );
+    script.setAttribute("data-onboarding-only", "true");
+    script.setAttribute("data-voice-enabled", "false");
     script.setAttribute("data-theme", "blue");
+    script.setAttribute("data-chat-title", "Onboarding Assistant");
+    script.setAttribute("data-widget", "appointy");
     document.body.appendChild(script);
   };
 
