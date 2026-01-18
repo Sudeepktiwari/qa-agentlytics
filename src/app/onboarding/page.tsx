@@ -14,7 +14,7 @@ export default function OnboardingPage() {
     s.setAttribute("data-api-key", v);
     s.setAttribute("data-onboarding-only", "true");
     s.setAttribute("data-chat-title", "Onboarding Assistant");
-    s.setAttribute("data-theme", "green");
+    s.setAttribute("data-theme", "blue");
     s.setAttribute("data-auto-open-proactive", "false");
     s.setAttribute("data-mirror-mode", "false");
     s.onload = () => setLoaded(true);

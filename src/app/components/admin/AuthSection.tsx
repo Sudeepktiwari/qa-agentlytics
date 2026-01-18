@@ -42,7 +42,7 @@ const AuthSection: React.FC<AuthSectionProps> = ({
     }
 
     const script = document.createElement("script");
-    script.src = `/api/widget?cb=${Date.now()}`;
+    script.src = `/api/onboarding/widget?cb=${Date.now()}`;
     script.async = true;
     script.setAttribute("data-onboarding-widget", "true");
     script.setAttribute(

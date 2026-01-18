@@ -22,7 +22,14 @@ export async function GET(request: Request) {
   var el = document.currentScript || document.querySelector('script[src*="/api/onboarding/widget"]');
   var apiKey = '';
   var chatTitle = 'Onboarding Assistant';
-  try { if (el && typeof el.getAttribute === 'function') { apiKey = el.getAttribute('data-api-key') || ''; chatTitle = el.getAttribute('data-chat-title') || 'Onboarding Assistant'; } } catch (e) {}
+  var theme = 'blue';
+  try { 
+    if (el && typeof el.getAttribute === 'function') { 
+      apiKey = el.getAttribute('data-api-key') || ''; 
+      chatTitle = el.getAttribute('data-chat-title') || 'Onboarding Assistant'; 
+      theme = el.getAttribute('data-theme') || 'blue';
+    } 
+  } catch (e) {}
 
   if (!apiKey || !apiKey.startsWith('ak_')) {
     throw new Error('API key required');
@@ -35,12 +42,16 @@ export async function GET(request: Request) {
   function saveState() { localStorage.setItem('onboarding_state', JSON.stringify(state)); }
   var sid = (function(){ var s = localStorage.getItem('onboarding_sid'); if (!s) { s = 'sess_' + Math.random().toString(36).slice(2); localStorage.setItem('onboarding_sid', s); } return s; })();
 
+  var primaryColor = '#3b82f6';
+  if (theme === 'green') { primaryColor = '#10b981'; }
+  else if (theme === 'purple') { primaryColor = '#8b5cf6'; }
+
   var container = document.createElement('div');
   container.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:10000;padding:20px;';
   var panel = document.createElement('div');
   panel.style.cssText = 'width:70vw;max-width:800px;height:70vh;max-height:720px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;box-shadow:0 10px 25px rgba(0,0,0,0.15);display:flex;flex-direction:column;overflow:hidden;';
   var header = document.createElement('div');
-  header.style.cssText = 'padding:12px 16px;background:#10b981;color:#fff;font-weight:600;display:flex;align-items:center;justify-content:space-between;';
+  header.style.cssText = 'padding:12px 16px;background:' + primaryColor + ';color:#fff;font-weight:600;display:flex;align-items:center;justify-content:space-between;';
   header.textContent = chatTitle;
   var messages = document.createElement('div');
   messages.style.cssText = 'flex:1;padding:14px;overflow:auto;font-size:14px;color:#374151;background:#f9fafb;';
@@ -54,13 +65,13 @@ export async function GET(request: Request) {
   input.style.cssText = 'flex:1;padding:10px;border:1px solid #e5e7eb;border-radius:8px;';
   var sendBtn = document.createElement('button');
   sendBtn.textContent = 'Send';
-  sendBtn.style.cssText = 'padding:10px 14px;border:1px solid #e5e7eb;border-radius:8px;background:#10b981;color:#fff;font-weight:600;';
+  sendBtn.style.cssText = 'padding:10px 14px;border:1px solid #e5e7eb;border-radius:8px;background:' + primaryColor + ';color:#fff;font-weight:600;';
   inputBar.appendChild(input); inputBar.appendChild(sendBtn);
   panel.appendChild(header); panel.appendChild(messages); panel.appendChild(actions); panel.appendChild(inputBar); container.appendChild(panel); document.body.appendChild(container);
 
   function clearActions() { while (actions.firstChild) actions.removeChild(actions.firstChild); }
   function addAction(label, onClick) { var b = document.createElement('button'); b.textContent = label; b.style.cssText = 'padding:8px 12px;border:1px solid #e5e7eb;border-radius:999px;background:#fff;color:#374151;font-weight:600;'; b.onclick = onClick; actions.appendChild(b); return b; }
-  function addBubble(role, text) { var row = document.createElement('div'); row.style.cssText = 'display:flex;margin-bottom:10px;'; var bubble = document.createElement('div'); bubble.textContent = text; if (role === 'user') { row.style.justifyContent = 'flex-end'; bubble.style.cssText = 'max-width:70%;background:#10b981;color:#fff;padding:10px 12px;border-radius:14px 14px 2px 14px;'; } else { row.style.justifyContent = 'flex-start'; bubble.style.cssText = 'max-width:70%;background:#fff;color:#374151;padding:10px 12px;border-radius:14px 14px 14px 2px;border:1px solid #e5e7eb;'; } row.appendChild(bubble); messages.appendChild(row); messages.scrollTop = messages.scrollHeight; }
+  function addBubble(role, text) { var row = document.createElement('div'); row.style.cssText = 'display:flex;margin-bottom:10px;'; var bubble = document.createElement('div'); bubble.textContent = text; if (role === 'user') { row.style.justifyContent = 'flex-end'; bubble.style.cssText = 'max-width:70%;background:' + primaryColor + ';color:#fff;padding:10px 12px;border-radius:14px 14px 2px 14px;'; } else { row.style.justifyContent = 'flex-start'; bubble.style.cssText = 'max-width:70%;background:#fff;color:#374151;padding:10px 12px;border-radius:14px 14px 14px 2px;border:1px solid #e5e7eb;'; } row.appendChild(bubble); messages.appendChild(row); messages.scrollTop = messages.scrollHeight; }
 
   function renderRegistrationIntro() {
     messages.innerHTML = '';
