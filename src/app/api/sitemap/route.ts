@@ -1476,6 +1476,8 @@ export async function POST(req: NextRequest) {
     Object.fromEntries(req.headers.entries())
   );
 
+  let adminId: string | null = null;
+
   const cookieToken = req.cookies.get("auth_token")?.value;
   let token = cookieToken;
   if (!token) {
@@ -1487,23 +1489,46 @@ export async function POST(req: NextRequest) {
       token = match ? match[1] : authHeader;
     }
   }
-  if (!token) {
-    console.log(`[Sitemap] No auth token provided (cookie or header)`);
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  if (token) {
+    console.log(`[Sitemap] Auth token found, verifying...`);
+    try {
+      const payload = jwt.verify(token, JWT_SECRET) as {
+        email: string;
+        adminId: string;
+      };
+      adminId = payload.adminId;
+      console.log(`[Sitemap] Auth successful for adminId (JWT): ${adminId}`);
+    } catch (authError) {
+      console.log(`[Sitemap] JWT auth failed:`, authError);
+    }
+  } else {
+    console.log(`[Sitemap] No JWT token provided (cookie or header)`);
   }
 
-  console.log(`[Sitemap] Auth token found, verifying...`);
-  let adminId = "";
-  try {
-    const payload = jwt.verify(token!, JWT_SECRET) as {
-      email: string;
-      adminId: string;
-    };
-    adminId = payload.adminId;
-    console.log(`[Sitemap] Auth successful for adminId: ${adminId}`);
-  } catch (authError) {
-    console.log(`[Sitemap] Auth failed:`, authError);
-    return NextResponse.json({ error: "Invalid token" }, { status: 401 });
+  if (!adminId) {
+    const apiKey =
+      req.headers.get("x-api-key") ||
+      req.headers.get("X-API-Key") ||
+      req.headers.get("api-key") ||
+      req.headers.get("Api-Key");
+    if (apiKey) {
+      console.log(`[Sitemap] Trying API key authentication...`);
+      const apiAuth = await verifyApiKey(apiKey);
+      if (apiAuth) {
+        adminId = apiAuth.adminId;
+        console.log(
+          `[Sitemap] Auth successful for adminId (API key): ${adminId}`
+        );
+      } else {
+        console.log(`[Sitemap] API key authentication failed`);
+      }
+    }
+  }
+
+  if (!adminId) {
+    console.log(`[Sitemap] No valid authentication found`);
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   console.log(`[Sitemap] Parsing request body...`);
