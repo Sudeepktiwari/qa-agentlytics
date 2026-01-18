@@ -1476,9 +1476,19 @@ export async function POST(req: NextRequest) {
     Object.fromEntries(req.headers.entries())
   );
 
-  const token = req.cookies.get("auth_token")?.value;
+  const cookieToken = req.cookies.get("auth_token")?.value;
+  let token = cookieToken;
   if (!token) {
-    console.log(`[Sitemap] No auth token provided`);
+    console.log(`[Sitemap] No auth cookie, checking Authorization header...`);
+    const authHeader =
+      req.headers.get("authorization") || req.headers.get("Authorization");
+    if (authHeader) {
+      const match = authHeader.match(/Bearer\s+(.+)/i);
+      token = match ? match[1] : authHeader;
+    }
+  }
+  if (!token) {
+    console.log(`[Sitemap] No auth token provided (cookie or header)`);
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

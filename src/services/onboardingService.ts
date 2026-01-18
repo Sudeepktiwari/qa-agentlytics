@@ -831,10 +831,14 @@ export const onboardingService = {
       const apiKeyHeaderKey =
         (onboarding as any).apiKeyHeaderKey || "X-API-Key";
       if (tokenFromFlow) {
-        headers[authHeaderKey] =
-          String(authHeaderKey).toLowerCase() === "authorization"
-            ? `Bearer ${tokenFromFlow}`
-            : tokenFromFlow;
+        const tok = String(tokenFromFlow).trim();
+        if (String(authHeaderKey).toLowerCase() === "authorization") {
+          headers[authHeaderKey] = /^Bearer\s+/i.test(tok)
+            ? tok
+            : `Bearer ${tok}`;
+        } else {
+          headers[authHeaderKey] = tok;
+        }
       }
       if (apiKeyFromFlow) {
         headers[apiKeyHeaderKey] = apiKeyFromFlow;
@@ -876,10 +880,12 @@ export const onboardingService = {
             const hk = String((hf as any).key || "");
             if (!hk) continue;
             if (src === "token" && tokenFromFlow) {
-              headers[hk] =
-                hk.toLowerCase() === "authorization"
-                  ? `Bearer ${tokenFromFlow}`
-                  : tokenFromFlow;
+              const tok = String(tokenFromFlow).trim();
+              if (hk.toLowerCase() === "authorization") {
+                headers[hk] = /^Bearer\s+/i.test(tok) ? tok : `Bearer ${tok}`;
+              } else {
+                headers[hk] = tok;
+              }
             } else if (src === "apiKey" && apiKeyFromFlow) {
               headers[hk] = apiKeyFromFlow;
             } else if ((hf as any).defaultValue) {
@@ -1121,10 +1127,12 @@ export const onboardingService = {
     const tokenFromFlow = (data as any).__authToken as string | undefined;
     const apiKeyFromFlow = (data as any).__apiKey as string | undefined;
     if (tokenFromFlow) {
-      headers[headerKey] =
-        headerKey.toLowerCase() === "authorization"
-          ? `Bearer ${tokenFromFlow}`
-          : tokenFromFlow;
+      const tok = String(tokenFromFlow).trim();
+      if (headerKey.toLowerCase() === "authorization") {
+        headers[headerKey] = /^Bearer\s+/i.test(tok) ? tok : `Bearer ${tok}`;
+      } else {
+        headers[headerKey] = tok;
+      }
     }
     if (apiKeyFromFlow) {
       const apiKeyHeaderKey =
@@ -1167,10 +1175,12 @@ export const onboardingService = {
         const hk = String((hf as any).key || "");
         if (!hk) continue;
         if (src === "token" && tokenFromFlow) {
-          headers[hk] =
-            hk.toLowerCase() === "authorization"
-              ? `Bearer ${tokenFromFlow}`
-              : tokenFromFlow;
+          const tok = String(tokenFromFlow).trim();
+          if (hk.toLowerCase() === "authorization") {
+            headers[hk] = /^Bearer\s+/i.test(tok) ? tok : `Bearer ${tok}`;
+          } else {
+            headers[hk] = tok;
+          }
         } else if (src === "apiKey" && apiKeyFromFlow) {
           headers[hk] = apiKeyFromFlow;
         } else if ((hf as any).defaultValue) {
