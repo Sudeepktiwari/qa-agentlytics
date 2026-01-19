@@ -630,7 +630,10 @@ export default function GlobalHeader() {
               </div>
             </div>
           </div>
-          <Link href="/blogs" className="hover:text-slate-900">
+          <Link
+            href="https://blogs.advancelytics.com"
+            className="hover:text-slate-900"
+          >
             Blogs
           </Link>
           <Link
@@ -934,7 +937,7 @@ export default function GlobalHeader() {
                     Pricing
                   </Link>
                   <Link
-                    href="/blogs"
+                    href="https://blogs.advancelytics.com"
                     className="block px-2 py-1 rounded hover:bg-slate-50"
                   >
                     Blogs
