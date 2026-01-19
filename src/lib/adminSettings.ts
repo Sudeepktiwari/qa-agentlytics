@@ -171,11 +171,18 @@ export const DEFAULT_ADMIN_SETTINGS: Omit<
     authHeaderKey: "Authorization",
     docsUrl: undefined,
     curlCommand: undefined,
+    // Authentication: docs and canonical cURL
     authDocsUrl: undefined,
-    authCurlCommand: undefined,
+    authCurlCommand: `curl -X POST "http://localhost:3000/api/auth" -H "Content-Type: application/json" -d '{"action": "login", "email": "user@example.com", "password": "password"}'`,
+    authResponseMappings: {
+      apiKeyPath: "apiKey",
+    },
+    apiKeyHeaderKey: "X-API-Key",
+
+    // Post-registration initial setup: docs and canonical cURL
     initialSetupDocsUrl: undefined,
-    initialSetupCurlCommand: undefined,
-    initialSetupEndpoint: undefined,
+    initialSetupCurlCommand: `curl -X POST "http://localhost:3000/api/sitemap" -H "Content-Type: application/json" -d '{"url": "https://example.com"}'`,
+    initialSetupEndpoint: "/api/sitemap",
     initialSetupMethod: "POST",
     fields: undefined,
     registrationFields: undefined,
