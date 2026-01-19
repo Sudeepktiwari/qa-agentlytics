@@ -24,6 +24,13 @@ const pinecone = new Pinecone({
 });
 const index = pinecone.index(process.env.PINECONE_INDEX!);
 
+// Helper to check if domains are the same, ignoring www.
+function isSameDomain(host1: string, host2: string): boolean {
+  const h1 = host1.replace(/^www\./, "").toLowerCase();
+  const h2 = host2.replace(/^www\./, "").toLowerCase();
+  return h1 === h2;
+}
+
 // Auto-extract personas after crawling is complete
 async function extractPersonasForAdmin(adminId: string, websiteUrl: string) {
   try {
@@ -458,7 +465,7 @@ async function extractLinksUsingBrowser(pageUrl: string): Promise<string[]> {
             // Only include same-domain HTTP/HTTPS URLs
             if (
               linkUrl.protocol.startsWith("http") &&
-              linkUrl.hostname === pageUrlObj.hostname
+              isSameDomain(linkUrl.hostname, pageUrlObj.hostname)
             ) {
               // Clean up the URL
               let cleanUrl = absoluteUrl.split("#")[0];
@@ -684,29 +691,36 @@ async function extractLinksFromPage(pageUrl: string): Promise<string[]> {
       );
     }
 
+    // Use final URL after redirects for base resolution
+    const finalUrl = res.url;
+    console.log(`[LinkExtract] Final URL after redirects: ${finalUrl}`);
+
     const html = await res.text();
     const $ = cheerio.load(html);
 
     const links = new Set<string>();
 
-    // Add the original page itself
+    // Add the original page itself (and the final URL if different)
     links.add(pageUrl);
+    if (finalUrl !== pageUrl) {
+      links.add(finalUrl);
+    }
 
     // Extract all links from the page with more comprehensive selectors
     $("a[href]").each((_, element) => {
       const href = $(element).attr("href");
       if (href) {
         try {
-          // Convert relative URLs to absolute
-          const absoluteUrl = new URL(href, pageUrl).href;
+          // Convert relative URLs to absolute using final URL
+          const absoluteUrl = new URL(href, finalUrl).href;
 
           // Only include HTTP/HTTPS URLs from the same domain
-          const pageUrlObj = new URL(pageUrl);
+          const pageUrlObj = new URL(finalUrl);
           const linkUrlObj = new URL(absoluteUrl);
 
           if (
             linkUrlObj.protocol.startsWith("http") &&
-            linkUrlObj.hostname === pageUrlObj.hostname
+            isSameDomain(linkUrlObj.hostname, pageUrlObj.hostname)
           ) {
             // Remove fragments and query parameters for cleaner URLs
             let cleanUrl = absoluteUrl.split("#")[0];
@@ -1681,7 +1695,7 @@ async function processBatch(req: NextRequest) {
           const filtered = cleanedUrls.filter((link) => {
             try {
               const lu = new URL(link);
-              const sameHost = lu.hostname === originHost;
+              const sameHost = isSameDomain(lu.hostname, originHost);
               const sameLocale =
                 !locale || lu.pathname.includes(`/hc/${locale}`);
               return sameHost && sameLocale;
