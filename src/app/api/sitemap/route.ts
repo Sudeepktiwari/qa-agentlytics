@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb, getAdminSettingsCollection } from "@/lib/mongo";
-import { verifyApiKey } from "@/lib/auth";
+import {
+  verifyApiKey,
+  verifyAdminToken,
+  verifyAdminTokenFromCookie,
+} from "@/lib/auth";
 import jwt from "jsonwebtoken";
 import fetch from "node-fetch";
 import * as cheerio from "cheerio";
@@ -1490,6 +1494,46 @@ export async function POST(req: NextRequest) {
     return processBatch(req);
   }
 
+  // Get Admin ID (needed for stop action and background loop)
+  let adminId: string | null = null;
+  const cookieAuth = verifyAdminTokenFromCookie(req);
+  if (cookieAuth) {
+    adminId = cookieAuth.adminId;
+  } else {
+    const headerAuth = verifyAdminToken(req);
+    if (headerAuth) {
+      adminId = headerAuth.adminId;
+    }
+  }
+  // Fallback to API key if needed
+  if (!adminId) {
+    const apiKey =
+      req.headers.get("x-api-key") ||
+      req.headers.get("X-API-Key") ||
+      req.headers.get("api-key") ||
+      req.headers.get("Api-Key");
+    if (apiKey) {
+      const apiAuth = await verifyApiKey(apiKey);
+      if (apiAuth) adminId = apiAuth.adminId;
+    }
+  }
+
+  // Handle Stop Action
+  if (body.action === "stop") {
+    if (!adminId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const db = await getDb();
+    const crawlStates = db.collection("crawl_states");
+    await crawlStates.updateOne(
+      { adminId },
+      { $set: { status: "stopped", updatedAt: new Date() } },
+      { upsert: true }
+    );
+    console.log(`[Sitemap] Stop signal received for admin ${adminId}`);
+    return NextResponse.json({ message: "Stop signal received" });
+  }
+
   if (!body.background) {
     return processBatch(req);
   }
@@ -1516,11 +1560,38 @@ export async function POST(req: NextRequest) {
   (async () => {
     try {
       console.log("[BackgroundCrawl] Starting background crawl process...");
+
+      // Set status to running
+      if (adminId) {
+        const db = await getDb();
+        await db
+          .collection("crawl_states")
+          .updateOne(
+            { adminId },
+            { $set: { status: "running", updatedAt: new Date() } },
+            { upsert: true }
+          );
+      }
+
       let hasMore = true;
       let batchCount = 0;
       const MAX_BATCHES = 50; // Safety limit: ~300 pages
 
       while (hasMore && batchCount < MAX_BATCHES) {
+        // Check for stop signal
+        if (adminId) {
+          const db = await getDb();
+          const state = await db
+            .collection("crawl_states")
+            .findOne({ adminId });
+          if (state?.status === "stopped") {
+            console.log(
+              `[BackgroundCrawl] Stop signal detected for admin ${adminId}. Aborting.`
+            );
+            break;
+          }
+        }
+
         console.log(`[BackgroundCrawl] Processing batch ${batchCount + 1}...`);
 
         const headers: Record<string, string> = {
@@ -1885,6 +1956,18 @@ async function processBatch(req: NextRequest) {
     let timeoutReached = false;
 
     for (const url of uncrawledUrls) {
+      // Check for stop signal
+      if (adminId) {
+        const db = await getDb();
+        const state = await db.collection("crawl_states").findOne({ adminId });
+        if (state?.status === "stopped") {
+          console.log(
+            `[ProcessBatch] Stop signal detected for admin ${adminId}. Aborting batch.`
+          );
+          break;
+        }
+      }
+
       // Check if we're approaching the timeout limit
       const currentTime = Date.now();
       const elapsedTime = currentTime - startTime;

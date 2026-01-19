@@ -316,11 +316,30 @@ const AdminPanel: React.FC = () => {
   };
 
   // Stop auto-continue handler
-  const handleStopCrawling = () => {
+  const handleStopCrawling = async () => {
     setAutoContinue(false);
     setContinueCrawling(false);
     setSitemapLoading(false);
     setSitemapStatus((prev) => prev + `\n\n⏹️ Crawling stopped by user.`);
+
+    try {
+      // Notify backend to stop any running background jobs
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (apiKey) {
+        headers["x-api-key"] = apiKey;
+      }
+
+      await fetch("/api/sitemap", {
+        method: "POST",
+        headers,
+        credentials: "include",
+        body: JSON.stringify({ action: "stop" }),
+      });
+    } catch (err) {
+      console.error("Failed to send stop signal to backend:", err);
+    }
   };
 
   // Logout handler
