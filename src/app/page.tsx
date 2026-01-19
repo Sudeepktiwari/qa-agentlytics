@@ -2044,6 +2044,12 @@ export default function Page() {
               ]}
             />
           </motion.div>
+          <a
+            href="/pricing"
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-[color:var(--brand-blue)] text-white"
+          >
+            See full pricing & usage limits →
+          </a>
         </section>
 
         {/* CTA */}
