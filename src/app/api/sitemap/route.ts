@@ -547,30 +547,30 @@ async function extractLinksUsingBrowser(pageUrl: string): Promise<string[]> {
                   const linkType = cleanUrl.includes("/slide")
                     ? "slide"
                     : cleanUrl.includes("/blog")
-                    ? "blog"
-                    : cleanUrl.includes("/post")
-                    ? "post"
-                    : cleanUrl.includes("/article")
-                    ? "article"
-                    : cleanUrl.includes("/help")
-                    ? "help"
-                    : cleanUrl.includes("/guide")
-                    ? "guide"
-                    : cleanUrl.includes("/news")
-                    ? "news"
-                    : cleanUrl.includes("/tutorial")
-                    ? "tutorial"
-                    : cleanUrl.includes("/docs")
-                    ? "docs"
-                    : cleanUrl.includes("/support")
-                    ? "support"
-                    : cleanUrl.includes("/resource")
-                    ? "resource"
-                    : cleanUrl.includes("/case-stud")
-                    ? "case-study"
-                    : cleanUrl.includes("/faq")
-                    ? "faq"
-                    : "content";
+                      ? "blog"
+                      : cleanUrl.includes("/post")
+                        ? "post"
+                        : cleanUrl.includes("/article")
+                          ? "article"
+                          : cleanUrl.includes("/help")
+                            ? "help"
+                            : cleanUrl.includes("/guide")
+                              ? "guide"
+                              : cleanUrl.includes("/news")
+                                ? "news"
+                                : cleanUrl.includes("/tutorial")
+                                  ? "tutorial"
+                                  : cleanUrl.includes("/docs")
+                                    ? "docs"
+                                    : cleanUrl.includes("/support")
+                                      ? "support"
+                                      : cleanUrl.includes("/resource")
+                                        ? "resource"
+                                        : cleanUrl.includes("/case-stud")
+                                          ? "case-study"
+                                          : cleanUrl.includes("/faq")
+                                            ? "faq"
+                                            : "content";
                   console.log(
                     `[JSCrawl-Browser] Found ${linkType} link: ${cleanUrl}`
                   );
@@ -1467,6 +1467,107 @@ async function extractTextUsingBrowser(url: string): Promise<string> {
 }
 
 export async function POST(req: NextRequest) {
+  // Clone the request to read body without consuming it for processBatch
+  const clone = req.clone();
+  let body;
+  try {
+    body = await clone.json();
+  } catch (e) {
+    return processBatch(req);
+  }
+
+  if (!body.background) {
+    return processBatch(req);
+  }
+
+  const cookieToken = req.cookies.get("auth_token")?.value;
+  let token = cookieToken;
+  if (!token) {
+    const authHeader =
+      req.headers.get("authorization") || req.headers.get("Authorization");
+    if (authHeader) {
+      const match = authHeader.match(/Bearer\s+(.+)/i);
+      token = match ? match[1] : authHeader;
+    }
+  }
+
+  const sitemapUrl = body.sitemapUrl;
+  if (!sitemapUrl) {
+    return NextResponse.json({ error: "Missing sitemapUrl" }, { status: 400 });
+  }
+
+  const internalUrl = new URL("/api/sitemap", req.nextUrl.origin).toString();
+
+  // Start background crawl process (Fire and Forget)
+  (async () => {
+    try {
+      console.log("[BackgroundCrawl] Starting background crawl process...");
+      let hasMore = true;
+      let batchCount = 0;
+      const MAX_BATCHES = 50; // Safety limit: ~300 pages
+
+      while (hasMore && batchCount < MAX_BATCHES) {
+        console.log(`[BackgroundCrawl] Processing batch ${batchCount + 1}...`);
+
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+        };
+        if (token) {
+          headers["Cookie"] = `auth_token=${token}`;
+          headers["Authorization"] = `Bearer ${token}`;
+        }
+
+        const resp = await fetch(internalUrl, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ sitemapUrl, background: false }),
+        });
+
+        if (!resp.ok) {
+          console.error(
+            `[BackgroundCrawl] Batch ${batchCount + 1} failed: ${resp.status} ${
+              resp.statusText
+            }`
+          );
+          break;
+        }
+
+        let data: any = null;
+        try {
+          data = await resp.json();
+        } catch (e) {
+          console.error(`[BackgroundCrawl] Failed to parse JSON response`, e);
+          break;
+        }
+
+        hasMore = data?.hasMorePages || false;
+        batchCount++;
+
+        if (hasMore) {
+          // Small delay to prevent overwhelming the server
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+        }
+      }
+      console.log(
+        `[BackgroundCrawl] Process completed after ${batchCount} batches`
+      );
+    } catch (err) {
+      console.error("[BackgroundCrawl] Background process error:", err);
+    }
+  })();
+
+  return NextResponse.json(
+    {
+      message: "Crawl started in background",
+      status: "started",
+      details:
+        "Pages are being crawled in the background. They will appear in the dashboard as they are processed.",
+    },
+    { status: 200 }
+  );
+}
+
+async function processBatch(req: NextRequest) {
   const startTime = Date.now();
   const MAX_EXECUTION_TIME = 270000; // 270 seconds (30 seconds buffer before Vercel timeout)
 
@@ -2053,8 +2154,8 @@ Extract and return a JSON object with:
       message: timeoutReached
         ? `Processed ${results.length} pages before timeout. ${totalRemaining} pages remaining.`
         : hasMorePages
-        ? `Successfully processed ${results.length} pages. ${totalRemaining} pages remaining - auto-continue available.`
-        : `All ${urls.length} pages have been successfully processed!`,
+          ? `Successfully processed ${results.length} pages. ${totalRemaining} pages remaining - auto-continue available.`
+          : `All ${urls.length} pages have been successfully processed!`,
     };
 
     // Auto-extract personas when crawling is complete
