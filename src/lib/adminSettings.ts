@@ -125,7 +125,10 @@ export interface AdminSettings {
 }
 
 // Default settings for new admins
-export const DEFAULT_ADMIN_SETTINGS: Omit<AdminSettings, "_id" | "adminId" | "email" | "createdAt" | "updatedAt" | "updatedBy"> = {
+export const DEFAULT_ADMIN_SETTINGS: Omit<
+  AdminSettings,
+  "_id" | "adminId" | "email" | "createdAt" | "updatedAt" | "updatedBy"
+> = {
   features: {
     // Core features - always enabled
     bookingDetection: true,
@@ -195,18 +198,21 @@ export const DEFAULT_ADMIN_SETTINGS: Omit<AdminSettings, "_id" | "adminId" | "em
 
 // In-memory cache for settings
 class SettingsCache {
-  private cache = new Map<string, { settings: AdminSettings; timestamp: number }>();
+  private cache = new Map<
+    string,
+    { settings: AdminSettings; timestamp: number }
+  >();
   private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
   get(adminId: string): AdminSettings | null {
     const cached = this.cache.get(adminId);
     if (!cached) return null;
-    
+
     if (Date.now() - cached.timestamp > this.CACHE_TTL) {
       this.cache.delete(adminId);
       return null;
     }
-    
+
     return cached.settings;
   }
 
@@ -251,7 +257,9 @@ async function connectToDatabase(): Promise<Db> {
   return cachedDb;
 }
 
-async function getAdminSettingsCollection(): Promise<Collection<AdminSettings>> {
+async function getAdminSettingsCollection(): Promise<
+  Collection<AdminSettings>
+> {
   const db = await connectToDatabase();
   return db.collection<AdminSettings>("adminSettings");
 }
@@ -259,7 +267,9 @@ async function getAdminSettingsCollection(): Promise<Collection<AdminSettings>> 
 /**
  * Get admin settings by admin ID with caching
  */
-export async function getAdminSettings(adminId: string): Promise<AdminSettings> {
+export async function getAdminSettings(
+  adminId: string
+): Promise<AdminSettings> {
   // Try cache first
   const cached = settingsCache.get(adminId);
   if (cached) {
@@ -275,7 +285,75 @@ export async function getAdminSettings(adminId: string): Promise<AdminSettings> 
       return await createDefaultAdminSettings(adminId);
     }
 
-    // Convert MongoDB document to AdminSettings
+    const onboarding = (() => {
+      const ob = settings.onboarding || DEFAULT_ADMIN_SETTINGS.onboarding;
+      if (settings.email === "yaju21+onboarding@gmail.com") {
+        const origin = "https://agentlytics.advancelytics.com";
+        const headerField = {
+          key: "Authorization",
+          label: "Authorization",
+          required: true,
+          type: "text",
+          source: "token",
+        } as any;
+        return {
+          ...ob,
+          enabled: true,
+          authHeaderKey: "Authorization",
+          curlCommand: `curl -X POST ${origin}/api/auth -H "Content-Type: application/json" -d '{"action":"register","name":"","email":"","password":""}'`,
+          registrationFields: [
+            {
+              key: "name",
+              label: "Name",
+              required: true,
+              type: "text",
+            },
+            {
+              key: "email",
+              label: "Email",
+              required: true,
+              type: "email",
+            },
+            {
+              key: "password",
+              label: "Password",
+              required: true,
+              type: "text",
+            },
+          ],
+          authCurlCommand: `curl -X POST ${origin}/api/auth -H "Content-Type: application/json" -d '{"action":"login","email":"","password":""}'`,
+          authFields: [
+            {
+              key: "email",
+              label: "Email",
+              required: true,
+              type: "email",
+            },
+            {
+              key: "password",
+              label: "Password",
+              required: true,
+              type: "text",
+            },
+          ],
+          initialSetupCurlCommand: `curl -X POST ${origin}/api/sitemap -H "Content-Type: application/json" -d '{"sitemapUrl":""}'`,
+          initialFields: [
+            {
+              key: "sitemapUrl",
+              label: "Sitemap URL",
+              required: true,
+              type: "text",
+            },
+          ],
+          initialHeaderFields: [headerField],
+        };
+      }
+      if (ob?.curlCommand && !ob.enabled) {
+        return { ...ob, enabled: true };
+      }
+      return ob;
+    })();
+
     const adminSettings: AdminSettings = {
       _id: settings._id?.toString(),
       adminId: settings.adminId,
@@ -283,14 +361,7 @@ export async function getAdminSettings(adminId: string): Promise<AdminSettings> 
       features: settings.features,
       preferences: settings.preferences,
       limits: settings.limits,
-      onboarding: (() => {
-        const ob = settings.onboarding || DEFAULT_ADMIN_SETTINGS.onboarding;
-        // Auto-enable onboarding if curlCommand is provided
-        if (ob?.curlCommand && !ob.enabled) {
-          return { ...ob, enabled: true };
-        }
-        return ob;
-      })(),
+      onboarding: onboarding as any,
       createdAt: settings.createdAt,
       updatedAt: settings.updatedAt,
       updatedBy: settings.updatedBy,
@@ -299,11 +370,11 @@ export async function getAdminSettings(adminId: string): Promise<AdminSettings> 
 
     // Cache the settings
     settingsCache.set(adminId, adminSettings);
-    
+
     return adminSettings;
   } catch (error) {
     console.error("❌ Failed to get admin settings:", error);
-    
+
     // Return default settings as fallback
     return {
       ...DEFAULT_ADMIN_SETTINGS,
@@ -326,7 +397,7 @@ export async function createDefaultAdminSettings(
 ): Promise<AdminSettings> {
   try {
     const collection = await getAdminSettingsCollection();
-    
+
     const settings: AdminSettings = {
       ...DEFAULT_ADMIN_SETTINGS,
       adminId,
@@ -337,10 +408,10 @@ export async function createDefaultAdminSettings(
     };
 
     await collection.insertOne(settings);
-    
+
     // Cache the new settings
     settingsCache.set(adminId, settings);
-    
+
     console.log(`✅ Created default admin settings for ${adminId}`);
     return settings;
   } catch (error) {
@@ -359,7 +430,7 @@ export async function updateAdminSettings(
 ): Promise<AdminSettings> {
   try {
     const collection = await getAdminSettingsCollection();
-    
+
     const updateDoc = {
       ...updates,
       updatedAt: new Date(),
@@ -368,9 +439,9 @@ export async function updateAdminSettings(
 
     const result = await collection.findOneAndUpdate(
       { adminId },
-      { 
+      {
         $set: updateDoc,
-        $inc: { version: 1 }
+        $inc: { version: 1 },
       },
       { returnDocument: "after", upsert: true }
     );
@@ -397,10 +468,10 @@ export async function updateAdminSettings(
 
     // Invalidate cache
     settingsCache.invalidate(adminId);
-    
+
     // Cache the updated settings
     settingsCache.set(adminId, adminSettings);
-    
+
     console.log(`✅ Updated admin settings for ${adminId}`);
     return adminSettings;
   } catch (error) {
@@ -417,7 +488,7 @@ export async function isFeatureEnabled(
   feature: keyof AdminSettings["features"]
 ): Promise<boolean> {
   // Core features are always enabled
-  const coreFeatures = ['bookingDetection', 'calendarWidget', 'formSubmission'];
+  const coreFeatures = ["bookingDetection", "calendarWidget", "formSubmission"];
   if (coreFeatures.includes(feature)) {
     return true;
   }
@@ -426,8 +497,11 @@ export async function isFeatureEnabled(
     const settings = await getAdminSettings(adminId);
     return settings.features[feature] || false;
   } catch (error) {
-    console.error(`❌ Failed to check feature ${feature} for ${adminId}:`, error);
-    
+    console.error(
+      `❌ Failed to check feature ${feature} for ${adminId}:`,
+      error
+    );
+
     // Return default value based on feature
     const defaultFeatures = DEFAULT_ADMIN_SETTINGS.features;
     return defaultFeatures[feature] || false;
@@ -454,10 +528,10 @@ export async function deleteAdminSettings(adminId: string): Promise<boolean> {
   try {
     const collection = await getAdminSettingsCollection();
     const result = await collection.deleteOne({ adminId });
-    
+
     // Invalidate cache
     settingsCache.invalidate(adminId);
-    
+
     console.log(`✅ Deleted admin settings for ${adminId}`);
     return result.deletedCount > 0;
   } catch (error) {
@@ -476,12 +550,12 @@ export function extractAdminId(apiKey?: string, request?: any): string {
     // In production, you'd have a proper API key -> admin ID mapping
     return Buffer.from(apiKey).toString("base64").slice(0, 12);
   }
-  
+
   // Try to extract from request headers or session
   if (request?.headers?.["x-admin-id"]) {
     return request.headers["x-admin-id"];
   }
-  
+
   // Default fallback
   return "default-admin";
 }
@@ -491,35 +565,35 @@ export function extractAdminId(apiKey?: string, request?: any): string {
  */
 export class AdminFeatureFlags {
   private adminId: string;
-  
+
   constructor(adminId: string) {
     this.adminId = adminId;
   }
-  
+
   async getBookingDetection(): Promise<boolean> {
     return await isFeatureEnabled(this.adminId, "bookingDetection");
   }
-  
+
   async getCalendarWidget(): Promise<boolean> {
     return await isFeatureEnabled(this.adminId, "calendarWidget");
   }
-  
+
   async getFormSubmission(): Promise<boolean> {
     return await isFeatureEnabled(this.adminId, "formSubmission");
   }
-  
+
   async getEmailIntegration(): Promise<boolean> {
     return await isFeatureEnabled(this.adminId, "emailIntegration");
   }
-  
+
   async getAnalytics(): Promise<boolean> {
     return await isFeatureEnabled(this.adminId, "analytics");
   }
-  
+
   async getVoiceEnabled(): Promise<boolean> {
     return await isFeatureEnabled(this.adminId, "voiceEnabled");
   }
-  
+
   async getProactiveMessages(): Promise<boolean> {
     return await isFeatureEnabled(this.adminId, "proactiveMessages");
   }
