@@ -409,13 +409,22 @@ function HeroIllustrationAnimated() {
   );
 }
 
-const Badge = ({ children }) => (
+interface BadgeProps {
+  children: React.ReactNode;
+}
+
+const Badge = ({ children }: BadgeProps) => (
   <span className="inline-flex items-center rounded-full border border-blue-100 bg-white px-3 py-1 text-xs font-medium text-slate-700 shadow-sm">
     {children}
   </span>
 );
 
-const Button = ({ variant = "primary", children }) => {
+interface ButtonProps {
+  variant?: "primary" | "secondary";
+  children: React.ReactNode;
+}
+
+const Button = ({ variant = "primary", children }: ButtonProps) => {
   const base =
     "inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-offset-2";
   const styles =
@@ -425,7 +434,12 @@ const Button = ({ variant = "primary", children }) => {
   return <button className={`${base} ${styles}`}>{children}</button>;
 };
 
-const Card = ({ children, className = "" }) => (
+interface CardProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+const Card = ({ children, className = "" }: CardProps) => (
   <div
     className={`rounded-2xl border border-blue-100 bg-white p-6 shadow-sm ${className}`}
   >
@@ -433,7 +447,13 @@ const Card = ({ children, className = "" }) => (
   </div>
 );
 
-const SectionHeader = ({ kicker, title, subtitle }) => (
+interface SectionHeaderProps {
+  kicker?: string;
+  title: string;
+  subtitle?: string;
+}
+
+const SectionHeader = ({ kicker, title, subtitle }: SectionHeaderProps) => (
   <div className="mx-auto max-w-3xl text-center">
     {kicker ? (
       <div className="mb-3 flex items-center justify-center gap-2">
@@ -449,7 +469,12 @@ const SectionHeader = ({ kicker, title, subtitle }) => (
   </div>
 );
 
-const Stat = ({ label, value }) => (
+interface StatProps {
+  label: string;
+  value: string;
+}
+
+const Stat = ({ label, value }: StatProps) => (
   <div className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm">
     <div className="text-2xl font-bold text-blue-900">{value}</div>
     <div className="mt-1 text-sm text-blue-700">{label}</div>
