@@ -57,6 +57,12 @@ export interface OnboardingSettings {
   // Authentication: docs and canonical cURL
   authDocsUrl?: string;
   authCurlCommand?: string;
+  authResponseMappings?: {
+    tokenPath?: string;
+    apiKeyPath?: string;
+  };
+  apiKeyHeaderKey?: string; // e.g. X-API-Key
+
   // Post-registration initial setup: docs and canonical cURL
   initialSetupDocsUrl?: string;
   initialSetupCurlCommand?: string;
@@ -285,75 +291,7 @@ export async function getAdminSettings(
       return await createDefaultAdminSettings(adminId);
     }
 
-    const onboarding = (() => {
-      const ob = settings.onboarding || DEFAULT_ADMIN_SETTINGS.onboarding;
-      if (settings.email === "yaju21+onboarding@gmail.com") {
-        const origin = "https://agentlytics.advancelytics.com";
-        const headerField = {
-          key: "Authorization",
-          label: "Authorization",
-          required: true,
-          type: "text",
-          source: "token",
-        } as any;
-        return {
-          ...ob,
-          enabled: true,
-          authHeaderKey: "Authorization",
-          curlCommand: `curl -X POST ${origin}/api/auth -H "Content-Type: application/json" -d '{"action":"register","name":"","email":"","password":""}'`,
-          registrationFields: [
-            {
-              key: "name",
-              label: "Name",
-              required: true,
-              type: "text",
-            },
-            {
-              key: "email",
-              label: "Email",
-              required: true,
-              type: "email",
-            },
-            {
-              key: "password",
-              label: "Password",
-              required: true,
-              type: "text",
-            },
-          ],
-          authCurlCommand: `curl -X POST ${origin}/api/auth -H "Content-Type: application/json" -d '{"action":"login","email":"","password":""}'`,
-          authFields: [
-            {
-              key: "email",
-              label: "Email",
-              required: true,
-              type: "email",
-            },
-            {
-              key: "password",
-              label: "Password",
-              required: true,
-              type: "text",
-            },
-          ],
-          initialSetupCurlCommand: `curl -X POST ${origin}/api/sitemap -H "Content-Type: application/json" -d '{"sitemapUrl":""}'`,
-          initialFields: [
-            {
-              key: "sitemapUrl",
-              label: "Sitemap URL",
-              required: true,
-              type: "text",
-            },
-          ],
-          initialHeaderFields: [headerField],
-        };
-      }
-      if (ob?.curlCommand && !ob.enabled) {
-        return { ...ob, enabled: true };
-      }
-      return ob;
-    })();
-
+    // Convert MongoDB document to AdminSettings
     const adminSettings: AdminSettings = {
       _id: settings._id?.toString(),
       adminId: settings.adminId,
@@ -361,7 +299,14 @@ export async function getAdminSettings(
       features: settings.features,
       preferences: settings.preferences,
       limits: settings.limits,
-      onboarding: onboarding as any,
+      onboarding: (() => {
+        const ob = settings.onboarding || DEFAULT_ADMIN_SETTINGS.onboarding;
+        // Auto-enable onboarding if curlCommand is provided
+        if (ob?.curlCommand && !ob.enabled) {
+          return { ...ob, enabled: true };
+        }
+        return ob;
+      })(),
       createdAt: settings.createdAt,
       updatedAt: settings.updatedAt,
       updatedBy: settings.updatedBy,

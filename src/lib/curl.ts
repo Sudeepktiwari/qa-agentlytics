@@ -132,9 +132,9 @@ export function parseCurlRegistrationSpec(curlCommand: string): ParsedCurl {
     /-d\s+({[\s\S]*?})/i,
     /--data\s+({[\s\S]*?})/i,
     /--data-raw\s+({[\s\S]*?})/i,
-    /-d\s+\$?['"`]([\s\S]*?)['"`]/i,
-    /--data\s+\$?['"`]([\s\S]*?)['"`]/i,
-    /--data-raw\s+\$?['"`]([\s\S]*?)['"`]/i,
+    /-d\s+\$?(['"`])([\s\S]*?)\1/i,
+    /--data\s+\$?(['"`])([\s\S]*?)\1/i,
+    /--data-raw\s+\$?(['"`])([\s\S]*?)\1/i,
     /--data=(['"`]?)([\s\S]*?)\1/i,
     /--data-raw=(['"`]?)([\s\S]*?)\1/i,
   ];

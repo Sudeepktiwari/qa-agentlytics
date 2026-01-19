@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { getUsersCollection, getDb } from "@/lib/mongo";
+import crypto from "crypto";
 import { PRICING } from "@/config/pricing";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
@@ -28,7 +29,13 @@ export async function POST(req: NextRequest) {
       );
     }
     const hashed = await bcrypt.hash(password, 10);
-    const userDoc = { email, password: hashed };
+    const apiKey = `ak_${crypto.randomBytes(32).toString("hex")}`;
+    const userDoc = {
+      email,
+      password: hashed,
+      apiKey,
+      apiKeyCreated: new Date(),
+    };
     const result = await users.insertOne(userDoc);
     const adminId = result.insertedId.toString();
     const token = jwt.sign({ email, adminId }, JWT_SECRET, { expiresIn: "1d" });
@@ -74,7 +81,7 @@ export async function POST(req: NextRequest) {
         initErr
       );
     }
-    const res = NextResponse.json({ token, adminId });
+    const res = NextResponse.json({ token, adminId, apiKey });
     res.cookies.set("auth_token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -113,8 +120,31 @@ export async function POST(req: NextRequest) {
     }
     const adminId = user._id.toString();
     const token = jwt.sign({ email, adminId }, JWT_SECRET, { expiresIn: "1d" });
-    await users.updateOne({ email }, { $set: { token } });
-    const res = NextResponse.json({ token, adminId });
+
+    let apiKey = user.apiKey as string | undefined;
+    if (!apiKey) {
+      apiKey = `ak_${crypto.randomBytes(32).toString("hex")}`;
+      await users.updateOne(
+        { _id: user._id },
+        {
+          $set: {
+            apiKey,
+            apiKeyCreated: new Date(),
+          },
+        }
+      );
+    }
+
+    await users.updateOne(
+      { _id: user._id },
+      {
+        $set: {
+          token,
+        },
+      }
+    );
+
+    const res = NextResponse.json({ token, adminId, apiKey });
     res.cookies.set("auth_token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
