@@ -327,10 +327,6 @@ export default function GlobalHeader() {
             </div>
           </div>
 
-          <Link href="/blogs" className="hover:text-slate-900">
-            Blogs
-          </Link>
-
           {/* Platforms & Partners dropdown */}
           <div
             className="relative"
@@ -634,6 +630,15 @@ export default function GlobalHeader() {
               </div>
             </div>
           </div>
+          <Link href="/blogs" className="hover:text-slate-900">
+            Blogs
+          </Link>
+          <Link
+            href="/pricing"
+            className="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50"
+          >
+            <div className=" text-slate-900">Pricing</div>
+          </Link>
         </nav>
 
         {/* Desktop CTAs */}
@@ -836,16 +841,16 @@ export default function GlobalHeader() {
                       idx === 0
                         ? "/agentlytics+agentforce"
                         : idx === 1
-                        ? "/agentlytics+hubspot"
-                        : idx === 2
-                        ? "/agentlytics+intercom"
-                        : idx === 3
-                        ? "/agentlytics+drift"
-                        : idx === 4
-                        ? "/agentlytics+freshworks"
-                        : idx === 5
-                        ? "/agentlytics+zoho"
-                        : "#";
+                          ? "/agentlytics+hubspot"
+                          : idx === 2
+                            ? "/agentlytics+intercom"
+                            : idx === 3
+                              ? "/agentlytics+drift"
+                              : idx === 4
+                                ? "/agentlytics+freshworks"
+                                : idx === 5
+                                  ? "/agentlytics+zoho"
+                                  : "#";
                     return href === "#" ? (
                       <a
                         key={label}

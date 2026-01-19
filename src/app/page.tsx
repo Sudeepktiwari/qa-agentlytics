@@ -1,6 +1,418 @@
 "use client";
 import Head from "next/head";
-import { useEffect } from "react";
+import React, { useEffect } from "react";
+import { motion } from "framer-motion";
+import { PRICING } from "@/config/pricing";
+
+// --- Helpers copied from Pricing Page ---
+
+type IconName =
+  | "ArrowRight"
+  | "Check"
+  | "ChevronRight"
+  | "Shield"
+  | "Sparkles"
+  | "Timer"
+  | "Users"
+  | "Bot"
+  | "BarChart3"
+  | "Brain"
+  | "Calculator"
+  | "Lock";
+
+function Icon({
+  name,
+  className = "h-4 w-4",
+}: {
+  name: IconName;
+  className?: string;
+}) {
+  const common = {
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 2,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+  };
+
+  const paths: Record<IconName, React.ReactNode> = {
+    ArrowRight: (
+      <>
+        <path {...common} d="M5 12h12" />
+        <path {...common} d="M13 6l6 6-6 6" />
+      </>
+    ),
+    ChevronRight: <path {...common} d="M10 6l6 6-6 6" />,
+    Check: <path {...common} d="M20 6L9 17l-5-5" />,
+    Sparkles: (
+      <>
+        <path
+          {...common}
+          d="M12 2l1.2 3.6L17 7l-3.8 1.4L12 12l-1.2-3.6L7 7l3.8-1.4L12 2z"
+        />
+        <path
+          {...common}
+          d="M19 12l.7 2.1L22 15l-2.3.9L19 18l-.7-2.1L16 15l2.3-.9L19 12z"
+        />
+      </>
+    ),
+    Shield: (
+      <path
+        {...common}
+        d="M12 2l8 4v6c0 5-3.5 9.5-8 10-4.5-.5-8-5-8-10V6l8-4z"
+      />
+    ),
+    Timer: (
+      <>
+        <path {...common} d="M10 2h4" />
+        <path {...common} d="M12 14l3-3" />
+        <path {...common} d="M12 22a9 9 0 1 0-9-9 9 9 0 0 0 9 9z" />
+      </>
+    ),
+    Users: (
+      <>
+        <path {...common} d="M17 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+        <path {...common} d="M16 3.1a4 4 0 0 1 0 7.8" />
+        <path {...common} d="M12 11a4 4 0 1 0-4-4 4 4 0 0 0 4 4z" />
+        <path {...common} d="M20 21v-2a4 4 0 0 0-3-3.87" />
+      </>
+    ),
+    Bot: (
+      <>
+        <path {...common} d="M12 2v3" />
+        <path {...common} d="M7 7h10" />
+        <path {...common} d="M6 7v8a4 4 0 0 0 4 4h4a4 4 0 0 0 4-4V7" />
+        <path {...common} d="M9 12h.01" />
+        <path {...common} d="M15 12h.01" />
+        <path {...common} d="M9 16h6" />
+      </>
+    ),
+    Brain: (
+      <>
+        <path
+          {...common}
+          d="M8 6a3 3 0 0 1 3-3h1a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3h-1a3 3 0 0 1-3-3"
+        />
+        <path {...common} d="M8 8H7a3 3 0 0 0 0 6h1" />
+        <path {...common} d="M16 10h1a3 3 0 0 1 0 6h-1" />
+      </>
+    ),
+    BarChart3: (
+      <>
+        <path {...common} d="M3 3v18h18" />
+        <path {...common} d="M7 16v-6" />
+        <path {...common} d="M12 16V6" />
+        <path {...common} d="M17 16v-9" />
+      </>
+    ),
+    Calculator: (
+      <>
+        <path
+          {...common}
+          d="M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"
+        />
+        <path {...common} d="M8 6h8" />
+        <path {...common} d="M8 11h2" />
+        <path {...common} d="M12 11h2" />
+        <path {...common} d="M16 11h0" />
+        <path {...common} d="M8 15h2" />
+        <path {...common} d="M12 15h2" />
+        <path {...common} d="M8 19h8" />
+      </>
+    ),
+    Lock: (
+      <>
+        <path {...common} d="M7 11V8a5 5 0 0 1 10 0v3" />
+        <path {...common} d="M6 11h12v10H6z" />
+      </>
+    ),
+  };
+
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+      focusable="false"
+    >
+      {paths[name]}
+    </svg>
+  );
+}
+
+function cn(...classes: Array<string | false | undefined | null>) {
+  return classes.filter(Boolean).join(" ");
+}
+
+function Button({
+  children,
+  variant = "primary",
+  size = "md",
+  className,
+  onClick,
+  type,
+}: {
+  children: React.ReactNode;
+  variant?: "primary" | "outline" | "ghost";
+  size?: "sm" | "md";
+  className?: string;
+  onClick?: () => void;
+  type?: "button" | "submit";
+}) {
+  const base =
+    "inline-flex items-center justify-center rounded-2xl font-medium transition border focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#006BFF]/30";
+  const sizes = {
+    sm: "h-9 px-3 text-sm",
+    md: "h-11 px-4 text-sm",
+  };
+  const variants = {
+    primary:
+      "bg-[#006BFF] text-white border-[#006BFF] hover:bg-[#005CE6] hover:border-[#005CE6]",
+    outline: "bg-white text-[#0B1F3B] border-[#D7E3F3] hover:bg-[#F5FAFF]",
+    ghost:
+      "bg-transparent text-[#0B1F3B] border-transparent hover:bg-[#F5FAFF]",
+  };
+  return (
+    <button
+      type={type ?? "button"}
+      onClick={onClick}
+      className={cn(base, sizes[size], variants[variant], className)}
+    >
+      {children}
+    </button>
+  );
+}
+
+function Badge({
+  children,
+  variant = "secondary",
+  className,
+}: {
+  children: React.ReactNode;
+  variant?: "secondary" | "outline";
+  className?: string;
+}) {
+  const base =
+    "inline-flex items-center rounded-full px-3 py-1 text-xs font-medium";
+  const variants = {
+    secondary: "bg-[#EBF2FA] text-[#0B1F3B] border border-[#D7E3F3]",
+    outline: "bg-white text-[#0B1F3B] border border-[#D7E3F3]",
+  };
+  return (
+    <span className={cn(base, variants[variant], className)}>{children}</span>
+  );
+}
+
+function Card({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-3xl border border-[#D7E3F3] bg-white shadow-sm",
+        className
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+function CardHeader({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return <div className={cn("p-6", className)}>{children}</div>;
+}
+function CardContent({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return <div className={cn("px-6 pb-6", className)}>{children}</div>;
+}
+function CardTitle({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn("text-base font-semibold text-[#0B1F3B]", className)}>
+      {children}
+    </div>
+  );
+}
+
+function SectionHeader(props: {
+  eyebrow?: string;
+  title: string;
+  subtitle?: string;
+}) {
+  return (
+    <div className="text-center">
+      {props.eyebrow ? (
+        <div className="mb-3 flex items-center justify-center gap-2">
+          <Badge variant="secondary">{props.eyebrow}</Badge>
+        </div>
+      ) : null}
+      <h2 className="text-2xl font-semibold tracking-tight text-[#0B1F3B] sm:text-3xl">
+        {props.title}
+      </h2>
+      {props.subtitle ? (
+        <p className="mx-auto mt-3 max-w-3xl text-sm text-slate-600 sm:text-base">
+          {props.subtitle}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function Pill(props: { icon: React.ReactNode; label: string }) {
+  return (
+    <div className="inline-flex items-center gap-2 rounded-full border border-[#D7E3F3] bg-white px-3 py-1 text-sm">
+      <span className="text-slate-500">{props.icon}</span>
+      <span className="font-medium text-[#0B1F3B]">{props.label}</span>
+    </div>
+  );
+}
+
+function BulletList({ items }: { items: string[] }) {
+  return (
+    <ul className="space-y-2 text-sm">
+      {items.map((b) => (
+        <li key={b} className="flex gap-2">
+          <Icon name="Check" className="mt-0.5 h-4 w-4 text-[#006BFF]" />
+          <span className="text-slate-600">{b}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function scrollToId(id: string) {
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function formatNumber(n: number) {
+  return n.toLocaleString("en-US");
+}
+
+function PriceCard(props: {
+  name: string;
+  price: string;
+  cadence?: string;
+  tagline: string;
+  badge?: string;
+  cta: string;
+  variant?: "default" | "highlight";
+  details: { label: string; value: string; icon?: IconName }[];
+  bullets: string[];
+  footnote?: string;
+}) {
+  const highlight = props.variant === "highlight";
+  return (
+    <motion.div variants={item}>
+      <Card
+        className={cn(
+          "relative h-full overflow-hidden",
+          highlight && "border-[#9CC2FF] ring-1 ring-[#006BFF]/20"
+        )}
+      >
+        {highlight ? (
+          <div className="absolute inset-x-0 top-0 h-2 bg-[#006BFF]" />
+        ) : null}
+        <CardHeader className="space-y-4">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <CardTitle>{props.name}</CardTitle>
+                {props.badge ? (
+                  <Badge variant="secondary">{props.badge}</Badge>
+                ) : null}
+              </div>
+              <div className="mt-2 text-sm text-slate-600">{props.tagline}</div>
+            </div>
+          </div>
+
+          <div className="flex items-end gap-2">
+            <div className="text-4xl font-semibold tracking-tight text-[#0B1F3B]">
+              {props.price}
+            </div>
+            {props.cadence ? (
+              <div className="pb-1 text-sm text-slate-600">
+                /{props.cadence}
+              </div>
+            ) : null}
+          </div>
+
+          <Button
+            className="w-full"
+            variant={highlight ? "primary" : "outline"}
+            onClick={() => scrollToId("trial")}
+          >
+            {props.cta} <Icon name="ArrowRight" className="ml-2 h-4 w-4" />
+          </Button>
+
+          {props.footnote ? (
+            <div className="text-xs text-slate-600">{props.footnote}</div>
+          ) : null}
+        </CardHeader>
+
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 gap-3">
+            {props.details.map((d) => (
+              <div
+                key={d.label}
+                className="flex items-center justify-between rounded-2xl border border-[#D7E3F3] bg-[#F7FAFF] px-4 py-3"
+              >
+                <div className="flex items-center gap-2 text-sm">
+                  {d.icon ? (
+                    <Icon name={d.icon} className="h-4 w-4 text-[#0B1F3B]" />
+                  ) : null}
+                  <span className="text-slate-600">{d.label}</span>
+                </div>
+                <div className="text-sm font-medium text-[#0B1F3B]">
+                  {d.value}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div>
+            <div className="mb-3 text-sm font-medium text-[#0B1F3B]">
+              Includes
+            </div>
+            <BulletList items={props.bullets} />
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+}
+
+const container = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.08, delayChildren: 0.05 },
+  },
+};
+
+const item = {
+  hidden: { opacity: 0, y: 10 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+};
 
 export default function Page() {
   useEffect(() => {
@@ -199,7 +611,13 @@ export default function Page() {
         body {
           background: #fff;
           color: #0f172a;
-          font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial,
+          font-family:
+            Inter,
+            system-ui,
+            -apple-system,
+            Segoe UI,
+            Roboto,
+            Arial,
             sans-serif;
         }
         .font-display {
@@ -208,7 +626,9 @@ export default function Page() {
         .reveal {
           opacity: 0;
           transform: translateY(10px);
-          transition: opacity 0.5s ease, transform 0.5s ease;
+          transition:
+            opacity 0.5s ease,
+            transform 0.5s ease;
         }
         .reveal.in-view {
           opacity: 1;
@@ -1524,74 +1944,106 @@ export default function Page() {
         </section>
 
         {/* PRICING */}
-        <section id="pricing" className="py-24">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 className="font-display font-extrabold text-3xl sm:text-4xl text-slate-900 reveal">
-              Start Free — Scale As You Grow
-            </h2>
-            <div className="grid lg:grid-cols-3 gap-5 mt-6">
-              <article className="rounded-xl border border-slate-200 bg-white p-6 shadow-[0_12px_34px_rgba(2,6,23,.08)] reveal">
-                <h3 className="font-semibold text-xl">Starter</h3>
-                <p className="text-slate-700 text-sm">
-                  Test proactive chat on 1 site.
-                </p>
-                <div className="font-display text-3xl font-extrabold my-2">
-                  Free
-                </div>
-                <ul className="space-y-2 text-slate-700">
-                  <li>✔ 1 AI Agent</li>
-                  <li>✔ Basic triggers</li>
-                  <li>✔ Essential dashboard</li>
-                </ul>
-                <a
-                  href="#trial"
-                  className="inline-flex mt-4 items-center px-4 py-2 rounded-lg border border-slate-300"
-                >
-                  Start Free Trial
-                </a>
-              </article>
-              <article className="rounded-xl border-2 border-[color:var(--brand-blue)]/30 bg-white p-6 shadow-[0_12px_34px_rgba(2,6,23,.08)] reveal">
-                <h3 className="font-semibold text-xl">Pro</h3>
-                <p className="text-slate-700 text-sm">
-                  Lifecycle automation + CRM sync.
-                </p>
-                <div className="font-display text-3xl font-extrabold my-2">
-                  $49<span className="text-base font-semibold">/mo</span>
-                </div>
-                <ul className="space-y-2 text-slate-700">
-                  <li>✔ Advanced lifecycle automation</li>
-                  <li>✔ CRM sync</li>
-                  <li>✔ Analytics dashboard</li>
-                </ul>
-                <a
-                  href="#trial"
-                  className="inline-flex mt-4 items-center px-4 py-2 rounded-lg bg-[color:var(--brand-blue)] text-white"
-                >
-                  Start Free Trial
-                </a>
-              </article>
-              <article className="rounded-xl border border-slate-200 bg-white p-4 md:p-6 shadow-[0_12px_34px_rgba(2,6,23,.08)] reveal">
-                <h3 className="font-semibold text-xl">Enterprise</h3>
-                <p className="text-slate-700 text-sm">
-                  Unlimited agents, SSO, SOC-2 on request.
-                </p>
-                <div className="font-display text-3xl font-extrabold my-2">
-                  Custom
-                </div>
-                <ul className="space-y-2 text-slate-700">
-                  <li>✔ Unlimited agents</li>
-                  <li>✔ Full analytics</li>
-                  <li>✔ Dedicated success manager</li>
-                </ul>
-                <a
-                  href="#trial"
-                  className="inline-flex mt-4 items-center px-4 py-2 rounded-lg border border-slate-300"
-                >
-                  Start Free Trial
-                </a>
-              </article>
-            </div>
-          </div>
+        <section
+          className="mx-auto max-w-6xl px-4 pt-14 pb-14 sm:pt-20 sm:pb-24 reveal"
+          id="pricing"
+        >
+          <SectionHeader
+            eyebrow="Pricing"
+            title="Simple, transparent pricing"
+            subtitle="Choose the perfect plan for your business. Start small and scale as you grow."
+          />
+
+          <motion.div
+            variants={container}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true }}
+            className="mt-12 grid gap-6 md:grid-cols-3 lg:gap-8"
+          >
+            {/* Free */}
+            <PriceCard
+              name={PRICING.free.name}
+              price={PRICING.free.price}
+              cadence={PRICING.free.cadence}
+              tagline="Perfect for testing the waters"
+              cta="Start for free"
+              details={[
+                {
+                  label: "Lead Limit",
+                  value: `${formatNumber(PRICING.free.totalLeads)} total`,
+                  icon: "Users",
+                },
+                {
+                  label: "Monthly Credits",
+                  value: formatNumber(PRICING.free.creditsPerMonth),
+                  icon: "Sparkles",
+                },
+              ]}
+              bullets={[
+                "1 Website",
+                "Basic Chat Interface",
+                "Email Support",
+                "Community Access",
+              ]}
+            />
+
+            {/* Growth */}
+            <PriceCard
+              name={PRICING.growth.name}
+              price={PRICING.growth.price}
+              cadence={PRICING.growth.cadence}
+              tagline="For growing businesses"
+              badge="Most Popular"
+              variant="highlight"
+              cta="Start Growth Trial"
+              details={[
+                {
+                  label: "Lead Limit",
+                  value: `${formatNumber(PRICING.growth.totalLeads)} total`,
+                  icon: "Users",
+                },
+                {
+                  label: "Monthly Credits",
+                  value: formatNumber(PRICING.growth.creditsPerMonth),
+                  icon: "Sparkles",
+                },
+              ]}
+              bullets={[
+                "Everything in Free",
+                "Priority Support",
+                "Custom Branding",
+                "Advanced Analytics",
+              ]}
+            />
+
+            {/* Scale */}
+            <PriceCard
+              name={PRICING.scale.name}
+              price={PRICING.scale.price}
+              cadence={PRICING.scale.cadence}
+              tagline="For high-volume needs"
+              cta="Contact Sales"
+              details={[
+                {
+                  label: "Lead Limit",
+                  value: `${formatNumber(PRICING.scale.totalLeads)} total`,
+                  icon: "Users",
+                },
+                {
+                  label: "Monthly Credits",
+                  value: formatNumber(PRICING.scale.creditsPerMonth),
+                  icon: "Sparkles",
+                },
+              ]}
+              bullets={[
+                "Everything in Growth",
+                "3 Websites",
+                "Dedicated Account Manager",
+                "SLA Guarantee",
+              ]}
+            />
+          </motion.div>
         </section>
 
         {/* CTA */}
