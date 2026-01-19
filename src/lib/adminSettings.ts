@@ -181,7 +181,7 @@ export const DEFAULT_ADMIN_SETTINGS: Omit<
 
     // Post-registration initial setup: docs and canonical cURL
     initialSetupDocsUrl: undefined,
-    initialSetupCurlCommand: `curl -X POST "http://localhost:3000/api/sitemap" -H "Content-Type: application/json" -d '{"url": "https://example.com"}'`,
+    initialSetupCurlCommand: `curl -X POST "http://localhost:3000/api/sitemap" -H "Content-Type: application/json" -d '{"sitemapUrl": "https://example.com"}'`,
     initialSetupEndpoint: "/api/sitemap",
     initialSetupMethod: "POST",
     fields: undefined,
