@@ -1864,7 +1864,7 @@ export default function Page() {
               </a>
 
               <a
-                href="https://www.advancelytics.com"
+                href="https://www.advancelytics.com/9metric"
                 className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-card transition-all hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(2,6,23,.10)] reveal"
               >
                 <div className="size-10 rounded-xl bg-blue-50 grid place-items-center text-brand-blue">
