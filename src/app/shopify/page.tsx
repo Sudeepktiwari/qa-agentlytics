@@ -1303,7 +1303,7 @@ export default function ShopifyLandingPage() {
                     {r.capability}
                   </div>
                   <div className="col-span-3 text-center">
-                    <div className="inline-flex items-center justify-center gap-2 rounded-full bg-[#f1f6f0] px-3 py-1 text-xs font-semibold text-[#0b1f19] ring-1 ring-[#d7e1d4]">
+                    <div className="inline-flex items-center justify-center gap-1 md:gap-2 rounded-full bg-[#f1f6f0] px-2 md:px-3 py-1 text-[8px] md:text-xs font-semibold text-[#0b1f19] ring-1 ring-[#d7e1d4]">
                       {r.widgetOk ? (
                         <CheckIcon className="h-4 w-4 text-[#008060]" />
                       ) : (
@@ -1313,7 +1313,7 @@ export default function ShopifyLandingPage() {
                     </div>
                   </div>
                   <div className="col-span-3 text-center">
-                    <div className="inline-flex items-center justify-center gap-2 rounded-full bg-[#e8f5ef] px-3 py-1 text-xs font-semibold text-[#008060] ring-1 ring-[#d7e1d4]">
+                    <div className="inline-flex items-center justify-center gap-1 md:gap-2 rounded-full bg-[#e8f5ef] px-2 md:px-3 py-1 text-[8px] md:text-xs font-semibold text-[#008060] ring-1 ring-[#d7e1d4]">
                       {r.agentlyOk ? (
                         <CheckIcon className="h-4 w-4" />
                       ) : (
