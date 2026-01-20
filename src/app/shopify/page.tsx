@@ -748,45 +748,30 @@ export default function ShopifyLandingPage() {
 
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-[#d7e1d4] bg-[#fbf7ed]/90 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
+        <div className="mx-auto flex max-w-6xl items-center justify-center md:justify-start px-4 py-2 sm:px-6">
           <a href="#" className="flex items-center gap-2">
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[#0b1f19] text-sm font-semibold text-white">
+            {/* <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[#0b1f19] text-sm font-semibold text-white">
               A
-            </span>
-            <div className="leading-tight">
+            </span> */}
+            <div className="leading-tight hidden md:block">
               <div className="text-sm font-semibold">Agentlytics</div>
               <div className="text-xs text-[#4e5a55]">for Shopify</div>
             </div>
           </a>
 
-          <nav className="hidden items-center gap-6 text-sm font-medium text-[#0b1f19] md:flex">
+          <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 md:gap-6 md:ml-42 text-xs md:text-sm font-medium text-[#0b1f19]">
             {NAV.map((i) => (
               <a
                 key={i.href}
                 href={i.href}
-                className="text-[#0b1f19]/80 hover:text-[#0b1f19]"
+                className="text-[#0b1f19]/80 hover:text-[#0b1f19] whitespace-nowrap"
               >
                 {i.label}
               </a>
             ))}
           </nav>
 
-          <div className="hidden items-center gap-3 md:flex">
-            <a
-              href="#final"
-              className="rounded-full bg-[#008060] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#006a50]"
-            >
-              Start Free
-            </a>
-            <a
-              href="#final"
-              className="rounded-full border border-[#d7e1d4] bg-white px-4 py-2 text-sm font-semibold text-[#0b1f19] hover:bg-[#f1f6f0]"
-            >
-              Book a Demo
-            </a>
-          </div>
-
-          <button
+          {/* <button
             type="button"
             onClick={() => setMobileOpen((v) => !v)}
             className="inline-flex items-center justify-center rounded-xl border border-[#d7e1d4] bg-white px-3 py-2 text-sm font-semibold text-[#0b1f19] hover:bg-[#f1f6f0] md:hidden"
@@ -794,7 +779,7 @@ export default function ShopifyLandingPage() {
             aria-controls="mobile-nav"
           >
             {mobileOpen ? "Close" : "Menu"}
-          </button>
+          </button> */}
         </div>
 
         {/* Mobile nav */}
