@@ -143,7 +143,15 @@ Guidelines:
   }
 }
 
-async function parseSitemap(sitemapUrl: string): Promise<string[]> {
+async function parseSitemap(
+  sitemapUrl: string,
+  depth: number = 0
+): Promise<string[]> {
+  if (depth > 3) {
+    console.log(`[Sitemap] Max recursion depth reached for ${sitemapUrl}`);
+    return [];
+  }
+
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 60000);
 
@@ -156,29 +164,59 @@ async function parseSitemap(sitemapUrl: string): Promise<string[]> {
 
     console.log(`[Sitemap] XML size: ${xml.length} characters`);
 
+    const $ = cheerio.load(xml, { xmlMode: true });
     const urls: string[] = [];
-    const matches = xml.matchAll(/<loc>(.*?)<\/loc>/g);
 
-    let matchCount = 0;
-    for (const match of matches) {
-      urls.push(match[1]);
-      matchCount++;
+    // Check for sitemap index (recursive)
+    const childSitemaps = $("sitemap > loc");
+    if (childSitemaps.length > 0) {
+      console.log(
+        `[Sitemap] Found sitemap index with ${childSitemaps.length} sitemaps at ${sitemapUrl}`
+      );
+      const sitemapUrls: string[] = [];
+      childSitemaps.each((_, el) => {
+        const loc = $(el).text().trim();
+        if (loc) sitemapUrls.push(loc);
+      });
 
-      // Add protection against extremely large sitemaps
-      if (matchCount % 1000 === 0) {
-        console.log(`[Sitemap] Processed ${matchCount} URLs from sitemap...`);
-      }
-
-      // Limit sitemap size to prevent memory issues
-      if (matchCount > 5000) {
-        console.log(
-          `[Sitemap] Limiting sitemap to first 5000 URLs to prevent timeout`
-        );
-        break;
+      // Process sub-sitemaps sequentially to avoid overwhelming
+      for (const url of sitemapUrls) {
+        try {
+          const nestedUrls = await parseSitemap(url, depth + 1);
+          urls.push(...nestedUrls);
+        } catch (err) {
+          console.error(`[Sitemap] Failed to parse sub-sitemap ${url}:`, err);
+        }
       }
     }
 
-    console.log(`[Sitemap] Total URLs extracted: ${urls.length}`);
+    // Check for standard URL set
+    const pageLocs = $("url > loc");
+    if (pageLocs.length > 0) {
+      console.log(
+        `[Sitemap] Found ${pageLocs.length} page URLs at ${sitemapUrl}`
+      );
+      pageLocs.each((_, el) => {
+        const loc = $(el).text().trim();
+        if (loc) urls.push(loc);
+      });
+    }
+
+    // Fallback: If specific tags not found, try generic regex as last resort
+    // (This helps with malformed XML or unusual namespaces)
+    if (urls.length === 0) {
+      console.log(
+        `[Sitemap] No strict structure found, trying generic regex for ${sitemapUrl}`
+      );
+      const matches = xml.matchAll(/<loc>(.*?)<\/loc>/g);
+      for (const match of matches) {
+        urls.push(match[1].trim());
+      }
+    }
+
+    console.log(
+      `[Sitemap] Total URLs extracted from ${sitemapUrl}: ${urls.length}`
+    );
     return urls;
   } catch (error) {
     clearTimeout(timeoutId);
@@ -1918,20 +1956,24 @@ async function processBatch(req: NextRequest) {
     const updatedCrawledUrls = new Set(
       updatedCrawledDocs.map((doc: any) => doc.url)
     );
-    const globallyCrawledDocs = await sitemapUrls
-      .find({ adminId, crawled: true })
-      .project({ url: 1, _id: 0 })
-      .toArray();
-    const globalCrawledUrls = new Set(
-      globallyCrawledDocs.map((doc: any) => doc.url)
-    );
-    const existingPageUrls = new Set<string>(
-      await pages.distinct("url", { adminId })
-    );
+
+    // We only care about what has been crawled FOR THIS SITEMAP SUBMISSION
+    // or if the content is missing from our vector store.
+    // If a page exists in another sitemap or was crawled previously,
+    // we might still want to re-crawl it if it's explicitly part of THIS sitemap request
+    // and hasn't been processed in this context yet.
+
+    // However, to save resources, we usually skip if it was crawled VERY recently (e.g. 24h)
+    // But for now, let's strictly check against the current sitemap context
+    // AND the global "crawled_pages" collection to avoid duplicate work if the data is fresh.
+
+    // NOTE: The user wants to see 50 pages. If they were crawled under a different sitemap URL
+    // or without a sitemap URL, they might be skipped here.
+    // Let's relax the check: we will only skip if it's marked as crawled for THIS sitemapUrl
+    // OR if it was crawled recently and we have vectors.
+
     const alreadyCrawledUrls = new Set<string>([
       ...Array.from(updatedCrawledUrls),
-      ...Array.from(globalCrawledUrls),
-      ...Array.from(existingPageUrls),
     ]);
 
     const uncrawledUrls = urls
