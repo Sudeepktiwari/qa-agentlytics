@@ -654,7 +654,7 @@ export default function GlobalHeader() {
             Book a Demo
           </Link>
           <a
-            href="#trial"
+            href="/admin"
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[color:var(--brand-blue)] text-white hover:bg-blue-600"
           >
             Start Free Trial
@@ -953,7 +953,7 @@ export default function GlobalHeader() {
                   Book a Demo
                 </Link>
                 <a
-                  href="#trial"
+                  href="/admin"
                   className="inline-flex items-center gap-2 px-4 py-2 w-full justify-center rounded-lg bg-[color:var(--brand-blue)] text-white"
                 >
                   Start Free Trial
