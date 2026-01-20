@@ -1950,6 +1950,7 @@ async function processBatch(req: NextRequest) {
     }
 
     const results: { url: string; text: string }[] = [];
+    const failedUrls: { url: string; error: string }[] = [];
     let totalChunks = 0;
     let crawlCount = 0;
     let timeoutReached = false;
@@ -2285,6 +2286,10 @@ Extract and return a JSON object with:
               },
             }
           );
+          failedUrls.push({
+            url,
+            error: err instanceof Error ? err.message : String(err),
+          });
         }
         processedInSession.add(url);
       }
@@ -2328,6 +2333,7 @@ Extract and return a JSON object with:
       crawled: results.length,
       totalChunks,
       pages: results.map((r) => r.url),
+      failedPages: failedUrls,
       batchDone: results.length, // Number of pages successfully crawled in this batch
       batchRemaining: totalRemaining, // Total remaining pages
       totalRemaining: totalRemaining,
