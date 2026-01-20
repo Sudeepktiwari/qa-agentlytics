@@ -16,7 +16,11 @@ export default function GlobalFooter() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 grid md:grid-cols-4 gap-6">
         <div>
           <div className="flex items-center gap-2 font-display font-extrabold tracking-tight text-slate-900">
-            <span className="size-7 rounded-lg bg-[conic-gradient(from_220deg,#0069FF,#3BA3FF)]" />
+            <img
+              src="/favicon.ico"
+              alt="Agentlytics"
+              className="size-7 rounded-lg"
+            />
             <span>Agentlytics</span>
           </div>
           <p className="text-slate-700 mt-3">
@@ -24,8 +28,7 @@ export default function GlobalFooter() {
             automatically.
           </p>
           <p className="text-slate-500 text-sm mt-2">
-            Runs on Google Cloud. GDPR-ready. No PII used for model
-            training.
+            Runs on Google Cloud. GDPR-ready. No PII used for model training.
           </p>
         </div>
         <div>
