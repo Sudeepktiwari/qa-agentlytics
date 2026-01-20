@@ -58,11 +58,12 @@ export default function GlobalHeader() {
       className={`${headerPositionClasses} z-50 bg-white/80 backdrop-blur border-b border-slate-200`}
     >
       <div className="max-w-7xl mx-auto h-16 px-4 md:p-6 flex items-center justify-between">
-        <Link
-          href="/"
-          // className="flex items-center gap-2 font-display font-extrabold tracking-tight text-[color:var(--brand-midnight)]"
-        >
-          {/* <span className="size-7 rounded-lg bg-[conic-gradient(from_220deg,#0069FF,#3BA3FF)] " /> */}
+        <Link href="/" className="flex items-center gap-2 text-slate-900">
+          <img
+            src="/favicon.ico"
+            alt="Advancelytics Logo"
+            className="w-6 h-6"
+          />
           <span className="font-bold text-lg hidden md:inline">
             Advancelytics
           </span>
