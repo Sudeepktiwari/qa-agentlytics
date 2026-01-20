@@ -32,7 +32,7 @@ const index = pinecone.index(process.env.PINECONE_INDEX!);
 function isSameDomain(host1: string, host2: string): boolean {
   const h1 = host1.replace(/^www\./, "").toLowerCase();
   const h2 = host2.replace(/^www\./, "").toLowerCase();
-  return h1 === h2;
+  return h1 === h2 || h1.endsWith("." + h2) || h2.endsWith("." + h1);
 }
 
 // Auto-extract personas after crawling is complete
@@ -1949,160 +1949,184 @@ async function processBatch(req: NextRequest) {
       }
     }
 
-    const updatedCrawledDocs = await sitemapUrls
-      .find({ adminId, sitemapUrl, crawled: true })
-      .project({ url: 1, _id: 0 })
-      .toArray();
-    const updatedCrawledUrls = new Set(
-      updatedCrawledDocs.map((doc: any) => doc.url)
-    );
-
-    // We only care about what has been crawled FOR THIS SITEMAP SUBMISSION
-    // or if the content is missing from our vector store.
-    // If a page exists in another sitemap or was crawled previously,
-    // we might still want to re-crawl it if it's explicitly part of THIS sitemap request
-    // and hasn't been processed in this context yet.
-
-    // However, to save resources, we usually skip if it was crawled VERY recently (e.g. 24h)
-    // But for now, let's strictly check against the current sitemap context
-    // AND the global "crawled_pages" collection to avoid duplicate work if the data is fresh.
-
-    // NOTE: The user wants to see 50 pages. If they were crawled under a different sitemap URL
-    // or without a sitemap URL, they might be skipped here.
-    // Let's relax the check: we will only skip if it's marked as crawled for THIS sitemapUrl
-    // OR if it was crawled recently and we have vectors.
-
-    const alreadyCrawledUrls = new Set<string>([
-      ...Array.from(updatedCrawledUrls),
-    ]);
-
-    const uncrawledUrls = urls
-      .filter((url) => !alreadyCrawledUrls.has(url))
-      .slice(0, MAX_PAGES);
-
-    console.log(
-      `[Crawl] Found ${problematicUrls.length} problematic URLs to re-crawl`
-    );
-    console.log(
-      `[Crawl] Will crawl ${uncrawledUrls.length} URLs in this batch`
-    );
-    console.log(
-      `[Crawl] URLs to crawl: ${uncrawledUrls.slice(0, 3).join(", ")}${
-        uncrawledUrls.length > 3 ? "..." : ""
-      }`
-    );
-
     const results: { url: string; text: string }[] = [];
     let totalChunks = 0;
     let crawlCount = 0;
     let timeoutReached = false;
+    let updatedCrawledUrls = new Set<string>();
+    const processedInSession = new Set<string>();
 
-    for (const url of uncrawledUrls) {
-      // Check for stop signal
-      if (adminId) {
-        const db = await getDb();
-        const state = await db.collection("crawl_states").findOne({ adminId });
-        if (state?.status === "stopped") {
+    while (true) {
+      if (Date.now() - startTime > MAX_EXECUTION_TIME) {
+        console.log(
+          `[Timeout] Total execution time limit reached before next batch.`
+        );
+        timeoutReached = true;
+        break;
+      }
+
+      const updatedCrawledDocs = await sitemapUrls
+        .find({ adminId, sitemapUrl, crawled: true })
+        .project({ url: 1, _id: 0 })
+        .toArray();
+      updatedCrawledUrls = new Set(
+        updatedCrawledDocs.map((doc: any) => doc.url)
+      );
+
+      // We only care about what has been crawled FOR THIS SITEMAP SUBMISSION
+      // or if the content is missing from our vector store.
+      // If a page exists in another sitemap or was crawled previously,
+      // we might still want to re-crawl it if it's explicitly part of THIS sitemap request
+      // and hasn't been processed in this context yet.
+
+      // However, to save resources, we usually skip if it was crawled VERY recently (e.g. 24h)
+      // But for now, let's strictly check against the current sitemap context
+      // AND the global "crawled_pages" collection to avoid duplicate work if the data is fresh.
+
+      // NOTE: The user wants to see 50 pages. If they were crawled under a different sitemap URL
+      // or without a sitemap URL, they might be skipped here.
+      // Let's relax the check: we will only skip if it's marked as crawled for THIS sitemapUrl
+      // OR if it was crawled recently and we have vectors.
+
+      const alreadyCrawledUrls = new Set<string>([
+        ...Array.from(updatedCrawledUrls),
+        ...Array.from(processedInSession),
+      ]);
+
+      const uncrawledUrls = urls
+        .filter((url) => !alreadyCrawledUrls.has(url))
+        .slice(0, MAX_PAGES);
+
+      if (uncrawledUrls.length === 0) {
+        console.log(`[Crawl] No more URLs to crawl.`);
+        break;
+      }
+
+      console.log(
+        `[Crawl] Found ${problematicUrls.length} problematic URLs to re-crawl`
+      );
+      console.log(
+        `[Crawl] Will crawl ${uncrawledUrls.length} URLs in this batch`
+      );
+      console.log(
+        `[Crawl] URLs to crawl: ${uncrawledUrls.slice(0, 3).join(", ")}${
+          uncrawledUrls.length > 3 ? "..." : ""
+        }`
+      );
+
+      for (const url of uncrawledUrls) {
+        // Check for stop signal
+        if (adminId) {
+          const db = await getDb();
+          const state = await db
+            .collection("crawl_states")
+            .findOne({ adminId });
+          if (state?.status === "stopped") {
+            console.log(
+              `[ProcessBatch] Stop signal detected for admin ${adminId}. Aborting batch.`
+            );
+            break;
+          }
+        }
+
+        // Check if we're approaching the timeout limit
+        const currentTime = Date.now();
+        const elapsedTime = currentTime - startTime;
+
+        if (elapsedTime > MAX_EXECUTION_TIME) {
           console.log(
-            `[ProcessBatch] Stop signal detected for admin ${adminId}. Aborting batch.`
+            `[Timeout] Execution time limit reached (${elapsedTime}ms > ${MAX_EXECUTION_TIME}ms)`
           );
+          console.log(
+            `[Timeout] Processed ${crawlCount}/${uncrawledUrls.length} URLs before timeout`
+          );
+          timeoutReached = true;
           break;
         }
-      }
 
-      // Check if we're approaching the timeout limit
-      const currentTime = Date.now();
-      const elapsedTime = currentTime - startTime;
-
-      if (elapsedTime > MAX_EXECUTION_TIME) {
-        console.log(
-          `[Timeout] Execution time limit reached (${elapsedTime}ms > ${MAX_EXECUTION_TIME}ms)`
-        );
-        console.log(
-          `[Timeout] Processed ${crawlCount}/${uncrawledUrls.length} URLs before timeout`
-        );
-        timeoutReached = true;
-        break;
-      }
-
-      // Also check if we're close to timeout and have processed some URLs
-      if (elapsedTime > MAX_EXECUTION_TIME - 30000 && crawlCount > 0) {
-        console.log(
-          `[Timeout] Approaching timeout limit with 30s buffer (${elapsedTime}ms)`
-        );
-        console.log(
-          `[Timeout] Stopping early after ${crawlCount}/${uncrawledUrls.length} URLs`
-        );
-        timeoutReached = true;
-        break;
-      }
-
-      crawlCount++;
-      try {
-        console.log(
-          `[Crawl] [${crawlCount}/${uncrawledUrls.length}] Starting to crawl: ${url} (elapsed: ${elapsedTime}ms)`
-        );
-        const crawlStartTime = Date.now();
-
-        const text = await extractTextFromUrl(url);
-        const endTime = Date.now();
-
-        console.log(
-          `[Crawl] [${crawlCount}/${
-            uncrawledUrls.length
-          }] SUCCESS - Extracted ${text.length} chars in ${
-            endTime - crawlStartTime
-          }ms from ${url}`
-        );
-        console.log(`[Crawl] First 100 chars: ${text.slice(0, 100)}`);
-
-        // Debug: Log if text is too short
-        if (text.length < 50) {
-          console.log(`[Crawl] WARNING: Very short content for ${url}:`, text);
+        // Also check if we're close to timeout and have processed some URLs
+        if (elapsedTime > MAX_EXECUTION_TIME - 30000 && crawlCount > 0) {
+          console.log(
+            `[Timeout] Approaching timeout limit with 30s buffer (${elapsedTime}ms)`
+          );
+          console.log(
+            `[Timeout] Stopping early after ${crawlCount}/${uncrawledUrls.length} URLs`
+          );
+          timeoutReached = true;
+          break;
         }
 
-        console.log(`[Crawl] Storing page data in MongoDB...`);
-        results.push({ url, text });
+        crawlCount++;
+        try {
+          console.log(
+            `[Crawl] [${crawlCount}/${uncrawledUrls.length}] Starting to crawl: ${url} (elapsed: ${elapsedTime}ms)`
+          );
+          const crawlStartTime = Date.now();
 
-        // Generate basic summary (existing functionality)
-        const basicSummaryResponse = await openai.chat.completions.create({
-          model: "gpt-4o-mini",
-          messages: [
-            {
-              role: "system",
-              content:
-                "You are a helpful assistant that creates concise summaries of web page content. Focus on the main topics, key information, and important details.",
-            },
-            {
-              role: "user",
-              content: `Please create a concise summary of the following web page content:\n\n${text}`,
-            },
-          ],
-          max_tokens: 300,
-          temperature: 0.3,
-        });
-        const basicSummary =
-          basicSummaryResponse.choices[0]?.message?.content ||
-          "Summary not available";
+          const text = await extractTextFromUrl(url);
+          const endTime = Date.now();
 
-        // Generate structured summary (NEW - automatic during crawling)
-        let structuredSummary = null;
-        if (text.length >= 100) {
-          // Only generate if we have sufficient content
-          try {
-            console.log(`[Crawl] Generating structured summary for ${url}...`);
-            const structuredSummaryResponse =
-              await openai.chat.completions.create({
-                model: "gpt-4o-mini",
-                messages: [
-                  {
-                    role: "system",
-                    content:
-                      "You are an expert web page analyzer. Analyze the provided web page content and extract key business information. Return ONLY a valid JSON object with the specified structure. Do not include any markdown formatting or additional text.",
-                  },
-                  {
-                    role: "user",
-                    content: `Analyze this web page content and extract key information:
+          console.log(
+            `[Crawl] [${crawlCount}/${
+              uncrawledUrls.length
+            }] SUCCESS - Extracted ${text.length} chars in ${
+              endTime - crawlStartTime
+            }ms from ${url}`
+          );
+          console.log(`[Crawl] First 100 chars: ${text.slice(0, 100)}`);
+
+          // Debug: Log if text is too short
+          if (text.length < 50) {
+            console.log(
+              `[Crawl] WARNING: Very short content for ${url}:`,
+              text
+            );
+          }
+
+          console.log(`[Crawl] Storing page data in MongoDB...`);
+          results.push({ url, text });
+
+          // Generate basic summary (existing functionality)
+          const basicSummaryResponse = await openai.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages: [
+              {
+                role: "system",
+                content:
+                  "You are a helpful assistant that creates concise summaries of web page content. Focus on the main topics, key information, and important details.",
+              },
+              {
+                role: "user",
+                content: `Please create a concise summary of the following web page content:\n\n${text}`,
+              },
+            ],
+            max_tokens: 300,
+            temperature: 0.3,
+          });
+          const basicSummary =
+            basicSummaryResponse.choices[0]?.message?.content ||
+            "Summary not available";
+
+          // Generate structured summary (NEW - automatic during crawling)
+          let structuredSummary = null;
+          if (text.length >= 100) {
+            // Only generate if we have sufficient content
+            try {
+              console.log(
+                `[Crawl] Generating structured summary for ${url}...`
+              );
+              const structuredSummaryResponse =
+                await openai.chat.completions.create({
+                  model: "gpt-4o-mini",
+                  messages: [
+                    {
+                      role: "system",
+                      content:
+                        "You are an expert web page analyzer. Analyze the provided web page content and extract key business information. Return ONLY a valid JSON object with the specified structure. Do not include any markdown formatting or additional text.",
+                    },
+                    {
+                      role: "user",
+                      content: `Analyze this web page content and extract key information:
 
 ${text}
 
@@ -2123,148 +2147,171 @@ Extract and return a JSON object with:
   "callsToAction": ["Get Started", "Book Demo"],
   "trustSignals": ["testimonial", "certification", "clientcount"]
 }`,
-                  },
-                ],
-                max_tokens: 800,
-                temperature: 0.3,
-              });
+                    },
+                  ],
+                  max_tokens: 800,
+                  temperature: 0.3,
+                });
 
-            const structuredText =
-              structuredSummaryResponse.choices[0]?.message?.content;
-            if (structuredText) {
-              try {
-                structuredSummary = JSON.parse(structuredText);
-                console.log(
-                  `[Crawl] Structured summary generated successfully for ${url}`
-                );
-              } catch (parseError) {
-                console.error(
-                  `[Crawl] Failed to parse structured summary JSON for ${url}:`,
-                  parseError
-                );
+              const structuredText =
+                structuredSummaryResponse.choices[0]?.message?.content;
+              if (structuredText) {
+                try {
+                  structuredSummary = JSON.parse(structuredText);
+                  console.log(
+                    `[Crawl] Structured summary generated successfully for ${url}`
+                  );
+                } catch (parseError) {
+                  console.error(
+                    `[Crawl] Failed to parse structured summary JSON for ${url}:`,
+                    parseError
+                  );
+                }
+              }
+            } catch (summaryError) {
+              console.error(
+                `[Crawl] Error generating structured summary for ${url}:`,
+                summaryError
+              );
+            }
+          }
+
+          // Store page data with both summaries
+          const pageData: any = {
+            adminId,
+            url,
+            text,
+            summary: basicSummary,
+            filename: url,
+            createdAt: new Date(),
+          };
+
+          // Add structured summary if generated
+          if (structuredSummary) {
+            pageData.structuredSummary = structuredSummary;
+            pageData.summaryGeneratedAt = new Date();
+          }
+
+          await pages.insertOne(pageData);
+          console.log(
+            `[Crawl] Page data stored successfully${
+              structuredSummary ? " with structured summary" : ""
+            }`
+          );
+
+          // Mark as crawled in sitemap_urls with specific sitemapUrl context
+          console.log(`[Crawl] Marking URL as crawled in sitemap_urls...`);
+          await sitemapUrls.updateOne(
+            { adminId, url, sitemapUrl }, // Include sitemapUrl to ensure proper tracking
+            { $set: { crawled: true, crawledAt: new Date() } }
+          );
+          // Chunk and embed for Pinecone
+          let chunks = chunkText(text);
+          console.log(`[Crawl] Chunks for ${url}:`, chunks.length);
+
+          // Debug: If no chunks created, log why and try to create a minimal chunk
+          if (chunks.length === 0) {
+            console.log(
+              `[Crawl] DEBUG: No chunks created for ${url}. Text length: ${text.length}. Sample text:`,
+              text.slice(0, 200)
+            );
+
+            // If we have some text but no chunks, create a minimal chunk
+            if (text.length > 10) {
+              console.log(
+                `[Crawl] Creating minimal chunk for short content...`
+              );
+              chunks = [text.trim()];
+            }
+          }
+
+          if (chunks.length > 0) {
+            console.log(
+              `[Crawl] Creating embeddings for ${chunks.length} chunks...`
+            );
+            try {
+              const embedResp = await openai.embeddings.create({
+                input: chunks,
+                model: "text-embedding-3-small",
+              });
+              const embeddings = embedResp.data.map(
+                (d: { embedding: number[] }) => d.embedding
+              );
+              const metadata = chunks.map((chunk, i) => ({
+                filename: url,
+                adminId,
+                url,
+                chunkIndex: i,
+              }));
+              console.log(
+                `[Crawl] Upserting ${embeddings.length} embeddings to Pinecone...`
+              );
+              await addChunks(chunks, embeddings, metadata);
+              totalChunks += chunks.length;
+              console.log(
+                `[Crawl] SUCCESS - Processed ${url}: ${chunks.length} chunks, ${totalChunks} total chunks so far`
+              );
+            } catch (embeddingError) {
+              console.error(
+                `[Crawl] EMBEDDING ERROR for ${url}:`,
+                embeddingError
+              );
+              if (embeddingError instanceof Error) {
+                console.error(`[Crawl] Stack trace:`, embeddingError.stack);
               }
             }
-          } catch (summaryError) {
-            console.error(
-              `[Crawl] Error generating structured summary for ${url}:`,
-              summaryError
+          } else {
+            console.log(
+              `[Crawl] WARNING - No chunks created for ${url}. Text length: ${
+                text.length
+              }, Content: ${text.slice(0, 200)}`
             );
           }
-        }
-
-        // Store page data with both summaries
-        const pageData: any = {
-          adminId,
-          url,
-          text,
-          summary: basicSummary,
-          filename: url,
-          createdAt: new Date(),
-        };
-
-        // Add structured summary if generated
-        if (structuredSummary) {
-          pageData.structuredSummary = structuredSummary;
-          pageData.summaryGeneratedAt = new Date();
-        }
-
-        await pages.insertOne(pageData);
-        console.log(
-          `[Crawl] Page data stored successfully${
-            structuredSummary ? " with structured summary" : ""
-          }`
-        );
-
-        // Mark as crawled in sitemap_urls with specific sitemapUrl context
-        console.log(`[Crawl] Marking URL as crawled in sitemap_urls...`);
-        await sitemapUrls.updateOne(
-          { adminId, url, sitemapUrl }, // Include sitemapUrl to ensure proper tracking
-          { $set: { crawled: true, crawledAt: new Date() } }
-        );
-        // Chunk and embed for Pinecone
-        let chunks = chunkText(text);
-        console.log(`[Crawl] Chunks for ${url}:`, chunks.length);
-
-        // Debug: If no chunks created, log why and try to create a minimal chunk
-        if (chunks.length === 0) {
-          console.log(
-            `[Crawl] DEBUG: No chunks created for ${url}. Text length: ${text.length}. Sample text:`,
-            text.slice(0, 200)
-          );
-
-          // If we have some text but no chunks, create a minimal chunk
-          if (text.length > 10) {
-            console.log(`[Crawl] Creating minimal chunk for short content...`);
-            chunks = [text.trim()];
+        } catch (err) {
+          console.error(`[Crawl] CRITICAL ERROR for URL ${url}:`, err);
+          if (err instanceof Error) {
+            console.error(`[Crawl] Error type: ${err.constructor.name}`);
+            console.error(`[Crawl] Error message: ${err.message}`);
+            console.error(`[Crawl] Stack trace:`, err.stack);
           }
-        }
 
-        if (chunks.length > 0) {
-          console.log(
-            `[Crawl] Creating embeddings for ${chunks.length} chunks...`
-          );
-          try {
-            const embedResp = await openai.embeddings.create({
-              input: chunks,
-              model: "text-embedding-3-small",
-            });
-            const embeddings = embedResp.data.map(
-              (d: { embedding: number[] }) => d.embedding
-            );
-            const metadata = chunks.map((chunk, i) => ({
-              filename: url,
-              adminId,
-              url,
-              chunkIndex: i,
-            }));
-            console.log(
-              `[Crawl] Upserting ${embeddings.length} embeddings to Pinecone...`
-            );
-            await addChunks(chunks, embeddings, metadata);
-            totalChunks += chunks.length;
-            console.log(
-              `[Crawl] SUCCESS - Processed ${url}: ${chunks.length} chunks, ${totalChunks} total chunks so far`
-            );
-          } catch (embeddingError) {
-            console.error(
-              `[Crawl] EMBEDDING ERROR for ${url}:`,
-              embeddingError
-            );
-            if (embeddingError instanceof Error) {
-              console.error(`[Crawl] Stack trace:`, embeddingError.stack);
+          // Mark as failed in sitemap_urls (but don't set crawled to true)
+          await sitemapUrls.updateOne(
+            { adminId, url, sitemapUrl }, // Include sitemapUrl for proper tracking
+            {
+              $set: {
+                failedAt: new Date(),
+                error: err instanceof Error ? err.message : String(err),
+              },
             }
-          }
-        } else {
-          console.log(
-            `[Crawl] WARNING - No chunks created for ${url}. Text length: ${
-              text.length
-            }, Content: ${text.slice(0, 200)}`
           );
         }
-      } catch (err) {
-        console.error(`[Crawl] CRITICAL ERROR for URL ${url}:`, err);
-        if (err instanceof Error) {
-          console.error(`[Crawl] Error type: ${err.constructor.name}`);
-          console.error(`[Crawl] Error message: ${err.message}`);
-          console.error(`[Crawl] Stack trace:`, err.stack);
-        }
+        processedInSession.add(url);
+      }
 
-        // Mark as failed in sitemap_urls (but don't set crawled to true)
-        await sitemapUrls.updateOne(
-          { adminId, url, sitemapUrl }, // Include sitemapUrl for proper tracking
-          {
-            $set: {
-              failedAt: new Date(),
-              error: err instanceof Error ? err.message : String(err),
-            },
-          }
-        );
+      if (timeoutReached) {
+        break;
+      }
+
+      if (adminId) {
+        const db = await getDb();
+        const state = await db.collection("crawl_states").findOne({ adminId });
+        if (state?.status === "stopped") {
+          console.log(`[Crawl] Stop signal detected between batches.`);
+          break;
+        }
       }
     }
 
     const totalElapsedTime = Date.now() - startTime;
-    const totalRemaining =
-      urls.length - updatedCrawledUrls.size - results.length;
+
+    // Recalculate remaining based on DB truth
+    const finalCrawledCount = await sitemapUrls.countDocuments({
+      adminId,
+      sitemapUrl,
+      crawled: true,
+    });
+    const totalRemaining = Math.max(0, urls.length - finalCrawledCount);
     const hasMorePages = totalRemaining > 0;
 
     console.log(
