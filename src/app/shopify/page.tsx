@@ -676,53 +676,60 @@ function DevTests() {
     console.assert(NAV.length >= 3, "NAV should have at least 3 items");
     console.assert(
       INTENT_SIGNALS.length >= 4,
-      "INTENT_SIGNALS should have at least 4 items"
+      "INTENT_SIGNALS should have at least 4 items",
     );
     console.assert(
       COMPARE_ROWS.length >= 6,
-      "COMPARE_ROWS should have at least 6 rows"
+      "COMPARE_ROWS should have at least 6 rows",
     );
     console.assert(
       FOOTER_LINKS.length === 3,
-      "FOOTER_LINKS should have exactly 3 links"
+      "FOOTER_LINKS should have exactly 3 links",
     );
 
     const caps = COMPARE_ROWS.map((r) => r.capability);
     console.assert(
       new Set(caps).size === caps.length,
-      "COMPARE_ROWS capability values should be unique"
+      "COMPARE_ROWS capability values should be unique",
     );
 
     const hrefs = NAV.map((n) => n.href);
     console.assert(
       new Set(hrefs).size === hrefs.length,
-      "NAV hrefs should be unique"
+      "NAV hrefs should be unique",
     );
 
     const labels = NAV.map((n) => n.label);
     console.assert(
       new Set(labels).size === labels.length,
-      "NAV labels should be unique"
+      "NAV labels should be unique",
     );
 
     // Additional tests: ensure expected anchors exist
-    const required = ["#problem", "#why", "#how", "#use", "#compare", "#who"];
+    const required = [
+      "#problem",
+      "#why",
+      "#how",
+      "#use",
+      "#compare",
+      "#who",
+    ] as const;
     required.forEach((id) =>
-      console.assert(hrefs.includes(id), `NAV should include ${id}`)
+      console.assert(hrefs.includes(id), `NAV should include ${id}`),
     );
 
     // Defensive checks for component presence
     console.assert(
       typeof ShopifyIntentIllustration === "function",
-      "ShopifyIntentIllustration should be a function component"
+      "ShopifyIntentIllustration should be a function component",
     );
     console.assert(
       typeof SectionHeader === "function",
-      "SectionHeader should be a function component"
+      "SectionHeader should be a function component",
     );
     console.assert(
       typeof classNames === "function",
-      "classNames should be a function"
+      "classNames should be a function",
     );
   } catch {
     // no-op

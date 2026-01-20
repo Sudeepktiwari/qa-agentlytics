@@ -486,9 +486,9 @@ export default function AgentlyticsBuildersLanding() {
     <div className="min-h-screen bg-blue-50 text-blue-900" id="top">
       {/* Top Bar */}
       <header className="sticky top-0 z-30 border-b border-blue-100 bg-white/90 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-blue-600" aria-hidden />
+        <div className="mx-auto flex max-w-6xl items-center justify-center md:justify-start px-4 py-3 sm:px-6">
+          <div className="md:flex items-center hidden gap-3">
+            {/* <div className="h-9 w-9 rounded-xl bg-blue-600" aria-hidden /> */}
             <div className="leading-tight">
               <div className="text-sm font-bold">Agentlytics</div>
               <div className="text-xs text-blue-600">
@@ -497,7 +497,7 @@ export default function AgentlyticsBuildersLanding() {
             </div>
           </div>
 
-          <nav className="hidden items-center gap-6 text-sm text-blue-700 md:flex">
+          <nav className="space-x-2 md:space-x-0 items-center gap-6 md:ml-32 text-xs md:text-sm text-blue-700 md:flex">
             <a className="hover:text-blue-900" href="#how-it-works">
               How it works
             </a>
@@ -514,11 +514,6 @@ export default function AgentlyticsBuildersLanding() {
               Proof
             </a>
           </nav>
-
-          <div className="flex items-center gap-2">
-            <Button variant="secondary">Book a Demo</Button>
-            <Button>Start Free</Button>
-          </div>
         </div>
       </header>
 
