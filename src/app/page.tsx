@@ -214,7 +214,7 @@ function Card({
     <div
       className={cn(
         "rounded-3xl border border-[#D7E3F3] bg-white shadow-sm",
-        className
+        className,
       )}
     >
       {children}
@@ -326,7 +326,7 @@ function PriceCard(props: {
       <Card
         className={cn(
           "relative h-full overflow-hidden",
-          highlight && "border-[#9CC2FF] ring-1 ring-[#006BFF]/20"
+          highlight && "border-[#9CC2FF] ring-1 ring-[#006BFF]/20",
         )}
       >
         {highlight ? (
@@ -417,7 +417,7 @@ const item = {
 export default function Page() {
   useEffect(() => {
     const prefersReduced = window.matchMedia(
-      "(prefers-reduced-motion: reduce)"
+      "(prefers-reduced-motion: reduce)",
     ).matches;
 
     // Mobile menu with outside-click and Escape close
@@ -449,7 +449,7 @@ export default function Page() {
           }
         });
       },
-      { threshold: 0.15 }
+      { threshold: 0.15 },
     );
     if (!prefersReduced) {
       document
@@ -459,19 +459,19 @@ export default function Page() {
 
     // How It Works interactions
     const howButtons = Array.from(
-      document.querySelectorAll<HTMLButtonElement>("[data-how-step]")
+      document.querySelectorAll<HTMLButtonElement>("[data-how-step]"),
     );
     const howViews = Array.from(
-      document.querySelectorAll<HTMLElement>("[data-how-view]")
+      document.querySelectorAll<HTMLElement>("[data-how-view]"),
     );
     const howProgress = document.getElementById(
-      "howProgress"
+      "howProgress",
     ) as HTMLDivElement | null;
     const howIndex = document.getElementById(
-      "howIndex"
+      "howIndex",
     ) as HTMLSpanElement | null;
     const playHowBtn = document.getElementById(
-      "playHow"
+      "playHow",
     ) as HTMLButtonElement | null;
 
     let howCurrent = 1;
@@ -501,7 +501,7 @@ export default function Page() {
     }
 
     howButtons.forEach((btn) =>
-      btn.addEventListener("click", () => showHow(Number(btn.dataset.howStep)))
+      btn.addEventListener("click", () => showHow(Number(btn.dataset.howStep))),
     );
 
     function playHow() {
@@ -518,7 +518,7 @@ export default function Page() {
           const next = (howCurrent % howButtons.length) + 1;
           showHow(next);
         },
-        prefersReduced ? 1 : 1600
+        prefersReduced ? 1 : 1600,
       );
     }
     playHowBtn?.addEventListener("click", playHow);
@@ -541,29 +541,29 @@ export default function Page() {
         "Hero title exists",
         document
           .querySelector("#top h1")
-          ?.textContent?.includes("Meet the AI Salesperson")
+          ?.textContent?.includes("Meet the AI Salesperson"),
       );
       expect("Problem section present", !!document.getElementById("problem"));
       expect(
         "How storyboard has 5 steps",
-        document.querySelectorAll("[data-how-step]").length === 5
+        document.querySelectorAll("[data-how-step]").length === 5,
       );
       expect(
         "How views has 5 panels",
-        document.querySelectorAll("[data-how-view]").length === 5
+        document.querySelectorAll("[data-how-view]").length === 5,
       );
       const failed = tests.filter((t) => !t.pass);
       if (failed.length) {
         console.group(
           "%cAgentlytics self-tests",
-          "color:#b91c1c;font-weight:700"
+          "color:#b91c1c;font-weight:700",
         );
         failed.forEach((t) => console.error("❌", t.name));
         console.groupEnd();
       } else {
         console.log(
           "%cAgentlytics self-tests: all passed",
-          "color:#16a34a;font-weight:700"
+          "color:#16a34a;font-weight:700",
         );
       }
     })();
@@ -2163,10 +2163,16 @@ export default function Page() {
             </div>
             <div>
               <h5 className="font-semibold mb-2 text-slate-900">Legal</h5>
-              <a href="#" className="block text-slate-700">
+              <a
+                href="https://www.advancelytics.com/privacy"
+                className="block text-slate-700"
+              >
                 Privacy Policy
               </a>
-              <a href="#" className="block text-slate-700">
+              <a
+                href="https://www.advancelytics.com/terms"
+                className="block text-slate-700"
+              >
                 Terms of Service
               </a>
             </div>
