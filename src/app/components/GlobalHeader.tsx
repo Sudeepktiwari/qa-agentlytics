@@ -5,6 +5,11 @@ import { usePathname } from "next/navigation";
 
 export default function GlobalHeader() {
   const pathname = usePathname();
+
+  if (pathname?.startsWith("/admin")) {
+    return null;
+  }
+
   const isHome = pathname === "/";
   const headerPositionClasses = "relative";
   // Mobile accordion refs so only one dropdown stays open at a time
