@@ -441,6 +441,15 @@ function computeBant(profile: any) {
     score: normalizedScore,
     completeness: completenessRatio,
     stage,
+    // UI Fallback Aliases
+    budget: budgetKnown ? budgetRange : null,
+    authority:
+      authorityKnown && typeof decisionMaker === "boolean"
+        ? decisionMaker
+          ? "Decision Maker"
+          : "Influencer"
+        : null,
+    need: profile?.requirementsProfile?.primaryUseCase || null,
   };
 }
 
