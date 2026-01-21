@@ -34,7 +34,7 @@ function shouldUpdateProfile(
   timeInSession: number,
   pageTransitions: string[],
   lastUpdateTrigger: string,
-  lastUpdateTime: Date
+  lastUpdateTime: Date,
 ): { shouldUpdate: boolean; trigger: string } {
   const latestMessage = conversation[conversation.length - 1] || "";
   const timeSinceLastUpdate = Date.now() - lastUpdateTime.getTime();
@@ -44,7 +44,7 @@ function shouldUpdateProfile(
     return { shouldUpdate: true, trigger: "email_detection" };
   }
 
-  if (messageCount % 5 === 0 && messageCount > 0) {
+  if (messageCount % 3 === 0 && messageCount > 0) {
     return { shouldUpdate: true, trigger: "periodic_update" };
   }
 
@@ -62,6 +62,12 @@ function shouldUpdateProfile(
 
   if (detectDecisionLanguage(latestMessage)) {
     return { shouldUpdate: true, trigger: "decision_authority" };
+  }
+
+  // Active conversation catchup
+  if (messageCount > 2 && timeSinceLastUpdate > 60000) {
+    // 1 min
+    return { shouldUpdate: true, trigger: "active_conversation_catchup" };
   }
 
   // Secondary triggers (conditional)
@@ -218,7 +224,7 @@ function calculateConfidenceScore(profile: any): number {
 async function analyzeProfileSection(
   sectionType: string,
   conversationContent: string,
-  existingProfile: any
+  existingProfile: any,
 ): Promise<any> {
   const prompts = {
     company: `Analyze this conversation to extract company/business information:
@@ -334,7 +340,7 @@ Provide actionable insights based on conversation patterns and profile data.`,
           error: parseError,
           originalResult: result,
           cleanedContent: jsonContent,
-        }
+        },
       );
       return null;
     }
@@ -344,13 +350,107 @@ Provide actionable insights based on conversation patterns and profile data.`,
   }
 }
 
+// Compute BANT score and stage
+function computeBant(profile: any) {
+  const budgetRange = profile?.requirementsProfile?.budgetRange || "";
+  const timeline = profile?.requirementsProfile?.timeline || "";
+  const decisionMaker = profile?.behaviorProfile?.decisionMaker;
+  const hasNeed = Boolean(
+    (profile?.requirementsProfile?.primaryUseCase &&
+      profile.requirementsProfile.primaryUseCase.length > 0) ||
+    (profile?.requirementsProfile?.specificFeatures &&
+      profile.requirementsProfile.specificFeatures.length > 0),
+  );
+
+  let score = 0;
+  let completeness = 0;
+
+  const budgetKnown = Boolean(budgetRange && budgetRange !== "unknown");
+  const authorityKnown = decisionMaker !== undefined;
+  const timelineKnown = Boolean(timeline && timeline !== "unknown");
+  const needKnown = hasNeed;
+
+  const basePerSignal = 20;
+  if (budgetKnown) {
+    score += basePerSignal;
+    switch (String(budgetRange)) {
+      case "under_500":
+        score += 2;
+        break;
+      case "500_2k":
+        score += 3;
+        break;
+      case "2k_10k":
+        score += 4;
+        break;
+      case "10k_plus":
+        score += 5;
+        break;
+    }
+    completeness += 1;
+  }
+  if (authorityKnown) {
+    score += basePerSignal;
+    if (decisionMaker === true) score += 5;
+    completeness += 1;
+  }
+  if (needKnown) {
+    score += basePerSignal;
+    const featuresCount = Array.isArray(
+      profile?.requirementsProfile?.specificFeatures,
+    )
+      ? profile.requirementsProfile.specificFeatures.length
+      : 0;
+    score += featuresCount >= 2 ? 3 : 2;
+    completeness += 1;
+  }
+  if (timelineKnown) {
+    score += basePerSignal;
+    switch (String(timeline)) {
+      case "asap":
+      case "this_month":
+        score += 5;
+        break;
+      case "next_quarter":
+        score += 3;
+        break;
+      case "exploring":
+        score += 1;
+        break;
+    }
+    completeness += 1;
+  }
+
+  const normalizedScore = Math.min(100, Math.max(0, Math.round(score)));
+  const completenessRatio = Math.min(1, Math.max(0, completeness / 4));
+
+  let stage = "intro";
+  if (timelineKnown) stage = "timeline";
+  else if (needKnown) stage = "need";
+  else if (authorityKnown) stage = "authority";
+  else if (budgetKnown) stage = "budget";
+
+  return {
+    budgetRange: budgetKnown ? budgetRange : "unknown",
+    authorityDecisionMaker:
+      authorityKnown && typeof decisionMaker === "boolean"
+        ? decisionMaker
+        : null,
+    needSummary: profile?.requirementsProfile?.primaryUseCase || null,
+    timeline: timelineKnown ? timeline : "unknown",
+    score: normalizedScore,
+    completeness: completenessRatio,
+    stage,
+  };
+}
+
 // Get customer profile
 export async function GET(req: NextRequest) {
   const rl = await rateLimit(req, "auth");
   if (!rl.allowed) {
     return NextResponse.json(
       { error: "Rate limit exceeded" },
-      { status: 429, headers: corsHeaders }
+      { status: 429, headers: corsHeaders },
     );
   }
   let adminId: string | null = null;
@@ -382,7 +482,7 @@ export async function GET(req: NextRequest) {
   if (!adminId) {
     return NextResponse.json(
       { error: "Not authenticated" },
-      { status: 401, headers: corsHeaders }
+      { status: 401, headers: corsHeaders },
     );
   }
 
@@ -399,7 +499,7 @@ export async function GET(req: NextRequest) {
     if (!sessionId && !email && !getAllProfiles) {
       return NextResponse.json(
         { error: "sessionId, email, or all=true required" },
-        { status: 400, headers: corsHeaders }
+        { status: 400, headers: corsHeaders },
       );
     }
 
@@ -415,7 +515,7 @@ export async function GET(req: NextRequest) {
 
       return NextResponse.json(
         { profiles: allProfiles },
-        { headers: corsHeaders }
+        { headers: corsHeaders },
       );
     }
 
@@ -425,15 +525,19 @@ export async function GET(req: NextRequest) {
 
     const profile = await profiles.findOne(query);
 
+    if (profile && !profile.bant) {
+      (profile as any).bant = computeBant(profile);
+    }
+
     return NextResponse.json(
       { profile: profile || null },
-      { headers: corsHeaders }
+      { headers: corsHeaders },
     );
   } catch (error) {
     console.error("Error fetching customer profile:", error);
     return NextResponse.json(
       { error: "Failed to fetch profile" },
-      { status: 500, headers: corsHeaders }
+      { status: 500, headers: corsHeaders },
     );
   }
 }
@@ -444,7 +548,7 @@ export async function POST(req: NextRequest) {
   if (!rl.allowed) {
     return NextResponse.json(
       { error: "Rate limit exceeded" },
-      { status: 429, headers: corsHeaders }
+      { status: 429, headers: corsHeaders },
     );
   }
   let adminId: string | null = null;
@@ -476,7 +580,7 @@ export async function POST(req: NextRequest) {
   if (!adminId) {
     return NextResponse.json(
       { error: "Not authenticated" },
-      { status: 401, headers: corsHeaders }
+      { status: 401, headers: corsHeaders },
     );
   }
 
@@ -537,7 +641,7 @@ export async function POST(req: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json(
         { error: "Invalid payload", details: parsed.error.flatten() },
-        { status: 400, headers: corsHeaders }
+        { status: 400, headers: corsHeaders },
       );
     }
 
@@ -555,7 +659,7 @@ export async function POST(req: NextRequest) {
     if (!sessionId) {
       return NextResponse.json(
         { error: "sessionId required" },
-        { status: 400, headers: corsHeaders }
+        { status: 400, headers: corsHeaders },
       );
     }
 
@@ -589,7 +693,7 @@ export async function POST(req: NextRequest) {
       // Try latest chat containing an email for this session
       const lastEmailMsg = await chats.findOne(
         { sessionId, email: { $exists: true } },
-        { sort: { createdAt: -1 } }
+        { sort: { createdAt: -1 } },
       );
       if (lastEmailMsg && typeof lastEmailMsg.email === "string") {
         resolvedEmail = lastEmailMsg.email;
@@ -624,7 +728,7 @@ export async function POST(req: NextRequest) {
       timeInSession || 0,
       pageTransitions || [],
       existingProfile?.profileMeta?.lastUpdateTrigger || "",
-      lastUpdateTime
+      lastUpdateTime,
     );
 
     const shouldUpdate = trigger || updateDecision.shouldUpdate;
@@ -637,7 +741,7 @@ export async function POST(req: NextRequest) {
           updated: false,
           reason: "No update trigger met",
         },
-        { headers: corsHeaders }
+        { headers: corsHeaders },
       );
     }
 
@@ -657,12 +761,12 @@ export async function POST(req: NextRequest) {
         analyzeProfileSection(
           "requirements",
           conversationContent,
-          existingProfile
+          existingProfile,
         ),
         analyzeProfileSection(
           "intelligence",
           conversationContent,
-          existingProfile
+          existingProfile,
         ),
       ]);
 
@@ -679,13 +783,13 @@ export async function POST(req: NextRequest) {
           updates.requirementsProfile = await analyzeProfileSection(
             "requirements",
             conversationContent,
-            existingProfile
+            existingProfile,
           );
           // Also update intelligence for topics discussed
           updates.intelligenceProfile = await analyzeProfileSection(
             "intelligence",
             conversationContent,
-            existingProfile
+            existingProfile,
           );
           break;
         case "technical_discussion":
@@ -693,18 +797,18 @@ export async function POST(req: NextRequest) {
           updates.companyProfile = await analyzeProfileSection(
             "company",
             conversationContent,
-            existingProfile
+            existingProfile,
           );
           updates.behaviorProfile = await analyzeProfileSection(
             "behavior",
             conversationContent,
-            existingProfile
+            existingProfile,
           );
           // Also update intelligence for topics discussed
           updates.intelligenceProfile = await analyzeProfileSection(
             "intelligence",
             conversationContent,
-            existingProfile
+            existingProfile,
           );
           break;
         case "periodic_update":
@@ -714,7 +818,7 @@ export async function POST(req: NextRequest) {
           updates.intelligenceProfile = await analyzeProfileSection(
             "intelligence",
             conversationContent,
-            existingProfile
+            existingProfile,
           );
           break;
         default:
@@ -723,12 +827,12 @@ export async function POST(req: NextRequest) {
             analyzeProfileSection(
               "behavior",
               conversationContent,
-              existingProfile
+              existingProfile,
             ),
             analyzeProfileSection(
               "requirements",
               conversationContent,
-              existingProfile
+              existingProfile,
             ),
           ]);
           updates.behaviorProfile = behaviorAnalysis;
@@ -852,99 +956,6 @@ export async function POST(req: NextRequest) {
       },
     };
 
-    function computeBant(profile: any) {
-      const budgetRange = profile?.requirementsProfile?.budgetRange || "";
-      const timeline = profile?.requirementsProfile?.timeline || "";
-      const decisionMaker = profile?.behaviorProfile?.decisionMaker;
-      const hasNeed = Boolean(
-        (profile?.requirementsProfile?.primaryUseCase &&
-          profile.requirementsProfile.primaryUseCase.length > 0) ||
-          (profile?.requirementsProfile?.specificFeatures &&
-            profile.requirementsProfile.specificFeatures.length > 0)
-      );
-
-      let score = 0;
-      let completeness = 0;
-
-      const budgetKnown = Boolean(budgetRange && budgetRange !== "unknown");
-      const authorityKnown = decisionMaker !== undefined;
-      const timelineKnown = Boolean(timeline && timeline !== "unknown");
-      const needKnown = hasNeed;
-
-      const basePerSignal = 20;
-      if (budgetKnown) {
-        score += basePerSignal;
-        switch (String(budgetRange)) {
-          case "under_500":
-            score += 2;
-            break;
-          case "500_2k":
-            score += 3;
-            break;
-          case "2k_10k":
-            score += 4;
-            break;
-          case "10k_plus":
-            score += 5;
-            break;
-        }
-        completeness += 1;
-      }
-      if (authorityKnown) {
-        score += basePerSignal;
-        if (decisionMaker === true) score += 5;
-        completeness += 1;
-      }
-      if (needKnown) {
-        score += basePerSignal;
-        const featuresCount = Array.isArray(
-          profile?.requirementsProfile?.specificFeatures
-        )
-          ? profile.requirementsProfile.specificFeatures.length
-          : 0;
-        score += featuresCount >= 2 ? 3 : 2;
-        completeness += 1;
-      }
-      if (timelineKnown) {
-        score += basePerSignal;
-        switch (String(timeline)) {
-          case "asap":
-          case "this_month":
-            score += 5;
-            break;
-          case "next_quarter":
-            score += 3;
-            break;
-          case "exploring":
-            score += 1;
-            break;
-        }
-        completeness += 1;
-      }
-
-      const normalizedScore = Math.min(100, Math.max(0, Math.round(score)));
-      const completenessRatio = Math.min(1, Math.max(0, completeness / 4));
-
-      let stage = "intro";
-      if (timelineKnown) stage = "timeline";
-      else if (needKnown) stage = "need";
-      else if (authorityKnown) stage = "authority";
-      else if (budgetKnown) stage = "budget";
-
-      return {
-        budgetRange: budgetKnown ? budgetRange : "unknown",
-        authorityDecisionMaker:
-          authorityKnown && typeof decisionMaker === "boolean"
-            ? decisionMaker
-            : null,
-        needSummary: profile?.requirementsProfile?.primaryUseCase || null,
-        timeline: timelineKnown ? timeline : "unknown",
-        score: normalizedScore,
-        completeness: completenessRatio,
-        stage,
-      };
-    }
-
     const bant = computeBant(updatedProfile);
     (updatedProfile as any).bant = bant;
 
@@ -952,14 +963,14 @@ export async function POST(req: NextRequest) {
     if (existingProfile) {
       await profiles.updateOne(
         { _id: existingProfile._id },
-        { $set: updatedProfile }
+        { $set: updatedProfile },
       );
     } else {
       await profiles.insertOne(updatedProfile);
     }
 
     console.log(
-      `[CustomerProfiling] Profile updated - Trigger: ${updateTrigger}, Confidence: ${updatedProfile.profileMeta.confidenceScore}`
+      `[CustomerProfiling] Profile updated - Trigger: ${updateTrigger}, Confidence: ${updatedProfile.profileMeta.confidenceScore}`,
     );
 
     return NextResponse.json(
@@ -969,13 +980,13 @@ export async function POST(req: NextRequest) {
         trigger: updateTrigger,
         confidence: updatedProfile.profileMeta.confidenceScore,
       },
-      { headers: corsHeaders }
+      { headers: corsHeaders },
     );
   } catch (error) {
     console.error("Error updating customer profile:", error);
     return NextResponse.json(
       { error: "Failed to update profile" },
-      { status: 500, headers: corsHeaders }
+      { status: 500, headers: corsHeaders },
     );
   }
 }
@@ -986,7 +997,7 @@ export async function DELETE(req: NextRequest) {
   if (!rl.allowed) {
     return NextResponse.json(
       { error: "Rate limit exceeded" },
-      { status: 429, headers: corsHeaders }
+      { status: 429, headers: corsHeaders },
     );
   }
   let adminId: string | null = null;
@@ -1018,7 +1029,7 @@ export async function DELETE(req: NextRequest) {
   if (!adminId) {
     return NextResponse.json(
       { error: "Not authenticated" },
-      { status: 401, headers: corsHeaders }
+      { status: 401, headers: corsHeaders },
     );
   }
 
@@ -1034,7 +1045,7 @@ export async function DELETE(req: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json(
         { error: "Invalid payload", details: parsed.error.flatten() },
-        { status: 400, headers: corsHeaders }
+        { status: 400, headers: corsHeaders },
       );
     }
     const { profileId } = parsed.data;
@@ -1042,7 +1053,7 @@ export async function DELETE(req: NextRequest) {
     if (!profileId) {
       return NextResponse.json(
         { error: "profileId required" },
-        { status: 400, headers: corsHeaders }
+        { status: 400, headers: corsHeaders },
       );
     }
 
@@ -1057,7 +1068,7 @@ export async function DELETE(req: NextRequest) {
     if (result.deletedCount === 0) {
       return NextResponse.json(
         { error: "Profile not found" },
-        { status: 404, headers: corsHeaders }
+        { status: 404, headers: corsHeaders },
       );
     }
 
@@ -1066,7 +1077,7 @@ export async function DELETE(req: NextRequest) {
     console.error("Error deleting customer profile:", error);
     return NextResponse.json(
       { error: "Failed to delete profile" },
-      { status: 500, headers: corsHeaders }
+      { status: 500, headers: corsHeaders },
     );
   }
 }
