@@ -12,9 +12,9 @@ export default function WidgetScript() {
 
   return (
     <script
-      src="https://agentlytics.advancelytics.com/api/widget"
+      src="/api/widget"
       data-api-key={process.env.NEXT_PUBLIC_BOT_KEY}
-      data-size="large"
+    >  data-size="large"
       data-voice-enabled="false"
       data-voice-gender="female"
       data-auto-open-proactive="true"

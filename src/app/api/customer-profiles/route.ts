@@ -814,12 +814,35 @@ export async function POST(req: NextRequest) {
         case "periodic_update":
         case "extended_session":
         case "contact_request":
-        case "bant_complete":
           updates.intelligenceProfile = await analyzeProfileSection(
             "intelligence",
             conversationContent,
             existingProfile,
           );
+          break;
+        case "bant_complete":
+          // Update all sections for BANT complete to ensure we capture the latest BANT data
+          const [bantBehavior, bantRequirements, bantIntelligence] =
+            await Promise.all([
+              analyzeProfileSection(
+                "behavior",
+                conversationContent,
+                existingProfile,
+              ),
+              analyzeProfileSection(
+                "requirements",
+                conversationContent,
+                existingProfile,
+              ),
+              analyzeProfileSection(
+                "intelligence",
+                conversationContent,
+                existingProfile,
+              ),
+            ]);
+          updates.behaviorProfile = bantBehavior;
+          updates.requirementsProfile = bantRequirements;
+          updates.intelligenceProfile = bantIntelligence;
           break;
         default:
           // Lightweight behavior and requirements update
