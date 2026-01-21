@@ -119,7 +119,7 @@ Guidelines:
         id: persona.id || `persona_${index + 1}`,
         createdAt: new Date(),
         updatedAt: new Date(),
-      })
+      }),
     );
 
     const personaDocument = {
@@ -132,12 +132,12 @@ Guidelines:
     await personas.replaceOne({ adminId }, personaDocument, { upsert: true });
 
     console.log(
-      `[Persona] Successfully extracted ${extracted.targetAudiences.length} personas for adminId: ${adminId}`
+      `[Persona] Successfully extracted ${extracted.targetAudiences.length} personas for adminId: ${adminId}`,
     );
   } catch (error) {
     console.error(
       `[Persona] Error extracting personas for adminId ${adminId}:`,
-      error
+      error,
     );
     throw error;
   }
@@ -145,7 +145,7 @@ Guidelines:
 
 async function parseSitemap(
   sitemapUrl: string,
-  depth: number = 0
+  depth: number = 0,
 ): Promise<string[]> {
   if (depth > 3) {
     console.log(`[Sitemap] Max recursion depth reached for ${sitemapUrl}`);
@@ -171,7 +171,7 @@ async function parseSitemap(
     const childSitemaps = $("sitemap > loc");
     if (childSitemaps.length > 0) {
       console.log(
-        `[Sitemap] Found sitemap index with ${childSitemaps.length} sitemaps at ${sitemapUrl}`
+        `[Sitemap] Found sitemap index with ${childSitemaps.length} sitemaps at ${sitemapUrl}`,
       );
       const sitemapUrls: string[] = [];
       childSitemaps.each((_, el) => {
@@ -194,7 +194,7 @@ async function parseSitemap(
     const pageLocs = $("url > loc");
     if (pageLocs.length > 0) {
       console.log(
-        `[Sitemap] Found ${pageLocs.length} page URLs at ${sitemapUrl}`
+        `[Sitemap] Found ${pageLocs.length} page URLs at ${sitemapUrl}`,
       );
       pageLocs.each((_, el) => {
         const loc = $(el).text().trim();
@@ -206,7 +206,7 @@ async function parseSitemap(
     // (This helps with malformed XML or unusual namespaces)
     if (urls.length === 0) {
       console.log(
-        `[Sitemap] No strict structure found, trying generic regex for ${sitemapUrl}`
+        `[Sitemap] No strict structure found, trying generic regex for ${sitemapUrl}`,
       );
       const matches = xml.matchAll(/<loc>(.*?)<\/loc>/g);
       for (const match of matches) {
@@ -215,7 +215,7 @@ async function parseSitemap(
     }
 
     console.log(
-      `[Sitemap] Total URLs extracted from ${sitemapUrl}: ${urls.length}`
+      `[Sitemap] Total URLs extracted from ${sitemapUrl}: ${urls.length}`,
     );
     return urls;
   } catch (error) {
@@ -287,7 +287,7 @@ async function extractLinksUsingBrowser(pageUrl: string): Promise<string[]> {
     // Set a reasonable viewport and user agent
     await page.setViewport({ width: 1280, height: 720 });
     await page.setUserAgent(
-      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     );
 
     // Navigate to the page with timeout
@@ -335,7 +335,7 @@ async function extractLinksUsingBrowser(pageUrl: string): Promise<string[]> {
           ];
 
           const contentLinks = Array.from(
-            document.querySelectorAll("a[href]")
+            document.querySelectorAll("a[href]"),
           ).filter((el) => {
             const href = el.getAttribute("href");
             return (
@@ -347,19 +347,19 @@ async function extractLinksUsingBrowser(pageUrl: string): Promise<string[]> {
             currentLinkCount: allLinks,
             currentContentCount: contentLinks,
           };
-        }
+        },
       );
 
       console.log(
         `[JSCrawl] Scroll attempt ${
           scrollAttempts + 1
-        }: Found ${currentLinkCount} total links, ${currentContentCount} content links`
+        }: Found ${currentLinkCount} total links, ${currentContentCount} content links`,
       );
 
       // If no new links were loaded after scrolling, try a few more times
       if (scrollAttempts > 2 && currentLinkCount === previousLinkCount) {
         console.log(
-          `[JSCrawl] No new content loaded, trying 2 more attempts...`
+          `[JSCrawl] No new content loaded, trying 2 more attempts...`,
         );
         // Try scrolling more aggressively
         await page.evaluate(() => {
@@ -375,7 +375,7 @@ async function extractLinksUsingBrowser(pageUrl: string): Promise<string[]> {
 
         if (finalLinkCount === currentLinkCount) {
           console.log(
-            `[JSCrawl] Still no new content, stopping infinite scroll`
+            `[JSCrawl] Still no new content, stopping infinite scroll`,
           );
           break;
         }
@@ -441,7 +441,7 @@ async function extractLinksUsingBrowser(pageUrl: string): Promise<string[]> {
     }
 
     console.log(
-      `[JSCrawl] Finished scrolling after ${scrollAttempts} attempts`
+      `[JSCrawl] Finished scrolling after ${scrollAttempts} attempts`,
     );
 
     // Get final counts after all scrolling
@@ -466,7 +466,7 @@ async function extractLinksUsingBrowser(pageUrl: string): Promise<string[]> {
       ];
 
       const contentLinks = Array.from(
-        document.querySelectorAll("a[href]")
+        document.querySelectorAll("a[href]"),
       ).filter((el) => {
         const href = el.getAttribute("href");
         return href && contentPatterns.some((pattern) => pattern.test(href));
@@ -476,7 +476,7 @@ async function extractLinksUsingBrowser(pageUrl: string): Promise<string[]> {
     });
 
     console.log(
-      `[JSCrawl] Final counts after infinite scroll: ${finalCounts.totalLinks} total links, ${finalCounts.contentLinks} content links`
+      `[JSCrawl] Final counts after infinite scroll: ${finalCounts.totalLinks} total links, ${finalCounts.contentLinks} content links`,
     );
 
     // Extract all links from the rendered page with enhanced deduplication
@@ -486,7 +486,7 @@ async function extractLinksUsingBrowser(pageUrl: string): Promise<string[]> {
       const processedHrefs = new Set<string>(); // Track processed hrefs to avoid duplicates
 
       console.log(
-        `[JSCrawl-Browser] Found ${linkElements.length} link elements on page`
+        `[JSCrawl-Browser] Found ${linkElements.length} link elements on page`,
       );
 
       // Add the current page
@@ -560,7 +560,7 @@ async function extractLinksUsingBrowser(pageUrl: string): Promise<string[]> {
                 "tel:",
               ];
               const hasSkipPattern = skipPatterns.some((pattern) =>
-                cleanUrl.includes(pattern)
+                cleanUrl.includes(pattern),
               );
 
               if (
@@ -589,7 +589,7 @@ async function extractLinksUsingBrowser(pageUrl: string): Promise<string[]> {
                 ];
 
                 const matchedPattern = contentPatterns.find((pattern) =>
-                  pattern.test(cleanUrl)
+                  pattern.test(cleanUrl),
                 );
                 if (matchedPattern && index < 20) {
                   // Only log first 20 content links to avoid spam
@@ -621,7 +621,7 @@ async function extractLinksUsingBrowser(pageUrl: string): Promise<string[]> {
                                             ? "faq"
                                             : "content";
                   console.log(
-                    `[JSCrawl-Browser] Found ${linkType} link: ${cleanUrl}`
+                    `[JSCrawl-Browser] Found ${linkType} link: ${cleanUrl}`,
                   );
                 }
               }
@@ -656,14 +656,14 @@ async function extractLinksUsingBrowser(pageUrl: string): Promise<string[]> {
       ];
 
       const contentLinks = allLinks.filter((url) =>
-        contentPatterns.some((cp) => cp.pattern.test(url))
+        contentPatterns.some((cp) => cp.pattern.test(url)),
       );
 
       console.log(
-        `[JSCrawl-Browser] Total unique links extracted: ${allLinks.length}`
+        `[JSCrawl-Browser] Total unique links extracted: ${allLinks.length}`,
       );
       console.log(
-        `[JSCrawl-Browser] Content-related links: ${contentLinks.length}`
+        `[JSCrawl-Browser] Content-related links: ${contentLinks.length}`,
       );
 
       // Break down by content type
@@ -683,7 +683,7 @@ async function extractLinksUsingBrowser(pageUrl: string): Promise<string[]> {
     }, pageUrl);
 
     console.log(
-      `[JSCrawl] Found ${links.length} links with JavaScript rendering`
+      `[JSCrawl] Found ${links.length} links with JavaScript rendering`,
     );
 
     // Use intelligent content analysis for final summary
@@ -724,12 +724,12 @@ async function extractLinksFromPage(pageUrl: string): Promise<string[]> {
     });
 
     console.log(
-      `[LinkExtract] Response for ${pageUrl}: ${res.status} ${res.statusText}`
+      `[LinkExtract] Response for ${pageUrl}: ${res.status} ${res.statusText}`,
     );
 
     if (!res.ok) {
       throw new Error(
-        `Failed to fetch page: ${pageUrl} (Status: ${res.status} ${res.statusText})`
+        `Failed to fetch page: ${pageUrl} (Status: ${res.status} ${res.statusText})`,
       );
     }
 
@@ -831,7 +831,7 @@ async function extractLinksFromPage(pageUrl: string): Promise<string[]> {
             ];
 
             const hasSkipPattern = skipPatterns.some((pattern) =>
-              cleanUrl.includes(pattern)
+              cleanUrl.includes(pattern),
             );
 
             if (!hasSkipExtension && !hasSkipPattern && cleanUrl !== pageUrl) {
@@ -849,7 +849,7 @@ async function extractLinksFromPage(pageUrl: string): Promise<string[]> {
     const pageLinks = Array.from(links);
 
     console.log(
-      `[LinkExtract] Total links found on ${pageUrl}: ${pageLinks.length}`
+      `[LinkExtract] Total links found on ${pageUrl}: ${pageLinks.length}`,
     );
 
     const intelligentAnalysis = analyzeUrlPatterns(pageLinks, pageUrl);
@@ -935,7 +935,7 @@ function analyzeUrlPatterns(urls: string[], inputUrl: string) {
     pathAnalysis,
     totalContentScore: detectedPatterns.reduce(
       (sum, p) => sum + p.count * p.weight,
-      0
+      0,
     ),
   };
 }
@@ -997,7 +997,7 @@ interface UrlAnalysis {
 function detectDynamicContentPage(
   inputUrl: string,
   urlAnalysis: UrlAnalysis,
-  totalUrls: number
+  totalUrls: number,
 ) {
   const hasMinimalLinks = totalUrls <= 10;
   const hasMinimalContent = urlAnalysis.contentUrls.length <= 3;
@@ -1021,14 +1021,14 @@ function detectDynamicContentPage(
   ];
 
   const isListingPage = listingPatterns.some((pattern) =>
-    pattern.test(inputUrl)
+    pattern.test(inputUrl),
   );
 
   // Check if URL contains any content-related keywords
   const hasContentKeywords =
     urlAnalysis.detectedPatterns.length > 0 ||
     /\/(blog|post|article|slide|news|help|guide|tutorial|doc|support|resource|case-stud|faq)/i.test(
-      inputUrl
+      inputUrl,
     );
 
   // Determine if this looks like a dynamic content page
@@ -1058,7 +1058,7 @@ function detectDynamicContentPage(
       hasContentKeywords,
       hasMinimalContent,
       hasZeroContent,
-      hasMinimalLinks
+      hasMinimalLinks,
     ),
   };
 }
@@ -1068,7 +1068,7 @@ function calculateConfidence(
   hasContentKeywords: boolean,
   hasMinimalContent: boolean,
   hasZeroContent: boolean,
-  hasMinimalLinks: boolean
+  hasMinimalLinks: boolean,
 ): number {
   let confidence = 0;
 
@@ -1082,7 +1082,7 @@ function calculateConfidence(
 }
 
 async function discoverUrls(
-  inputUrl: string
+  inputUrl: string,
 ): Promise<{ urls: string[]; type: "sitemap" | "webpage" | "javascript" }> {
   console.log(`[Discovery] Starting discovery for: ${inputUrl}`);
 
@@ -1108,7 +1108,7 @@ async function discoverUrls(
           const urls = await parseSitemap(candidate);
           if (urls.length > 0) {
             console.log(
-              `[Discovery] Found ${urls.length} URLs via candidate sitemap: ${candidate}`
+              `[Discovery] Found ${urls.length} URLs via candidate sitemap: ${candidate}`,
             );
             return { urls, type: "sitemap" };
           }
@@ -1121,7 +1121,7 @@ async function discoverUrls(
   try {
     const urls = await extractLinksFromPage(inputUrl);
     console.log(
-      `[Discovery] Found ${urls.length} URLs by crawling webpage links`
+      `[Discovery] Found ${urls.length} URLs by crawling webpage links`,
     );
 
     // Intelligent content detection - analyze URL patterns dynamically
@@ -1129,11 +1129,11 @@ async function discoverUrls(
 
     console.log(`[Discovery] URL Analysis:`, urlAnalysis);
     console.log(
-      `[Discovery] Potential content URLs found: ${urlAnalysis.contentUrls.length}`
+      `[Discovery] Potential content URLs found: ${urlAnalysis.contentUrls.length}`,
     );
     console.log(
       `[Discovery] Content patterns detected:`,
-      urlAnalysis.detectedPatterns
+      urlAnalysis.detectedPatterns,
     );
 
     const totalUrls = urls.length;
@@ -1143,23 +1143,23 @@ async function discoverUrls(
     const isDynamicContentPage = detectDynamicContentPage(
       inputUrl,
       urlAnalysis,
-      totalUrls
+      totalUrls,
     );
 
     console.log(
       `[Discovery] Dynamic content page detection:`,
-      isDynamicContentPage
+      isDynamicContentPage,
     );
 
     if (isDynamicContentPage.shouldUseJavaScript) {
       console.log(
         `[Discovery] Detected dynamic content page (confidence: ${isDynamicContentPage.confidence.toFixed(
-          2
+          2,
         )}). ` +
           `Reasons: ${Object.entries(isDynamicContentPage.reasons)
             .filter(([, value]) => value)
             .map(([key]) => key)
-            .join(", ")}. Trying JS crawling...`
+            .join(", ")}. Trying JS crawling...`,
       );
 
       try {
@@ -1172,13 +1172,13 @@ async function discoverUrls(
         // If JavaScript rendering found more content URLs, use those results
         if (jsUrls.length > totalUrls || jsContentUrls > contentUrls) {
           console.log(
-            `[Discovery] JavaScript rendering found more content! Using JS results.`
+            `[Discovery] JavaScript rendering found more content! Using JS results.`,
           );
           console.log(
             `[Discovery] Content patterns found:`,
             jsUrlAnalysis.detectedPatterns
               .map((p) => `${p.name}: ${p.count}`)
-              .join(", ")
+              .join(", "),
           );
 
           // Ensure no duplicates in the final result
@@ -1186,7 +1186,7 @@ async function discoverUrls(
           console.log(
             `[Discovery] Final unique URLs: ${uniqueJsUrls.length} (removed ${
               jsUrls.length - uniqueJsUrls.length
-            } duplicates)`
+            } duplicates)`,
           );
 
           return { urls: uniqueJsUrls, type: "javascript" };
@@ -1194,7 +1194,7 @@ async function discoverUrls(
       } catch (jsError) {
         console.log(
           `[Discovery] JavaScript crawling failed, falling back to regular results:`,
-          jsError
+          jsError,
         );
       }
     }
@@ -1207,7 +1207,7 @@ async function discoverUrls(
       console.log(
         `[Discovery] Removed ${
           urls.length - uniqueUrls.length
-        } duplicate URLs from webpage results`
+        } duplicate URLs from webpage results`,
       );
     }
 
@@ -1220,7 +1220,7 @@ async function discoverUrls(
 
 async function extractTextFromUrl(
   url: string,
-  depth: number = 0
+  depth: number = 0,
 ): Promise<string> {
   // Prevent infinite redirect loops
   if (depth > 5) {
@@ -1231,23 +1231,23 @@ async function extractTextFromUrl(
   // Check if this is a slide page - force JavaScript rendering
   if (url.includes("/slide")) {
     console.log(
-      `[Crawl] Detected slide page, forcing JavaScript extraction: ${url}`
+      `[Crawl] Detected slide page, forcing JavaScript extraction: ${url}`,
     );
     try {
       const jsText = await extractTextUsingBrowser(url);
       console.log(
-        `[Crawl] JavaScript extraction for slide page returned ${jsText.length} chars`
+        `[Crawl] JavaScript extraction for slide page returned ${jsText.length} chars`,
       );
       if (jsText.length > 100) {
         return jsText;
       }
       console.log(
-        `[Crawl] JavaScript extraction returned minimal content, trying regular extraction as fallback`
+        `[Crawl] JavaScript extraction returned minimal content, trying regular extraction as fallback`,
       );
     } catch (jsError) {
       console.log(
         `[Crawl] JavaScript extraction failed for slide page, trying regular extraction:`,
-        jsError
+        jsError,
       );
     }
   }
@@ -1281,22 +1281,22 @@ async function extractTextFromUrl(
 
     clearTimeout(timeout);
     console.log(
-      `[ExtractText] Fetch completed in ${fetchEnd - fetchStart}ms for: ${url}`
+      `[ExtractText] Fetch completed in ${fetchEnd - fetchStart}ms for: ${url}`,
     );
     console.log(
-      `[ExtractText] Response status: ${res.status} ${res.statusText}`
+      `[ExtractText] Response status: ${res.status} ${res.statusText}`,
     );
     console.log(
       `[ExtractText] Response headers: ${JSON.stringify(
-        Object.fromEntries(res.headers.entries())
-      )}`
+        Object.fromEntries(res.headers.entries()),
+      )}`,
     );
 
     clearTimeout(timeout);
 
     if (!res.ok) {
       throw new Error(
-        `Failed to fetch page: ${url} (Status: ${res.status} ${res.statusText})`
+        `Failed to fetch page: ${url} (Status: ${res.status} ${res.statusText})`,
       );
     }
 
@@ -1310,7 +1310,7 @@ async function extractTextFromUrl(
       if (match) {
         let redirectUrl = match[1].trim();
         console.log(
-          `[Crawl] Following meta redirect from ${url} to ${redirectUrl}`
+          `[Crawl] Following meta redirect from ${url} to ${redirectUrl}`,
         );
 
         // Handle relative URLs by converting to absolute
@@ -1319,12 +1319,12 @@ async function extractTextFromUrl(
             const baseUrl = new URL(url);
             redirectUrl = new URL(redirectUrl, baseUrl.origin).href;
             console.log(
-              `[Crawl] Converted relative URL to absolute: ${redirectUrl}`
+              `[Crawl] Converted relative URL to absolute: ${redirectUrl}`,
             );
           } catch (urlError) {
             console.log(
               `[Crawl] Failed to convert relative URL: ${redirectUrl}`,
-              urlError
+              urlError,
             );
             // If URL conversion fails, proceed with original content
           }
@@ -1343,7 +1343,7 @@ async function extractTextFromUrl(
     const text = $("body").text().replace(/\s+/g, " ").trim();
 
     console.log(
-      `[ExtractText] SUCCESS - Extracted ${text.length} chars from ${url}`
+      `[ExtractText] SUCCESS - Extracted ${text.length} chars from ${url}`,
     );
     console.log(`[ExtractText] Text preview: ${text.slice(0, 200)}...`);
 
@@ -1372,20 +1372,20 @@ async function extractTextFromUrl(
 
     if ((text.length < 200 && isContentPage) || isSlidePageWithMinimalContent) {
       console.log(
-        `[Crawl] Content seems minimal (${text.length} chars) or slide page with little content, trying JavaScript extraction...`
+        `[Crawl] Content seems minimal (${text.length} chars) or slide page with little content, trying JavaScript extraction...`,
       );
       try {
         const jsText = await extractTextUsingBrowser(url);
         if (jsText.length > text.length) {
           console.log(
-            `[Crawl] JavaScript extraction found more content (${jsText.length} vs ${text.length} chars)`
+            `[Crawl] JavaScript extraction found more content (${jsText.length} vs ${text.length} chars)`,
           );
           return jsText;
         }
       } catch (jsError) {
         console.log(
           `[Crawl] JavaScript extraction failed, using regular content:`,
-          jsError
+          jsError,
         );
       }
     }
@@ -1395,7 +1395,7 @@ async function extractTextFromUrl(
       console.log(
         `[Crawl] Warning: Very short content for ${url} (${
           text.length
-        } chars): ${text.substring(0, 100)}`
+        } chars): ${text.substring(0, 100)}`,
       );
     }
 
@@ -1403,7 +1403,7 @@ async function extractTextFromUrl(
   } catch (error) {
     console.log(
       `[Crawl] Regular extraction failed for ${url}, trying JavaScript extraction:`,
-      error
+      error,
     );
     // If regular extraction fails completely, try JavaScript as fallback
     try {
@@ -1411,7 +1411,7 @@ async function extractTextFromUrl(
     } catch (jsError) {
       console.error(
         `[Crawl] Both regular and JavaScript extraction failed for ${url}:`,
-        jsError
+        jsError,
       );
       throw error; // Throw the original error
     }
@@ -1439,7 +1439,7 @@ async function extractTextUsingBrowser(url: string): Promise<string> {
     const page = await browser.newPage();
     await page.setViewport({ width: 1280, height: 720 });
     await page.setUserAgent(
-      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     );
 
     // Navigate and wait for content to load
@@ -1451,14 +1451,14 @@ async function extractTextUsingBrowser(url: string): Promise<string> {
     // Wait for dynamic content - longer wait for slides
     const waitTime = url.includes("/slide") ? 5000 : 3000;
     console.log(
-      `[JSExtract] Waiting ${waitTime}ms for dynamic content to load...`
+      `[JSExtract] Waiting ${waitTime}ms for dynamic content to load...`,
     );
     await new Promise((resolve) => setTimeout(resolve, waitTime));
 
     // For slide pages, try scrolling to load more content
     if (url.includes("/slide")) {
       console.log(
-        `[JSExtract] Slide page detected, attempting scroll to load content...`
+        `[JSExtract] Slide page detected, attempting scroll to load content...`,
       );
       await page.evaluate(() => {
         window.scrollTo(0, document.body.scrollHeight);
@@ -1505,14 +1505,14 @@ async function extractTextUsingBrowser(url: string): Promise<string> {
     });
 
     console.log(
-      `[JSExtract] Extracted ${text.length} characters with JS rendering`
+      `[JSExtract] Extracted ${text.length} characters with JS rendering`,
     );
 
     return text;
   } catch (error) {
     console.error(
       `[JSExtract] Error during JavaScript text extraction:`,
-      error
+      error,
     );
     throw error;
   } finally {
@@ -1566,7 +1566,7 @@ export async function POST(req: NextRequest) {
     await crawlStates.updateOne(
       { adminId },
       { $set: { status: "stopped", updatedAt: new Date() } },
-      { upsert: true }
+      { upsert: true },
     );
     console.log(`[Sitemap] Stop signal received for admin ${adminId}`);
     return NextResponse.json({ message: "Stop signal received" });
@@ -1607,7 +1607,7 @@ export async function POST(req: NextRequest) {
           .updateOne(
             { adminId },
             { $set: { status: "running", updatedAt: new Date() } },
-            { upsert: true }
+            { upsert: true },
           );
       }
 
@@ -1624,7 +1624,7 @@ export async function POST(req: NextRequest) {
             .findOne({ adminId });
           if (state?.status === "stopped") {
             console.log(
-              `[BackgroundCrawl] Stop signal detected for admin ${adminId}. Aborting.`
+              `[BackgroundCrawl] Stop signal detected for admin ${adminId}. Aborting.`,
             );
             break;
           }
@@ -1650,7 +1650,7 @@ export async function POST(req: NextRequest) {
           console.error(
             `[BackgroundCrawl] Batch ${batchCount + 1} failed: ${resp.status} ${
               resp.statusText
-            }`
+            }`,
           );
           break;
         }
@@ -1672,7 +1672,7 @@ export async function POST(req: NextRequest) {
         }
       }
       console.log(
-        `[BackgroundCrawl] Process completed after ${batchCount} batches`
+        `[BackgroundCrawl] Process completed after ${batchCount} batches`,
       );
     } catch (err) {
       console.error("[BackgroundCrawl] Background process error:", err);
@@ -1686,7 +1686,7 @@ export async function POST(req: NextRequest) {
       details:
         "Pages are being crawled in the background. They will appear in the dashboard as they are processed.",
     },
-    { status: 200 }
+    { status: 200 },
   );
 }
 
@@ -1697,7 +1697,7 @@ async function processBatch(req: NextRequest) {
   console.log(`[Sitemap] POST request received at ${new Date().toISOString()}`);
   console.log(
     `[Sitemap] Request headers:`,
-    Object.fromEntries(req.headers.entries())
+    Object.fromEntries(req.headers.entries()),
   );
 
   let adminId: string | null = null;
@@ -1742,7 +1742,7 @@ async function processBatch(req: NextRequest) {
       if (apiAuth) {
         adminId = apiAuth.adminId;
         console.log(
-          `[Sitemap] Auth successful for adminId (API key): ${adminId}`
+          `[Sitemap] Auth successful for adminId (API key): ${adminId}`,
         );
       } else {
         console.log(`[Sitemap] API key authentication failed`);
@@ -1820,19 +1820,28 @@ async function processBatch(req: NextRequest) {
         urls = Array.from(new Set(cleanedUrls));
       }
       console.log(
-        `[Crawl] Discovery SUCCESS - Found ${urls.length} URLs via ${discoveryType}`
+        `[Crawl] Discovery SUCCESS - Found ${urls.length} URLs via ${discoveryType}`,
       );
       console.log(`[Crawl] First 5 URLs: ${urls.slice(0, 5).join(", ")}`);
     } catch (error) {
       console.error(`[Crawl] Discovery FAILED for ${normalizedUrl}:`, error);
       return NextResponse.json(
         { error: `Failed to discover URLs from the provided link: ${error}` },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     console.log(`[Crawl] Connecting to database...`);
     const db = await getDb();
+
+    // Reset crawl state to ensure we don't hit a stale stop signal
+    const crawlStates = db.collection("crawl_states");
+    await crawlStates.updateOne(
+      { adminId },
+      { $set: { status: "running", updatedAt: new Date() } },
+      { upsert: true },
+    );
+
     const pages = db.collection("crawled_pages");
     const sitemapUrls = db.collection("sitemap_urls");
     const adminSettings = await getAdminSettingsCollection();
@@ -1841,7 +1850,7 @@ async function processBatch(req: NextRequest) {
     await adminSettings.updateOne(
       { adminId },
       { $set: { lastSitemapUrl: sitemapUrl } },
-      { upsert: true }
+      { upsert: true },
     );
 
     // Store all sitemap URLs for this admin with the specific sitemapUrl context
@@ -1853,7 +1862,7 @@ async function processBatch(req: NextRequest) {
       console.log(
         `[Crawl] Removed ${
           urls.length - uniqueUrls.length
-        } duplicate URLs before storage`
+        } duplicate URLs before storage`,
       );
     }
 
@@ -1895,7 +1904,7 @@ async function processBatch(req: NextRequest) {
     const problematicUrls: string[] = [];
 
     console.log(
-      `[Crawl] Checking ${crawledDocs.length} crawled URLs for missing vectors`
+      `[Crawl] Checking ${crawledDocs.length} crawled URLs for missing vectors`,
     );
     for (const doc of crawledDocs) {
       // Check if vectors exist in Pinecone by trying to fetch them
@@ -1911,24 +1920,24 @@ async function processBatch(req: NextRequest) {
         // Check if the vectors actually exist in Pinecone
         try {
           const vectorIdList = vectorIds.map(
-            (v) => (v as { vectorId: string }).vectorId
+            (v) => (v as { vectorId: string }).vectorId,
           );
           const result = await index.fetch(vectorIdList);
           const foundVectors = Object.keys(result.records || {}).length;
           console.log(
-            `[Crawl] URL ${doc.url} has ${vectorIds.length} MongoDB records, ${foundVectors} Pinecone vectors`
+            `[Crawl] URL ${doc.url} has ${vectorIds.length} MongoDB records, ${foundVectors} Pinecone vectors`,
           );
 
           if (foundVectors === 0) {
             console.log(
-              `[Crawl] URL ${doc.url} has MongoDB records but no Pinecone vectors - will re-crawl`
+              `[Crawl] URL ${doc.url} has MongoDB records but no Pinecone vectors - will re-crawl`,
             );
             problematicUrls.push(doc.url);
           }
         } catch (pineconeError) {
           console.log(
             `[Crawl] Error checking Pinecone for ${doc.url}:`,
-            pineconeError
+            pineconeError,
           );
           problematicUrls.push(doc.url);
         }
@@ -1944,7 +1953,7 @@ async function processBatch(req: NextRequest) {
               recrawlReason: "no_pinecone_vectors",
               recrawlAt: new Date(),
             },
-          }
+          },
         );
       }
     }
@@ -1960,7 +1969,7 @@ async function processBatch(req: NextRequest) {
     while (true) {
       if (Date.now() - startTime > MAX_EXECUTION_TIME) {
         console.log(
-          `[Timeout] Total execution time limit reached before next batch.`
+          `[Timeout] Total execution time limit reached before next batch.`,
         );
         timeoutReached = true;
         break;
@@ -1971,7 +1980,7 @@ async function processBatch(req: NextRequest) {
         .project({ url: 1, _id: 0 })
         .toArray();
       updatedCrawledUrls = new Set(
-        updatedCrawledDocs.map((doc: any) => doc.url)
+        updatedCrawledDocs.map((doc: any) => doc.url),
       );
 
       // We only care about what has been crawled FOR THIS SITEMAP SUBMISSION
@@ -2004,15 +2013,15 @@ async function processBatch(req: NextRequest) {
       }
 
       console.log(
-        `[Crawl] Found ${problematicUrls.length} problematic URLs to re-crawl`
+        `[Crawl] Found ${problematicUrls.length} problematic URLs to re-crawl`,
       );
       console.log(
-        `[Crawl] Will crawl ${uncrawledUrls.length} URLs in this batch`
+        `[Crawl] Will crawl ${uncrawledUrls.length} URLs in this batch`,
       );
       console.log(
         `[Crawl] URLs to crawl: ${uncrawledUrls.slice(0, 3).join(", ")}${
           uncrawledUrls.length > 3 ? "..." : ""
-        }`
+        }`,
       );
 
       for (const url of uncrawledUrls) {
@@ -2024,7 +2033,7 @@ async function processBatch(req: NextRequest) {
             .findOne({ adminId });
           if (state?.status === "stopped") {
             console.log(
-              `[ProcessBatch] Stop signal detected for admin ${adminId}. Aborting batch.`
+              `[ProcessBatch] Stop signal detected for admin ${adminId}. Aborting batch.`,
             );
             break;
           }
@@ -2036,10 +2045,10 @@ async function processBatch(req: NextRequest) {
 
         if (elapsedTime > MAX_EXECUTION_TIME) {
           console.log(
-            `[Timeout] Execution time limit reached (${elapsedTime}ms > ${MAX_EXECUTION_TIME}ms)`
+            `[Timeout] Execution time limit reached (${elapsedTime}ms > ${MAX_EXECUTION_TIME}ms)`,
           );
           console.log(
-            `[Timeout] Processed ${crawlCount}/${uncrawledUrls.length} URLs before timeout`
+            `[Timeout] Processed ${crawlCount}/${uncrawledUrls.length} URLs before timeout`,
           );
           timeoutReached = true;
           break;
@@ -2048,10 +2057,10 @@ async function processBatch(req: NextRequest) {
         // Also check if we're close to timeout and have processed some URLs
         if (elapsedTime > MAX_EXECUTION_TIME - 30000 && crawlCount > 0) {
           console.log(
-            `[Timeout] Approaching timeout limit with 30s buffer (${elapsedTime}ms)`
+            `[Timeout] Approaching timeout limit with 30s buffer (${elapsedTime}ms)`,
           );
           console.log(
-            `[Timeout] Stopping early after ${crawlCount}/${uncrawledUrls.length} URLs`
+            `[Timeout] Stopping early after ${crawlCount}/${uncrawledUrls.length} URLs`,
           );
           timeoutReached = true;
           break;
@@ -2060,7 +2069,7 @@ async function processBatch(req: NextRequest) {
         crawlCount++;
         try {
           console.log(
-            `[Crawl] [${crawlCount}/${uncrawledUrls.length}] Starting to crawl: ${url} (elapsed: ${elapsedTime}ms)`
+            `[Crawl] [${crawlCount}/${uncrawledUrls.length}] Starting to crawl: ${url} (elapsed: ${elapsedTime}ms)`,
           );
           const crawlStartTime = Date.now();
 
@@ -2072,7 +2081,7 @@ async function processBatch(req: NextRequest) {
               uncrawledUrls.length
             }] SUCCESS - Extracted ${text.length} chars in ${
               endTime - crawlStartTime
-            }ms from ${url}`
+            }ms from ${url}`,
           );
           console.log(`[Crawl] First 100 chars: ${text.slice(0, 100)}`);
 
@@ -2080,7 +2089,7 @@ async function processBatch(req: NextRequest) {
           if (text.length < 50) {
             console.log(
               `[Crawl] WARNING: Very short content for ${url}:`,
-              text
+              text,
             );
           }
 
@@ -2114,7 +2123,7 @@ async function processBatch(req: NextRequest) {
             // Only generate if we have sufficient content
             try {
               console.log(
-                `[Crawl] Generating structured summary for ${url}...`
+                `[Crawl] Generating structured summary for ${url}...`,
               );
               const structuredSummaryResponse =
                 await openai.chat.completions.create({
@@ -2160,19 +2169,19 @@ Extract and return a JSON object with:
                 try {
                   structuredSummary = JSON.parse(structuredText);
                   console.log(
-                    `[Crawl] Structured summary generated successfully for ${url}`
+                    `[Crawl] Structured summary generated successfully for ${url}`,
                   );
                 } catch (parseError) {
                   console.error(
                     `[Crawl] Failed to parse structured summary JSON for ${url}:`,
-                    parseError
+                    parseError,
                   );
                 }
               }
             } catch (summaryError) {
               console.error(
                 `[Crawl] Error generating structured summary for ${url}:`,
-                summaryError
+                summaryError,
               );
             }
           }
@@ -2197,14 +2206,14 @@ Extract and return a JSON object with:
           console.log(
             `[Crawl] Page data stored successfully${
               structuredSummary ? " with structured summary" : ""
-            }`
+            }`,
           );
 
           // Mark as crawled in sitemap_urls with specific sitemapUrl context
           console.log(`[Crawl] Marking URL as crawled in sitemap_urls...`);
           await sitemapUrls.updateOne(
             { adminId, url, sitemapUrl }, // Include sitemapUrl to ensure proper tracking
-            { $set: { crawled: true, crawledAt: new Date() } }
+            { $set: { crawled: true, crawledAt: new Date() } },
           );
           // Chunk and embed for Pinecone
           let chunks = chunkText(text);
@@ -2214,13 +2223,13 @@ Extract and return a JSON object with:
           if (chunks.length === 0) {
             console.log(
               `[Crawl] DEBUG: No chunks created for ${url}. Text length: ${text.length}. Sample text:`,
-              text.slice(0, 200)
+              text.slice(0, 200),
             );
 
             // If we have some text but no chunks, create a minimal chunk
             if (text.length > 10) {
               console.log(
-                `[Crawl] Creating minimal chunk for short content...`
+                `[Crawl] Creating minimal chunk for short content...`,
               );
               chunks = [text.trim()];
             }
@@ -2228,7 +2237,7 @@ Extract and return a JSON object with:
 
           if (chunks.length > 0) {
             console.log(
-              `[Crawl] Creating embeddings for ${chunks.length} chunks...`
+              `[Crawl] Creating embeddings for ${chunks.length} chunks...`,
             );
             try {
               const embedResp = await openai.embeddings.create({
@@ -2236,7 +2245,7 @@ Extract and return a JSON object with:
                 model: "text-embedding-3-small",
               });
               const embeddings = embedResp.data.map(
-                (d: { embedding: number[] }) => d.embedding
+                (d: { embedding: number[] }) => d.embedding,
               );
               const metadata = chunks.map((chunk, i) => ({
                 filename: url,
@@ -2245,17 +2254,17 @@ Extract and return a JSON object with:
                 chunkIndex: i,
               }));
               console.log(
-                `[Crawl] Upserting ${embeddings.length} embeddings to Pinecone...`
+                `[Crawl] Upserting ${embeddings.length} embeddings to Pinecone...`,
               );
               await addChunks(chunks, embeddings, metadata);
               totalChunks += chunks.length;
               console.log(
-                `[Crawl] SUCCESS - Processed ${url}: ${chunks.length} chunks, ${totalChunks} total chunks so far`
+                `[Crawl] SUCCESS - Processed ${url}: ${chunks.length} chunks, ${totalChunks} total chunks so far`,
               );
             } catch (embeddingError) {
               console.error(
                 `[Crawl] EMBEDDING ERROR for ${url}:`,
-                embeddingError
+                embeddingError,
               );
               if (embeddingError instanceof Error) {
                 console.error(`[Crawl] Stack trace:`, embeddingError.stack);
@@ -2265,7 +2274,7 @@ Extract and return a JSON object with:
             console.log(
               `[Crawl] WARNING - No chunks created for ${url}. Text length: ${
                 text.length
-              }, Content: ${text.slice(0, 200)}`
+              }, Content: ${text.slice(0, 200)}`,
             );
           }
         } catch (err) {
@@ -2284,7 +2293,7 @@ Extract and return a JSON object with:
                 failedAt: new Date(),
                 error: err instanceof Error ? err.message : String(err),
               },
-            }
+            },
           );
           failedUrls.push({
             url,
@@ -2320,7 +2329,7 @@ Extract and return a JSON object with:
     const hasMorePages = totalRemaining > 0;
 
     console.log(
-      `[Crawl] BATCH COMPLETE - Successfully crawled ${results.length} pages in ${totalElapsedTime}ms`
+      `[Crawl] BATCH COMPLETE - Successfully crawled ${results.length} pages in ${totalElapsedTime}ms`,
     );
     console.log(`[Crawl] Total chunks created: ${totalChunks}`);
     console.log(`[Crawl] Remaining pages in sitemap: ${totalRemaining}`);
@@ -2353,7 +2362,7 @@ Extract and return a JSON object with:
     // Auto-extract personas when crawling is complete
     if (!hasMorePages && results.length > 0) {
       console.log(
-        `[Persona] Triggering auto-extraction of customer personas...`
+        `[Persona] Triggering auto-extraction of customer personas...`,
       );
       try {
         await extractPersonasForAdmin(adminId, normalizedUrl);
@@ -2383,7 +2392,7 @@ Extract and return a JSON object with:
 
     console.log(
       "[Sitemap] Sending error response:",
-      JSON.stringify(errorResponse, null, 2)
+      JSON.stringify(errorResponse, null, 2),
     );
     return NextResponse.json(errorResponse, { status: 500 });
   }
@@ -2396,7 +2405,7 @@ export async function GET(req: NextRequest) {
     if (!apiKey) {
       return NextResponse.json(
         { error: "API key required for debug" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -2501,7 +2510,7 @@ export async function GET(req: NextRequest) {
   const page = parseInt(req.nextUrl.searchParams.get("page") || "1", 10);
   const pageSize = parseInt(
     req.nextUrl.searchParams.get("pageSize") || "10",
-    10
+    10,
   );
 
   const db = await getDb();
@@ -2557,7 +2566,7 @@ export async function DELETE(req: NextRequest) {
   if (!sitemapUrl && !url)
     return NextResponse.json(
       { error: "Missing sitemapUrl or url" },
-      { status: 400 }
+      { status: 400 },
     );
 
   const db = await getDb();
