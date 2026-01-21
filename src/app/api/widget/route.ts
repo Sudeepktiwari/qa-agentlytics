@@ -4847,6 +4847,16 @@ export async function GET(request: Request) {
     toggleButton.innerHTML = isOpen ? '×' : config.buttonText;
     toggleButton.style.animation = 'none'; // Remove pulse animation
     
+    // Hide toggle button on mobile when open (since header has close button)
+    if (!ONBOARDING_ONLY) {
+      const isMobile = (window.matchMedia && window.matchMedia('(max-width: 480px)').matches) || (window.innerWidth <= 480);
+      if (isMobile) {
+        toggleButton.style.display = isOpen ? 'none' : 'flex';
+      } else {
+        toggleButton.style.display = 'flex';
+      }
+    }
+    
     if (isOpen) {
       console.log('[Widget] Widget opened');
       
