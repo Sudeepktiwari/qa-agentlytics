@@ -4,6 +4,7 @@ import Script from "next/script";
 import "./globals.css";
 import GlobalHeader from "./components/GlobalHeader";
 import GlobalFooter from "./components/GlobalFooter";
+import WidgetScript from "./components/WidgetScript";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -47,15 +48,8 @@ export default function RootLayout({
         <GlobalHeader />
         {children}
         <GlobalFooter />
+        <WidgetScript />
       </body>
-      <script
-        src="https://agentlytics.advancelytics.com/api/widget"
-        data-api-key={process.env.NEXT_PUBLIC_BOT_KEY}
-        data-size="large"
-        data-voice-enabled="false"
-        data-voice-gender="female"
-        data-auto-open-proactive="true"
-      ></script>
     </html>
   );
 }
