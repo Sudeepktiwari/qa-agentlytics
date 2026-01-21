@@ -48,15 +48,15 @@ async function getSessionBookingStatus(sessionId: string, adminId?: string) {
         }).formatToParts(d);
         const year = parseInt(
           parts.find((p) => p.type === "year")?.value || "0",
-          10
+          10,
         );
         const month = parseInt(
           parts.find((p) => p.type === "month")?.value || "0",
-          10
+          10,
         );
         const day = parseInt(
           parts.find((p) => p.type === "day")?.value || "0",
-          10
+          10,
         );
         return year * 10000 + month * 100 + day;
       };
@@ -76,11 +76,11 @@ async function getSessionBookingStatus(sessionId: string, adminId?: string) {
         }).formatToParts(d);
         const hour = parseInt(
           parts.find((p) => p.type === "hour")?.value || "0",
-          10
+          10,
         );
         const minute = parseInt(
           parts.find((p) => p.type === "minute")?.value || "0",
-          10
+          10,
         );
         return hour * 60 + minute;
       };
@@ -109,7 +109,7 @@ async function getSessionBookingStatus(sessionId: string, adminId?: string) {
         let fallbackEmail: string | null = null;
         const lastEmailMsg = await chats.findOne(
           { sessionId, email: { $exists: true } },
-          { sort: { createdAt: -1 } }
+          { sort: { createdAt: -1 } },
         );
         if (lastEmailMsg?.email) fallbackEmail = lastEmailMsg.email;
 
@@ -146,16 +146,16 @@ async function getSessionBookingStatus(sessionId: string, adminId?: string) {
             const currentBooking = emailBookings[0];
             const hasValidShape = Boolean(
               currentBooking &&
-                currentBooking.preferredDate &&
-                !isNaN(new Date(currentBooking.preferredDate).getTime()) &&
-                typeof currentBooking.preferredTime === "string" &&
-                currentBooking.preferredTime.length >= 4 &&
-                typeof currentBooking.requestType === "string" &&
-                currentBooking.requestType.length > 0 &&
-                typeof currentBooking.email === "string" &&
-                currentBooking.email.length > 3 &&
-                typeof currentBooking.confirmationNumber === "string" &&
-                currentBooking.confirmationNumber.length > 0
+              currentBooking.preferredDate &&
+              !isNaN(new Date(currentBooking.preferredDate).getTime()) &&
+              typeof currentBooking.preferredTime === "string" &&
+              currentBooking.preferredTime.length >= 4 &&
+              typeof currentBooking.requestType === "string" &&
+              currentBooking.requestType.length > 0 &&
+              typeof currentBooking.email === "string" &&
+              currentBooking.email.length > 3 &&
+              typeof currentBooking.confirmationNumber === "string" &&
+              currentBooking.confirmationNumber.length > 0,
             );
 
             if (hasValidShape) {
@@ -180,7 +180,7 @@ async function getSessionBookingStatus(sessionId: string, adminId?: string) {
       } catch (fallbackErr) {
         console.log(
           "[Booking Status] Email fallback lookup failed:",
-          fallbackErr
+          fallbackErr,
         );
       }
 
@@ -197,16 +197,16 @@ async function getSessionBookingStatus(sessionId: string, adminId?: string) {
     // Validate booking shape; if invalid, treat as no active booking
     const hasValidShape = Boolean(
       currentBooking &&
-        currentBooking.preferredDate &&
-        !isNaN(new Date(currentBooking.preferredDate).getTime()) &&
-        typeof currentBooking.preferredTime === "string" &&
-        currentBooking.preferredTime.length >= 4 &&
-        typeof currentBooking.requestType === "string" &&
-        currentBooking.requestType.length > 0 &&
-        typeof currentBooking.email === "string" &&
-        currentBooking.email.length > 3 &&
-        typeof currentBooking.confirmationNumber === "string" &&
-        currentBooking.confirmationNumber.length > 0
+      currentBooking.preferredDate &&
+      !isNaN(new Date(currentBooking.preferredDate).getTime()) &&
+      typeof currentBooking.preferredTime === "string" &&
+      currentBooking.preferredTime.length >= 4 &&
+      typeof currentBooking.requestType === "string" &&
+      currentBooking.requestType.length > 0 &&
+      typeof currentBooking.email === "string" &&
+      currentBooking.email.length > 3 &&
+      typeof currentBooking.confirmationNumber === "string" &&
+      currentBooking.confirmationNumber.length > 0,
     );
     if (!hasValidShape) {
       return {
@@ -293,7 +293,7 @@ function filterButtonsBasedOnBooking(buttons: string[], bookingStatus: any) {
 function filterRedundantButtons(
   buttons: string[],
   userQuestion: string,
-  mainText: string
+  mainText: string,
 ) {
   const norm = (s: string) =>
     (s || "")
@@ -303,7 +303,7 @@ function filterRedundantButtons(
   const uq = norm(userQuestion);
   const mt = norm(mainText);
   const tokens = new Set(
-    [...uq.split(" "), ...mt.split(" ")].filter((t) => t.length > 2)
+    [...uq.split(" "), ...mt.split(" ")].filter((t) => t.length > 2),
   );
   const unique: string[] = [];
   const seen = new Set<string>();
@@ -398,16 +398,16 @@ function collectClickedOptionHistory(previousChats: any[]) {
 function filterButtonsBasedOnHistory(
   buttons: string[],
   previousChats: any[],
-  topicsDiscussed: string[] = []
+  topicsDiscussed: string[] = [],
 ) {
   if (!Array.isArray(buttons) || buttons.length === 0) return buttons || [];
   const { labels, categories } = collectClickedOptionHistory(
-    previousChats || []
+    previousChats || [],
   );
 
   // Normalize topics for fuzzy matching
   const normalizedTopics = (topicsDiscussed || []).map((t) =>
-    String(t || "").toLowerCase()
+    String(t || "").toLowerCase(),
   );
 
   // Map discussed topics to their canonical categories/synonyms
@@ -561,7 +561,7 @@ function limitWords(text: string, maxWords: number): string {
 
 function limitWordsPreservingFormatting(
   text: string,
-  maxWords: number
+  maxWords: number,
 ): string {
   const words = text.match(/\S+/g) || [];
   if (words.length <= maxWords) return text;
@@ -588,7 +588,7 @@ function limitWordsPreservingFormatting(
 function generateBookingAwareResponse(
   originalResponse: any,
   bookingStatus: any,
-  userQuestion: string
+  userQuestion: string,
 ) {
   if (!bookingStatus.hasActiveBooking || !bookingStatus.currentBooking) {
     return originalResponse; // No modification needed
@@ -601,7 +601,7 @@ function generateBookingAwareResponse(
   // Check if user is asking for another booking
   const isBookingRequest =
     /\b(book|schedule|demo|call|meeting|appointment|consultation|talk to sales)\b/i.test(
-      userQuestion
+      userQuestion,
     );
 
   if (isBookingRequest) {
@@ -649,7 +649,7 @@ function generateBookingAwareResponse(
     bookingType: undefined,
     buttons: filterButtonsBasedOnBooking(
       originalResponse.buttons || [],
-      bookingStatus
+      bookingStatus,
     ),
   };
 }
@@ -661,7 +661,7 @@ async function updateChatWithBookingReference(
   sessionId: string,
   bookingId: string,
   hasActiveBooking: boolean,
-  adminId?: string
+  adminId?: string,
 ) {
   try {
     const db = await getDb();
@@ -676,16 +676,16 @@ async function updateChatWithBookingReference(
           hasActiveBooking: hasActiveBooking,
           bookingLastChecked: new Date(),
         },
-      }
+      },
     );
 
     console.log(
-      `[Booking] Updated chat messages for session ${sessionId} with booking ${bookingId}`
+      `[Booking] Updated chat messages for session ${sessionId} with booking ${bookingId}`,
     );
   } catch (error) {
     console.error(
       "[Booking] Error updating chat with booking reference:",
-      error
+      error,
     );
   }
 }
@@ -697,11 +697,11 @@ function generateBookingManagementResponse(action: string, booking: any) {
   // Validate booking before generating response
   const valid = Boolean(
     booking.preferredDate &&
-      !isNaN(new Date(booking.preferredDate).getTime()) &&
-      typeof booking.preferredTime === "string" &&
-      booking.preferredTime.length >= 4 &&
-      typeof booking.requestType === "string" &&
-      booking.requestType.length > 0
+    !isNaN(new Date(booking.preferredDate).getTime()) &&
+    typeof booking.preferredTime === "string" &&
+    booking.preferredTime.length >= 4 &&
+    typeof booking.requestType === "string" &&
+    booking.requestType.length > 0,
   );
   if (!valid) return null;
   const bookingDate = new Date(booking.preferredDate).toLocaleDateString();
@@ -778,7 +778,7 @@ function generateBookingManagementResponse(action: string, booking: any) {
 
 async function generateSalesEntryResponse(
   messages: any[],
-  profile: any
+  profile: any,
 ): Promise<{ mainText: string; buttons: string[] }> {
   const relevantContext = {
     profile: profile || {},
@@ -877,7 +877,7 @@ async function analyzeForProbing(input: {
             : ["budget", "authority", "need", "timeline"],
         },
         null,
-        2
+        2,
       ),
     },
   ];
@@ -916,19 +916,19 @@ async function analyzeForProbing(input: {
     }`.toLowerCase();
     const hasPricing =
       /(pricing|price|cost|plan|plans|quote|estimate|discount|billing|budget|\$|usd)/i.test(
-        combined
+        combined,
       );
     const hasBooking =
       /(book|schedule|demo|call|meeting|appointment|timeline|when|time)/i.test(
-        combined
+        combined,
       );
     const hasAuthority =
       /(manager|director|vp|cfo|ceo|owner|founder|decision|approve|buy|authority)/i.test(
-        combined
+        combined,
       );
     const hasFeatures =
       /(feature|features|capabilities|options|need|priority|use\s*case|help)/i.test(
-        combined
+        combined,
       );
     const dims = (
       Array.isArray(input.missingDims)
@@ -969,12 +969,12 @@ async function analyzeForProbing(input: {
         chosen === "budget"
           ? "What budget range are you considering?"
           : chosen === "timeline"
-          ? "What timeline are you targeting?"
-          : chosen === "authority"
-          ? "Who will make the decision?"
-          : chosen === "segment"
-          ? "What type of business are you?"
-          : "Which feature matters most right now?";
+            ? "What timeline are you targeting?"
+            : chosen === "authority"
+              ? "Who will make the decision?"
+              : chosen === "segment"
+                ? "What type of business are you?"
+                : "Which feature matters most right now?";
       const mtHeu = q.endsWith("?") ? q : q + "?";
       const btnHeu = (() => {
         if (chosen === "budget")
@@ -1005,7 +1005,7 @@ async function analyzeForProbing(input: {
   const normButtons = (
     q: string,
     b: any[],
-    mode: "sales" | "lead_generation"
+    mode: "sales" | "lead_generation",
   ) => {
     let out = Array.isArray(b)
       ? b
@@ -1027,7 +1027,7 @@ async function analyzeForProbing(input: {
         out = ["I’m the decision maker", "Add decision maker", "Unsure"];
       } else if (
         /type\s*of\s*business|business\s*type|individual|smb|enterprise/.test(
-          lower
+          lower,
         )
       ) {
         out = ["Individual", "SMB", "Enterprise"];
@@ -1046,7 +1046,7 @@ async function analyzeForProbing(input: {
   const mt = normQ(typeof parsed.mainText === "string" ? parsed.mainText : "");
   const btns = normButtons(mt, parsed.buttons, input.botMode);
   const needSegmentFirst = /budget|price|cost|pricing|plan/.test(
-    mt.toLowerCase()
+    mt.toLowerCase(),
   );
   const dimsArr = Array.isArray(input.missingDims)
     ? (input.missingDims as (
@@ -1073,7 +1073,11 @@ async function analyzeForProbing(input: {
       dimension: "segment",
     };
   }
-  const ep = typeof parsed.emailPrompt === "string" ? parsed.emailPrompt : "";
+  const ep = input.userEmail
+    ? ""
+    : typeof parsed.emailPrompt === "string"
+      ? parsed.emailPrompt
+      : "";
   return {
     shouldSendFollowUp: true,
     mainText: mt,
@@ -1112,18 +1116,18 @@ function buildFallbackFollowup(input: {
     : false;
   const hasPricing =
     /(pricing|price|cost|plan|plans|quote|estimate|discount|billing)/i.test(
-      text
+      text,
     );
   const hasBooking =
     /(book|schedule|demo|call|meeting|appointment|consultation)/i.test(text);
   const hasAuthority = /(manager|director|vp|cfo|decision|approve|buy)/i.test(
-    text
+    text,
   );
   const hasFeatures = /(feature|features|capabilities|options)/i.test(text);
   const isIndividual = /(individual|solo|freelancer|personal)\b/.test(text);
   const isSMB = /(smb|small\s*business|startup|team|mid\s*market)\b/.test(text);
   const isEnterprise = /(enterprise|corporate|large\s*company|global)\b/.test(
-    text
+    text,
   );
   if (
     hasPricing &&
@@ -1148,12 +1152,14 @@ function buildFallbackFollowup(input: {
       const budgetButtons = isIndividual
         ? ["Under $20/mo", "$20–$50/mo", "$50+"]
         : isSMB
-        ? ["Under $500/mo", "$500–$1.5k/mo", "$1.5k+"]
-        : ["Under $10k/yr", "$10k–$50k/yr", "$50k+/yr"];
+          ? ["Under $500/mo", "$500–$1.5k/mo", "$1.5k+"]
+          : ["Under $10k/yr", "$10k–$50k/yr", "$50k+/yr"];
       return {
         mainText: "What budget range are you considering?",
         buttons: budgetButtons,
-        emailPrompt: "Share your work email to receive a tailored quote",
+        emailPrompt: input.userEmail
+          ? ""
+          : "Share your work email to receive a tailored quote",
         dimension: "budget",
       };
     }
@@ -1164,7 +1170,9 @@ function buildFallbackFollowup(input: {
     return {
       mainText: "When would you like to schedule a demo?",
       buttons: ["This week", "Next week", "Later"],
-      emailPrompt: "Add your email to receive the calendar invite",
+      emailPrompt: input.userEmail
+        ? ""
+        : "Add your email to receive the calendar invite",
     };
   }
   if (
@@ -1176,7 +1184,9 @@ function buildFallbackFollowup(input: {
     return {
       mainText: "Who will make the decision?",
       buttons: ["I’m the decision maker", "Add decision maker", "Unsure"],
-      emailPrompt: "Add an email to coordinate next steps",
+      emailPrompt: input.userEmail
+        ? ""
+        : "Add an email to coordinate next steps",
     };
   }
   if (
@@ -1186,20 +1196,26 @@ function buildFallbackFollowup(input: {
     return {
       mainText: "Which feature matters most for you right now?",
       buttons: ["Workflows", "Embeds", "Analytics"],
-      emailPrompt: "Share an email to send a brief feature comparison",
+      emailPrompt: input.userEmail
+        ? ""
+        : "Share an email to send a brief feature comparison",
     };
   }
   if (input.botMode === "sales" && dims.includes("timeline")) {
     return {
       mainText: "What timeline are you targeting?",
       buttons: ["This month", "This quarter", "Later"],
-      emailPrompt: "Share your email to receive a brief plan",
+      emailPrompt: input.userEmail
+        ? ""
+        : "Share your email to receive a brief plan",
     };
   }
   return {
     mainText: "What are you exploring?",
     buttons: ["Pricing", "Integrations", "Scheduling"],
-    emailPrompt: "Add your email to receive a tailored walkthrough",
+    emailPrompt: input.userEmail
+      ? ""
+      : "Add your email to receive a tailored walkthrough",
   };
 }
 
@@ -1219,19 +1235,19 @@ function buildHeuristicBantFollowup(input: {
   ) as ("budget" | "authority" | "need" | "timeline" | "segment")[];
   const hasPricing =
     /(pricing|price|cost|plan|plans|quote|estimate|discount|billing|budget|\$|usd)/i.test(
-      text
+      text,
     );
   const hasBooking =
     /(book|schedule|demo|call|meeting|appointment|timeline|when|time)/i.test(
-      text
+      text,
     );
   const hasAuthority =
     /(manager|director|vp|cfo|ceo|owner|founder|decision|approve|buy|authority)/i.test(
-      text
+      text,
     );
   const hasFeatures =
     /(feature|features|capabilities|options|need|priority|use\s*case|help)/i.test(
-      text
+      text,
     );
   let chosen: "budget" | "authority" | "need" | "timeline" | "segment" | null =
     null;
@@ -1248,8 +1264,8 @@ function buildHeuristicBantFollowup(input: {
       chosen = dims.includes("budget")
         ? "budget"
         : input.botMode === "sales"
-        ? "timeline"
-        : "need";
+          ? "timeline"
+          : "need";
     }
     if (!dims.includes(chosen)) {
       chosen =
@@ -1262,12 +1278,12 @@ function buildHeuristicBantFollowup(input: {
     chosen === "budget"
       ? "What budget range are you considering?"
       : chosen === "timeline"
-      ? "What timeline are you targeting?"
-      : chosen === "authority"
-      ? "Who will make the decision?"
-      : chosen === "segment"
-      ? "What type of business are you?"
-      : "Which feature matters most right now?";
+        ? "What timeline are you targeting?"
+        : chosen === "authority"
+          ? "Who will make the decision?"
+          : chosen === "segment"
+            ? "What type of business are you?"
+            : "Which feature matters most right now?";
   const mt = q.endsWith("?") ? q : q + "?";
   const btns = (() => {
     if (chosen === "budget")
@@ -1305,7 +1321,7 @@ function mapChatDocsToBantMessages(docs: any[]): any[] {
 
 function inferDomainFromContext(
   pageUrl?: string,
-  intent?: string
+  intent?: string,
 ): {
   domain: string;
   confidence: number;
@@ -1365,7 +1381,7 @@ function computeSuggestedActions(input: {
 
 function computeBantMissingDims(
   messages: any[],
-  profile: any = null
+  profile: any = null,
 ): ("budget" | "authority" | "need" | "timeline" | "segment")[] {
   const allDims: ("budget" | "authority" | "need" | "timeline" | "segment")[] =
     ["budget", "authority", "need", "timeline", "segment"];
@@ -1435,28 +1451,28 @@ function computeBantMissingDims(
       const s = content.toLowerCase();
       if (
         /\$|budget|price|cost|pricing|per\s*month|monthly|\/mo\b|per\s*year|yearly|annually|\/yr\b|\b\d+\s*(usd|dollars|\$|k|grand)\b|less\s*than|under|below|more\s*than|above|over|free|range/.test(
-          s
+          s,
         )
       ) {
         answered.add("budget");
       }
       if (
         /\b(this\s*week|next\s*week|later|today|tomorrow|this\s*month|next\s*month|this\s*year|next\s*year|quarter|q[1-4]|in\s+\d+\s*(days?|weeks?|months?|years?|mos?|yrs?)|\d{4}-\d{2}-\d{2})\b/.test(
-          s
+          s,
         )
       ) {
         answered.add("timeline");
       }
       if (
         /i\s*(am|'m)\s*the\s*decision\s*maker|\b(it'?s\s*me|myself)\b|i\s*(decide|approve|buy)\b|my\s*manager|team\s*lead|we\s*decide|manager\s*approval|need\s*approval|procurement|legal|finance|cfo|ceo|owner|founder|director|vp/.test(
-          s
+          s,
         )
       ) {
         answered.add("authority");
       }
       if (
         /workflows|embeds|analytics|integration|feature|features|need|priority|use\s*case|help\b|automation|reminders|calendar|api|webhooks|availability|templates|reporting|compliance|security|scheduling|project\s*management|collaboration|data\s*analytics/.test(
-          s
+          s,
         )
       ) {
         answered.add("need");
@@ -1469,7 +1485,7 @@ function computeBantMissingDims(
       }
       if (
         /(smb|small\s*business|startup|mid\s*market|medium\s*business)\b/.test(
-          s
+          s,
         ) ||
         /\bteam\s*(of|size|plan)\b/.test(s)
       ) {
@@ -1488,7 +1504,7 @@ function computeBantMissingDims(
           pendingAskedButtons.includes(
             String(content || "")
               .trim()
-              .toLowerCase()
+              .toLowerCase(),
           );
         if (matchesAnswer || clickedButton) {
           answered.add(pendingAsked);
@@ -1502,32 +1518,32 @@ function computeBantMissingDims(
 }
 
 function detectBantDimensionFromText(
-  t: string
+  t: string,
 ): "budget" | "authority" | "need" | "timeline" | "segment" | null {
   const s = String(t || "").toLowerCase();
   if (/budget|price|cost|pricing|\$|usd|spend|investment/.test(s))
     return "budget";
   if (
     /when|time|timeline|schedule|demo|call|meeting|appointment|week|month|quarter|today|tomorrow/.test(
-      s
+      s,
     )
   )
     return "timeline";
   if (
     /decision|authority|approve|buy|cfo|vp|director|manager|who\s*will\s*make/.test(
-      s
+      s,
     )
   )
     return "authority";
   if (
     /feature|need|priority|matter|help|workflows|embeds|analytics|integration/.test(
-      s
+      s,
     )
   )
     return "need";
   if (
     /type\s*of\s*business|business\s*type|individual|smb|enterprise|medium\s*business|small\s*business|non[\s-]*profit/.test(
-      s
+      s,
     )
   )
     return "segment";
@@ -1536,29 +1552,29 @@ function detectBantDimensionFromText(
 
 function isAnswerToAskedDim(
   t: string,
-  dim: "budget" | "authority" | "need" | "timeline" | "segment" | null
+  dim: "budget" | "authority" | "need" | "timeline" | "segment" | null,
 ): boolean {
   if (!dim) return false;
   const s = String(t || "").toLowerCase();
   if (dim === "budget")
     return /\$|budget|price|cost|pricing|per\s*month|monthly|\/mo\b|per\s*year|yearly|annually|\/yr\b|\b\d+\s*(usd|dollars|\$|k|grand)\b|free|under|less\s*than|below|above|over|more\s*than|range|plan|tier/.test(
-      s
+      s,
     );
   if (dim === "timeline")
     return /\b(this\s*week|next\s*week|later|today|tomorrow|this\s*month|next\s*month|this\s*year|next\s*year|quarter|q[1-4]|in\s+\d+\s*(days?|weeks?|months?|years?|mos?|yrs?)|\d{4}-\d{2}-\d{2}|soon|now)\b/.test(
-      s
+      s,
     );
   if (dim === "authority")
     return /i\s*(am|'m)\s*the\s*decision\s*maker|\b(it'?s\s*me|myself)\b|manager|director|vp|cfo|ceo|owner|founder|team\s*lead|approve|authority|procurement|legal|finance|unsure|not\s*sure/.test(
-      s
+      s,
     );
   if (dim === "need")
     return /workflows|embeds|analytics|integration|feature|features|need|priority|use\s*case|help|explore|learn|customize|project\s*management|collaboration|data\s*analytics|automation|reminders|calendar|api|webhooks|routing|availability|templates|reporting|compliance|security|scheduling/.test(
-      s
+      s,
     );
   if (dim === "segment")
     return /(individual|solo|freelancer|personal|smb|sme|small\s*business|startup|mid\s*market|enterprise|corporate|large\s*company|global|medium\s*business|non[\s-]*profit)/.test(
-      s
+      s,
     );
   return false;
 }
@@ -1569,7 +1585,7 @@ async function updateProfileOnBantComplete(
   adminId?: string | null,
   apiKey?: string | null,
   pageUrl?: string,
-  currentQuestion?: string
+  currentQuestion?: string,
 ): Promise<void> {
   try {
     const db = await getDb();
@@ -1616,11 +1632,11 @@ async function updateProfileOnBantComplete(
       const profileResult = (await profileResponse.json()) as any;
       if (profileResult.updated) {
         console.log(
-          `[CustomerProfiling] Profile updated via ${profileResult.trigger} - Confidence: ${profileResult.confidence}`
+          `[CustomerProfiling] Profile updated via ${profileResult.trigger} - Confidence: ${profileResult.confidence}`,
         );
         if (profileResult.profile?.intelligenceProfile?.buyingReadiness) {
           console.log(
-            `[CustomerProfiling] Buying readiness: ${profileResult.profile.intelligenceProfile.buyingReadiness}`
+            `[CustomerProfiling] Buying readiness: ${profileResult.profile.intelligenceProfile.buyingReadiness}`,
           );
         }
       }
@@ -1635,7 +1651,7 @@ async function updateProfileOnContactRequest(
   sessionId: string,
   apiKey?: string | null,
   pageUrl?: string,
-  currentMessage?: string
+  currentMessage?: string,
 ): Promise<void> {
   try {
     const db = await getDb();
@@ -1682,11 +1698,11 @@ async function updateProfileOnContactRequest(
       const profileResult = (await profileResponse.json()) as any;
       if (profileResult.updated) {
         console.log(
-          `[CustomerProfiling] Profile updated via ${profileResult.trigger} - Confidence: ${profileResult.confidence}`
+          `[CustomerProfiling] Profile updated via ${profileResult.trigger} - Confidence: ${profileResult.confidence}`,
         );
         if (profileResult.profile?.intelligenceProfile?.buyingReadiness) {
           console.log(
-            `[CustomerProfiling] Buying readiness: ${profileResult.profile.intelligenceProfile.buyingReadiness}`
+            `[CustomerProfiling] Buying readiness: ${profileResult.profile.intelligenceProfile.buyingReadiness}`,
           );
         }
       }
@@ -1707,7 +1723,7 @@ function detectOnboardingIntent(text?: string): boolean {
 async function inferFieldsFromDocs(
   adminId?: string,
   docsUrl?: string,
-  queryPhrase?: string
+  queryPhrase?: string,
 ): Promise<any[]> {
   try {
     let chunks: string[] = [];
@@ -1811,7 +1827,7 @@ function labelFromKey(key: string): string {
 }
 
 function typeFromKey(
-  key: string
+  key: string,
 ): "text" | "email" | "phone" | "select" | "checkbox" {
   const kl = key.toLowerCase();
   if (kl.includes("email")) return "email";
@@ -1906,7 +1922,7 @@ function buildSafeSummary(data: Record<string, any>): string {
 async function buildOnboardingDocContext(
   field: any,
   adminId?: string,
-  docsUrl?: string
+  docsUrl?: string,
 ): Promise<string> {
   try {
     const label = (field.label || field.key || "information").toLowerCase();
@@ -1984,7 +2000,7 @@ async function buildOnboardingDocContext(
 
 function validateAnswer(
   field: any,
-  answer: string
+  answer: string,
 ): { valid: boolean; message?: string; normalized?: string } {
   const val = answer?.trim();
   if (!val)
@@ -2048,7 +2064,7 @@ function validateAnswer(
 
 function extractApiKeyFromResponse(
   resp: any,
-  onboarding?: OnboardingSettings
+  onboarding?: OnboardingSettings,
 ): string | undefined {
   try {
     const candidates = new Set<string>([
@@ -2069,12 +2085,14 @@ function extractApiKeyFromResponse(
     addKeys((onboarding as any)?.registrationResponseFields);
     addKeys(
       ((onboarding as any)?.registrationResponseFieldDefs || []).map(
-        (f: any) => f?.key
-      )
+        (f: any) => f?.key,
+      ),
     );
     addKeys((onboarding as any)?.authResponseFields);
     addKeys(
-      ((onboarding as any)?.authResponseFieldDefs || []).map((f: any) => f?.key)
+      ((onboarding as any)?.authResponseFieldDefs || []).map(
+        (f: any) => f?.key,
+      ),
     );
     const isTokenLike = (v: any) => typeof v === "string" && v.length >= 8;
     const matchKey = (k: string) => {
@@ -2103,7 +2121,7 @@ function extractApiKeyFromResponse(
 
 function isApiKeyFieldKey(
   key: string,
-  onboarding?: OnboardingSettings
+  onboarding?: OnboardingSettings,
 ): boolean {
   const k = String(key || "").toLowerCase();
   const candidates = new Set<string>([
@@ -2124,18 +2142,18 @@ function isApiKeyFieldKey(
   addKeys((onboarding as any)?.initialResponseFields);
   addKeys(
     ((onboarding as any)?.initialResponseFieldDefs || []).map(
-      (f: any) => f?.key
-    )
+      (f: any) => f?.key,
+    ),
   );
   addKeys((onboarding as any)?.registrationResponseFields);
   addKeys(
     ((onboarding as any)?.registrationResponseFieldDefs || []).map(
-      (f: any) => f?.key
-    )
+      (f: any) => f?.key,
+    ),
   );
   addKeys((onboarding as any)?.authResponseFields);
   addKeys(
-    ((onboarding as any)?.authResponseFieldDefs || []).map((f: any) => f?.key)
+    ((onboarding as any)?.authResponseFieldDefs || []).map((f: any) => f?.key),
   );
   for (const c of candidates) {
     const cl = String(c).toLowerCase();
@@ -2148,7 +2166,7 @@ function isApiKeyFieldKey(
 async function detectBookingConflicts(
   sessionId: string,
   newBookingRequest: any,
-  adminId?: string
+  adminId?: string,
 ) {
   try {
     const db = await getDb();
@@ -2211,7 +2229,7 @@ export async function OPTIONS() {
 // Helper to extract text from URL with redirect handling (same as sitemap route)
 async function extractTextFromUrl(
   url: string,
-  depth: number = 0
+  depth: number = 0,
 ): Promise<string> {
   // Prevent infinite redirect loops
   if (depth > 5) {
@@ -2231,7 +2249,7 @@ async function extractTextFromUrl(
     if (match) {
       let redirectUrl = match[1].trim();
       console.log(
-        `[OnDemandCrawl] Following meta redirect from ${url} to ${redirectUrl}`
+        `[OnDemandCrawl] Following meta redirect from ${url} to ${redirectUrl}`,
       );
 
       // Handle relative URLs by converting to absolute
@@ -2240,12 +2258,12 @@ async function extractTextFromUrl(
           const baseUrl = new URL(url);
           redirectUrl = new URL(redirectUrl, baseUrl.origin).href;
           console.log(
-            `[OnDemandCrawl] Converted relative URL to absolute: ${redirectUrl}`
+            `[OnDemandCrawl] Converted relative URL to absolute: ${redirectUrl}`,
           );
         } catch (urlError) {
           console.log(
             `[OnDemandCrawl] Failed to convert relative URL: ${redirectUrl}`,
-            urlError
+            urlError,
           );
           // If URL conversion fails, proceed with original content
         }
@@ -2266,7 +2284,7 @@ async function extractTextFromUrl(
     console.log(
       `[OnDemandCrawl] Warning: Very short content for ${url} (${
         text.length
-      } chars): ${text.substring(0, 100)}`
+      } chars): ${text.substring(0, 100)}`,
     );
   }
 
@@ -2334,7 +2352,7 @@ function parseAIResponse(content: string): {
       };
     } catch (fixError) {
       console.log(
-        "[DEBUG] Fixed JSON parsing also failed, continuing to method 2"
+        "[DEBUG] Fixed JSON parsing also failed, continuing to method 2",
       );
     }
 
@@ -2343,7 +2361,7 @@ function parseAIResponse(content: string): {
 
     // Extract mainText from first JSON object (handle escaped quotes and newlines)
     const mainTextMatch = content.match(
-      /\{\s*"mainText":\s*"([^"]*(?:\\.[^"]*)*)"/
+      /\{\s*"mainText":\s*"([^"]*(?:\\.[^"]*)*)"/,
     );
     if (mainTextMatch) {
       result.mainText = mainTextMatch[1]
@@ -2369,7 +2387,7 @@ function parseAIResponse(content: string): {
 
     // Extract emailPrompt
     const emailMatch = content.match(
-      /\{\s*"emailPrompt":\s*"([^"]*(?:\\.[^"]*)*)"/
+      /\{\s*"emailPrompt":\s*"([^"]*(?:\\.[^"]*)*)"/,
     );
     if (emailMatch) {
       result.emailPrompt = emailMatch[1]
@@ -2380,7 +2398,7 @@ function parseAIResponse(content: string): {
 
     // Extract followupQuestion
     const followupMatch = content.match(
-      /\{\s*"followupQuestion":\s*"([^"]*(?:\\.[^"]*)*)"/
+      /\{\s*"followupQuestion":\s*"([^"]*(?:\\.[^"]*)*)"/,
     );
     if (followupMatch) {
       result.followupQuestion = followupMatch[1]
@@ -2489,7 +2507,7 @@ function parseAIResponse(content: string): {
   } catch (error) {
     console.warn(
       "⚠️ AI response parsing failed completely, using ultimate fallback:",
-      error
+      error,
     );
 
     // Clean up the content as much as possible
@@ -2518,7 +2536,7 @@ function detectVertical(pageUrl: string, pageContent: string = ""): string {
   console.log(`[VERTICAL DEBUG] Analyzing pageUrl: ${pageUrl}`);
   console.log(`[VERTICAL DEBUG] Content length: ${pageContent.length} chars`);
   console.log(
-    `[VERTICAL DEBUG] Content preview: ${content.substring(0, 200)}...`
+    `[VERTICAL DEBUG] Content preview: ${content.substring(0, 200)}...`,
   );
 
   // URL-based detection
@@ -2603,10 +2621,10 @@ function detectVertical(pageUrl: string, pageContent: string = ""): string {
   ) {
     console.log(
       `[VERTICAL DEBUG] Detected 'legal' from content keywords: legal=${content.includes(
-        "legal"
+        "legal",
       )}, litigation=${content.includes(
-        "litigation"
-      )}, attorney=${content.includes("attorney")}`
+        "litigation",
+      )}, attorney=${content.includes("attorney")}`,
     );
     return "legal";
   }
@@ -2642,7 +2660,7 @@ function detectVertical(pageUrl: string, pageContent: string = ""): string {
 // Helper to generate vertical-specific messaging
 function getVerticalMessage(
   vertical: string,
-  productName: string = "our platform"
+  productName: string = "our platform",
 ): {
   message: string;
   buttons: string[];
@@ -2687,7 +2705,7 @@ function getVerticalMessage(
 // Helper to generate conversion-oriented buttons based on vertical and visitor status
 function getConversionButtons(
   vertical: string,
-  isReturningVisitor: boolean = false
+  isReturningVisitor: boolean = false,
 ): string[] {
   const conversionButtons: Record<
     string,
@@ -2734,7 +2752,7 @@ async function trackSDREvent(
   email?: string,
   vertical?: string,
   pageUrl?: string,
-  adminId?: string
+  adminId?: string,
 ) {
   try {
     const db = await getDb();
@@ -2751,7 +2769,7 @@ async function trackSDREvent(
     });
 
     console.log(
-      `[SDR Analytics] Tracked event: ${eventType} for session ${sessionId}`
+      `[SDR Analytics] Tracked event: ${eventType} for session ${sessionId}`,
     );
   } catch (error) {
     console.error("[SDR Analytics] Failed to track event:", error);
@@ -2764,7 +2782,7 @@ async function detectUserPersona(
   sessionId: string,
   messages: any[],
   pageUrl: string,
-  adminId: string
+  adminId: string,
 ): Promise<any | null> {
   try {
     const db = await getDb();
@@ -2786,42 +2804,42 @@ async function detectUserPersona(
       mentionsTeam: /team|staff|employees|colleagues/i.test(conversationText),
       mentionsEnterprise:
         /enterprise|corporation|department|organization/i.test(
-          conversationText
+          conversationText,
         ),
       mentionsSmallBiz: /small business|startup|freelance|solo/i.test(
-        conversationText
+        conversationText,
       ),
 
       // Budget sensitivity
       asksPricing: /cost|price|budget|affordable|expensive|cheap/i.test(
-        conversationText
+        conversationText,
       ),
       mentionsBudget: /\$|budget|cost|price|expensive|affordable/i.test(
-        conversationText
+        conversationText,
       ),
 
       // Technical level
       asksTechnical: /api|integration|webhook|sso|technical|developer/i.test(
-        conversationText
+        conversationText,
       ),
       mentionsIntegration: /integrate|connection|sync|api|plugin/i.test(
-        conversationText
+        conversationText,
       ),
 
       // Urgency level
       urgentWords: /urgent|asap|immediately|quickly|soon|deadline/i.test(
-        conversationText
+        conversationText,
       ),
       exploratory: /wondering|curious|exploring|looking into|considering/i.test(
-        conversationText
+        conversationText,
       ),
 
       // Decision making
       decisionLanguage: /decide|decision|choose|purchase|buy|implement/i.test(
-        conversationText
+        conversationText,
       ),
       exploringLanguage: /learn|understand|know more|information|details/i.test(
-        conversationText
+        conversationText,
       ),
 
       // Page behavior
@@ -2886,13 +2904,13 @@ async function detectUserPersona(
       console.log(
         `[Persona] Detected persona: ${
           bestMatch?.name || "unknown"
-        } (score: ${bestScore})`
+        } (score: ${bestScore})`,
       );
       return bestMatch;
     }
 
     console.log(
-      `[Persona] No strong persona match found (best score: ${bestScore})`
+      `[Persona] No strong persona match found (best score: ${bestScore})`,
     );
     return null;
   } catch (error) {
@@ -2908,7 +2926,8 @@ async function generatePersonaBasedFollowup(
   currentPage: string,
   conversationHistory: string,
   followupCount: number,
-  topicsDiscussed: string[] = []
+  topicsDiscussed: string[] = [],
+  hasEmail: boolean = false,
 ): Promise<any> {
   try {
     const systemPrompt = `
@@ -2932,12 +2951,13 @@ Current Context:
 - Followup #: ${followupCount + 1}
 - Page Content: ${pageContext.slice(0, 500)}
 - Conversation: ${conversationHistory.slice(-500)}
+- User Has Email: ${hasEmail}
 
 Generate your response in JSON format:
 {
   "mainText": "<Under 30 words. Inform about a specific important item on the page and invite a quick response. End with: 'Please tap an option below.' No personal names>",
   "buttons": ["<Generate exactly 3 short options (2-4 words) that are actionable and specific to the page. IMPORTANT: Do NOT include options related to topics already discussed.>"] ,
-  "emailPrompt": "<ONLY include this if followupCount >= 2 AND user hasn't provided email yet. Otherwise empty string>"
+  "emailPrompt": "${hasEmail ? "" : "<ONLY include this if followupCount >= 2. Otherwise empty string>"}"
 }
 
 STYLE GUIDELINES (no hard blacklist):
@@ -2951,7 +2971,7 @@ LEAD GENERATION BUTTON STRATEGY - 3-Button Framework (PERSONA-BASED):
 - Extract these directly from page content where possible.
 - Buttons must be 2-4 words, actionable, and distinct.
 - Do NOT generate buttons for topics already discussed: ${topicsDiscussed.join(
-      ", "
+      ", ",
     )}.
 
 Conversation Flow Intelligence:
@@ -2986,7 +3006,8 @@ async function generateTopicBasedFollowup(
   pageUrl: string,
   previousQnA: string,
   followupCount: number,
-  topicsDiscussed: string[] = []
+  topicsDiscussed: string[] = [],
+  hasEmail: boolean = false,
 ) {
   try {
     const topicPrompts = {
@@ -3023,7 +3044,7 @@ async function generateTopicBasedFollowup(
     const filteredButtons = filterButtonsBasedOnHistory(
       topicInfo.buttons,
       [], // No chat history needed for this specific check, just topics
-      topicsDiscussed
+      topicsDiscussed,
     );
 
     const systemPrompt = `You are a sales assistant focused specifically on ${
@@ -3051,7 +3072,7 @@ async function generateTopicBasedFollowup(
     5. CRITICAL: Use standard Markdown newlines (\n\n) to structure your message into readable paragraphs. Do NOT produce a single block of text.
     6. CRITICAL: Keep the main message under 100 words total.
     7. CRITICAL: Do NOT generate buttons for topics already discussed: ${topicsDiscussed.join(
-      ", "
+      ", ",
     )}.
     
     Return JSON in this exact format:
@@ -3062,7 +3083,7 @@ async function generateTopicBasedFollowup(
       "buttons": ${
         filteredButtons.length > 0 ? JSON.stringify(filteredButtons) : "[]"
       },
-      "emailPrompt": "<ONLY include this if followupCount >= 2 AND user hasn't provided email yet. Otherwise empty string>"
+      "emailPrompt": "${hasEmail ? "" : "<ONLY include this if followupCount >= 2. Otherwise empty string>"}"
     }`;
 
     const completion = await openai.chat.completions.create({
@@ -3090,7 +3111,7 @@ async function generateTopicBasedFollowup(
 
     console.log(
       `[FOLLOWUP] Generated topic-based followup for ${followupTopic}:`,
-      parsed
+      parsed,
     );
     return parsed;
   } catch (error) {
@@ -3211,12 +3232,12 @@ export async function POST(req: NextRequest) {
     if (rl.blocked && rl.blocked.reason === "spam_repetition") {
       return NextResponse.json(
         { error: "IP blocked due to spam" },
-        { status: 403, headers: corsHeaders }
+        { status: 403, headers: corsHeaders },
       );
     }
     return NextResponse.json(
       { error: "Rate limit exceeded" },
-      { status: 429, headers: corsHeaders }
+      { status: 429, headers: corsHeaders },
     );
   }
   const body = await req.json();
@@ -3226,13 +3247,13 @@ export async function POST(req: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json(
         { error: "Invalid request body" },
-        { status: 400, headers: corsHeaders }
+        { status: 400, headers: corsHeaders },
       );
     }
   } catch (e) {
     return NextResponse.json(
       { error: e instanceof Error ? e.message : "Invalid request" },
-      { status: 400, headers: corsHeaders }
+      { status: 400, headers: corsHeaders },
     );
   }
   const {
@@ -3278,7 +3299,7 @@ export async function POST(req: NextRequest) {
     if (spamCheck.action === "block") {
       return NextResponse.json(
         { error: spamCheck.message || "Access blocked" },
-        { status: 403, headers: corsHeaders }
+        { status: 403, headers: corsHeaders },
       );
     }
     if (spamCheck.action === "warn") {
@@ -3289,7 +3310,7 @@ export async function POST(req: NextRequest) {
           emailPrompt: "",
           silent: true,
         },
-        { status: 200, headers: corsHeaders }
+        { status: 200, headers: corsHeaders },
       );
     }
   }
@@ -3318,7 +3339,7 @@ export async function POST(req: NextRequest) {
       const chats = db.collection("chats");
       const lastEmailMsg = await chats.findOne(
         { sessionId, email: { $exists: true } },
-        { sort: { createdAt: -1 } }
+        { sort: { createdAt: -1 } },
       );
       if (lastEmailMsg && lastEmailMsg.email) {
         resolvedUserEmail = lastEmailMsg.email;
@@ -3355,10 +3376,10 @@ export async function POST(req: NextRequest) {
 
     // Robust label-based extraction first
     const nameLabelMatch = text.match(
-      /(?:^|[;,])\s*(?:name|your name)\s*:\s*([^,;]+)/i
+      /(?:^|[;,])\s*(?:name|your name)\s*:\s*([^,;]+)/i,
     );
     const passwordLabelMatch = text.match(
-      /(?:^|[;,])\s*(?:password)\s*:\s*([^,;]+)/i
+      /(?:^|[;,])\s*(?:password)\s*:\s*([^,;]+)/i,
     );
     const emailMatch = text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
 
@@ -3375,12 +3396,12 @@ export async function POST(req: NextRequest) {
       rawName && rawName.length > 0
         ? rawName
         : email
-        ? text
-            .slice(0, text.indexOf(email))
-            .split(",")[0]
-            .replace(/^(?:name|your name)\s*:\s*/i, "")
-            .trim()
-        : undefined;
+          ? text
+              .slice(0, text.indexOf(email))
+              .split(",")[0]
+              .replace(/^(?:name|your name)\s*:\s*/i, "")
+              .trim()
+          : undefined;
 
     if (nameSource) {
       const tokens = nameSource.split(/\s+/).filter(Boolean);
@@ -3436,7 +3457,7 @@ export async function POST(req: NextRequest) {
         error:
           "No question, proactive, followup, contextualQuestionGeneration, or autoResponse flag, or no sessionId provided",
       },
-      { status: 400, headers: corsHeaders }
+      { status: 400, headers: corsHeaders },
     );
 
   // Check for API key authentication (for external widget usage)
@@ -3448,7 +3469,7 @@ export async function POST(req: NextRequest) {
     if (!apiAuth) {
       return NextResponse.json(
         { error: "Invalid API key" },
-        { status: 401, headers: corsHeaders }
+        { status: 401, headers: corsHeaders },
       );
     }
   }
@@ -3457,7 +3478,7 @@ export async function POST(req: NextRequest) {
   if (updateUserProfile && profileUserEmail) {
     try {
       console.log(
-        `[Chat API ${requestId}] 📊 Updating user profile for customer intelligence`
+        `[Chat API ${requestId}] 📊 Updating user profile for customer intelligence`,
       );
       console.log(`[Chat API ${requestId}] 📊 Profile data:`, {
         sessionId,
@@ -3546,7 +3567,7 @@ export async function POST(req: NextRequest) {
               `Name: ${profileUserName}`,
             ],
             visitedPages: [pageUrl],
-          }
+          },
         );
 
         // 🔥 ALSO UPDATE CUSTOMER_PROFILES COLLECTION
@@ -3567,10 +3588,10 @@ export async function POST(req: NextRequest) {
                   lastContact: new Date().toISOString(),
                 },
                 $addToSet: { sessionIds: sessionId },
-              }
+              },
             );
             console.log(
-              `[Chat API ${requestId}] ✅ Updated existing customer profile for ${profileUserEmail}`
+              `[Chat API ${requestId}] ✅ Updated existing customer profile for ${profileUserEmail}`,
             );
           } else {
             await profilesCollection.insertOne({
@@ -3602,13 +3623,13 @@ export async function POST(req: NextRequest) {
               },
             });
             console.log(
-              `[Chat API ${requestId}] ✅ Created new customer profile for ${profileUserEmail}`
+              `[Chat API ${requestId}] ✅ Created new customer profile for ${profileUserEmail}`,
             );
           }
         } catch (profileError) {
           console.error(
             `[Chat API ${requestId}] ⚠️ Failed to update customer_profiles:`,
-            profileError
+            profileError,
           );
         }
       }
@@ -3637,15 +3658,15 @@ export async function POST(req: NextRequest) {
               buttons: Array.isArray((d as any).buttons)
                 ? (d as any).buttons
                 : [],
-            })
+            }),
           );
           let missingDims = computeBantMissingDims(
             sessionMsgsForBant,
-            customerProfile
+            customerProfile,
           );
           // Exclude 'timeline' and 'segment' since they just booked
           missingDims = missingDims.filter(
-            (d) => d !== "timeline" && d !== "segment"
+            (d) => d !== "timeline" && d !== "segment",
           );
 
           // Only send a follow-up if there are still truly missing dimensions
@@ -3669,19 +3690,19 @@ export async function POST(req: NextRequest) {
             } else {
               // Do not force a fallback BANT if no dimension is confidently missing
               console.log(
-                `[Chat API ${requestId}] ⚠️ AI declined post-booking follow-up; skipping forced BANT since dims may be complete.`
+                `[Chat API ${requestId}] ⚠️ AI declined post-booking follow-up; skipping forced BANT since dims may be complete.`,
               );
             }
           } else {
             // Nothing missing; skip follow-up entirely
             console.log(
-              `[Chat API ${requestId}] ✅ BANT appears complete; skipping post-booking follow-up.`
+              `[Chat API ${requestId}] ✅ BANT appears complete; skipping post-booking follow-up.`,
             );
           }
         } catch (e) {
           console.warn(
             `[Chat API ${requestId}] ⚠️ Failed to generate post-booking BANT follow-up:`,
-            e
+            e,
           );
           // On errors, avoid forcing BANT to prevent duplicates
           followUpMessage = null;
@@ -3689,7 +3710,7 @@ export async function POST(req: NextRequest) {
       }
 
       console.log(
-        `[Chat API ${requestId}] ✅ User profile updated successfully`
+        `[Chat API ${requestId}] ✅ User profile updated successfully`,
       );
 
       // Insert booking confirmation into chats collection for history and email resolution
@@ -3715,12 +3736,12 @@ export async function POST(req: NextRequest) {
             adminId: apiAuth?.adminId || "default-admin",
           });
           console.log(
-            `[Chat API ${requestId}] ✅ Inserted booking confirmation to chats collection`
+            `[Chat API ${requestId}] ✅ Inserted booking confirmation to chats collection`,
           );
         } catch (chatError) {
           console.error(
             `[Chat API ${requestId}] ⚠️ Failed to insert booking msg to chats:`,
-            chatError
+            chatError,
           );
         }
       }
@@ -3753,7 +3774,7 @@ export async function POST(req: NextRequest) {
 
         finalButtons = filterButtonsBasedOnBooking(
           finalButtons,
-          tempBookingStatus
+          tempBookingStatus,
         );
       }
 
@@ -3770,16 +3791,16 @@ export async function POST(req: NextRequest) {
           botMode: "sales",
           userEmail: profileUserEmail,
         },
-        { headers: corsHeaders }
+        { headers: corsHeaders },
       );
     } catch (error) {
       console.error(
         `[Chat API ${requestId}] ❌ Error updating user profile:`,
-        error
+        error,
       );
       return NextResponse.json(
         { error: "Failed to update user profile" },
-        { status: 500, headers: corsHeaders }
+        { status: 500, headers: corsHeaders },
       );
     }
   }
@@ -3796,7 +3817,7 @@ export async function POST(req: NextRequest) {
         });
         if (
           ["in_progress", "ready_to_submit", "error"].includes(
-            existingOnboarding?.status || ""
+            existingOnboarding?.status || "",
           )
         ) {
           const idx = existingOnboarding?.stageIndex ?? 0;
@@ -3823,23 +3844,24 @@ export async function POST(req: NextRequest) {
                   ((adminOnboarding as any)?.initialFields || []).length > 0
                     ? ((adminOnboarding as any).initialFields as any[])
                     : ((adminOnboarding as any)?.initialParsed?.bodyKeys || [])
-                        .length > 0
-                    ? fieldsFromBodyKeys(
-                        (adminOnboarding as any)?.initialParsed
-                          ?.bodyKeys as string[]
-                      )
-                    : ((adminOnboarding as any)?.initialHeaderFields || [])
-                        .length > 0
-                    ? ((adminOnboarding as any).initialHeaderFields as any[])
-                    : deriveOnboardingFieldsFromCurl(
-                        (adminOnboarding as any)
-                          .initialSetupCurlCommand as string
-                      );
+                          .length > 0
+                      ? fieldsFromBodyKeys(
+                          (adminOnboarding as any)?.initialParsed
+                            ?.bodyKeys as string[],
+                        )
+                      : ((adminOnboarding as any)?.initialHeaderFields || [])
+                            .length > 0
+                        ? ((adminOnboarding as any)
+                            .initialHeaderFields as any[])
+                        : deriveOnboardingFieldsFromCurl(
+                            (adminOnboarding as any)
+                              .initialSetupCurlCommand as string,
+                          );
                 if (setupFields && setupFields.length > 0) {
                   const setupKeys = (setupFields || []).map((f: any) => f.key);
                   const data = existingOnboarding?.collectedData || {};
                   const limited = Object.fromEntries(
-                    Object.entries(data).filter(([k]) => setupKeys.includes(k))
+                    Object.entries(data).filter(([k]) => setupKeys.includes(k)),
                   );
                   summary = buildSafeSummary(limited);
                 }
@@ -3877,7 +3899,7 @@ export async function POST(req: NextRequest) {
             const lastError =
               existingOnboarding?.lastError || "Registration failed";
             const summary = buildSafeSummary(
-              existingOnboarding?.collectedData || {}
+              existingOnboarding?.collectedData || {},
             );
             const isExistingUser =
               (typeof (existingOnboarding as any)?.lastErrorHttpStatus ===
@@ -3885,7 +3907,7 @@ export async function POST(req: NextRequest) {
                 ((existingOnboarding as any).lastErrorHttpStatus === 409 ||
                   (existingOnboarding as any).lastErrorHttpStatus === 422)) ||
               /duplicate\s*email|email\s*.*already\s*(?:exists|registered)/i.test(
-                lastError || ""
+                lastError || "",
               );
             const resp = {
               mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\n${
@@ -3913,7 +3935,7 @@ export async function POST(req: NextRequest) {
             const docContext = await buildOnboardingDocContext(
               field,
               existingOnboarding?.adminId || undefined,
-              docsUrl
+              docsUrl,
             );
             const resp = {
               mainText: `${docContext ? `${docContext}\n\n` : ""}${prompt}`,
@@ -3966,7 +3988,7 @@ Based on the page context, create an intelligent contextual question that demons
         contextualResp.choices[0].message.content?.trim() || "";
       console.log(
         "[DEBUG] Raw AI response for contextual question:",
-        aiResponse
+        aiResponse,
       );
 
       // Clean up AI response to handle HTML entities and formatting issues
@@ -4001,10 +4023,10 @@ Based on the page context, create an intelligent contextual question that demons
       } catch (parseError) {
         console.error(
           "[DEBUG] Failed to parse AI response, using fallback:",
-          parseError
+          parseError,
         );
         console.log(
-          "[DEBUG] Attempting to extract content from malformed response..."
+          "[DEBUG] Attempting to extract content from malformed response...",
         );
 
         // Try to extract content from malformed response
@@ -4040,7 +4062,7 @@ Based on the page context, create an intelligent contextual question that demons
 
         console.log(
           "[DEBUG] Using fallback response with extracted content:",
-          parsed
+          parsed,
         );
       }
 
@@ -4050,19 +4072,19 @@ Based on the page context, create an intelligent contextual question that demons
         const bookingEnhancement = await enhanceChatWithBookingDetection(
           question || "",
           [], // conversation history - could be enhanced later
-          `Page URL: ${pageUrl || "unknown"}`
+          `Page URL: ${pageUrl || "unknown"}`,
         );
 
         if (bookingEnhancement.chatResponse.showBookingCalendar) {
           console.log(
-            "[Chat API] Booking detected in contextual question - enhancing response with calendar"
+            "[Chat API] Booking detected in contextual question - enhancing response with calendar",
           );
           await updateProfileOnContactRequest(
             req.nextUrl.origin,
             sessionId,
             apiKey,
             pageUrl,
-            question || ""
+            question || "",
           );
           enhancedResponse = {
             ...parsed,
@@ -4075,7 +4097,7 @@ Based on the page context, create an intelligent contextual question that demons
       } catch (error) {
         console.warn(
           "[Chat API] Booking detection failed for contextual question:",
-          error
+          error,
         );
         // Continue with original response if booking detection fails
       }
@@ -4087,7 +4109,7 @@ Based on the page context, create an intelligent contextual question that demons
         const chats = db.collection("chats");
         const lastEmailMsg = await chats.findOne(
           { sessionId, email: { $exists: true } },
-          { sort: { createdAt: -1 } }
+          { sort: { createdAt: -1 } },
         );
         if (lastEmailMsg && lastEmailMsg.email)
           sessionEmail = lastEmailMsg.email;
@@ -4131,7 +4153,7 @@ Based on the page context, create an intelligent contextual question that demons
 
         missingDims = computeBantMissingDims(
           messagesWithCurrent,
-          customerProfile
+          customerProfile,
         );
       } catch (e) {}
 
@@ -4151,7 +4173,7 @@ Based on the page context, create an intelligent contextual question that demons
         const lastAssistantIdx = [...sessionDocs]
           .reverse()
           .findIndex(
-            (d: any) => String(d.role || "").toLowerCase() === "assistant"
+            (d: any) => String(d.role || "").toLowerCase() === "assistant",
           );
         const lastAssistantDoc =
           lastAssistantIdx >= 0
@@ -4172,7 +4194,7 @@ Based on the page context, create an intelligent contextual question that demons
             null,
             apiKey,
             pageUrl,
-            question || ""
+            question || "",
           );
           console.log("[SalesMode] Switching due to BANT complete", {
             sessionId,
@@ -4190,7 +4212,7 @@ Based on the page context, create an intelligent contextual question that demons
               botMode: "sales",
               userEmail: sessionEmail,
             },
-            { headers: corsHeaders }
+            { headers: corsHeaders },
           );
         } else if (!enhancedResponse.showBookingCalendar) {
           // If BANT incomplete and no booking detected, try to ask next BANT question
@@ -4215,7 +4237,7 @@ Based on the page context, create an intelligent contextual question that demons
                 String((probing as any).bantDimension || "").toLowerCase() ===
                   "budget" ||
                 /budget|price|cost|pricing|\$|usd/i.test(
-                  String(probing.mainText || "")
+                  String(probing.mainText || ""),
                 );
               const lastAssistant = [...sessionMessages]
                 .reverse()
@@ -4233,8 +4255,8 @@ Based on the page context, create an intelligent contextual question that demons
                   segmentDetected === "individual"
                     ? ["Under $20/mo", "$20–$50/mo", "$50+"]
                     : segmentDetected === "smb"
-                    ? ["Under $500/mo", "$500–$1.5k/mo", "$1.5k+"]
-                    : ["Under $10k/yr", "$10k–$50k/yr", "$50k+/yr"];
+                      ? ["Under $500/mo", "$500–$1.5k/mo", "$1.5k+"]
+                      : ["Under $10k/yr", "$10k–$50k/yr", "$50k+/yr"];
               }
             } catch {}
             enhancedResponse = {
@@ -4253,7 +4275,7 @@ Based on the page context, create an intelligent contextual question that demons
       // This runs for EVERYONE, even if no email or if BANT logic wasn't triggered explicitly
       try {
         const isAskingBudget = /budget|price|cost|pricing|\$|usd/i.test(
-          enhancedResponse.mainText || ""
+          enhancedResponse.mainText || "",
         );
         const segmentDetected = getBusinessSegment([
           ...sessionMessages,
@@ -4267,7 +4289,7 @@ Based on the page context, create an intelligent contextual question that demons
 
         if (isAskingBudget && !segmentDetected && !justAskedSegment) {
           console.log(
-            "[BANT] Intercepting budget question to ask segment first"
+            "[BANT] Intercepting budget question to ask segment first",
           );
           enhancedResponse = {
             ...enhancedResponse,
@@ -4282,8 +4304,8 @@ Based on the page context, create an intelligent contextual question that demons
             segmentDetected === "individual"
               ? ["Under $20/mo", "$20–$50/mo", "$50+"]
               : segmentDetected === "smb"
-              ? ["Under $500/mo", "$500–$1.5k/mo", "$1.5k+"]
-              : ["Under $10k/yr", "$10k–$50k/yr", "$50k+/yr"];
+                ? ["Under $500/mo", "$500–$1.5k/mo", "$1.5k+"]
+                : ["Under $10k/yr", "$10k–$50k/yr", "$50k+/yr"];
           enhancedResponse = {
             ...enhancedResponse,
             buttons: budgetButtons,
@@ -4316,7 +4338,7 @@ Based on the page context, create an intelligent contextual question that demons
 
       console.log(
         "[DEBUG] Returning contextual question response:",
-        responseWithMode
+        responseWithMode,
       );
 
       return NextResponse.json(responseWithMode, { headers: corsHeaders });
@@ -4349,14 +4371,14 @@ Based on the page context, create an intelligent contextual question that demons
         });
         if (
           ["in_progress", "ready_to_submit", "error"].includes(
-            existingOnboarding?.status || ""
+            existingOnboarding?.status || "",
           )
         ) {
           const idx = existingOnboarding?.stageIndex ?? 0;
           const field = existingOnboarding?.fields?.[idx];
           if (existingOnboarding?.status === "ready_to_submit") {
             const summary = buildSafeSummary(
-              existingOnboarding?.collectedData || {}
+              existingOnboarding?.collectedData || {},
             );
             const resp = {
               mainText: `We’re finishing your onboarding. Please review:\n${summary}\n\nReply "Confirm" to submit, or "Edit" to change any detail.`,
@@ -4373,7 +4395,7 @@ Based on the page context, create an intelligent contextual question that demons
             const lastError =
               existingOnboarding?.lastError || "Registration failed";
             const summary = buildSafeSummary(
-              existingOnboarding?.collectedData || {}
+              existingOnboarding?.collectedData || {},
             );
             const isExistingUser =
               (typeof (existingOnboarding as any)?.lastErrorHttpStatus ===
@@ -4381,7 +4403,7 @@ Based on the page context, create an intelligent contextual question that demons
                 ((existingOnboarding as any).lastErrorHttpStatus === 409 ||
                   (existingOnboarding as any).lastErrorHttpStatus === 422)) ||
               /duplicate\s*email|email\s*.*already\s*(?:exists|registered)/i.test(
-                lastError || ""
+                lastError || "",
               );
             const resp = {
               mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\n${
@@ -4402,9 +4424,8 @@ Based on the page context, create an intelligent contextual question that demons
             const docContext = await buildOnboardingDocContext(
               field,
               existingOnboarding?.adminId || undefined,
-              (
-                await getAdminSettings(existingOnboarding?.adminId || "")
-              ).onboarding?.docsUrl
+              (await getAdminSettings(existingOnboarding?.adminId || ""))
+                .onboarding?.docsUrl,
             );
             const resp = {
               mainText: `${docContext ? `${docContext}\n\n` : ""}${prompt}`,
@@ -4422,7 +4443,7 @@ Based on the page context, create an intelligent contextual question that demons
 
       console.log(
         "[DEBUG] Generating auto-response for contextual question:",
-        contextualQuestion
+        contextualQuestion,
       );
 
       const autoResponsePrompt = `You are a helpful business assistant. A user was shown this contextual question but didn't respond: "${contextualQuestion}"
@@ -4472,7 +4493,7 @@ Keep the response conversational and helpful, focusing on providing value before
       } catch (parseError) {
         console.error(
           "[DEBUG] Failed to parse auto-response, using fallback:",
-          parseError
+          parseError,
         );
 
         // Fallback response if AI doesn't return valid JSON
@@ -4490,19 +4511,19 @@ Keep the response conversational and helpful, focusing on providing value before
         const bookingEnhancement = await enhanceChatWithBookingDetection(
           contextualQuestion || "",
           [], // conversation history - could be enhanced later
-          `Page URL: ${pageUrl || "unknown"}`
+          `Page URL: ${pageUrl || "unknown"}`,
         );
 
         if (bookingEnhancement.chatResponse.showBookingCalendar) {
           console.log(
-            "[Chat API] Booking detected in auto-response - enhancing response with calendar"
+            "[Chat API] Booking detected in auto-response - enhancing response with calendar",
           );
           await updateProfileOnContactRequest(
             req.nextUrl.origin,
             sessionId,
             apiKey,
             pageUrl,
-            contextualQuestion || ""
+            contextualQuestion || "",
           );
           enhancedAutoResponse = {
             ...parsed,
@@ -4515,7 +4536,7 @@ Keep the response conversational and helpful, focusing on providing value before
       } catch (error) {
         console.warn(
           "[Chat API] Booking detection failed for auto-response:",
-          error
+          error,
         );
         // Continue with original response if booking detection fails
       }
@@ -4527,7 +4548,7 @@ Keep the response conversational and helpful, focusing on providing value before
         const chats = db.collection("chats");
         const lastEmailMsg = await chats.findOne(
           { sessionId, email: { $exists: true } },
-          { sort: { createdAt: -1 } }
+          { sort: { createdAt: -1 } },
         );
         if (lastEmailMsg && lastEmailMsg.email)
           sessionEmailAR = lastEmailMsg.email;
@@ -4547,7 +4568,7 @@ Keep the response conversational and helpful, focusing on providing value before
         };
         console.log(
           "[DEBUG] Returning sales-mode auto-response:",
-          salesAutoResponse
+          salesAutoResponse,
         );
         return NextResponse.json(salesAutoResponse, { headers: corsHeaders });
       }
@@ -4631,7 +4652,7 @@ Keep the response conversational and helpful, focusing on providing value before
   // 🔥 PHASE 1: CHECK BOOKING STATUS
   let bookingStatus = await getSessionBookingStatus(
     sessionId,
-    adminId || undefined
+    adminId || undefined,
   );
 
   // Patch booking status if we just confirmed a booking in this request (fixes race condition)
@@ -4658,7 +4679,7 @@ Keep the response conversational and helpful, focusing on providing value before
       },
     } as any;
     console.log(
-      `[Chat API ${requestId}] 🟢 Overriding booking status due to immediate confirmation.`
+      `[Chat API ${requestId}] 🟢 Overriding booking status due to immediate confirmation.`,
     );
   }
 
@@ -4669,7 +4690,7 @@ Keep the response conversational and helpful, focusing on providing value before
       bookingType: bookingStatus.currentBooking?.requestType,
       bookingDate: bookingStatus.currentBooking?.preferredDate,
       canBookAgain: bookingStatus.canBookAgain,
-    }
+    },
   );
 
   // 🔰 Onboarding flow entry
@@ -4689,7 +4710,7 @@ Keep the response conversational and helpful, focusing on providing value before
   if (!adminId && isOnboardingOnlyEarly) {
     adminId = "default-admin";
     console.log(
-      `[DEBUG] Onboarding-only mode: using fallback adminId: ${adminId}`
+      `[DEBUG] Onboarding-only mode: using fallback adminId: ${adminId}`,
     );
     try {
       const settings = await getAdminSettings(adminId);
@@ -4697,7 +4718,7 @@ Keep the response conversational and helpful, focusing on providing value before
     } catch (e) {
       console.log(
         "[Onboarding] Failed to load fallback admin onboarding settings:",
-        e
+        e,
       );
     }
   }
@@ -4710,7 +4731,7 @@ Keep the response conversational and helpful, focusing on providing value before
     (/(?:\b(cancel|quit)\s+onboarding\b)/i.test(question || "") ||
       (/\b(cancel|quit)\b/i.test(question || "") &&
         ["in_progress", "ready_to_submit", "error"].includes(
-          existingOnboarding?.status || ""
+          existingOnboarding?.status || "",
         )));
   // Respect widget mode header to gate onboarding in the chat API
   const widgetMode = widgetModeEarly;
@@ -4729,7 +4750,7 @@ Keep the response conversational and helpful, focusing on providing value before
     (detectOnboardingIntent(question) ||
       isBundleSignal ||
       ["in_progress", "ready_to_submit", "error"].includes(
-        existingOnboarding?.status || ""
+        existingOnboarding?.status || "",
       ) ||
       isOnboardingAction);
 
@@ -4739,29 +4760,29 @@ Keep the response conversational and helpful, focusing on providing value before
       (onboardingConfig as any).registrationFields.length > 0
         ? (onboardingConfig as any).registrationFields
         : onboardingConfig?.fields && onboardingConfig.fields.length > 0
-        ? onboardingConfig.fields
-        : [
-            { key: "email", label: "Email", required: true, type: "email" },
-            {
-              key: "firstName",
-              label: "First Name",
-              required: true,
-              type: "text",
-            },
-            {
-              key: "password",
-              label: "Password",
-              required: true,
-              type: "text",
-              validations: { minLength: 8 },
-            },
-            {
-              key: "lastName",
-              label: "Last Name",
-              required: false,
-              type: "text",
-            },
-          ];
+          ? onboardingConfig.fields
+          : [
+              { key: "email", label: "Email", required: true, type: "email" },
+              {
+                key: "firstName",
+                label: "First Name",
+                required: true,
+                type: "text",
+              },
+              {
+                key: "password",
+                label: "Password",
+                required: true,
+                type: "text",
+                validations: { minLength: 8 },
+              },
+              {
+                key: "lastName",
+                label: "Last Name",
+                required: false,
+                type: "text",
+              },
+            ];
 
     // Prefer admin-edited registrationFields; else merge docs-derived with sensible defaults
     let fields: any[] = [];
@@ -4773,7 +4794,7 @@ Keep the response conversational and helpful, focusing on providing value before
     } else {
       const docDerived = await inferFieldsFromDocs(
         adminId || undefined,
-        onboardingConfig?.docsUrl
+        onboardingConfig?.docsUrl,
       );
       fields = mergeFields(configuredFields, docDerived || []);
     }
@@ -4787,7 +4808,7 @@ Keep the response conversational and helpful, focusing on providing value before
       await sessionsCollection.updateOne(
         { sessionId },
         { $set: { status: "cancelled", updatedAt: now } },
-        { upsert: true }
+        { upsert: true },
       );
 
       const resp = {
@@ -4822,7 +4843,7 @@ Keep the response conversational and helpful, focusing on providing value before
       await sessionsCollection.updateOne(
         { sessionId },
         { $set: doc },
-        { upsert: true }
+        { upsert: true },
       );
       sessionDoc = doc as any;
 
@@ -4832,7 +4853,7 @@ Keep the response conversational and helpful, focusing on providing value before
       const docContext = await buildOnboardingDocContext(
         fieldsToAsk[0],
         adminId || undefined,
-        onboardingConfig?.docsUrl
+        onboardingConfig?.docsUrl,
       );
       if (!isBundleSignal) {
         const resp = {
@@ -4876,7 +4897,7 @@ Keep the response conversational and helpful, focusing on providing value before
               }
               result = await onboardingService.initialSetup(
                 { ...payload, __authToken: sessionDoc?.externalAuthToken },
-                adminId
+                adminId,
               );
             } else {
               result = await onboardingService.register(payload, adminId);
@@ -4898,7 +4919,7 @@ Keep the response conversational and helpful, focusing on providing value before
                 const kl = k.toLowerCase();
                 const isSensitive = redactKeys.some((rk) => kl.includes(rk));
                 return [k, isSensitive ? "***" : v];
-              })
+              }),
             );
             if (!result.success) {
               console.error(
@@ -4909,7 +4930,7 @@ Keep the response conversational and helpful, focusing on providing value before
                   status: result.status,
                   error: result.error,
                   payload: safePayload,
-                }
+                },
               );
             } else {
               console.log(
@@ -4919,7 +4940,7 @@ Keep the response conversational and helpful, focusing on providing value before
                   sessionId,
                   userId: result.userId,
                   status: result.status,
-                }
+                },
               );
             }
           } catch {}
@@ -4942,7 +4963,7 @@ Keep the response conversational and helpful, focusing on providing value before
                 lastErrorHttpStatus:
                   typeof result.status === "number" ? result.status : null,
               },
-            }
+            },
           );
 
           // If registration failed, try to surface specific error details from the external API response
@@ -4997,12 +5018,12 @@ Keep the response conversational and helpful, focusing on providing value before
           ) {
             const tokenFromReg = extractApiKeyFromResponse(
               result.responseBody,
-              onboardingConfig
+              onboardingConfig,
             );
             if (tokenFromReg) {
               await sessionsCollection.updateOne(
                 { sessionId },
-                { $set: { externalAuthToken: tokenFromReg, updatedAt: now } }
+                { $set: { externalAuthToken: tokenFromReg, updatedAt: now } },
               );
             }
             // Attempt authentication using admin-provided auth cURL and collected registration data
@@ -5010,7 +5031,7 @@ Keep the response conversational and helpful, focusing on providing value before
               try {
                 const authRes = await onboardingService.authenticate(
                   { ...(sessionDoc.collectedData || {}) },
-                  adminId!
+                  adminId!,
                 );
                 if (authRes.success && authRes.token) {
                   await sessionsCollection.updateOne(
@@ -5020,7 +5041,7 @@ Keep the response conversational and helpful, focusing on providing value before
                         externalAuthToken: authRes.token,
                         updatedAt: now,
                       },
-                    }
+                    },
                   );
                 } else {
                   console.warn(
@@ -5030,7 +5051,7 @@ Keep the response conversational and helpful, focusing on providing value before
                       sessionId,
                       status: authRes.status,
                       error: authRes.error,
-                    }
+                    },
                   );
                 }
               } catch (e: any) {
@@ -5047,17 +5068,18 @@ Keep the response conversational and helpful, focusing on providing value before
               ((onboardingConfig as any)?.initialFields || []).length > 0
                 ? ((onboardingConfig as any).initialFields as any[])
                 : ((onboardingConfig as any)?.initialParsed?.bodyKeys || [])
-                    .length > 0
-                ? fieldsFromBodyKeys(
-                    (onboardingConfig as any)?.initialParsed
-                      ?.bodyKeys as string[]
-                  )
-                : ((onboardingConfig as any)?.initialHeaderFields || [])
-                    .length > 0
-                ? ((onboardingConfig as any).initialHeaderFields as any[])
-                : deriveOnboardingFieldsFromCurl(
-                    (onboardingConfig as any).initialSetupCurlCommand as string
-                  );
+                      .length > 0
+                  ? fieldsFromBodyKeys(
+                      (onboardingConfig as any)?.initialParsed
+                        ?.bodyKeys as string[],
+                    )
+                  : ((onboardingConfig as any)?.initialHeaderFields || [])
+                        .length > 0
+                    ? ((onboardingConfig as any).initialHeaderFields as any[])
+                    : deriveOnboardingFieldsFromCurl(
+                        (onboardingConfig as any)
+                          .initialSetupCurlCommand as string,
+                      );
             if (!setupFields || setupFields.length === 0) {
               const resp = {
                 mainText:
@@ -5087,12 +5109,12 @@ Keep the response conversational and helpful, focusing on providing value before
                     phase: "initial_setup",
                     updatedAt: now,
                   },
-                }
+                },
               );
               const setupKeys = (setupFields || []).map((f: any) => f.key);
               const data = sessionDoc.collectedData || {};
               const limited = Object.fromEntries(
-                Object.entries(data).filter(([k]) => setupKeys.includes(k))
+                Object.entries(data).filter(([k]) => setupKeys.includes(k)),
               );
               const summary = buildSafeSummary(limited);
               const resp = {
@@ -5127,13 +5149,13 @@ Keep the response conversational and helpful, focusing on providing value before
                     ...autoFilled,
                   },
                 },
-              }
+              },
             );
             const firstField = fieldsNoToken[0];
             const docContext = await buildOnboardingDocContext(
               firstField,
               adminId || undefined,
-              onboardingConfig?.initialSetupDocsUrl
+              onboardingConfig?.initialSetupDocsUrl,
             );
             const intro =
               "✅ Registration complete. Now, let’s finish initial setup.";
@@ -5165,15 +5187,15 @@ Keep the response conversational and helpful, focusing on providing value before
               const docDerived = await inferFieldsFromDocs(
                 adminId || undefined,
                 preferredDocs,
-                "initial setup required fields"
+                "initial setup required fields",
               );
               if (Array.isArray(docDerived) && docDerived.length > 0) {
                 const tokenFromReg = extractApiKeyFromResponse(
                   result.responseBody,
-                  onboardingConfig
+                  onboardingConfig,
                 );
                 const collectedKeys = Object.keys(
-                  sessionDoc.collectedData || {}
+                  sessionDoc.collectedData || {},
                 );
                 const autoFilled: Record<string, any> = {};
                 const fieldsNoToken = (docDerived || []).filter((f: any) => {
@@ -5201,13 +5223,13 @@ Keep the response conversational and helpful, focusing on providing value before
                           ...autoFilled,
                         },
                       },
-                    }
+                    },
                   );
                   const firstField = fieldsNoToken[0];
                   const docContext = await buildOnboardingDocContext(
                     firstField,
                     adminId || undefined,
-                    onboardingConfig?.initialSetupDocsUrl
+                    onboardingConfig?.initialSetupDocsUrl,
                   );
                   const intro =
                     "✅ Registration complete. Now, let’s finish initial setup.";
@@ -5249,7 +5271,7 @@ Keep the response conversational and helpful, focusing on providing value before
               const collectedKeys = Object.keys(sessionDoc.collectedData || {});
               const tokenFromReg2 = extractApiKeyFromResponse(
                 result.responseBody,
-                onboardingConfig
+                onboardingConfig,
               );
               const autoFilled2: Record<string, any> = {};
               const fieldsNoToken2 = (fallbackFields || []).filter((f: any) => {
@@ -5277,14 +5299,14 @@ Keep the response conversational and helpful, focusing on providing value before
                         ...autoFilled2,
                       },
                     },
-                  }
+                  },
                 );
                 const firstField = fieldsNoToken2[0];
                 const docContext2 = await buildOnboardingDocContext(
                   firstField,
                   adminId || undefined,
                   onboardingConfig?.initialSetupDocsUrl ||
-                    onboardingConfig?.docsUrl
+                    onboardingConfig?.docsUrl,
                 );
                 const intro2 =
                   "✅ Registration complete. Now, let’s finish initial setup.";
@@ -5320,7 +5342,7 @@ Keep the response conversational and helpful, focusing on providing value before
                     registeredUserId: result.userId || null,
                     updatedAt: now,
                   },
-                }
+                },
               );
             } catch {}
           }
@@ -5401,7 +5423,7 @@ Keep the response conversational and helpful, focusing on providing value before
                     ];
               const docDerived = await inferFieldsFromDocs(
                 adminId || undefined,
-                onboardingConfig?.docsUrl
+                onboardingConfig?.docsUrl,
               );
               const allFields = mergeFields(configuredFields, docDerived || []);
               const requiredKeys = allFields
@@ -5409,11 +5431,11 @@ Keep the response conversational and helpful, focusing on providing value before
                 .map((f: any) => String(f.key || ""));
               const presentKeys = Object.keys(sessionDoc.collectedData || {});
               const missingKeys = requiredKeys.filter(
-                (k) => !presentKeys.includes(k)
+                (k) => !presentKeys.includes(k),
               );
               if (missingKeys.length > 0) {
                 const missingFields = allFields.filter((f: any) =>
-                  missingKeys.includes(String(f.key || ""))
+                  missingKeys.includes(String(f.key || "")),
                 );
                 await sessionsCollection.updateOne(
                   { sessionId },
@@ -5424,19 +5446,19 @@ Keep the response conversational and helpful, focusing on providing value before
                       fields: missingFields,
                       updatedAt: now,
                     },
-                  }
+                  },
                 );
                 const firstField = missingFields[0];
                 const docContext = await buildOnboardingDocContext(
                   firstField,
                   adminId || undefined,
-                  onboardingConfig?.docsUrl
+                  onboardingConfig?.docsUrl,
                 );
                 resp = {
                   mainText: `${
                     docContext ? `${docContext}\n\n` : ""
                   }We need a few more details to complete your registration. ${promptForField(
-                    firstField
+                    firstField,
                   )}`,
                   buttons: [],
                   emailPrompt: "",
@@ -5464,7 +5486,7 @@ Keep the response conversational and helpful, focusing on providing value before
               (typeof result.status === "number" &&
                 (result.status === 409 || result.status === 422)) ||
               /duplicate\s*email|email\s*.*already\s*(?:exists|registered)/i.test(
-                errTxt
+                errTxt,
               );
             if (isExistingUser) {
               (resp as any).buttons = ["Change Email"];
@@ -5475,13 +5497,13 @@ Keep the response conversational and helpful, focusing on providing value before
         } else if (/\b(edit|change|update)\b/.test(lower)) {
           await sessionsCollection.updateOne(
             { sessionId },
-            { $set: { status: "in_progress", stageIndex: 0, updatedAt: now } }
+            { $set: { status: "in_progress", stageIndex: 0, updatedAt: now } },
           );
           const prompt = promptForField(sessionDoc.fields[0]);
           const docContext = await buildOnboardingDocContext(
             sessionDoc.fields[0],
             adminId || undefined,
-            onboardingConfig?.docsUrl
+            onboardingConfig?.docsUrl,
           );
           const resp = {
             mainText: `${docContext ? `${docContext}\n\n` : ""}${prompt}`,
@@ -5495,7 +5517,7 @@ Keep the response conversational and helpful, focusing on providing value before
           await sessionsCollection.updateOne(
             { sessionId },
             { $set: { status: "cancelled", updatedAt: now } },
-            { upsert: true }
+            { upsert: true },
           );
           const resp = {
             mainText:
@@ -5528,7 +5550,7 @@ Keep the response conversational and helpful, focusing on providing value before
               ((sessionDoc as any).lastErrorHttpStatus === 409 ||
                 (sessionDoc as any).lastErrorHttpStatus === 422)) ||
             /duplicate\s*email|email\s*.*already\s*(?:exists|registered)/i.test(
-              lastError || ""
+              lastError || "",
             );
           const resp = {
             mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\n${
@@ -5560,16 +5582,18 @@ Keep the response conversational and helpful, focusing on providing value before
             ((onboardingConfig as any)?.initialFields || []).length > 0
               ? ((onboardingConfig as any).initialFields as any[])
               : ((onboardingConfig as any)?.initialParsed?.bodyKeys || [])
-                  .length > 0
-              ? fieldsFromBodyKeys(
-                  (onboardingConfig as any)?.initialParsed?.bodyKeys as string[]
-                )
-              : ((onboardingConfig as any)?.initialHeaderFields || []).length >
-                0
-              ? ((onboardingConfig as any).initialHeaderFields as any[])
-              : deriveOnboardingFieldsFromCurl(
-                  (onboardingConfig as any).initialSetupCurlCommand as string
-                );
+                    .length > 0
+                ? fieldsFromBodyKeys(
+                    (onboardingConfig as any)?.initialParsed
+                      ?.bodyKeys as string[],
+                  )
+                : ((onboardingConfig as any)?.initialHeaderFields || [])
+                      .length > 0
+                  ? ((onboardingConfig as any).initialHeaderFields as any[])
+                  : deriveOnboardingFieldsFromCurl(
+                      (onboardingConfig as any)
+                        .initialSetupCurlCommand as string,
+                    );
           if (!setupFields || setupFields.length === 0) {
             const resp = {
               mainText:
@@ -5584,7 +5608,7 @@ Keep the response conversational and helpful, focusing on providing value before
           const setupKeys = (setupFields || []).map((f: any) => f.key);
           const data = sessionDoc.collectedData || {};
           const limited = Object.fromEntries(
-            Object.entries(data).filter(([k]) => setupKeys.includes(k))
+            Object.entries(data).filter(([k]) => setupKeys.includes(k)),
           );
           summary = buildSafeSummary(limited);
         } else {
@@ -5606,7 +5630,7 @@ Keep the response conversational and helpful, focusing on providing value before
         }
         await sessionsCollection.updateOne(
           { sessionId },
-          { $set: { status: "ready_to_submit", updatedAt: now } }
+          { $set: { status: "ready_to_submit", updatedAt: now } },
         );
         const resp = {
           mainText: `Please review your details:\n${summary}\n\nReply "Confirm" to submit, or say "Edit" to change any detail.`,
@@ -5622,12 +5646,12 @@ Keep the response conversational and helpful, focusing on providing value before
           try {
             const authRes = await onboardingService.authenticate(
               { ...(sessionDoc.collectedData || {}) },
-              adminId!
+              adminId!,
             );
             if (authRes.success && authRes.token) {
               await sessionsCollection.updateOne(
                 { sessionId },
-                { $set: { externalAuthToken: authRes.token, updatedAt: now } }
+                { $set: { externalAuthToken: authRes.token, updatedAt: now } },
               );
               let summary = buildSafeSummary(sessionDoc.collectedData || {});
               if (
@@ -5643,18 +5667,19 @@ Keep the response conversational and helpful, focusing on providing value before
                   ((onboardingConfig as any)?.initialFields || []).length > 0
                     ? ((onboardingConfig as any).initialFields as any[])
                     : ((onboardingConfig as any)?.initialParsed?.bodyKeys || [])
-                        .length > 0
-                    ? fieldsFromBodyKeys(
-                        (onboardingConfig as any)?.initialParsed
-                          ?.bodyKeys as string[]
-                      )
-                    : ((onboardingConfig as any)?.initialHeaderFields || [])
-                        .length > 0
-                    ? ((onboardingConfig as any).initialHeaderFields as any[])
-                    : deriveOnboardingFieldsFromCurl(
-                        (onboardingConfig as any)
-                          .initialSetupCurlCommand as string
-                      );
+                          .length > 0
+                      ? fieldsFromBodyKeys(
+                          (onboardingConfig as any)?.initialParsed
+                            ?.bodyKeys as string[],
+                        )
+                      : ((onboardingConfig as any)?.initialHeaderFields || [])
+                            .length > 0
+                        ? ((onboardingConfig as any)
+                            .initialHeaderFields as any[])
+                        : deriveOnboardingFieldsFromCurl(
+                            (onboardingConfig as any)
+                              .initialSetupCurlCommand as string,
+                          );
                 if (!setupFields || setupFields.length === 0) {
                   const resp = {
                     mainText:
@@ -5669,7 +5694,7 @@ Keep the response conversational and helpful, focusing on providing value before
                 const setupKeys = (setupFields || []).map((f: any) => f.key);
                 const data = sessionDoc.collectedData || {};
                 const limited = Object.fromEntries(
-                  Object.entries(data).filter(([k]) => setupKeys.includes(k))
+                  Object.entries(data).filter(([k]) => setupKeys.includes(k)),
                 );
                 summary = buildSafeSummary(limited);
               }
@@ -5705,7 +5730,7 @@ Keep the response conversational and helpful, focusing on providing value before
         }
         if (
           /(\bconfirm\s+and\s+submit\b|\bconfirm\b|\bsubmit\b|\blooks\s+good\b|\byes\b|\btry\s+again\b|\bretry\b|\bresubmit\b)/.test(
-            lower
+            lower,
           )
         ) {
           const payload = { ...(sessionDoc.collectedData || {}) };
@@ -5722,7 +5747,7 @@ Keep the response conversational and helpful, focusing on providing value before
                 try {
                   const authRes2 = await onboardingService.authenticate(
                     { ...(sessionDoc.collectedData || {}) },
-                    adminId!
+                    adminId!,
                   );
                   if (authRes2.success && authRes2.token) {
                     tokenToUse = authRes2.token;
@@ -5733,14 +5758,14 @@ Keep the response conversational and helpful, focusing on providing value before
                           externalAuthToken: tokenToUse,
                           updatedAt: now,
                         },
-                      }
+                      },
                     );
                   }
                 } catch {}
               }
               result2 = await onboardingService.initialSetup(
                 { ...payload, __authToken: tokenToUse },
-                adminId
+                adminId,
               );
             } else {
               result2 = await onboardingService.register(payload, adminId);
@@ -5762,7 +5787,7 @@ Keep the response conversational and helpful, focusing on providing value before
                 const kl = k.toLowerCase();
                 const isSensitive = redactKeys.some((rk) => kl.includes(rk));
                 return [k, isSensitive ? "***" : v];
-              })
+              }),
             );
             if (!result2.success) {
               console.error(
@@ -5773,7 +5798,7 @@ Keep the response conversational and helpful, focusing on providing value before
                   status: result2.status,
                   error: result2.error,
                   payload: safePayload,
-                }
+                },
               );
             } else {
               console.log(
@@ -5783,7 +5808,7 @@ Keep the response conversational and helpful, focusing on providing value before
                   sessionId,
                   userId: result2.userId,
                   status: result2.status,
-                }
+                },
               );
             }
           } catch {}
@@ -5804,7 +5829,7 @@ Keep the response conversational and helpful, focusing on providing value before
                 registeredUserId: result2.userId || null,
                 lastError: result2.error || null,
               },
-            }
+            },
           );
 
           // If registration failed, try to surface specific error details from the external API response
@@ -5862,29 +5887,30 @@ Keep the response conversational and helpful, focusing on providing value before
           ) {
             const tokenFromReg2 = extractApiKeyFromResponse(
               result2.responseBody,
-              onboardingConfig
+              onboardingConfig,
             );
             if (tokenFromReg2) {
               await sessionsCollection.updateOne(
                 { sessionId },
-                { $set: { externalAuthToken: tokenFromReg2, updatedAt: now } }
+                { $set: { externalAuthToken: tokenFromReg2, updatedAt: now } },
               );
             }
             const setupFields =
               ((onboardingConfig as any)?.initialFields || []).length > 0
                 ? ((onboardingConfig as any).initialFields as any[])
                 : ((onboardingConfig as any)?.initialParsed?.bodyKeys || [])
-                    .length > 0
-                ? fieldsFromBodyKeys(
-                    (onboardingConfig as any)?.initialParsed
-                      ?.bodyKeys as string[]
-                  )
-                : ((onboardingConfig as any)?.initialHeaderFields || [])
-                    .length > 0
-                ? ((onboardingConfig as any).initialHeaderFields as any[])
-                : deriveOnboardingFieldsFromCurl(
-                    (onboardingConfig as any).initialSetupCurlCommand as string
-                  );
+                      .length > 0
+                  ? fieldsFromBodyKeys(
+                      (onboardingConfig as any)?.initialParsed
+                        ?.bodyKeys as string[],
+                    )
+                  : ((onboardingConfig as any)?.initialHeaderFields || [])
+                        .length > 0
+                    ? ((onboardingConfig as any).initialHeaderFields as any[])
+                    : deriveOnboardingFieldsFromCurl(
+                        (onboardingConfig as any)
+                          .initialSetupCurlCommand as string,
+                      );
             if (!setupFields || setupFields.length === 0) {
               const resp = {
                 mainText:
@@ -5914,12 +5940,12 @@ Keep the response conversational and helpful, focusing on providing value before
                     phase: "initial_setup",
                     updatedAt: now,
                   },
-                }
+                },
               );
               const setupKeys = (setupFields || []).map((f: any) => f.key);
               const data = sessionDoc.collectedData || {};
               const limited = Object.fromEntries(
-                Object.entries(data).filter(([k]) => setupKeys.includes(k))
+                Object.entries(data).filter(([k]) => setupKeys.includes(k)),
               );
               const summary = buildSafeSummary(limited);
               const resp = {
@@ -5954,13 +5980,13 @@ Keep the response conversational and helpful, focusing on providing value before
                     ...autoFilled2,
                   },
                 },
-              }
+              },
             );
             const firstField = fieldsNoToken2[0];
             const docContext = await buildOnboardingDocContext(
               firstField,
               adminId || undefined,
-              onboardingConfig?.initialSetupDocsUrl
+              onboardingConfig?.initialSetupDocsUrl,
             );
             const intro =
               "✅ Registration complete. Now, let’s finish initial setup.";
@@ -5991,15 +6017,15 @@ Keep the response conversational and helpful, focusing on providing value before
               const docDerived2 = await inferFieldsFromDocs(
                 adminId || undefined,
                 preferredDocs,
-                "initial setup required fields"
+                "initial setup required fields",
               );
               if (Array.isArray(docDerived2) && docDerived2.length > 0) {
                 const tokenFromReg2 = extractApiKeyFromResponse(
                   result2.responseBody,
-                  onboardingConfig
+                  onboardingConfig,
                 );
                 const collectedKeys2 = Object.keys(
-                  sessionDoc.collectedData || {}
+                  sessionDoc.collectedData || {},
                 );
                 const autoFilled2: Record<string, any> = {};
                 const fieldsNoToken2 = (docDerived2 || []).filter((f: any) => {
@@ -6026,13 +6052,13 @@ Keep the response conversational and helpful, focusing on providing value before
                         ...autoFilled2,
                       },
                     },
-                  }
+                  },
                 );
                 const firstField2 = fieldsNoToken2[0];
                 const docContext2 = await buildOnboardingDocContext(
                   firstField2,
                   adminId || undefined,
-                  onboardingConfig?.initialSetupDocsUrl
+                  onboardingConfig?.initialSetupDocsUrl,
                 );
                 const intro2 =
                   "✅ Registration complete. Now, let’s finish initial setup.";
@@ -6070,11 +6096,11 @@ Keep the response conversational and helpful, focusing on providing value before
                   },
                 ];
                 const collectedKeys3 = Object.keys(
-                  sessionDoc.collectedData || {}
+                  sessionDoc.collectedData || {},
                 );
                 const tokenFromReg3 = extractApiKeyFromResponse(
                   result2.responseBody,
-                  onboardingConfig
+                  onboardingConfig,
                 );
                 const autoFilled3: Record<string, any> = {};
                 const fieldsNoToken3 = (fallbackFields || []).filter(
@@ -6087,7 +6113,7 @@ Keep the response conversational and helpful, focusing on providing value before
                       return false;
                     }
                     return !collectedKeys3.includes(k);
-                  }
+                  },
                 );
                 if (fieldsNoToken3.length > 0) {
                   await sessionsCollection.updateOne(
@@ -6104,14 +6130,14 @@ Keep the response conversational and helpful, focusing on providing value before
                           ...autoFilled3,
                         },
                       },
-                    }
+                    },
                   );
                   const firstField3 = fieldsNoToken3[0];
                   const docContext3 = await buildOnboardingDocContext(
                     firstField3,
                     adminId || undefined,
                     onboardingConfig?.initialSetupDocsUrl ||
-                      onboardingConfig?.docsUrl
+                      onboardingConfig?.docsUrl,
                   );
                   const intro3 =
                     "✅ Registration complete. Now, let’s finish initial setup.";
@@ -6179,7 +6205,7 @@ Keep the response conversational and helpful, focusing on providing value before
                     registeredUserId: result2.userId || null,
                     updatedAt: now,
                   },
-                }
+                },
               );
             } catch {}
           }
@@ -6226,7 +6252,7 @@ Keep the response conversational and helpful, focusing on providing value before
           } else {
             const lowerErr2 = String(result2.error || "").toLowerCase();
             const missingGeneric2 = /missing\s+required\s+fields/.test(
-              lowerErr2
+              lowerErr2,
             );
             if (missingGeneric2) {
               const configuredFields2 =
@@ -6262,22 +6288,22 @@ Keep the response conversational and helpful, focusing on providing value before
                     ];
               const docDerived2 = await inferFieldsFromDocs(
                 adminId || undefined,
-                onboardingConfig?.docsUrl
+                onboardingConfig?.docsUrl,
               );
               const allFields2 = mergeFields(
                 configuredFields2,
-                docDerived2 || []
+                docDerived2 || [],
               );
               const requiredKeys2 = allFields2
                 .filter((f: any) => f.required)
                 .map((f: any) => String(f.key || ""));
               const presentKeys2 = Object.keys(sessionDoc.collectedData || {});
               const missingKeys2 = requiredKeys2.filter(
-                (k) => !presentKeys2.includes(k)
+                (k) => !presentKeys2.includes(k),
               );
               if (missingKeys2.length > 0) {
                 const missingFields2 = allFields2.filter((f: any) =>
-                  missingKeys2.includes(String(f.key || ""))
+                  missingKeys2.includes(String(f.key || "")),
                 );
                 await sessionsCollection.updateOne(
                   { sessionId },
@@ -6288,19 +6314,19 @@ Keep the response conversational and helpful, focusing on providing value before
                       fields: missingFields2,
                       updatedAt: now,
                     },
-                  }
+                  },
                 );
                 const firstField2 = missingFields2[0];
                 const docContext2 = await buildOnboardingDocContext(
                   firstField2,
                   adminId || undefined,
-                  onboardingConfig?.docsUrl
+                  onboardingConfig?.docsUrl,
                 );
                 resp = {
                   mainText: `${
                     docContext2 ? `${docContext2}\n\n` : ""
                   }We need a few more details to complete your registration. ${promptForField(
-                    firstField2
+                    firstField2,
                   )}`,
                   buttons: [],
                   emailPrompt: "",
@@ -6328,7 +6354,7 @@ Keep the response conversational and helpful, focusing on providing value before
               (typeof result2.status === "number" &&
                 (result2.status === 409 || result2.status === 422)) ||
               /duplicate\s*email|email\s*.*already\s*(?:exists|registered)/i.test(
-                errTxt
+                errTxt,
               );
             if (isExistingUser) {
               (resp as any).buttons = ["Change Email"];
@@ -6344,17 +6370,18 @@ Keep the response conversational and helpful, focusing on providing value before
               ((onboardingConfig as any)?.initialFields || []).length > 0
                 ? ((onboardingConfig as any).initialFields as any[])
                 : ((onboardingConfig as any)?.initialParsed?.bodyKeys || [])
-                    .length > 0
-                ? fieldsFromBodyKeys(
-                    (onboardingConfig as any)?.initialParsed
-                      ?.bodyKeys as string[]
-                  )
-                : ((onboardingConfig as any)?.initialHeaderFields || [])
-                    .length > 0
-                ? ((onboardingConfig as any).initialHeaderFields as any[])
-                : deriveOnboardingFieldsFromCurl(
-                    (onboardingConfig as any).initialSetupCurlCommand as string
-                  );
+                      .length > 0
+                  ? fieldsFromBodyKeys(
+                      (onboardingConfig as any)?.initialParsed
+                        ?.bodyKeys as string[],
+                    )
+                  : ((onboardingConfig as any)?.initialHeaderFields || [])
+                        .length > 0
+                    ? ((onboardingConfig as any).initialHeaderFields as any[])
+                    : deriveOnboardingFieldsFromCurl(
+                        (onboardingConfig as any)
+                          .initialSetupCurlCommand as string,
+                      );
             editFields = setupFields || [];
           } else {
             editFields =
@@ -6392,7 +6419,7 @@ Keep the response conversational and helpful, focusing on providing value before
                   ? "initial_setup"
                   : sessionDoc?.phase || "registration",
               },
-            }
+            },
           );
           const firstField = filteredEditFields[0];
           const docContext = await buildOnboardingDocContext(
@@ -6401,7 +6428,7 @@ Keep the response conversational and helpful, focusing on providing value before
             inSetup
               ? onboardingConfig?.initialSetupDocsUrl ||
                   onboardingConfig?.docsUrl
-              : onboardingConfig?.docsUrl
+              : onboardingConfig?.docsUrl,
           );
           const prompt = promptForField(firstField);
           const intro = inSetup
@@ -6420,7 +6447,7 @@ Keep the response conversational and helpful, focusing on providing value before
         } else if (/\bchange\s+email\b/.test(lower)) {
           // Prompt only for email, do not allow changing other fields
           const emailIdx = (sessionDoc.fields || []).findIndex(
-            (f: any) => f.key === "email" || f.type === "email"
+            (f: any) => f.key === "email" || f.type === "email",
           );
           const emailField =
             emailIdx >= 0
@@ -6437,12 +6464,12 @@ Keep the response conversational and helpful, focusing on providing value before
                 phase: "change_email_only",
                 updatedAt: now,
               },
-            }
+            },
           );
           const docContext = await buildOnboardingDocContext(
             emailField,
             adminId || undefined,
-            onboardingConfig?.docsUrl
+            onboardingConfig?.docsUrl,
           );
           const prompt = promptForField(emailField);
           const resp = {
@@ -6457,7 +6484,7 @@ Keep the response conversational and helpful, focusing on providing value before
           await sessionsCollection.updateOne(
             { sessionId },
             { $set: { status: "cancelled", updatedAt: now } },
-            { upsert: true }
+            { upsert: true },
           );
           const resp = {
             mainText:
@@ -6557,7 +6584,7 @@ Keep the response conversational and helpful, focusing on providing value before
               stageIndex: nextIndex,
               updatedAt: now,
             },
-          }
+          },
         );
 
         const nextField = sessionDoc.fields[nextIndex];
@@ -6581,7 +6608,7 @@ Keep the response conversational and helpful, focusing on providing value before
                     registeredUserId: result.userId || null,
                     updatedAt: now,
                   },
-                }
+                },
               );
             } catch {}
             const setupFields =
@@ -6601,7 +6628,7 @@ Keep the response conversational and helpful, focusing on providing value before
             }
             const tokenFromReg = extractApiKeyFromResponse(
               result.responseBody,
-              onboardingConfig
+              onboardingConfig,
             );
             const collectedKeys = Object.keys(sessionDoc.collectedData || {});
             const autoFilled: Record<string, any> = {};
@@ -6629,7 +6656,7 @@ Keep the response conversational and helpful, focusing on providing value before
                     ...autoFilled,
                   },
                 },
-              }
+              },
             );
             const firstField = fieldsNoToken[0];
             if (!firstField) {
@@ -6643,12 +6670,12 @@ Keep the response conversational and helpful, focusing on providing value before
                     phase: "initial_setup",
                     updatedAt: now,
                   },
-                }
+                },
               );
               const setupKeys = (setupFields || []).map((f: any) => f.key);
               const data = sessionDoc.collectedData || {};
               const limited = Object.fromEntries(
-                Object.entries(data).filter(([k]) => setupKeys.includes(k))
+                Object.entries(data).filter(([k]) => setupKeys.includes(k)),
               );
               const summary = buildSafeSummary(limited);
               const resp = {
@@ -6663,7 +6690,7 @@ Keep the response conversational and helpful, focusing on providing value before
             const docContext = await buildOnboardingDocContext(
               firstField,
               adminId || undefined,
-              onboardingConfig?.initialSetupDocsUrl
+              onboardingConfig?.initialSetupDocsUrl,
             );
             const intro =
               "✅ Registration complete. Now, let’s finish initial setup.";
@@ -6682,7 +6709,7 @@ Keep the response conversational and helpful, focusing on providing value before
           const resp = {
             mainText:
               String(
-                result?.error || "Registration failed. Please try again."
+                result?.error || "Registration failed. Please try again.",
               ) || "Registration failed. Please try again.",
             buttons: ["Try Again"],
             emailPrompt: "",
@@ -6696,7 +6723,7 @@ Keep the response conversational and helpful, focusing on providing value before
         const docContext = await buildOnboardingDocContext(
           nextField,
           adminId || undefined,
-          onboardingConfig?.docsUrl
+          onboardingConfig?.docsUrl,
         );
         const resp = {
           mainText: `${docContext ? `${docContext}\n\n` : ""}${prompt}`,
@@ -6715,7 +6742,7 @@ Keep the response conversational and helpful, focusing on providing value before
       const docContext = await buildOnboardingDocContext(
         currentField,
         adminId || undefined,
-        onboardingConfig?.docsUrl
+        onboardingConfig?.docsUrl,
       );
       const resp = {
         mainText: `${docContext ? `${docContext}\n\n` : ""}${
@@ -6742,7 +6769,7 @@ Keep the response conversational and helpful, focusing on providing value before
       { sessionId },
       {
         $set: { collectedData: updated, stageIndex: nextIndex, updatedAt: now },
-      }
+      },
     );
 
     const nextField = sessionDoc.fields[nextIndex];
@@ -6766,7 +6793,7 @@ Keep the response conversational and helpful, focusing on providing value before
                 registeredUserId: result.userId || null,
                 updatedAt: now,
               },
-            }
+            },
           );
         } catch {}
         const setupFields =
@@ -6786,7 +6813,7 @@ Keep the response conversational and helpful, focusing on providing value before
         }
         const tokenFromReg = extractApiKeyFromResponse(
           result.responseBody,
-          onboardingConfig
+          onboardingConfig,
         );
         const collectedKeys = Object.keys(sessionDoc.collectedData || {});
         const autoFilled: Record<string, any> = {};
@@ -6814,7 +6841,7 @@ Keep the response conversational and helpful, focusing on providing value before
                 ...autoFilled,
               },
             },
-          }
+          },
         );
         const firstField = fieldsNoToken[0];
         if (!firstField) {
@@ -6828,12 +6855,12 @@ Keep the response conversational and helpful, focusing on providing value before
                 phase: "initial_setup",
                 updatedAt: now,
               },
-            }
+            },
           );
           const setupKeys = (setupFields || []).map((f: any) => f.key);
           const data = sessionDoc.collectedData || {};
           const limited = Object.fromEntries(
-            Object.entries(data).filter(([k]) => setupKeys.includes(k))
+            Object.entries(data).filter(([k]) => setupKeys.includes(k)),
           );
           const summary = buildSafeSummary(limited);
           const resp = {
@@ -6848,7 +6875,7 @@ Keep the response conversational and helpful, focusing on providing value before
         const docContext = await buildOnboardingDocContext(
           firstField,
           adminId || undefined,
-          onboardingConfig?.initialSetupDocsUrl
+          onboardingConfig?.initialSetupDocsUrl,
         );
         const intro =
           "✅ Registration complete. Now, let’s finish initial setup.";
@@ -6880,7 +6907,7 @@ Keep the response conversational and helpful, focusing on providing value before
     const docContext = await buildOnboardingDocContext(
       nextField,
       adminId || undefined,
-      onboardingConfig?.docsUrl
+      onboardingConfig?.docsUrl,
     );
     const resp = {
       mainText: `${docContext ? `${docContext}\n\n` : ""}${prompt}`,
@@ -6928,7 +6955,7 @@ Keep the response conversational and helpful, focusing on providing value before
       const conversation = conversationHistory
         .map(
           (msg) =>
-            `${msg.role === "user" ? "Customer" : "Assistant"}: ${msg.content}`
+            `${msg.role === "user" ? "Customer" : "Assistant"}: ${msg.content}`,
         )
         .join("\n");
 
@@ -6965,7 +6992,7 @@ Extract key requirements (2-3 bullet points max, be concise):`;
         ) {
           updateData.requirements = extractedRequirements;
           console.log(
-            `[LeadGen] Extracted requirements for ${detectedEmail}: ${extractedRequirements}`
+            `[LeadGen] Extracted requirements for ${detectedEmail}: ${extractedRequirements}`,
           );
         }
       }
@@ -7010,7 +7037,7 @@ Extract key requirements (2-3 bullet points max, be concise):`;
               ...new Set(
                 sessionMessages
                   .map((m) => m.pageUrl)
-                  .filter((url) => url && url !== pageUrl)
+                  .filter((url) => url && url !== pageUrl),
               ),
             ];
 
@@ -7018,7 +7045,9 @@ Extract key requirements (2-3 bullet points max, be concise):`;
             const proactiveQuestions = sessionMessages
               .filter(
                 (m) =>
-                  m.role === "assistant" && m.content && m.content.includes("?")
+                  m.role === "assistant" &&
+                  m.content &&
+                  m.content.includes("?"),
               )
               .map((m) => m.content);
 
@@ -7036,7 +7065,7 @@ Extract key requirements (2-3 bullet points max, be concise):`;
             };
 
             console.log(
-              `[LeadGen] Enhanced context: intent=${detectedIntent}, vertical=${detectedVertical}, pages=${visitedPages.length}`
+              `[LeadGen] Enhanced context: intent=${detectedIntent}, vertical=${detectedVertical}, pages=${visitedPages.length}`,
             );
           } catch (contextError) {
             console.error("[LeadGen] Error gathering context:", contextError);
@@ -7051,11 +7080,11 @@ Extract key requirements (2-3 bullet points max, be concise):`;
           extractedRequirements,
           pageUrl || undefined,
           firstMessage,
-          pageContext
+          pageContext,
         );
 
         console.log(
-          `[LeadGen] Created/updated lead record for ${detectedEmail} with adminId: ${adminId}`
+          `[LeadGen] Created/updated lead record for ${detectedEmail} with adminId: ${adminId}`,
         );
       } catch (error) {
         console.error("[LeadGen] Error creating lead record:", error);
@@ -7065,7 +7094,7 @@ Extract key requirements (2-3 bullet points max, be concise):`;
 
     // Log for verification
     console.log(
-      `[LeadGen] Stored email for session ${sessionId}: ${detectedEmail} with adminId: ${adminId}`
+      `[LeadGen] Stored email for session ${sessionId}: ${detectedEmail} with adminId: ${adminId}`,
     );
 
     // Track email capture event
@@ -7075,7 +7104,7 @@ Extract key requirements (2-3 bullet points max, be concise):`;
       detectedEmail,
       undefined,
       pageUrl || undefined,
-      adminId || undefined
+      adminId || undefined,
     );
 
     // Continue without returning early; downstream logic will generate an acknowledgment
@@ -7129,33 +7158,33 @@ Extract key requirements (2-3 bullet points max, be concise):`;
             pageUrl,
             trigger: detectedEmail ? "email_detection" : undefined,
           }),
-        }
+        },
       );
 
       if (profileResponse.ok) {
         const profileResult = (await profileResponse.json()) as any;
         if (profileResult.updated) {
           console.log(
-            `[CustomerProfiling] Profile updated via ${profileResult.trigger} - Confidence: ${profileResult.confidence}`
+            `[CustomerProfiling] Profile updated via ${profileResult.trigger} - Confidence: ${profileResult.confidence}`,
           );
 
           // Store profile data for potential use in response generation
           if (profileResult.profile?.intelligenceProfile?.buyingReadiness) {
             console.log(
-              `[CustomerProfiling] Buying readiness: ${profileResult.profile.intelligenceProfile.buyingReadiness}`
+              `[CustomerProfiling] Buying readiness: ${profileResult.profile.intelligenceProfile.buyingReadiness}`,
             );
           }
         }
       } else {
         console.log(
           "[CustomerProfiling] Profile update request failed:",
-          profileResponse.status
+          profileResponse.status,
         );
       }
     } catch (error) {
       console.error(
         "[CustomerProfiling] Error in profile update process:",
-        error
+        error,
       );
       // Continue with normal chat flow - profiling failures shouldn't break the conversation
     }
@@ -7167,12 +7196,12 @@ Extract key requirements (2-3 bullet points max, be concise):`;
     const bookingAwareResponse = generateBookingAwareResponse(
       { mainText: "", buttons: [] }, // Will be filled by AI if needed
       bookingStatus,
-      question
+      question,
     );
 
     if (bookingAwareResponse.existingBooking) {
       console.log(
-        `[Chat API ${requestId}] 🔒 User has active booking, returning booking-aware response`
+        `[Chat API ${requestId}] 🔒 User has active booking, returning booking-aware response`,
       );
 
       // Store user message
@@ -7216,12 +7245,12 @@ Extract key requirements (2-3 bullet points max, be concise):`;
       "cancel booking",
     ];
     const isBookingAction = bookingActions.some((action) =>
-      question.toLowerCase().includes(action.toLowerCase())
+      question.toLowerCase().includes(action.toLowerCase()),
     );
 
     if (isBookingAction && bookingStatus.hasActiveBooking) {
       console.log(
-        `[Chat API ${requestId}] 🎛️ Handling booking management action: ${question}`
+        `[Chat API ${requestId}] 🎛️ Handling booking management action: ${question}`,
       );
 
       // Determine which action was requested
@@ -7241,7 +7270,7 @@ Extract key requirements (2-3 bullet points max, be concise):`;
         try {
           const cancelled = await bookingService.cancelBooking(
             bookingStatus.currentBooking._id.toString(),
-            adminId || undefined
+            adminId || undefined,
           );
 
           // Store user message
@@ -7263,7 +7292,7 @@ Extract key requirements (2-3 bullet points max, be concise):`;
               sessionId,
               bookingStatus.currentBooking._id.toString(),
               false,
-              adminId || undefined
+              adminId || undefined,
             );
 
             const response = {
@@ -7349,7 +7378,7 @@ Extract key requirements (2-3 bullet points max, be concise):`;
 
       const managementResponse = generateBookingManagementResponse(
         requestedAction,
-        bookingStatus.currentBooking
+        bookingStatus.currentBooking,
       );
 
       // Store user message
@@ -7391,13 +7420,13 @@ Extract key requirements (2-3 bullet points max, be concise):`;
   // Proactive page-aware message
   if ((proactive || followup) && pageUrl) {
     console.log(
-      `[DEBUG] Proactive request - pageUrl: ${pageUrl}, adminId: ${adminId}, proactive: ${proactive}, followup: ${followup}`
+      `[DEBUG] Proactive request - pageUrl: ${pageUrl}, adminId: ${adminId}, proactive: ${proactive}, followup: ${followup}`,
     );
 
     let pageChunks: string[] = [];
     if (adminId) {
       console.log(
-        `[DEBUG] AdminId found: ${adminId}, checking sitemap for pageUrl: ${pageUrl}`
+        `[DEBUG] AdminId found: ${adminId}, checking sitemap for pageUrl: ${pageUrl}`,
       );
       // Check if pageUrl is in sitemap_urls and if it's crawled
       const sitemapUrls = db.collection("sitemap_urls");
@@ -7409,19 +7438,19 @@ Extract key requirements (2-3 bullet points max, be concise):`;
         "pageUrl:",
         pageUrl,
         "sitemapEntry:",
-        sitemapEntry
+        sitemapEntry,
       );
 
       if (!sitemapEntry) {
         console.log(
-          `[DEBUG] No sitemap entry found for pageUrl: ${pageUrl} with adminId: ${adminId}`
+          `[DEBUG] No sitemap entry found for pageUrl: ${pageUrl} with adminId: ${adminId}`,
         );
         console.log(
-          `[DEBUG] This means the page is not in your sitemap. Add it via admin panel.`
+          `[DEBUG] This means the page is not in your sitemap. Add it via admin panel.`,
         );
       } else if (!sitemapEntry.crawled) {
         console.log(
-          `[DEBUG] Sitemap entry found but page not crawled yet. Will crawl now.`
+          `[DEBUG] Sitemap entry found but page not crawled yet. Will crawl now.`,
         );
       } else {
         console.log(`[DEBUG] Page found and crawled. Getting chunks...`);
@@ -7434,7 +7463,7 @@ Extract key requirements (2-3 bullet points max, be concise):`;
           console.log(
             `[OnDemandCrawl] Extracted text for ${pageUrl}: ${
               text.length
-            } chars, first 100: ${text.slice(0, 100)}`
+            } chars, first 100: ${text.slice(0, 100)}`,
           );
 
           // Store in crawled_pages
@@ -7448,7 +7477,7 @@ Extract key requirements (2-3 bullet points max, be concise):`;
           // Mark as crawled in sitemap_urls
           await sitemapUrls.updateOne(
             { adminId, url: pageUrl },
-            { $set: { crawled: true, crawledAt: new Date() } }
+            { $set: { crawled: true, crawledAt: new Date() } },
           );
           // Chunk and embed for ChromaDB
           const chunks = chunkText(text);
@@ -7458,7 +7487,7 @@ Extract key requirements (2-3 bullet points max, be concise):`;
               model: "text-embedding-3-small",
             });
             const embeddings = embedResp.data.map(
-              (d: { embedding: number[] }) => d.embedding
+              (d: { embedding: number[] }) => d.embedding,
             );
             const metadata = chunks.map((_, i) => ({
               filename: pageUrl,
@@ -7469,11 +7498,11 @@ Extract key requirements (2-3 bullet points max, be concise):`;
             await addChunks(chunks, embeddings, metadata);
             pageChunks = chunks;
             console.log(
-              `[OnDemandCrawl] Successfully processed ${pageUrl}: ${chunks.length} chunks`
+              `[OnDemandCrawl] Successfully processed ${pageUrl}: ${chunks.length} chunks`,
             );
           } else {
             console.log(
-              `[OnDemandCrawl] No chunks created for ${pageUrl} - content may be too short or empty`
+              `[OnDemandCrawl] No chunks created for ${pageUrl} - content may be too short or empty`,
             );
           }
         } catch (err) {
@@ -7489,10 +7518,10 @@ Extract key requirements (2-3 bullet points max, be concise):`;
       // LOG: No adminId found for session
       console.log("[Proactive] No adminId found for sessionId:", sessionId);
       console.log(
-        "[DEBUG] This means your API key is not properly mapped to an adminId"
+        "[DEBUG] This means your API key is not properly mapped to an adminId",
       );
       console.log(
-        "[DEBUG] Check that your API key exists in the users collection"
+        "[DEBUG] Check that your API key exists in the users collection",
       );
     }
     let pageSummary = "(No specific information found for this page.)";
@@ -7512,14 +7541,14 @@ Extract key requirements (2-3 bullet points max, be concise):`;
           });
           if (
             ["in_progress", "ready_to_submit", "error"].includes(
-              existingOnboarding?.status || ""
+              existingOnboarding?.status || "",
             )
           ) {
             const idx = existingOnboarding?.stageIndex ?? 0;
             const field = existingOnboarding?.fields?.[idx];
             if (existingOnboarding?.status === "ready_to_submit") {
               const summary = buildSafeSummary(
-                existingOnboarding?.collectedData || {}
+                existingOnboarding?.collectedData || {},
               );
               return NextResponse.json(
                 {
@@ -7531,13 +7560,13 @@ Extract key requirements (2-3 bullet points max, be concise):`;
                   emailPrompt: "",
                   onboardingAction: "confirm",
                 },
-                { headers: corsHeaders }
+                { headers: corsHeaders },
               );
             } else if (existingOnboarding?.status === "error") {
               const lastError =
                 existingOnboarding?.lastError || "Registration failed";
               const summary = buildSafeSummary(
-                existingOnboarding?.collectedData || {}
+                existingOnboarding?.collectedData || {},
               );
               return NextResponse.json(
                 {
@@ -7549,7 +7578,7 @@ Extract key requirements (2-3 bullet points max, be concise):`;
                         (existingOnboarding as any).lastErrorHttpStatus ===
                           422)) ||
                     /duplicate\s*email|email\s*.*already\s*(?:exists|registered)/i.test(
-                      lastError || ""
+                      lastError || "",
                     )
                       ? "Please update your email to continue."
                       : 'Reply "Try Again" to resubmit, or "Edit" to change any detail.'
@@ -7562,7 +7591,7 @@ Extract key requirements (2-3 bullet points max, be concise):`;
                         (existingOnboarding as any).lastErrorHttpStatus ===
                           422)) ||
                     /duplicate\s*email|email\s*.*already\s*(?:exists|registered)/i.test(
-                      lastError || ""
+                      lastError || "",
                     )
                       ? ["Change Email"]
                       : ["Try Again", "Edit Details"],
@@ -7575,21 +7604,20 @@ Extract key requirements (2-3 bullet points max, be concise):`;
                         (existingOnboarding as any).lastErrorHttpStatus ===
                           422)) ||
                     /duplicate\s*email|email\s*.*already\s*(?:exists|registered)/i.test(
-                      lastError || ""
+                      lastError || "",
                     )
                       ? "error_change_email"
                       : "error",
                 },
-                { headers: corsHeaders }
+                { headers: corsHeaders },
               );
             } else if (field) {
               const prompt = promptForField(field);
               const docContext = await buildOnboardingDocContext(
                 field,
                 existingOnboarding?.adminId || undefined,
-                (
-                  await getAdminSettings(existingOnboarding?.adminId || "")
-                ).onboarding?.docsUrl
+                (await getAdminSettings(existingOnboarding?.adminId || ""))
+                  .onboarding?.docsUrl,
               );
               return NextResponse.json(
                 {
@@ -7598,7 +7626,7 @@ Extract key requirements (2-3 bullet points max, be concise):`;
                   emailPrompt: "",
                   onboardingAction: "ask_next",
                 },
-                { headers: corsHeaders }
+                { headers: corsHeaders },
               );
             }
           }
@@ -7611,16 +7639,16 @@ Extract key requirements (2-3 bullet points max, be concise):`;
           const chunkSize = 5000;
           const textChunks = await splitTextIntoTokenChunks(
             fullPageText,
-            chunkSize
+            chunkSize,
           );
           console.log(
-            `[Proactive] Splitting into ${textChunks.length} chunks of ~${chunkSize} tokens each`
+            `[Proactive] Splitting into ${textChunks.length} chunks of ~${chunkSize} tokens each`,
           );
           const summaries = [];
           for (let i = 0; i < textChunks.length; i++) {
             const chunk = textChunks[i];
             console.log(
-              `[Proactive] Summarizing chunk ${i + 1}/${textChunks.length}`
+              `[Proactive] Summarizing chunk ${i + 1}/${textChunks.length}`,
             );
             const summaryResp = await openai.chat.completions.create({
               model: "gpt-4o-mini",
@@ -7636,7 +7664,7 @@ Extract key requirements (2-3 bullet points max, be concise):`;
           }
           summaryContext = summaries.join("\n");
           console.log(
-            `[Proactive] Combined summary length: ${summaryContext.length} chars`
+            `[Proactive] Combined summary length: ${summaryContext.length} chars`,
           );
         }
         const detectedIntent = detectIntent({ pageUrl });
@@ -7644,11 +7672,11 @@ Extract key requirements (2-3 bullet points max, be concise):`;
         const verticalInfo = getVerticalMessage(detectedVertical);
 
         console.log(
-          `[DEBUG] Detected intent for pageUrl "${pageUrl}": "${detectedIntent}"`
+          `[DEBUG] Detected intent for pageUrl "${pageUrl}": "${detectedIntent}"`,
         );
         console.log(`[DEBUG] Detected vertical: "${detectedVertical}"`);
         console.log(
-          `[DEBUG] Conversation state: hasBeenGreeted=${hasBeenGreeted}, proactiveCount=${proactiveMessageCount}, visitedPages=${visitedPages.length}`
+          `[DEBUG] Conversation state: hasBeenGreeted=${hasBeenGreeted}, proactiveCount=${proactiveMessageCount}, visitedPages=${visitedPages.length}`,
         );
 
         const businessName = (() => {
@@ -7671,7 +7699,7 @@ Extract key requirements (2-3 bullet points max, be concise):`;
             undefined,
             detectedVertical,
             pageUrl || undefined,
-            adminId || undefined
+            adminId || undefined,
           );
         }
 
@@ -7686,7 +7714,7 @@ Extract key requirements (2-3 bullet points max, be concise):`;
               let content = String(msg.content || "");
               content = content.replace(
                 /(?:Options|Buttons|Quick Actions|Choose from):\s*[\s\S]*$/i,
-                ""
+                "",
               );
               return `${msg.role === "user" ? "User" : "Bot"}: ${content}`;
             })
@@ -7735,7 +7763,7 @@ Extract key requirements (2-3 bullet points max, be concise):`;
           finalProactiveMsg = finalProactiveMsg
             .replace(
               /(?:Options|Buttons|Quick Actions|Choose from):\s*[\s\S]*$/i,
-              ""
+              "",
             )
             .trim();
 
@@ -7754,7 +7782,7 @@ Extract key requirements (2-3 bullet points max, be concise):`;
             const bookingEnhancement = await enhanceChatWithBookingDetection(
               finalProactiveMsg || "",
               [],
-              `Page URL: ${pageUrl || "unknown"}`
+              `Page URL: ${pageUrl || "unknown"}`,
             );
             if (bookingEnhancement.chatResponse.showBookingCalendar) {
               enhancedProactiveData = {
@@ -7777,7 +7805,7 @@ Extract key requirements (2-3 bullet points max, be concise):`;
           // Check if user already has email (sales mode activation) or preserved SDR status
           const existingEmail = await chats.findOne(
             { sessionId, email: { $exists: true } },
-            { sort: { createdAt: -1 } }
+            { sort: { createdAt: -1 } },
           );
 
           if (existingEmail && existingEmail.email) {
@@ -7789,10 +7817,10 @@ Extract key requirements (2-3 bullet points max, be concise):`;
             const isReturningVisitor = existingEmail.preservedStatus;
             const conversionButtons = getConversionButtons(
               detectedVertical,
-              isReturningVisitor
+              isReturningVisitor,
             );
             const featureButtonsFirst = extractFeatureOptionsFromText(
-              summaryContext || ""
+              summaryContext || "",
             );
             const sdrButtons =
               featureButtonsFirst.length > 0
@@ -7809,12 +7837,12 @@ Extract key requirements (2-3 bullet points max, be concise):`;
               finalSdrButtons = filterButtonsBasedOnHistory(
                 finalSdrButtons || [],
                 history || [],
-                customerProfile?.intelligenceProfile?.topicsDiscussed || []
+                customerProfile?.intelligenceProfile?.topicsDiscussed || [],
               );
               if (bookingStatus.hasActiveBooking) {
                 finalSdrButtons = filterButtonsBasedOnBooking(
                   finalSdrButtons || [],
-                  bookingStatus
+                  bookingStatus,
                 );
               }
             } catch {}
@@ -7848,7 +7876,7 @@ Extract key requirements (2-3 bullet points max, be concise):`;
                 botMode: "sales",
                 userEmail: existingEmail.email,
               },
-              { headers: corsHeaders }
+              { headers: corsHeaders },
             );
           }
 
@@ -7919,7 +7947,7 @@ BUTTONS REQUIREMENTS:
         } else {
           // Follow-up proactive message - deeper context analysis
           const isRevisit = visitedPages.some((page: string) =>
-            pageUrl.includes(page)
+            pageUrl.includes(page),
           );
 
           summaryPrompt = `FOLLOW-UP CONTEXT ANALYSIS:
@@ -8068,7 +8096,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
         } catch (error) {
           // Dynamic fallback based on page content
           console.log(
-            "[Proactive] Failed to parse JSON, creating dynamic fallback"
+            "[Proactive] Failed to parse JSON, creating dynamic fallback",
           );
 
           // Extract key info from page context for fallback
@@ -8134,7 +8162,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
             buttons = structuredButtons;
           } else {
             const featureButtons = extractFeatureOptionsFromText(
-              summaryContext || ""
+              summaryContext || "",
             );
             if (featureButtons.length > 0) {
               buttons = featureButtons.slice(0, 4);
@@ -8182,19 +8210,19 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
           const bookingEnhancement = await enhanceChatWithBookingDetection(
             proactiveMsg || "",
             [], // conversation history - could be enhanced later
-            `Page URL: ${pageUrl || "unknown"}`
+            `Page URL: ${pageUrl || "unknown"}`,
           );
 
           if (bookingEnhancement.chatResponse.showBookingCalendar) {
             console.log(
-              "[Chat API] Booking detected in proactive message - enhancing response with calendar"
+              "[Chat API] Booking detected in proactive message - enhancing response with calendar",
             );
             await updateProfileOnContactRequest(
               req.nextUrl.origin,
               sessionId,
               apiKey,
               pageUrl,
-              proactiveMsg || ""
+              proactiveMsg || "",
             );
             enhancedProactiveData = {
               ...enhancedProactiveData,
@@ -8209,7 +8237,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
         } catch (error) {
           console.warn(
             "[Chat API] Booking detection failed for proactive message:",
-            error
+            error,
           );
           // Continue with original response if booking detection fails
         }
@@ -8305,7 +8333,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
         if (isScrolling) {
           const lastEmailDoc = await chats.findOne(
             { sessionId, email: { $exists: true } },
-            { sort: { createdAt: -1 } }
+            { sort: { createdAt: -1 } },
           );
           const botModeMirror: "sales" | "lead_generation" =
             resolvedUserEmail || bookingStatus.hasActiveBooking
@@ -8331,7 +8359,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
           .filter(
             (msg) =>
               (msg as unknown as ChatMessage).role === "assistant" ||
-              (msg as unknown as ChatMessage).role === "user"
+              (msg as unknown as ChatMessage).role === "user",
           )
           .map((msg) => {
             const m = msg as unknown as ChatMessage;
@@ -8345,7 +8373,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
 
         const missingDims = computeBantMissingDims(
           previousChats,
-          customerProfile
+          customerProfile,
         );
         const lastUserMessage = previousChats
           .filter((msg) => (msg as unknown as ChatMessage).role === "user")
@@ -8373,7 +8401,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
             null,
             apiKey,
             pageUrl,
-            lastUserContent || ""
+            lastUserContent || "",
           );
         }
 
@@ -8387,7 +8415,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
 
         function isTooSimilar(
           newQ: MainTextLike,
-          prevQs: MainTextLike[]
+          prevQs: MainTextLike[],
         ): boolean {
           const newText = getText(newQ);
           if (!newText || newText.length < 10) return true; // Skip very short responses
@@ -8407,12 +8435,12 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
           const lowerText = newText.toLowerCase();
           const hasBannedPattern = bannedPatterns.some(
             (pattern) =>
-              lowerText.startsWith(pattern) || lowerText.includes(pattern)
+              lowerText.startsWith(pattern) || lowerText.includes(pattern),
           );
 
           if (hasBannedPattern) {
             console.log(
-              `[VARIETY] Rejected message for banned pattern: "${newText}"`
+              `[VARIETY] Rejected message for banned pattern: "${newText}"`,
             );
             return true; // Reject this message as too similar
           }
@@ -8429,7 +8457,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
             const overlapThreshold = 0.7;
             const minLength = Math.min(
               normalizedNew.length,
-              normalizedPrev.length
+              normalizedPrev.length,
             );
 
             if (
@@ -8457,34 +8485,31 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
           typeof rawFollowupCount === "number"
             ? rawFollowupCount
             : typeof rawFollowupCount === "string" &&
-              !isNaN(Number(rawFollowupCount))
-            ? Number(rawFollowupCount)
-            : 0;
+                !isNaN(Number(rawFollowupCount))
+              ? Number(rawFollowupCount)
+              : 0;
         const followupTopic = body.followupTopic || "general";
 
         console.log(
           "[FOLLOWUP] Generating followup message for topic:",
           followupTopic,
           "Count:",
-          followupCount
+          followupCount,
         );
 
         // Check if user already has email (sales mode)
-        const lastEmailMsg = await chats.findOne(
-          { sessionId, email: { $exists: true } },
-          { sort: { createdAt: -1 } }
-        );
-        const userHasEmail = lastEmailMsg && lastEmailMsg.email;
+        // resolvedUserEmail is the authoritative source (includes profile, booking, etc.)
+        const userHasEmail = resolvedUserEmail;
 
         // Try persona-based followup first
         console.log(
-          `[Persona] Attempting persona detection for followup ${followupCount}`
+          `[Persona] Attempting persona detection for followup ${followupCount}`,
         );
         const detectedPersona = await detectUserPersona(
           sessionId,
           previousChats,
           pageUrl,
-          adminId || ""
+          adminId || "",
         );
 
         // Build summary-first page context for prompts
@@ -8530,7 +8555,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
           } catch (e) {
             console.log(
               "[Followup] Summary-first context build failed, using chunks",
-              e
+              e,
             );
           }
         }
@@ -8545,7 +8570,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
           followupCount !== 2
         ) {
           console.log(
-            `[FOLLOWUP] Generating topic-based followup for: ${followupTopic}`
+            `[FOLLOWUP] Generating topic-based followup for: ${followupTopic}`,
           );
           personaFollowup = await generateTopicBasedFollowup(
             followupTopic,
@@ -8553,7 +8578,8 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
             pageUrl,
             previousQnA,
             followupCount,
-            customerProfile?.intelligenceProfile?.topicsDiscussed || []
+            customerProfile?.intelligenceProfile?.topicsDiscussed || [],
+            !!userHasEmail,
           );
         } else if (
           !preferMessageBased &&
@@ -8564,7 +8590,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
           console.log(
             `[Persona] Generating persona-based followup for: ${
               detectedPersona?.name || "unknown"
-            }`
+            }`,
           );
           personaFollowup = await generatePersonaBasedFollowup(
             detectedPersona,
@@ -8572,12 +8598,13 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
             pageUrl,
             previousQnA,
             followupCount,
-            customerProfile?.intelligenceProfile?.topicsDiscussed || []
+            customerProfile?.intelligenceProfile?.topicsDiscussed || [],
+            !!userHasEmail,
           );
         }
 
         const emailJustProvided = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i.test(
-          String(question || "")
+          String(question || ""),
         );
         if (emailJustProvided) {
           let prevAssistantText = "";
@@ -8587,7 +8614,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
             const chats = db.collection("chats");
             const prevAssistant = await chats.findOne(
               { sessionId, role: "assistant" },
-              { sort: { createdAt: -1 } }
+              { sort: { createdAt: -1 } },
             );
             if (prevAssistant) {
               prevAssistantText = String((prevAssistant as any).content || "");
@@ -8640,7 +8667,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
             });
             const missingDimsQuick = computeBantMissingDims(
               sessionMessagesQuick,
-              customerProfile
+              customerProfile,
             );
             if (missingDimsQuick.length === 0) {
               await updateProfileOnBantComplete(
@@ -8649,7 +8676,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
                 null,
                 apiKey,
                 pageUrl,
-                question || ""
+                question || "",
               );
             }
             const probingQuick = await analyzeForProbing({
@@ -8680,7 +8707,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
                 bantDimension:
                   immediate.dimension ||
                   detectBantDimensionFromText(
-                    String(immediate.mainText || "")
+                    String(immediate.mainText || ""),
                   ) ||
                   null,
                 createdAt: new Date(),
@@ -8703,7 +8730,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
                     detectedPersona?.name || "unknown"
                   }`
                 : "generated followup"
-            }`
+            }`,
           );
 
           const userEmail =
@@ -8723,19 +8750,19 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
             const bookingEnhancement = await enhanceChatWithBookingDetection(
               question || "",
               [], // conversation history - could be enhanced later
-              `Page URL: ${pageUrl || "unknown"}`
+              `Page URL: ${pageUrl || "unknown"}`,
             );
 
             if (bookingEnhancement.chatResponse.showBookingCalendar) {
               console.log(
-                "[Chat API] Booking detected in persona followup - enhancing response with calendar"
+                "[Chat API] Booking detected in persona followup - enhancing response with calendar",
               );
               await updateProfileOnContactRequest(
                 req.nextUrl.origin,
                 sessionId,
                 apiKey,
                 pageUrl,
-                question || ""
+                question || "",
               );
               enhancedPersonaFollowup = {
                 ...personaFollowup,
@@ -8751,7 +8778,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
           } catch (error) {
             console.warn(
               "[Chat API] Booking detection failed for persona followup:",
-              error
+              error,
             );
             // Continue with original response if booking detection fails
           }
@@ -8792,14 +8819,14 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
           let bookingAwareFollowup = generateBookingAwareResponse(
             followupWithMode,
             bookingStatus,
-            question || ""
+            question || "",
           );
           bookingAwareFollowup = {
             ...bookingAwareFollowup,
             buttons: filterButtonsBasedOnHistory(
               bookingAwareFollowup.buttons || [],
               previousChats,
-              customerProfile?.intelligenceProfile?.topicsDiscussed || []
+              customerProfile?.intelligenceProfile?.topicsDiscussed || [],
             ),
             topicsDiscussed:
               customerProfile?.intelligenceProfile?.topicsDiscussed || [],
@@ -8818,13 +8845,13 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
 
         // Fall back to generic followup logic
         console.log(
-          `[Persona] No persona detected or persona followup failed, using generic followup`
+          `[Persona] No persona detected or persona followup failed, using generic followup`,
         );
 
         if (followupCount === 0) {
           if (preferMessageBased) {
             console.log(
-              `[Followup] First followup based on last user message: "${lastUserContent}"`
+              `[Followup] First followup based on last user message: "${lastUserContent}"`,
             );
             if (userHasEmail) {
               followupSystemPrompt = `You are a helpful sales assistant. Always return ONLY valid JSON: {"mainText":"...","buttons":[...],"emailPrompt":""}.
@@ -8859,7 +8886,7 @@ Rules:
           } else {
             // No user message yet - use existing page-context driven logic
             console.log(
-              `[Followup] No user message found, using page-context driven first followup`
+              `[Followup] No user message found, using page-context driven first followup`,
             );
 
             followupSystemPrompt = `
@@ -9267,7 +9294,7 @@ ${previousQnA}
         } else {
           // No more follow-ups after 4
           console.log(
-            `[Followup] No more followups after count 4 for session ${sessionId}`
+            `[Followup] No more followups after count 4 for session ${sessionId}`,
           );
           return NextResponse.json(
             {
@@ -9278,7 +9305,7 @@ ${previousQnA}
               showBookingCalendar: false,
               onboardingAction: "noop",
             },
-            { headers: corsHeaders }
+            { headers: corsHeaders },
           );
         }
 
@@ -9299,12 +9326,12 @@ ${previousQnA}
 
           if (recentUserActivity) {
             console.log(
-              `[Followup] Skipping followup - user was active within last 25 seconds for session ${sessionId}`
+              `[Followup] Skipping followup - user was active within last 25 seconds for session ${sessionId}`,
             );
             let userEmail: string | null = null;
             const lastEmailMsg = await chats.findOne(
               { sessionId, email: { $exists: true } },
-              { sort: { createdAt: -1 } }
+              { sort: { createdAt: -1 } },
             );
             if (lastEmailMsg && lastEmailMsg.email)
               userEmail = lastEmailMsg.email;
@@ -9317,7 +9344,7 @@ ${previousQnA}
                 botMode: userEmail ? "sales" : "lead_generation",
                 userEmail: userEmail || null,
               },
-              { headers: corsHeaders }
+              { headers: corsHeaders },
             );
           }
         }
@@ -9334,7 +9361,7 @@ ${previousQnA}
 
         // Start followup generation with error handling
         console.log(
-          `[Followup] Starting followup generation for session ${sessionId}, count: ${followupCount}`
+          `[Followup] Starting followup generation for session ${sessionId}, count: ${followupCount}`,
         );
         let followupMsg = "";
         let parsed = null;
@@ -9342,7 +9369,7 @@ ${previousQnA}
         try {
           for (let attempt = 0; attempt < 2; attempt++) {
             console.log(
-              `[Followup] Attempt ${attempt + 1}/2 for session ${sessionId}`
+              `[Followup] Attempt ${attempt + 1}/2 for session ${sessionId}`,
             );
             // For retries, add explicit constraints to avoid previously used options
             const augmentedUserPrompt =
@@ -9374,10 +9401,10 @@ ${previousQnA}
               ? parsed.buttons
               : [];
             const newButtonsNorm = new Set(
-              newButtons.map((b) => normalizeLabel(String(b || "")))
+              newButtons.map((b) => normalizeLabel(String(b || ""))),
             );
             const prevButtonsNorm = new Set(
-              previousButtonsAll.map((b) => normalizeLabel(String(b || "")))
+              previousButtonsAll.map((b) => normalizeLabel(String(b || ""))),
             );
             let overlap = 0;
             for (const b of newButtonsNorm)
@@ -9394,12 +9421,12 @@ ${previousQnA}
           // If still too similar, skip sending a new follow-up
           if (isTooSimilar(parsed.mainText, lastFewQuestions)) {
             console.log(
-              `[Followup] Skipping followup - too similar to previous questions for session ${sessionId}`
+              `[Followup] Skipping followup - too similar to previous questions for session ${sessionId}`,
             );
             let userEmail: string | null = null;
             const lastEmailMsg = await chats.findOne(
               { sessionId, email: { $exists: true } },
-              { sort: { createdAt: -1 } }
+              { sort: { createdAt: -1 } },
             );
             if (lastEmailMsg && lastEmailMsg.email)
               userEmail = lastEmailMsg.email;
@@ -9411,7 +9438,7 @@ ${previousQnA}
                 botMode: userEmail ? "sales" : "lead_generation",
                 userEmail: userEmail || null,
               },
-              { headers: corsHeaders }
+              { headers: corsHeaders },
             );
           }
 
@@ -9419,14 +9446,14 @@ ${previousQnA}
           if (Array.isArray(parsed.buttons)) {
             const seen = new Set<string>();
             const prev = new Set(
-              previousButtonsAll.map((b) => normalizeLabel(b))
+              previousButtonsAll.map((b) => normalizeLabel(b)),
             );
 
             // Normalize topics for fuzzy matching
             const topicsDiscussed =
               customerProfile?.intelligenceProfile?.topicsDiscussed || [];
             const normalizedTopics = topicsDiscussed.map((t: string) =>
-              String(t || "").toLowerCase()
+              String(t || "").toLowerCase(),
             );
 
             parsed.buttons = parsed.buttons.filter((b: string) => {
@@ -9440,7 +9467,7 @@ ${previousQnA}
                 (topic: string) => {
                   if (topic.length < 3) return false; // Ignore very short topics
                   return key.includes(topic) || topic.includes(key);
-                }
+                },
               );
 
               if (isTopicDiscussed) {
@@ -9450,8 +9477,8 @@ ${previousQnA}
                       String(t || "")
                         .toLowerCase()
                         .includes(key) ||
-                      key.includes(String(t || "").toLowerCase())
-                  )}"`
+                      key.includes(String(t || "").toLowerCase()),
+                  )}"`,
                 );
                 return false;
               }
@@ -9462,14 +9489,14 @@ ${previousQnA}
           }
 
           console.log(
-            `[Followup] Successfully generated followup for session ${sessionId}`
+            `[Followup] Successfully generated followup for session ${sessionId}`,
           );
 
           // Add bot mode to followup response
           let userEmail: string | null = null;
           const lastEmailMsg = await chats.findOne(
             { sessionId, email: { $exists: true } },
-            { sort: { createdAt: -1 } }
+            { sort: { createdAt: -1 } },
           );
           if (lastEmailMsg && lastEmailMsg.email)
             userEmail = lastEmailMsg.email;
@@ -9479,19 +9506,19 @@ ${previousQnA}
             const bookingEnhancement = await enhanceChatWithBookingDetection(
               question || "",
               [], // conversation history - could be enhanced later
-              `Page URL: ${pageUrl || "unknown"}`
+              `Page URL: ${pageUrl || "unknown"}`,
             );
 
             if (bookingEnhancement.chatResponse.showBookingCalendar) {
               console.log(
-                "[Chat API] Booking detected in generic followup - enhancing response with calendar"
+                "[Chat API] Booking detected in generic followup - enhancing response with calendar",
               );
               await updateProfileOnContactRequest(
                 req.nextUrl.origin,
                 sessionId,
                 apiKey,
                 pageUrl,
-                question || ""
+                question || "",
               );
               enhancedFollowup = {
                 ...parsed,
@@ -9506,7 +9533,7 @@ ${previousQnA}
           } catch (error) {
             console.warn(
               "[Chat API] Booking detection failed for generic followup:",
-              error
+              error,
             );
             // Continue with original response if booking detection fails
           }
@@ -9514,7 +9541,7 @@ ${previousQnA}
           // Force empty buttons for 3rd followup (ghost closure)
           if (followupCount === 2) {
             console.log(
-              "[Ghost Closure] Enforcing empty buttons for followupCount 2"
+              "[Ghost Closure] Enforcing empty buttons for followupCount 2",
             );
             enhancedFollowup.buttons = [];
             enhancedFollowup.showBookingCalendar = false;
@@ -9529,7 +9556,7 @@ ${previousQnA}
             botMode === "sales" && (followupCount === 1 || followupCount === 2)
               ? limitWordsPreservingFormatting(
                   String(enhancedFollowup.mainText || ""),
-                  100
+                  100,
                 )
               : enhancedFollowup.mainText;
 
@@ -9560,12 +9587,12 @@ ${previousQnA}
         } catch (error) {
           console.error(
             `[Followup] Error generating followup for session ${sessionId}:`,
-            error
+            error,
           );
           let userEmail: string | null = null;
           const lastEmailMsg = await chats.findOne(
             { sessionId, email: { $exists: true } },
-            { sort: { createdAt: -1 } }
+            { sort: { createdAt: -1 } },
           );
           if (lastEmailMsg && lastEmailMsg.email)
             userEmail = lastEmailMsg.email;
@@ -9580,18 +9607,18 @@ ${previousQnA}
                   : "lead_generation",
               userEmail: resolvedUserEmail || null,
             },
-            { headers: corsHeaders }
+            { headers: corsHeaders },
           );
         }
       }
     }
     // Fallback if no context
     console.log(
-      `[DEBUG] Falling back to generic message. pageSummary: "${pageSummary}", pageChunks.length: ${pageChunks.length}`
+      `[DEBUG] Falling back to generic message. pageSummary: "${pageSummary}", pageChunks.length: ${pageChunks.length}`,
     );
     if (proactive) {
       console.log(
-        `[DEBUG] Returning generic proactive message - no page context found`
+        `[DEBUG] Returning generic proactive message - no page context found`,
       );
 
       // Generate dynamic generic message based on URL patterns
@@ -9624,7 +9651,7 @@ What specific information are you looking for? I'm here to help guide you throug
       let userEmail: string | null = null;
       const lastEmailMsg = await chats.findOne(
         { sessionId, email: { $exists: true } },
-        { sort: { createdAt: -1 } }
+        { sort: { createdAt: -1 } },
       );
       if (lastEmailMsg && lastEmailMsg.email) userEmail = lastEmailMsg.email;
       const botMode =
@@ -9640,11 +9667,11 @@ What specific information are you looking for? I'm here to help guide you throug
           botMode,
           userEmail: userEmail || null,
         },
-        { headers: corsHeaders }
+        { headers: corsHeaders },
       );
     } else if (followup) {
       console.log(
-        `[Followup] Simple fallback followup for session ${sessionId}`
+        `[Followup] Simple fallback followup for session ${sessionId}`,
       );
 
       // Exclusivity gating: suppress followups if onboarding is active
@@ -9656,14 +9683,14 @@ What specific information are you looking for? I'm here to help guide you throug
         });
         if (
           ["in_progress", "ready_to_submit", "error"].includes(
-            existingOnboarding?.status || ""
+            existingOnboarding?.status || "",
           )
         ) {
           const idx = existingOnboarding?.stageIndex ?? 0;
           const field = existingOnboarding?.fields?.[idx];
           if (existingOnboarding?.status === "ready_to_submit") {
             const summary = buildSafeSummary(
-              existingOnboarding?.collectedData || {}
+              existingOnboarding?.collectedData || {},
             );
             return NextResponse.json(
               {
@@ -9675,13 +9702,13 @@ What specific information are you looking for? I'm here to help guide you throug
                 emailPrompt: "",
                 onboardingAction: "confirm",
               },
-              { headers: corsHeaders }
+              { headers: corsHeaders },
             );
           } else if (existingOnboarding?.status === "error") {
             const lastError =
               existingOnboarding?.lastError || "Registration failed";
             const summary = buildSafeSummary(
-              existingOnboarding?.collectedData || {}
+              existingOnboarding?.collectedData || {},
             );
             return NextResponse.json(
               {
@@ -9692,7 +9719,7 @@ What specific information are you looking for? I'm here to help guide you throug
                       (existingOnboarding as any).lastErrorHttpStatus ===
                         422)) ||
                   /duplicate\s*email|email\s*.*already\s*(?:exists|registered)/i.test(
-                    lastError || ""
+                    lastError || "",
                   )
                     ? "Please update your email to continue."
                     : 'Reply "Try Again" to resubmit, or "Edit" to change any detail.'
@@ -9704,7 +9731,7 @@ What specific information are you looking for? I'm here to help guide you throug
                       (existingOnboarding as any).lastErrorHttpStatus ===
                         422)) ||
                   /duplicate\s*email|email\s*.*already\s*(?:exists|registered)/i.test(
-                    lastError || ""
+                    lastError || "",
                   )
                     ? ["Change Email"]
                     : ["Try Again", "Edit Details"],
@@ -9716,21 +9743,20 @@ What specific information are you looking for? I'm here to help guide you throug
                       (existingOnboarding as any).lastErrorHttpStatus ===
                         422)) ||
                   /duplicate\s*email|email\s*.*already\s*(?:exists|registered)/i.test(
-                    lastError || ""
+                    lastError || "",
                   )
                     ? "error_change_email"
                     : "error",
               },
-              { headers: corsHeaders }
+              { headers: corsHeaders },
             );
           } else if (field) {
             const prompt = promptForField(field);
             const docContext = await buildOnboardingDocContext(
               field,
               existingOnboarding?.adminId || undefined,
-              (
-                await getAdminSettings(existingOnboarding?.adminId || "")
-              ).onboarding?.docsUrl
+              (await getAdminSettings(existingOnboarding?.adminId || ""))
+                .onboarding?.docsUrl,
             );
             return NextResponse.json(
               {
@@ -9739,7 +9765,7 @@ What specific information are you looking for? I'm here to help guide you throug
                 emailPrompt: "",
                 onboardingAction: "ask_next",
               },
-              { headers: corsHeaders }
+              { headers: corsHeaders },
             );
           }
         }
@@ -9767,7 +9793,7 @@ What specific information are you looking for? I'm here to help guide you throug
           botMode,
           userEmail: userEmail || null,
         },
-        { headers: corsHeaders }
+        { headers: corsHeaders },
       );
     }
   }
@@ -9791,7 +9817,7 @@ What specific information are you looking for? I'm here to help guide you throug
       return NextResponse.json(mirrorResp2, { headers: corsHeaders });
     }
     console.log(
-      `[Followup] Processing followup without pageUrl for session ${sessionId}`
+      `[Followup] Processing followup without pageUrl for session ${sessionId}`,
     );
 
     try {
@@ -9804,14 +9830,14 @@ What specific information are you looking for? I'm here to help guide you throug
         });
         if (
           ["in_progress", "ready_to_submit", "error"].includes(
-            existingOnboarding?.status || ""
+            existingOnboarding?.status || "",
           )
         ) {
           const idx = existingOnboarding?.stageIndex ?? 0;
           const field = existingOnboarding?.fields?.[idx];
           if (existingOnboarding?.status === "ready_to_submit") {
             const summary = buildSafeSummary(
-              existingOnboarding?.collectedData || {}
+              existingOnboarding?.collectedData || {},
             );
             return NextResponse.json(
               {
@@ -9824,13 +9850,13 @@ What specific information are you looking for? I'm here to help guide you throug
                 emailPrompt: "",
                 onboardingAction: "confirm",
               },
-              { headers: corsHeaders }
+              { headers: corsHeaders },
             );
           } else if (existingOnboarding?.status === "error") {
             const lastError =
               existingOnboarding?.lastError || "Registration failed";
             const summary = buildSafeSummary(
-              existingOnboarding?.collectedData || {}
+              existingOnboarding?.collectedData || {},
             );
             return NextResponse.json(
               {
@@ -9839,16 +9865,15 @@ What specific information are you looking for? I'm here to help guide you throug
                 emailPrompt: "",
                 onboardingAction: "error",
               },
-              { headers: corsHeaders }
+              { headers: corsHeaders },
             );
           } else if (field) {
             const prompt = promptForField(field);
             const docContext = await buildOnboardingDocContext(
               field,
               existingOnboarding?.adminId || undefined,
-              (
-                await getAdminSettings(existingOnboarding?.adminId || "")
-              ).onboarding?.docsUrl
+              (await getAdminSettings(existingOnboarding?.adminId || ""))
+                .onboarding?.docsUrl,
             );
             return NextResponse.json(
               {
@@ -9857,7 +9882,7 @@ What specific information are you looking for? I'm here to help guide you throug
                 emailPrompt: "",
                 onboardingAction: "ask_next",
               },
-              { headers: corsHeaders }
+              { headers: corsHeaders },
             );
           }
         }
@@ -9869,9 +9894,9 @@ What specific information are you looking for? I'm here to help guide you throug
         typeof rawFollowupCount === "number"
           ? rawFollowupCount
           : typeof rawFollowupCount === "string" &&
-            !isNaN(Number(rawFollowupCount))
-          ? Number(rawFollowupCount)
-          : 0;
+              !isNaN(Number(rawFollowupCount))
+            ? Number(rawFollowupCount)
+            : 0;
 
       if (followupCount < 3) {
         // Generate contextual followup based on URL or previous conversation
@@ -9895,7 +9920,7 @@ What specific information are you looking for? I'm here to help guide you throug
         }
 
         console.log(
-          `[Followup] Sending contextual followup ${followupCount} for session ${sessionId}`
+          `[Followup] Sending contextual followup ${followupCount} for session ${sessionId}`,
         );
 
         // Add bot mode to generic followup
@@ -9917,11 +9942,11 @@ What specific information are you looking for? I'm here to help guide you throug
             botMode,
             userEmail: userEmail || null,
           },
-          { headers: corsHeaders }
+          { headers: corsHeaders },
         );
       } else {
         console.log(
-          `[Followup] No more generic followups for session ${sessionId}`
+          `[Followup] No more generic followups for session ${sessionId}`,
         );
         return NextResponse.json(
           {
@@ -9930,13 +9955,13 @@ What specific information are you looking for? I'm here to help guide you throug
             emailPrompt: "",
             showBookingCalendar: false,
           },
-          { headers: corsHeaders }
+          { headers: corsHeaders },
         );
       }
     } catch (error) {
       console.error(
         `[Followup] Error in generic followup for session ${sessionId}:`,
-        error
+        error,
       );
       return NextResponse.json(
         {
@@ -9945,7 +9970,7 @@ What specific information are you looking for? I'm here to help guide you throug
           emailPrompt: "",
           showBookingCalendar: false,
         },
-        { headers: corsHeaders }
+        { headers: corsHeaders },
       );
     }
   }
@@ -9957,7 +9982,7 @@ What specific information are you looking for? I'm here to help guide you throug
       {
         answer: "I'm here to help! What would you like to know?",
       },
-      { headers: corsHeaders }
+      { headers: corsHeaders },
     );
   }
 
@@ -9971,12 +9996,12 @@ What specific information are you looking for? I'm here to help guide you throug
   const topSimilar = await querySimilarChunks(
     questionEmbedding,
     5,
-    adminId || undefined
+    adminId || undefined,
   );
   const context = topSimilar.map((s) => s.text).join("\n---\n");
   const sources = [
     ...new Set(
-      topSimilar.map((s) => s.source).filter((s) => !!s && s.length > 0)
+      topSimilar.map((s) => s.source).filter((s) => !!s && s.length > 0),
     ),
   ];
 
@@ -10004,7 +10029,7 @@ What specific information are you looking for? I'm here to help guide you throug
   if (!userEmail) {
     const lastEmailMsg = await chats.findOne(
       { sessionId, email: { $exists: true } },
-      { sort: { createdAt: -1 } }
+      { sort: { createdAt: -1 } },
     );
     if (lastEmailMsg && lastEmailMsg.email) userEmail = lastEmailMsg.email;
   }
@@ -10019,10 +10044,10 @@ What specific information are you looking for? I'm here to help guide you throug
   if (enableBantChaining) {
     const lastAssistant = await chats.findOne(
       { sessionId, role: "assistant" },
-      { sort: { createdAt: -1 } }
+      { sort: { createdAt: -1 } },
     );
     const lastFollowupType = String(
-      (lastAssistant as any)?.followupType || ""
+      (lastAssistant as any)?.followupType || "",
     ).toLowerCase();
     const lastBantDim: any = (lastAssistant as any)?.bantDimension || null;
     const lastButtons: string[] = Array.isArray((lastAssistant as any)?.buttons)
@@ -10033,7 +10058,7 @@ What specific information are you looking for? I'm here to help guide you throug
         String(b).toLowerCase().trim() ===
         String(question || "")
           .toLowerCase()
-          .trim()
+          .trim(),
     );
     const isBantAnswer =
       lastFollowupType === "bant" &&
@@ -10051,12 +10076,12 @@ What specific information are you looking for? I'm here to help guide you throug
           followupType: (d as any).followupType,
           bantDimension: (d as any).bantDimension,
           buttons: Array.isArray((d as any).buttons) ? (d as any).buttons : [],
-        })
+        }),
       );
       sessionMessagesQuick.push({ role: "user", content: question || "" });
       const missingDimsQuick = computeBantMissingDims(
         sessionMessagesQuick,
-        customerProfile
+        customerProfile,
       );
       let nextBant: any = null;
       const botModeChain: "sales" | "lead_generation" =
@@ -10079,7 +10104,7 @@ What specific information are you looking for? I'm here to help guide you throug
           null,
           apiKey,
           pageUrl,
-          question || ""
+          question || "",
         );
         const completion = {
           mainText:
@@ -10110,10 +10135,10 @@ What specific information are you looking for? I'm here to help guide you throug
             segment === "individual"
               ? ["Under $20/mo", "$20–$50/mo", "$50+"]
               : segment === "smb"
-              ? ["Under $500/mo", "$500–$1.5k/mo", "$1.5k+"]
-              : segment === "enterprise"
-              ? ["Under $10k/yr", "$10k–$50k/yr", "$50k+/yr"]
-              : ["Under $500/mo", "$500–$1.5k/mo", "$1.5k+"];
+                ? ["Under $500/mo", "$500–$1.5k/mo", "$1.5k+"]
+                : segment === "enterprise"
+                  ? ["Under $10k/yr", "$10k–$50k/yr", "$50k+/yr"]
+                  : ["Under $500/mo", "$500–$1.5k/mo", "$1.5k+"];
           nextBant = {
             mainText: "What budget range are you considering?",
             buttons: budgetButtons,
@@ -10202,7 +10227,7 @@ What specific information are you looking for? I'm here to help guide you throug
         const bookingAware = generateBookingAwareResponse(
           { ...nextBant },
           bookingStatus,
-          question || ""
+          question || "",
         );
         await chats.insertMany([
           {
@@ -10235,7 +10260,7 @@ What specific information are you looking for? I'm here to help guide you throug
               (((bookingAware as any).type as any) ||
                 ((nextBant as any).type as any)) === "bant"
                 ? detectBantDimensionFromText(
-                    String(bookingAware.mainText || "")
+                    String(bookingAware.mainText || ""),
                   ) ||
                   (nextBant as any).dimension ||
                   null
@@ -10301,7 +10326,7 @@ What specific information are you looking for? I'm here to help guide you throug
         role: "assistant",
         "content.buttons.0": { $exists: true },
       },
-      { sort: { createdAt: -1 } }
+      { sort: { createdAt: -1 } },
     );
     if (
       lastAssistantWithButtons &&
@@ -10321,7 +10346,7 @@ What specific information are you looking for? I'm here to help guide you throug
         answer:
           "I'm not sure about that. I'll refer your question to our sales team. Could you please share your email or phone number so we can follow up?",
       },
-      { headers: corsHeaders }
+      { headers: corsHeaders },
     );
   }
 
@@ -10335,7 +10360,7 @@ What specific information are you looking for? I'm here to help guide you throug
     (lowerQuestion.includes("send") || lowerQuestion.includes("share"));
 
   const isGroupMeetingIntent = /\b(group\s+meeting|group\s+event)\b/i.test(
-    lowerQuestion
+    lowerQuestion,
   );
   const isRoundRobinIntent = /\bround\s*robin\b/i.test(lowerQuestion);
   const isCollectiveIntent = /\bcollective\b/i.test(lowerQuestion);
@@ -10343,24 +10368,24 @@ What specific information are you looking for? I'm here to help guide you throug
     isGroupMeetingIntent || isRoundRobinIntent || isCollectiveIntent;
 
   const isWorkshopIntent = /\b(workshop|training|class|seminar)\b/i.test(
-    lowerQuestion
+    lowerQuestion,
   );
   const isInternalMeetingIntent =
     /\b(internal team|team meeting|standup|all-hands)\b/i.test(lowerQuestion);
   const isClientOnboardingIntent =
     /\b(client onboarding|onboarding session|kickoff)\b/i.test(lowerQuestion);
   const isWebinarIntent = /\b(webinar|multi-attendee|live session)\b/i.test(
-    lowerQuestion
+    lowerQuestion,
   );
   const meetingTypeSelection = isWorkshopIntent
     ? "workshops"
     : isInternalMeetingIntent
-    ? "internal"
-    : isClientOnboardingIntent
-    ? "onboarding"
-    : isWebinarIntent
-    ? "webinar"
-    : "";
+      ? "internal"
+      : isClientOnboardingIntent
+        ? "onboarding"
+        : isWebinarIntent
+          ? "webinar"
+          : "";
 
   const meetingStage = isMeetingIntent
     ? meetingTypeSelection
@@ -10379,26 +10404,26 @@ What specific information are you looking for? I'm here to help guide you throug
   // BANT intent detection and stage inference
   const hasNumbers =
     /\b\d+\s*(agents?|tickets?|k)\b|\b\d+\s*(k|month|mo)\b/i.test(
-      lowerQuestion
+      lowerQuestion,
     );
   const hasBudget = /\$|usd|mo\b|per\s*month|budget|pricing|cost/i.test(
-    lowerQuestion
+    lowerQuestion,
   );
   const hasAuthority = /cto|ceo|ops|manager|director|owner|founder/i.test(
-    lowerQuestion
+    lowerQuestion,
   );
   const mentionsNeeds =
     /deflection|lead\s*capture|onboarding|faster\s*responses/i.test(
-      lowerQuestion
+      lowerQuestion,
     );
   const hasTimeline =
     /\b(this\s*month|1\s*–?\s*3\s*months|>\s*3\s*months|quarter|q[1-4])\b/i.test(
-      lowerQuestion
+      lowerQuestion,
     );
 
   const isBantIntent =
     /\b(bant|qualification|lead\s*score|lead\s*scoring)\b/i.test(
-      lowerQuestion
+      lowerQuestion,
     ) ||
     /support/.test((pageUrl || "").toLowerCase()) ||
     /customer-support-ai/.test((pageUrl || "").toLowerCase()) ||
@@ -10410,21 +10435,21 @@ What specific information are you looking for? I'm here to help guide you throug
 
   const isCaseStudyIntent =
     /\b(case\s*stud|testimonial|success\s*stor|example\s*of|customer\s*stor|examples)\b/i.test(
-      lowerQuestion
+      lowerQuestion,
     ) || /testimonial/.test((pageUrl || "").toLowerCase());
 
   const bantStage = isBantIntent
     ? hasTimeline
       ? "timeline"
       : mentionsNeeds
-      ? "need"
-      : hasAuthority
-      ? "authority"
-      : hasBudget
-      ? "budget"
-      : hasNumbers
-      ? "need_probe"
-      : "intro"
+        ? "need"
+        : hasAuthority
+          ? "authority"
+          : hasBudget
+            ? "budget"
+            : hasNumbers
+              ? "need_probe"
+              : "intro"
     : "";
 
   // Chat completion with sales-pitch system prompt
@@ -10435,20 +10460,20 @@ What specific information are you looking for? I'm here to help guide you throug
   try {
     const reqDoc = await chats.findOne(
       { sessionId, requirements: { $exists: true } },
-      { sort: { createdAt: -1 } }
+      { sort: { createdAt: -1 } },
     );
     hasRequirements = Boolean(reqDoc && reqDoc.requirements);
   } catch {}
   if (userEmail) {
     console.log(
-      `[DEBUG] User has email: ${userEmail} - Switching to SALES mode`
+      `[DEBUG] User has email: ${userEmail} - Switching to SALES mode`,
     );
     if (isMeetingIntent) {
       systemPrompt = `You are a product assistant for scheduling (sales-qualified). The user mentioned group meetings or team distribution. Return ONLY valid JSON.
 {
   "mainText": "<Acknowledge their intent (e.g., group meetings) in one short sentence. Then ask ONE clarifying question to personalize: internal vs client and together vs distributed.>",
   "buttons": ["Workshops / training", "Internal team meetings", "Client onboarding", "Webinars / multi-attendee"],
-  "emailPrompt": "<Offer to send a setup guide if they prefer email>"
+  "emailPrompt": ""
 }
 
 Context:
@@ -10479,7 +10504,7 @@ STRICT:
       {
         "mainText": "<The actual case study/testimonial content. Use \\n\\n for spacing.>",
         "buttons": ["More Success Stories", "Schedule a Demo", "View All Case Studies"],
-        "emailPrompt": "<Offer to send the full case study PDF to their email>"
+        "emailPrompt": ""
       }
 
       Context:
@@ -10489,7 +10514,7 @@ STRICT:
       General Context:
       ${context}`;
     } else if (isBantIntent) {
-      systemPrompt = `You are a BANT-based qualification assistant (sales-qualified). Return ONLY valid JSON: {"mainText":"...","buttons":[...],"emailPrompt":"..."}.
+      systemPrompt = `You are a BANT-based qualification assistant (sales-qualified). Return ONLY valid JSON: {"mainText":"...","buttons":[...],"emailPrompt":""}.
 
 Rules:
 - Keep outputs short
@@ -10708,7 +10733,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
     const { attemptAutoRecharge } = await import("@/lib/credits");
     // Fire and forget - don't block the request
     attemptAutoRecharge(adminId || "default-admin").catch((e) =>
-      console.error("[Chat API] Auto-recharge check failed:", e)
+      console.error("[Chat API] Auto-recharge check failed:", e),
     );
   }
 
@@ -10716,7 +10741,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
     console.warn(
       `[Chat API] Credit limit reached for admin ${
         adminId || "default-admin"
-      } (${creditsUsed}/${limit})`
+      } (${creditsUsed}/${limit})`,
     );
     return NextResponse.json(
       {
@@ -10725,7 +10750,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
         buttons: ["Contact Support"],
         emailPrompt: "",
       },
-      { status: 200 } // Return 200 so the chatbot displays the message gracefully
+      { status: 200 }, // Return 200 so the chatbot displays the message gracefully
     );
   }
 
@@ -10811,13 +10836,13 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
     try {
       const prevAssistant = await chats.findOne(
         { sessionId, role: "assistant" },
-        { sort: { createdAt: -1 } }
+        { sort: { createdAt: -1 } },
       );
       if (prevAssistant) {
         prevAssistantText = String((prevAssistant as any).content || "");
         if (Array.isArray((prevAssistant as any).buttons)) {
           prevAssistantButtons = ((prevAssistant as any).buttons || []).map(
-            (b: any) => String(b || "")
+            (b: any) => String(b || ""),
           );
         }
       }
@@ -10880,8 +10905,8 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
       content: emailAckText
         ? emailAckText
         : parsed && typeof parsed.mainText === "string" && parsed.mainText
-        ? parsed.mainText
-        : answer,
+          ? parsed.mainText
+          : answer,
       createdAt: new Date(now.getTime() + 1),
       ...(pageUrl ? { pageUrl } : {}),
       ...(isMeetingIntent ? { meetingIntent: true } : {}),
@@ -10915,7 +10940,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
       [],
       `Page URL: ${pageUrl || "unknown"}\nMeetingType: ${
         meetingTypeSelection || ""
-      }`
+      }`,
     );
 
     const explicitBooking =
@@ -10925,14 +10950,14 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
       explicitBooking.test(String(question || ""))
     ) {
       console.log(
-        `[Chat API ${requestId}] Booking detected - enhancing response with calendar`
+        `[Chat API ${requestId}] Booking detected - enhancing response with calendar`,
       );
       await updateProfileOnContactRequest(
         req.nextUrl.origin,
         sessionId,
         apiKey,
         pageUrl,
-        question || ""
+        question || "",
       );
       // Completely override with booking response, don't merge with potentially corrupted parsed response
       enhancedResponse = {
@@ -10975,7 +11000,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
     bookingStatus.hasActiveBooking && bookingStatus.currentBooking
       ? generateBookingManagementResponse(
           question || "",
-          bookingStatus.currentBooking
+          bookingStatus.currentBooking,
         )
       : null;
 
@@ -10992,13 +11017,13 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
     finalResponse = generateBookingAwareResponse(
       responseWithMode,
       bookingStatus,
-      question || ""
+      question || "",
     );
     if (meetingStage === "clarify") {
       if (!finalResponse.mainText || !/[\?]$/.test(finalResponse.mainText)) {
         finalResponse.mainText = `${(finalResponse.mainText || "").replace(
           /\s+$/,
-          ""
+          "",
         )}?`;
       }
       finalResponse.buttons = [
@@ -11019,7 +11044,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
       if (bt) (finalResponse as any).bookingTypeHint = bt;
     }
     const isQuestion = /\?\s*$/.test(
-      String(finalResponse.mainText || "").trim()
+      String(finalResponse.mainText || "").trim(),
     );
     const extractedFromBullets =
       isQuestion && /•/.test(finalResponse.mainText || "")
@@ -11034,14 +11059,14 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
     finalResponse.buttons = filterRedundantButtons(
       finalResponse.buttons || [],
       question || "",
-      mainTextForFilter
+      mainTextForFilter,
     );
     // Exclude buttons the user already clicked or closely related to same intent
     // Re-apply booking-based button filtering after any stage-specific overrides
     if (bookingStatus.hasActiveBooking) {
       finalResponse.buttons = filterButtonsBasedOnBooking(
         finalResponse.buttons || [],
-        bookingStatus
+        bookingStatus,
       );
       finalResponse.showBookingCalendar = false;
       delete (finalResponse as any).bookingType;
@@ -11091,11 +11116,11 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
       });
       const lastAssistant = await chats.findOne(
         { sessionId, role: "assistant" },
-        { sort: { createdAt: -1 } }
+        { sort: { createdAt: -1 } },
       );
       const lastUser = await chats.findOne(
         { sessionId, role: "user" },
-        { sort: { createdAt: -1 } }
+        { sort: { createdAt: -1 } },
       );
       let skipSecondaryForFirstAssistant =
         assistantCountBefore === 0 && Number(assistantCountClient) === 0;
@@ -11156,7 +11181,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
         });
         const missingDimsQuick = computeBantMissingDims(
           sessionMessagesQuick,
-          customerProfile
+          customerProfile,
         );
         if (missingDimsQuick.length === 0) {
           await updateProfileOnBantComplete(
@@ -11165,7 +11190,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
             null,
             apiKey,
             pageUrl,
-            question || ""
+            question || "",
           );
         }
 
@@ -11290,10 +11315,10 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
                 segment === "individual"
                   ? ["Under $20/mo", "$20–$50/mo", "$50+"]
                   : segment === "smb"
-                  ? ["Under $500/mo", "$500–$1.5k/mo", "$1.5k+"]
-                  : segment === "enterprise"
-                  ? ["Under $10k/yr", "$10k–$50k/yr", "$50k+/yr"]
-                  : ["Under $500/mo", "$500–$1.5k/mo", "$1.5k+"];
+                    ? ["Under $500/mo", "$500–$1.5k/mo", "$1.5k+"]
+                    : segment === "enterprise"
+                      ? ["Under $10k/yr", "$10k–$50k/yr", "$50k+/yr"]
+                      : ["Under $500/mo", "$500–$1.5k/mo", "$1.5k+"];
               immediate.dimension = "budget";
               immediate.type = "bant";
             }
@@ -11306,7 +11331,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
               buttonsCount: Array.isArray(immediate.buttons)
                 ? immediate.buttons.length
                 : 0,
-            }
+            },
           );
           secondary = immediate;
           await chats.insertOne({
@@ -11327,11 +11352,11 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
         } else {
           const txt = String(finalResponse.mainText || "").toLowerCase();
           const priceSignal = /\$|price|pricing|per\s*month|plan|seat/.test(
-            txt
+            txt,
           );
           const timeSignal =
             /schedule|demo|call|meeting|appointment|today|tomorrow|week|month|timeline/.test(
-              txt
+              txt,
             );
           let immediate: any = null;
           const segment = getBusinessSegment(sessionMessagesQuick);
@@ -11398,7 +11423,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
                 buttonsCount: Array.isArray(immediate.buttons)
                   ? immediate.buttons.length
                   : 0,
-              }
+              },
             );
             secondary = immediate;
             await chats.insertOne({
@@ -11433,7 +11458,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
         });
         const missingDimsQuick2 = computeBantMissingDims(
           sessionMessagesQuick2,
-          customerProfile
+          customerProfile,
         );
         if (missingDimsQuick2.length > 0) {
           const fallback = buildHeuristicBantFollowup({
@@ -11478,7 +11503,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
             null,
             apiKey,
             pageUrl,
-            question || ""
+            question || "",
           );
         }
       }
@@ -11494,7 +11519,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
       sessionMessagesQuick.push({ role: "user", content: question || "" });
       const missingDimsQuick = computeBantMissingDims(
         sessionMessagesQuick,
-        customerProfile
+        customerProfile,
       );
       secondary = buildFallbackFollowup({
         userMessage: question || "",
@@ -11515,8 +11540,8 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
             err instanceof Error
               ? err.message
               : typeof err === "string"
-              ? err
-              : "Unknown error",
+                ? err
+                : "Unknown error",
           type: (secondary as any).type,
           hasMainText: !!secondary.mainText,
           buttonsCount: Array.isArray(secondary.buttons)
@@ -11526,7 +11551,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
             typeof secondary.mainText === "string"
               ? secondary.mainText.slice(0, 120)
               : "",
-        }
+        },
       );
       const assistantCountBefore = await chats.countDocuments({
         sessionId,
@@ -11534,11 +11559,11 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
       });
       const lastAssistant = await chats.findOne(
         { sessionId, role: "assistant" },
-        { sort: { createdAt: -1 } }
+        { sort: { createdAt: -1 } },
       );
       const lastUser = await chats.findOne(
         { sessionId, role: "user" },
-        { sort: { createdAt: -1 } }
+        { sort: { createdAt: -1 } },
       );
       const skipDueToRecentFollowup = (() => {
         const la: any = lastAssistant || null;
@@ -11575,7 +11600,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
         });
       } else {
         console.log(
-          `[Chat API ${requestId}] Skipping fallback follow-up insert`
+          `[Chat API ${requestId}] Skipping fallback follow-up insert`,
         );
       }
     }
@@ -11619,7 +11644,7 @@ export async function GET(req: NextRequest) {
         // Strip out "Options:", "Buttons:", etc. and anything following them (typically button lists)
         content = content.replace(
           /(?:Options|Buttons|Quick Actions|Choose from):\s*[\s\S]*$/i,
-          ""
+          "",
         );
         return `[${m.role}] ${content.replace(/\s+/g, " ").trim()}`;
       })
@@ -11646,7 +11671,7 @@ export async function GET(req: NextRequest) {
         pageSummary = aiSummary
           .replace(
             /(?:Options|Buttons|Quick Actions|Choose from):\s*[\s\S]*$/i,
-            ""
+            "",
           )
           .trim();
       } else {
@@ -11661,7 +11686,7 @@ export async function GET(req: NextRequest) {
           let content = String(m.content || "");
           content = content.replace(
             /(?:Options|Buttons|Quick Actions|Choose from):\s*[\s\S]*$/i,
-            ""
+            "",
           );
           return content.replace(/\s+/g, " ").trim();
         })
@@ -11684,7 +11709,7 @@ export async function GET(req: NextRequest) {
   }
   return NextResponse.json(
     { history: history.reverse(), pageSummary },
-    { headers: corsHeaders }
+    { headers: corsHeaders },
   );
 }
 
@@ -11695,7 +11720,7 @@ export async function DELETE(req: NextRequest) {
     if (!sessionId) {
       return NextResponse.json(
         { error: "Missing sessionId" },
-        { status: 400, headers: corsHeaders }
+        { status: 400, headers: corsHeaders },
       );
     }
 
@@ -11706,14 +11731,14 @@ export async function DELETE(req: NextRequest) {
       // First, check if user has email (to preserve SDR status)
       const emailMessage = await chats.findOne(
         { sessionId, email: { $exists: true } },
-        { sort: { createdAt: -1 } }
+        { sort: { createdAt: -1 } },
       );
 
       // Delete all chat history for this session
       const result = await chats.deleteMany({ sessionId });
 
       console.log(
-        `[Chat] Cleared ${result.deletedCount} messages for session ${sessionId}`
+        `[Chat] Cleared ${result.deletedCount} messages for session ${sessionId}`,
       );
 
       // If user had email, preserve their SDR status for cross-page activation
@@ -11727,7 +11752,7 @@ export async function DELETE(req: NextRequest) {
         };
 
         console.log(
-          `[Chat] Preserving SDR status for ${emailMessage.email} across page navigation`
+          `[Chat] Preserving SDR status for ${emailMessage.email} across page navigation`,
         );
 
         // Store a minimal record to maintain SDR status
@@ -11751,24 +11776,24 @@ export async function DELETE(req: NextRequest) {
           message: "Chat history cleared successfully",
           preservedEmailStatus,
         },
-        { headers: corsHeaders }
+        { headers: corsHeaders },
       );
     }
 
     return NextResponse.json(
       { error: "Invalid request" },
-      { status: 400, headers: corsHeaders }
+      { status: 400, headers: corsHeaders },
     );
   } catch (error) {
     console.error("[Chat] Error clearing chat history:", error);
     return NextResponse.json(
       { error: "Failed to clear chat history" },
-      { status: 500, headers: corsHeaders }
+      { status: 500, headers: corsHeaders },
     );
   }
 }
 function getBusinessSegment(
-  messages: any[]
+  messages: any[],
 ): "individual" | "smb" | "enterprise" | null {
   let segment: "individual" | "smb" | "enterprise" | null = null;
   for (let i = 0; i < messages.length; i++) {
