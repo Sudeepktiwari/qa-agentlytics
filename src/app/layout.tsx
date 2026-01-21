@@ -48,6 +48,13 @@ export default function RootLayout({
         {children}
         <GlobalFooter />
       </body>
+      <script
+        src="https://agentlytics.advancelytics.com/api/widget"
+        data-api-key="ak_b11073a2c223c1a1b8de748e2291cb68eb72d9a6a4c73f2204a8e4d4faf3b450"
+        data-voice-enabled="false"
+        data-voice-gender="female"
+        data-auto-open-proactive="true"
+      ></script>
     </html>
   );
 }
