@@ -17,6 +17,7 @@ import { getAdminSettings, OnboardingSettings } from "@/lib/adminSettings";
 import { deriveOnboardingFieldsFromCurl } from "@/lib/curl";
 import { rateLimit, checkSpam } from "@/lib/rateLimit";
 import { checkCreditLimit, deductCredits } from "@/lib/credits";
+import { updateCustomerProfile } from "@/lib/customer-profile";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -3572,60 +3573,25 @@ export async function POST(req: NextRequest) {
 
         // 🔥 ALSO UPDATE CUSTOMER_PROFILES COLLECTION
         try {
-          const profilesCollection = db.collection("customer_profiles");
-          const existingProfile = await profilesCollection.findOne({
+          await updateCustomerProfile({
             adminId,
-            $or: [{ email: profileUserEmail }, { sessionIds: sessionId }],
-          });
-
-          if (existingProfile) {
-            await profilesCollection.updateOne(
-              { _id: existingProfile._id },
+            sessionId,
+            email: profileUserEmail,
+            conversation: [
               {
-                $set: {
-                  name: profileUserName || existingProfile.name,
-                  email: profileUserEmail, // Ensure email is set
-                  lastContact: new Date().toISOString(),
-                },
-                $addToSet: { sessionIds: sessionId },
+                role: "user",
+                content:
+                  question || `User provided email for ${bookingType} booking`,
               },
-            );
-            console.log(
-              `[Chat API ${requestId}] ✅ Updated existing customer profile for ${profileUserEmail}`,
-            );
-          } else {
-            await profilesCollection.insertOne({
-              adminId,
-              sessionIds: [sessionId],
-              name: profileUserName || "Anonymous User",
-              email: profileUserEmail,
-              firstContact: new Date().toISOString(),
-              lastContact: new Date().toISOString(),
-              totalSessions: 1,
-              companyProfile: {},
-              behaviorProfile: {},
-              requirementsProfile: {},
-              engagementProfile: {
-                questionsAsked: 0,
-                pagesVisited: [pageUrl],
-                timeOnSite: 0,
-                returnVisits: 0,
-                conversionSignals: [],
-                objections: [],
+              {
+                role: "assistant",
+                content: bookingMessage?.content || "Booking confirmed",
               },
-              intelligenceProfile: {},
-              profileMeta: {
-                confidenceScore: 0.5,
-                lastUpdated: new Date().toISOString(),
-                updateTriggers: ["booking_confirmation"],
-                totalUpdates: 1,
-                nextScheduledUpdate: "conversation_end",
-              },
-            });
-            console.log(
-              `[Chat API ${requestId}] ✅ Created new customer profile for ${profileUserEmail}`,
-            );
-          }
+            ],
+            // Let the function calculate messageCount and timeInSession from DB
+            pageUrl,
+            trigger: "booking_confirmation",
+          });
         } catch (profileError) {
           console.error(
             `[Chat API ${requestId}] ⚠️ Failed to update customer_profiles:`,
@@ -10925,6 +10891,35 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
         : {}),
     },
   ]);
+
+  // 🔥 UPDATE CUSTOMER PROFILE FOR REGULAR MESSAGES
+  // Ensure profile is updated for every message, not just bookings
+  try {
+    await updateCustomerProfile({
+      adminId: adminId || "default-admin",
+      sessionId,
+      email: resolvedUserEmail || emailToStore || undefined,
+      conversation: [
+        { role: "user", content: question || "" },
+        {
+          role: "assistant",
+          content: emailAckText
+            ? emailAckText
+            : parsed && typeof parsed.mainText === "string" && parsed.mainText
+              ? parsed.mainText
+              : answer || "",
+        },
+      ],
+      // Let the function calculate messageCount and timeInSession from DB
+      pageUrl,
+      trigger: "chat_message",
+    });
+  } catch (profileErr) {
+    console.error(
+      `[Chat API ${requestId}] ⚠️ Failed to update customer profile:`,
+      profileErr,
+    );
+  }
 
   // Add bot mode information to the response
   const botMode =
