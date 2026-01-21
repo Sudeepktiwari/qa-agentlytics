@@ -1069,6 +1069,30 @@ const Chatbot: React.FC<ChatbotProps> = ({
     sendMessage(action);
   };
 
+  // Helper to filter out buttons related to discussed topics
+  const filterButtonsByTopics = (
+    buttons: string[],
+    topicsDiscussed: string[] = []
+  ): string[] => {
+    const normalizedTopics = (topicsDiscussed || []).map((t) =>
+      String(t || "").toLowerCase()
+    );
+    return buttons.filter((btn) => {
+      const lb = btn.toLowerCase();
+      const isDiscussed = normalizedTopics.some((topic) => {
+        if (topic.length < 3) return false;
+        return lb.includes(topic) || topic.includes(lb);
+      });
+      if (isDiscussed) {
+        console.log(
+          "[BUTTON DEBUG] Filtered out discussed topic button:",
+          btn
+        );
+      }
+      return !isDiscussed;
+    });
+  };
+
   // Fallback: extract actionable options from plain text bullets when buttons array is empty
   const extractButtonsFromText = (
     text: string,
@@ -1138,20 +1162,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
     }
 
     // Filter out buttons related to discussed topics
-    const normalizedTopics = (topicsDiscussed || []).map((t) =>
-      String(t || "").toLowerCase()
-    );
-    const filteredButtons = buttons.filter((btn) => {
-      const lb = btn.toLowerCase();
-      const isDiscussed = normalizedTopics.some((topic) => {
-        if (topic.length < 3) return false;
-        return lb.includes(topic) || topic.includes(lb);
-      });
-      if (isDiscussed) {
-        console.log("[BUTTON DEBUG] Filtered out discussed topic button:", btn);
-      }
-      return !isDiscussed;
-    });
+    const filteredButtons = filterButtonsByTopics(buttons, topicsDiscussed);
 
     console.log("[BUTTON DEBUG] Final extracted buttons:", filteredButtons);
     return filteredButtons;
@@ -1191,23 +1202,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
       ];
 
     // Filter out buttons related to discussed topics
-    const normalizedTopics = (topicsDiscussed || []).map((t) =>
-      String(t || "").toLowerCase()
-    );
-    const filteredButtons = buttons.filter((btn) => {
-      const lb = btn.toLowerCase();
-      const isDiscussed = normalizedTopics.some((topic) => {
-        if (topic.length < 3) return false;
-        return lb.includes(topic) || topic.includes(lb);
-      });
-      if (isDiscussed) {
-        console.log(
-          "[BUTTON DEBUG] Filtered out discussed topic button (fallback):",
-          btn
-        );
-      }
-      return !isDiscussed;
-    });
+    const filteredButtons = filterButtonsByTopics(buttons, topicsDiscussed);
 
     return filteredButtons;
   };
@@ -1703,9 +1698,12 @@ const Chatbot: React.FC<ChatbotProps> = ({
                   const allowOptions =
                     !clarifierActive && domainGateOk && missingGateOk;
                   if (msg.buttons && msg.buttons.length > 0) {
-                    finalButtons = msg.buttons;
+                    finalButtons = filterButtonsByTopics(
+                      msg.buttons,
+                      msg.topicsDiscussed
+                    );
                     console.log(
-                      "[BUTTON DEBUG] Using buttons from API response:",
+                      "[BUTTON DEBUG] Using buttons from API response (filtered):",
                       finalButtons
                     );
                   } else if (allowOptions) {
