@@ -34,6 +34,12 @@ interface CustomerPersona {
   technicalLevel: string;
   urgency: string;
   decisionMaker: boolean;
+  bantQuestions: {
+    budget: { question: string; options: string[] }[];
+    authority: { question: string; options: string[] }[];
+    need: { question: string; options: string[] }[];
+    timeline: { question: string; options: string[] }[];
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -64,7 +70,7 @@ const CustomerPersonaSection: React.FC<CustomerPersonaSectionProps> = ({
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [editingPersona, setEditingPersona] = useState<CustomerPersona | null>(
-    null
+    null,
   );
   const [showCreateForm, setShowCreateForm] = useState(false);
 
@@ -120,7 +126,7 @@ const CustomerPersonaSection: React.FC<CustomerPersonaSectionProps> = ({
         setMessage(data.message);
         console.log(
           "Successfully extracted personas:",
-          data.personas?.targetAudiences?.length || 0
+          data.personas?.targetAudiences?.length || 0,
         );
       } else {
         setError(data.error || "Failed to extract personas");
@@ -170,7 +176,7 @@ const CustomerPersonaSection: React.FC<CustomerPersonaSectionProps> = ({
   const deletePersonas = async () => {
     if (
       !window.confirm(
-        "Are you sure you want to delete all personas? This action cannot be undone."
+        "Are you sure you want to delete all personas? This action cannot be undone.",
       )
     ) {
       return;
@@ -206,7 +212,7 @@ const CustomerPersonaSection: React.FC<CustomerPersonaSectionProps> = ({
     const updatedAudiences = personaData.targetAudiences.map((p) =>
       p.id === updatedPersona.id
         ? { ...updatedPersona, updatedAt: new Date() }
-        : p
+        : p,
     );
 
     const updatedData = {
@@ -219,7 +225,7 @@ const CustomerPersonaSection: React.FC<CustomerPersonaSectionProps> = ({
   };
 
   const addNewPersona = (
-    newPersona: Omit<CustomerPersona, "id" | "createdAt" | "updatedAt">
+    newPersona: Omit<CustomerPersona, "id" | "createdAt" | "updatedAt">,
   ) => {
     if (!personaData) return;
 
@@ -245,7 +251,7 @@ const CustomerPersonaSection: React.FC<CustomerPersonaSectionProps> = ({
       return;
 
     const updatedAudiences = personaData.targetAudiences.filter(
-      (p) => p.id !== personaId
+      (p) => p.id !== personaId,
     );
 
     const updatedData = {
@@ -551,8 +557,8 @@ const PersonaCard: React.FC<{
                 persona.urgency === "high"
                   ? "bg-red-500"
                   : persona.urgency === "medium"
-                  ? "bg-amber-500"
-                  : "bg-emerald-500"
+                    ? "bg-amber-500"
+                    : "bg-emerald-500"
               }`}
             />
             <span className="text-xs text-slate-500 font-medium capitalize">
@@ -565,6 +571,28 @@ const PersonaCard: React.FC<{
           <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-1 bg-amber-50 text-amber-700 text-xs font-bold rounded-md border border-amber-100 w-full justify-center">
             <Zap size={10} className="fill-current" />
             Decision Maker
+          </div>
+        )}
+
+        {persona.bantQuestions && (
+          <div className="mt-3 pt-3 border-t border-slate-100">
+            <div className="text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
+              <Briefcase size={12} /> BANT Questions
+            </div>
+            <div className="flex gap-1 flex-wrap">
+              {Object.entries(persona.bantQuestions).map(
+                ([key, questions]) =>
+                  questions &&
+                  questions.length > 0 && (
+                    <span
+                      key={key}
+                      className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600 border border-slate-200 capitalize"
+                    >
+                      {key}: {questions.length}
+                    </span>
+                  ),
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -590,6 +618,7 @@ const PersonaForm: React.FC<{
     technicalLevel: persona?.technicalLevel || "beginner",
     urgency: persona?.urgency || "medium",
     decisionMaker: persona?.decisionMaker || false,
+    bantQuestions: persona?.bantQuestions || {},
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -825,6 +854,133 @@ const PersonaForm: React.FC<{
                 </span>
               </label>
             </div>
+
+            {/* BANT Questions Section */}
+            <div className="border-t border-slate-200 pt-6 mt-6">
+              <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <span className="w-1 h-4 bg-indigo-500 rounded-full"></span>
+                BANT Qualification Questions
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {(["budget", "authority", "need", "timeline"] as const).map(
+                  (category) => (
+                    <div
+                      key={category}
+                      className="bg-slate-50 p-4 rounded-xl border border-slate-200"
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <label className="text-xs font-bold text-slate-700 uppercase flex items-center gap-2">
+                          {category === "budget" && (
+                            <DollarSign
+                              size={14}
+                              className="text-emerald-600"
+                            />
+                          )}
+                          {category === "authority" && (
+                            <Users size={14} className="text-blue-600" />
+                          )}
+                          {category === "need" && (
+                            <Target size={14} className="text-amber-600" />
+                          )}
+                          {category === "timeline" && (
+                            <PieChart size={14} className="text-purple-600" />
+                          )}
+                          {category}
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => addBantQuestion(category)}
+                          className="text-indigo-600 hover:text-indigo-800 text-xs font-medium flex items-center gap-1"
+                        >
+                          <Plus size={12} /> Add
+                        </button>
+                      </div>
+                      <div className="space-y-4">
+                        {(formData.bantQuestions[category] || []).map(
+                          (q, qIdx) => (
+                            <div
+                              key={`${category}-${qIdx}`}
+                              className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm"
+                            >
+                              <div className="flex gap-2 mb-2">
+                                <input
+                                  type="text"
+                                  value={q.question}
+                                  onChange={(e) =>
+                                    handleBantQuestionChange(
+                                      category,
+                                      qIdx,
+                                      e.target.value,
+                                    )
+                                  }
+                                  placeholder={`${category} question...`}
+                                  className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 font-medium"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    removeBantQuestion(category, qIdx)
+                                  }
+                                  className="text-slate-400 hover:text-red-500 p-1"
+                                >
+                                  <X size={14} />
+                                </button>
+                              </div>
+
+                              {/* Options */}
+                              <div className="pl-2 border-l-2 border-slate-100 ml-1 space-y-2">
+                                <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                                  Options
+                                </div>
+                                {(q.options || []).map((opt, oIdx) => (
+                                  <div
+                                    key={`${category}-${qIdx}-opt-${oIdx}`}
+                                    className="flex gap-2 items-center"
+                                  >
+                                    <div className="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
+                                    <input
+                                      type="text"
+                                      value={opt}
+                                      onChange={(e) =>
+                                        handleBantOptionChange(
+                                          category,
+                                          qIdx,
+                                          oIdx,
+                                          e.target.value,
+                                        )
+                                      }
+                                      placeholder="Option label..."
+                                      className="flex-1 px-2 py-1 bg-white border border-slate-200 rounded text-xs focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        removeBantOption(category, qIdx, oIdx)
+                                      }
+                                      className="text-slate-300 hover:text-red-400 p-0.5"
+                                    >
+                                      <X size={12} />
+                                    </button>
+                                  </div>
+                                ))}
+                                <button
+                                  type="button"
+                                  onClick={() => addBantOption(category, qIdx)}
+                                  className="text-[10px] text-indigo-500 hover:text-indigo-700 font-medium flex items-center gap-1 mt-1 pl-3"
+                                >
+                                  <Plus size={10} /> Add Option
+                                </button>
+                              </div>
+                            </div>
+                          ),
+                        )}
+                      </div>
+                    </div>
+                  ),
+                )}
+              </div>
+            </div>
           </form>
         </div>
 
@@ -840,7 +996,7 @@ const PersonaForm: React.FC<{
           <button
             onClick={() => {
               const form = document.getElementById(
-                "persona-form"
+                "persona-form",
               ) as HTMLFormElement;
               if (form) form.requestSubmit();
             }}

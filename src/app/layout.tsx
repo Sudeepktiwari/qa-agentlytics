@@ -31,20 +31,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <meta name="msvalidate.01" content="F4758ADAFF276132743477B9EAFC7467" />
+
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning={true}
       >
-        {/* <Script
-          src="http://localhost:3000/api/widget"
-          data-api-key="ak_b17dd57a2e0d78b5d3f1155e94167da890dda703409fe1e36e647c2e6cc8d345"
-          data-theme="green"
-          data-size="large"
-          data-voice-enabled="true"
-          data-voice-gender="female"
-          data-auto-open-proactive="true"
-          strategy="afterInteractive"
-        /> */}
         <GlobalHeader />
         {children}
         <GlobalFooter />

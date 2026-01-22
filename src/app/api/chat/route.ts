@@ -858,12 +858,25 @@ async function analyzeForProbing(input: {
   botMode: "sales" | "lead_generation";
   userEmail?: string | null;
   missingDims?: ("budget" | "authority" | "need" | "timeline" | "segment")[];
+  personas?: any[]; // Added personas support
 }) {
   const messages: any = [
     {
       role: "system",
-      content:
-        "Decide whether to send a short BANT qualification follow-up now. Use the last user message and the assistant's response. Prefer sending a follow-up when at least one of the provided missingDims remains and a question can be naturally anchored to the user's last message or the assistant's response. Choose ONE BANT dimension from missingDims and ask about that only. Return JSON: { shouldSendFollowUp: boolean, mainText: string, buttons: string[], emailPrompt: string, bantDimension: string }. The message must ask ONE qualification in ONE sentence ending with '?'. Provide 2–4 concise options in 'buttons' that directly answer that single question. Never combine multiple BANT dimensions in one question. If botMode is 'sales', prefer Budget or Timeline; if 'lead_generation', prefer Need. If Budget is missing but Business Type ('segment') is also missing, ask Business Type first.",
+      content: `Decide whether to send a short BANT qualification follow-up now. Use the last user message and the assistant's response. Prefer sending a follow-up when at least one of the provided missingDims remains and a question can be naturally anchored to the user's last message or the assistant's response. Choose ONE BANT dimension from missingDims and ask about that only. Return JSON: { shouldSendFollowUp: boolean, mainText: string, buttons: string[], emailPrompt: string, bantDimension: string }. The message must ask ONE qualification in ONE sentence ending with '?'. Provide 2–4 concise options in 'buttons'. 
+      
+      IMPORTANT - PERSONA SPECIFIC BANT QUESTIONS:
+      If a matching persona is found in the "KNOWN PERSONAS" list below, and it has specific BANT questions for the chosen dimension:
+      1. Use one of the specific questions defined in the persona.
+      2. Use the EXACT "options" defined for that question as the "buttons".
+
+      If no persona matches or no specific question exists, generate a generic professional question and 2-4 concise options.
+
+      Never combine multiple BANT dimensions in one question. If botMode is 'sales', prefer Budget or Timeline; if 'lead_generation', prefer Need. If Budget is missing but Business Type ('segment') is also missing, ask Business Type first.
+
+      KNOWN PERSONAS:
+      ${JSON.stringify(input.personas || [])}
+      `,
     },
     {
       role: "user",
@@ -3475,6 +3488,22 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Fetch personas for BANT generation
+  let personas: any[] = [];
+  try {
+    const finalAdminId = apiAuth?.adminId || adminIdFromBody || "default-admin";
+    const db = await getDb();
+    const personasCollection = db.collection("customer_personas");
+    const personaDoc = await personasCollection.findOne({
+      adminId: finalAdminId,
+    });
+    if (personaDoc && personaDoc.targetAudiences) {
+      personas = personaDoc.targetAudiences;
+    }
+  } catch (e) {
+    console.error("[Chat API] Error fetching personas:", e);
+  }
+
   // 🔥 HANDLE USER PROFILE UPDATE FOR CUSTOMER INTELLIGENCE
   if (updateUserProfile && profileUserEmail) {
     try {
@@ -3645,6 +3674,7 @@ export async function POST(req: NextRequest) {
               botMode: "sales",
               userEmail: profileUserEmail,
               missingDims: missingDims as any,
+              personas,
             });
 
             if (probeResult && probeResult.shouldSendFollowUp) {
@@ -4188,6 +4218,7 @@ Based on the page context, create an intelligent contextual question that demons
             botMode: "lead_generation",
             userEmail: sessionEmail,
             missingDims: missingDims,
+            personas,
           });
 
           if (probing.shouldSendFollowUp && probing.mainText) {
@@ -8233,6 +8264,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
             },
             botMode,
             userEmail,
+            personas,
           });
           if (probing.shouldSendFollowUp && probing.mainText) {
             secondary = {
@@ -8655,6 +8687,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
               botMode: "sales",
               userEmail: String(question || ""),
               missingDims: missingDimsQuick,
+              personas,
             });
             if (probingQuick.shouldSendFollowUp && probingQuick.mainText) {
               const immediate = {

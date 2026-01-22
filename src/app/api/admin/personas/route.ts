@@ -19,6 +19,12 @@ interface CustomerPersona {
   technicalLevel: string; // "beginner", "intermediate", "advanced"
   urgency: string; // "low", "medium", "high"
   decisionMaker: boolean;
+  bantQuestions: {
+    budget: { question: string; options: string[] }[];
+    authority: { question: string; options: string[] }[];
+    need: { question: string; options: string[] }[];
+    timeline: { question: string; options: string[] }[];
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -45,7 +51,7 @@ function getAdminIdFromAuthResult(request: NextRequest): string | undefined {
 // Extract customer personas from website content
 async function extractPersonasFromContent(
   websiteContent: string[],
-  websiteUrl: string
+  websiteUrl: string,
 ): Promise<Omit<PersonaData, "adminId" | "extractedAt" | "updatedAt">> {
   const prompt = `
 You are analyzing a website to extract customer personas. Based on the content below, create 2-4 specific customer personas.
@@ -73,7 +79,21 @@ Return this exact JSON structure:
       "budget": "under_500",
       "technicalLevel": "beginner",
       "urgency": "medium",
-      "decisionMaker": true
+      "decisionMaker": true,
+      "bantQuestions": {
+        "budget": [
+          { "question": "What is your expected monthly budget?", "options": ["Under $500", "$500-$2k", "$2k-$5k", "$5k+"] }
+        ],
+        "authority": [
+          { "question": "Are you the final decision maker?", "options": ["Yes, I decide", "I need approval", "I'm researching"] }
+        ],
+        "need": [
+          { "question": "What is your biggest challenge right now?", "options": ["High costs", "Low efficiency", "Compliance", "Other"] }
+        ],
+        "timeline": [
+          { "question": "When are you looking to implement this?", "options": ["Immediately", "1-3 months", "3-6 months", "Just looking"] }
+        ]
+      }
     }
   ],
   "industryFocus": ["primary industry"],
@@ -89,6 +109,12 @@ IMPORTANT GUIDELINES:
 - For "industries" field, use ["general"] unless the website is clearly industry-specific (e.g., a dental practice website). Do NOT assume specific industries from generic business content.
 - Create personas that represent customer archetypes/segments for targeting
 - These will be used for messaging personalization based on business context, not personal identity
+- For "bantQuestions", generate 2-3 specific, relevant qualification questions for EACH category (Budget, Authority, Need, Timeline).
+  - For EACH question, provide 3-4 "options" that the user can click as quick replies.
+  - Budget questions should match their likely financial scale.
+  - Authority questions should respect their role.
+  - Need questions should probe their specific pain points.
+  - Timeline questions should relate to their urgency level.
 
 Create realistic personas based on the actual content. Even if content is limited, create at least 1-2 basic personas.`;
 
@@ -98,7 +124,7 @@ Create realistic personas based on the actual content. Even if content is limite
     console.log("Website URL:", websiteUrl);
     console.log(
       "Sample content preview:",
-      websiteContent[0]?.substring(0, 200) + "..."
+      websiteContent[0]?.substring(0, 200) + "...",
     );
 
     const completion = await openai.chat.completions.create({
@@ -118,7 +144,7 @@ Create realistic personas based on the actual content. Even if content is limite
     console.log("Raw response:", completion.choices[0].message.content);
     console.log(
       "Response length:",
-      completion.choices[0].message.content?.length
+      completion.choices[0].message.content?.length,
     );
 
     let extracted;
@@ -156,11 +182,11 @@ Create realistic personas based on the actual content. Even if content is limite
         id: persona.id || `persona_${index + 1}`,
         createdAt: new Date(),
         updatedAt: new Date(),
-      })
+      }),
     );
 
     console.log(
-      `Successfully extracted ${extracted.targetAudiences.length} personas for ${websiteUrl}`
+      `Successfully extracted ${extracted.targetAudiences.length} personas for ${websiteUrl}`,
     );
 
     return extracted;
@@ -199,7 +225,7 @@ export async function GET(req: NextRequest) {
     console.error("Error fetching personas:", error);
     return NextResponse.json(
       { error: "Failed to fetch personas" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -248,7 +274,7 @@ export async function POST(req: NextRequest) {
             error:
               "No website URL found. Please provide a website URL or crawl your website first.",
           },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
@@ -271,7 +297,7 @@ export async function POST(req: NextRequest) {
         .filter((item) => item.text.length > 0);
 
       console.log(
-        `${crawledContent.length} pages have content after filtering`
+        `${crawledContent.length} pages have content after filtering`,
       );
 
       // Debug: Show sample content
@@ -281,18 +307,18 @@ export async function POST(req: NextRequest) {
         console.log("First page title:", crawledContent[0]?.title);
         console.log(
           "First page content length:",
-          crawledContent[0]?.text?.length
+          crawledContent[0]?.text?.length,
         );
         console.log(
           "First page preview:",
-          crawledContent[0]?.text?.substring(0, 300) + "..."
+          crawledContent[0]?.text?.substring(0, 300) + "...",
         );
       }
 
       // Combine all content sources
       const allContent = crawledContent.map(
         (item) =>
-          `URL: ${item.url}\nTitle: ${item.title}\nContent: ${item.text}`
+          `URL: ${item.url}\nTitle: ${item.title}\nContent: ${item.text}`,
       );
 
       if (allContent.length === 0) {
@@ -302,17 +328,17 @@ export async function POST(req: NextRequest) {
             error:
               "No content found for persona extraction. Please crawl your website first using the sitemap feature.",
           },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
       console.log(
-        `Extracting personas from ${allContent.length} crawled pages for ${targetWebsiteUrl}`
+        `Extracting personas from ${allContent.length} crawled pages for ${targetWebsiteUrl}`,
       );
 
       const extracted = await extractPersonasFromContent(
         allContent,
-        targetWebsiteUrl
+        targetWebsiteUrl,
       );
 
       const personaDocument: PersonaData = {
@@ -334,7 +360,7 @@ export async function POST(req: NextRequest) {
       if (!personaData) {
         return NextResponse.json(
           { error: "Persona data required" },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
@@ -355,14 +381,14 @@ export async function POST(req: NextRequest) {
     } else {
       return NextResponse.json(
         { error: "Invalid action. Use 'auto_extract' or 'manual_save'" },
-        { status: 400 }
+        { status: 400 },
       );
     }
   } catch (error) {
     console.error("Error processing personas:", error);
     return NextResponse.json(
       { error: "Failed to process personas" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -388,7 +414,7 @@ export async function DELETE(req: NextRequest) {
     console.error("Error deleting personas:", error);
     return NextResponse.json(
       { error: "Failed to delete personas" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
