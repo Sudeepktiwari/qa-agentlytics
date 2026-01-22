@@ -15,6 +15,7 @@ import TestingSection from "./admin/TestingSection";
 import DocumentManagementSection from "./admin/DocumentManagementSection";
 import CrawledPagesSection from "./admin/CrawledPagesSection";
 import CustomerPersonaSection from "./admin/CustomerPersonaSection";
+import BantQualificationSection from "./admin/BantQualificationSection";
 import CustomerProfilesSection from "./admin/CustomerProfilesSection";
 import BookingManagementSection from "./admin/BookingManagementSection";
 import SubscriptionSection from "./admin/SubscriptionSection";
@@ -26,7 +27,7 @@ import { PRICING } from "@/config/pricing";
 const AdminPanel: React.FC = () => {
   // Authentication state
   const [auth, setAuth] = useState<null | { email: string; adminId?: string }>(
-    null
+    null,
   );
   const [authError, setAuthError] = useState("");
   const [authLoading, setAuthLoading] = useState(true);
@@ -87,6 +88,7 @@ const AdminPanel: React.FC = () => {
   const [documentsLoading, setDocumentsLoading] = useState(false);
   const [documentsError, setDocumentsError] = useState("");
   const [documentsExpanded, setDocumentsExpanded] = useState(true);
+  const [bantExpanded, setBantExpanded] = useState(false);
 
   // Crawled pages management state
   interface CrawledPage {
@@ -138,7 +140,7 @@ const AdminPanel: React.FC = () => {
   }>(null);
   const showToast = (
     message: string,
-    type: "success" | "error" = "success"
+    type: "success" | "error" = "success",
   ) => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
@@ -262,13 +264,13 @@ const AdminPanel: React.FC = () => {
           `✅ Batch Complete: ${data.crawled} pages crawled, ${data.totalChunks} chunks created\n` +
             `📊 ${progressInfo}\n` +
             `⏱️ Execution time: ${Math.round(data.executionTime / 1000)}s\n` +
-            `${data.message}`
+            `${data.message}`,
         );
 
         // Auto-continue if there are more pages and auto-continue is enabled
         if (data.hasMorePages && (autoContinue || continueCrawling)) {
           setSitemapStatus(
-            (prev) => prev + `\n\n🔄 Auto-continuing in 2 seconds...`
+            (prev) => prev + `\n\n🔄 Auto-continuing in 2 seconds...`,
           );
 
           // Wait 2 seconds before continuing to prevent overwhelming the server
@@ -279,13 +281,13 @@ const AdminPanel: React.FC = () => {
           setSitemapStatus(
             (prev) =>
               prev +
-              `\n\n💡 ${data.totalRemaining} pages remaining. Enable auto-continue or click "Continue Crawling" to process more.`
+              `\n\n💡 ${data.totalRemaining} pages remaining. Enable auto-continue or click "Continue Crawling" to process more.`,
           );
           setSitemapLoading(false);
         } else {
           setSitemapStatus(
             (prev) =>
-              prev + `\n\n🎉 All pages have been successfully processed!`
+              prev + `\n\n🎉 All pages have been successfully processed!`,
           );
           setSitemapLoading(false);
           setContinueCrawling(false);
@@ -429,7 +431,7 @@ const AdminPanel: React.FC = () => {
         setLeadsLoading(false);
       }
     },
-    [leadsSearch, leadsSortBy, leadsSortOrder, LEADS_PAGE_SIZE]
+    [leadsSearch, leadsSortBy, leadsSortOrder, LEADS_PAGE_SIZE],
   );
 
   // Documents management functions
@@ -529,7 +531,7 @@ const AdminPanel: React.FC = () => {
 
     if (
       !window.confirm(
-        `Delete crawled page "${page.url}"? This action cannot be undone.`
+        `Delete crawled page "${page.url}"? This action cannot be undone.`,
       )
     ) {
       return;
@@ -561,7 +563,7 @@ const AdminPanel: React.FC = () => {
   const deleteDocumentFile = async (filename: string) => {
     if (
       !window.confirm(
-        `Delete document "${filename}"? This will remove all its chunks from the knowledge base.`
+        `Delete document "${filename}"? This will remove all its chunks from the knowledge base.`,
       )
     ) {
       return;
@@ -673,7 +675,7 @@ const AdminPanel: React.FC = () => {
                 hasStructuredSummary: true,
                 structuredSummary: result.summary || prev.structuredSummary,
               }
-            : prev
+            : prev,
         );
 
         // Update local status maps and background lists without closing modal
@@ -1176,12 +1178,16 @@ const AdminPanel: React.FC = () => {
       case "subscription":
         return <SubscriptionSection email={auth?.email} />;
 
-      case "customers":
+      case "qualification":
         return (
           <div className="space-y-8">
             <CustomerPersonaSection
               expanded={true} // Always expanded in dedicated view
               onToggleExpanded={() => {}}
+            />
+            <BantQualificationSection
+              expanded={bantExpanded}
+              onToggleExpanded={() => setBantExpanded(!bantExpanded)}
             />
             <CustomerProfilesSection />
           </div>

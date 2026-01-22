@@ -11,6 +11,7 @@ import {
   BookOpen,
   Zap,
   LogOut,
+  GraduationCap,
   X,
 } from "lucide-react";
 
@@ -34,18 +35,19 @@ const Sidebar: React.FC<SidebarProps> = ({
       title: "Core",
       items: [
         { id: "overview", label: "Overview", icon: LayoutDashboard },
-        { id: "live-preview", label: "Live Preview", icon: MessageSquare },
+        { id: "qualification", label: "Qualification", icon: GraduationCap },
+        // { id: "live-preview", label: "Live Preview", icon: MessageSquare },
       ],
     },
     {
       title: "Data",
       items: [
         { id: "knowledge", label: "Knowledge Base", icon: Database },
-        { id: "documents", label: "Documents", icon: FileText },
+        // { id: "documents", label: "Documents", icon: FileText },
       ],
     },
     {
-      title: "Engage",
+      title: "Customers",
       items: [
         { id: "leads", label: "Leads", icon: Users },
         { id: "bookings", label: "Bookings", icon: BookOpen },
@@ -55,14 +57,14 @@ const Sidebar: React.FC<SidebarProps> = ({
       title: "Admin",
       items: [
         { id: "configuration", label: "Configuration", icon: Settings },
-        { id: "testing", label: "Testing", icon: Cpu },
+        // { id: "testing", label: "Testing", icon: Cpu },
         { id: "subscription", label: "Subscription", icon: CreditCard },
       ],
     },
     {
       title: "More",
       items: [
-        { id: "customers", label: "Customers", icon: Users },
+        // { id: "customers", label: "Customers", icon: Users },
         { id: "onboarding", label: "Onboarding", icon: Zap },
       ],
     },

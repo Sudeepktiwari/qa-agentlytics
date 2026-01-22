@@ -109,12 +109,6 @@ IMPORTANT GUIDELINES:
 - For "industries" field, use ["general"] unless the website is clearly industry-specific (e.g., a dental practice website). Do NOT assume specific industries from generic business content.
 - Create personas that represent customer archetypes/segments for targeting
 - These will be used for messaging personalization based on business context, not personal identity
-- For "bantQuestions", generate 2-3 specific, relevant qualification questions for EACH category (Budget, Authority, Need, Timeline).
-  - For EACH question, provide 3-4 "options" that the user can click as quick replies.
-  - Budget questions should match their likely financial scale.
-  - Authority questions should respect their role.
-  - Need questions should probe their specific pain points.
-  - Timeline questions should relate to their urgency level.
 
 Create realistic personas based on the actual content. Even if content is limited, create at least 1-2 basic personas.`;
 
