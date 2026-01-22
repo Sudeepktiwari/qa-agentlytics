@@ -621,9 +621,117 @@ const PersonaForm: React.FC<{
     bantQuestions: persona?.bantQuestions || {},
   });
 
+  const handleBantQuestionChange = (
+    category: "budget" | "authority" | "need" | "timeline",
+    index: number,
+    value: string,
+  ) => {
+    const questions = [...(formData.bantQuestions[category] || [])];
+    if (questions[index]) {
+      questions[index] = { ...questions[index], question: value };
+      setFormData({
+        ...formData,
+        bantQuestions: {
+          ...formData.bantQuestions,
+          [category]: questions,
+        },
+      });
+    }
+  };
+
+  const addBantQuestion = (
+    category: "budget" | "authority" | "need" | "timeline",
+  ) => {
+    const questions = [...(formData.bantQuestions[category] || [])];
+    questions.push({ question: "", options: [] });
+    setFormData({
+      ...formData,
+      bantQuestions: {
+        ...formData.bantQuestions,
+        [category]: questions,
+      },
+    });
+  };
+
+  const removeBantQuestion = (
+    category: "budget" | "authority" | "need" | "timeline",
+    index: number,
+  ) => {
+    const questions = [...(formData.bantQuestions[category] || [])];
+    questions.splice(index, 1);
+    setFormData({
+      ...formData,
+      bantQuestions: {
+        ...formData.bantQuestions,
+        [category]: questions,
+      },
+    });
+  };
+
+  const handleBantOptionChange = (
+    category: "budget" | "authority" | "need" | "timeline",
+    qIndex: number,
+    oIndex: number,
+    value: string,
+  ) => {
+    const questions = [...(formData.bantQuestions[category] || [])];
+    if (questions[qIndex]) {
+      const options = [...(questions[qIndex].options || [])];
+      options[oIndex] = value;
+      questions[qIndex] = { ...questions[qIndex], options };
+      setFormData({
+        ...formData,
+        bantQuestions: {
+          ...formData.bantQuestions,
+          [category]: questions,
+        },
+      });
+    }
+  };
+
+  const addBantOption = (
+    category: "budget" | "authority" | "need" | "timeline",
+    qIndex: number,
+  ) => {
+    const questions = [...(formData.bantQuestions[category] || [])];
+    if (questions[qIndex]) {
+      const options = [...(questions[qIndex].options || [])];
+      options.push("");
+      questions[qIndex] = { ...questions[qIndex], options };
+      setFormData({
+        ...formData,
+        bantQuestions: {
+          ...formData.bantQuestions,
+          [category]: questions,
+        },
+      });
+    }
+  };
+
+  const removeBantOption = (
+    category: "budget" | "authority" | "need" | "timeline",
+    qIndex: number,
+    oIndex: number,
+  ) => {
+    const questions = [...(formData.bantQuestions[category] || [])];
+    if (questions[qIndex]) {
+      const options = [...(questions[qIndex].options || [])];
+      options.splice(oIndex, 1);
+      questions[qIndex] = { ...questions[qIndex], options };
+      setFormData({
+        ...formData,
+        bantQuestions: {
+          ...formData.bantQuestions,
+          [category]: questions,
+        },
+      });
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    // Include the original ID so update logic works
+    onSave({ ...formData, id: persona?.id });
   };
 
   const modalContent = (
