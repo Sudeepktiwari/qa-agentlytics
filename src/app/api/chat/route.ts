@@ -864,19 +864,33 @@ async function analyzeForProbing(input: {
   const messages: any = [
     {
       role: "system",
-      content: `Decide whether to send a short BANT qualification follow-up now. Use the last user message and the assistant's response. Prefer sending a follow-up when at least one of the provided missingDims remains and a question can be naturally anchored to the user's last message or the assistant's response. Choose ONE BANT dimension from missingDims and ask about that only. Return JSON: { shouldSendFollowUp: boolean, mainText: string, buttons: string[], emailPrompt: string, bantDimension: string }. The message must ask ONE qualification in ONE sentence ending with '?'. Provide 2–4 concise options in 'buttons'. 
+      content: `You are an expert sales consultant. Decide whether to send a short BANT qualification follow-up now. 
       
-      IMPORTANT - PERSONA SPECIFIC BANT QUESTIONS:
-      If a matching persona is found in the "KNOWN PERSONAS" list below, and it has specific BANT questions for the chosen dimension:
-      1. Use one of the specific questions defined in the persona.
-      2. Use the EXACT "options" defined for that question as the "buttons".
+      GOAL: Move the conversation forward by asking ONE qualification question, but do it conversationally.
+      
+      STRUCTURE:
+      1. Bridge/Context: Briefly acknowledge the user's input or context (1 sentence).
+      2. Insight (Optional but recommended): Provide a tiny snippet of value or explanation for why you are asking (e.g., "That helps me tailor the pricing...").
+      3. Question: Ask the specific BANT question.
 
-      If no persona matches or no specific question exists, generate a generic professional question and 2-4 concise options.
+      RULES:
+      - Choose ONE BANT dimension from missingDims.
+      - Return JSON: { shouldSendFollowUp: boolean, mainText: string, buttons: string[], emailPrompt: string, bantDimension: string }.
+      - 'mainText' should contain the full conversational message (Bridge + Insight + Question).
+      
+      IMPORTANT - BANT CONFIGURATION PRIORITY:
+      1. Check "GLOBAL BANT CONFIGURATION" first. If questions exist for the chosen dimension, you MUST use that question (you can wrap it in the conversational structure).
+      2. Use the EXACT "options" from the config as the "buttons".
+      3. If no global config, check "KNOWN PERSONAS".
+      4. If neither, generate a generic professional question.
 
-      Never combine multiple BANT dimensions in one question. If botMode is 'sales', prefer Budget or Timeline; if 'lead_generation', prefer Need. If Budget is missing but Business Type ('segment') is also missing, ask Business Type first.
-
+      GLOBAL BANT CONFIGURATION:
+      ${JSON.stringify(input.bantConfig || {})}
+      
       KNOWN PERSONAS:
       ${JSON.stringify(input.personas || [])}
+
+      Never combine multiple BANT dimensions. If botMode is 'sales', prefer Budget or Timeline.
       `,
     },
     {
@@ -10135,71 +10149,74 @@ What specific information are you looking for? I'm here to help guide you throug
         } as any;
         nextBant = completion;
       } else {
-        const dim = orderedMissing[0];
-        if (dim === "segment") {
-          nextBant = {
-            mainText: "What type of business are you?",
-            buttons: ["Individual", "SMB", "Enterprise"],
-            emailPrompt: "",
-            type: "bant",
-            dimension: "segment",
-          } as any;
-        } else if (dim === "budget") {
-          const segment = getBusinessSegment(sessionMessagesQuick);
-          const budgetButtons =
-            segment === "individual"
-              ? ["Under $20/mo", "$20–$50/mo", "$50+"]
-              : segment === "smb"
-                ? ["Under $500/mo", "$500–$1.5k/mo", "$1.5k+"]
-                : segment === "enterprise"
-                  ? ["Under $10k/yr", "$10k–$50k/yr", "$50k+/yr"]
-                  : ["Under $500/mo", "$500–$1.5k/mo", "$1.5k+"];
-          nextBant = {
-            mainText: "What budget range are you considering?",
-            buttons: budgetButtons,
-            emailPrompt: "",
-            type: "bant",
-            dimension: "budget",
-          } as any;
-        } else if (dim === "authority") {
-          nextBant = {
-            mainText: "Who will make the decision?",
-            buttons: [
-              "Myself",
-              "Manager approval required",
-              "Team decision",
-              "Not sure yet",
-            ],
-            emailPrompt: "",
-            type: "bant",
-            dimension: "authority",
-          } as any;
-        } else if (dim === "need") {
-          nextBant = {
-            mainText: "Which feature matters most right now?",
-            buttons: [
-              "Project Management",
-              "Team Collaboration",
-              "Data Analytics",
-            ],
-            emailPrompt: "",
-            type: "bant",
-            dimension: "need",
-          } as any;
-        } else {
-          nextBant = {
-            mainText: "What timeline are you targeting?",
-            buttons: [
-              "Immediately",
-              "Within a month",
-              "1-3 months",
-              "3-6 months",
-              "No specific timeline",
-            ],
-            emailPrompt: "",
-            type: "bant",
-            dimension: "timeline",
-          } as any;
+        // If BANT config exists, skip hardcoded logic and let analyzeForProbing handle it
+        if (!bantConfig) {
+          const dim = orderedMissing[0];
+          if (dim === "segment") {
+            nextBant = {
+              mainText: "What type of business are you?",
+              buttons: ["Individual", "SMB", "Enterprise"],
+              emailPrompt: "",
+              type: "bant",
+              dimension: "segment",
+            } as any;
+          } else if (dim === "budget") {
+            const segment = getBusinessSegment(sessionMessagesQuick);
+            const budgetButtons =
+              segment === "individual"
+                ? ["Under $20/mo", "$20–$50/mo", "$50+"]
+                : segment === "smb"
+                  ? ["Under $500/mo", "$500–$1.5k/mo", "$1.5k+"]
+                  : segment === "enterprise"
+                    ? ["Under $10k/yr", "$10k–$50k/yr", "$50k+/yr"]
+                    : ["Under $500/mo", "$500–$1.5k/mo", "$1.5k+"];
+            nextBant = {
+              mainText: "What budget range are you considering?",
+              buttons: budgetButtons,
+              emailPrompt: "",
+              type: "bant",
+              dimension: "budget",
+            } as any;
+          } else if (dim === "authority") {
+            nextBant = {
+              mainText: "Who will make the decision?",
+              buttons: [
+                "Myself",
+                "Manager approval required",
+                "Team decision",
+                "Not sure yet",
+              ],
+              emailPrompt: "",
+              type: "bant",
+              dimension: "authority",
+            } as any;
+          } else if (dim === "need") {
+            nextBant = {
+              mainText: "Which feature matters most right now?",
+              buttons: [
+                "Project Management",
+                "Team Collaboration",
+                "Data Analytics",
+              ],
+              emailPrompt: "",
+              type: "bant",
+              dimension: "need",
+            } as any;
+          } else {
+            nextBant = {
+              mainText: "What timeline are you targeting?",
+              buttons: [
+                "Immediately",
+                "Within a month",
+                "1-3 months",
+                "3-6 months",
+                "No specific timeline",
+              ],
+              emailPrompt: "",
+              type: "bant",
+              dimension: "timeline",
+            } as any;
+          }
         }
       }
       if (!nextBant) {
@@ -11297,7 +11314,10 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
           const inferredDim =
             immediate.dimension ||
             detectBantDimensionFromText(String(immediate.mainText || ""));
-          if (inferredDim === "budget") {
+
+          // Only apply hardcoded heuristics if NO BANT config is present.
+          // If BANT config exists, we trust the LLM (analyzeForProbing) to have picked the right question/options.
+          if (!bantConfig && inferredDim === "budget") {
             const budgetMissing = missingDimsQuick.includes("budget");
             const segment = getBusinessSegment(sessionMessagesQuick);
             const lastAssistant = [...sessionMessagesQuick]
@@ -11415,6 +11435,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
             (lastAssistant as any)?.bantDimension === "segment";
 
           if (
+            !bantConfig &&
             resolvedUserEmail &&
             priceSignal &&
             !segment &&
@@ -11428,6 +11449,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
               dimension: "segment",
             } as any;
           } else if (
+            !bantConfig &&
             resolvedUserEmail &&
             missingDimsQuick.length > 0 &&
             priceSignal &&
@@ -11450,6 +11472,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
               dimension: "budget",
             } as any;
           } else if (
+            !bantConfig &&
             resolvedUserEmail &&
             missingDimsQuick.length > 0 &&
             timeSignal
