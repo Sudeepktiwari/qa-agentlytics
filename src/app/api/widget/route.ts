@@ -251,26 +251,38 @@ export async function GET(request: Request) {
 
   // Mobile responsive adjustments for standard mode
   if (!ONBOARDING_ONLY) {
-    const isMobile = (window.matchMedia && window.matchMedia('(max-width: 480px)').matches) || (window.innerWidth <= 480);
-    if (isMobile) {
-      // Adjust main container to be full width at bottom
-      widgetMainContainer.style.bottom = '0';
-      widgetMainContainer.style.left = '0';
-      widgetMainContainer.style.right = '0';
-      widgetMainContainer.style.width = '100%';
-      widgetMainContainer.style.alignItems = 'flex-end'; // Keep button on right
+    const applyMobileStyles = () => {
+      const isMobile = (window.matchMedia && window.matchMedia('(max-width: 480px)').matches) || (window.innerWidth <= 480);
       
-      // Adjust widget container to take up bottom half
-      widgetContainer.style.width = '100%';
-      widgetContainer.style.height = '50vh';
-      widgetContainer.style.maxHeight = '50vh';
-      widgetContainer.style.borderRadius = '12px 12px 0 0';
-      widgetContainer.style.margin = '0';
-      
-      // Add margin to toggle button since container is now edge-to-edge
-      toggleButton.style.marginRight = '20px';
-      toggleButton.style.marginBottom = '20px';
-    }
+      if (isMobile) {
+        // Adjust main container to be full width at bottom
+        widgetMainContainer.style.bottom = '0';
+        widgetMainContainer.style.left = '0';
+        widgetMainContainer.style.right = '0';
+        widgetMainContainer.style.width = '100%';
+        widgetMainContainer.style.alignItems = 'flex-end'; // Keep button on right
+        
+        // Adjust widget container to take up bottom half
+        widgetContainer.style.width = '100%';
+        widgetContainer.style.height = '50vh';
+        widgetContainer.style.maxHeight = '50vh';
+        widgetContainer.style.borderRadius = '12px 12px 0 0';
+        widgetContainer.style.margin = '0';
+        
+        // Add margin to toggle button since container is now edge-to-edge
+        toggleButton.style.marginRight = '20px';
+        toggleButton.style.marginBottom = '20px';
+      } else {
+        // Reset/Standard styles for desktop (basic reset if coming from mobile)
+        // Note: Full reset would require storing original styles, but for now we focus on mobile
+      }
+    };
+    
+    // Apply initially
+    applyMobileStyles();
+    
+    // Apply on resize
+    window.addEventListener('resize', applyMobileStyles);
   }
   
   toggleButton.addEventListener('mouseenter', () => {

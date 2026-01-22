@@ -11258,6 +11258,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
             botMode,
             userEmail: resolvedUserEmail,
             missingDims: missingDimsQuick,
+            personas,
           });
         }
 
