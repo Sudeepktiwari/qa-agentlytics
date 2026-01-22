@@ -11,6 +11,7 @@ import {
   AlertCircle,
   CheckCircle2,
   X,
+  Wand2,
 } from "lucide-react";
 
 interface BantQuestion {
@@ -32,6 +33,7 @@ interface BantConfiguration {
 const BantQualificationSection: React.FC = () => {
   const [config, setConfig] = useState<BantConfiguration | null>(null);
   const [loading, setLoading] = useState(false);
+  const [generating, setGenerating] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [activeCategory, setActiveCategory] = useState<
@@ -59,6 +61,41 @@ const BantQualificationSection: React.FC = () => {
       setError("An unexpected error occurred");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGenerate = async () => {
+    if (
+      !confirm(
+        "This will overwrite your current BANT questions with AI-generated ones based on your website content. Continue?",
+      )
+    ) {
+      return;
+    }
+
+    setGenerating(true);
+    setError("");
+    setMessage("");
+
+    try {
+      const res = await fetch("/api/admin/bant/generate", {
+        method: "POST",
+      });
+      const data = await res.json();
+
+      if (res.ok) {
+        setConfig(data.config);
+        setMessage(
+          "Questions generated successfully! Don't forget to review and save.",
+        );
+      } else {
+        setError(data.error || "Failed to generate questions");
+      }
+    } catch (err) {
+      console.error(err);
+      setError("Failed to connect to generation service");
+    } finally {
+      setGenerating(false);
     }
   };
 
@@ -202,6 +239,18 @@ const BantQualificationSection: React.FC = () => {
             </p>
           </div>
         </div>
+        <button
+          onClick={handleGenerate}
+          disabled={generating || loading}
+          className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg text-sm font-semibold hover:bg-indigo-100 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {generating ? (
+            <span className="animate-spin">✨</span>
+          ) : (
+            <Wand2 size={16} />
+          )}
+          {generating ? "Generating..." : "Auto-Generate from Website"}
+        </button>
       </div>
 
       {/* Content */}
