@@ -88,7 +88,6 @@ const AdminPanel: React.FC = () => {
   const [documentsLoading, setDocumentsLoading] = useState(false);
   const [documentsError, setDocumentsError] = useState("");
   const [documentsExpanded, setDocumentsExpanded] = useState(true);
-  const [bantExpanded, setBantExpanded] = useState(false);
 
   // Crawled pages management state
   interface CrawledPage {
@@ -1181,15 +1180,12 @@ const AdminPanel: React.FC = () => {
       case "qualification":
         return (
           <div className="space-y-8">
-            <CustomerPersonaSection
+            {/* <CustomerPersonaSection
               expanded={true} // Always expanded in dedicated view
               onToggleExpanded={() => {}}
-            />
-            <BantQualificationSection
-              expanded={bantExpanded}
-              onToggleExpanded={() => setBantExpanded(!bantExpanded)}
-            />
-            <CustomerProfilesSection />
+            /> */}
+            <BantQualificationSection />
+            {/* <CustomerProfilesSection /> */}
           </div>
         );
 

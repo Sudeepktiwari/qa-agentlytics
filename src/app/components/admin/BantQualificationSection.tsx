@@ -10,10 +10,7 @@ import {
   Save,
   AlertCircle,
   CheckCircle2,
-  ChevronDown,
-  ChevronUp,
   X,
-  Edit2,
 } from "lucide-react";
 
 interface BantQuestion {
@@ -32,15 +29,7 @@ interface BantConfiguration {
   updatedAt: Date;
 }
 
-interface BantQualificationSectionProps {
-  expanded: boolean;
-  onToggleExpanded: () => void;
-}
-
-const BantQualificationSection: React.FC<BantQualificationSectionProps> = ({
-  expanded,
-  onToggleExpanded,
-}) => {
+const BantQualificationSection: React.FC = () => {
   const [config, setConfig] = useState<BantConfiguration | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -49,12 +38,10 @@ const BantQualificationSection: React.FC<BantQualificationSectionProps> = ({
     "budget" | "authority" | "need" | "timeline"
   >("budget");
 
-  // Load config when expanded
+  // Load config on mount
   useEffect(() => {
-    if (expanded) {
-      fetchConfig();
-    }
-  }, [expanded]);
+    fetchConfig();
+  }, []);
 
   const fetchConfig = async () => {
     setLoading(true);
@@ -120,7 +107,11 @@ const BantQualificationSection: React.FC<BantQualificationSectionProps> = ({
     });
   };
 
-  const updateQuestion = (index: number, field: keyof BantQuestion, value: any) => {
+  const updateQuestion = (
+    index: number,
+    field: keyof BantQuestion,
+    value: any,
+  ) => {
     if (!config) return;
     const updatedList = [...config[activeCategory]];
     updatedList[index] = { ...updatedList[index], [field]: value };
@@ -156,21 +147,44 @@ const BantQualificationSection: React.FC<BantQualificationSectionProps> = ({
   };
 
   const categories = [
-    { id: "budget", label: "Budget", icon: DollarSign, color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-100" },
-    { id: "authority", label: "Authority", icon: Users, color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-100" },
-    { id: "need", label: "Need", icon: Zap, color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-100" },
-    { id: "timeline", label: "Timeline", icon: Clock, color: "text-purple-600", bg: "bg-purple-50", border: "border-purple-100" },
+    {
+      id: "budget",
+      label: "Budget",
+      icon: DollarSign,
+      color: "text-emerald-600",
+      bg: "bg-emerald-50",
+      border: "border-emerald-100",
+    },
+    {
+      id: "authority",
+      label: "Authority",
+      icon: Users,
+      color: "text-blue-600",
+      bg: "bg-blue-50",
+      border: "border-blue-100",
+    },
+    {
+      id: "need",
+      label: "Need",
+      icon: Zap,
+      color: "text-amber-600",
+      bg: "bg-amber-50",
+      border: "border-amber-100",
+    },
+    {
+      id: "timeline",
+      label: "Timeline",
+      icon: Clock,
+      color: "text-purple-600",
+      bg: "bg-purple-50",
+      border: "border-purple-100",
+    },
   ] as const;
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-6">
       {/* Header */}
-      <div
-        onClick={onToggleExpanded}
-        className={`p-6 flex items-center justify-between cursor-pointer hover:bg-slate-50/50 transition-colors ${
-          expanded ? "border-b border-slate-100" : ""
-        }`}
-      >
+      <div className="p-6 flex items-center justify-between border-b border-slate-100">
         <div className="flex items-start gap-4">
           <div className="w-12 h-12 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center border border-teal-100 shadow-sm">
             <Briefcase size={24} />
@@ -183,163 +197,167 @@ const BantQualificationSection: React.FC<BantQualificationSectionProps> = ({
               </span>
             </h2>
             <p className="text-sm text-slate-500 mt-1">
-              Manage global qualification questions for Budget, Authority, Need, and Timeline
+              Manage global qualification questions for Budget, Authority, Need,
+              and Timeline
             </p>
           </div>
-        </div>
-        <div className="flex items-center gap-2 text-sm font-medium text-slate-600">
-          {expanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
         </div>
       </div>
 
       {/* Content */}
-      {expanded && (
-        <div className="p-6">
-          {/* Notifications */}
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl flex items-start gap-3 text-red-700 text-sm animate-in fade-in">
-              <AlertCircle size={18} className="mt-0.5 flex-shrink-0" />
-              <div>{error}</div>
-            </div>
-          )}
-          {message && (
-            <div className="mb-6 p-4 bg-emerald-50 border border-emerald-100 rounded-xl flex items-start gap-3 text-emerald-700 text-sm animate-in fade-in">
-              <CheckCircle2 size={18} className="mt-0.5 flex-shrink-0" />
-              <div>{message}</div>
-            </div>
-          )}
+      <div className="p-6">
+        {/* Notifications */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl flex items-start gap-3 text-red-700 text-sm animate-in fade-in">
+            <AlertCircle size={18} className="mt-0.5 flex-shrink-0" />
+            <div>{error}</div>
+          </div>
+        )}
+        {message && (
+          <div className="mb-6 p-4 bg-emerald-50 border border-emerald-100 rounded-xl flex items-start gap-3 text-emerald-700 text-sm animate-in fade-in">
+            <CheckCircle2 size={18} className="mt-0.5 flex-shrink-0" />
+            <div>{message}</div>
+          </div>
+        )}
 
-          {loading && !config ? (
-            <div className="py-12 text-center text-slate-500">Loading configuration...</div>
-          ) : config ? (
-            <div className="flex flex-col md:flex-row gap-6">
-              {/* Sidebar Tabs */}
-              <div className="w-full md:w-64 flex-shrink-0 space-y-2">
-                {categories.map((cat) => (
-                  <button
-                    key={cat.id}
-                    onClick={() => setActiveCategory(cat.id)}
-                    className={`w-full flex items-center gap-3 p-3 rounded-xl border text-sm font-semibold transition-all ${
-                      activeCategory === cat.id
-                        ? `${cat.bg} ${cat.border} ${cat.color} ring-1 ring-inset ring-black/5`
-                        : "bg-white border-transparent hover:bg-slate-50 text-slate-600"
-                    }`}
-                  >
-                    <cat.icon size={18} />
-                    {cat.label}
-                    <span className="ml-auto bg-white/50 px-2 py-0.5 rounded-md text-xs border border-black/5">
-                      {config[cat.id]?.length || 0}
-                    </span>
-                  </button>
-                ))}
+        {loading && !config ? (
+          <div className="py-12 text-center text-slate-500">
+            Loading configuration...
+          </div>
+        ) : config ? (
+          <div className="flex flex-col md:flex-row gap-6">
+            {/* Sidebar Tabs */}
+            <div className="w-full md:w-64 flex-shrink-0 space-y-2">
+              {categories.map((cat) => (
+                <button
+                  key={cat.id}
+                  onClick={() => setActiveCategory(cat.id)}
+                  className={`w-full flex items-center gap-3 p-3 rounded-xl border text-sm font-semibold transition-all ${
+                    activeCategory === cat.id
+                      ? `${cat.bg} ${cat.border} ${cat.color} ring-1 ring-inset ring-black/5`
+                      : "bg-white border-transparent hover:bg-slate-50 text-slate-600"
+                  }`}
+                >
+                  <cat.icon size={18} />
+                  {cat.label}
+                  <span className="ml-auto bg-white/50 px-2 py-0.5 rounded-md text-xs border border-black/5">
+                    {config[cat.id]?.length || 0}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            {/* Main Content Area */}
+            <div className="flex-1 bg-slate-50 rounded-xl border border-slate-200 p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-bold text-slate-900 capitalize flex items-center gap-2">
+                  {activeCategory} Questions
+                </h3>
+                <button
+                  onClick={addQuestion}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-semibold hover:bg-slate-50 transition-all shadow-sm"
+                >
+                  <Plus size={16} />
+                  Add Question
+                </button>
               </div>
 
-              {/* Main Content Area */}
-              <div className="flex-1 bg-slate-50 rounded-xl border border-slate-200 p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-bold text-slate-900 capitalize flex items-center gap-2">
-                    {activeCategory} Questions
-                  </h3>
-                  <button
-                    onClick={addQuestion}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-semibold hover:bg-slate-50 transition-all shadow-sm"
+              <div className="space-y-6">
+                {config[activeCategory].map((q, qIndex) => (
+                  <div
+                    key={q.id}
+                    className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm animate-in fade-in slide-in-from-bottom-2"
                   >
-                    <Plus size={16} />
-                    Add Question
-                  </button>
-                </div>
+                    <div className="flex items-start gap-3 mb-4">
+                      <div className="flex-1">
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                          Question Text
+                        </label>
+                        <input
+                          type="text"
+                          value={q.question}
+                          onChange={(e) =>
+                            updateQuestion(qIndex, "question", e.target.value)
+                          }
+                          placeholder="e.g., What is your budget range?"
+                          className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                        />
+                      </div>
+                      <button
+                        onClick={() => removeQuestion(qIndex)}
+                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all mt-6"
+                        title="Remove Question"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
 
-                <div className="space-y-6">
-                  {config[activeCategory].map((q, qIndex) => (
-                    <div
-                      key={q.id}
-                      className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm animate-in fade-in slide-in-from-bottom-2"
-                    >
-                      <div className="flex items-start gap-3 mb-4">
-                        <div className="flex-1">
-                          <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-                            Question Text
-                          </label>
-                          <input
-                            type="text"
-                            value={q.question}
-                            onChange={(e) => updateQuestion(qIndex, "question", e.target.value)}
-                            placeholder="e.g., What is your budget range?"
-                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                          />
-                        </div>
+                    {/* Options */}
+                    <div className="pl-4 border-l-2 border-slate-100">
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
+                        Answer Options
+                      </label>
+                      <div className="space-y-2">
+                        {q.options.map((opt, oIndex) => (
+                          <div key={oIndex} className="flex items-center gap-2">
+                            <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+                            <input
+                              type="text"
+                              value={opt}
+                              onChange={(e) =>
+                                updateOption(qIndex, oIndex, e.target.value)
+                              }
+                              placeholder="Option text..."
+                              className="flex-1 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                            />
+                            <button
+                              onClick={() => removeOption(qIndex, oIndex)}
+                              className="p-1.5 text-slate-300 hover:text-red-500 transition-colors"
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        ))}
                         <button
-                          onClick={() => removeQuestion(qIndex)}
-                          className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all mt-6"
-                          title="Remove Question"
+                          onClick={() => addOption(qIndex)}
+                          className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 mt-2 px-2 py-1 rounded hover:bg-blue-50 transition-colors w-fit"
                         >
-                          <Trash2 size={18} />
+                          <Plus size={14} /> Add Option
                         </button>
                       </div>
-
-                      {/* Options */}
-                      <div className="pl-4 border-l-2 border-slate-100">
-                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">
-                          Answer Options
-                        </label>
-                        <div className="space-y-2">
-                          {q.options.map((opt, oIndex) => (
-                            <div key={oIndex} className="flex items-center gap-2">
-                              <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
-                              <input
-                                type="text"
-                                value={opt}
-                                onChange={(e) => updateOption(qIndex, oIndex, e.target.value)}
-                                placeholder="Option text..."
-                                className="flex-1 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                              />
-                              <button
-                                onClick={() => removeOption(qIndex, oIndex)}
-                                className="p-1.5 text-slate-300 hover:text-red-500 transition-colors"
-                              >
-                                <X size={14} />
-                              </button>
-                            </div>
-                          ))}
-                          <button
-                            onClick={() => addOption(qIndex)}
-                            className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 mt-2 px-2 py-1 rounded hover:bg-blue-50 transition-colors w-fit"
-                          >
-                            <Plus size={14} /> Add Option
-                          </button>
-                        </div>
-                      </div>
                     </div>
-                  ))}
+                  </div>
+                ))}
 
-                  {config[activeCategory].length === 0 && (
-                    <div className="text-center py-8 text-slate-400 bg-slate-100/50 rounded-xl border border-dashed border-slate-200">
-                      <p className="text-sm">No questions added for this category yet.</p>
-                    </div>
+                {config[activeCategory].length === 0 && (
+                  <div className="text-center py-8 text-slate-400 bg-slate-100/50 rounded-xl border border-dashed border-slate-200">
+                    <p className="text-sm">
+                      No questions added for this category yet.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-8 pt-6 border-t border-slate-200 flex justify-end">
+                <button
+                  onClick={saveConfig}
+                  disabled={loading}
+                  className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-all shadow-md hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed"
+                >
+                  {loading ? (
+                    <>Saving...</>
+                  ) : (
+                    <>
+                      <Save size={18} />
+                      Save Changes
+                    </>
                   )}
-                </div>
-
-                <div className="mt-8 pt-6 border-t border-slate-200 flex justify-end">
-                  <button
-                    onClick={saveConfig}
-                    disabled={loading}
-                    className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-all shadow-md hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed"
-                  >
-                    {loading ? (
-                      <>Saving...</>
-                    ) : (
-                      <>
-                        <Save size={18} />
-                        Save Changes
-                      </>
-                    )}
-                  </button>
-                </div>
+                </button>
               </div>
             </div>
-          ) : null}
-        </div>
-      )}
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 };
