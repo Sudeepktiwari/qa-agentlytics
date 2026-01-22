@@ -36,6 +36,47 @@ function isSameDomain(host1: string, host2: string): boolean {
 }
 
 // Auto-extract personas after crawling is complete
+import { generateBantFromContent } from "@/lib/bant-generation";
+
+async function autoGenerateBantConfig(adminId: string) {
+  try {
+    const db = await getDb();
+    const crawledPages = db.collection("crawled_pages");
+
+    // Get crawled content for this admin
+    const pages = await crawledPages
+      .find({ adminId })
+      .sort({ created_at: -1 }) // Get most recent pages
+      .limit(10)
+      .toArray();
+
+    if (pages.length === 0) {
+      console.log(`[BANT] No content found for adminId: ${adminId}`);
+      return;
+    }
+
+    const context = pages
+      .map(
+        (p) =>
+          `URL: ${p.url}\nTitle: ${p.title}\nContent Summary: ${p.text.substring(0, 500)}...`,
+      )
+      .join("\n\n");
+
+    const newConfig = await generateBantFromContent(adminId, context);
+
+    // Save to DB
+    const bantCollection = db.collection("bant_configurations");
+    await bantCollection.updateOne(
+      { adminId },
+      { $set: newConfig },
+      { upsert: true },
+    );
+    console.log(`[BANT] Auto-generated global BANT config for ${adminId}`);
+  } catch (error) {
+    console.error("[BANT] Auto-generation failed:", error);
+  }
+}
+
 async function extractPersonasForAdmin(adminId: string, websiteUrl: string) {
   try {
     const db = await getDb();
@@ -2386,6 +2427,7 @@ Extract and return a JSON object with:
       );
       try {
         await extractPersonasForAdmin(adminId, normalizedUrl);
+        await autoGenerateBantConfig(adminId);
         console.log(`[Persona] Auto-extraction completed successfully`);
       } catch (personaError) {
         console.error(`[Persona] Auto-extraction failed:`, personaError);

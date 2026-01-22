@@ -859,6 +859,7 @@ async function analyzeForProbing(input: {
   userEmail?: string | null;
   missingDims?: ("budget" | "authority" | "need" | "timeline" | "segment")[];
   personas?: any[]; // Added personas support
+  bantConfig?: any; // Added BANT config support
 }) {
   const messages: any = [
     {
@@ -3504,6 +3505,17 @@ export async function POST(req: NextRequest) {
     console.error("[Chat API] Error fetching personas:", e);
   }
 
+  // Fetch BANT configuration
+  let bantConfig: any = null;
+  try {
+    const finalAdminId = apiAuth?.adminId || adminIdFromBody || "default-admin";
+    const db = await getDb();
+    const bantCollection = db.collection("bant_configurations");
+    bantConfig = await bantCollection.findOne({ adminId: finalAdminId });
+  } catch (e) {
+    console.error("[Chat API] Error fetching BANT config:", e);
+  }
+
   // 🔥 HANDLE USER PROFILE UPDATE FOR CUSTOMER INTELLIGENCE
   if (updateUserProfile && profileUserEmail) {
     try {
@@ -3675,6 +3687,7 @@ export async function POST(req: NextRequest) {
               userEmail: profileUserEmail,
               missingDims: missingDims as any,
               personas,
+              bantConfig,
             });
 
             if (probeResult && probeResult.shouldSendFollowUp) {
@@ -4219,6 +4232,7 @@ Based on the page context, create an intelligent contextual question that demons
             userEmail: sessionEmail,
             missingDims: missingDims,
             personas,
+            bantConfig,
           });
 
           if (probing.shouldSendFollowUp && probing.mainText) {
@@ -8265,6 +8279,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
             botMode,
             userEmail,
             personas,
+            bantConfig,
           });
           if (probing.shouldSendFollowUp && probing.mainText) {
             secondary = {
@@ -8688,6 +8703,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
               userEmail: String(question || ""),
               missingDims: missingDimsQuick,
               personas,
+              bantConfig,
             });
             if (probingQuick.shouldSendFollowUp && probingQuick.mainText) {
               const immediate = {
@@ -10198,6 +10214,8 @@ What specific information are you looking for? I'm here to help guide you throug
             botMode: botModeChain,
             userEmail,
             missingDims: missingDimsQuick,
+            personas, // Added missing personas
+            bantConfig,
           });
           if (probingQuick.shouldSendFollowUp && probingQuick.mainText) {
             nextBant = {
@@ -11259,6 +11277,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
             userEmail: resolvedUserEmail,
             missingDims: missingDimsQuick,
             personas,
+            bantConfig,
           });
         }
 
