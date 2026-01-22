@@ -861,6 +861,19 @@ async function analyzeForProbing(input: {
   personas?: any[]; // Added personas support
   bantConfig?: any; // Added BANT config support
 }) {
+  console.log("[analyzeForProbing] Inputs:", {
+    hasBantConfig: !!input.bantConfig,
+    bantConfigDims: input.bantConfig
+      ? Object.keys(input.bantConfig).filter(
+          (k) =>
+            Array.isArray(input.bantConfig[k]) &&
+            input.bantConfig[k].length > 0,
+        )
+      : [],
+    missingDims: input.missingDims,
+    botMode: input.botMode,
+  });
+
   const messages: any = [
     {
       role: "system",
@@ -879,10 +892,14 @@ async function analyzeForProbing(input: {
       - 'mainText' should contain the full conversational message (Bridge + Insight + Question).
       
       IMPORTANT - BANT CONFIGURATION PRIORITY:
-      1. Check "GLOBAL BANT CONFIGURATION" first. If questions exist for the chosen dimension, you MUST use that question (you can wrap it in the conversational structure).
-      2. Use the EXACT "options" from the config as the "buttons".
-      3. If no global config, check "KNOWN PERSONAS".
-      4. If neither, generate a generic professional question.
+      1. Check "GLOBAL BANT CONFIGURATION" first. If questions exist for the chosen dimension, you MUST use that specific question.
+      2. You MUST use the "Bridge + Insight + Question" structure.
+         - Bridge: Acknowledge previous input.
+         - Insight: Explain WHY you are asking (value prop).
+         - Question: The specific question from the config.
+      3. Use the EXACT "options" from the config as the "buttons".
+      4. If no global config, check "KNOWN PERSONAS".
+      5. If neither, generate a generic professional question.
 
       GLOBAL BANT CONFIGURATION:
       ${JSON.stringify(input.bantConfig || {})}
@@ -925,6 +942,13 @@ async function analyzeForProbing(input: {
     parsed = { shouldSendFollowUp: false };
   }
   const should = Boolean(parsed && parsed.shouldSendFollowUp);
+
+  console.log("[analyzeForProbing] LLM Output:", {
+    should,
+    bantDimension: parsed.bantDimension,
+    mainText: parsed.mainText,
+    buttons: parsed.buttons,
+  });
 
   // Validate that the generated BANT dimension is actually missing
   if (should) {
@@ -987,13 +1011,46 @@ async function analyzeForProbing(input: {
             | "segment") || null;
       }
     }
-    if (!input.userEmail) {
+    if (!input.userEmail && !input.bantConfig) {
       chosen = null;
     }
     if (chosen) {
       if (chosen === "budget" && dims.includes("segment")) {
         chosen = "segment";
       }
+
+      // Internal fallback: Use BANT config if available before hardcoded defaults
+      if (
+        input.bantConfig &&
+        input.bantConfig[chosen] &&
+        input.bantConfig[chosen][0]
+      ) {
+        const qConfig = input.bantConfig[chosen][0];
+        console.log(
+          `[analyzeForProbing] Fallback using BANT config for ${chosen}:`,
+          qConfig,
+        );
+
+        // Handle both string and object structure (schema uses object with question/options)
+        const questionText =
+          typeof qConfig === "string" ? qConfig : qConfig.question || "";
+        const options = Array.isArray(qConfig.options)
+          ? qConfig.options
+          : Array.isArray(qConfig.buttons)
+            ? qConfig.buttons
+            : [];
+
+        if (questionText) {
+          return {
+            shouldSendFollowUp: true,
+            mainText: questionText,
+            buttons: options,
+            emailPrompt: "",
+            dimension: chosen,
+          };
+        }
+      }
+
       const q =
         chosen === "budget"
           ? "What budget range are you considering?"
@@ -1072,7 +1129,12 @@ async function analyzeForProbing(input: {
     if (out.length > 4) out = out.slice(0, 4);
     return out;
   };
-  const mt = normQ(typeof parsed.mainText === "string" ? parsed.mainText : "");
+  // Trust the LLM's mainText if available, otherwise normalize
+  const mt =
+    typeof parsed.mainText === "string" && parsed.mainText.trim().length > 0
+      ? parsed.mainText.trim()
+      : normQ(typeof parsed.mainText === "string" ? parsed.mainText : "");
+
   const btns = normButtons(mt, parsed.buttons, input.botMode);
   const needSegmentFirst = /budget|price|cost|pricing|plan/.test(
     mt.toLowerCase(),
@@ -1087,6 +1149,7 @@ async function analyzeForProbing(input: {
       )[])
     : ["budget", "authority", "need", "timeline", "segment"];
   if (
+    !input.bantConfig &&
     input.botMode === "lead_generation" &&
     needSegmentFirst &&
     dimsArr.includes("segment")
@@ -1126,6 +1189,7 @@ function buildFallbackFollowup(input: {
   botMode: "sales" | "lead_generation";
   userEmail?: string | null;
   missingDims?: ("budget" | "authority" | "need" | "timeline" | "segment")[];
+  bantConfig?: any;
 }) {
   const text = `${input.userMessage || ""} ${
     input.assistantResponse.mainText || ""
@@ -1178,6 +1242,17 @@ function buildFallbackFollowup(input: {
       };
     }
     if (dims.includes("budget")) {
+      if (input.bantConfig?.budget?.[0]) {
+        const q = input.bantConfig.budget[0];
+        return {
+          mainText: q.question,
+          buttons: q.options,
+          emailPrompt: input.userEmail
+            ? ""
+            : "Share your work email to receive a tailored quote",
+          dimension: "budget",
+        };
+      }
       const budgetButtons = isIndividual
         ? ["Under $20/mo", "$20–$50/mo", "$50+"]
         : isSMB
@@ -1196,6 +1271,17 @@ function buildFallbackFollowup(input: {
     // to other conditions (booking/timeline/features) without re-asking budget.
   }
   if (hasBooking) {
+    if (input.bantConfig?.timeline?.[0]) {
+      const q = input.bantConfig.timeline[0];
+      return {
+        mainText: q.question,
+        buttons: q.options,
+        emailPrompt: input.userEmail
+          ? ""
+          : "Add your email to receive the calendar invite",
+        dimension: "timeline",
+      };
+    }
     return {
       mainText: "When would you like to schedule a demo?",
       buttons: ["This week", "Next week", "Later"],
@@ -1210,6 +1296,17 @@ function buildFallbackFollowup(input: {
     !bantCompleted &&
     dims.includes("authority")
   ) {
+    if (input.bantConfig?.authority?.[0]) {
+      const q = input.bantConfig.authority[0];
+      return {
+        mainText: q.question,
+        buttons: q.options,
+        emailPrompt: input.userEmail
+          ? ""
+          : "Add an email to coordinate next steps",
+        dimension: "authority",
+      };
+    }
     return {
       mainText: "Who will make the decision?",
       buttons: ["I’m the decision maker", "Add decision maker", "Unsure"],
@@ -1222,6 +1319,17 @@ function buildFallbackFollowup(input: {
     hasFeatures &&
     (!input.userEmail || !bantCompleted || dims.includes("need"))
   ) {
+    if (input.bantConfig?.need?.[0]) {
+      const q = input.bantConfig.need[0];
+      return {
+        mainText: q.question,
+        buttons: q.options,
+        emailPrompt: input.userEmail
+          ? ""
+          : "Share an email to send a brief feature comparison",
+        dimension: "need",
+      };
+    }
     return {
       mainText: "Which feature matters most for you right now?",
       buttons: ["Workflows", "Embeds", "Analytics"],
@@ -1231,6 +1339,17 @@ function buildFallbackFollowup(input: {
     };
   }
   if (input.botMode === "sales" && dims.includes("timeline")) {
+    if (input.bantConfig?.timeline?.[0]) {
+      const q = input.bantConfig.timeline[0];
+      return {
+        mainText: q.question,
+        buttons: q.options,
+        emailPrompt: input.userEmail
+          ? ""
+          : "Share your email to receive a brief plan",
+        dimension: "timeline",
+      };
+    }
     return {
       mainText: "What timeline are you targeting?",
       buttons: ["This month", "This quarter", "Later"],
@@ -1254,8 +1373,17 @@ function buildHeuristicBantFollowup(input: {
   botMode: "sales" | "lead_generation";
   missingDims?: ("budget" | "authority" | "need" | "timeline" | "segment")[];
   userEmail?: string | null;
+  bantConfig?: any;
 }) {
-  if (!input.userEmail) return null;
+  if (!input.userEmail && !input.bantConfig) return null;
+
+  // If BANT config is present, we WANT to use analyzeForProbing (LLM) to generate
+  // the "Bridge + Insight + Question" structure. The heuristic function below
+  // only returns the raw question, which is too robotic.
+  // So, if bantConfig exists, return null here to force the flow to fall through
+  // to analyzeForProbing.
+  if (input.bantConfig) return null;
+
   const text = `${input.userMessage || ""}`.toLowerCase();
   const dims = (
     Array.isArray(input.missingDims)
@@ -1303,6 +1431,22 @@ function buildHeuristicBantFollowup(input: {
     }
   }
   if (!chosen) return null;
+
+  // Prioritize BANT config if available
+  if (
+    input.bantConfig &&
+    input.bantConfig[chosen] &&
+    input.bantConfig[chosen][0]
+  ) {
+    const q = input.bantConfig[chosen][0];
+    return {
+      mainText: q.question,
+      buttons: q.options,
+      emailPrompt: "",
+      dimension: chosen,
+    };
+  }
+
   const q =
     chosen === "budget"
       ? "What budget range are you considering?"
@@ -1478,20 +1622,23 @@ function computeBantMissingDims(
     }
     if (role === "user") {
       const s = content.toLowerCase();
+      // Stricter regex for unsolicited budget info to avoid false positives on questions like "what is the price?"
       if (
-        /\$|budget|price|cost|pricing|per\s*month|monthly|\/mo\b|per\s*year|yearly|annually|\/yr\b|\b\d+\s*(usd|dollars|\$|k|grand)\b|less\s*than|under|below|more\s*than|above|over|free|range/.test(
+        /\b\d+\s*(usd|dollars|\$|k|grand)\b|per\s*month|\/mo\b|per\s*year|\/yr\b|budget\s*(is|of|range)|less\s*than|under|below|more\s*than|above|over|free/.test(
           s,
         )
       ) {
         answered.add("budget");
       }
+      // Stricter regex for timeline
       if (
-        /\b(this\s*week|next\s*week|later|today|tomorrow|this\s*month|next\s*month|this\s*year|next\s*year|quarter|q[1-4]|in\s+\d+\s*(days?|weeks?|months?|years?|mos?|yrs?)|\d{4}-\d{2}-\d{2})\b/.test(
+        /\b(this\s*week|next\s*week|this\s*month|next\s*month|this\s*year|next\s*year|quarter|q[1-4]|in\s+\d+\s*(days?|weeks?|months?|years?|mos?|yrs?)|\d{4}-\d{2}-\d{2})\b/.test(
           s,
         )
       ) {
         answered.add("timeline");
       }
+      // Authority - keep mostly same but remove generic "manager" unless context implies approval
       if (
         /i\s*(am|'m)\s*the\s*decision\s*maker|\b(it'?s\s*me|myself)\b|i\s*(decide|approve|buy)\b|my\s*manager|team\s*lead|we\s*decide|manager\s*approval|need\s*approval|procurement|legal|finance|cfo|ceo|owner|founder|director|vp/.test(
           s,
@@ -1499,8 +1646,9 @@ function computeBantMissingDims(
       ) {
         answered.add("authority");
       }
+      // Need - difficult to distinguish from questions, but usually safe if specific feature mentioned
       if (
-        /workflows|embeds|analytics|integration|feature|features|need|priority|use\s*case|help\b|automation|reminders|calendar|api|webhooks|availability|templates|reporting|compliance|security|scheduling|project\s*management|collaboration|data\s*analytics/.test(
+        /workflows|embeds|analytics|integration|automation|reminders|api|webhooks|availability|templates|reporting|compliance|security|scheduling|project\s*management|collaboration|data\s*analytics/.test(
           s,
         )
       ) {
@@ -3523,9 +3671,48 @@ export async function POST(req: NextRequest) {
   let bantConfig: any = null;
   try {
     const finalAdminId = apiAuth?.adminId || adminIdFromBody || "default-admin";
+    console.log(
+      `[Chat API ${requestId}] Loading BANT config for adminId: ${finalAdminId}`,
+    );
     const db = await getDb();
     const bantCollection = db.collection("bant_configurations");
     bantConfig = await bantCollection.findOne({ adminId: finalAdminId });
+
+    if (bantConfig) {
+      console.log(
+        `[Chat API ${requestId}] BANT config raw:`,
+        JSON.stringify({
+          adminId: finalAdminId,
+          budget: bantConfig.budget?.length,
+          authority: bantConfig.authority?.length,
+          need: bantConfig.need?.length,
+          timeline: bantConfig.timeline?.length,
+          questions: {
+            budget: bantConfig.budget?.[0]?.question,
+            authority: bantConfig.authority?.[0]?.question,
+            need: bantConfig.need?.[0]?.question,
+            timeline: bantConfig.timeline?.[0]?.question,
+          },
+        }),
+      );
+    } else {
+      console.log(
+        `[Chat API ${requestId}] No BANT config found for adminId: ${finalAdminId}`,
+      );
+    }
+
+    // Filter only active questions
+    if (bantConfig) {
+      ["budget", "authority", "need", "timeline"].forEach((dim) => {
+        if (Array.isArray(bantConfig[dim])) {
+          bantConfig[dim] = bantConfig[dim].filter(
+            (q: any) => q.active !== false,
+          );
+        }
+      });
+    }
+
+    console.log(`[Chat API ${requestId}] BANT config found: ${!!bantConfig}`);
   } catch (e) {
     console.error("[Chat API] Error fetching BANT config:", e);
   }
@@ -4251,37 +4438,45 @@ Based on the page context, create an intelligent contextual question that demons
 
           if (probing.shouldSendFollowUp && probing.mainText) {
             try {
-              const segmentDetected = (() => {
-                try {
-                  return getBusinessSegment(sessionMessages);
-                } catch {
-                  return null;
+              // Only apply segment heuristic if NO custom BANT config is present
+              // If the user has defined their own BANT flow, we trust the AI to follow it
+              if (!bantConfig) {
+                const segmentDetected = (() => {
+                  try {
+                    return getBusinessSegment(sessionMessages);
+                  } catch {
+                    return null;
+                  }
+                })();
+                const wantsBudgetFirst =
+                  String((probing as any).bantDimension || "").toLowerCase() ===
+                    "budget" ||
+                  /budget|price|cost|pricing|\$|usd/i.test(
+                    String(probing.mainText || ""),
+                  );
+                const lastAssistant = [...sessionMessages]
+                  .reverse()
+                  .find((m) => m.role === "assistant");
+                const justAskedSegment =
+                  (lastAssistant as any)?.bantDimension === "segment";
+                const shouldSwitchToSegment =
+                  wantsBudgetFirst && !segmentDetected && !justAskedSegment;
+                if (shouldSwitchToSegment) {
+                  (probing as any).mainText = "What type of business are you?";
+                  (probing as any).buttons = [
+                    "Individual",
+                    "SMB",
+                    "Enterprise",
+                  ];
+                  (probing as any).bantDimension = "segment";
+                } else if (wantsBudgetFirst && segmentDetected) {
+                  (probing as any).buttons =
+                    segmentDetected === "individual"
+                      ? ["Under $20/mo", "$20–$50/mo", "$50+"]
+                      : segmentDetected === "smb"
+                        ? ["Under $500/mo", "$500–$1.5k/mo", "$1.5k+"]
+                        : ["Under $10k/yr", "$10k–$50k/yr", "$50k+/yr"];
                 }
-              })();
-              const wantsBudgetFirst =
-                String((probing as any).bantDimension || "").toLowerCase() ===
-                  "budget" ||
-                /budget|price|cost|pricing|\$|usd/i.test(
-                  String(probing.mainText || ""),
-                );
-              const lastAssistant = [...sessionMessages]
-                .reverse()
-                .find((m) => m.role === "assistant");
-              const justAskedSegment =
-                (lastAssistant as any)?.bantDimension === "segment";
-              const shouldSwitchToSegment =
-                wantsBudgetFirst && !segmentDetected && !justAskedSegment;
-              if (shouldSwitchToSegment) {
-                (probing as any).mainText = "What type of business are you?";
-                (probing as any).buttons = ["Individual", "SMB", "Enterprise"];
-                (probing as any).bantDimension = "segment";
-              } else if (wantsBudgetFirst && segmentDetected) {
-                (probing as any).buttons =
-                  segmentDetected === "individual"
-                    ? ["Under $20/mo", "$20–$50/mo", "$50+"]
-                    : segmentDetected === "smb"
-                      ? ["Under $500/mo", "$500–$1.5k/mo", "$1.5k+"]
-                      : ["Under $10k/yr", "$10k–$50k/yr", "$50k+/yr"];
               }
             } catch {}
             enhancedResponse = {
@@ -4299,43 +4494,45 @@ Based on the page context, create an intelligent contextual question that demons
       // UNIVERSAL CHECK: Ensure Segment is asked before Budget
       // This runs for EVERYONE, even if no email or if BANT logic wasn't triggered explicitly
       try {
-        const isAskingBudget = /budget|price|cost|pricing|\$|usd/i.test(
-          enhancedResponse.mainText || "",
-        );
-        const segmentDetected = getBusinessSegment([
-          ...sessionMessages,
-          { role: "user", content: question || "" },
-        ]);
-        const lastAssistant = [...sessionMessages]
-          .reverse()
-          .find((m) => m.role === "assistant");
-        const justAskedSegment =
-          (lastAssistant as any)?.bantDimension === "segment";
-
-        if (isAskingBudget && !segmentDetected && !justAskedSegment) {
-          console.log(
-            "[BANT] Intercepting budget question to ask segment first",
+        if (!bantConfig) {
+          const isAskingBudget = /budget|price|cost|pricing|\$|usd/i.test(
+            enhancedResponse.mainText || "",
           );
-          enhancedResponse = {
-            ...enhancedResponse,
-            mainText:
-              "To help us recommend the best plan for you, what type of business are you?",
-            buttons: ["Individual", "SMB", "Enterprise"],
-            bantDimension: "segment",
-            followupType: "bant",
-          };
-        } else if (isAskingBudget && segmentDetected) {
-          const budgetButtons =
-            segmentDetected === "individual"
-              ? ["Under $20/mo", "$20–$50/mo", "$50+"]
-              : segmentDetected === "smb"
-                ? ["Under $500/mo", "$500–$1.5k/mo", "$1.5k+"]
-                : ["Under $10k/yr", "$10k–$50k/yr", "$50k+/yr"];
-          enhancedResponse = {
-            ...enhancedResponse,
-            buttons: budgetButtons,
-            bantDimension: enhancedResponse.bantDimension || "budget",
-          };
+          const segmentDetected = getBusinessSegment([
+            ...sessionMessages,
+            { role: "user", content: question || "" },
+          ]);
+          const lastAssistant = [...sessionMessages]
+            .reverse()
+            .find((m) => m.role === "assistant");
+          const justAskedSegment =
+            (lastAssistant as any)?.bantDimension === "segment";
+
+          if (isAskingBudget && !segmentDetected && !justAskedSegment) {
+            console.log(
+              "[BANT] Intercepting budget question to ask segment first",
+            );
+            enhancedResponse = {
+              ...enhancedResponse,
+              mainText:
+                "To help us recommend the best plan for you, what type of business are you?",
+              buttons: ["Individual", "SMB", "Enterprise"],
+              bantDimension: "segment",
+              followupType: "bant",
+            };
+          } else if (isAskingBudget && segmentDetected) {
+            const budgetButtons =
+              segmentDetected === "individual"
+                ? ["Under $20/mo", "$20–$50/mo", "$50+"]
+                : segmentDetected === "smb"
+                  ? ["Under $500/mo", "$500–$1.5k/mo", "$1.5k+"]
+                  : ["Under $10k/yr", "$10k–$50k/yr", "$50k+/yr"];
+            enhancedResponse = {
+              ...enhancedResponse,
+              buttons: budgetButtons,
+              bantDimension: enhancedResponse.bantDimension || "budget",
+            };
+          }
         }
       } catch (e) {}
 
@@ -8314,6 +8511,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
                 .toArray()
                 .then((ms) => computeBantMissingDims(ms, customerProfile)),
               userEmail,
+              bantConfig,
             });
             if (heuristicBant) {
               secondary = { ...heuristicBant, type: "bant" };
@@ -8327,6 +8525,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
                 },
                 botMode,
                 userEmail,
+                bantConfig,
               });
               secondary = { ...secondary, type: "probe" };
             }
@@ -10254,6 +10453,7 @@ What specific information are you looking for? I'm here to help guide you throug
           botMode: botModeChain,
           userEmail,
           missingDims: missingDimsQuick,
+          bantConfig,
         });
         nextBant = fallback;
       }
@@ -11268,8 +11468,13 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
             botMode: "sales",
             missingDims: missingDimsQuick,
             userEmail: resolvedUserEmail,
+            bantConfig,
           });
           if (heuristic) {
+            console.log(
+              `[Chat API ${requestId}] Heuristic BANT triggered:`,
+              JSON.stringify(heuristic),
+            );
             immediate = {
               mainText: heuristic.mainText,
               buttons: heuristic.buttons,
@@ -11283,6 +11488,12 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
         // Only use LLM probing if heuristic didn't produce a question
         let probingQuick: any = { shouldSendFollowUp: false };
         if (!immediate) {
+          if (bantConfig) {
+            console.log(
+              `[Chat API ${requestId}] Using BANT config for probing:`,
+              JSON.stringify(bantConfig).slice(0, 100) + "...",
+            );
+          }
           probingQuick = await analyzeForProbing({
             userMessage: question || "",
             assistantResponse: {
@@ -11296,6 +11507,10 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
             personas,
             bantConfig,
           });
+          console.log(
+            `[Chat API ${requestId}] Probing result:`,
+            JSON.stringify(probingQuick, null, 2),
+          );
         }
 
         if (
@@ -11540,6 +11755,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
             botMode,
             missingDims: missingDimsQuick2,
             userEmail: resolvedUserEmail,
+            bantConfig,
           });
 
           if (fallback) {
@@ -11602,6 +11818,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
         botMode,
         userEmail: resolvedUserEmail,
         missingDims: missingDimsQuick,
+        bantConfig,
       });
       secondary = { ...secondary, type: "probe" };
       console.log(

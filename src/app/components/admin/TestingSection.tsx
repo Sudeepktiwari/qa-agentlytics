@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Chatbot from "../Chatbot";
 
 interface TestingSectionProps {
   auth: { email: string; adminId?: string } | null;
@@ -50,13 +51,38 @@ const TestingSection: React.FC<TestingSectionProps> = ({
               <option key={`${u.url}-${index}`} value={u.url}>
                 {u.url} {u.crawled ? "✅ (crawled)" : "⏳ (not crawled)"}
               </option>
-            )
+            ),
           )}
         </select>
         <div className="mt-2 text-xs text-slate-400">
           Select a page to simulate the chatbot context for that specific URL.
         </div>
       </div>
+
+      {selectedPageUrl && (
+        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+            <h3 className="text-lg font-semibold text-slate-800 mb-4">
+              Preview
+            </h3>
+            <div className="relative border border-slate-200 rounded-xl overflow-hidden bg-slate-50 h-[600px]">
+              <Chatbot
+                pageUrl={selectedPageUrl}
+                adminId={auth.adminId}
+                disableProactive={false}
+              />
+            </div>
+          </div>
+          <div className="bg-slate-900 rounded-2xl p-6 text-slate-300 font-mono text-sm overflow-y-auto max-h-[600px]">
+            <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
+              <span>🔍</span> Debug Log
+            </h3>
+            <p className="opacity-70 italic">
+              Debug logs will appear here in future updates...
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
