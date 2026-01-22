@@ -364,10 +364,20 @@ export async function POST(req: NextRequest) {
         );
       }
 
+      // Remove _id and adminId from personaData to ensure security and valid update
+      const {
+        _id,
+        adminId: _ignoredAdminId,
+        ...cleanPersonaData
+      } = personaData;
+
       const personaDocument: PersonaData = {
         adminId,
-        ...personaData,
-        extractedAt: new Date(),
+        ...cleanPersonaData,
+        // Preserve original extraction date if available, otherwise use current
+        extractedAt: cleanPersonaData.extractedAt
+          ? new Date(cleanPersonaData.extractedAt)
+          : new Date(),
         updatedAt: new Date(),
       };
 

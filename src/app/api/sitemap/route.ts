@@ -77,7 +77,21 @@ Extract and return a JSON object with this structure:
       "budget": "under_500|500_2000|2000_10000|10000_plus",
       "technicalLevel": "beginner|intermediate|advanced",
       "urgency": "low|medium|high",
-      "decisionMaker": true|false
+      "decisionMaker": true|false,
+      "bantQuestions": {
+        "budget": [
+          { "question": "What is your expected monthly budget?", "options": ["Under $500", "$500-$2k", "$2k-$5k", "$5k+"] }
+        ],
+        "authority": [
+          { "question": "Are you the final decision maker?", "options": ["Yes, I decide", "I need approval", "I'm researching"] }
+        ],
+        "need": [
+          { "question": "What is your biggest challenge right now?", "options": ["High costs", "Low efficiency", "Compliance", "Other"] }
+        ],
+        "timeline": [
+          { "question": "When are you looking to implement this?", "options": ["Immediately", "1-3 months", "3-6 months", "Just looking"] }
+        ]
+      }
     }
   ],
   "industryFocus": ["primary industries served"],
@@ -95,6 +109,12 @@ Guidelines:
 - Extract actual competitor names mentioned
 - Determine pricing strategy from pricing pages or content
 - Each persona should be distinct and actionable for messaging
+- For "bantQuestions", generate 2-3 specific, relevant qualification questions for EACH category (Budget, Authority, Need, Timeline).
+  - For EACH question, provide 3-4 "options" that the user can click as quick replies.
+  - Budget questions should match their likely financial scale.
+  - Authority questions should respect their role.
+  - Need questions should probe their specific pain points.
+  - Timeline questions should relate to their urgency level.
 `;
 
     const completion = await openai.chat.completions.create({
