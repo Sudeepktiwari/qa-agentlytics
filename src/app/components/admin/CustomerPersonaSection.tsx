@@ -617,8 +617,13 @@ const PersonaForm: React.FC<{
     budget: persona?.budget || "under_500",
     technicalLevel: persona?.technicalLevel || "beginner",
     urgency: persona?.urgency || "medium",
-    decisionMaker: persona?.decisionMaker || false,
-    bantQuestions: persona?.bantQuestions || {},
+    decisionMaker: !!persona?.decisionMaker,
+    bantQuestions: (persona?.bantQuestions || {
+      budget: [],
+      authority: [],
+      need: [],
+      timeline: [],
+    }) as CustomerPersona["bantQuestions"],
   });
 
   const handleBantQuestionChange = (
@@ -731,7 +736,12 @@ const PersonaForm: React.FC<{
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Include the original ID so update logic works
-    onSave({ ...formData, id: persona?.id });
+    // Ensure decisionMaker is a boolean
+    onSave({
+      ...formData,
+      decisionMaker: !!formData.decisionMaker,
+      id: persona?.id,
+    });
   };
 
   const modalContent = (
@@ -950,7 +960,7 @@ const PersonaForm: React.FC<{
                     onChange={(e) =>
                       setFormData({
                         ...formData,
-                        decisionMaker: e.target.checked,
+                        decisionMaker: !!e.target.checked,
                       })
                     }
                     className="peer sr-only"
