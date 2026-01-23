@@ -547,8 +547,10 @@ const AdminPanel: React.FC = () => {
       });
 
       if (res.ok) {
-        fetchCrawledPages(); // Refresh the list
-        fetchDocuments(); // Also refresh documents as it might affect the unified view
+        // Optimistically update state instead of refetching to prevent full list refresh
+        setCrawledPages((prev) => prev.filter((p) => p.url !== page.url));
+        setDocuments((prev) => prev.filter((d) => d.filename !== page.url));
+        showToast("Crawled page deleted successfully");
       } else {
         const data = await res.json();
         setCrawledPagesError(data.error || "Failed to delete crawled page");
@@ -577,7 +579,9 @@ const AdminPanel: React.FC = () => {
       });
 
       if (res.ok) {
-        fetchDocuments(); // Refresh the list
+        // Optimistically update state instead of refetching
+        setDocuments((prev) => prev.filter((d) => d.filename !== filename));
+        showToast("Document deleted successfully");
       } else {
         const data = await res.json();
         setDocumentsError(data.error || "Failed to delete document");
