@@ -1638,9 +1638,9 @@ function computeBantMissingDims(
       ) {
         answered.add("timeline");
       }
-      // Authority - keep mostly same but remove generic "manager" unless context implies approval
+      // Authority - expanded to include more roles like CX, Admin, Head, etc.
       if (
-        /i\s*(am|'m)\s*the\s*decision\s*maker|\b(it'?s\s*me|myself)\b|i\s*(decide|approve|buy)\b|my\s*manager|team\s*lead|we\s*decide|manager\s*approval|need\s*approval|procurement|legal|finance|cfo|ceo|owner|founder|director|vp/.test(
+        /i\s*(am|'m)\s*the\s*decision\s*maker|\b(it'?s\s*me|myself)\b|i\s*(decide|approve|buy)\b|my\s*manager|team\s*lead|we\s*decide|manager\s*approval|need\s*approval|procurement|legal|finance|cfo|ceo|owner|founder|director|vp|cx|admin|head|chief|executive|officer|lead|consultant|analyst|developer|engineer|architect/.test(
           s,
         )
       ) {
@@ -1707,7 +1707,7 @@ function detectBantDimensionFromText(
   )
     return "timeline";
   if (
-    /decision|authority|approve|buy|cfo|vp|director|manager|who\s*will\s*make/.test(
+    /decision|authority|approve|buy|cfo|vp|director|manager|who\s*will\s*make|role|title|position/.test(
       s,
     )
   )
@@ -1741,10 +1741,17 @@ function isAnswerToAskedDim(
     return /\b(this\s*week|next\s*week|later|today|tomorrow|this\s*month|next\s*month|this\s*year|next\s*year|quarter|q[1-4]|in\s+\d+\s*(days?|weeks?|months?|years?|mos?|yrs?)|\d{4}-\d{2}-\d{2}|soon|now)\b/.test(
       s,
     );
-  if (dim === "authority")
-    return /i\s*(am|'m)\s*the\s*decision\s*maker|\b(it'?s\s*me|myself)\b|manager|director|vp|cfo|ceo|owner|founder|team\s*lead|approve|authority|procurement|legal|finance|unsure|not\s*sure/.test(
-      s,
-    );
+  if (dim === "authority") {
+    // If the assistant just asked for authority, accept almost any non-empty answer
+    // that isn't clearly a refusal or a different question.
+    // This allows custom roles like "Pizza Chef", "Head of Wizardry", etc.
+    if (!s || s.length < 2) return false;
+    // Basic filter for obvious non-answers
+    if (/^(no|nope|nah|idk|i don'?t know|unsure)$/.test(s)) return false;
+    // If it looks like a budget question, don't count it as authority answer
+    if (/how much|price|cost|budget/.test(s)) return false;
+    return true;
+  }
   if (dim === "need")
     return /workflows|embeds|analytics|integration|feature|features|need|priority|use\s*case|help|explore|learn|customize|project\s*management|collaboration|data\s*analytics|automation|reminders|calendar|api|webhooks|routing|availability|templates|reporting|compliance|security|scheduling/.test(
       s,
@@ -10643,9 +10650,10 @@ What specific information are you looking for? I'm here to help guide you throug
   const hasBudget = /\$|usd|mo\b|per\s*month|budget|pricing|cost/i.test(
     lowerQuestion,
   );
-  const hasAuthority = /cto|ceo|ops|manager|director|owner|founder/i.test(
-    lowerQuestion,
-  );
+  const hasAuthority =
+    /cto|ceo|ops|manager|director|owner|founder|cx|admin|head|chief|executive|officer|lead|consultant|analyst|developer|engineer|architect/i.test(
+      lowerQuestion,
+    );
   const mentionsNeeds =
     /deflection|lead\s*capture|onboarding|faster\s*responses/i.test(
       lowerQuestion,
