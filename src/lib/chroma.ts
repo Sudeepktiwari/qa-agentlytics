@@ -124,8 +124,14 @@ export async function deleteChunksByUrl(_url: string, _adminId?: string) {
 export async function getChunksByPageUrl(adminId: string, pageUrl: string) {
   const db = await getDb();
   const pineconeVectors = db.collection("pinecone_vectors");
-  const escaped = pageUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const suffixPattern = new RegExp(`${escaped}$`, "i");
+  
+  // Normalize URL by removing trailing slash for regex creation
+  const normalizedUrl = pageUrl.replace(/\/$/, "");
+  const escaped = normalizedUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  
+  // Match the URL optionally followed by a slash at the end
+  const suffixPattern = new RegExp(`${escaped}\/?$`, "i");
+  
   const ids = await pineconeVectors
     .find({ adminId, filename: { $regex: suffixPattern } })
     .project({ vectorId: 1, _id: 0 })

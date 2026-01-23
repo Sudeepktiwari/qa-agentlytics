@@ -1186,7 +1186,7 @@ async function analyzeForProbing(input: {
   };
 }
 
-function buildFallbackFollowup(input: {
+async function buildFallbackFollowup(input: {
   userMessage: string;
   assistantResponse: {
     mainText?: string;
@@ -1440,6 +1440,39 @@ function buildFallbackFollowup(input: {
         dimension: "segment",
       };
     }
+  }
+
+  // 🎯 DYNAMIC FALLBACK: Use OpenAI to generate a context-aware question
+  try {
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: `You are a helpful sales assistant. The user is browsing our website. 
+Your goal is to ask a relevant, short follow-up question to engage them, based on their last message and your previous response. 
+Do not be pushy. Keep it under 15 words. Avoid "What are you exploring?".`,
+        },
+        {
+          role: "user",
+          content: `User Message: "${input.userMessage}"
+Assistant Response: "${input.assistantResponse.mainText}"`,
+        },
+      ],
+      temperature: 0.7,
+      max_tokens: 50,
+    });
+
+    const dynamicQuestion = completion.choices[0]?.message?.content?.trim();
+    if (dynamicQuestion) {
+      return {
+        mainText: dynamicQuestion,
+        buttons: ["Pricing", "Features", "Talk to Sales"],
+        emailPrompt: input.userEmail ? "" : "Add your email to receive updates",
+      };
+    }
+  } catch (error) {
+    console.error("Error generating dynamic fallback:", error);
   }
 
   return {
@@ -7748,7 +7781,12 @@ Extract key requirements (2-3 bullet points max, be concise):`;
       );
       // Check if pageUrl is in sitemap_urls and if it's crawled
       const sitemapUrls = db.collection("sitemap_urls");
-      const sitemapEntry = await sitemapUrls.findOne({ adminId, url: pageUrl });
+      // Robust lookup handling trailing slash mismatch
+      const normalizedUrl = pageUrl.replace(/\/$/, "");
+      const sitemapEntry = await sitemapUrls.findOne({
+        adminId,
+        url: { $in: [normalizedUrl, normalizedUrl + "/"] },
+      });
       // LOG: adminId, pageUrl, sitemapEntry
       console.log(
         "[Proactive] adminId:",
@@ -7776,10 +7814,12 @@ Extract key requirements (2-3 bullet points max, be concise):`;
       if (sitemapEntry && !sitemapEntry.crawled) {
         // Crawl the page on demand with redirect handling
         try {
-          console.log(`[OnDemandCrawl] Starting to crawl: ${pageUrl}`);
-          const text = await extractTextFromUrl(pageUrl);
+          // Use the URL from sitemap entry to ensure consistency
+          const targetUrl = sitemapEntry.url;
+          console.log(`[OnDemandCrawl] Starting to crawl: ${targetUrl}`);
+          const text = await extractTextFromUrl(targetUrl);
           console.log(
-            `[OnDemandCrawl] Extracted text for ${pageUrl}: ${
+            `[OnDemandCrawl] Extracted text for ${targetUrl}: ${
               text.length
             } chars, first 100: ${text.slice(0, 100)}`,
           );
@@ -7787,14 +7827,14 @@ Extract key requirements (2-3 bullet points max, be concise):`;
           // Store in crawled_pages
           await db.collection("crawled_pages").insertOne({
             adminId,
-            url: pageUrl,
+            url: targetUrl,
             text,
-            filename: pageUrl,
+            filename: targetUrl,
             createdAt: new Date(),
           });
           // Mark as crawled in sitemap_urls
           await sitemapUrls.updateOne(
-            { adminId, url: pageUrl },
+            { adminId, url: targetUrl },
             { $set: { crawled: true, crawledAt: new Date() } },
           );
           // Chunk and embed for ChromaDB
@@ -7808,27 +7848,28 @@ Extract key requirements (2-3 bullet points max, be concise):`;
               (d: { embedding: number[] }) => d.embedding,
             );
             const metadata = chunks.map((_, i) => ({
-              filename: pageUrl,
+              filename: targetUrl,
               adminId,
-              url: pageUrl,
+              url: targetUrl,
               chunkIndex: i,
             }));
             await addChunks(chunks, embeddings, metadata);
             pageChunks = chunks;
             console.log(
-              `[OnDemandCrawl] Successfully processed ${pageUrl}: ${chunks.length} chunks`,
+              `[OnDemandCrawl] Successfully processed ${targetUrl}: ${chunks.length} chunks`,
             );
           } else {
             console.log(
-              `[OnDemandCrawl] No chunks created for ${pageUrl} - content may be too short or empty`,
+              `[OnDemandCrawl] No chunks created for ${targetUrl} - content may be too short or empty`,
             );
           }
         } catch (err) {
-          console.error(`[OnDemandCrawl] Failed for ${pageUrl}:`, err);
+          console.error(`[OnDemandCrawl] Failed for ${sitemapEntry.url}:`, err);
           // If crawl fails, fallback to no info
         }
       } else if (sitemapEntry && sitemapEntry.crawled) {
-        pageChunks = await getChunksByPageUrl(adminId, pageUrl);
+        // Use the canonical URL from sitemap entry to fetch chunks
+        pageChunks = await getChunksByPageUrl(adminId, sitemapEntry.url);
         // LOG: pageChunks result
         console.log("[Proactive] getChunksByPageUrl result:", pageChunks);
       }
@@ -9945,31 +9986,73 @@ ${previousQnA}
         `[DEBUG] Returning generic proactive message - no page context found`,
       );
 
-      // Generate dynamic generic message based on URL patterns
-      const urlLower = pageUrl.toLowerCase();
-      let contextualMessage =
-        "I'm here to help you find what you're looking for.";
+      // 🎯 DYNAMIC FALLBACK FOR PROACTIVE GREETING (No page context)
+      let proactiveMsg = "";
 
-      if (urlLower.includes("pricing") || urlLower.includes("plan")) {
-        contextualMessage =
-          "I can help you understand the available options and pricing.";
-      } else if (urlLower.includes("feature") || urlLower.includes("product")) {
-        contextualMessage =
-          "I can explain how our features work and help you get started.";
-      } else if (urlLower.includes("contact") || urlLower.includes("about")) {
-        contextualMessage =
-          "I'm here to help you connect with our team or learn more.";
-      } else if (urlLower.includes("demo") || urlLower.includes("trial")) {
-        contextualMessage =
-          "I can help you try our platform or schedule a demonstration.";
-      } else if (urlLower.includes("support") || urlLower.includes("help")) {
-        contextualMessage =
-          "I'm here to provide support and answer your questions.";
+      // Calculate businessName for the prompt
+      const businessName = (() => {
+        try {
+          const host = new URL(pageUrl || "").hostname.replace(/^www\./, "");
+          const base = host.split(".")[0] || "";
+          return base
+            ? base.charAt(0).toUpperCase() + base.slice(1)
+            : "Our Team";
+        } catch {
+          return "Our Team";
+        }
+      })();
+
+      try {
+        const completion = await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: [
+            {
+              role: "system",
+              content: `You are a helpful assistant for ${businessName}. The user is visiting ${pageUrl}. 
+              They haven't started chatting yet. 
+              Your goal: specific, short, welcoming greeting (under 30 words).
+              Context: The page content is not available, so infer likely intent from the URL.
+              End with a short question about what they might be looking for.
+              Avoid "What are you exploring?".`,
+            },
+          ],
+          max_tokens: 100,
+        });
+        proactiveMsg = completion.choices[0]?.message?.content?.trim() || "";
+      } catch (e) {
+        console.error("Error generating dynamic proactive fallback:", e);
       }
 
-      const proactiveMsg = `${contextualMessage}
+      if (!proactiveMsg) {
+        // Generate dynamic generic message based on URL patterns
+        const urlLower = pageUrl.toLowerCase();
+        let contextualMessage =
+          "I'm here to help you find what you're looking for.";
+
+        if (urlLower.includes("pricing") || urlLower.includes("plan")) {
+          contextualMessage =
+            "I can help you understand the available options and pricing.";
+        } else if (
+          urlLower.includes("feature") ||
+          urlLower.includes("product")
+        ) {
+          contextualMessage =
+            "I can explain how our features work and help you get started.";
+        } else if (urlLower.includes("contact") || urlLower.includes("about")) {
+          contextualMessage =
+            "I'm here to help you connect with our team or learn more.";
+        } else if (urlLower.includes("demo") || urlLower.includes("trial")) {
+          contextualMessage =
+            "I can help you try our platform or schedule a demonstration.";
+        } else if (urlLower.includes("support") || urlLower.includes("help")) {
+          contextualMessage =
+            "I'm here to provide support and answer your questions.";
+        }
+
+        proactiveMsg = `${contextualMessage}
 
 What specific information are you looking for? I'm here to help guide you through the available options and answer any questions you might have.`;
+      }
 
       // Determine bot mode for generic proactive message
       let userEmail: string | null = null;
@@ -10539,7 +10622,7 @@ What specific information are you looking for? I'm here to help guide you throug
         } catch {}
       }
       if (!nextBant) {
-        const fallback = buildFallbackFollowup({
+        const fallback = await buildFallbackFollowup({
           userMessage: question || "",
           assistantResponse: {
             mainText: String((lastAssistant as any)?.content || ""),

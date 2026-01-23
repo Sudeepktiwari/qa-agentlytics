@@ -3321,7 +3321,6 @@ export async function GET(request: Request) {
     const mirrorHTML = mirrorEnabled ? \`
       <iframe id="appointy-mirror" 
               class="appointy-mirror"
-              sandbox="allow-same-origin allow-scripts"
               src="" 
               loading="lazy"
               style="
