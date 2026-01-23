@@ -35,9 +35,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
   ];
 
   return routes.map((route) => ({
-    url: route === "/" ? baseUrl : `${baseUrl}${route}`,
+    url: `${baseUrl}${route}`,
     lastModified,
     changeFrequency: "weekly",
-    priority: route === "" ? 1 : 0.8,
+    priority: route === "/" ? 1 : 0.8,
   }));
 }
