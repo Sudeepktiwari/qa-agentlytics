@@ -1207,6 +1207,11 @@ function buildFallbackFollowup(input: {
   const bantCompleted = Array.isArray(input.missingDims)
     ? input.missingDims.length === 0
     : false;
+
+  // If BANT is completed, do not return a fallback question.
+  // This prevents the "What are you exploring?" loop.
+  if (bantCompleted) return null;
+
   const hasPricing =
     /(pricing|price|cost|plan|plans|quote|estimate|discount|billing)/i.test(
       text,
@@ -11828,7 +11833,9 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
         missingDims: missingDimsQuick,
         bantConfig,
       });
-      secondary = { ...secondary, type: "probe" };
+      if (secondary) {
+        secondary = { ...secondary, type: "probe" };
+      }
       console.log(
         `[Chat API ${requestId}] Qualification evaluator failed, using fallback`,
         {
@@ -11838,14 +11845,15 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
               : typeof err === "string"
                 ? err
                 : "Unknown error",
-          type: (secondary as any).type,
-          hasMainText: !!secondary.mainText,
-          buttonsCount: Array.isArray(secondary.buttons)
-            ? secondary.buttons.length
-            : 0,
+          type: (secondary as any)?.type,
+          hasMainText: !!(secondary as any)?.mainText,
+          buttonsCount:
+            secondary && Array.isArray((secondary as any).buttons)
+              ? (secondary as any).buttons.length
+              : 0,
           preview:
-            typeof secondary.mainText === "string"
-              ? secondary.mainText.slice(0, 120)
+            secondary && typeof (secondary as any).mainText === "string"
+              ? (secondary as any).mainText.slice(0, 120)
               : "",
         },
       );
@@ -11878,7 +11886,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
         assistantCountBefore,
         skipDueToRecentFollowup,
       });
-      if (assistantCountBefore > 0 && !skipDueToRecentFollowup) {
+      if (assistantCountBefore > 0 && !skipDueToRecentFollowup && secondary) {
         console.log(`[Chat API ${requestId}] Inserting fallback follow-up`, {
           type: (secondary as any).type,
           createdAt: new Date(now.getTime() + 2).toISOString(),
