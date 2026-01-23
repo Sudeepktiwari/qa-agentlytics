@@ -1363,6 +1363,78 @@ function buildFallbackFollowup(input: {
         : "Share your email to receive a brief plan",
     };
   }
+  // If we fell through to here, it means we have missing dimensions (checked by bantCompleted)
+  // but the user's input didn't trigger a specific logic block above (or the triggered block's dimension was already done).
+  // Instead of looping on "What are you exploring?", we MUST ask about the next missing dimension.
+  const nextDim = dims[0];
+  if (nextDim) {
+    // 1. Try BANT Config first
+    if (input.bantConfig?.[nextDim]?.[0]) {
+      const q = input.bantConfig[nextDim][0];
+      return {
+        mainText: q.question,
+        buttons: q.options,
+        emailPrompt: input.userEmail ? "" : "Add your email to continue",
+        dimension: nextDim,
+      };
+    }
+
+    // 2. Fallback defaults
+    if (nextDim === "budget") {
+      const budgetButtons = isIndividual
+        ? ["Under $20/mo", "$20–$50/mo", "$50+"]
+        : isSMB
+          ? ["Under $500/mo", "$500–$1.5k/mo", "$1.5k+"]
+          : ["Under $10k/yr", "$10k–$50k/yr", "$50k+/yr"];
+      return {
+        mainText: "What budget range are you considering?",
+        buttons: budgetButtons,
+        emailPrompt: input.userEmail
+          ? ""
+          : "Share your work email to receive a tailored quote",
+        dimension: "budget",
+      };
+    }
+    if (nextDim === "authority") {
+      return {
+        mainText: "Who will make the decision?",
+        buttons: ["I’m the decision maker", "Add decision maker", "Unsure"],
+        emailPrompt: input.userEmail
+          ? ""
+          : "Add an email to coordinate next steps",
+        dimension: "authority",
+      };
+    }
+    if (nextDim === "need") {
+      return {
+        mainText: "Which feature matters most for you right now?",
+        buttons: ["Workflows", "Embeds", "Analytics"],
+        emailPrompt: input.userEmail
+          ? ""
+          : "Share an email to send a brief feature comparison",
+        dimension: "need",
+      };
+    }
+    if (nextDim === "timeline") {
+      return {
+        mainText: "What timeline are you targeting?",
+        buttons: ["This month", "This quarter", "Later"],
+        emailPrompt: input.userEmail
+          ? ""
+          : "Share your email to receive a brief plan",
+        dimension: "timeline",
+      };
+    }
+    if (nextDim === "segment") {
+      return {
+        mainText: "What type of business are you?",
+        buttons: ["Individual", "SMB", "Enterprise"],
+        emailPrompt: "",
+        dimension: "segment",
+      };
+    }
+  }
+
   return {
     mainText: "What are you exploring?",
     buttons: ["Pricing", "Integrations", "Scheduling"],
@@ -1718,7 +1790,7 @@ function detectBantDimensionFromText(
   )
     return "authority";
   if (
-    /feature|need|priority|matter|help|workflows|embeds|analytics|integration/.test(
+    /feature|need|priority|matter|help|workflows|embeds|analytics|integration|engage|visitors/.test(
       s,
     )
   )
