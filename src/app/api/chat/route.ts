@@ -1651,9 +1651,9 @@ function computeBantMissingDims(
       ) {
         answered.add("authority");
       }
-      // Need - difficult to distinguish from questions, but usually safe if specific feature mentioned
+      // Need - expanded to include common business goals and specific options
       if (
-        /workflows|embeds|analytics|integration|automation|reminders|api|webhooks|availability|templates|reporting|compliance|security|scheduling|project\s*management|collaboration|data\s*analytics/.test(
+        /workflows|embeds|analytics|integration|automation|reminders|api|webhooks|availability|templates|reporting|compliance|security|scheduling|project\s*management|collaboration|data\s*analytics|capture|leads|qualified|engage|visitors|manual|sales|support|work|understand|intent|behavior|growth|scale|revenue|efficiency|optimize|optimization|conversion|convert|traffic|user\s*experience|ux/.test(
           s,
         )
       ) {
@@ -1758,7 +1758,7 @@ function isAnswerToAskedDim(
     return true;
   }
   if (dim === "need")
-    return /workflows|embeds|analytics|integration|feature|features|need|priority|use\s*case|help|explore|learn|customize|project\s*management|collaboration|data\s*analytics|automation|reminders|calendar|api|webhooks|routing|availability|templates|reporting|compliance|security|scheduling/.test(
+    return /workflows|embeds|analytics|integration|feature|features|need|priority|use\s*case|help|explore|learn|customize|project\s*management|collaboration|data\s*analytics|automation|reminders|calendar|api|webhooks|routing|availability|templates|reporting|compliance|security|scheduling|capture|leads|qualified|engage|visitors|manual|sales|support|work|understand|intent|behavior|growth|scale|revenue|efficiency|optimize|optimization|conversion|convert|traffic|user\s*experience|ux/.test(
       s,
     );
   if (dim === "segment")
@@ -10660,7 +10660,7 @@ What specific information are you looking for? I'm here to help guide you throug
       lowerQuestion,
     );
   const mentionsNeeds =
-    /deflection|lead\s*capture|onboarding|faster\s*responses/i.test(
+    /deflection|lead\s*capture|onboarding|faster\s*responses|capture|leads|qualified|engage|visitors|manual|sales|support|work|understand|intent|behavior|growth|scale|revenue|efficiency|optimize|optimization|conversion|convert|traffic|user\s*experience|ux/i.test(
       lowerQuestion,
     );
   const hasTimeline =
@@ -10778,7 +10778,8 @@ Signals seen: ${[
         .filter(Boolean)
         .join(", ")}
 
-Guide them through: team size/tickets → budget ranges → decision-maker → problem focus → timeline → next steps.
+Guide them through: team size/tickets → budget ranges → decision-maker → problem focus → timeline.
+IMPORTANT: If the user has provided information for all these areas (Budget, Authority, Need, Timeline), STOP asking questions. Instead, thank them for the details and propose a 'Schedule Demo' or 'Talk to Sales' as the next step.
 
 Buttons examples by stage:
 - Budget: ["<$500/mo","$500–$1.5k/mo",">$1.5k+/mo"]
@@ -10794,7 +10795,7 @@ ${pageContext}
 General Context:
 ${context}`;
     } else {
-      systemPrompt = `You are a helpful sales assistant for a company. The user has provided their email (${userEmail}) and is now a qualified lead. Keep the conversation human-like and smooth: when needed, ask ONE short clarifying question to understand intent and needs before giving a concise, benefits-focused response. Encourage booking a call. Always generate your response in the following JSON format:
+      systemPrompt = `You are a helpful sales assistant for a company. The user has provided their email (${userEmail}) and is now a qualified lead. Keep the conversation human-like and smooth. If the user has already answered qualification questions (Budget, Authority, Need, Timeline), DO NOT ask more questions. Instead, thank them and propose a 'Schedule Demo' or 'Talk to Sales'. Only ask a clarifying question if crucial information is missing. Encourage booking a call. Always generate your response in the following JSON format:
 
 {
   "mainText": "<Provide sales-focused, persuasive responses about products/services, pricing, benefits, case studies, or next steps. Be enthusiastic and focus on value proposition. Use the context below to provide specific information. MANDATORY FORMATTING RULES: \n1. NEVER write long paragraphs - they are hard to read in chat\n2. Start with 1-2 short sentences (max 20 words each)\n3. Add double line break \\n\\n after intro\n4. Use bullet points with • symbol for ANY list of 2+ benefits/features\n5. Add TWO line breaks \\n\\n after each bullet point for better spacing\n6. Example format: 'Great question! Here's what makes us special:\\n\\n• Benefit 1\\n\\n• Benefit 2\\n\\n• Benefit 3'\n7. Use emojis sparingly for emphasis\n8. Never use long sentences in paragraphs - break them into bullets\n9. CRITICAL: Do NOT generate buttons for topics already discussed: ${
