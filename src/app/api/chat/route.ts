@@ -907,7 +907,10 @@ async function analyzeForProbing(input: {
       KNOWN PERSONAS:
       ${JSON.stringify(input.personas || [])}
 
-      Never combine multiple BANT dimensions. If botMode is 'sales', prefer Budget or Timeline.
+      Never combine multiple BANT dimensions. 
+      PRIORITIZATION:
+      1. If 'segment' is in missingDims, you MUST ask about it FIRST (Business Type).
+      2. Otherwise, follow the order in missingDims or prefer Budget/Timeline.
       `,
     },
     {
@@ -955,7 +958,7 @@ async function analyzeForProbing(input: {
     const generatedDim = parsed.bantDimension;
     const missingDims = Array.isArray(input.missingDims)
       ? input.missingDims
-      : ["budget", "authority", "need", "timeline", "segment"];
+      : ["segment", "budget", "authority", "need", "timeline"];
 
     if (generatedDim && !missingDims.includes(generatedDim as any)) {
       // Generated dimension is not in the missing list. Block it.
@@ -986,7 +989,7 @@ async function analyzeForProbing(input: {
     const dims = (
       Array.isArray(input.missingDims)
         ? input.missingDims
-        : ["budget", "authority", "need", "timeline", "segment"]
+        : ["segment", "budget", "authority", "need", "timeline"]
     ) as ("budget" | "authority" | "need" | "timeline" | "segment")[];
     let chosen:
       | "budget"
@@ -1000,7 +1003,11 @@ async function analyzeForProbing(input: {
     else if (hasAuthority && dims.includes("authority")) chosen = "authority";
     else if (hasFeatures && dims.includes("need")) chosen = "need";
     if (!chosen) {
-      chosen = input.botMode === "sales" ? "timeline" : "need";
+      if (dims.includes("segment")) {
+        chosen = "segment";
+      } else {
+        chosen = input.botMode === "sales" ? "timeline" : "need";
+      }
       if (!dims.includes(chosen)) {
         chosen =
           (dims[0] as
@@ -1147,7 +1154,7 @@ async function analyzeForProbing(input: {
         | "timeline"
         | "segment"
       )[])
-    : ["budget", "authority", "need", "timeline", "segment"];
+    : ["segment", "budget", "authority", "need", "timeline"];
   if (
     !input.bantConfig &&
     input.botMode === "lead_generation" &&
@@ -1465,7 +1472,7 @@ function buildHeuristicBantFollowup(input: {
   const dims = (
     Array.isArray(input.missingDims)
       ? input.missingDims
-      : ["budget", "authority", "need", "timeline", "segment"]
+      : ["segment", "budget", "authority", "need", "timeline"]
   ) as ("budget" | "authority" | "need" | "timeline" | "segment")[];
   const hasPricing =
     /(pricing|price|cost|plan|plans|quote|estimate|discount|billing|budget|\$|usd)/i.test(
@@ -1633,8 +1640,10 @@ function computeBantMissingDims(
   messages: any[],
   profile: any = null,
 ): ("budget" | "authority" | "need" | "timeline" | "segment")[] {
+  // User requested "segment" (Business Type) to be asked first.
+  // We reorder this list so "segment" is at the beginning.
   const allDims: ("budget" | "authority" | "need" | "timeline" | "segment")[] =
-    ["budget", "authority", "need", "timeline", "segment"];
+    ["segment", "budget", "authority", "need", "timeline"];
   const answered = new Set<
     "budget" | "authority" | "need" | "timeline" | "segment"
   >();
