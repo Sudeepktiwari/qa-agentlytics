@@ -536,6 +536,13 @@ const AdminPanel: React.FC = () => {
       return;
     }
 
+    // Optimistic update: Update UI immediately before API call to prevent list refresh/flicker
+    const previousPages = crawledPages;
+    const previousDocuments = documents;
+
+    setCrawledPages((prev) => prev.filter((p) => p.url !== page.url));
+    setDocuments((prev) => prev.filter((d) => d.filename !== page.url));
+
     try {
       const res = await fetch("/api/crawled-pages", {
         method: "DELETE",
@@ -547,15 +554,18 @@ const AdminPanel: React.FC = () => {
       });
 
       if (res.ok) {
-        // Optimistically update state instead of refetching to prevent full list refresh
-        setCrawledPages((prev) => prev.filter((p) => p.url !== page.url));
-        setDocuments((prev) => prev.filter((d) => d.filename !== page.url));
         showToast("Crawled page deleted successfully");
       } else {
+        // Revert on failure
+        setCrawledPages(previousPages);
+        setDocuments(previousDocuments);
         const data = await res.json();
         setCrawledPagesError(data.error || "Failed to delete crawled page");
       }
     } catch (error) {
+      // Revert on error
+      setCrawledPages(previousPages);
+      setDocuments(previousDocuments);
       setCrawledPagesError("Failed to delete crawled page");
       console.error("Error deleting crawled page:", error);
     }
@@ -570,6 +580,10 @@ const AdminPanel: React.FC = () => {
       return;
     }
 
+    // Optimistic update: Update UI immediately
+    const previousDocuments = documents;
+    setDocuments((prev) => prev.filter((d) => d.filename !== filename));
+
     try {
       const res = await fetch("/api/admin-docs?admin=1", {
         method: "DELETE",
@@ -579,14 +593,16 @@ const AdminPanel: React.FC = () => {
       });
 
       if (res.ok) {
-        // Optimistically update state instead of refetching
-        setDocuments((prev) => prev.filter((d) => d.filename !== filename));
         showToast("Document deleted successfully");
       } else {
+        // Revert on failure
+        setDocuments(previousDocuments);
         const data = await res.json();
         setDocumentsError(data.error || "Failed to delete document");
       }
     } catch (error) {
+      // Revert on error
+      setDocuments(previousDocuments);
       setDocumentsError("Failed to delete document");
       console.error("Error deleting document:", error);
     }
