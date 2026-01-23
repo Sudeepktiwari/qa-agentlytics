@@ -1718,9 +1718,10 @@ function computeBantMissingDims(
       }
       // Stricter regex for timeline
       if (
-        /\b(this\s*week|next\s*week|this\s*month|next\s*month|this\s*year|next\s*year|quarter|q[1-4]|in\s+\d+\s*(days?|weeks?|months?|years?|mos?|yrs?)|\d{4}-\d{2}-\d{2})\b/.test(
+        /\b(this\s*week|next\s*week|this\s*month|next\s*month|this\s*year|next\s*year|quarter|q[1-4]|in\s+\d+\s*(days?|weeks?|months?|years?|mos?|yrs?)|\d{4}-\d{2}-\d{2}|immediately|soon|later|evaluating|exploring|just\s*looking|active|months?|weeks?|days?|years?)\b/.test(
           s,
-        )
+        ) ||
+        /\b\d+\s*[-–]\s*\d+\s*(months?|weeks?|days?|yrs?|years?)\b/.test(s)
       ) {
         answered.add("timeline");
       }
@@ -1824,8 +1825,10 @@ function isAnswerToAskedDim(
       s,
     );
   if (dim === "timeline")
-    return /\b(this\s*week|next\s*week|later|today|tomorrow|this\s*month|next\s*month|this\s*year|next\s*year|quarter|q[1-4]|in\s+\d+\s*(days?|weeks?|months?|years?|mos?|yrs?)|\d{4}-\d{2}-\d{2}|soon|now)\b/.test(
-      s,
+    return (
+      /\b(this\s*week|next\s*week|later|today|tomorrow|this\s*month|next\s*month|this\s*year|next\s*year|quarter|q[1-4]|in\s+\d+\s*(days?|weeks?|months?|years?|mos?|yrs?)|\d{4}-\d{2}-\d{2}|soon|now|immediately|evaluating|exploring|just\s*looking|active)\b/.test(
+        s,
+      ) || /\b\d+\s*[-–]\s*\d+\s*(months?|weeks?|days?|yrs?|years?)\b/.test(s)
     );
   if (dim === "authority") {
     // If the assistant just asked for authority, accept almost any non-empty answer
