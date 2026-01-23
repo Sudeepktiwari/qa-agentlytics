@@ -1,7 +1,7 @@
 import { MetadataRoute } from "next";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = "https://www.advancelytics.com";
+  const baseUrl = "https://agentlytics.advancelytics.com";
   const lastModified = new Date();
 
   const routes = [

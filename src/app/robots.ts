@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
       disallow: ["/admin/", "/api/", "/sa/", "/auth/"],
     },
-    sitemap: "https://www.advancelytics.com/sitemap.xml",
+    sitemap: "https://agentlytics.advancelytics.com/sitemap.xml",
   };
 }
