@@ -801,7 +801,7 @@ Instructions:
    - Summarizes the key points (e.g., "Thanks for sharing that. It sounds like you're looking for [Need] with a budget of [Budget]...").
    - Proposes the immediate next step (e.g., "I can set up a demo tailored to [Need]" or "Let's look at plans that fit your [Budget]").
 3. Generate 2-4 "buttons" for the user to click. These should be specific actions based on the summary (e.g., "Schedule Demo for [Need]", "See [Segment] Pricing", "Talk to Sales").
-4. Keep the tone professional, helpful, and encouraging.
+4. Keep the tone simple, friendly, and human. Use contractions.
 
 Return ONLY a valid JSON object with this structure:
 {
@@ -1493,6 +1493,14 @@ function buildHeuristicBantFollowup(input: {
   bantConfig?: any;
 }) {
   if (!input.userEmail && !input.bantConfig) return null;
+
+  // If the assistant already asked a question, do not interrupt with a heuristic BANT question
+  if (
+    input.assistantResponse.mainText &&
+    input.assistantResponse.mainText.includes("?")
+  ) {
+    return null;
+  }
 
   // If BANT config is present, we WANT to use analyzeForProbing (LLM) to generate
   // the "Bridge + Insight + Question" structure. The heuristic function below
@@ -3237,7 +3245,8 @@ async function generatePersonaBasedFollowup(
 ): Promise<any> {
   try {
     const systemPrompt = `
-You are a sales assistant specialized in understanding different customer segments. Generate a followup message that resonates with this specific customer type without using personal names.
+You are a helpful, friendly assistant. Generate a followup message that resonates with this specific customer type.
+Tone: Simple, conversational, and human-like. Use contractions. Avoid buzzwords.
 
 Customer Segment Profile:
 - Segment: ${detectedPersona.type} (${detectedPersona.companySize} company)
@@ -3353,10 +3362,11 @@ async function generateTopicBasedFollowup(
       topicsDiscussed,
     );
 
-    const systemPrompt = `You are a sales assistant focused specifically on ${
+    const systemPrompt = `You are a helpful, friendly assistant focused on ${
       topicInfo.mainFocus
     }. 
-    Generate a helpful followup message that addresses this specific topic area.
+    Generate a simple, helpful followup message.
+    Tone: Conversational and human. Use contractions.
     
     Context:
     - Page URL: ${pageUrl}
@@ -10011,6 +10021,7 @@ ${previousQnA}
               content: `You are a helpful assistant for ${businessName}. The user is visiting ${pageUrl}. 
               They haven't started chatting yet. 
               Your goal: specific, short, welcoming greeting (under 30 words).
+              Tone: Simple, friendly, and human.
               Context: The page content is not available, so infer likely intent from the URL.
               End with a short question about what they might be looking for.
               Avoid "What are you exploring?".`,
@@ -10051,7 +10062,7 @@ ${previousQnA}
 
         proactiveMsg = `${contextualMessage}
 
-What specific information are you looking for? I'm here to help guide you through the available options and answer any questions you might have.`;
+How can I help you today?`;
       }
 
       // Determine bot mode for generic proactive message
@@ -11003,7 +11014,11 @@ ${context}
 
 IMPORTANT: Focus on being helpful and supportive. Don't ask for email unless it's specifically needed for support. Generate contextual support-related buttons. ABSOLUTELY NO LONG PARAGRAPHS - USE BULLET POINTS WITH DOUBLE LINE BREAKS FOR SPACING.`;
     } else if (isEmailRequest) {
-      systemPrompt = `You are a helpful sales assistant. The user is asking about email or wanting something sent to their email. Always generate your response in the following JSON format:
+      systemPrompt = `You are a helpful, friendly assistant. The user is asking about email or wanting something sent to their email.
+      
+      Tone: Simple, human, and direct. Use contractions.
+      
+      Always generate your response in the following JSON format:
 
 {
   "mainText": "<Acknowledge their email request and explain what you can send them. Be specific about what information or resources you'll provide. MANDATORY FORMATTING: Use 1-2 short sentences maximum. Be direct and clear about what they'll receive. NO BULLET POINTS needed for simple email acknowledgments.>",
@@ -11065,7 +11080,9 @@ STRICT:
 - Buttons should be clarifying options, not generic actions
 - NEVER put JSON or buttons in mainText.`;
     } else if (isCaseStudyIntent) {
-      systemPrompt = `You are a helpful lead-generation assistant. The user wants to see specific case studies, testimonials, or success stories.
+      systemPrompt = `You are a helpful, friendly assistant. The user wants to see specific case studies, testimonials, or success stories.
+      
+      Tone: Simple, storytelling style. Avoid corporate speak.
 
       CRITICAL INSTRUCTION:
       - Do NOT explain "why" case studies are important.
@@ -11089,7 +11106,13 @@ STRICT:
       General Context:
       ${context}`;
     } else {
-      systemPrompt = `You are a helpful lead-generation assistant. The user has not provided contact details yet. Keep the conversation human-like and smooth.
+      systemPrompt = `You are a helpful, friendly assistant. The user has not provided contact details yet.
+      
+      TONE INSTRUCTIONS:
+      - Use simple, clear English (approx. 8th grade reading level).
+      - Sound like a real person, not a robot. Use contractions (e.g., "I'll", "we're").
+      - Avoid corporate jargon and complex sentences.
+      - Be warm and approachable.
 
 CRITICAL CONVERSATION RULES:
 - If requirements are missing (${
@@ -11104,7 +11127,7 @@ You will receive page and general context. Always generate your response in the 
 {
   "mainText": "<A dynamic, page-aware summary or answer (or a brief clarifying question when intent is unclear), using the context below. MANDATORY FORMATTING RULES: 
 1. NEVER write long paragraphs - they are hard to read in chat
-2. Start with 1-2 short sentences (max 20 words each)
+2. Start with 1-2 short, simple sentences (max 15 words each). Talk like a human.
 3. Add double line break \\n\\n after intro
 4. Use bullet points with • symbol for ANY list of 2+ items
 5. Add TWO line breaks \\n\\n after each bullet point for better spacing
@@ -11668,30 +11691,40 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
 
         // Only use LLM probing if heuristic didn't produce a question
         let probingQuick: any = { shouldSendFollowUp: false };
+        const assistantHasQuestion = (finalResponse.mainText || "").includes(
+          "?",
+        );
+
         if (!immediate) {
-          if (bantConfig) {
+          if (assistantHasQuestion) {
             console.log(
-              `[Chat API ${requestId}] Using BANT config for probing:`,
-              JSON.stringify(bantConfig).slice(0, 100) + "...",
+              `[Chat API ${requestId}] Skipping BANT probing because main response contains a question.`,
+            );
+          } else {
+            if (bantConfig) {
+              console.log(
+                `[Chat API ${requestId}] Using BANT config for probing:`,
+                JSON.stringify(bantConfig).slice(0, 100) + "...",
+              );
+            }
+            probingQuick = await analyzeForProbing({
+              userMessage: question || "",
+              assistantResponse: {
+                mainText: finalResponse.mainText,
+                buttons: finalResponse.buttons,
+                emailPrompt: (finalResponse as any).emailPrompt || "",
+              },
+              botMode,
+              userEmail: resolvedUserEmail,
+              missingDims: missingDimsQuick,
+              personas,
+              bantConfig,
+            });
+            console.log(
+              `[Chat API ${requestId}] Probing result:`,
+              JSON.stringify(probingQuick, null, 2),
             );
           }
-          probingQuick = await analyzeForProbing({
-            userMessage: question || "",
-            assistantResponse: {
-              mainText: finalResponse.mainText,
-              buttons: finalResponse.buttons,
-              emailPrompt: (finalResponse as any).emailPrompt || "",
-            },
-            botMode,
-            userEmail: resolvedUserEmail,
-            missingDims: missingDimsQuick,
-            personas,
-            bantConfig,
-          });
-          console.log(
-            `[Chat API ${requestId}] Probing result:`,
-            JSON.stringify(probingQuick, null, 2),
-          );
         }
 
         if (
