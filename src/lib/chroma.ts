@@ -62,14 +62,17 @@ export async function querySimilarChunks(
   const effectiveAdminId =
     adminId && adminId.trim().length > 0 ? adminId : "default-admin";
 
-  const filter = searchMode === "global" ? {} : { adminId: effectiveAdminId };
-
-  const result = await index.query({
+  const queryParams: any = {
     vector: questionEmbedding,
     topK,
     includeMetadata: true,
-    filter, // always restrict search to the resolved admin unless global mode
-  });
+  };
+
+  if (searchMode !== "global") {
+    queryParams.filter = { adminId: effectiveAdminId };
+  }
+
+  const result = await index.query(queryParams);
 
   console.log(
     `[Pinecone] Query (adminId: ${effectiveAdminId}, mode: ${searchMode}) returned ${
