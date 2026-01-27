@@ -2214,14 +2214,7 @@ function promptForField(field: any): string {
 
 // Build a user-facing summary of collected onboarding data with sensitive fields redacted
 function buildSafeSummary(data: Record<string, any>): string {
-  const redactKeys = [
-    "password",
-    "pass",
-    "secret",
-    "token",
-    "apiKey",
-    "api_key",
-  ];
+  const redactKeys = ["secret", "token", "apiKey", "api_key"];
   return Object.entries(data || {})
     .map(([k, v]) => {
       const kl = k.toLowerCase();
@@ -4229,7 +4222,7 @@ export async function POST(req: NextRequest) {
                 const lines: string[] = [];
                 if (regName) lines.push(`- name: ${regName}`);
                 if (regEmail) lines.push(`- email: ${regEmail}`);
-                if (hasPwd) lines.push(`- password: ***`);
+                if (hasPwd) lines.push(`- password: ${hasPwd}`);
                 summary = lines.join("\n");
               }
             } catch {}
@@ -5905,7 +5898,7 @@ Keep the response conversational and helpful, focusing on providing value before
           const lines: string[] = [];
           if (regName) lines.push(`- name: ${regName}`);
           if (regEmail) lines.push(`- email: ${regEmail}`);
-          if (hasPwd) lines.push(`- password: ***`);
+          if (hasPwd) lines.push(`- password: ${hasPwd}`);
           const summary = lines.join("\n");
           const isExistingUser =
             (typeof (sessionDoc as any)?.lastErrorHttpStatus === "number" &&
@@ -5987,7 +5980,7 @@ Keep the response conversational and helpful, focusing on providing value before
           const lines: string[] = [];
           if (regName) lines.push(`- name: ${regName}`);
           if (regEmail) lines.push(`- email: ${regEmail}`);
-          if (hasPwd) lines.push(`- password: ***`);
+          if (hasPwd) lines.push(`- password: ${hasPwd}`);
           summary = lines.join("\n");
         }
         await sessionsCollection.updateOne(
