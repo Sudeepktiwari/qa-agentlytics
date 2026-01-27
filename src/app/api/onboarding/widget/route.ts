@@ -394,7 +394,7 @@ export async function GET(request: Request) {
            if (d.success && d.answer) {
                addBubble('bot', d.answer);
            } else {
-               addBubble('bot', "I couldn't find an answer to that question.");
+               addBubble('bot', d.error || "I couldn't find an answer to that question.");
            }
            
            if (state.step === 'reg_collect') {

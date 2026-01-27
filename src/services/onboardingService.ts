@@ -1703,7 +1703,9 @@ export const onboardingService = {
         model: "text-embedding-3-small",
       });
       const embedding = embedResp.data[0].embedding;
+      console.log(`[Onboarding] Search params - Admin: ${adminId}, Mode: user, TopK: 10`);
       const similar = await querySimilarChunks(embedding, 10, adminId, "user");
+      console.log(`[Onboarding] Found ${similar.length} chunks`);
       const context = similar.map((s) => s.text).join("\n\n");
 
       const systemPrompt = `You are a helpful assistant for an onboarding bot.
