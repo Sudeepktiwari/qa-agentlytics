@@ -2306,7 +2306,7 @@ export async function answerQuestion(
 ): Promise<string | null> {
   try {
     console.log(
-      `[AnswerQuestion] Question: "${question}" | AdminId: ${adminId} | SearchMode: global`,
+      `[AnswerQuestion] Question: "${question}" | AdminId: ${adminId} | SearchMode: user`,
     );
 
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -2315,8 +2315,8 @@ export async function answerQuestion(
       model: "text-embedding-3-small",
     });
     const embedding = embedResp.data[0].embedding as number[];
-    // Search globally to allow finding answers from system help docs or other public knowledge
-    const similar = await querySimilarChunks(embedding, 5, adminId, "global");
+    // Search within the user's knowledge base (scoped to adminId) to ensure relevant answers
+    const similar = await querySimilarChunks(embedding, 10, adminId, "user");
 
     console.log(
       `[AnswerQuestion] Found ${
@@ -2351,7 +2351,7 @@ System Knowledge (Common Onboarding Terms):
         {
           role: "system",
           content:
-            "You are a helpful assistant for a product onboarding process. Answer the user's question based ONLY on the provided context. If the answer is not in the context, say 'I don't have enough information to answer that.' and do not make up an answer. Keep it concise.",
+            "You are a helpful assistant for a product onboarding process. Answer the user's question using the provided context as a primary source. If the exact answer is not explicitly in the context but can be logically inferred or explained using general knowledge about the topics mentioned (like sitemaps, API keys, web crawling, etc.), provide a helpful explanation. Only say 'I don't have enough information' if the question is completely unrelated to the context or requires specific proprietary data not present. Keep it concise.",
         },
         {
           role: "user",
