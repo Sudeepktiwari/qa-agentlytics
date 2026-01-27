@@ -2,63 +2,77 @@ import { MetadataRoute } from "next";
 import fs from "fs";
 import path from "path";
 
+const baseUrl = "https://agentlytics.advancelytics.com";
+
+// Directories to exclude from sitemap
+const EXCLUDED_DIRS = [
+  "api",
+  "admin",
+  "sa", // Super admin
+  "test",
+  "components",
+  "lib",
+  "services",
+  "hooks",
+  "types",
+  "utils",
+  "styles",
+];
+
+function getRoutes(dir: string, baseRoute: string = ""): string[] {
+  const routes: string[] = [];
+  
+  if (!fs.existsSync(dir)) return routes;
+
+  const items = fs.readdirSync(dir, { withFileTypes: true });
+
+  for (const item of items) {
+    if (item.isDirectory()) {
+      const name = item.name;
+      
+      // Skip hidden files, dynamic routes (start with [), route groups (start with (), and private folders (start with _)
+      if (
+        name.startsWith(".") || 
+        name.startsWith("[") || 
+        name.startsWith("(") || 
+        name.startsWith("_")
+      ) continue;
+      
+      // Check exclusion list (only for top-level mostly, but good to check always if meaningful)
+      // We mainly care about top-level exclusions like 'api' or 'admin'
+      if (baseRoute === "" && EXCLUDED_DIRS.includes(name)) continue;
+
+      const fullPath = path.join(dir, name);
+      const routePath = `${baseRoute}/${name}`;
+
+      // Check if this directory has a page.tsx (it's a valid route)
+      if (fs.existsSync(path.join(fullPath, "page.tsx"))) {
+        routes.push(routePath + "/");
+      }
+
+      // Recurse to find nested pages (e.g. /help/onboarding-setup)
+      routes.push(...getRoutes(fullPath, routePath));
+    }
+  }
+  return routes;
+}
+
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = "https://agentlytics.advancelytics.com";
   const lastModified = new Date();
 
-  const routes = [
-    "/",
-    "/about/",
-    "/pricing/",
-    "/contact/",
-    "/services/",
-    "/developers/",
-    "/knowledge-base/",
-    "/ai-chatbots/",
-    "/bant-based-qualification/",
-    "/behavioral-trigger/",
-    "/built-in-scheduling/",
-    "/crm-and-analytics-sync/",
-    "/customer-support-ai/",
-    "/cx-analytics-dashboard/",
-    "/knowledge-automation/",
-    "/lead-generation-basics/",
-    "/multipersona/",
-    "/onboarding-ai-bot/",
-    "/onboarding-automation/",
-    "/sales-conversion-ai/",
-    "/shopify/",
-    "/agentlytics+drift/",
-    "/agentlytics+agentforce/",
-    "/agentlytics+freshworks/",
-    "/agentlytics+hubspot/",
-    "/agentlytics+intercom/",
-    "/agentlytics+zoho/",
-    "/demo/",
-  ];
+  // 1. Root page
+  const routes = ["/"];
 
-  // Dynamically add help articles
+  // 2. Auto-discover pages from src/app
   try {
-    const helpDir = path.join(process.cwd(), "src/app/help");
-    if (fs.existsSync(helpDir)) {
-      // Add main help page
-      if (fs.existsSync(path.join(helpDir, "page.tsx"))) {
-        routes.push("/help/");
-      }
-
-      // Add sub-pages
-      const items = fs.readdirSync(helpDir, { withFileTypes: true });
-      for (const item of items) {
-        if (
-          item.isDirectory() &&
-          fs.existsSync(path.join(helpDir, item.name, "page.tsx"))
-        ) {
-          routes.push(`/help/${item.name}/`);
-        }
-      }
+    const appDir = path.join(process.cwd(), "src/app");
+    if (fs.existsSync(appDir)) {
+      routes.push(...getRoutes(appDir));
     }
-  } catch (e) {
-    console.error("Error generating dynamic sitemap routes:", e);
+  } catch (error) {
+    console.error("Error auto-discovering sitemap routes:", error);
+    // Fallback to basic routes if something goes wrong
+    routes.push("/about/", "/pricing/", "/contact/"); 
   }
 
   // Deduplicate routes
