@@ -10,6 +10,7 @@ import FeaturesSection from "./features-section";
 import SecuritySection from "./security-section";
 import OutcomesSection from "./outcomes-section";
 import TestimonialSection from "./testimonial-section";
+import FaqSection from "./faq-section";
 
 // Advancelytics — Onboarding AI Bot (Full Page)
 // ✅ Animated "Proactive Brain" + synced list
@@ -104,7 +105,7 @@ function AnimatedBrain() {
   useEffect(() => {
     const id = setInterval(
       () => setIdx((n) => (n + 1) % brainItems.length),
-      2600
+      2600,
     );
     return () => clearInterval(id);
   }, []);
@@ -230,11 +231,11 @@ function useSEO() {
     };
     ensure(
       "description",
-      "AI onboarding software for SaaS: conversational setup guidance, real-time validation, adaptive paths, and faster activation."
+      "AI onboarding software for SaaS: conversational setup guidance, real-time validation, adaptive paths, and faster activation.",
     );
     ensure(
       "keywords",
-      "AI onboarding software, SaaS activation automation, guided setup assistant, onboarding automation, AI setup guide, SaaS activation bot"
+      "AI onboarding software, SaaS activation automation, guided setup assistant, onboarding automation, AI setup guide, SaaS activation bot",
     );
   }, []);
 }
@@ -276,7 +277,7 @@ export default function OnboardingAIBotPage() {
 
   // Close menu then smooth-scroll to target anchors for reliable navigation
   const handleMobileNavClick = (
-    e: React.MouseEvent<HTMLAnchorElement, MouseEvent>
+    e: React.MouseEvent<HTMLAnchorElement, MouseEvent>,
   ) => {
     const href = (e.currentTarget.getAttribute("href") || "").trim();
     if (href.startsWith("#")) {
@@ -316,7 +317,7 @@ export default function OnboardingAIBotPage() {
             e.target.classList.add("opacity-100", "translate-y-0");
         });
       },
-      { threshold: 0.12 }
+      { threshold: 0.12 },
     );
     cards.forEach((c) => obs.observe(c));
     return () => obs.disconnect();
@@ -333,31 +334,31 @@ export default function OnboardingAIBotPage() {
     try {
       console.assert(
         typeof BrainList === "function",
-        "BrainList should be defined"
+        "BrainList should be defined",
       );
       console.assert(
         typeof AnimatedBrain === "function",
-        "AnimatedBrain should be defined"
+        "AnimatedBrain should be defined",
       );
       console.assert(
         Array.isArray(brainItems) && brainItems.length === 4,
-        "brainItems should have 4 entries"
+        "brainItems should have 4 entries",
       );
       const metaDesc = document.querySelector('meta[name="description"]');
       const metaKeys = document.querySelector('meta[name="keywords"]');
       console.assert(
         metaDesc?.getAttribute("content")?.length ?? 0 > 0,
-        "Meta description should be set"
+        "Meta description should be set",
       );
       console.assert(
         metaKeys && /onboarding/.test(metaKeys.getAttribute("content") || ""),
-        "Meta keywords should include 'onboarding'"
+        "Meta keywords should include 'onboarding'",
       );
       if (containerRef.current) {
         const styles = getComputedStyle(containerRef.current);
         console.assert(
           styles.getPropertyValue("--brand-primary").trim().length > 0,
-          "CSS var --brand-primary should be applied on container"
+          "CSS var --brand-primary should be applied on container",
         );
       }
     } catch (err) {
@@ -625,6 +626,9 @@ export default function OnboardingAIBotPage() {
 
       {/* OUTCOMES */}
       <OutcomesSection />
+
+      {/* FAQ */}
+      <FaqSection />
 
       {/* TESTIMONIALS */}
       <TestimonialSection />

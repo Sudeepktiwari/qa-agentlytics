@@ -381,11 +381,11 @@ const AdminPanel: React.FC = () => {
           marginBottom: 24,
         }}
       >
-        <h3>Submit Sitemap</h3>
+        <h3>Submit Sitemap or Website URL</h3>
         <form onSubmit={handleSitemapSubmit} style={{ marginBottom: 8 }}>
           <input
             type="url"
-            placeholder="https://example.com/sitemap.xml"
+            placeholder="https://example.com or https://example.com/sitemap.xml"
             value={sitemapUrl}
             onChange={(e) => setSitemapUrl(e.target.value)}
             required
@@ -393,7 +393,7 @@ const AdminPanel: React.FC = () => {
             disabled={sitemapLoading}
           />
           <button type="submit" disabled={sitemapLoading || !sitemapUrl}>
-            {sitemapLoading ? "Crawling..." : "Crawl Sitemap"}
+            {sitemapLoading ? "Crawling..." : "Crawl"}
           </button>
         </form>
         {sitemapStatus && (

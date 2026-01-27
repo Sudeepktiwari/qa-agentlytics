@@ -1576,7 +1576,7 @@ export default function KnowledgeBasePage() {
             {[
               {
                 q: "Can we import existing docs?",
-                a: "Yes. Upload markdown, HTML or PDFs, or sync from tools like Notion, Confluence or Google Drive.",
+                a: "Yes. Point us to your website URL or sitemap, upload markdown/PDFs, or sync from tools like Notion, Confluence or Google Drive.",
               },
               {
                 q: "Does it work with the Proactive Agent?",

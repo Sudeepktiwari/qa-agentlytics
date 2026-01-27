@@ -137,7 +137,7 @@ const ContentCrawlingSection: React.FC<ContentCrawlingSectionProps> = ({
                     </div>
                     <input
                       type="url"
-                      placeholder="https://example.com/sitemap.xml"
+                      placeholder="https://example.com or https://example.com/sitemap.xml"
                       value={sitemapUrl}
                       onChange={(e) => onSitemapUrlChange(e.target.value)}
                       required
@@ -162,8 +162,8 @@ const ContentCrawlingSection: React.FC<ContentCrawlingSectionProps> = ({
                   Upload not available yet
                 </h4>
                 <p className="text-slate-500 text-sm">
-                  We are rolling out file uploads soon. Please use Sitemap for
-                  now.
+                  We are rolling out file uploads soon. Please use Sitemap or
+                  Website URL for now.
                 </p>
               </div>
             )}
@@ -253,8 +253,8 @@ const ContentCrawlingSection: React.FC<ContentCrawlingSectionProps> = ({
                   {sitemapLoading
                     ? "Our AI is reading and indexing your content..."
                     : isSuccess
-                    ? "Your chatbot has been updated with the latest knowledge."
-                    : "Something went wrong. Check the logs below."}
+                      ? "Your chatbot has been updated with the latest knowledge."
+                      : "Something went wrong. Check the logs below."}
                 </p>
               </div>
 
@@ -270,7 +270,7 @@ const ContentCrawlingSection: React.FC<ContentCrawlingSectionProps> = ({
                       {Math.round(
                         (totalProcessed /
                           (totalProcessed + totalRemaining || 1)) *
-                          100
+                          100,
                       )}
                       %
                     </span>
@@ -281,15 +281,15 @@ const ContentCrawlingSection: React.FC<ContentCrawlingSectionProps> = ({
                         isError
                           ? "bg-red-500"
                           : isSuccess
-                          ? "bg-emerald-500"
-                          : "bg-blue-600"
+                            ? "bg-emerald-500"
+                            : "bg-blue-600"
                       }`}
                       style={{
                         width: `${Math.max(
                           5,
                           (totalProcessed /
                             (totalProcessed + totalRemaining || 1)) *
-                            100
+                            100,
                         )}%`,
                       }}
                     >

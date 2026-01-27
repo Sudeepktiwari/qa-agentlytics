@@ -208,7 +208,7 @@ function DocsToDoneIllustration() {
   const steps: StepData[] = [
     {
       title: "Upload or connect your docs",
-      subtitle: "Paste a URL or drop files — PDF, Markdown, OpenAPI, Postman.",
+      subtitle: "Paste a website URL or sitemap, or drop files — PDF, Markdown, OpenAPI, Postman.",
       bullets: [
         "Understands auth & environments",
         "Reads prerequisites & rate limits",
