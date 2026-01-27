@@ -63,6 +63,13 @@ const Chatbot: React.FC<ChatbotProps> = ({
 }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
+  const [messageType, setMessageType] = useState<"question" | "data">(
+    "question",
+  );
+  const [editingMessageIndex, setEditingMessageIndex] = useState<number | null>(
+    null,
+  );
+  const [editInput, setEditInput] = useState("");
   const [loading, setLoading] = useState(false);
   const followupTimer = useRef<NodeJS.Timeout | null>(null);
   const typingStopTimer = useRef<NodeJS.Timeout | null>(null);
@@ -1270,6 +1277,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
           ).length,
           userInactiveForMs: Date.now() - lastUserAction,
           ...(adminId ? { adminId } : {}),
+          messageType,
         }),
       });
 
@@ -2026,12 +2034,160 @@ const Chatbot: React.FC<ChatbotProps> = ({
                     </div>
                   )}
               </>
+            ) : editingMessageIndex === i ? (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (editInput.trim()) {
+                    sendMessage(editInput);
+                    setEditingMessageIndex(null);
+                    setEditInput("");
+                  }
+                }}
+                style={{ display: "inline-block", width: "100%" }}
+              >
+                <input
+                  type="text"
+                  value={editInput}
+                  onChange={(e) => setEditInput(e.target.value)}
+                  autoFocus
+                  style={{
+                    width: "100%",
+                    padding: "4px",
+                    borderRadius: "4px",
+                    border: "1px solid #ccc",
+                  }}
+                />
+                <div style={{ marginTop: 4, fontSize: 11 }}>
+                  Press Enter to send correction
+                  <button
+                    type="button"
+                    onClick={() => setEditingMessageIndex(null)}
+                    style={{
+                      marginLeft: 8,
+                      background: "none",
+                      border: "none",
+                      color: "#666",
+                      cursor: "pointer",
+                      textDecoration: "underline",
+                    }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
             ) : (
-              <span>{msg.content}</span>
+              <div
+                style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
+              >
+                <span>{msg.content}</span>
+                <button
+                  onClick={() => {
+                    setEditingMessageIndex(i);
+                    setEditInput(msg.content);
+                  }}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    fontSize: "14px",
+                    padding: 0,
+                    opacity: 0.6,
+                  }}
+                  title="Edit this message"
+                >
+                  ✏️
+                </button>
+              </div>
             )}
           </div>
         ))}
       </div>
+      <div style={{ marginBottom: 12 }}>
+        <div
+          style={{
+            display: "flex",
+            gap: 8,
+            marginBottom: 8,
+            fontSize: 12,
+            fontWeight: 500,
+          }}
+        >
+          <label
+            style={{
+              display: "flex",
+              alignItems: "center",
+              cursor: "pointer",
+              color: messageType === "question" ? "#0070f3" : "#666",
+            }}
+          >
+            <input
+              type="radio"
+              name="messageType"
+              value="question"
+              checked={messageType === "question"}
+              onChange={() => setMessageType("question")}
+              style={{ marginRight: 4 }}
+            />
+            Ask a Question
+          </label>
+          <label
+            style={{
+              display: "flex",
+              alignItems: "center",
+              cursor: "pointer",
+              color: messageType === "data" ? "#0070f3" : "#666",
+            }}
+          >
+            <input
+              type="radio"
+              name="messageType"
+              value="data"
+              checked={messageType === "data"}
+              onChange={() => setMessageType("data")}
+              style={{ marginRight: 4 }}
+            />
+            Provide Answer/Data
+          </label>
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <input
+            type="text"
+            value={input}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
+            placeholder={
+              messageType === "question"
+                ? "Type your question..."
+                : "Type your answer..."
+            }
+            style={{
+              flex: 1,
+              padding: "8px 12px",
+              borderRadius: 4,
+              border: "1px solid #ccc",
+              fontSize: 14,
+            }}
+          />
+          <button
+            onClick={() => sendMessage(input)}
+            disabled={loading || !input.trim()}
+            style={{
+              padding: "8px 16px",
+              backgroundColor: loading ? "#ccc" : "#0070f3",
+              color: "#fff",
+              border: "none",
+              borderRadius: 4,
+              cursor: loading ? "not-allowed" : "pointer",
+              fontSize: 14,
+              fontWeight: 600,
+            }}
+          >
+            Send
+          </button>
+        </div>
+      </div>
+
       <button
         style={{
           backgroundColor: "#dc3545",

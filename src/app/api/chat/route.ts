@@ -3604,6 +3604,7 @@ export async function POST(req: NextRequest) {
     bookingTime = null,
     confirmationNumber = null,
     leadStatus = null,
+    messageType,
   } = body;
 
   // Add request ID for debugging

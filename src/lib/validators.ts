@@ -57,6 +57,7 @@ export const ChatBodySchema = z
     sessionId: z.string().min(1).max(128).optional(),
     pageUrl: z.string().url().max(2048).optional(),
     adminId: z.string().min(1).max(128).optional(),
+    messageType: z.enum(["question", "data"]).optional(),
     followup: z.union([z.boolean(), z.number().int().min(0).max(5)]).optional(),
     proactive: z.boolean().optional(),
   })
