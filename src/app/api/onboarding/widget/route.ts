@@ -74,6 +74,43 @@ export async function GET(request: Request) {
   function addBubble(role, text) { var row = document.createElement('div'); row.style.cssText = 'display:flex;margin-bottom:10px;'; var bubble = document.createElement('div'); bubble.textContent = text; if (role === 'user') { row.style.justifyContent = 'flex-end'; bubble.style.cssText = 'max-width:70%;background:' + primaryColor + ';color:#fff;padding:10px 12px;border-radius:14px 14px 2px 14px;'; } else { row.style.justifyContent = 'flex-start'; bubble.style.cssText = 'max-width:70%;background:#fff;color:#374151;padding:10px 12px;border-radius:14px 14px 14px 2px;border:1px solid #e5e7eb;'; } row.appendChild(bubble); messages.appendChild(row); messages.scrollTop = messages.scrollHeight; }
   function addQuestionBubble(question, reason) { var row = document.createElement('div'); row.style.cssText = 'display:flex;margin-bottom:10px;'; var bubble = document.createElement('div'); bubble.style.cssText = 'max-width:70%;background:#fff;color:#374151;padding:10px 12px;border-radius:14px 14px 14px 2px;border:1px solid #e5e7eb;display:flex;flex-direction:column;gap:4px;'; var q = document.createElement('div'); q.textContent = question; q.style.cssText = 'font-size:14px;color:#111827;'; var r = document.createElement('div'); r.textContent = reason; r.style.cssText = 'font-size:12px;color:#6b7280;'; bubble.appendChild(q); if (reason && String(reason).trim().length > 0) bubble.appendChild(r); row.style.justifyContent = 'flex-start'; row.appendChild(bubble); messages.appendChild(row); messages.scrollTop = messages.scrollHeight; }
 
+  var typingBubble = null;
+  function showTyping() {
+    if (typingBubble) return;
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;margin-bottom:10px;justify-content:flex-start;';
+    var bubble = document.createElement('div');
+    bubble.style.cssText = 'background:#fff;color:#374151;padding:10px 12px;border-radius:14px 14px 14px 2px;border:1px solid #e5e7eb;display:flex;gap:4px;align-items:center;min-width:40px;justify-content:center;';
+    
+    for (var i = 0; i < 3; i++) {
+        var dot = document.createElement('div');
+        dot.style.cssText = 'width:6px;height:6px;background:#9ca3af;border-radius:50%;animation:typing 1.4s infinite ease-in-out both;';
+        if (i === 1) dot.style.animationDelay = '0.2s';
+        if (i === 2) dot.style.animationDelay = '0.4s';
+        bubble.appendChild(dot);
+    }
+    
+    row.appendChild(bubble);
+    messages.appendChild(row);
+    messages.scrollTop = messages.scrollHeight;
+    typingBubble = row;
+    
+    if (!document.getElementById('typing-style')) {
+        var style = document.createElement('style');
+        style.id = 'typing-style';
+        style.innerHTML = '@keyframes typing { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }';
+        document.head.appendChild(style);
+    }
+  }
+
+  function hideTyping() {
+    if (typingBubble && typingBubble.parentNode) {
+        typingBubble.parentNode.removeChild(typingBubble);
+    }
+    typingBubble = null;
+  }
+
+
   function renderRegistrationIntro() {
     messages.innerHTML = '';
     clearActions();
@@ -337,9 +374,11 @@ export async function GET(request: Request) {
      );
 
     if (isQuestion) {
+       showTyping();
        fetch(API_BASE + '/api/onboarding/chat', { method:'POST', headers:{ 'Content-Type': 'application/json', 'x-api-key': apiKey }, body: JSON.stringify({ action:'answer_question', payload:{ question: text } }) })
        .then(function(r){ return r.json(); })
        .then(function(d){
+           hideTyping();
            if (d.success && d.answer && d.answer.toLowerCase().indexOf("don't have enough information") === -1) {
                addBubble('bot', d.answer);
            } else {
@@ -360,6 +399,7 @@ export async function GET(request: Request) {
            }
        })
        .catch(function(){ 
+           hideTyping();
            addBubble('bot', "Sorry, I encountered an error processing your question.");
            if (state.step === 'setup_collect') { askNextSetupField(); }
            else if (state.step === 'additional_step_collect') { askNextAdditionalField(); }
