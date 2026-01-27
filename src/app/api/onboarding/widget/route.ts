@@ -72,6 +72,7 @@ export async function GET(request: Request) {
   function clearActions() { while (actions.firstChild) actions.removeChild(actions.firstChild); }
   function addAction(label, onClick) { var b = document.createElement('button'); b.textContent = label; b.style.cssText = 'padding:8px 12px;border:1px solid #e5e7eb;border-radius:999px;background:#fff;color:#374151;font-weight:600;'; b.onclick = onClick; actions.appendChild(b); return b; }
   function addBubble(role, text) { var row = document.createElement('div'); row.style.cssText = 'display:flex;margin-bottom:10px;'; var bubble = document.createElement('div'); bubble.textContent = text; if (role === 'user') { row.style.justifyContent = 'flex-end'; bubble.style.cssText = 'max-width:70%;background:' + primaryColor + ';color:#fff;padding:10px 12px;border-radius:14px 14px 2px 14px;'; } else { row.style.justifyContent = 'flex-start'; bubble.style.cssText = 'max-width:70%;background:#fff;color:#374151;padding:10px 12px;border-radius:14px 14px 14px 2px;border:1px solid #e5e7eb;'; } row.appendChild(bubble); messages.appendChild(row); messages.scrollTop = messages.scrollHeight; }
+  function addQuestionBubble(question, reason) { var row = document.createElement('div'); row.style.cssText = 'display:flex;margin-bottom:10px;'; var bubble = document.createElement('div'); bubble.style.cssText = 'max-width:70%;background:#fff;color:#374151;padding:10px 12px;border-radius:14px 14px 14px 2px;border:1px solid #e5e7eb;display:flex;flex-direction:column;gap:4px;'; var q = document.createElement('div'); q.textContent = question; q.style.cssText = 'font-size:14px;color:#111827;'; var r = document.createElement('div'); r.textContent = reason; r.style.cssText = 'font-size:12px;color:#6b7280;'; bubble.appendChild(q); if (reason && String(reason).trim().length > 0) bubble.appendChild(r); row.style.justifyContent = 'flex-start'; row.appendChild(bubble); messages.appendChild(row); messages.scrollTop = messages.scrollHeight; }
 
   function renderRegistrationIntro() {
     messages.innerHTML = '';
@@ -227,7 +228,9 @@ export async function GET(request: Request) {
       renderAdditionalConfirm();
       return;
     }
-    addBubble('bot', generateQuestion(pending));
+    var q = generateQuestion(pending);
+    var r = generateReason(pending);
+    addQuestionBubble(q, r);
     clearActions();
   }
 
@@ -271,7 +274,6 @@ export async function GET(request: Request) {
   function parseRegFromText(t) { var out = { name: state.reg.name || '', email: state.reg.email || '', password: state.reg.password || '' }; var lower = t.toLowerCase(); function extractAfter(label) { var idx = lower.indexOf(label); if (idx < 0) return null; var rest = t.slice(idx + label.length); var j = 0; while (j < rest.length && (rest[j] === ':' || rest[j] === '-' || rest[j] === ' ')) j++; rest = rest.slice(j); var endComma = rest.indexOf(','); var endNl = rest.indexOf('\\\\n'); var end = -1; if (endComma >= 0 && endNl >= 0) end = Math.min(endComma, endNl); else end = endComma >= 0 ? endComma : endNl; var value = end >= 0 ? rest.slice(0, end) : rest; return value.trim(); } function extractEmail(txt) { var best = null; var token = ''; for (var i = 0; i < txt.length; i++) { var ch = txt[i]; if (ch === ' ' || ch === ',' || ch === '\\\\n') { if (token) { if (token.indexOf('@') >= 0 && token.indexOf('.') >= 0) { best = token; } token = ''; } } else { token += ch; } } if (!best && token && token.indexOf('@') >= 0 && token.indexOf('.') >= 0) best = token; return best ? best.trim() : null; } var nm = extractAfter('name'); if (nm) out.name = nm; var em = extractEmail(t); if (em) out.email = em; var pw = extractAfter('password'); if (pw) out.password = pw; if (!out.name && lower.indexOf('email') === -1 && lower.indexOf('password') === -1) { out.name = t.trim(); } return out; }
   
   function generateQuestion(field) {
-    if (field.description && field.description.trim().length > 0) return field.description;
     var label = field.label || field.key;
     var l = label.toLowerCase();
     if (l.includes('email') && l.length < 10) return "What is your email address?";
@@ -286,12 +288,24 @@ export async function GET(request: Request) {
       "What is your " + label + "?",
       "Could you provide your " + label + "?"
     ];
-    // Simple pseudo-random selection based on label length to remain deterministic per field but varied across fields
     var idx = label.length % prompts.length;
     return prompts[idx];
   }
 
-  function askNextSetupField() { var pending = setupFieldsCache.find(function(f){ return !state.init[f.key]; }); if (!pending) { renderInitialConfirm(setupFieldsCache); return; } addBubble('bot', generateQuestion(pending)); clearActions(); }
+  function generateReason(field) {
+    if (field.description && field.description.trim().length > 0) return field.description;
+    var label = field.label || field.key;
+    var l = label.toLowerCase();
+    if (l.includes('email')) return "We will use this email to identify the user and send confirmations.";
+    if (l.includes('name')) return "This helps personalise the account and communications.";
+    if (l.includes('phone') || l.includes('mobile')) return "This lets us contact the user or send SMS notifications if needed.";
+    if (l.includes('company') || l.includes('organization')) return "This ties the account and data back to the right organisation.";
+    if (l.includes('api key') || l.includes('apikey')) return "The API key is needed so we can call your API securely on your behalf.";
+    if (l.includes('token')) return "The token is required to authenticate requests to your API.";
+    return "This information is required so your onboarding flow and API integration work correctly.";
+  }
+
+  function askNextSetupField() { var pending = setupFieldsCache.find(function(f){ return !state.init[f.key]; }); if (!pending) { renderInitialConfirm(setupFieldsCache); return; } var q = generateQuestion(pending); var r = generateReason(pending); addQuestionBubble(q, r); clearActions(); }
   
   // Add a persistent option to skip initial setup and proceed directly to additional steps
   // This ensures additional APIs can work even if initial steps are not completed.
