@@ -55,19 +55,26 @@ export async function addChunks(
 export async function querySimilarChunks(
   questionEmbedding: number[],
   topK = 5,
-  adminId?: string
+  adminId?: string,
+  searchMode: "user" | "global" = "user"
 ) {
   // Enforce admin-level isolation: default to "default-admin" if none provided
-  const effectiveAdminId = adminId && adminId.trim().length > 0 ? adminId : "default-admin";
+  const effectiveAdminId =
+    adminId && adminId.trim().length > 0 ? adminId : "default-admin";
+
+  const filter =
+    searchMode === "global" ? {} : { adminId: effectiveAdminId };
 
   const result = await index.query({
     vector: questionEmbedding,
     topK,
     includeMetadata: true,
-    filter: { adminId: effectiveAdminId }, // always restrict search to the resolved admin
+    filter, // always restrict search to the resolved admin unless global mode
   });
 
-  type PineconeMatch = { metadata?: { adminId?: string; chunk?: string; filename?: string } };
+  type PineconeMatch = {
+    metadata?: { adminId?: string; chunk?: string; filename?: string };
+  };
   const matches: PineconeMatch[] = result.matches || [];
   return matches.map((m: PineconeMatch) => ({
     text: m.metadata?.chunk || "",

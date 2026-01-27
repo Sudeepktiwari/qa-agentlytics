@@ -2311,7 +2311,8 @@ export async function answerQuestion(
       model: "text-embedding-3-small",
     });
     const embedding = embedResp.data[0].embedding as number[];
-    const similar = await querySimilarChunks(embedding, 3, adminId);
+    // Search globally to allow finding answers from system help docs or other public knowledge
+    const similar = await querySimilarChunks(embedding, 5, adminId, "global");
 
     const systemContext = `
 System Knowledge (Common Onboarding Terms):
