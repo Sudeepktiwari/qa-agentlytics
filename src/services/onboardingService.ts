@@ -106,7 +106,7 @@ function resolveInitialSetupUrl(settings: OnboardingSettings): string | null {
 
 function applyRegistrationFieldDefaults(
   payload: Record<string, any>,
-  settings: OnboardingSettings
+  settings: OnboardingSettings,
 ): Record<string, any> {
   const fields = (settings.registrationFields || []) as OnboardingField[];
   if (!fields || fields.length === 0) {
@@ -135,7 +135,7 @@ function applyRegistrationFieldDefaults(
 
 function applyInitialFieldDefaults(
   payload: Record<string, any>,
-  settings: OnboardingSettings
+  settings: OnboardingSettings,
 ): Record<string, any> {
   const fields = (settings.initialFields || []) as OnboardingField[];
   if (!fields || fields.length === 0) {
@@ -185,7 +185,7 @@ function extractDocKeys(chunks: string[]): string[] {
 }
 
 function inferContentType(
-  chunks: string[]
+  chunks: string[],
 ): "application/json" | "application/x-www-form-urlencoded" {
   const hint = chunks.join("\n").toLowerCase();
   if (
@@ -208,27 +208,27 @@ function buildFieldMappings(docKeys: string[]): Record<string, string> {
   const mappings: Record<string, string> = {};
   const emailKey = pick(
     ["email", "user_email", "email_address", "mail"],
-    "email"
+    "email",
   );
   const firstNameKey = pick(
     ["first_name", "firstName", "given_name", "fname"],
-    "firstName"
+    "firstName",
   );
   const lastNameKey = pick(
     ["last_name", "lastName", "surname", "lname"],
-    "lastName"
+    "lastName",
   );
   const phoneKey = pick(
     ["phone", "phone_number", "mobile", "contact_number"],
-    "phone"
+    "phone",
   );
   const companyKey = pick(
     ["company", "organization", "org", "business"],
-    "company"
+    "company",
   );
   const consentKey = pick(
     ["consent", "gdpr_consent", "agree_terms", "accept"],
-    "consent"
+    "consent",
   );
 
   mappings["email"] = emailKey;
@@ -274,7 +274,7 @@ async function inferRequestFormatFromDocs(adminId: string, docsUrl?: string) {
 
 function applyFieldMappings(
   data: Record<string, any>,
-  mappings: Record<string, string>
+  mappings: Record<string, string>,
 ) {
   const out: Record<string, any> = {};
   for (const [key, value] of Object.entries(data)) {
@@ -308,7 +308,7 @@ export const onboardingService = {
   async executeAdditionalStep(
     stepId: string,
     data: Record<string, any>,
-    adminId: string
+    adminId: string,
   ): Promise<{
     success: boolean;
     error?: string;
@@ -319,7 +319,7 @@ export const onboardingService = {
     const settings = await getAdminSettings(adminId);
     const onboarding = settings.onboarding;
     const step = (onboarding?.additionalSteps || []).find(
-      (s) => s.id === stepId
+      (s) => s.id === stepId,
     );
 
     if (!step) {
@@ -390,12 +390,12 @@ export const onboardingService = {
 
     // Filter payload to only include fields defined in the step (security/cleanliness)
     const allowedKeys = new Set(
-      (step.fields || []).map((f: any) => String(f.key || ""))
+      (step.fields || []).map((f: any) => String(f.key || "")),
     );
     // Also allow keys found in cURL body if any
     if ((step as any).parsed?.bodyKeys) {
       ((step as any).parsed.bodyKeys || []).forEach((k: any) =>
-        allowedKeys.add(k)
+        allowedKeys.add(k),
       );
     }
 
@@ -409,7 +409,7 @@ export const onboardingService = {
         const kl = k.toLowerCase();
         const isSensitive = redactKeys.some((rk) => kl.includes(rk));
         return [k, isSensitive ? "***" : v];
-      })
+      }),
     );
 
     console.log(
@@ -418,7 +418,7 @@ export const onboardingService = {
         url,
         method,
         payload: safePayloadForLog,
-      }
+      },
     );
 
     try {
@@ -473,7 +473,7 @@ export const onboardingService = {
 
   async authenticate(
     data: Record<string, any>,
-    adminId: string
+    adminId: string,
   ): Promise<AuthResult> {
     const settings = await getAdminSettings(adminId);
     const onboarding = settings.onboarding || { enabled: false };
@@ -514,7 +514,7 @@ export const onboardingService = {
           {
             adminId,
             curlSnippet: (authCurl || "").slice(0, 200),
-          }
+          },
         );
         return {
           success: false,
@@ -535,7 +535,7 @@ export const onboardingService = {
           const kl = k.toLowerCase();
           const isSensitive = redactKeys.some((rk) => kl.includes(rk));
           return [k, isSensitive ? "***" : v];
-        })
+        }),
       );
 
       const payloadUsedLog = Object.fromEntries(
@@ -543,7 +543,7 @@ export const onboardingService = {
           const lk = String(k || "").toLowerCase();
           const isSensitive = redactKeys.some((rk) => lk.includes(rk));
           return [k, isSensitive ? "***" : (data as any)[k]];
-        })
+        }),
       );
       const requestDebug = {
         url,
@@ -556,7 +556,7 @@ export const onboardingService = {
       };
       console.log(
         "[Onboarding] Calling external auth API via cURL:",
-        requestDebug
+        requestDebug,
       );
 
       const res = await fetch(url as string, { method, headers, body });
@@ -645,17 +645,17 @@ export const onboardingService = {
             (parsedResp as any)?.user?.access_token,
           ];
           const found = candidates.find(
-            (t: any) => typeof t === "string" && t.length > 0
+            (t: any) => typeof t === "string" && t.length > 0,
           );
           if (found) {
             const lowerKeys = Object.keys(parsedResp as any).map((k) =>
-              k.toLowerCase()
+              k.toLowerCase(),
             );
             const lowerDataKeys = Object.keys(
-              ((parsedResp as any)?.data || {}) as any
+              ((parsedResp as any)?.data || {}) as any,
             ).map((k) => k.toLowerCase());
             const lowerUserKeys = Object.keys(
-              ((parsedResp as any)?.user || {}) as any
+              ((parsedResp as any)?.user || {}) as any,
             ).map((k) => k.toLowerCase());
             const isApiKey =
               lowerKeys.includes("apikey") ||
@@ -707,7 +707,7 @@ export const onboardingService = {
             adminId,
             url,
             responseBodyType: typeof parsedResp,
-          }
+          },
         );
       }
 
@@ -744,7 +744,7 @@ export const onboardingService = {
               const isSensitive = redactKeys.some((rk) => lk.includes(rk));
               const v = flat[k];
               return [k, isSensitive ? "***" : v];
-            })
+            }),
           );
           return { keys, preview: redacted };
         }
@@ -780,7 +780,7 @@ export const onboardingService = {
   },
   async initialSetup(
     data: Record<string, any>,
-    adminId: string
+    adminId: string,
   ): Promise<RegistrationResult> {
     const settings = await getAdminSettings(adminId);
     const onboarding = settings.onboarding || { enabled: false };
@@ -813,7 +813,7 @@ export const onboardingService = {
 
     if (hasCurl) {
       const parsed = parseCurlRegistrationSpec(
-        onboarding.initialSetupCurlCommand as string
+        onboarding.initialSetupCurlCommand as string,
       );
       url = parsed.url;
       method = (parsed.method as any) || method;
@@ -851,7 +851,9 @@ export const onboardingService = {
         if (Array.isArray(setupFields)) {
           if (tokenFromFlow) {
             const tokenField = setupFields.find((f: any) =>
-              /^(token|access[_-]?token|authToken)$/i.test(String(f?.key || ""))
+              /^(token|access[_-]?token|authToken)$/i.test(
+                String(f?.key || ""),
+              ),
             );
             if (tokenField?.key && !payload[tokenField.key]) {
               payload[tokenField.key] = tokenFromFlow;
@@ -859,7 +861,7 @@ export const onboardingService = {
           }
           if (apiKeyFromFlow) {
             const keyField = setupFields.find((f: any) =>
-              /^(api[_-]?key|apiKey|key)$/i.test(String(f?.key || ""))
+              /^(api[_-]?key|apiKey|key)$/i.test(String(f?.key || "")),
             );
             if (keyField?.key && !payload[keyField.key]) {
               payload[keyField.key] = apiKeyFromFlow;
@@ -902,9 +904,9 @@ export const onboardingService = {
             adminId,
             curlSnippet: (onboarding.initialSetupCurlCommand || "").slice(
               0,
-              200
+              200,
             ),
-          }
+          },
         );
         return {
           success: false,
@@ -918,7 +920,7 @@ export const onboardingService = {
         data[onboarding.idempotencyKeyField]
       ) {
         headers["Idempotency-Key"] = String(
-          data[onboarding.idempotencyKeyField]
+          data[onboarding.idempotencyKeyField],
         );
       }
 
@@ -929,7 +931,7 @@ export const onboardingService = {
           const kl = k.toLowerCase();
           const isSensitive = redactKeys.some((rk) => kl.includes(rk));
           return [k, isSensitive ? "***" : v];
-        })
+        }),
       );
 
       try {
@@ -942,7 +944,7 @@ export const onboardingService = {
             headerKeys: Object.keys(headers),
             headers: redactHeadersForLog(headers),
             payloadKeys: keysUsed,
-          }
+          },
         );
 
         let res = await fetch(url as string, { method, headers, body });
@@ -982,10 +984,10 @@ export const onboardingService = {
             try {
               const altHeaders = { ...headers };
               const hkAuth = String(
-                (onboarding as any).authHeaderKey || "Authorization"
+                (onboarding as any).authHeaderKey || "Authorization",
               );
               const hkApi = String(
-                (onboarding as any).apiKeyHeaderKey || "X-API-Key"
+                (onboarding as any).apiKeyHeaderKey || "X-API-Key",
               );
               const tok = String((data as any).__authToken || "")
                 .replace(/^\s*Bearer\s+/i, "")
@@ -1030,7 +1032,7 @@ export const onboardingService = {
                 {
                   status: res.status,
                   adminId,
-                }
+                },
               );
               return {
                 success: true,
@@ -1091,7 +1093,7 @@ export const onboardingService = {
               const kl = k.toLowerCase();
               const isSensitive = redactKeys.some((rk) => kl.includes(rk));
               return [k, isSensitive ? "***" : v];
-            })
+            }),
           ),
         });
         return {
@@ -1143,7 +1145,7 @@ export const onboardingService = {
       if (Array.isArray(setupFields)) {
         if (tokenFromFlow) {
           const tokenField = setupFields.find((f: any) =>
-            /^(token|access[_-]?token|authToken)$/i.test(String(f?.key || ""))
+            /^(token|access[_-]?token|authToken)$/i.test(String(f?.key || "")),
           );
           if (tokenField?.key && !payload[tokenField.key]) {
             payload[tokenField.key] = tokenFromFlow;
@@ -1151,7 +1153,7 @@ export const onboardingService = {
         }
         if (apiKeyFromFlow) {
           const keyField = setupFields.find((f: any) =>
-            /^(api[_-]?key|apiKey|key)$/i.test(String(f?.key || ""))
+            /^(api[_-]?key|apiKey|key)$/i.test(String(f?.key || "")),
           );
           if (keyField?.key && !payload[keyField.key]) {
             payload[keyField.key] = apiKeyFromFlow;
@@ -1195,7 +1197,7 @@ export const onboardingService = {
       headers["Idempotency-Key"] = String(data[onboarding.idempotencyKeyField]);
     }
     const allowedKeys = new Set(
-      setupFields.map((f: any) => String(f.key || ""))
+      setupFields.map((f: any) => String(f.key || "")),
     );
     const filtered: Record<string, any> = {};
     for (const [k, v] of Object.entries(payload)) {
@@ -1206,7 +1208,7 @@ export const onboardingService = {
         const kl = k.toLowerCase();
         const isSensitive = redactKeys.some((rk) => kl.includes(rk));
         return [k, isSensitive ? "***" : v];
-      })
+      }),
     );
     try {
       const body = JSON.stringify(filtered);
@@ -1246,7 +1248,7 @@ export const onboardingService = {
             const altHeaders = { ...headers };
             const hkAuth = String(onboarding.authHeaderKey || "Authorization");
             const hkApi = String(
-              (onboarding as any).apiKeyHeaderKey || "X-API-Key"
+              (onboarding as any).apiKeyHeaderKey || "X-API-Key",
             );
             const tok = String((data as any).__authToken || "")
               .replace(/^\s*Bearer\s+/i, "")
@@ -1303,7 +1305,7 @@ export const onboardingService = {
   },
   async register(
     data: Record<string, any>,
-    adminId: string
+    adminId: string,
   ): Promise<RegistrationResult> {
     const settings = await getAdminSettings(adminId);
     const onboarding = settings.onboarding || { enabled: false };
@@ -1349,7 +1351,7 @@ export const onboardingService = {
 
     if (hasCurl) {
       const parsed = parseCurlRegistrationSpec(
-        onboarding.curlCommand as string
+        onboarding.curlCommand as string,
       );
       url = parsed.url;
       method = (parsed.method as any) || method;
@@ -1365,7 +1367,7 @@ export const onboardingService = {
           {
             adminId,
             curlSnippet: (onboarding.curlCommand || "").slice(0, 200),
-          }
+          },
         );
         return {
           success: false,
@@ -1379,7 +1381,7 @@ export const onboardingService = {
         data[onboarding.idempotencyKeyField]
       ) {
         headers["Idempotency-Key"] = String(
-          data[onboarding.idempotencyKeyField]
+          data[onboarding.idempotencyKeyField],
         );
       }
 
@@ -1390,7 +1392,7 @@ export const onboardingService = {
           const kl = k.toLowerCase();
           const isSensitive = redactKeys.some((rk) => kl.includes(rk));
           return [k, isSensitive ? "***" : v];
-        })
+        }),
       );
 
       try {
@@ -1403,7 +1405,7 @@ export const onboardingService = {
             headerKeys: Object.keys(headers),
             headers: redactHeadersForLog(headers),
             payloadKeys: keysUsed,
-          }
+          },
         );
 
         const res = await fetch(url as string, {
@@ -1478,7 +1480,7 @@ export const onboardingService = {
               const kl = k.toLowerCase();
               const isSensitive = redactKeys.some((rk) => kl.includes(rk));
               return [k, isSensitive ? "***" : v];
-            })
+            }),
           ),
         });
         return {
@@ -1533,7 +1535,7 @@ export const onboardingService = {
         const kl = k.toLowerCase();
         const isSensitive = redactKeys.some((rk) => kl.includes(rk));
         return [k, isSensitive ? "***" : v];
-      })
+      }),
     );
 
     try {
@@ -1548,10 +1550,13 @@ export const onboardingService = {
       const body =
         contentType === "application/x-www-form-urlencoded"
           ? new URLSearchParams(
-              Object.entries(payload).reduce((acc, [k, v]) => {
-                acc[k] = typeof v === "string" ? v : JSON.stringify(v);
-                return acc;
-              }, {} as Record<string, string>)
+              Object.entries(payload).reduce(
+                (acc, [k, v]) => {
+                  acc[k] = typeof v === "string" ? v : JSON.stringify(v);
+                  return acc;
+                },
+                {} as Record<string, string>,
+              ),
             ).toString()
           : JSON.stringify(payload);
 
@@ -1632,7 +1637,7 @@ export const onboardingService = {
                 {
                   status: res.status,
                   adminId,
-                }
+                },
               );
               return {
                 success: true,
@@ -1679,7 +1684,7 @@ export const onboardingService = {
             const kl = k.toLowerCase();
             const isSensitive = redactKeys.some((rk) => kl.includes(rk));
             return [k, isSensitive ? "***" : v];
-          })
+          }),
         ),
       });
       return {
@@ -1694,7 +1699,7 @@ export const onboardingService = {
 export async function deriveFieldsFromDocsForAdmin(
   adminId: string,
   docsUrl?: string,
-  mode?: "registration" | "auth" | "initial" | string
+  mode?: "registration" | "auth" | "initial" | string,
 ): Promise<OnboardingField[]> {
   let chunks: string[] = [];
   try {
@@ -1713,8 +1718,8 @@ export async function deriveFieldsFromDocsForAdmin(
           mode === "auth"
             ? "login authentication request body required fields and content-type"
             : mode === "initial"
-            ? "initial setup request body required fields including nested keys and headers"
-            : "registration request body required fields and content-type",
+              ? "initial setup request body required fields including nested keys and headers"
+              : "registration request body required fields and content-type",
         ],
         model: "text-embedding-3-small",
       });
@@ -1812,7 +1817,7 @@ export async function deriveSpecFromDocsForAdmin(
   adminId: string,
   docsUrl?: string,
   mode?: "registration" | "auth" | "initial" | string,
-  curlCommand?: string
+  curlCommand?: string,
 ): Promise<{ headers: string[]; body: OnboardingField[]; response: string[] }> {
   let chunks: string[] = [];
   try {
@@ -1913,7 +1918,7 @@ export async function deriveSpecFromDocsForAdmin(
   const headersSet = new Set<string>();
   for (const t of ranked) {
     const colonHeaders = [...t.matchAll(/\b([A-Za-z-]{2,}):\s*[^\n]+/g)].map(
-      (m) => m[1]
+      (m) => m[1],
     );
     for (const h of colonHeaders) headersSet.add(h);
   }
@@ -1935,8 +1940,8 @@ export async function deriveSpecFromDocsForAdmin(
     /email/i.test(String(k))
       ? "email"
       : /phone/i.test(String(k))
-      ? "phone"
-      : "text";
+        ? "phone"
+        : "text";
   const toLabel = (k: string) =>
     String(k)
       .replace(/_/g, " ")
@@ -1961,33 +1966,33 @@ export async function deriveSpecFromDocsForAdmin(
   try {
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const allowedKeys = Array.from(
-      new Set([...bodyFields.map((f) => String(f.key)), ...(curlKeys || [])])
+      new Set([...bodyFields.map((f) => String(f.key)), ...(curlKeys || [])]),
     );
     const allowedHeaders = Array.from(headersSet);
     const system =
       mode === "auth"
         ? `From the documentation chunks provided, extract ONLY the login/authentication request spec in strict JSON: headers[], body[{key,label,required,type}], response[]. Prefer nested dotted keys (e.g., user.apiKey). Use only the given chunks; do not invent fields. Only use keys from ALLOWED_KEYS. Only use headers from ALLOWED_HEADERS. Only use response keys from ALLOWED_RESPONSE_KEYS. ALLOWED_KEYS: ${allowedKeys.join(
-            ","
+            ",",
           )}\nALLOWED_HEADERS: ${allowedHeaders.join(
-            ","
+            ",",
           )}\nALLOWED_RESPONSE_KEYS: ${Array.from(respAllowedSeed).join(",")}`
         : mode === "registration"
-        ? `From the documentation chunks provided, extract ONLY the registration request spec in strict JSON: headers[], body[{key,label,required,type}], response[]. Use only the given chunks; do not invent fields. Only use keys from ALLOWED_KEYS. Only use headers from ALLOWED_HEADERS. Only use response keys from ALLOWED_RESPONSE_KEYS. ALLOWED_KEYS: ${allowedKeys.join(
-            ","
-          )}\nALLOWED_HEADERS: ${allowedHeaders.join(
-            ","
-          )}\nALLOWED_RESPONSE_KEYS: ${Array.from(respAllowedSeed).join(",")}`
-        : mode === "initial"
-        ? `From the documentation chunks provided, extract ONLY the initial setup request spec in strict JSON: headers[], body[{key,label,required,type}], response[]. Prefer nested keys (e.g., crisp.websiteId). Use only the given chunks; do not invent fields. Only use keys from ALLOWED_KEYS. Only use headers from ALLOWED_HEADERS. Only use response keys from ALLOWED_RESPONSE_KEYS. ALLOWED_KEYS: ${allowedKeys.join(
-            ","
-          )}\nALLOWED_HEADERS: ${allowedHeaders.join(
-            ","
-          )}\nALLOWED_RESPONSE_KEYS: ${Array.from(respAllowedSeed).join(",")}`
-        : `From the documentation chunks provided, extract ONLY the request spec for ${mode} in strict JSON: headers[], body[{key,label,required,type}], response[]. Prefer nested keys. Use only the given chunks; do not invent fields. Only use keys from ALLOWED_KEYS. Only use headers from ALLOWED_HEADERS. Only use response keys from ALLOWED_RESPONSE_KEYS. ALLOWED_KEYS: ${allowedKeys.join(
-            ","
-          )}\nALLOWED_HEADERS: ${allowedHeaders.join(
-            ","
-          )}\nALLOWED_RESPONSE_KEYS: ${Array.from(respAllowedSeed).join(",")}`;
+          ? `From the documentation chunks provided, extract ONLY the registration request spec in strict JSON: headers[], body[{key,label,required,type}], response[]. Use only the given chunks; do not invent fields. Only use keys from ALLOWED_KEYS. Only use headers from ALLOWED_HEADERS. Only use response keys from ALLOWED_RESPONSE_KEYS. ALLOWED_KEYS: ${allowedKeys.join(
+              ",",
+            )}\nALLOWED_HEADERS: ${allowedHeaders.join(
+              ",",
+            )}\nALLOWED_RESPONSE_KEYS: ${Array.from(respAllowedSeed).join(",")}`
+          : mode === "initial"
+            ? `From the documentation chunks provided, extract ONLY the initial setup request spec in strict JSON: headers[], body[{key,label,required,type}], response[]. Prefer nested keys (e.g., crisp.websiteId). Use only the given chunks; do not invent fields. Only use keys from ALLOWED_KEYS. Only use headers from ALLOWED_HEADERS. Only use response keys from ALLOWED_RESPONSE_KEYS. ALLOWED_KEYS: ${allowedKeys.join(
+                ",",
+              )}\nALLOWED_HEADERS: ${allowedHeaders.join(
+                ",",
+              )}\nALLOWED_RESPONSE_KEYS: ${Array.from(respAllowedSeed).join(",")}`
+            : `From the documentation chunks provided, extract ONLY the request spec for ${mode} in strict JSON: headers[], body[{key,label,required,type}], response[]. Prefer nested keys. Use only the given chunks; do not invent fields. Only use keys from ALLOWED_KEYS. Only use headers from ALLOWED_HEADERS. Only use response keys from ALLOWED_RESPONSE_KEYS. ALLOWED_KEYS: ${allowedKeys.join(
+                ",",
+              )}\nALLOWED_HEADERS: ${allowedHeaders.join(
+                ",",
+              )}\nALLOWED_RESPONSE_KEYS: ${Array.from(respAllowedSeed).join(",")}`;
     const promptHeader = `Endpoint hint: ${endpointHint}\nDocs URL: ${
       docsUrl || ""
     }\n\nChunks:\n`;
@@ -2041,16 +2046,16 @@ export async function deriveSpecFromDocsForAdmin(
         .map((f) => ({
           key: String(f.key || f.name || "").trim(),
           label: String(
-            f.label || toLabel(String(f.key || f.name || ""))
+            f.label || toLabel(String(f.key || f.name || "")),
           ).trim(),
           required: Boolean(f.required ?? true),
           type: /email|mail/i.test(String(f.type || f.key))
             ? "email"
             : /phone/i.test(String(f.type || f.key))
-            ? "phone"
-            : f.type === "select" || f.type === "checkbox"
-            ? f.type
-            : toType(String(f.key || "")),
+              ? "phone"
+              : f.type === "select" || f.type === "checkbox"
+                ? f.type
+                : toType(String(f.key || "")),
         }))
         .filter((f) => f.key);
       if (llmFields.length > 0) {
@@ -2059,7 +2064,7 @@ export async function deriveSpecFromDocsForAdmin(
           ...(curlKeys || []).map((k) => String(k).toLowerCase()),
         ]);
         const inter = llmFields.filter((f) =>
-          baseSet.has(String(f.key).toLowerCase())
+          baseSet.has(String(f.key).toLowerCase()),
         );
         if (inter.length > 0) {
           bodyFields = inter;
@@ -2073,8 +2078,8 @@ export async function deriveSpecFromDocsForAdmin(
             type: /email/i.test(String(k))
               ? "email"
               : /phone/i.test(String(k))
-              ? "phone"
-              : "text",
+                ? "phone"
+                : "text",
           }));
         }
       }
@@ -2097,7 +2102,7 @@ export async function deriveSpecFromDocsForAdmin(
   const addRespFromText = (t: string) => {
     const hint =
       /(response|responses|returns|example\s*response|200\b|Login\s+successful)/i.test(
-        t
+        t,
       );
     if (!hint) return;
     let pos = 0;
@@ -2176,4 +2181,88 @@ export async function deriveSpecFromDocsForAdmin(
     body: filteredBody,
     response: filteredResp.slice(0, 50),
   };
+}
+
+export async function getReasonFromDocs(
+  adminId: string,
+  fieldKey: string,
+  fieldLabel: string,
+): Promise<string | null> {
+  try {
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const query = `Why is the field "${fieldLabel || fieldKey}" required in the API request?`;
+
+    const embedResp = await openai.embeddings.create({
+      input: [query],
+      model: "text-embedding-3-small",
+    });
+    const embedding = embedResp.data[0].embedding as number[];
+    const similar = await querySimilarChunks(embedding, 3, adminId);
+
+    if (!similar || similar.length === 0) return null;
+
+    const context = similar.map((s) => s.text).join("\n\n");
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a helpful assistant. Explain briefly (one sentence, max 20 words) why the specific field is needed based on the API documentation context. If the context doesn't mention it, return empty string. Do not start with 'The field is needed because...', just state the reason directly like 'Used to identify the user.'",
+        },
+        {
+          role: "user",
+          content: `Context:\n${context}\n\nQuestion: Why is the field "${
+            fieldLabel || fieldKey
+          }" needed?`,
+        },
+      ],
+      max_tokens: 60,
+    });
+
+    const reason = completion.choices[0].message.content?.trim();
+    if (
+      reason &&
+      reason.length > 0 &&
+      !reason.toLowerCase().includes("context doesn't mention")
+    ) {
+      return reason;
+    }
+    return null;
+  } catch (e) {
+    console.error("Error getting reason from docs:", e);
+    return null;
+  }
+}
+
+export async function enrichFieldsWithReasons(
+  adminId: string,
+  fields: OnboardingField[],
+): Promise<OnboardingField[]> {
+  if (!fields || fields.length === 0) return [];
+
+  // Use a map to keep track of results to maintain order
+  const results = new Map<string, OnboardingField>();
+
+  // Run in parallel
+  await Promise.all(
+    fields.map(async (f) => {
+      const newF = { ...f };
+      // Only fetch if description is missing
+      if (!newF.description || newF.description.trim().length === 0) {
+        try {
+          const reason = await getReasonFromDocs(adminId, f.key, f.label);
+          if (reason) {
+            newF.description = reason;
+          }
+        } catch (err) {
+          // Ignore error, keep original field
+        }
+      }
+      results.set(f.key, newF);
+    }),
+  );
+
+  return fields.map((f) => results.get(f.key) || f);
 }

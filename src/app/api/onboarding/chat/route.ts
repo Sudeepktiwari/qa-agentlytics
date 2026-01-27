@@ -4,7 +4,10 @@ import { assertBodyConstraints } from "@/lib/validators";
 import { verifyApiKey } from "@/lib/auth";
 import { createOrUpdateLead } from "@/lib/leads";
 import { getAdminSettings } from "@/lib/adminSettings";
-import { onboardingService } from "@/services/onboardingService";
+import {
+  onboardingService,
+  enrichFieldsWithReasons,
+} from "@/services/onboardingService";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -25,7 +28,7 @@ export async function POST(request: NextRequest) {
     if (!keyInfo?.adminId) {
       return NextResponse.json(
         { success: false, error: "Invalid API key" },
-        { status: 401, headers: corsHeaders }
+        { status: 401, headers: corsHeaders },
       );
     }
 
@@ -36,11 +39,32 @@ export async function POST(request: NextRequest) {
 
     if (action === "get_initial_fields") {
       const settings = await getAdminSettings(adminId);
-      const fields = (settings.onboarding as any)?.initialFields || [];
-      const additionalSteps = settings.onboarding?.additionalSteps || [];
+      let fields = (settings.onboarding as any)?.initialFields || [];
+      let additionalSteps = settings.onboarding?.additionalSteps || [];
+
+      // Enrich fields with reasons from docs
+      try {
+        fields = await enrichFieldsWithReasons(adminId, fields);
+        if (additionalSteps.length > 0) {
+          additionalSteps = await Promise.all(
+            additionalSteps.map(async (step: any) => {
+              if (step.fields && step.fields.length > 0) {
+                return {
+                  ...step,
+                  fields: await enrichFieldsWithReasons(adminId, step.fields),
+                };
+              }
+              return step;
+            }),
+          );
+        }
+      } catch (e) {
+        console.error("Failed to enrich fields with reasons", e);
+      }
+
       return NextResponse.json(
         { success: true, fields, additionalSteps },
-        { status: 200, headers: corsHeaders }
+        { status: 200, headers: corsHeaders },
       );
     }
 
@@ -49,13 +73,13 @@ export async function POST(request: NextRequest) {
       if (!stepId) {
         return NextResponse.json(
           { success: false, error: "stepId required" },
-          { status: 400, headers: corsHeaders }
+          { status: 400, headers: corsHeaders },
         );
       }
       const result = await onboardingService.executeAdditionalStep(
         stepId,
         payload,
-        adminId
+        adminId,
       );
 
       if (result.success) {
@@ -63,7 +87,7 @@ export async function POST(request: NextRequest) {
           const { __authToken, __apiKey, __sessionId, ...safePayload } =
             payload;
           const sessionId = String(
-            (payload as any)?.__sessionId || `onboarding_${Date.now()}`
+            (payload as any)?.__sessionId || `onboarding_${Date.now()}`,
           );
           const db = await (await import("@/lib/mongo")).getDb();
           const sessions = db.collection("onboardingSessions");
@@ -87,7 +111,7 @@ export async function POST(request: NextRequest) {
                 status: "in_progress",
               },
             },
-            { upsert: true }
+            { upsert: true },
           );
         } catch (e) {
           console.error("[Onboarding] Failed to persist additional step", e);
@@ -105,7 +129,7 @@ export async function POST(request: NextRequest) {
       if (!result.success) {
         return NextResponse.json(
           { success: false, error: result.error || "Registration failed" },
-          { status: result.status || 400, headers: corsHeaders }
+          { status: result.status || 400, headers: corsHeaders },
         );
       }
 
@@ -128,8 +152,29 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      const initialFields = (settings.onboarding as any)?.initialFields || [];
-      const additionalSteps = settings.onboarding?.additionalSteps || [];
+      let initialFields = (settings.onboarding as any)?.initialFields || [];
+      let additionalSteps = settings.onboarding?.additionalSteps || [];
+
+      // Enrich fields with reasons from docs
+      try {
+        initialFields = await enrichFieldsWithReasons(adminId, initialFields);
+        if (additionalSteps.length > 0) {
+          additionalSteps = await Promise.all(
+            additionalSteps.map(async (step: any) => {
+              if (step.fields && step.fields.length > 0) {
+                return {
+                  ...step,
+                  fields: await enrichFieldsWithReasons(adminId, step.fields),
+                };
+              }
+              return step;
+            }),
+          );
+        }
+      } catch (e) {
+        console.error("Failed to enrich fields with reasons", e);
+      }
+
       return NextResponse.json(
         {
           success: true,
@@ -140,7 +185,7 @@ export async function POST(request: NextRequest) {
           initialFields,
           additionalSteps,
         },
-        { status: 200, headers: corsHeaders }
+        { status: 200, headers: corsHeaders },
       );
     }
 
@@ -149,7 +194,7 @@ export async function POST(request: NextRequest) {
       if (!result.success) {
         return NextResponse.json(
           { success: false, error: result.error || "Initial setup failed" },
-          { status: result.status || 400, headers: corsHeaders }
+          { status: result.status || 400, headers: corsHeaders },
         );
       }
       try {
@@ -167,10 +212,10 @@ export async function POST(request: NextRequest) {
         const email =
           emailCandidates[0] ||
           String(
-            (payload as any)?.__userEmail || (payload as any)?.email || ""
+            (payload as any)?.__userEmail || (payload as any)?.email || "",
           ).trim();
         const sessionId = String(
-          (payload as any)?.__sessionId || `onboarding_${Date.now()}`
+          (payload as any)?.__sessionId || `onboarding_${Date.now()}`,
         );
         const EmailSchema = z.string().email().max(254);
         if (email && EmailSchema.safeParse(email).success) {
@@ -181,7 +226,7 @@ export async function POST(request: NextRequest) {
             null,
             undefined,
             "Initial setup completed",
-            { detectedIntent: "onboarding_initial_setup" }
+            { detectedIntent: "onboarding_initial_setup" },
           );
         }
         // Persist onboarding session state regardless of email presence
@@ -200,32 +245,32 @@ export async function POST(request: NextRequest) {
               },
               $setOnInsert: { createdAt: new Date() },
             },
-            { upsert: true }
+            { upsert: true },
           );
         } catch (sessErr) {
           console.error("[Onboarding] Session persistence error", sessErr);
         }
         console.log(
           "[Onboarding] Lead persistence attempted for adminId",
-          adminId
+          adminId,
         );
       } catch (e) {
         console.error("[Onboarding] Lead persistence error", e);
       }
       return NextResponse.json(
         { success: true, responseBody: result.responseBody || null },
-        { status: 200, headers: corsHeaders }
+        { status: 200, headers: corsHeaders },
       );
     }
 
     return NextResponse.json(
       { success: false, error: "Unknown action" },
-      { status: 400, headers: corsHeaders }
+      { status: 400, headers: corsHeaders },
     );
   } catch (e: any) {
     return NextResponse.json(
       { success: false, error: e?.message || "Server error" },
-      { status: 500, headers: corsHeaders }
+      { status: 500, headers: corsHeaders },
     );
   }
 }
