@@ -342,16 +342,29 @@ export async function GET(request: Request) {
        .then(function(d){
            if (d.success && d.answer && d.answer.toLowerCase().indexOf("don't have enough information") === -1) {
                addBubble('bot', d.answer);
-               if (state.step === 'reg_collect') {
-                   var missing = []; if (!state.reg.name) missing.push('name'); if (!state.reg.email) missing.push('email'); if (!state.reg.password || String(state.reg.password).length < 8) missing.push('password'); 
-                   if (missing.length > 0) { addBubble('bot', 'Still missing: ' + missing.join(', ') + '.'); }
-               } else if (state.step === 'setup_collect') { askNextSetupField(); }
-               else if (state.step === 'additional_step_collect') { askNextAdditionalField(); }
            } else {
-               processInput(text);
+               addBubble('bot', "I couldn't find an answer to that question. Please provide the value for the field or continue.");
+           }
+           
+           if (state.step === 'reg_collect') {
+               var missing = []; if (!state.reg.name) missing.push('name'); if (!state.reg.email) missing.push('email'); if (!state.reg.password || String(state.reg.password).length < 8) missing.push('password'); 
+               if (missing.length > 0) { addBubble('bot', 'Still missing: ' + missing.join(', ') + '.'); }
+           } else if (state.step === 'reg_confirm') {
+               renderRegistrationConfirm();
+           } else if (state.step === 'setup_collect') { 
+               askNextSetupField(); 
+           } else if (state.step === 'setup_confirm') {
+               renderInitialConfirm(setupFieldsCache);
+           } else if (state.step === 'additional_step_collect') { 
+               askNextAdditionalField(); 
            }
        })
-       .catch(function(){ processInput(text); });
+       .catch(function(){ 
+           addBubble('bot', "Sorry, I encountered an error processing your question.");
+           if (state.step === 'setup_collect') { askNextSetupField(); }
+           else if (state.step === 'additional_step_collect') { askNextAdditionalField(); }
+           else if (state.step === 'setup_confirm') { renderInitialConfirm(setupFieldsCache); }
+       });
        return;
     }
 
