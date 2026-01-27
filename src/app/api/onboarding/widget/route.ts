@@ -329,17 +329,47 @@ export async function GET(request: Request) {
   
   function handleUserMessage(text) { 
     addBubble('user', text); 
-    if (state.step === 'reg_collect') { var next = parseRegFromText(text); state.reg = next; saveState(); var missing = []; if (!state.reg.name) missing.push('name'); if (!state.reg.email) missing.push('email'); if (!state.reg.password || String(state.reg.password).length < 8) missing.push('password'); if (missing.length === 0) { renderRegistrationConfirm(); } else { addBubble('bot', 'Missing: ' + missing.join(', ') + '.'); } return; } 
-    if (state.step === 'setup_collect') { var f = setupFieldsCache.find(function(ff){ return !state.init[ff.key]; }); if (f) { state.init[f.key] = text.trim(); saveState(); askNextSetupField(); return; } } 
-    if (state.step === 'additional_step_collect') {
-        var step = state.additionalSteps[state.stepIdx];
-        var fields = Array.isArray(step.fields) ? step.fields : [];
-        var f = fields.find(function(ff){ return !state.stepData[ff.key]; });
-        if (f) {
-            state.stepData[f.key] = text.trim();
-            saveState();
-            askNextAdditionalField();
-            return;
+
+    var isQuestion = text.trim().length > 3 && (
+        text.trim().endsWith('?') || 
+        /^(what|who|where|when|why|how|can|does|is|are|could|would|should|tell|explain|describe|help)\b/i.test(text.trim()) ||
+        /^(i\s+(need\s+help|dont\s+know|don't\s+know|am\s+not\s+sure))\b/i.test(text.trim())
+     );
+
+    if (isQuestion) {
+       fetch(API_BASE + '/api/onboarding/chat', { method:'POST', headers:{ 'Content-Type': 'application/json', 'x-api-key': apiKey }, body: JSON.stringify({ action:'answer_question', payload:{ question: text } }) })
+       .then(function(r){ return r.json(); })
+       .then(function(d){
+           if (d.success && d.answer && d.answer.toLowerCase().indexOf("don't have enough information") === -1) {
+               addBubble('bot', d.answer);
+               if (state.step === 'reg_collect') {
+                   var missing = []; if (!state.reg.name) missing.push('name'); if (!state.reg.email) missing.push('email'); if (!state.reg.password || String(state.reg.password).length < 8) missing.push('password'); 
+                   if (missing.length > 0) { addBubble('bot', 'Still missing: ' + missing.join(', ') + '.'); }
+               } else if (state.step === 'setup_collect') { askNextSetupField(); }
+               else if (state.step === 'additional_step_collect') { askNextAdditionalField(); }
+           } else {
+               processInput(text);
+           }
+       })
+       .catch(function(){ processInput(text); });
+       return;
+    }
+
+    processInput(text);
+
+    function processInput(text) {
+        if (state.step === 'reg_collect') { var next = parseRegFromText(text); state.reg = next; saveState(); var missing = []; if (!state.reg.name) missing.push('name'); if (!state.reg.email) missing.push('email'); if (!state.reg.password || String(state.reg.password).length < 8) missing.push('password'); if (missing.length === 0) { renderRegistrationConfirm(); } else { addBubble('bot', 'Missing: ' + missing.join(', ') + '.'); } return; } 
+        if (state.step === 'setup_collect') { var f = setupFieldsCache.find(function(ff){ return !state.init[ff.key]; }); if (f) { state.init[f.key] = text.trim(); saveState(); askNextSetupField(); return; } } 
+        if (state.step === 'additional_step_collect') {
+            var step = state.additionalSteps[state.stepIdx];
+            var fields = Array.isArray(step.fields) ? step.fields : [];
+            var f = fields.find(function(ff){ return !state.stepData[ff.key]; });
+            if (f) {
+                state.stepData[f.key] = text.trim();
+                saveState();
+                askNextAdditionalField();
+                return;
+            }
         }
     }
   }

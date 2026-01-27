@@ -2299,3 +2299,43 @@ export async function enrichFieldsWithReasons(
 
   return fields.map((f) => results.get(f.key) || f);
 }
+
+export async function answerQuestion(
+  adminId: string,
+  question: string,
+): Promise<string | null> {
+  try {
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const embedResp = await openai.embeddings.create({
+      input: [question],
+      model: "text-embedding-3-small",
+    });
+    const embedding = embedResp.data[0].embedding as number[];
+    const similar = await querySimilarChunks(embedding, 3, adminId);
+
+    if (!similar || similar.length === 0) return null;
+
+    const context = similar.map((s) => s.text).join("\n\n");
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a helpful assistant for a product. Answer the user's question based ONLY on the provided context. If the answer is not in the context, say 'I don't have enough information to answer that.' and do not make up an answer. Keep it concise.",
+        },
+        {
+          role: "user",
+          content: `Context:\n${context}\n\nQuestion: ${question}`,
+        },
+      ],
+      max_tokens: 150,
+    });
+
+    return completion.choices[0].message.content?.trim() || null;
+  } catch (e) {
+    console.error("Error answering question:", e);
+    return null;
+  }
+}

@@ -68,6 +68,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (action === "answer_question") {
+      const question = String(payload.question || "");
+      if (!question) {
+        return NextResponse.json(
+          { success: false, error: "Question required" },
+          { status: 400, headers: corsHeaders },
+        );
+      }
+      const answer = await onboardingService.answerQuestion(adminId, question);
+      return NextResponse.json(
+        { success: true, answer },
+        { status: 200, headers: corsHeaders },
+      );
+    }
+
     if (action === "additional_step") {
       const stepId = String(body.stepId || "");
       if (!stepId) {
