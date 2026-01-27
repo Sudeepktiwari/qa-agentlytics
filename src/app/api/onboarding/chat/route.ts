@@ -7,6 +7,7 @@ import { getAdminSettings } from "@/lib/adminSettings";
 import {
   onboardingService,
   enrichFieldsWithReasons,
+  answerQuestion,
 } from "@/services/onboardingService";
 
 const corsHeaders = {
@@ -70,13 +71,15 @@ export async function POST(request: NextRequest) {
 
     if (action === "answer_question") {
       const question = String(payload.question || "");
+      console.log(`[API] answer_question request: "${question}"`);
       if (!question) {
         return NextResponse.json(
           { success: false, error: "Question required" },
           { status: 400, headers: corsHeaders },
         );
       }
-      const answer = await onboardingService.answerQuestion(adminId, question);
+      const answer = await answerQuestion(adminId, question);
+      console.log(`[API] answer_question response: "${answer}"`);
       return NextResponse.json(
         { success: true, answer },
         { status: 200, headers: corsHeaders },

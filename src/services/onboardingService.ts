@@ -2305,6 +2305,10 @@ export async function answerQuestion(
   question: string,
 ): Promise<string | null> {
   try {
+    console.log(
+      `[AnswerQuestion] Question: "${question}" | AdminId: ${adminId} | SearchMode: global`,
+    );
+
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const embedResp = await openai.embeddings.create({
       input: [question],
@@ -2313,6 +2317,12 @@ export async function answerQuestion(
     const embedding = embedResp.data[0].embedding as number[];
     // Search globally to allow finding answers from system help docs or other public knowledge
     const similar = await querySimilarChunks(embedding, 5, adminId, "global");
+
+    console.log(
+      `[AnswerQuestion] Found ${
+        similar ? similar.length : 0
+      } chunks. Sources: ${similar?.map((s) => s.source).join(", ")}`,
+    );
 
     const systemContext = `
 System Knowledge (Common Onboarding Terms):

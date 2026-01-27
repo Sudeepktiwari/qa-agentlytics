@@ -15,7 +15,7 @@ console.log("[DEBUG] PINECONE_INDEX:", process.env.PINECONE_INDEX);
 function buildVectors(
   chunks: string[],
   embeddings: number[][],
-  metadata: { filename: string; chunkIndex: number; adminId: string }[]
+  metadata: { filename: string; chunkIndex: number; adminId: string }[],
 ) {
   return chunks.map((chunk, i) => ({
     id: `${metadata[i].filename}-${metadata[i].chunkIndex}-${metadata[i].adminId}`,
@@ -27,12 +27,12 @@ function buildVectors(
 export async function addChunks(
   chunks: string[],
   embeddings: number[][],
-  metadata: { filename: string; chunkIndex: number; adminId: string }[]
+  metadata: { filename: string; chunkIndex: number; adminId: string }[],
 ) {
   const vectors = buildVectors(chunks, embeddings, metadata);
   console.log(
     "[Crawl] Upserting vector IDs:",
-    vectors.map((v) => v.id)
+    vectors.map((v) => v.id),
   );
   const upsertResponse = await index.upsert(vectors);
   console.log("[Crawl] Pinecone upsert response:", upsertResponse);
@@ -56,14 +56,13 @@ export async function querySimilarChunks(
   questionEmbedding: number[],
   topK = 5,
   adminId?: string,
-  searchMode: "user" | "global" = "user"
+  searchMode: "user" | "global" = "user",
 ) {
   // Enforce admin-level isolation: default to "default-admin" if none provided
   const effectiveAdminId =
     adminId && adminId.trim().length > 0 ? adminId : "default-admin";
 
-  const filter =
-    searchMode === "global" ? {} : { adminId: effectiveAdminId };
+  const filter = searchMode === "global" ? {} : { adminId: effectiveAdminId };
 
   const result = await index.query({
     vector: questionEmbedding,
@@ -71,6 +70,12 @@ export async function querySimilarChunks(
     includeMetadata: true,
     filter, // always restrict search to the resolved admin unless global mode
   });
+
+  console.log(
+    `[Pinecone] Query (adminId: ${effectiveAdminId}, mode: ${searchMode}) returned ${
+      result.matches?.length || 0
+    } matches`,
+  );
 
   type PineconeMatch = {
     metadata?: { adminId?: string; chunk?: string; filename?: string };
@@ -115,7 +120,7 @@ export async function deleteDocument(filename: string, adminId?: string) {
 
 export async function deleteChunksByFilename(
   _filename: string,
-  _adminId?: string
+  _adminId?: string,
 ) {
   void _filename;
   void _adminId;
@@ -131,14 +136,14 @@ export async function deleteChunksByUrl(_url: string, _adminId?: string) {
 export async function getChunksByPageUrl(adminId: string, pageUrl: string) {
   const db = await getDb();
   const pineconeVectors = db.collection("pinecone_vectors");
-  
+
   // Normalize URL by removing trailing slash for regex creation
   const normalizedUrl = pageUrl.replace(/\/$/, "");
   const escaped = normalizedUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  
+
   // Match the URL optionally followed by a slash at the end
   const suffixPattern = new RegExp(`${escaped}\/?$`, "i");
-  
+
   const ids = await pineconeVectors
     .find({ adminId, filename: { $regex: suffixPattern } })
     .project({ vectorId: 1, _id: 0 })
@@ -151,6 +156,6 @@ export async function getChunksByPageUrl(adminId: string, pageUrl: string) {
   console.log("[DEBUG] Pinecone fetch result:", result);
   // Return the chunk text from metadata (use result.records)
   return Object.values(result.records || {}).map(
-    (v: { metadata?: { chunk?: string } }) => v.metadata?.chunk || ""
+    (v: { metadata?: { chunk?: string } }) => v.metadata?.chunk || "",
   );
 }
