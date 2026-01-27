@@ -2236,6 +2236,36 @@ export async function getReasonFromDocs(
   }
 }
 
+export async function getGenericReason(
+  fieldKey: string,
+  fieldLabel: string,
+): Promise<string | null> {
+  try {
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a helpful UX writer for a chatbot. Explain briefly (one sentence, max 20 words) why the specific field is typically needed in an onboarding or registration flow. Do not start with 'The field is needed because...', just state the reason directly like 'Used to verify your identity.'",
+        },
+        {
+          role: "user",
+          content: `Field Key: ${fieldKey}\nField Label: ${
+            fieldLabel || fieldKey
+          }\n\nQuestion: Why is this field needed?`,
+        },
+      ],
+      max_tokens: 60,
+    });
+    return completion.choices[0].message.content?.trim() || null;
+  } catch (e) {
+    console.error("Error getting generic reason:", e);
+    return null;
+  }
+}
+
 export async function enrichFieldsWithReasons(
   adminId: string,
   fields: OnboardingField[],
@@ -2252,11 +2282,14 @@ export async function enrichFieldsWithReasons(
       // Only fetch if description is missing
       if (!newF.description || newF.description.trim().length === 0) {
         try {
-          const reason = await getReasonFromDocs(adminId, f.key, f.label);
+          let reason = await getReasonFromDocs(adminId, f.key, f.label);
+          if (!reason) {
+            reason = await getGenericReason(f.key, f.label);
+          }
           if (reason) {
             newF.description = reason;
           }
-        } catch (err) {
+        } catch {
           // Ignore error, keep original field
         }
       }
