@@ -58,7 +58,15 @@ export async function GET(request: Request) {
   var actions = document.createElement('div');
   actions.style.cssText = 'padding:8px 12px;border-top:1px solid #e5e7eb;background:#fff;display:flex;gap:8px;flex-wrap:wrap;';
   var inputBar = document.createElement('div');
-  inputBar.style.cssText = 'padding:10px;border-top:1px solid #e5e7eb;background:#fff;display:flex;gap:8px;';
+  inputBar.style.cssText = 'padding:10px;border-top:1px solid #e5e7eb;background:#fff;display:flex;flex-direction:column;gap:8px;';
+
+  var intentContainer = document.createElement('div');
+  intentContainer.style.cssText = 'display:flex;gap:12px;font-size:12px;color:#374151;padding-left:4px;';
+  intentContainer.innerHTML = '<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="msg_intent" value="answer" checked> Provide Answer/Data</label><label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="msg_intent" value="question"> Ask a Question</label>';
+  
+  var inputRow = document.createElement('div');
+  inputRow.style.cssText = 'display:flex;gap:8px;width:100%';
+  
   var input = document.createElement('input');
   input.type = 'text';
   input.placeholder = 'Type your message';
@@ -66,7 +74,11 @@ export async function GET(request: Request) {
   var sendBtn = document.createElement('button');
   sendBtn.textContent = 'Send';
   sendBtn.style.cssText = 'padding:10px 14px;border:1px solid #e5e7eb;border-radius:8px;background:' + primaryColor + ';color:#fff;font-weight:600;';
-  inputBar.appendChild(input); inputBar.appendChild(sendBtn);
+  
+  inputRow.appendChild(input); inputRow.appendChild(sendBtn);
+  inputBar.appendChild(intentContainer);
+  inputBar.appendChild(inputRow);
+  
   panel.appendChild(header); panel.appendChild(messages); panel.appendChild(actions); panel.appendChild(inputBar); container.appendChild(panel); document.body.appendChild(container);
 
   function clearActions() { while (actions.firstChild) actions.removeChild(actions.firstChild); }
@@ -367,22 +379,22 @@ export async function GET(request: Request) {
   function handleUserMessage(text) { 
     addBubble('user', text); 
 
-    var isQuestion = text.trim().length > 3 && (
-        text.trim().endsWith('?') || 
-        /^(what|who|where|when|why|how|can|does|is|are|could|would|should|tell|explain|describe|help)\b/i.test(text.trim()) ||
-        /^(i\s+(need\s+help|dont\s+know|don't\s+know|am\s+not\s+sure))\b/i.test(text.trim())
-     );
+    var messageType = 'answer';
+    try {
+        var checked = intentContainer.querySelector('input[name="msg_intent"]:checked');
+        if (checked) messageType = checked.value;
+    } catch(e) {}
 
-    if (isQuestion) {
+    if (messageType === 'question') {
        showTyping();
        fetch(API_BASE + '/api/onboarding/chat', { method:'POST', headers:{ 'Content-Type': 'application/json', 'x-api-key': apiKey }, body: JSON.stringify({ action:'answer_question', payload:{ question: text } }) })
        .then(function(r){ return r.json(); })
        .then(function(d){
            hideTyping();
-           if (d.success && d.answer && d.answer.toLowerCase().indexOf("don't have enough information") === -1) {
+           if (d.success && d.answer) {
                addBubble('bot', d.answer);
            } else {
-               addBubble('bot', "I couldn't find an answer to that question. Please provide the value for the field or continue.");
+               addBubble('bot', "I couldn't find an answer to that question.");
            }
            
            if (state.step === 'reg_collect') {
