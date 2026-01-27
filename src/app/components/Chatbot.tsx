@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
+import rehypeRaw from "rehype-raw";
 
 function getSessionId() {
   if (typeof window === "undefined") return "";
@@ -37,14 +38,6 @@ interface Message {
 }
 
 // Type for backend bot response
-interface BotResponse {
-  mainText: string;
-  buttons?: string[];
-  emailPrompt?: string;
-  botMode?: "sales" | "lead_generation";
-  userEmail?: string | null;
-  topicsDiscussed?: string[];
-}
 
 interface ChatbotProps {
   pageUrl?: string;
@@ -79,8 +72,6 @@ const Chatbot: React.FC<ChatbotProps> = ({
   // const [selectedLink, setSelectedLink] = useState<string | null>(null);
   // const [proactiveTriggered, setProactiveTriggered] = useState(false);
   const [emailInputValue, setEmailInputValue] = useState("");
-  // Add state for selected radio button
-  const [selectedRadio, setSelectedRadio] = useState<number | null>(null);
   // Track user activity to prevent unnecessary followups
   const [userIsActive, setUserIsActive] = useState(false);
   const [lastUserAction, setLastUserAction] = useState<number>(Date.now());
@@ -1004,7 +995,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
       let conversationText = "Chat Conversation\n";
       conversationText += "===================\n\n";
 
-      messages.forEach((msg, index) => {
+      messages.forEach((msg) => {
         const role = msg.role === "user" ? "You" : "Assistant";
         const timestamp = new Date().toLocaleString();
 
@@ -1032,7 +1023,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
         let conversationText = "Chat Conversation\n";
         conversationText += "===================\n\n";
 
-        messages.forEach((msg, index) => {
+        messages.forEach((msg) => {
           const role = msg.role === "user" ? "You" : "Assistant";
           const timestamp = new Date().toLocaleString();
 
@@ -1212,7 +1203,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
     return filteredButtons;
   };
 
-  const isLikelyBantQuestion = (msg: Message, buttons: string[]): boolean => {
+  const isLikelyBantQuestion = (msg: Message): boolean => {
     const t = String(msg.content || "").toLowerCase();
     const phrases = [
       "what type of business are you",
@@ -1610,7 +1601,9 @@ const Chatbot: React.FC<ChatbotProps> = ({
             {msg.role === "assistant" ? (
               <>
                 <div style={{ color: "#000000" }}>
-                  <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  <ReactMarkdown rehypePlugins={[rehypeRaw]}>
+                    {msg.content}
+                  </ReactMarkdown>
                   {msg.role === "assistant" &&
                     msg.sources &&
                     msg.sources.length > 0 && (
@@ -1808,7 +1801,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
                           );
                         })}
                       </div>
-                      {isLikelyBantQuestion(msg, finalButtons) && (
+                      {isLikelyBantQuestion(msg) && (
                         <div style={{ marginTop: 8, color: "#000000" }}>
                           <form
                             onSubmit={(e) => {
@@ -1905,7 +1898,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
                           </div>
                         ) : null;
                       })()}
-                      {isLikelyBantQuestion(msg, finalButtons) && (
+                      {isLikelyBantQuestion(msg) && (
                         <div style={{ marginTop: 8, color: "#000000" }}>
                           <form
                             onSubmit={(e) => {

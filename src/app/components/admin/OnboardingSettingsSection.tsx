@@ -20,6 +20,39 @@ import {
   redactHeadersForLog,
   extractBodyKeysFromCurl,
 } from "@/lib/curl";
+import dynamic from "next/dynamic";
+import "react-quill-new/dist/quill.snow.css";
+
+const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
+
+const quillModules = {
+  toolbar: [
+    [{ header: [1, 2, false] }],
+    ["bold", "italic", "underline", "strike", "blockquote"],
+    [
+      { list: "ordered" },
+      { list: "bullet" },
+      { indent: "-1" },
+      { indent: "+1" },
+    ],
+    ["link", "image"],
+    ["clean"],
+  ],
+};
+
+const quillFormats = [
+  "header",
+  "bold",
+  "italic",
+  "underline",
+  "strike",
+  "blockquote",
+  "list",
+  "bullet",
+  "indent",
+  "link",
+  "image",
+];
 
 const OnboardingSettingsSection: React.FC = () => {
   const [settings, setSettings] = useState<OnboardingSettings>({
@@ -70,7 +103,7 @@ const OnboardingSettingsSection: React.FC = () => {
 
   // Dynamic steps state
   const [expandedSteps, setExpandedSteps] = useState<Record<string, boolean>>(
-    {}
+    {},
   );
   const [stepStates, setStepStates] = useState<
     Record<
@@ -93,6 +126,7 @@ const OnboardingSettingsSection: React.FC = () => {
   const [registrationOpen, setRegistrationOpen] = useState<boolean>(false);
   const [authenticationOpen, setAuthenticationOpen] = useState<boolean>(false);
   const [initialSetupOpen, setInitialSetupOpen] = useState<boolean>(false);
+  const [closingMessageOpen, setClosingMessageOpen] = useState<boolean>(false);
   const [embedOpen, setEmbedOpen] = useState<boolean>(false);
 
   // Completion indicators for headings
@@ -123,7 +157,7 @@ const OnboardingSettingsSection: React.FC = () => {
           if (ob.initialSetupDocsUrl) setInitialDocUrl(ob.initialSetupDocsUrl);
           try {
             console.groupCollapsed(
-              "[Onboarding] AI-derived registration spec (load)"
+              "[Onboarding] AI-derived registration spec (load)",
             );
             console.log({
               docsUrl: ob.docsUrl || "",
@@ -154,7 +188,7 @@ const OnboardingSettingsSection: React.FC = () => {
           } catch {}
           try {
             console.groupCollapsed(
-              "[Onboarding] AI-derived initial setup spec (load)"
+              "[Onboarding] AI-derived initial setup spec (load)",
             );
             console.log({
               docsUrl: ob.initialSetupDocsUrl || "",
@@ -348,7 +382,7 @@ const OnboardingSettingsSection: React.FC = () => {
         throw new Error(indexJson.error || "Failed to index docs");
       }
       setIndexStatus(
-        `Indexed ${indexJson.count} chunks from ${indexJson.source}`
+        `Indexed ${indexJson.count} chunks from ${indexJson.source}`,
       );
     } catch (e: any) {
       setError(e?.message || "Failed to index docs");
@@ -423,11 +457,11 @@ const OnboardingSettingsSection: React.FC = () => {
       const indexJson = await indexRes.json();
       if (!indexRes.ok || !indexJson.ok) {
         throw new Error(
-          indexJson.error || "Failed to index initial setup docs"
+          indexJson.error || "Failed to index initial setup docs",
         );
       }
       setInitialIndexStatus(
-        `Indexed ${indexJson.count} chunks from ${indexJson.source}`
+        `Indexed ${indexJson.count} chunks from ${indexJson.source}`,
       );
     } catch (e: any) {
       setError(e?.message || "Failed to index initial setup docs");
@@ -451,7 +485,7 @@ const OnboardingSettingsSection: React.FC = () => {
       const genJson = await genRes.json();
       if (!genRes.ok || !genJson.success) {
         throw new Error(
-          genJson.error || "Failed to generate initial setup cURL"
+          genJson.error || "Failed to generate initial setup cURL",
         );
       }
       setInitialGeneratedCurl(genJson.curl || "");
@@ -504,11 +538,11 @@ const OnboardingSettingsSection: React.FC = () => {
       const indexJson = await indexRes.json();
       if (!indexRes.ok || !indexJson.ok) {
         throw new Error(
-          indexJson.error || "Failed to index authentication docs"
+          indexJson.error || "Failed to index authentication docs",
         );
       }
       setAuthIndexStatus(
-        `Indexed ${indexJson.count} chunks from ${indexJson.source}`
+        `Indexed ${indexJson.count} chunks from ${indexJson.source}`,
       );
     } catch (e: any) {
       setError(e?.message || "Failed to index authentication docs");
@@ -532,7 +566,7 @@ const OnboardingSettingsSection: React.FC = () => {
       const genJson = await genRes.json();
       if (!genRes.ok || !genJson.success) {
         throw new Error(
-          genJson.error || "Failed to generate authentication cURL"
+          genJson.error || "Failed to generate authentication cURL",
         );
       }
       setAuthGeneratedCurl(genJson.curl || "");
@@ -554,7 +588,7 @@ const OnboardingSettingsSection: React.FC = () => {
         return next;
       });
       setSuccess(
-        "Generated authentication cURL from docs. Review and save it."
+        "Generated authentication cURL from docs. Review and save it.",
       );
       setTimeout(() => setSuccess(null), 3000);
     } catch (e: any) {
@@ -566,7 +600,7 @@ const OnboardingSettingsSection: React.FC = () => {
 
   const handleStepFileChange = (
     stepId: string,
-    e: React.ChangeEvent<HTMLInputElement>
+    e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const files = e.target.files;
     const file = files && files[0] ? files[0] : null;
@@ -579,7 +613,7 @@ const OnboardingSettingsSection: React.FC = () => {
   const indexStepDocs = async (
     stepId: string,
     docsUrl: string,
-    namespace: string
+    namespace: string,
   ) => {
     const currentState = stepStates[stepId] || {};
     try {
@@ -705,7 +739,7 @@ const OnboardingSettingsSection: React.FC = () => {
     { name: "Initial Setup", completed: initialSetupComplete, key: "init" },
   ];
   const progress = Math.round(
-    (steps.filter((s) => s.completed).length / 3) * 100
+    (steps.filter((s) => s.completed).length / 3) * 100,
   );
 
   // Mock Analytics Data for Storytelling (Rule 6)
@@ -1119,8 +1153,8 @@ const OnboardingSettingsSection: React.FC = () => {
                       {indexing
                         ? "Indexing…"
                         : generating
-                        ? "Generating cURL…"
-                        : "Index docs"}
+                          ? "Generating cURL…"
+                          : "Index docs"}
                     </button>
                   </div>
 
@@ -1230,7 +1264,7 @@ const OnboardingSettingsSection: React.FC = () => {
                         >
                           {(
                             Object.entries(
-                              settings.registrationParsed.headersRedacted || {}
+                              settings.registrationParsed.headersRedacted || {},
                             ) as [string, string][]
                           ).map(([k, v]) => (
                             <span
@@ -1270,7 +1304,7 @@ const OnboardingSettingsSection: React.FC = () => {
                               >
                                 {k}
                               </span>
-                            )
+                            ),
                           )}
                         </div>
                       </div>
@@ -1299,7 +1333,7 @@ const OnboardingSettingsSection: React.FC = () => {
                       onClick={async () => {
                         try {
                           console.groupCollapsed(
-                            "[Onboarding] Regenerate registration spec"
+                            "[Onboarding] Regenerate registration spec",
                           );
                           console.log({
                             docsUrl: docUrl,
@@ -1310,11 +1344,11 @@ const OnboardingSettingsSection: React.FC = () => {
                         try {
                           const res = await fetch(
                             `/api/admin/onboarding?derive=registration&debug=true&docsUrl=${encodeURIComponent(
-                              docUrl || ""
+                              docUrl || "",
                             )}&curl=${encodeURIComponent(
-                              settings.curlCommand || ""
+                              settings.curlCommand || "",
                             )}`,
-                            { credentials: "include" }
+                            { credentials: "include" },
                           );
                           const data = await res.json();
                           if (res.ok && data.success) {
@@ -1328,14 +1362,14 @@ const OnboardingSettingsSection: React.FC = () => {
                                 method: "POST",
                               }),
                               bodyKeys: (spec.body || []).map(
-                                (f: any) => f.key
+                                (f: any) => f.key,
                               ),
                             } as any;
                             const regBodyKeys = (spec.body || []).map(
-                              (f: any) => f.key
+                              (f: any) => f.key,
                             );
                             const regRespKeys = (spec.response || []).filter(
-                              (k: string) => !regBodyKeys.includes(k)
+                              (k: string) => !regBodyKeys.includes(k),
                             );
                             setSettings({
                               ...(settings as any),
@@ -1356,13 +1390,13 @@ const OnboardingSettingsSection: React.FC = () => {
                                   label: k,
                                   required: false,
                                   type: "text",
-                                })
+                                }),
                               ),
                               registrationParsed: parsed,
                             } as any);
                             try {
                               console.groupCollapsed(
-                                "[Onboarding] Derived registration spec (ui)"
+                                "[Onboarding] Derived registration spec (ui)",
                               );
                               console.log(spec);
                               if (Array.isArray((data as any).debug)) {
@@ -1373,12 +1407,13 @@ const OnboardingSettingsSection: React.FC = () => {
                             } catch {}
                           } else {
                             alert(
-                              data.error || "Failed to derive registration spec"
+                              data.error ||
+                                "Failed to derive registration spec",
                             );
                           }
                         } catch (e: any) {
                           alert(
-                            e?.message || "Failed to derive registration spec"
+                            e?.message || "Failed to derive registration spec",
                           );
                         }
                       }}
@@ -1552,7 +1587,7 @@ const OnboardingSettingsSection: React.FC = () => {
                             Remove
                           </button>
                         </div>
-                      )
+                      ),
                     )}
                     <div>
                       <button
@@ -1757,7 +1792,7 @@ const OnboardingSettingsSection: React.FC = () => {
                               Remove
                             </button>
                           </div>
-                        )
+                        ),
                       )}
                       <div>
                         <button
@@ -1808,8 +1843,8 @@ const OnboardingSettingsSection: React.FC = () => {
                         .filter(
                           (f: any) =>
                             !((settings as any).registrationFields || []).some(
-                              (bf: any) => bf.key === f.key
-                            )
+                              (bf: any) => bf.key === f.key,
+                            ),
                         )
                         .map((f: any, i: number) => (
                           <div
@@ -2334,8 +2369,8 @@ const OnboardingSettingsSection: React.FC = () => {
                       {authIndexing
                         ? "Indexing…"
                         : authGenerating
-                        ? "Generating cURL…"
-                        : "Index docs"}
+                          ? "Generating cURL…"
+                          : "Index docs"}
                     </button>
                   </div>
 
@@ -2448,7 +2483,7 @@ const OnboardingSettingsSection: React.FC = () => {
                           {(
                             Object.entries(
                               (settings as any).authParsed?.headersRedacted ||
-                                {}
+                                {},
                             ) as [string, string][]
                           ).map(([k, v]) => (
                             <span
@@ -2488,7 +2523,7 @@ const OnboardingSettingsSection: React.FC = () => {
                               >
                                 {k}
                               </span>
-                            )
+                            ),
                           )}
                         </div>
                       </div>
@@ -2519,7 +2554,7 @@ const OnboardingSettingsSection: React.FC = () => {
                         onClick={async () => {
                           try {
                             console.groupCollapsed(
-                              "[Onboarding] Regenerate auth spec"
+                              "[Onboarding] Regenerate auth spec",
                             );
                             console.log({
                               docsUrl: authDocUrl,
@@ -2531,11 +2566,11 @@ const OnboardingSettingsSection: React.FC = () => {
                           try {
                             const res = await fetch(
                               `/api/admin/onboarding?derive=auth&debug=true&docsUrl=${encodeURIComponent(
-                                authDocUrl || ""
+                                authDocUrl || "",
                               )}&curl=${encodeURIComponent(
-                                (settings as any).authCurlCommand || ""
+                                (settings as any).authCurlCommand || "",
                               )}`,
-                              { credentials: "include" }
+                              { credentials: "include" },
                             );
                             const data = await res.json();
                             if (res.ok && data.success) {
@@ -2547,14 +2582,14 @@ const OnboardingSettingsSection: React.FC = () => {
                               const parsed = {
                                 ...(settings.authParsed || { method: "POST" }),
                                 bodyKeys: (spec.body || []).map(
-                                  (f: any) => f.key
+                                  (f: any) => f.key,
                                 ),
                               } as any;
                               const authBodyKeys = (spec.body || []).map(
-                                (f: any) => f.key
+                                (f: any) => f.key,
                               );
                               const authRespKeys = (spec.response || []).filter(
-                                (k: string) => !authBodyKeys.includes(k)
+                                (k: string) => !authBodyKeys.includes(k),
                               );
                               setSettings({
                                 ...(settings as any),
@@ -2566,7 +2601,7 @@ const OnboardingSettingsSection: React.FC = () => {
                                     label: h,
                                     required: true,
                                     type: "text",
-                                  })
+                                  }),
                                 ),
                                 authResponseFields: authRespKeys,
                                 authResponseFieldDefs: authRespKeys.map(
@@ -2575,13 +2610,13 @@ const OnboardingSettingsSection: React.FC = () => {
                                     label: k,
                                     required: false,
                                     type: "text",
-                                  })
+                                  }),
                                 ),
                                 authParsed: parsed,
                               } as any);
                               try {
                                 console.groupCollapsed(
-                                  "[Onboarding] Derived auth spec (ui)"
+                                  "[Onboarding] Derived auth spec (ui)",
                                 );
                                 console.log(spec);
                                 if (Array.isArray((data as any).debug)) {
@@ -2767,7 +2802,7 @@ const OnboardingSettingsSection: React.FC = () => {
                             Remove
                           </button>
                         </div>
-                      )
+                      ),
                     )}
                     <div>
                       <button
@@ -2962,7 +2997,7 @@ const OnboardingSettingsSection: React.FC = () => {
                                 Remove
                               </button>
                             </div>
-                          )
+                          ),
                         )}
                         <div>
                           <button
@@ -3148,7 +3183,7 @@ const OnboardingSettingsSection: React.FC = () => {
                                   <option key={k} value={k}>
                                     {k}
                                   </option>
-                                )
+                                ),
                               )}
                             </select>
                           </div>
@@ -3287,8 +3322,8 @@ const OnboardingSettingsSection: React.FC = () => {
                           .filter(
                             (f: any) =>
                               !((settings as any).authFields || []).some(
-                                (bf: any) => bf.key === f.key
-                              )
+                                (bf: any) => bf.key === f.key,
+                              ),
                           )
                           .map((f: any, i: number) => (
                             <div
@@ -3708,8 +3743,8 @@ const OnboardingSettingsSection: React.FC = () => {
                       {initialIndexing
                         ? "Indexing…"
                         : initialGenerating
-                        ? "Generating cURL…"
-                        : "Index docs"}
+                          ? "Generating cURL…"
+                          : "Index docs"}
                     </button>
                   </div>
 
@@ -3820,7 +3855,7 @@ const OnboardingSettingsSection: React.FC = () => {
                         >
                           {(
                             Object.entries(
-                              settings.initialParsed.headersRedacted || {}
+                              settings.initialParsed.headersRedacted || {},
                             ) as [string, string][]
                           ).map(([k, v]) => (
                             <span
@@ -3889,7 +3924,7 @@ const OnboardingSettingsSection: React.FC = () => {
                         onClick={async () => {
                           try {
                             console.groupCollapsed(
-                              "[Onboarding] Regenerate initial setup spec"
+                              "[Onboarding] Regenerate initial setup spec",
                             );
                             console.log({
                               docsUrl: initialDocUrl,
@@ -3901,11 +3936,11 @@ const OnboardingSettingsSection: React.FC = () => {
                           try {
                             const res = await fetch(
                               `/api/admin/onboarding?derive=initial&debug=true&docsUrl=${encodeURIComponent(
-                                initialDocUrl || ""
+                                initialDocUrl || "",
                               )}&curl=${encodeURIComponent(
-                                settings.initialSetupCurlCommand || ""
+                                settings.initialSetupCurlCommand || "",
                               )}`,
-                              { credentials: "include" }
+                              { credentials: "include" },
                             );
                             const data = await res.json();
                             if (res.ok && data.success) {
@@ -3919,14 +3954,14 @@ const OnboardingSettingsSection: React.FC = () => {
                                   method: "POST",
                                 }),
                                 bodyKeys: (spec.body || []).map(
-                                  (f: any) => f.key
+                                  (f: any) => f.key,
                                 ),
                               } as any;
                               const initBodyKeys = (spec.body || []).map(
-                                (f: any) => f.key
+                                (f: any) => f.key,
                               );
                               const initRespKeys = (spec.response || []).filter(
-                                (k: string) => !initBodyKeys.includes(k)
+                                (k: string) => !initBodyKeys.includes(k),
                               );
                               setSettings({
                                 ...(settings as any),
@@ -3938,7 +3973,7 @@ const OnboardingSettingsSection: React.FC = () => {
                                     label: h,
                                     required: true,
                                     type: "text",
-                                  })
+                                  }),
                                 ),
                                 initialResponseFields: initRespKeys,
                                 initialResponseFieldDefs: initRespKeys.map(
@@ -3947,13 +3982,13 @@ const OnboardingSettingsSection: React.FC = () => {
                                     label: k,
                                     required: false,
                                     type: "text",
-                                  })
+                                  }),
                                 ),
                                 initialParsed: parsed,
                               } as any);
                               try {
                                 console.groupCollapsed(
-                                  "[Onboarding] Derived initial setup spec (ui)"
+                                  "[Onboarding] Derived initial setup spec (ui)",
                                 );
                                 console.log(spec);
                                 if (Array.isArray((data as any).debug)) {
@@ -3964,12 +3999,12 @@ const OnboardingSettingsSection: React.FC = () => {
                               } catch {}
                             } else {
                               alert(
-                                data.error || "Failed to derive initial spec"
+                                data.error || "Failed to derive initial spec",
                               );
                             }
                           } catch (e: any) {
                             alert(
-                              e?.message || "Failed to derive initial spec"
+                              e?.message || "Failed to derive initial spec",
                             );
                           }
                         }}
@@ -4170,7 +4205,7 @@ const OnboardingSettingsSection: React.FC = () => {
                             Remove
                           </button>
                         </div>
-                      )
+                      ),
                     )}
                     <div>
                       <button
@@ -4400,7 +4435,7 @@ const OnboardingSettingsSection: React.FC = () => {
                                 Remove
                               </button>
                             </div>
-                          )
+                          ),
                         )}
                         <div>
                           <button
@@ -4451,8 +4486,8 @@ const OnboardingSettingsSection: React.FC = () => {
                           .filter(
                             (f: any) =>
                               !((settings as any).initialFields || []).some(
-                                (bf: any) => bf.key === f.key
-                              )
+                                (bf: any) => bf.key === f.key,
+                              ),
                           )
                           .map((f: any, i: number) => (
                             <div
@@ -4783,7 +4818,7 @@ const OnboardingSettingsSection: React.FC = () => {
                   const removeStep = () => {
                     if (
                       !confirm(
-                        "Are you sure you want to remove this step? This cannot be undone."
+                        "Are you sure you want to remove this step? This cannot be undone.",
                       )
                     )
                       return;
@@ -4939,7 +4974,7 @@ const OnboardingSettingsSection: React.FC = () => {
                                 indexStepDocs(
                                   stepId,
                                   step.docsUrl || "",
-                                  `step-${stepId}`
+                                  `step-${stepId}`,
                                 )
                               }
                               disabled={
@@ -4961,8 +4996,8 @@ const OnboardingSettingsSection: React.FC = () => {
                               {stepState.indexing
                                 ? "Indexing..."
                                 : stepState.generating
-                                ? "Generating..."
-                                : "Index Docs & Generate Spec"}
+                                  ? "Generating..."
+                                  : "Index Docs & Generate Spec"}
                             </button>
                           </div>
 
@@ -5032,7 +5067,7 @@ const OnboardingSettingsSection: React.FC = () => {
                                     url: p.url,
                                     contentType: p.contentType,
                                     headersRedacted: redactHeadersForLog(
-                                      p.headers
+                                      p.headers,
                                     ),
                                     bodyKeys,
                                   };
@@ -5056,11 +5091,11 @@ const OnboardingSettingsSection: React.FC = () => {
                               try {
                                 const res = await fetch(
                                   `/api/admin/onboarding?derive=${stepId}&docsUrl=${encodeURIComponent(
-                                    step.docsUrl || ""
+                                    step.docsUrl || "",
                                   )}&curl=${encodeURIComponent(
-                                    step.curlCommand || ""
+                                    step.curlCommand || "",
                                   )}`,
-                                  { credentials: "include" }
+                                  { credentials: "include" },
                                 );
                                 const data = await res.json();
                                 if (res.ok && data.success) {
@@ -5073,7 +5108,7 @@ const OnboardingSettingsSection: React.FC = () => {
                                         label: h,
                                         required: true,
                                         type: "text",
-                                      })
+                                      }),
                                     ),
                                     responseFieldDefs: (
                                       spec.response || []
@@ -5086,7 +5121,7 @@ const OnboardingSettingsSection: React.FC = () => {
                                     parsed: {
                                       method: step.parsed?.method || "POST",
                                       bodyKeys: (spec.body || []).map(
-                                        (f: any) => f.key
+                                        (f: any) => f.key,
                                       ),
                                     },
                                   });
@@ -5160,8 +5195,57 @@ const OnboardingSettingsSection: React.FC = () => {
                       )}
                     </div>
                   );
-                }
+                },
               )}
+
+              <div style={{ marginTop: 24, marginBottom: 12 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    cursor: "pointer",
+                  }}
+                  onClick={() => setClosingMessageOpen(!closingMessageOpen)}
+                >
+                  <div style={{ fontWeight: 600, color: "#2d3748" }}>
+                    Closing Message
+                  </div>
+                  {closingMessageOpen ? <ChevronDown /> : <ChevronRight />}
+                </div>
+                {closingMessageOpen && (
+                  <div
+                    style={{
+                      marginTop: 12,
+                      padding: 16,
+                      border: "1px solid #e2e8f0",
+                      borderRadius: 8,
+                      background: "white",
+                    }}
+                  >
+                    <div
+                      style={{
+                        marginBottom: 12,
+                        fontSize: 14,
+                        color: "#4a5568",
+                      }}
+                    >
+                      This message will be displayed to the user after
+                      onboarding is complete.
+                    </div>
+                    <ReactQuill
+                      theme="snow"
+                      value={settings.closingMessage || ""}
+                      onChange={(value) =>
+                        setSettings({ ...settings, closingMessage: value })
+                      }
+                      modules={quillModules}
+                      formats={quillFormats}
+                      style={{ height: "200px", marginBottom: "50px" }}
+                    />
+                  </div>
+                )}
+              </div>
 
               <div style={{ marginTop: 8 }}>
                 <button

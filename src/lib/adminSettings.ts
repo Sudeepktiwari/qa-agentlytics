@@ -92,6 +92,7 @@ export interface OnboardingSettings {
   idempotencyKeyField?: string;
   // Additional dynamic steps
   additionalSteps?: OnboardingStep[];
+  closingMessage?: string;
 }
 
 // Admin settings interface

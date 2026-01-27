@@ -6539,10 +6539,12 @@ Keep the response conversational and helpful, focusing on providing value before
               })() ||
               result2?.message ||
               result2?.statusText;
+            const closingMsg = (onboardingConfig as any)?.closingMessage;
+            const baseMsg = externalMsg2
+              ? `✅ ${externalMsg2}`
+              : "✅ You’re all set! Your account has been created.";
             const resp = {
-              mainText: externalMsg2
-                ? `✅ ${externalMsg2}`
-                : "✅ You’re all set! Your account has been created.",
+              mainText: closingMsg ? `${baseMsg}\n\n${closingMsg}` : baseMsg,
               buttons: ["Log In", "Talk to Sales"],
               emailPrompt: "",
               showBookingCalendar: false,
@@ -6595,10 +6597,12 @@ Keep the response conversational and helpful, focusing on providing value before
             result2?.statusText;
           let resp;
           if (isSuccess2) {
+            const closingMsg = (onboardingConfig as any)?.closingMessage;
+            const baseMsg = externalMsg3
+              ? `✅ ${externalMsg3}`
+              : "✅ You’re all set! Your account has been created.";
             resp = {
-              mainText: externalMsg3
-                ? `✅ ${externalMsg3}`
-                : "✅ You’re all set! Your account has been created.",
+              mainText: closingMsg ? `${baseMsg}\n\n${closingMsg}` : baseMsg,
               buttons: ["Log In", "Talk to Sales"],
               emailPrompt: "",
               showBookingCalendar: false,
