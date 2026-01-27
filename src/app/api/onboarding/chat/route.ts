@@ -69,13 +69,18 @@ export async function POST(request: NextRequest) {
 
     if (action === "answer_question") {
       const question = String(payload.question || "");
+      const pageUrl = String(payload.pageUrl || payload.url || "");
       if (!question) {
         return NextResponse.json(
           { success: false, error: "Question required" },
           { status: 400, headers: corsHeaders },
         );
       }
-      const answer = await onboardingService.answerQuestion(adminId, question);
+      const answer = await onboardingService.answerQuestion(
+        adminId,
+        question,
+        pageUrl,
+      );
       return NextResponse.json(
         { success: true, answer },
         { status: 200, headers: corsHeaders },

@@ -1695,7 +1695,11 @@ export const onboardingService = {
     }
   },
 
-  async answerQuestion(adminId: string, question: string): Promise<string> {
+  async answerQuestion(
+    adminId: string,
+    question: string,
+    pageUrl?: string,
+  ): Promise<string> {
     try {
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
       const embedResp = await openai.embeddings.create({
@@ -1703,14 +1707,36 @@ export const onboardingService = {
         model: "text-embedding-3-small",
       });
       const embedding = embedResp.data[0].embedding;
-      console.log(`[Onboarding] Search params - Admin: ${adminId}, Mode: user, TopK: 10`);
+      console.log(
+        `[Onboarding] Search params - Admin: ${adminId}, Mode: user, TopK: 10`,
+      );
+
+      let context = "";
+
+      // 1. Fetch page-specific chunks if pageUrl is provided
+      if (pageUrl) {
+        try {
+          const pageChunks = await getChunksByPageUrl(adminId, pageUrl);
+          if (pageChunks && pageChunks.length > 0) {
+            console.log(
+              `[Onboarding] Found ${pageChunks.length} page-specific chunks for ${pageUrl}`,
+            );
+            context +=
+              "Page Context:\n" + pageChunks.slice(0, 10).join("\n\n") + "\n\n";
+          }
+        } catch (e) {
+          console.error("[Onboarding] Error fetching page chunks:", e);
+        }
+      }
+
+      // 2. Fetch global chunks via vector search
       const similar = await querySimilarChunks(embedding, 10, adminId, "user");
-      console.log(`[Onboarding] Found ${similar.length} chunks`);
-      const context = similar.map((s) => s.text).join("\n\n");
+      console.log(`[Onboarding] Found ${similar.length} global chunks`);
+      context += "General Context:\n" + similar.map((s) => s.text).join("\n\n");
 
       const systemPrompt = `You are a helpful assistant for an onboarding bot.
 Use the following context to answer the user's question.
-If the answer is not in the context, say "I don't have enough information to answer that based on the provided documentation."
+If the answer is not in the context, try to answer based on the context as best as you can. If you really don't have enough information, say "I don't have enough information to answer that based on the provided documentation."
 
 Context:
 ${context}`;
