@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { assertBodyConstraints } from "@/lib/validators";
 import { verifyApiKey } from "@/lib/auth";
 import { createOrUpdateLead } from "@/lib/leads";
 import { getAdminSettings } from "@/lib/adminSettings";

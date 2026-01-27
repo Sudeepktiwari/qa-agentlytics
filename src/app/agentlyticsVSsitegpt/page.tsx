@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useMemo, useState, useEffect } from "react";
 
 /**
@@ -128,11 +130,17 @@ const faqs = [
   },
 ];
 
-function cn(...classes) {
+function cn(...classes: (string | undefined | null | false)[]) {
   return classes.filter(Boolean).join(" ");
 }
 
-function Pill({ label, tone = "neutral" }) {
+function Pill({
+  label,
+  tone = "neutral",
+}: {
+  label: string;
+  tone?: "brand" | "muted" | "neutral";
+}) {
   const styles =
     tone === "brand"
       ? "bg-[#006BFF]/10 text-[#005BE0] ring-[#006BFF]/25"
@@ -747,7 +755,7 @@ function Scenario() {
   );
 }
 
-function ComparisonTable({ filter }) {
+function ComparisonTable({ filter }: { filter: string }) {
   const filtered = useMemo(() => {
     if (filter === "all") return rows;
     return rows.filter((r) => r.tag === filter);
@@ -1005,7 +1013,11 @@ function Footer() {
   );
 }
 
-function DevTests({ filterButtons }) {
+function DevTests({
+  filterButtons,
+}: {
+  filterButtons: { id: string; label: string }[];
+}) {
   useEffect(() => {
     if (process.env.NODE_ENV === "production") return;
 

@@ -1694,6 +1694,39 @@ export const onboardingService = {
       };
     }
   },
+
+  async answerQuestion(adminId: string, question: string): Promise<string> {
+    try {
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      const embedResp = await openai.embeddings.create({
+        input: [question],
+        model: "text-embedding-3-small",
+      });
+      const embedding = embedResp.data[0].embedding;
+      const similar = await querySimilarChunks(embedding, 10, adminId, "user");
+      const context = similar.map((s) => s.text).join("\n\n");
+
+      const systemPrompt = `You are a helpful assistant for an onboarding bot.
+Use the following context to answer the user's question.
+If the answer is not in the context, say "I don't have enough information to answer that based on the provided documentation."
+
+Context:
+${context}`;
+
+      const chatCompletion = await openai.chat.completions.create({
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: question },
+        ],
+        model: "gpt-4o",
+      });
+
+      return chatCompletion.choices[0].message.content || "";
+    } catch (error) {
+      console.error("[Onboarding] Error answering question:", error);
+      return "Sorry, I encountered an error while trying to answer your question.";
+    }
+  },
 };
 
 export async function deriveFieldsFromDocsForAdmin(
