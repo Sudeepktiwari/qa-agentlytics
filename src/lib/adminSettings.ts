@@ -9,6 +9,7 @@ import { MongoClient, Db, Collection } from "mongodb";
 export interface OnboardingField {
   key: string;
   label: string;
+  description?: string;
   required: boolean;
   type: "text" | "email" | "phone" | "select" | "checkbox";
   defaultValue?: string;
@@ -281,7 +282,7 @@ async function getAdminSettingsCollection(): Promise<
  * Get admin settings by admin ID with caching
  */
 export async function getAdminSettings(
-  adminId: string
+  adminId: string,
 ): Promise<AdminSettings> {
   // Try cache first
   const cached = settingsCache.get(adminId);
@@ -345,7 +346,7 @@ export async function getAdminSettings(
  */
 export async function createDefaultAdminSettings(
   adminId: string,
-  email?: string
+  email?: string,
 ): Promise<AdminSettings> {
   try {
     const collection = await getAdminSettingsCollection();
@@ -378,7 +379,7 @@ export async function createDefaultAdminSettings(
 export async function updateAdminSettings(
   adminId: string,
   updates: Partial<AdminSettings>,
-  updatedBy: string
+  updatedBy: string,
 ): Promise<AdminSettings> {
   try {
     const collection = await getAdminSettingsCollection();
@@ -395,7 +396,7 @@ export async function updateAdminSettings(
         $set: updateDoc,
         $inc: { version: 1 },
       },
-      { returnDocument: "after", upsert: true }
+      { returnDocument: "after", upsert: true },
     );
 
     const doc = (result as any)?.value ?? result;
@@ -437,7 +438,7 @@ export async function updateAdminSettings(
  */
 export async function isFeatureEnabled(
   adminId: string,
-  feature: keyof AdminSettings["features"]
+  feature: keyof AdminSettings["features"],
 ): Promise<boolean> {
   // Core features are always enabled
   const coreFeatures = ["bookingDetection", "calendarWidget", "formSubmission"];
@@ -451,7 +452,7 @@ export async function isFeatureEnabled(
   } catch (error) {
     console.error(
       `❌ Failed to check feature ${feature} for ${adminId}:`,
-      error
+      error,
     );
 
     // Return default value based on feature

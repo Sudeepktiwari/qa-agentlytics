@@ -227,7 +227,7 @@ export async function GET(request: Request) {
       renderAdditionalConfirm();
       return;
     }
-    addBubble('bot', (pending.label || pending.key) + ':');
+    addBubble('bot', generateQuestion(pending));
     clearActions();
   }
 
@@ -270,7 +270,28 @@ export async function GET(request: Request) {
 
   function parseRegFromText(t) { var out = { name: state.reg.name || '', email: state.reg.email || '', password: state.reg.password || '' }; var lower = t.toLowerCase(); function extractAfter(label) { var idx = lower.indexOf(label); if (idx < 0) return null; var rest = t.slice(idx + label.length); var j = 0; while (j < rest.length && (rest[j] === ':' || rest[j] === '-' || rest[j] === ' ')) j++; rest = rest.slice(j); var endComma = rest.indexOf(','); var endNl = rest.indexOf('\\\\n'); var end = -1; if (endComma >= 0 && endNl >= 0) end = Math.min(endComma, endNl); else end = endComma >= 0 ? endComma : endNl; var value = end >= 0 ? rest.slice(0, end) : rest; return value.trim(); } function extractEmail(txt) { var best = null; var token = ''; for (var i = 0; i < txt.length; i++) { var ch = txt[i]; if (ch === ' ' || ch === ',' || ch === '\\\\n') { if (token) { if (token.indexOf('@') >= 0 && token.indexOf('.') >= 0) { best = token; } token = ''; } } else { token += ch; } } if (!best && token && token.indexOf('@') >= 0 && token.indexOf('.') >= 0) best = token; return best ? best.trim() : null; } var nm = extractAfter('name'); if (nm) out.name = nm; var em = extractEmail(t); if (em) out.email = em; var pw = extractAfter('password'); if (pw) out.password = pw; if (!out.name && lower.indexOf('email') === -1 && lower.indexOf('password') === -1) { out.name = t.trim(); } return out; }
   
-  function askNextSetupField() { var pending = setupFieldsCache.find(function(f){ return !state.init[f.key]; }); if (!pending) { renderInitialConfirm(setupFieldsCache); return; } addBubble('bot', (pending.label || pending.key) + ':'); clearActions(); }
+  function generateQuestion(field) {
+    if (field.description && field.description.trim().length > 0) return field.description;
+    var label = field.label || field.key;
+    var l = label.toLowerCase();
+    if (l.includes('email') && l.length < 10) return "What is your email address?";
+    if (l.includes('name') && l.length < 10) return "What is your full name?";
+    if (l.includes('phone') || l.includes('mobile')) return "What is your phone number?";
+    if (l.includes('company') || l.includes('organization')) return "What is the name of your company?";
+    if (l.includes('api key') || l.includes('apikey')) return "Could you please provide your API Key?";
+    if (l.includes('token')) return "Please enter your authentication token.";
+    
+    var prompts = [
+      "Please enter your " + label + ".",
+      "What is your " + label + "?",
+      "Could you provide your " + label + "?"
+    ];
+    // Simple pseudo-random selection based on label length to remain deterministic per field but varied across fields
+    var idx = label.length % prompts.length;
+    return prompts[idx];
+  }
+
+  function askNextSetupField() { var pending = setupFieldsCache.find(function(f){ return !state.init[f.key]; }); if (!pending) { renderInitialConfirm(setupFieldsCache); return; } addBubble('bot', generateQuestion(pending)); clearActions(); }
   
   // Add a persistent option to skip initial setup and proceed directly to additional steps
   // This ensures additional APIs can work even if initial steps are not completed.
