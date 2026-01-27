@@ -2313,9 +2313,26 @@ export async function answerQuestion(
     const embedding = embedResp.data[0].embedding as number[];
     const similar = await querySimilarChunks(embedding, 3, adminId);
 
-    if (!similar || similar.length === 0) return null;
+    const systemContext = `
+System Knowledge (Common Onboarding Terms):
+- Sitemap URL: An XML file listing all URLs on a website (e.g., https://example.com/sitemap.xml). It is needed to efficiently crawl and index your website's content so the chatbot can answer questions based on your data.
+- Documentation URL: The main URL of your public documentation. Used to scrape content for the knowledge base.
+- Registration URL: The URL where users sign up. Used to analyze the registration form structure to automate user onboarding.
+- API Key / Auth Token: specific credentials used to authenticate with your API. Required for the chatbot to perform actions (like creating accounts) on your behalf.
+- Selector / CSS Selector: A pattern (e.g., "#submit-btn", ".nav-link") used to identify specific HTML elements on a page. Needed for the bot to interact with your site (e.g., clicking buttons).
+- Crawl: The process of automatically scanning your website to extract text and data.
+`;
 
-    const context = similar.map((s) => s.text).join("\n\n");
+    const userContext =
+      similar && similar.length > 0
+        ? similar.map((s) => s.text).join("\n\n")
+        : "";
+
+    if (!userContext && !systemContext) return null;
+
+    const context = `${systemContext}\n\n${
+      userContext ? "User Documentation Context:\n" + userContext : ""
+    }`.trim();
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o",
@@ -2323,7 +2340,7 @@ export async function answerQuestion(
         {
           role: "system",
           content:
-            "You are a helpful assistant for a product. Answer the user's question based ONLY on the provided context. If the answer is not in the context, say 'I don't have enough information to answer that.' and do not make up an answer. Keep it concise.",
+            "You are a helpful assistant for a product onboarding process. Answer the user's question based ONLY on the provided context. If the answer is not in the context, say 'I don't have enough information to answer that.' and do not make up an answer. Keep it concise.",
         },
         {
           role: "user",

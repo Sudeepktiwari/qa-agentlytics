@@ -1,4 +1,6 @@
 import { MetadataRoute } from "next";
+import fs from "fs";
+import path from "path";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = "https://agentlytics.advancelytics.com";
@@ -32,9 +34,37 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/agentlytics+hubspot/",
     "/agentlytics+intercom/",
     "/agentlytics+zoho/",
+    "/demo/",
   ];
 
-  return routes.map((route) => ({
+  // Dynamically add help articles
+  try {
+    const helpDir = path.join(process.cwd(), "src/app/help");
+    if (fs.existsSync(helpDir)) {
+      // Add main help page
+      if (fs.existsSync(path.join(helpDir, "page.tsx"))) {
+        routes.push("/help/");
+      }
+
+      // Add sub-pages
+      const items = fs.readdirSync(helpDir, { withFileTypes: true });
+      for (const item of items) {
+        if (
+          item.isDirectory() &&
+          fs.existsSync(path.join(helpDir, item.name, "page.tsx"))
+        ) {
+          routes.push(`/help/${item.name}/`);
+        }
+      }
+    }
+  } catch (e) {
+    console.error("Error generating dynamic sitemap routes:", e);
+  }
+
+  // Deduplicate routes
+  const uniqueRoutes = Array.from(new Set(routes));
+
+  return uniqueRoutes.map((route) => ({
     url: `${baseUrl}${route}`,
     lastModified,
     changeFrequency: "weekly",
