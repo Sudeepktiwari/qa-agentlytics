@@ -366,10 +366,11 @@ const ContentCrawlingSection: React.FC<ContentCrawlingSectionProps> = ({
             )}
 
             {sitemapStatus && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 w-full pb-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 w-full pb-2 items-start">
                 {/* What this means */}
                 <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
                   <button
+                    type="button"
                     onClick={() => toggleInfoSection("meaning")}
                     className="w-full px-4 py-3 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-left"
                   >
@@ -404,6 +405,7 @@ const ContentCrawlingSection: React.FC<ContentCrawlingSectionProps> = ({
                 {/* What happens next */}
                 <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
                   <button
+                    type="button"
                     onClick={() => toggleInfoSection("next")}
                     className="w-full px-4 py-3 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-left"
                   >
