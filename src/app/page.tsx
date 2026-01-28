@@ -1,5 +1,6 @@
 "use client";
 import Head from "next/head";
+import Link from "next/link";
 import React, { useEffect } from "react";
 import { motion } from "framer-motion";
 import { PRICING } from "@/config/pricing";
@@ -901,7 +902,7 @@ export default function Page() {
                 </p>
                 <div className="flex flex-wrap gap-3 mt-6">
                   <a
-                    href="#trial"
+                    href="/admin"
                     className="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-[color:var(--brand-blue)] text-white shadow-[0_12px_34px_rgba(2,6,23,.08)]"
                   >
                     Start Free Trial
@@ -1633,9 +1634,12 @@ export default function Page() {
                           <div className="text-xs text-slate-500 mb-2">
                             Next best action
                           </div>
-                          <button className="w-full h-10 rounded-lg bg-[color:var(--brand-blue)] text-white">
+                          <Link
+                            href="/admin"
+                            className="w-full h-10 rounded-lg bg-[color:var(--brand-blue)] text-white flex items-center justify-center"
+                          >
                             Start Free Trial
-                          </button>
+                          </Link>
                           <button className="w-full h-10 rounded-lg mt-2 border border-slate-300">
                             Book a Demo
                           </button>
