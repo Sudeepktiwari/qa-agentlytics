@@ -348,8 +348,7 @@ export async function GET(request: Request) {
     if (l.includes('company') || l.includes('organization')) return "What is the name of your company?";
     if (l.includes('api key') || l.includes('apikey')) return "Could you please provide your API Key?";
     if (l.includes('token')) return "Please enter your authentication token.";
-    if (l.includes('sitemap')) return "What is your sitemap or website URL?";
-    
+    if (l.includes('sitemap') || l.includes('website') || l.includes('site') || l.includes('url')) return "What is your sitemap or website URL?";
     var prompts = [
       "Please enter your " + label + ".",
       "What is your " + label + "?",
@@ -360,10 +359,10 @@ export async function GET(request: Request) {
   }
 
   function generateReason(field) {
-    if (field.description && field.description.trim().length > 0) return field.description;
     var label = field.label || field.key;
     var l = label.toLowerCase();
-    if (l.includes('sitemap')) return "<div style='margin-top:6px;'>Used to help search engines find and index your website&#39;s content efficiently.</div><div style='margin-top:8px;'>Paste your sitemap URL (e.g. <span style='background:rgba(255,255,255,0.15);padding:2px 6px;border-radius:4px;color:#fff;font-family:monospace;'>&#96;https://example.com/sitemap.xml)&#96;</span>)</div><div style='margin:8px 0;'>—or—</div><div>enter your website URL (e.g. <span style='background:rgba(255,255,255,0.15);padding:2px 6px;border-radius:4px;color:#fff;font-family:monospace;'>&#96;https://example.com).&#96;</span>) We’ll automatically discover your pages.</div>";
+    if (l.includes('sitemap') || l.includes('website') || l.includes('site') || l.includes('url')) return "<div style='margin-top:6px;'>Used to help search engines find and index your website&#39;s content efficiently.</div><div style='margin-top:8px;'>Paste your sitemap URL (e.g. <span style='background:rgba(255,255,255,0.15);padding:2px 6px;border-radius:4px;color:#fff;font-family:monospace;'>&#96;https://example.com/sitemap.xml)&#96;</span>)</div><div style='margin:8px 0;'>—or—</div><div>enter your website URL (e.g. <span style='background:rgba(255,255,255,0.15);padding:2px 6px;border-radius:4px;color:#fff;font-family:monospace;'>&#96;https://example.com).&#96;</span>) We’ll automatically discover your pages.</div>";
+    if (field.description && field.description.trim().length > 0) return field.description;
     if (l.includes('email')) return "We will use this email to identify the user and send confirmations.";
     if (l.includes('name')) return "This helps personalise the account and communications.";
     if (l.includes('phone') || l.includes('mobile')) return "This lets us contact the user or send SMS notifications if needed.";
