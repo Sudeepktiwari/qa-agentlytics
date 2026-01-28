@@ -2037,7 +2037,7 @@ async function processBatch(req: NextRequest) {
       }
 
       const updatedCrawledDocs = await sitemapUrls
-        .find({ adminId, sitemapUrl, crawled: true })
+        .find({ adminId, crawled: true })
         .project({ url: 1, _id: 0 })
         .toArray();
       updatedCrawledUrls = new Set(
@@ -2059,6 +2059,7 @@ async function processBatch(req: NextRequest) {
       // Let's relax the check: we will only skip if it's marked as crawled for THIS sitemapUrl
       // OR if it was crawled recently and we have vectors.
 
+      // UPDATE: We now check globally for the admin to prevent duplicate crawling across different sitemaps
       const alreadyCrawledUrls = new Set<string>([
         ...Array.from(updatedCrawledUrls),
         ...Array.from(processedInSession),
