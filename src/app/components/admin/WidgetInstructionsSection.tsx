@@ -1,23 +1,34 @@
 "use client";
 
 import React, { useState } from "react";
-import { Check, Copy, Info } from "lucide-react";
+import { Check, Copy, Info, AlertTriangle } from "lucide-react";
+
+interface WidgetConfig {
+  voiceEnabled: boolean;
+  voiceGender: string;
+  autoOpenProactive: boolean;
+}
 
 interface WidgetInstructionsSectionProps {
   apiKey: string;
+  widgetConfig: WidgetConfig;
 }
 
 const WidgetInstructionsSection: React.FC<WidgetInstructionsSectionProps> = ({
   apiKey,
+  widgetConfig,
 }) => {
   const [copied, setCopied] = useState(false);
 
+  // Use a placeholder if apiKey is missing
+  const displayKey = apiKey || "YOUR_API_KEY_HERE";
+
   const widgetScript = `<script 
   src="https://agentlytics.advancelytics.com/api/widget" 
-  data-api-key="${apiKey || "YOUR_API_KEY"}" 
-  data-voice-enabled="true" 
-  data-voice-gender="female" 
-  data-auto-open-proactive="true"> 
+  data-api-key="${displayKey}" 
+  data-voice-enabled="${widgetConfig.voiceEnabled}" 
+  data-voice-gender="${widgetConfig.voiceGender}" 
+  data-auto-open-proactive="${widgetConfig.autoOpenProactive}"> 
 </script>`;
 
   const handleCopy = () => {
@@ -32,6 +43,17 @@ const WidgetInstructionsSection: React.FC<WidgetInstructionsSectionProps> = ({
         <h2 className="text-xl font-bold text-slate-900 mb-2 flex items-center gap-2">
           <span>🤖</span> Add Agentlytics Widget to Your Website
         </h2>
+        
+        {!apiKey && (
+          <div className="mb-6 p-4 bg-amber-50 text-amber-800 rounded-lg border border-amber-200 flex items-start gap-3">
+            <AlertTriangle className="shrink-0 mt-0.5" size={18} />
+            <div className="text-sm">
+              <span className="font-bold">API Key Missing:</span> You haven't generated an API key yet. 
+              The code below uses a placeholder. Please go to the Configuration section to generate your unique API key.
+            </div>
+          </div>
+        )}
+
         <p className="text-slate-500 mb-6">
           To activate the AI bot on your website, add the following script
           inside the{" "}

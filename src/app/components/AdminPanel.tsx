@@ -1117,7 +1117,10 @@ const AdminPanel: React.FC = () => {
               onContinueCrawling={handleContinueCrawling}
               onStopCrawling={handleStopCrawling}
             />
-            <WidgetInstructionsSection apiKey={apiKey} />
+            <WidgetInstructionsSection
+              apiKey={apiKey}
+              widgetConfig={widgetConfig}
+            />
             <CrawledPagesSection
               crawledPages={crawledPages}
               crawledPagesLoading={crawledPagesLoading}
