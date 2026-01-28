@@ -2638,8 +2638,22 @@ export async function DELETE(req: NextRequest) {
   let deleteCount = 0;
   if (sitemapUrl) {
     // Delete all pages for this sitemap
+    // First find all pages to get their URLs for chunk deletion
+    const pagesToDelete = await pages
+      .find({ adminId, filename: sitemapUrl })
+      .project({ url: 1 })
+      .toArray();
+
     const result = await pages.deleteMany({ adminId, filename: sitemapUrl });
     deleteCount = result.deletedCount || 0;
+
+    // Delete chunks for each page found
+    for (const p of pagesToDelete) {
+      if (p.url) {
+        await deleteChunksByUrl(p.url, adminId);
+      }
+    }
+    // Also try to delete by filename in case some were stored that way
     await deleteChunksByFilename(sitemapUrl, adminId);
   } else if (url) {
     // Delete a single page

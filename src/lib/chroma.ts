@@ -122,18 +122,14 @@ export async function deleteDocument(filename: string, adminId?: string) {
 }
 
 export async function deleteChunksByFilename(
-  _filename: string,
-  _adminId?: string,
+  filename: string,
+  adminId?: string,
 ) {
-  void _filename;
-  void _adminId;
-  // Not implemented: see note above. You need to track IDs for each filename to delete.
+  await deleteDocument(filename, adminId);
 }
 
-export async function deleteChunksByUrl(_url: string, _adminId?: string) {
-  void _url;
-  void _adminId;
-  // Not implemented: see note above. You need to track IDs for each URL to delete.
+export async function deleteChunksByUrl(url: string, adminId?: string) {
+  await deleteDocument(url, adminId);
 }
 
 export async function getChunksByPageUrl(adminId: string, pageUrl: string) {
