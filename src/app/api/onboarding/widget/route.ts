@@ -160,7 +160,7 @@ export async function GET(request: Request) {
     addBubble('bot', 'Please review your details:');
     addBubble('bot', 'Name: ' + (state.reg.name || ''));
     addBubble('bot', 'Email: ' + (state.reg.email || ''));
-    addBubble('bot', 'Password: ' + (state.reg.password ? '********' : ''));
+    addBubble('bot', 'Password: ' + (state.reg.password || ''));
     addAction('Confirm and Submit', submitRegistration);
     addAction('Edit Details', function(){ renderRegistrationIntro(); });
     state.step = 'reg_confirm'; saveState();
