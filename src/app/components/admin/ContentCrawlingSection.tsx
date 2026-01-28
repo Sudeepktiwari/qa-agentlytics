@@ -88,10 +88,10 @@ const ContentCrawlingSection: React.FC<ContentCrawlingSectionProps> = ({
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2 text-xs font-medium text-slate-500 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
+        {/* <div className="flex items-center gap-2 text-xs font-medium text-slate-500 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
           <Cpu size={14} className="text-blue-500" />
           <span>AI Model: Gemini 1.5 Pro</span>
-        </div>
+        </div> */}
       </div>
 
       <div className="p-4 sm:p-8">
