@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { Check, Copy, Info, AlertTriangle } from "lucide-react";
+import Link from "next/link";
+import { Check, Copy, Info, AlertTriangle, Palette } from "lucide-react";
 
 interface WidgetConfig {
   voiceEnabled: boolean;
@@ -43,13 +44,15 @@ const WidgetInstructionsSection: React.FC<WidgetInstructionsSectionProps> = ({
         <h2 className="text-xl font-bold text-slate-900 mb-2 flex items-center gap-2">
           <span>🤖</span> Add Agentlytics Widget to Your Website
         </h2>
-        
+
         {!apiKey && (
           <div className="mb-6 p-4 bg-amber-50 text-amber-800 rounded-lg border border-amber-200 flex items-start gap-3">
             <AlertTriangle className="shrink-0 mt-0.5" size={18} />
             <div className="text-sm">
-              <span className="font-bold">API Key Missing:</span> You haven't generated an API key yet. 
-              The code below uses a placeholder. Please go to the Configuration section to generate your unique API key.
+              <span className="font-bold">API Key Missing:</span> You haven't
+              generated an API key yet. The code below uses a placeholder.
+              Please go to the Configuration section to generate your unique API
+              key.
             </div>
           </div>
         )}
@@ -79,7 +82,7 @@ const WidgetInstructionsSection: React.FC<WidgetInstructionsSectionProps> = ({
           </pre>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8">
+        <div className="grid md:grid-cols-3 gap-8">
           {/* How this works */}
           <div>
             <h3 className="font-bold text-slate-900 mb-3 flex items-center gap-2">
@@ -107,7 +110,7 @@ const WidgetInstructionsSection: React.FC<WidgetInstructionsSectionProps> = ({
             <h3 className="font-bold text-slate-900 mb-3 flex items-center gap-2">
               <span>✅</span> After adding the script
             </h3>
-            <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-100">
+            <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-100 h-full">
               <p className="text-sm font-medium text-emerald-900 mb-3">
                 Once the code is live on your website:
               </p>
@@ -122,13 +125,33 @@ const WidgetInstructionsSection: React.FC<WidgetInstructionsSectionProps> = ({
                 </li>
                 <li className="flex gap-2 text-sm text-emerald-800">
                   <span className="text-emerald-500">•</span>
-                  Interact with the bot directly on those pages to test responses
+                  Interact with the bot directly on those pages to test
+                  responses
                 </li>
               </ul>
               <p className="text-xs text-emerald-700 mt-3 pt-3 border-t border-emerald-200/50">
                 The bot will use the indexed content shown below to answer
                 visitor queries.
               </p>
+            </div>
+          </div>
+
+          {/* Branding */}
+          <div>
+            <h3 className="font-bold text-slate-900 mb-3 flex items-center gap-2">
+              <Palette size={18} className="text-purple-600" />
+              Branding
+            </h3>
+            <div className="bg-purple-50 rounded-xl p-4 border border-purple-100 h-full flex flex-col justify-center">
+              <p className="text-sm font-medium text-purple-900 mb-3">
+                Match the AI agent’s color theme with your website branding.
+              </p>
+              <Link
+                href="/admin?section=configuration"
+                className="inline-flex items-center gap-2 text-sm font-bold text-purple-700 hover:text-purple-800 hover:underline transition-colors"
+              >
+                → Customize Now
+              </Link>
             </div>
           </div>
         </div>

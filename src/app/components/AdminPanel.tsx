@@ -205,6 +205,7 @@ const AdminPanel: React.FC = () => {
         }
 
         if (section === "knowledge") setActiveSection("knowledge");
+        if (section === "configuration") setActiveSection("configuration");
         if (urlParam && urlParam.trim().length > 0) {
           setSitemapUrl(urlParam);
           setSitemapStatus(null);
