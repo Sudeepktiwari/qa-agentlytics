@@ -3624,7 +3624,11 @@ export async function POST(req: NextRequest) {
   const requestId = Math.random().toString(36).substring(7);
 
   // SPAM PROTECTION
-  if (question && typeof question === "string" && question.trim().length > 0) {
+  // Requests triggered by the mirroring function (contextual questions) should not be counted as spam
+  // as they are triggered by user scrolling and may happen frequently
+  const isContextualGen = contextualQuestionGeneration === true || question === "Generate a single, detailed contextual message that summarizes the section the user is viewing and asks a clear, helpful question.";
+  
+  if (!isContextualGen && question && typeof question === "string" && question.trim().length > 0) {
     const spamCheck = await checkSpam(req, question);
     if (spamCheck.action === "block") {
       return NextResponse.json(
