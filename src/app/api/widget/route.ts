@@ -3441,6 +3441,9 @@ export async function GET(request: Request) {
               Send
             </button>
           </div>
+          <div style="text-align: center; margin-top: 8px; font-size: 11px; color: #9ca3af;">
+            <a href="https://advancelytics.com/?utm_source=agentlytics_widget&utm_medium=referral&utm_campaign=powered_by" target="_blank" rel="sponsored nofollow noopener noreferrer" style="color: #9ca3af; text-decoration: none;">Powered by Advancelytics</a>
+          </div>
         </div>
       </div>
     \`;
