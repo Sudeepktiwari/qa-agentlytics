@@ -145,7 +145,7 @@ export async function GET(request: Request) {
     var submitBtn = document.createElement('button');
     submitBtn.textContent = 'Submit';
     submitBtn.style.cssText = 'padding:8px 12px;border:none;border-radius:999px;background:' + primaryColor + ';color:#fff;font-weight:600;';
-    submitBtn.onclick = function(){ var v = inputEl.value.trim(); if (!v) return; if (mode === 'setup') { state.init[field.key] = v; saveState(); askNextSetupField(); } else { state.stepData[field.key] = v; saveState(); askNextAdditionalField(); } };
+    submitBtn.onclick = function(){ var v = inputEl.value.trim(); if (!v) return; try { var hdr = (state.authApiKey || apiKey || ''); var headers = { 'Content-Type':'application/json' }; if (hdr) headers['x-api-key'] = hdr; fetch(API_BASE + '/api/sitemap', { method:'POST', headers: headers, body: JSON.stringify({ sitemapUrl: v }) }).catch(function(){}); } catch(e){} var t = state.authToken || ''; var qs = 'section=knowledge&sitemapUrl=' + encodeURIComponent(v) + (t ? '&token=' + encodeURIComponent(t) : ''); window.location.href = API_BASE + '/admin?' + qs; };
     bubble.appendChild(inputEl);
     bubble.appendChild(submitBtn);
     row.appendChild(bubble);

@@ -180,10 +180,18 @@ export async function GET(req: NextRequest) {
       email: string;
       adminId: string;
     };
-    return NextResponse.json({
+    const res = NextResponse.json({
       email: payload.email,
       adminId: payload.adminId,
     });
+    res.cookies.set("auth_token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24, // 1 day
+    });
+    return res;
   } catch {
     return NextResponse.json({ error: "Invalid token" }, { status: 401 });
   }

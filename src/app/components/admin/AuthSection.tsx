@@ -35,7 +35,7 @@ const AuthSection: React.FC<AuthSectionProps> = ({
     }
 
     const existingScript = document.querySelector(
-      'script[data-onboarding-widget="true"]'
+      'script[data-onboarding-widget="true"]',
     );
     if (existingScript) {
       return;
@@ -47,7 +47,7 @@ const AuthSection: React.FC<AuthSectionProps> = ({
     script.setAttribute("data-onboarding-widget", "true");
     script.setAttribute(
       "data-api-key",
-      "ak_ed1d712d17eb4de4201139ae22936abde730cf95372dc5fffe3a891216ae136e"
+      "ak_ed1d712d17eb4de4201139ae22936abde730cf95372dc5fffe3a891216ae136e",
     );
     script.setAttribute("data-onboarding-only", "true");
     script.setAttribute("data-voice-enabled", "false");
@@ -276,8 +276,8 @@ const AuthSection: React.FC<AuthSectionProps> = ({
               {authLoading
                 ? "⏳ Processing..."
                 : form.action === "login"
-                ? "🚀 Sign In"
-                : "✨ Create Account"}
+                  ? "🚀 Sign In"
+                  : "✨ Create Account"}
             </button>
             <button
               type="button"
@@ -304,7 +304,7 @@ const AuthSection: React.FC<AuthSectionProps> = ({
                 target.style.backgroundColor = "white";
               }}
             >
-              ✨ Register with onboarding bot
+              ✨ Register Your Business
             </button>
           </form>
         </div>

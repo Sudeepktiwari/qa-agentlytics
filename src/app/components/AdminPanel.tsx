@@ -181,6 +181,42 @@ const AdminPanel: React.FC = () => {
     checkAuth();
   }, []);
 
+  // Auto-open knowledge base and start crawl + auto-login via token from onboarding
+  useEffect(() => {
+    const initFromParams = async () => {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const section = params.get("section");
+        const urlParam = params.get("sitemapUrl");
+        const tokenParam = params.get("token");
+
+        if (tokenParam) {
+           const res = await fetch("/api/auth", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ token: tokenParam }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            setAuth({ email: data.email, adminId: data.adminId });
+          }
+        }
+
+        if (section === "knowledge") setActiveSection("knowledge");
+        if (urlParam && urlParam.trim().length > 0) {
+          setSitemapUrl(urlParam);
+          setSitemapStatus(null);
+          setSitemapLoading(true);
+          setTotalProcessed(0);
+          setTotalRemaining(0);
+          crawlBatch(urlParam, true);
+        }
+      } catch {}
+    };
+    initFromParams();
+  }, []);
+
   // Auth form submit
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -229,7 +265,11 @@ const AdminPanel: React.FC = () => {
   };
 
   // Recursive crawling function
-  const crawlBatch = async (url: string, isInitial: boolean = false) => {
+  const crawlBatch = async (
+    url: string,
+    isInitial: boolean = false,
+    accumulatedProcessed: number = 0,
+  ) => {
     try {
       const res = await fetch("/api/sitemap", {
         method: "POST",
@@ -242,7 +282,7 @@ const AdminPanel: React.FC = () => {
       if (res.ok) {
         const newTotalProcessed = isInitial
           ? data.crawled
-          : totalProcessed + data.crawled;
+          : accumulatedProcessed + data.crawled;
         setTotalProcessed(newTotalProcessed);
         setTotalRemaining(data.totalRemaining);
 
