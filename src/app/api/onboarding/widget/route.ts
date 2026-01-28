@@ -88,13 +88,13 @@ export async function GET(request: Request) {
 
   // Inject styles for scrollbar and animations
   var styleSheet = document.createElement("style");
-  styleSheet.innerText = `
+  styleSheet.innerText = \`
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
     ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-  `;
+  \`;
   document.head.appendChild(styleSheet);
 
   function clearActions() { while (actions.firstChild) actions.removeChild(actions.firstChild); }
@@ -118,7 +118,7 @@ export async function GET(request: Request) {
         .replace(/'/g, "&#039;");
     html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
-    html = html.replace(/`(.*?)`/g, '<code style="background:#f3f4f6;padding:2px 4px;border-radius:4px;font-family:monospace;">$1</code>');
+    html = html.replace(/\`(.*?)\`/g, '<code style="background:#f3f4f6;padding:2px 4px;border-radius:4px;font-family:monospace;">$1</code>');
     html = html.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" style="color:' + primaryColor + ';text-decoration:underline;">$1</a>');
     return html;
   }
