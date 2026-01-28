@@ -23,11 +23,13 @@ export async function GET(request: Request) {
   var apiKey = '';
   var chatTitle = 'Onboarding Assistant';
   var theme = 'blue';
+  var customColor = '#0070f3';
   try { 
     if (el && typeof el.getAttribute === 'function') { 
       apiKey = el.getAttribute('data-api-key') || ''; 
       chatTitle = el.getAttribute('data-chat-title') || 'Onboarding Assistant'; 
       theme = el.getAttribute('data-theme') || 'blue';
+      customColor = el.getAttribute('data-custom-color') || el.getAttribute('data-brand-color') || '#0070f3';
     } 
   } catch (e) {}
 
@@ -42,9 +44,17 @@ export async function GET(request: Request) {
   function saveState() { localStorage.setItem('onboarding_state', JSON.stringify(state)); }
   var sid = (function(){ var s = localStorage.getItem('onboarding_sid'); if (!s) { s = 'sess_' + Math.random().toString(36).slice(2); localStorage.setItem('onboarding_sid', s); } return s; })();
 
-  var primaryColor = '#3b82f6';
-  if (theme === 'green') { primaryColor = '#10b981'; }
-  else if (theme === 'purple') { primaryColor = '#8b5cf6'; }
+  // Theme mapping aligned with main widget
+  var themes = {
+    blue: { primary: '#0070f3', secondary: '#f0f8ff' },
+    green: { primary: '#10b981', secondary: '#f0fdf4' },
+    purple: { primary: '#8b5cf6', secondary: '#faf5ff' },
+    orange: { primary: '#f59e0b', secondary: '#fffbeb' },
+    dark: { primary: '#1f2937', secondary: '#f9fafb' },
+    custom: { primary: customColor || '#0070f3', secondary: '#f0f8ff' }
+  };
+  var currentTheme = themes[theme] || themes.blue;
+  var primaryColor = currentTheme.primary;
 
   var container = document.createElement('div');
   container.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:10000;padding:20px;';
