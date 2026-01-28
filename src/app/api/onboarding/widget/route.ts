@@ -86,11 +86,13 @@ export async function GET(request: Request) {
   sendBtn.textContent = 'Send';
   sendBtn.style.cssText = 'padding:10px 14px;border:1px solid #e5e7eb;border-radius:8px;background:' + primaryColor + ';color:#fff;font-weight:600;';
   
-  inputRow.appendChild(input); inputRow.appendChild(sendBtn);
-  inputBar.appendChild(intentContainer);
-  inputBar.appendChild(inputRow);
+  // Remove free-text input and send button in onboarding-only flow
+  // inputBar is not appended to keep UI clean and guided via action buttons
+  // inputRow.appendChild(input); inputRow.appendChild(sendBtn);
+  // inputBar.appendChild(intentContainer);
+  // inputBar.appendChild(inputRow);
   
-  panel.appendChild(header); panel.appendChild(messages); panel.appendChild(actions); panel.appendChild(inputBar); container.appendChild(panel); document.body.appendChild(container);
+  panel.appendChild(header); panel.appendChild(messages); panel.appendChild(actions); container.appendChild(panel); document.body.appendChild(container);
 
   function clearActions() { while (actions.firstChild) actions.removeChild(actions.firstChild); }
   function addAction(label, onClick) { var b = document.createElement('button'); b.textContent = label; b.style.cssText = 'padding:8px 12px;border:none;border-radius:999px;background:' + botBubbleColor + ';color:#fff;font-weight:600;'; b.onclick = onClick; actions.appendChild(b); return b; }
