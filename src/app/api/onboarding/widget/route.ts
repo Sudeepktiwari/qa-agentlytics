@@ -18,6 +18,7 @@ export async function GET(request: Request) {
 
   const script = `
 (function() {
+  console.log("Onboarding widget script initializing...");
   const API_BASE = '${baseUrl}';
   var el = document.currentScript || document.querySelector('script[src*="/api/onboarding/widget"]');
   var apiKey = '';
@@ -40,7 +41,18 @@ export async function GET(request: Request) {
     try { return raw ? JSON.parse(raw) : { step: 'registration', reg: {}, authToken: null, authApiKey: null, init: {}, additionalSteps: [], stepIdx: 0, stepData: {} }; } catch { return { step: 'registration', reg: {}, authToken: null, authApiKey: null, init: {}, additionalSteps: [], stepIdx: 0, stepData: {} }; }
   })();
   function saveState() { localStorage.setItem('onboarding_state', JSON.stringify(state)); }
-  var sid = (function(){ var s = localStorage.getItem('onboarding_sid'); if (!s) { s = 'sess_' + Math.random().toString(36).slice(2); localStorage.setItem('onboarding_sid', s); } return s; })();
+  var sid = (function(){ 
+    try {
+      var s = localStorage.getItem('onboarding_sid'); 
+      if (!s) { 
+        s = 'sess_' + Math.random().toString(36).slice(2); 
+        localStorage.setItem('onboarding_sid', s); 
+      } 
+      return s; 
+    } catch(e) {
+      return 'sess_' + Math.random().toString(36).slice(2);
+    }
+  })();
 
   var primaryColor = '#3b82f6';
   if (theme === 'green') { primaryColor = '#10b981'; }
@@ -118,7 +130,7 @@ export async function GET(request: Request) {
         .replace(/'/g, "&#039;");
     html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
-    html = html.replace(/\`(.*?)\`/g, '<code style="background:#f3f4f6;padding:2px 4px;border-radius:4px;font-family:monospace;">$1</code>');
+    html = html.replace(/\u0060(.*?)\u0060/g, '<code style="background:#f3f4f6;padding:2px 4px;border-radius:4px;font-family:monospace;">$1</code>');
     html = html.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" style="color:' + primaryColor + ';text-decoration:underline;">$1</a>');
     return html;
   }
