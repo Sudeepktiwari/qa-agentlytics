@@ -98,7 +98,7 @@ export async function GET(request: Request) {
   function addAction(label, onClick) { var b = document.createElement('button'); b.textContent = label; b.style.cssText = 'padding:8px 12px;border:none;border-radius:999px;background:' + botBubbleColor + ';color:#fff;font-weight:600;'; b.onclick = onClick; actions.appendChild(b); return b; }
   function addBubble(role, text) { var row = document.createElement('div'); row.style.cssText = 'display:flex;margin-bottom:10px;'; var bubble = document.createElement('div'); bubble.textContent = text; if (role === 'user') { row.style.justifyContent = 'flex-end'; bubble.style.cssText = 'max-width:70%;background:' + primaryColor + ';color:#fff;padding:10px 12px;border-radius:14px 14px 2px 14px;'; } else { row.style.justifyContent = 'flex-start'; bubble.style.cssText = 'max-width:70%;background:' + botBubbleColor + ';color:#fff;padding:10px 12px;border-radius:14px 14px 14px 2px;border:none;'; } row.appendChild(bubble); messages.appendChild(row); messages.scrollTop = messages.scrollHeight; }
   function addHtmlBubble(html) { var row = document.createElement('div'); row.style.cssText = 'display:flex;margin-bottom:10px;justify-content:flex-start;'; var bubble = document.createElement('div'); bubble.style.cssText = 'max-width:70%;background:' + botBubbleColor + ';color:#fff;padding:10px 12px;border-radius:14px 14px 14px 2px;border:none;'; bubble.innerHTML = html; row.appendChild(bubble); messages.appendChild(row); messages.scrollTop = messages.scrollHeight; }
-  function addQuestionBubble(question, reason) { var row = document.createElement('div'); row.style.cssText = 'display:flex;margin-bottom:10px;'; var bubble = document.createElement('div'); bubble.style.cssText = 'max-width:70%;background:' + botBubbleColor + ';color:#fff;padding:10px 12px;border-radius:14px 14px 14px 2px;border:none;display:flex;flex-direction:column;gap:4px;'; var q = document.createElement('div'); q.textContent = question; q.style.cssText = 'font-size:14px;color:#ffffff;'; var r = document.createElement('div'); r.textContent = reason; r.style.cssText = 'font-size:12px;color:#e5e7eb;'; bubble.appendChild(q); if (reason && String(reason).trim().length > 0) bubble.appendChild(r); row.style.justifyContent = 'flex-start'; row.appendChild(bubble); messages.appendChild(row); messages.scrollTop = messages.scrollHeight; }
+  function addQuestionBubble(question, reason) { var row = document.createElement('div'); row.style.cssText = 'display:flex;margin-bottom:10px;'; var bubble = document.createElement('div'); bubble.style.cssText = 'max-width:70%;background:' + botBubbleColor + ';color:#fff;padding:10px 12px;border-radius:14px 14px 14px 2px;border:none;display:flex;flex-direction:column;gap:4px;'; var q = document.createElement('div'); q.textContent = question; q.style.cssText = 'font-size:14px;color:#ffffff;'; var r = document.createElement('div'); r.innerHTML = reason; r.style.cssText = 'font-size:12px;color:#e5e7eb;'; bubble.appendChild(q); if (reason && String(reason).trim().length > 0) bubble.appendChild(r); row.style.justifyContent = 'flex-start'; row.appendChild(bubble); messages.appendChild(row); messages.scrollTop = messages.scrollHeight; }
 
   var typingBubble = null;
   function showTyping() {
@@ -348,6 +348,7 @@ export async function GET(request: Request) {
     if (l.includes('company') || l.includes('organization')) return "What is the name of your company?";
     if (l.includes('api key') || l.includes('apikey')) return "Could you please provide your API Key?";
     if (l.includes('token')) return "Please enter your authentication token.";
+    if (l.includes('sitemap')) return "What is your sitemap or website URL?";
     
     var prompts = [
       "Please enter your " + label + ".",
@@ -362,6 +363,7 @@ export async function GET(request: Request) {
     if (field.description && field.description.trim().length > 0) return field.description;
     var label = field.label || field.key;
     var l = label.toLowerCase();
+    if (l.includes('sitemap')) return "Paste your sitemap URL (e.g. https://example.com/sitemap.xml)<br>&mdash;or&mdash;<br>enter your website URL (e.g. https://example.com). We’ll automatically discover your pages.";
     if (l.includes('email')) return "We will use this email to identify the user and send confirmations.";
     if (l.includes('name')) return "This helps personalise the account and communications.";
     if (l.includes('phone') || l.includes('mobile')) return "This lets us contact the user or send SMS notifications if needed.";
