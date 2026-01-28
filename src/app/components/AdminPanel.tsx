@@ -262,6 +262,7 @@ const AdminPanel: React.FC = () => {
     setSitemapLoading(true);
     setTotalProcessed(0);
     setTotalRemaining(0);
+    setAutoContinue(true); // Always enable auto-continue on new crawl
 
     await crawlBatch(sitemapUrl, true);
   };
@@ -1148,13 +1149,11 @@ const AdminPanel: React.FC = () => {
               sitemapUrl={sitemapUrl}
               sitemapStatus={sitemapStatus}
               sitemapLoading={sitemapLoading}
-              autoContinue={autoContinue}
               continueCrawling={continueCrawling}
               totalProcessed={totalProcessed}
               totalRemaining={totalRemaining}
               onSitemapUrlChange={setSitemapUrl}
               onSitemapSubmit={handleSitemapSubmit}
-              onAutoContinueChange={setAutoContinue}
               onContinueCrawling={handleContinueCrawling}
               onStopCrawling={handleStopCrawling}
             />

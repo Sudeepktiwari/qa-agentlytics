@@ -18,7 +18,7 @@ import CustomerProfilesSection from "./admin/CustomerProfilesSection";
 const AdminPanel: React.FC = () => {
   // Authentication state
   const [auth, setAuth] = useState<null | { email: string; adminId?: string }>(
-    null
+    null,
   );
   const [authError, setAuthError] = useState("");
   const [authLoading, setAuthLoading] = useState(true);
@@ -157,6 +157,7 @@ const AdminPanel: React.FC = () => {
     setSitemapLoading(true);
     setTotalProcessed(0);
     setTotalRemaining(0);
+    setAutoContinue(true); // Always enable auto-continue on new crawl
     await crawlBatch(sitemapUrl, true);
   };
 
@@ -195,13 +196,13 @@ const AdminPanel: React.FC = () => {
           `✅ Batch Complete: ${data.crawled} pages crawled, ${data.totalChunks} chunks created\n` +
             `📊 ${progressInfo}\n` +
             `⏱️ Execution time: ${Math.round(data.executionTime / 1000)}s\n` +
-            `${data.message}`
+            `${data.message}`,
         );
 
         // Auto-continue if there are more pages and auto-continue is enabled
         if (data.hasMorePages && (autoContinue || continueCrawling)) {
           setSitemapStatus(
-            (prev) => prev + `\n\n🔄 Auto-continuing in 2 seconds...`
+            (prev) => prev + `\n\n🔄 Auto-continuing in 2 seconds...`,
           );
 
           // Wait 2 seconds before continuing to prevent overwhelming the server
@@ -212,12 +213,12 @@ const AdminPanel: React.FC = () => {
           setSitemapStatus(
             (prev) =>
               prev +
-              `\n\n💡 ${data.totalRemaining} pages remaining. Enable auto-continue or click "Continue Crawling" to process more.`
+              `\n\n💡 ${data.totalRemaining} pages remaining. Enable auto-continue or click "Continue Crawling" to process more.`,
           );
           setSitemapLoading(false);
         } else {
           setSitemapStatus(
-            (prev) => prev + `\n\n🎉 All pages have been crawled successfully!`
+            (prev) => prev + `\n\n🎉 All pages have been crawled successfully!`,
           );
           setSitemapLoading(false);
           setContinueCrawling(false);
@@ -332,7 +333,7 @@ const AdminPanel: React.FC = () => {
         setLeadsLoading(false);
       }
     },
-    [leadsSearch, leadsSortBy, leadsSortOrder, LEADS_PAGE_SIZE]
+    [leadsSearch, leadsSortBy, leadsSortOrder, LEADS_PAGE_SIZE],
   );
 
   // Documents management functions
@@ -358,7 +359,7 @@ const AdminPanel: React.FC = () => {
   const deleteDocumentFile = async (filename: string) => {
     if (
       !window.confirm(
-        `Delete document "${filename}"? This will remove all its chunks from the knowledge base.`
+        `Delete document "${filename}"? This will remove all its chunks from the knowledge base.`,
       )
     ) {
       return;
@@ -462,13 +463,11 @@ const AdminPanel: React.FC = () => {
             sitemapUrl={sitemapUrl}
             sitemapStatus={sitemapStatus}
             sitemapLoading={sitemapLoading}
-            autoContinue={autoContinue}
             continueCrawling={continueCrawling}
             totalProcessed={totalProcessed}
             totalRemaining={totalRemaining}
             onSitemapUrlChange={setSitemapUrl}
             onSitemapSubmit={handleSitemapSubmit}
-            onAutoContinueChange={setAutoContinue}
             onContinueCrawling={handleContinueCrawling}
             onStopCrawling={handleStopCrawling}
           />

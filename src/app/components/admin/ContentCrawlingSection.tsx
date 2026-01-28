@@ -27,13 +27,11 @@ interface ContentCrawlingSectionProps {
   sitemapUrl: string;
   sitemapStatus: string | null;
   sitemapLoading: boolean;
-  autoContinue: boolean;
   continueCrawling: boolean;
   totalProcessed: number;
   totalRemaining: number;
   onSitemapUrlChange: (url: string) => void;
   onSitemapSubmit: (e: React.FormEvent) => void;
-  onAutoContinueChange: (enabled: boolean) => void;
   onContinueCrawling: () => void;
   onStopCrawling: () => void;
 }
@@ -42,13 +40,11 @@ const ContentCrawlingSection: React.FC<ContentCrawlingSectionProps> = ({
   sitemapUrl,
   sitemapStatus,
   sitemapLoading,
-  autoContinue,
   continueCrawling,
   totalProcessed,
   totalRemaining,
   onSitemapUrlChange,
   onSitemapSubmit,
-  onAutoContinueChange,
   onContinueCrawling,
   onStopCrawling,
 }) => {
@@ -251,7 +247,7 @@ const ContentCrawlingSection: React.FC<ContentCrawlingSectionProps> = ({
                         Resume
                       </button>
                     )}
-                    {sitemapLoading && (autoContinue || continueCrawling) && (
+                    {sitemapLoading && (
                       <button
                         onClick={onStopCrawling}
                         className="px-3 py-1.5 bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-lg text-xs font-bold uppercase tracking-wide transition-all shadow-sm flex items-center gap-1.5"
@@ -319,26 +315,6 @@ const ContentCrawlingSection: React.FC<ContentCrawlingSectionProps> = ({
                         <div className="absolute inset-0 bg-white/20 animate-[shimmer_1.5s_infinite] w-full bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-12"></div>
                       )}
                     </div>
-                  </div>
-
-                  <div className="mt-4 flex items-center justify-between">
-                    <label className="flex items-center gap-2 cursor-pointer group select-none">
-                      <div className="relative flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={autoContinue}
-                          onChange={(e) =>
-                            onAutoContinueChange(e.target.checked)
-                          }
-                          disabled={sitemapLoading}
-                          className="peer sr-only"
-                        />
-                        <div className="w-8 h-4 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-blue-600 transition-colors"></div>
-                      </div>
-                      <span className="text-xs font-medium text-slate-600 group-hover:text-slate-900 transition-colors">
-                        Auto-process batches
-                      </span>
-                    </label>
                   </div>
                 </div>
               )}
