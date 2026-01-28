@@ -366,7 +366,7 @@ const ContentCrawlingSection: React.FC<ContentCrawlingSectionProps> = ({
             )}
 
             {sitemapStatus && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 animate-in fade-in slide-in-from-bottom-2 duration-500 delay-100">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 w-full pb-2">
                 {/* What this means */}
                 <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
                   <button
