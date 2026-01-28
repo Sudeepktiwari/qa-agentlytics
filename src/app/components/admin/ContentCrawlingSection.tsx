@@ -250,11 +250,19 @@ const ContentCrawlingSection: React.FC<ContentCrawlingSectionProps> = ({
                 </div>
 
                 <p className="text-sm text-slate-500">
-                  {sitemapLoading
-                    ? "Our AI is reading and indexing your content..."
-                    : isSuccess
-                      ? "Your chatbot has been updated with the latest knowledge."
-                      : "Something went wrong. Check the logs below."}
+                  {sitemapLoading ? (
+                    <>
+                      Our AI is reading and indexing your content...
+                      <span className="block mt-1 font-medium text-amber-600">
+                        Please don’t refresh or close this page. The system needs a
+                        few minutes to crawl and index your website.
+                      </span>
+                    </>
+                  ) : isSuccess ? (
+                    "Your chatbot has been updated with the latest knowledge."
+                  ) : (
+                    "Something went wrong. Check the logs below."
+                  )}
                 </p>
               </div>
 
