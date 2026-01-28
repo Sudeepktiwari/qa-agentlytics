@@ -47,33 +47,38 @@ export async function GET(request: Request) {
   else if (theme === 'purple') { primaryColor = '#8b5cf6'; }
 
   var container = document.createElement('div');
-  container.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:10000;padding:20px;';
+  container.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:10000;padding:20px;background:rgba(0,0,0,0.5);backdrop-filter:blur(4px);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;';
   var panel = document.createElement('div');
-  panel.style.cssText = 'width:70vw;max-width:800px;height:70vh;max-height:720px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;box-shadow:0 10px 25px rgba(0,0,0,0.15);display:flex;flex-direction:column;overflow:hidden;';
+  panel.style.cssText = 'width:100%;max-width:600px;height:80vh;max-height:800px;background:#fff;border-radius:16px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);display:flex;flex-direction:column;overflow:hidden;position:relative;';
   var header = document.createElement('div');
-  header.style.cssText = 'padding:12px 16px;background:' + primaryColor + ';color:#fff;font-weight:600;display:flex;align-items:center;justify-content:space-between;';
+  header.style.cssText = 'padding:16px 20px;background:' + primaryColor + ';color:#fff;font-weight:600;font-size:16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 1px 3px rgba(0,0,0,0.1);z-index:10;';
   header.textContent = chatTitle;
   var messages = document.createElement('div');
-  messages.style.cssText = 'flex:1;padding:14px;overflow:auto;font-size:14px;color:#374151;background:#f9fafb;';
+  messages.style.cssText = 'flex:1;padding:20px;overflow-y:auto;overflow-x:hidden;font-size:15px;color:#374151;background:#f3f4f6;display:flex;flex-direction:column;gap:12px;scroll-behavior:smooth;';
   var actions = document.createElement('div');
-  actions.style.cssText = 'padding:8px 12px;border-top:1px solid #e5e7eb;background:#fff;display:flex;gap:8px;flex-wrap:wrap;';
+  actions.style.cssText = 'padding:12px 16px;border-top:1px solid #e5e7eb;background:#fff;display:flex;gap:8px;flex-wrap:wrap;min-height:56px;align-items:center;';
   var inputBar = document.createElement('div');
-  inputBar.style.cssText = 'padding:10px;border-top:1px solid #e5e7eb;background:#fff;display:flex;flex-direction:column;gap:8px;';
+  inputBar.style.cssText = 'padding:16px;border-top:1px solid #f3f4f6;background:#fff;display:flex;flex-direction:column;gap:12px;';
 
   var intentContainer = document.createElement('div');
-  intentContainer.style.cssText = 'display:flex;gap:12px;font-size:12px;color:#374151;padding-left:4px;';
-  intentContainer.innerHTML = '<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="msg_intent" value="answer" checked> Provide Answer/Data</label><label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="msg_intent" value="question"> Ask a Question</label>';
+  intentContainer.style.cssText = 'display:flex;gap:16px;font-size:13px;color:#4b5563;padding:0 4px;';
+  intentContainer.innerHTML = '<label style="display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;"><input type="radio" name="msg_intent" value="answer" checked style="accent-color:' + primaryColor + '"> Provide Answer/Data</label><label style="display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;"><input type="radio" name="msg_intent" value="question" style="accent-color:' + primaryColor + '"> Ask a Question</label>';
   
   var inputRow = document.createElement('div');
-  inputRow.style.cssText = 'display:flex;gap:8px;width:100%';
+  inputRow.style.cssText = 'display:flex;gap:10px;width:100%';
   
   var input = document.createElement('input');
   input.type = 'text';
-  input.placeholder = 'Type your message';
-  input.style.cssText = 'flex:1;padding:10px;border:1px solid #e5e7eb;border-radius:8px;';
+  input.placeholder = 'Type your message...';
+  input.style.cssText = 'flex:1;padding:12px 16px;border:1px solid #d1d5db;border-radius:24px;outline:none;font-size:15px;transition:border-color 0.2s,box-shadow 0.2s;';
+  input.onfocus = function() { this.style.borderColor = primaryColor; this.style.boxShadow = '0 0 0 3px ' + primaryColor + '20'; };
+  input.onblur = function() { this.style.borderColor = '#d1d5db'; this.style.boxShadow = 'none'; };
+
   var sendBtn = document.createElement('button');
-  sendBtn.textContent = 'Send';
-  sendBtn.style.cssText = 'padding:10px 14px;border:1px solid #e5e7eb;border-radius:8px;background:' + primaryColor + ';color:#fff;font-weight:600;';
+  sendBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width:20px;height:20px;"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" /></svg>';
+  sendBtn.style.cssText = 'padding:10px 14px;border:none;border-radius:50%;background:' + primaryColor + ';color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform 0.1s;';
+  sendBtn.onmousedown = function() { this.style.transform = 'scale(0.95)'; };
+  sendBtn.onmouseup = function() { this.style.transform = 'scale(1)'; };
   
   inputRow.appendChild(input); inputRow.appendChild(sendBtn);
   inputBar.appendChild(intentContainer);
@@ -81,8 +86,28 @@ export async function GET(request: Request) {
   
   panel.appendChild(header); panel.appendChild(messages); panel.appendChild(actions); panel.appendChild(inputBar); container.appendChild(panel); document.body.appendChild(container);
 
+  // Inject styles for scrollbar and animations
+  var styleSheet = document.createElement("style");
+  styleSheet.innerText = `
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  `;
+  document.head.appendChild(styleSheet);
+
   function clearActions() { while (actions.firstChild) actions.removeChild(actions.firstChild); }
-  function addAction(label, onClick) { var b = document.createElement('button'); b.textContent = label; b.style.cssText = 'padding:8px 12px;border:1px solid #e5e7eb;border-radius:999px;background:#fff;color:#374151;font-weight:600;'; b.onclick = onClick; actions.appendChild(b); return b; }
+  function addAction(label, onClick) { 
+    var b = document.createElement('button'); 
+    b.textContent = label; 
+    b.style.cssText = 'padding:8px 16px;border:1px solid #e5e7eb;border-radius:20px;background:#fff;color:#374151;font-weight:500;font-size:14px;cursor:pointer;transition:all 0.2s;box-shadow:0 1px 2px rgba(0,0,0,0.05);'; 
+    b.onmouseover = function() { this.style.background = '#f9fafb'; this.style.borderColor = '#d1d5db'; };
+    b.onmouseout = function() { this.style.background = '#fff'; this.style.borderColor = '#e5e7eb'; };
+    b.onclick = onClick; 
+    actions.appendChild(b); 
+    return b; 
+  }
   function formatText(text) {
     if (!text) return '';
     var html = String(text)
@@ -100,15 +125,15 @@ export async function GET(request: Request) {
 
   function addBubble(role, text) {
     var row = document.createElement('div');
-    row.style.cssText = 'display:flex;margin-bottom:10px;';
+    row.style.cssText = 'display:flex;margin-bottom:16px;animation:fadeIn 0.3s ease-out both;';
     var bubble = document.createElement('div');
     bubble.innerHTML = formatText(text);
     if (role === 'user') {
       row.style.justifyContent = 'flex-end';
-      bubble.style.cssText = 'max-width:70%;background:' + primaryColor + ';color:#fff;padding:10px 12px;border-radius:14px 14px 2px 14px;white-space:pre-wrap;word-break:break-word;line-height:1.5;';
+      bubble.style.cssText = 'max-width:75%;background:' + primaryColor + ';color:#fff;padding:12px 16px;border-radius:18px 18px 4px 18px;white-space:pre-wrap;word-break:break-word;line-height:1.5;box-shadow:0 1px 2px rgba(0,0,0,0.1);';
     } else {
       row.style.justifyContent = 'flex-start';
-      bubble.style.cssText = 'max-width:70%;background:#fff;color:#374151;padding:10px 12px;border-radius:14px 14px 14px 2px;border:1px solid #e5e7eb;white-space:pre-wrap;word-break:break-word;line-height:1.5;';
+      bubble.style.cssText = 'max-width:75%;background:#fff;color:#1f2937;padding:12px 16px;border-radius:18px 18px 18px 4px;border:1px solid #e5e7eb;white-space:pre-wrap;word-break:break-word;line-height:1.5;box-shadow:0 1px 2px rgba(0,0,0,0.05);';
     }
     row.appendChild(bubble);
     messages.appendChild(row);
@@ -117,15 +142,15 @@ export async function GET(request: Request) {
 
   function addQuestionBubble(question, reason) {
     var row = document.createElement('div');
-    row.style.cssText = 'display:flex;margin-bottom:10px;';
+    row.style.cssText = 'display:flex;margin-bottom:16px;animation:fadeIn 0.3s ease-out both;';
     var bubble = document.createElement('div');
-    bubble.style.cssText = 'max-width:70%;background:#fff;color:#374151;padding:10px 12px;border-radius:14px 14px 14px 2px;border:1px solid #e5e7eb;display:flex;flex-direction:column;gap:4px;white-space:pre-wrap;word-break:break-word;';
+    bubble.style.cssText = 'max-width:75%;background:#fff;color:#1f2937;padding:12px 16px;border-radius:18px 18px 18px 4px;border:1px solid #e5e7eb;display:flex;flex-direction:column;gap:6px;white-space:pre-wrap;word-break:break-word;box-shadow:0 1px 2px rgba(0,0,0,0.05);';
     var q = document.createElement('div');
     q.innerHTML = formatText(question);
-    q.style.cssText = 'font-size:14px;color:#111827;line-height:1.5;';
+    q.style.cssText = 'font-size:15px;color:#111827;line-height:1.5;font-weight:500;';
     var r = document.createElement('div');
     r.textContent = reason;
-    r.style.cssText = 'font-size:12px;color:#6b7280;';
+    r.style.cssText = 'font-size:13px;color:#6b7280;line-height:1.4;';
     bubble.appendChild(q);
     if (reason && String(reason).trim().length > 0) bubble.appendChild(r);
     row.style.justifyContent = 'flex-start';
@@ -138,9 +163,9 @@ export async function GET(request: Request) {
   function showTyping() {
     if (typingBubble) return;
     var row = document.createElement('div');
-    row.style.cssText = 'display:flex;margin-bottom:10px;justify-content:flex-start;';
+    row.style.cssText = 'display:flex;margin-bottom:16px;justify-content:flex-start;animation:fadeIn 0.3s ease-out both;';
     var bubble = document.createElement('div');
-    bubble.style.cssText = 'background:#fff;color:#374151;padding:10px 12px;border-radius:14px 14px 14px 2px;border:1px solid #e5e7eb;display:flex;gap:4px;align-items:center;min-width:40px;justify-content:center;';
+    bubble.style.cssText = 'background:#fff;color:#374151;padding:12px 16px;border-radius:18px 18px 18px 4px;border:1px solid #e5e7eb;display:flex;gap:4px;align-items:center;min-width:48px;justify-content:center;box-shadow:0 1px 2px rgba(0,0,0,0.05);';
     
     for (var i = 0; i < 3; i++) {
         var dot = document.createElement('div');
