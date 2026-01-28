@@ -1938,7 +1938,7 @@ export default function Page() {
 
             <div className="mt-8 flex items-center justify-center">
               <a
-                href="#trial"
+                href="/admin"
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 bg-white text-slate-900 hover:bg-slate-50 transition"
               >
                 Explore all features → Start free
