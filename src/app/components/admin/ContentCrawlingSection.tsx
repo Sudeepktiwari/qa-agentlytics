@@ -17,6 +17,10 @@ import {
   ArrowRight,
   Database,
   Cpu,
+  ChevronDown,
+  ChevronUp,
+  Info,
+  HelpCircle,
 } from "lucide-react";
 
 interface ContentCrawlingSectionProps {
@@ -49,6 +53,16 @@ const ContentCrawlingSection: React.FC<ContentCrawlingSectionProps> = ({
   onStopCrawling,
 }) => {
   const [activeTab, setActiveTab] = useState<"url" | "file">("url");
+  const [openInfoSections, setOpenInfoSections] = useState<
+    Record<string, boolean>
+  >({});
+
+  const toggleInfoSection = (section: string) => {
+    setOpenInfoSections((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
+  };
 
   // Determine status type for styling
   const isError =
@@ -254,8 +268,8 @@ const ContentCrawlingSection: React.FC<ContentCrawlingSectionProps> = ({
                     <>
                       Our AI is reading and indexing your content...
                       <span className="block mt-1 font-medium text-amber-600">
-                        Please don’t refresh or close this page. The system needs a
-                        few minutes to crawl and index your website.
+                        Please don’t refresh or close this page. The system
+                        needs a few minutes to crawl and index your website.
                       </span>
                     </>
                   ) : isSuccess ? (
@@ -346,6 +360,76 @@ const ContentCrawlingSection: React.FC<ContentCrawlingSectionProps> = ({
                   {sitemapStatus}
                   {sitemapLoading && (
                     <span className="inline-block w-2 h-4 bg-slate-500 ml-1 animate-pulse align-middle" />
+                  )}
+                </div>
+              </div>
+            )}
+
+            {sitemapStatus && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 animate-in fade-in slide-in-from-bottom-2 duration-500 delay-100">
+                {/* What this means */}
+                <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                  <button
+                    onClick={() => toggleInfoSection("meaning")}
+                    className="w-full px-4 py-3 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-left"
+                  >
+                    <span className="font-semibold text-slate-700 flex items-center gap-2">
+                      <Info size={16} className="text-blue-500" />
+                      What this means
+                    </span>
+                    {openInfoSections["meaning"] ? (
+                      <ChevronUp size={16} className="text-slate-400" />
+                    ) : (
+                      <ChevronDown size={16} className="text-slate-400" />
+                    )}
+                  </button>
+                  {openInfoSections["meaning"] && (
+                    <div className="p-4 bg-white border-t border-slate-100">
+                      <ul className="space-y-2 text-sm text-slate-600 list-disc pl-4">
+                        <li>
+                          Pages are being crawled and validated before they are
+                          indexed.
+                        </li>
+                        <li>
+                          Some batches may show “0 pages processed” while the
+                          system prepares the next set — this is expected
+                          behavior.
+                        </li>
+                        <li>No action is required from you.</li>
+                      </ul>
+                    </div>
+                  )}
+                </div>
+
+                {/* What happens next */}
+                <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                  <button
+                    onClick={() => toggleInfoSection("next")}
+                    className="w-full px-4 py-3 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors text-left"
+                  >
+                    <span className="font-semibold text-slate-700 flex items-center gap-2">
+                      <HelpCircle size={16} className="text-emerald-500" />
+                      What happens next
+                    </span>
+                    {openInfoSections["next"] ? (
+                      <ChevronUp size={16} className="text-slate-400" />
+                    ) : (
+                      <ChevronDown size={16} className="text-slate-400" />
+                    )}
+                  </button>
+                  {openInfoSections["next"] && (
+                    <div className="p-4 bg-white border-t border-slate-100">
+                      <ul className="space-y-2 text-sm text-slate-600 list-disc pl-4">
+                        <li>
+                          The system will automatically continue with the
+                          remaining pages.
+                        </li>
+                        <li>
+                          Indexed pages will appear in your Crawled Pages
+                          Library once processing completes.
+                        </li>
+                      </ul>
+                    </div>
                   )}
                 </div>
               </div>
