@@ -268,6 +268,8 @@ const OnboardingSettingsSection: React.FC = () => {
         regenRegistration,
         regenAuth,
         regenInitial,
+        closingMessage: settings.closingMessage,
+        additionalSteps: settings.additionalSteps,
       };
       if (regenRegistration) delete settingsToSave.registrationFields;
       if (regenAuth) delete settingsToSave.authFields;
