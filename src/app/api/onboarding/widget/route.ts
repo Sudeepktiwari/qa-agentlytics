@@ -137,7 +137,7 @@ export async function GET(request: Request) {
   function renderRegistrationIntro() {
     messages.innerHTML = '';
     clearActions();
-    addBubble('bot', "Welcome! Let's get you set up.");
+    addBubble('bot', "Welcome! Let's register your account.");
     addBubble('bot', 'Please share your name, email, and a password (min 8 chars). You can type them together like: Name: Jane, Email: jane@example.com, Password: hunter2');
     var wrap = document.createElement('div');
     wrap.style.cssText = 'margin:8px 0;padding:10px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;display:grid;grid-template-columns:1fr;gap:8px;';
