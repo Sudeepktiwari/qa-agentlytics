@@ -84,33 +84,35 @@ const WidgetInstructionsSection: React.FC<WidgetInstructionsSectionProps> = ({
 
         <div className="grid md:grid-cols-3 gap-8">
           {/* How this works */}
-          <div>
+          <div className="flex flex-col">
             <h3 className="font-bold text-slate-900 mb-3 flex items-center gap-2">
               <Info size={18} className="text-blue-600" />
               How this works
             </h3>
-            <ul className="space-y-3">
-              <li className="flex gap-3 text-sm text-slate-600">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-2 shrink-0" />
-                This script enables the Agentlytics AI widget on your website
-              </li>
-              <li className="flex gap-3 text-sm text-slate-600">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-2 shrink-0" />
-                The bot activates automatically based on visitor behavior
-              </li>
-              <li className="flex gap-3 text-sm text-slate-600">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-2 shrink-0" />
-                No additional configuration is required
-              </li>
-            </ul>
+            <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm h-full">
+              <ul className="space-y-3">
+                <li className="flex gap-3 text-sm text-slate-600">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-2 shrink-0" />
+                  This script enables the Agentlytics AI widget on your website
+                </li>
+                <li className="flex gap-3 text-sm text-slate-600">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-2 shrink-0" />
+                  The bot activates automatically based on visitor behavior
+                </li>
+                <li className="flex gap-3 text-sm text-slate-600">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-2 shrink-0" />
+                  No additional configuration is required
+                </li>
+              </ul>
+            </div>
           </div>
 
           {/* After adding the script */}
-          <div>
+          <div className="flex flex-col">
             <h3 className="font-bold text-slate-900 mb-3 flex items-center gap-2">
               <span>✅</span> After adding the script
             </h3>
-            <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-100 h-full">
+            <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-100 h-full shadow-sm">
               <p className="text-sm font-medium text-emerald-900 mb-3">
                 Once the code is live on your website:
               </p>
@@ -137,12 +139,12 @@ const WidgetInstructionsSection: React.FC<WidgetInstructionsSectionProps> = ({
           </div>
 
           {/* Branding */}
-          <div>
+          <div className="flex flex-col">
             <h3 className="font-bold text-slate-900 mb-3 flex items-center gap-2">
               <Palette size={18} className="text-purple-600" />
               Branding
             </h3>
-            <div className="bg-purple-50 rounded-xl p-4 border border-purple-100 h-full flex flex-col justify-center">
+            <div className="bg-purple-50 rounded-xl p-4 border border-purple-100 h-full flex flex-col justify-center shadow-sm">
               <p className="text-sm font-medium text-purple-900 mb-3">
                 Match the AI agent’s color theme with your website branding.
               </p>
