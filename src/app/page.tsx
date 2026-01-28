@@ -2070,7 +2070,7 @@ export default function Page() {
             </p>
             <div className="flex justify-center gap-3 mt-6 reveal">
               <a
-                href="#trial"
+                href="/admin"
                 className="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-[color:var(--brand-blue)] text-white"
               >
                 Start Free Trial
@@ -2086,7 +2086,7 @@ export default function Page() {
         </section>
 
         {/* Signup anchor */}
-        <section id="trial" className="py-24">
+        {/* <section id="trial" className="py-24">
           <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h2 className="font-display font-extrabold text-3xl sm:text-4xl text-slate-900">
               Start Free Trial
@@ -2124,7 +2124,7 @@ export default function Page() {
               No credit card required.
             </p>
           </div>
-        </section>
+        </section> */}
       </div>
     </>
   );
