@@ -63,7 +63,7 @@ const WidgetInstructionsSection: React.FC<WidgetInstructionsSectionProps> = ({
           <code className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-700 text-sm font-mono">
             &lt;body&gt;
           </code>{" "}
-          section of your site.
+          section or main layout of your site.
         </p>
 
         {/* Code Snippet */}
