@@ -152,7 +152,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
       .replace(/&quot;/gi, '"')
       .replace(/&lt;/gi, "<")
       .replace(/&gt;/gi, ">");
-    t = t.replace(/\s+/g, " ").trim();
+    t = t.replace(/[ \t]+/g, " ").trim();
     return t;
   };
 

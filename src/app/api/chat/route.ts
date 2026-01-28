@@ -2628,8 +2628,17 @@ function parseAIResponse(content: string): {
     const singleJsonMatch = content.match(/^\s*\{[\s\S]*\}\s*$/);
     if (singleJsonMatch) {
       const parsed = JSON.parse(content);
+      let mainText = parsed.mainText || parsed.answer || content;
+      if (typeof mainText === "string") {
+        mainText = mainText
+          .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+          .replace(/\*(.*?)\*/g, "<em>$1</em>")
+          .replace(/\n\n/g, "<br><br>")
+          .replace(/\n/g, "<br>")
+          .trim();
+      }
       return {
-        mainText: parsed.mainText || parsed.answer || content,
+        mainText: mainText,
         buttons: parsed.buttons || [],
         emailPrompt: parsed.emailPrompt || "",
         followupQuestion: parsed.followupQuestion || "",
@@ -2649,8 +2658,17 @@ function parseAIResponse(content: string): {
     try {
       const fixedParsed = JSON.parse(fixedContent);
       console.log("[DEBUG] Fixed JSON parsing successful");
+      let mainText = fixedParsed.mainText || fixedParsed.answer || content;
+      if (typeof mainText === "string") {
+        mainText = mainText
+          .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+          .replace(/\*(.*?)\*/g, "<em>$1</em>")
+          .replace(/\n\n/g, "<br><br>")
+          .replace(/\n/g, "<br>")
+          .trim();
+      }
       return {
-        mainText: fixedParsed.mainText || fixedParsed.answer || content,
+        mainText: mainText,
         buttons: fixedParsed.buttons || [],
         emailPrompt: fixedParsed.emailPrompt || "",
         followupQuestion: fixedParsed.followupQuestion || "",
