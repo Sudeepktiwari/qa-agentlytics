@@ -284,7 +284,7 @@ async function getAdminSettingsCollection(): Promise<
  */
 export async function getAdminSettings(
   adminId: string,
-  skipCache: boolean = false,
+  skipCache: boolean = false
 ): Promise<AdminSettings> {
   // Try cache first
   if (!skipCache) {

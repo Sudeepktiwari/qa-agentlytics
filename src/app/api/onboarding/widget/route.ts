@@ -61,7 +61,7 @@ export async function GET(request: Request) {
   inputBar.style.cssText = 'padding:10px;border-top:1px solid #e5e7eb;background:#fff;display:flex;flex-direction:column;gap:8px;';
 
   var intentContainer = document.createElement('div');
-  intentContainer.style.cssText = 'display:flex;gap:12px;font-size:12px;color:#374151;padding-left:4px;';
+  intentContainer.style.cssText = 'display:none;gap:12px;font-size:12px;color:#374151;padding-left:4px;';
   intentContainer.innerHTML = '<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="msg_intent" value="answer" checked> Provide Answer/Data</label><label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="msg_intent" value="question"> Ask a Question</label>';
   
   var inputRow = document.createElement('div');
