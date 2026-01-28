@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 
 export default function VoiceSettingsAdmin() {
   const [settings, setSettings] = useState({
-    voiceEnabled: true,
+    voiceEnabled: false,
     voiceGender: "female",
     autoOpenProactive: true,
   });

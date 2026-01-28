@@ -128,7 +128,7 @@ const AdminPanel: React.FC = () => {
     buttonText: "💬",
     welcomeMessage: "",
     customColor: "#0070f3",
-    voiceEnabled: true,
+    voiceEnabled: false,
     voiceGender: "female",
     autoOpenProactive: true,
   });
