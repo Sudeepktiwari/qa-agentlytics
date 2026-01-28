@@ -614,6 +614,43 @@ const AdminPanel: React.FC = () => {
     }
   };
 
+  const retryPage = async (page: CrawledPage) => {
+    if (!apiKey) {
+      showToast("API key required to retry crawl", "error");
+      return;
+    }
+
+    try {
+      showToast(`Retrying crawl for ${page.url}...`);
+
+      // Update local state to show loading/retrying status if needed
+      // For now we just trigger the toast
+
+      const res = await fetch("/api/sitemap", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
+        },
+        credentials: "include",
+        body: JSON.stringify({ retryUrl: page.url }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        showToast("Retry successful! Page is being processed.");
+        // Refresh the list to show updated status
+        fetchCrawledPages();
+      } else {
+        showToast(`Retry failed: ${data.error}`, "error");
+      }
+    } catch (error) {
+      console.error("Error retrying page:", error);
+      showToast("Error retrying page. Please try again.", "error");
+    }
+  };
+
   const deleteDocumentFile = async (filename: string) => {
     if (
       !window.confirm(
@@ -1129,6 +1166,7 @@ const AdminPanel: React.FC = () => {
               onRefreshCrawledPages={fetchCrawledPages}
               onViewPageSummary={(page) => viewSummary(page.url)}
               onDeleteCrawledPage={deleteCrawledPage}
+              onRetryPage={retryPage}
             />
           </div>
         );

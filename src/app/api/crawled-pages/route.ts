@@ -31,27 +31,64 @@ export async function GET(request: NextRequest) {
     await client.connect();
     const db = client.db("test");
     const collection = db.collection("crawled_pages");
+    const sitemapUrls = db.collection("sitemap_urls");
 
-    const pages = await collection
-      .find({ adminId })
-      .sort({ createdAt: -1 })
-      .toArray();
+    const [pages, failedDocs] = await Promise.all([
+      collection.find({ adminId }).sort({ createdAt: -1 }).toArray(),
+      sitemapUrls
+        .find({ adminId, failedAt: { $exists: true } })
+        .sort({ failedAt: -1 })
+        .toArray(),
+    ]);
+
+    // Define a common interface for the merged pages
+    interface MergedPage {
+      _id: any;
+      url: string;
+      hasStructuredSummary: boolean;
+      createdAt: Date | string;
+      status: string;
+      error?: string;
+      structuredSummary?: any;
+      summary?: string;
+    }
 
     // Add summary status flag (consider either structured or basic summary)
-    const pagesWithStatus = pages.map((page) => ({
-      ...page,
+    const pagesWithStatus: MergedPage[] = pages.map((page) => ({
+      _id: page._id,
+      url: page.url,
       hasStructuredSummary: !!(page.structuredSummary || page.summary),
+      createdAt: page.createdAt,
+      status: "success",
+      structuredSummary: page.structuredSummary,
+      summary: page.summary,
     }));
+
+    // Map failedDocs to match CrawledPage shape + error info
+    const failedPages: MergedPage[] = failedDocs.map((doc) => ({
+      _id: doc._id,
+      url: doc.url,
+      hasStructuredSummary: false,
+      createdAt: doc.failedAt,
+      error: doc.error,
+      status: "failed",
+    }));
+
+    // Merge and sort by date descending
+    const allPages = [...pagesWithStatus, ...failedPages].sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
 
     return NextResponse.json({
       success: true,
-      pages: pagesWithStatus,
+      pages: allPages,
     });
   } catch (error) {
     console.error("Error fetching crawled pages:", error);
     return NextResponse.json(
       { error: "Failed to fetch pages" },
-      { status: 500 }
+      { status: 500 },
     );
   } finally {
     if (client) {
@@ -111,7 +148,7 @@ export async function POST(request: NextRequest) {
       {
         adminId,
         filename: url,
-      }
+      },
     );
 
     // Get all vector IDs for this URL and admin
@@ -128,7 +165,7 @@ export async function POST(request: NextRequest) {
           filename: {
             $regex: new RegExp(
               `^${url.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`,
-              "i"
+              "i",
             ),
           },
         })
@@ -146,7 +183,7 @@ export async function POST(request: NextRequest) {
     if (!vectorIds.length) {
       return NextResponse.json(
         { error: "No chunk vectors found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
     const pineconeIndex = pc.index(process.env.PINECONE_INDEX!);
@@ -156,7 +193,7 @@ export async function POST(request: NextRequest) {
       Object.entries(pineconeResult.records || {}).map(([id, rec]) => [
         id,
         rec.metadata?.chunk || "",
-      ])
+      ]),
     );
     // Reconstruct content from Pinecone chunk text
     const reconstructedContent = vectorDocs
@@ -170,7 +207,7 @@ export async function POST(request: NextRequest) {
     if (!reconstructedContent || reconstructedContent.length < 50) {
       return NextResponse.json(
         { error: "Insufficient content in chunks to generate summary" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -194,7 +231,7 @@ export async function POST(request: NextRequest) {
     if (!structuredSummary) {
       return NextResponse.json(
         { error: "Failed to generate summary" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -213,7 +250,7 @@ export async function POST(request: NextRequest) {
     await collection.updateOne(
       { adminId, url },
       { $set: newPageEntry },
-      { upsert: true }
+      { upsert: true },
     );
     console.log("[API] Upserted crawled_pages entry from Pinecone chunks");
 
@@ -234,7 +271,7 @@ export async function POST(request: NextRequest) {
         error: "Failed to generate summary",
         details: error instanceof Error ? error.message : String(error),
       },
-      { status: 500 }
+      { status: 500 },
     );
   } finally {
     if (client) {
@@ -305,7 +342,7 @@ export async function DELETE(request: NextRequest) {
     console.error("Error deleting page:", error);
     return NextResponse.json(
       { error: "Failed to delete page" },
-      { status: 500 }
+      { status: 500 },
     );
   } finally {
     if (client) {
@@ -372,7 +409,7 @@ Extract and return a JSON object with:
 async function generateChunkedSummary(chunks: any[]) {
   try {
     console.log(
-      `[API] Starting chunked summary generation for ${chunks.length} chunks...`
+      `[API] Starting chunked summary generation for ${chunks.length} chunks...`,
     );
 
     // Step 1: Generate individual summaries for chunks (process in batches of 5)
@@ -383,8 +420,8 @@ async function generateChunkedSummary(chunks: any[]) {
       const batch = chunks.slice(i, i + batchSize);
       console.log(
         `[API] Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(
-          chunks.length / batchSize
-        )}`
+          chunks.length / batchSize,
+        )}`,
       );
 
       const batchPromises = batch.map(async (chunk, index) => {
@@ -439,7 +476,7 @@ Focus on: business features, pain points, solutions, target customers, pricing, 
     // Step 2: Combine all chunk summaries into final structured summary
     const combinedSummary = chunkSummaries.join("\n\n");
     console.log(
-      "[API] Generating final structured summary from chunk summaries..."
+      "[API] Generating final structured summary from chunk summaries...",
     );
 
     const finalResponse = await openai.chat.completions.create({

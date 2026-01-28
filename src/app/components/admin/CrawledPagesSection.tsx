@@ -10,6 +10,9 @@ interface CrawledPage {
   text?: string;
   summary?: string;
   structuredSummary?: Record<string, unknown>;
+  chunksCount?: number;
+  status?: "success" | "failed";
+  error?: string;
 }
 
 interface CrawledPagesSectionProps {
@@ -19,6 +22,7 @@ interface CrawledPagesSectionProps {
   onRefreshCrawledPages: () => void;
   onViewPageSummary: (page: CrawledPage) => void;
   onDeleteCrawledPage: (page: CrawledPage) => void;
+  onRetryPage: (page: CrawledPage) => void;
 }
 
 const CrawledPagesSection: React.FC<CrawledPagesSectionProps> = ({
@@ -28,6 +32,7 @@ const CrawledPagesSection: React.FC<CrawledPagesSectionProps> = ({
   onRefreshCrawledPages,
   onViewPageSummary,
   onDeleteCrawledPage,
+  onRetryPage,
 }) => {
   return (
     <div className="bg-white/95 backdrop-blur-md rounded-2xl p-4 md:p-8 shadow-lg border border-white/20 mb-6 transition-all">
@@ -86,36 +91,63 @@ const CrawledPagesSection: React.FC<CrawledPagesSectionProps> = ({
                   <div className="text-base font-semibold text-slate-800 mb-2 break-all">
                     {page.url}
                   </div>
-                  <div className="flex flex-wrap items-center gap-3 mb-4">
-                    <span
-                      className={`px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wide ${
+                  {page.status === "failed" ? (
+                    <div className="mb-2">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wide bg-red-50 text-red-600 border border-red-100">
+                          ❌ Failed
+                        </span>
+                        <span className="text-xs text-slate-400">
+                          {new Date(page.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                      {page.error && (
+                        <div className="text-xs text-red-500 mt-1 font-mono bg-red-50/50 p-1.5 rounded border border-red-100">
+                          Error: {page.error}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap items-center gap-3 mb-4">
+                      <span
+                        className={`px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wide ${
+                          page.hasStructuredSummary
+                            ? "bg-green-50 text-green-600"
+                            : "bg-orange-50 text-orange-600"
+                        }`}
+                      >
+                        {page.hasStructuredSummary
+                          ? "✅ Has Summary"
+                          : "⚡ Needs Summary"}
+                      </span>
+                      <span className="text-xs text-slate-500">
+                        {new Date(page.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex gap-2 w-full sm:w-auto">
+                  {page.status === "failed" ? (
+                    <button
+                      onClick={() => onRetryPage(page)}
+                      className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-4 py-2 rounded-lg text-xs font-bold text-white transition-all shadow-sm hover:-translate-y-0.5 bg-gradient-to-br from-blue-500 to-indigo-600 hover:shadow-blue-200"
+                    >
+                      🔄 Try Again
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => onViewPageSummary(page)}
+                      className={`flex-1 sm:flex-none flex items-center justify-center gap-1 px-4 py-2 rounded-lg text-xs font-bold text-white transition-all shadow-sm hover:-translate-y-0.5 ${
                         page.hasStructuredSummary
-                          ? "bg-green-50 text-green-600"
-                          : "bg-orange-50 text-orange-600"
+                          ? "bg-gradient-to-br from-emerald-500 to-green-600"
+                          : "bg-gradient-to-br from-orange-400 to-red-500"
                       }`}
                     >
                       {page.hasStructuredSummary
-                        ? "✅ Has Summary"
-                        : "⚡ Needs Summary"}
-                    </span>
-                    <span className="text-xs text-slate-500">
-                      {new Date(page.createdAt).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex gap-2 w-full sm:w-auto">
-                  <button
-                    onClick={() => onViewPageSummary(page)}
-                    className={`flex-1 sm:flex-none flex items-center justify-center gap-1 px-4 py-2 rounded-lg text-xs font-bold text-white transition-all shadow-sm hover:-translate-y-0.5 ${
-                      page.hasStructuredSummary
-                        ? "bg-gradient-to-br from-emerald-500 to-green-600"
-                        : "bg-gradient-to-br from-orange-400 to-red-500"
-                    }`}
-                  >
-                    {page.hasStructuredSummary
-                      ? "👁️ View Summary"
-                      : "⚡ Generate Summary"}
-                  </button>
+                        ? "👁️ View Summary"
+                        : "⚡ Generate Summary"}
+                    </button>
+                  )}
                   <button
                     onClick={() => onDeleteCrawledPage(page)}
                     className="flex-none px-3 py-2 rounded-lg text-xs font-bold text-white bg-gradient-to-br from-red-500 to-rose-600 transition-all shadow-sm hover:-translate-y-0.5"

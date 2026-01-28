@@ -1820,7 +1820,224 @@ async function processBatch(req: NextRequest) {
   const body = await req.json();
   console.log(`[Sitemap] Request body:`, JSON.stringify(body, null, 2));
 
-  const { sitemapUrl } = body;
+  const { sitemapUrl, retryUrl } = body;
+
+  if (retryUrl) {
+    console.log(`[Retry] Retrying crawl for: ${retryUrl}`);
+    const db = await getDb();
+    const sitemapUrls = db.collection("sitemap_urls");
+    const pages = db.collection("crawled_pages");
+    const pineconeVectors = db.collection("pinecone_vectors");
+
+    // Find the failed entry to get context (sitemapUrl)
+    const failedEntry = await sitemapUrls.findOne({ adminId, url: retryUrl });
+    if (!failedEntry) {
+      return NextResponse.json(
+        { error: "URL not found in history" },
+        { status: 404 },
+      );
+    }
+
+    const sitemapUrlContext = failedEntry.sitemapUrl;
+
+    // Reset status
+    await sitemapUrls.updateOne(
+      { _id: failedEntry._id },
+      {
+        $unset: { failedAt: 1, error: 1 },
+        $set: { recrawlAt: new Date(), recrawlReason: "user_retry" },
+      },
+    );
+
+    try {
+      console.log(`[Retry] Extracting text from: ${retryUrl}`);
+      const text = await extractTextFromUrl(retryUrl);
+
+      // Generate basic summary
+      const basicSummaryResponse = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are a helpful assistant that creates concise summaries of web page content. Focus on the main topics, key information, and important details.",
+          },
+          {
+            role: "user",
+            content: `Please create a concise summary of the following web page content:\n\n${text}`,
+          },
+        ],
+        max_tokens: 300,
+        temperature: 0.3,
+      });
+      const basicSummary =
+        basicSummaryResponse.choices[0]?.message?.content ||
+        "Summary not available";
+
+      // Generate structured summary
+      let structuredSummary = null;
+      if (text.length >= 100) {
+        try {
+          console.log(
+            `[Retry] Generating structured summary for ${retryUrl}...`,
+          );
+          const structuredSummaryResponse = await openai.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages: [
+              {
+                role: "system",
+                content:
+                  "You are an expert web page analyzer. Analyze the provided web page content and extract key business information. Return ONLY a valid JSON object with the specified structure. Do not include any markdown formatting or additional text.",
+              },
+              {
+                role: "user",
+                content: `Analyze this web page content and extract key information:
+
+${text}
+
+Extract and return a JSON object with:
+{
+  "pageType": "homepage|pricing|features|about|contact|blog|product|service",
+  "businessVertical": "fitness|healthcare|legal|restaurant|saas|ecommerce|consulting|other",
+  "primaryFeatures": ["feature1", "feature2", "feature3"],
+  "painPointsAddressed": ["pain1", "pain2", "pain3"],
+  "solutions": ["solution1", "solution2", "solution3"],
+  "targetCustomers": ["small business", "enterprise", "startups"],
+  "businessOutcomes": ["outcome1", "outcome2"],
+  "competitiveAdvantages": ["advantage1", "advantage2"],
+  "industryTerms": ["term1", "term2", "term3"],
+  "pricePoints": ["free", "$X/month", "enterprise"],
+  "integrations": ["tool1", "tool2"],
+  "useCases": ["usecase1", "usecase2"],
+  "callsToAction": ["Get Started", "Book Demo"],
+  "trustSignals": ["testimonial", "certification", "clientcount"]
+}`,
+              },
+            ],
+            max_tokens: 800,
+            temperature: 0.3,
+          });
+
+          const structuredText =
+            structuredSummaryResponse.choices[0]?.message?.content;
+          if (structuredText) {
+            try {
+              structuredSummary = JSON.parse(structuredText);
+            } catch (parseError) {
+              console.error(
+                `[Retry] Failed to parse structured summary JSON:`,
+                parseError,
+              );
+            }
+          }
+        } catch (summaryError) {
+          console.error(
+            `[Retry] Error generating structured summary:`,
+            summaryError,
+          );
+        }
+      }
+
+      // Store page data
+      const pageData: any = {
+        adminId,
+        url: retryUrl,
+        text,
+        summary: basicSummary,
+        filename: retryUrl,
+        createdAt: new Date(),
+      };
+
+      if (structuredSummary) {
+        pageData.structuredSummary = structuredSummary;
+        pageData.summaryGeneratedAt = new Date();
+      }
+
+      await pages.insertOne(pageData);
+
+      // Mark as crawled
+      await sitemapUrls.updateOne(
+        { adminId, url: retryUrl, sitemapUrl: sitemapUrlContext },
+        { $set: { crawled: true, crawledAt: new Date() } },
+      );
+
+      // Chunk and embed
+      let chunks = chunkText(text);
+      if (chunks.length === 0 && text.length > 10) {
+        chunks = [text.trim()];
+      }
+
+      if (chunks.length > 0) {
+        console.log(
+          `[Retry] Creating embeddings for ${chunks.length} chunks...`,
+        );
+        try {
+          const embeddings = await Promise.all(
+            chunks.map(async (chunk) => {
+              const response = await openai.embeddings.create({
+                model: "text-embedding-3-small",
+                input: chunk,
+              });
+              return response.data[0].embedding;
+            }),
+          );
+
+          const vectors = chunks.map((chunk, i) => ({
+            id: `${retryUrl}-${i}`,
+            values: embeddings[i],
+            metadata: {
+              url: retryUrl,
+              text: chunk,
+              chunkIndex: i,
+              adminId,
+              sitemapUrl: sitemapUrlContext,
+              createdAt: new Date().toISOString(),
+            },
+          }));
+
+          await index.upsert(vectors);
+
+          // Backup vectors to MongoDB
+          await pineconeVectors.deleteMany({ adminId, filename: retryUrl });
+          const vectorDocs = vectors.map((v) => ({
+            adminId,
+            vectorId: v.id,
+            filename: retryUrl,
+            sitemapUrl: sitemapUrlContext,
+            createdAt: new Date(),
+          }));
+          if (vectorDocs.length > 0) {
+            await pineconeVectors.insertMany(vectorDocs);
+          }
+        } catch (embedError) {
+          console.error(`[Retry] Error generating embeddings:`, embedError);
+        }
+      }
+
+      return NextResponse.json({
+        message: "Retry successful",
+        url: retryUrl,
+        crawled: true,
+      });
+    } catch (err) {
+      console.error(`[Retry] Failed:`, err);
+      // Mark as failed
+      await sitemapUrls.updateOne(
+        { _id: failedEntry._id },
+        {
+          $set: {
+            failedAt: new Date(),
+            error: err instanceof Error ? err.message : String(err),
+          },
+        },
+      );
+      return NextResponse.json(
+        { error: err instanceof Error ? err.message : String(err) },
+        { status: 500 },
+      );
+    }
+  }
+
   if (!sitemapUrl) {
     console.log(`[Sitemap] No sitemapUrl provided in request body`);
     return NextResponse.json({ error: "Missing URL" }, { status: 400 });
