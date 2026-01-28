@@ -100,6 +100,58 @@ export async function GET(request: Request) {
   function addHtmlBubble(html) { var row = document.createElement('div'); row.style.cssText = 'display:flex;margin-bottom:10px;justify-content:flex-start;'; var bubble = document.createElement('div'); bubble.style.cssText = 'max-width:70%;background:' + botBubbleColor + ';color:#fff;padding:10px 12px;border-radius:14px 14px 14px 2px;border:none;'; bubble.innerHTML = html; row.appendChild(bubble); messages.appendChild(row); messages.scrollTop = messages.scrollHeight; }
   function addQuestionBubble(question, reason) { var row = document.createElement('div'); row.style.cssText = 'display:flex;margin-bottom:10px;'; var bubble = document.createElement('div'); bubble.style.cssText = 'max-width:70%;background:' + botBubbleColor + ';color:#fff;padding:10px 12px;border-radius:14px 14px 14px 2px;border:none;display:flex;flex-direction:column;gap:4px;'; var q = document.createElement('div'); q.textContent = question; q.style.cssText = 'font-size:14px;color:#ffffff;'; var r = document.createElement('div'); r.innerHTML = reason; r.style.cssText = 'font-size:12px;color:#e5e7eb;'; bubble.appendChild(q); if (reason && String(reason).trim().length > 0) bubble.appendChild(r); row.style.justifyContent = 'flex-start'; row.appendChild(bubble); messages.appendChild(row); messages.scrollTop = messages.scrollHeight; }
 
+  function skipInitialSetup() {
+    if (state.additionalSteps && state.additionalSteps.length > 0) {
+      startAdditionalSteps();
+    } else {
+      fetch(API_BASE + '/api/onboarding/chat', { method:'POST', headers:{ 'Content-Type': 'application/json', 'x-api-key': apiKey }, body: JSON.stringify({ action:'get_initial_fields' }) })
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+          state.additionalSteps = d.additionalSteps || [];
+          saveState();
+          if (state.additionalSteps.length > 0) { startAdditionalSteps(); }
+          else { addBubble('bot', 'No additional steps are configured.'); }
+        }).catch(function(){
+          addBubble('bot', 'Could not load additional steps.');
+        });
+    }
+  }
+
+  function ensureSkipAction() {
+    var shouldShow = state.step === 'setup_collect' || state.step === 'setup_confirm';
+    if (!shouldShow) return;
+    var existing = actions.querySelector('#skip-initial-setup-btn');
+    if (existing) return;
+    var b = document.createElement('button');
+    b.id = 'skip-initial-setup-btn';
+    b.textContent = 'Skip Initial Setup';
+    b.style.cssText = 'padding:8px 12px;border:none;border-radius:999px;background:' + botBubbleColor + ';color:#fff;font-weight:600;';
+    b.onclick = skipInitialSetup;
+    actions.appendChild(b);
+  }
+
+  function addInlineInputForField(field, mode) {
+    var l = String((field && (field.label || field.key)) || '').toLowerCase();
+    var needs = l.includes('sitemap') || l.includes('website') || l.includes('site') || l.includes('url');
+    if (!needs) return;
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;margin:8px 0;justify-content:flex-start;';
+    var bubble = document.createElement('div');
+    bubble.style.cssText = 'max-width:70%;background:#fff;color:#374151;padding:10px 12px;border-radius:10px;border:1px solid #e5e7eb;display:flex;gap:8px;flex-wrap:wrap;';
+    var inputEl = document.createElement('input');
+    inputEl.type = 'text';
+    inputEl.placeholder = 'https://example.com/sitemap.xml or https://example.com';
+    inputEl.style.cssText = 'flex:1;min-width:260px;padding:8px;border:1px solid #e5e7eb;border-radius:8px;';
+    var submitBtn = document.createElement('button');
+    submitBtn.textContent = 'Submit';
+    submitBtn.style.cssText = 'padding:8px 12px;border:none;border-radius:999px;background:' + primaryColor + ';color:#fff;font-weight:600;';
+    submitBtn.onclick = function(){ var v = inputEl.value.trim(); if (!v) return; if (mode === 'setup') { state.init[field.key] = v; saveState(); askNextSetupField(); } else { state.stepData[field.key] = v; saveState(); askNextAdditionalField(); } };
+    bubble.appendChild(inputEl);
+    bubble.appendChild(submitBtn);
+    row.appendChild(bubble);
+    messages.appendChild(row);
+    messages.scrollTop = messages.scrollHeight;
+  }
   var typingBubble = null;
   function showTyping() {
     if (typingBubble) return;
@@ -197,6 +249,7 @@ export async function GET(request: Request) {
     }
     messages.innerHTML = '';
     clearActions();
+    ensureSkipAction();
     try {
       setupFieldsCache.forEach(function(f){
         var key = String(f.key || '');
@@ -216,19 +269,11 @@ export async function GET(request: Request) {
   function renderInitialConfirm(fields) {
     messages.innerHTML = '';
     clearActions();
+    ensureSkipAction();
     addBubble('bot', 'Please review your setup details:');
     fields.forEach(function(f){ addBubble('bot', (f.label || f.key) + ': ' + (state.init[f.key] || '')); });
     addAction('Confirm and Submit', function(){ submitInitialSetup(fields); });
     addAction('Edit Details', function(){ renderInitialSetup(fields); });
-    addAction('Skip Initial Setup', function(){ 
-      if (state.additionalSteps && state.additionalSteps.length > 0) {
-        startAdditionalSteps();
-      } else {
-        addBubble('bot', 'Onboarding complete.');
-        clearActions(); addAction('Close', function(){ container.remove(); });
-        state.step = 'complete'; saveState();
-      }
-    });
     state.step = 'setup_confirm'; saveState();
   }
 
@@ -297,6 +342,7 @@ export async function GET(request: Request) {
     var q = generateQuestion(pending);
     var r = generateReason(pending);
     addQuestionBubble(q, r);
+    addInlineInputForField(pending, 'additional');
     clearActions();
   }
 
@@ -372,27 +418,9 @@ export async function GET(request: Request) {
     return "This information is required so your onboarding flow and API integration work correctly.";
   }
 
-  function askNextSetupField() { var pending = setupFieldsCache.find(function(f){ return !state.init[f.key]; }); if (!pending) { renderInitialConfirm(setupFieldsCache); return; } var q = generateQuestion(pending); var r = generateReason(pending); addQuestionBubble(q, r); clearActions(); }
+  function askNextSetupField() { var pending = setupFieldsCache.find(function(f){ return !state.init[f.key]; }); if (!pending) { renderInitialConfirm(setupFieldsCache); return; } var q = generateQuestion(pending); var r = generateReason(pending); addQuestionBubble(q, r); addInlineInputForField(pending, 'setup'); clearActions(); ensureSkipAction(); }
   
-  // Add a persistent option to skip initial setup and proceed directly to additional steps
-  // This ensures additional APIs can work even if initial steps are not completed.
-  addAction('Skip Initial Setup', function(){ 
-    if (state.additionalSteps && state.additionalSteps.length > 0) {
-      startAdditionalSteps();
-    } else {
-      // Fetch latest steps in case they were not loaded yet
-      fetch(API_BASE + '/api/onboarding/chat', { method:'POST', headers:{ 'Content-Type': 'application/json', 'x-api-key': apiKey }, body: JSON.stringify({ action:'get_initial_fields' }) })
-        .then(function(r){ return r.json(); })
-        .then(function(d){
-          state.additionalSteps = d.additionalSteps || [];
-          saveState();
-          if (state.additionalSteps.length > 0) { startAdditionalSteps(); }
-          else { addBubble('bot', 'No additional steps are configured.'); }
-        }).catch(function(){
-          addBubble('bot', 'Could not load additional steps.');
-        });
-    }
-  });
+  ensureSkipAction();
   
   function handleUserMessage(text) { 
     addBubble('user', text); 
