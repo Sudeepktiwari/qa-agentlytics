@@ -210,7 +210,9 @@ export async function GET(request: Request) {
       if (state.additionalSteps && state.additionalSteps.length > 0) {
         startAdditionalSteps();
       } else {
-        addBubble('bot', 'No additional steps are configured.');
+        addBubble('bot', 'Onboarding complete.');
+        clearActions(); addAction('Close', function(){ container.remove(); });
+        state.step = 'complete'; saveState();
       }
     });
     state.step = 'setup_confirm'; saveState();
