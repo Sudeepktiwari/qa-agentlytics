@@ -363,7 +363,7 @@ export async function GET(request: Request) {
     if (field.description && field.description.trim().length > 0) return field.description;
     var label = field.label || field.key;
     var l = label.toLowerCase();
-    if (l.includes('sitemap')) return "Paste your sitemap URL (e.g. https://example.com/sitemap.xml)<br>&mdash;or&mdash;<br>enter your website URL (e.g. https://example.com). We’ll automatically discover your pages.";
+    if (l.includes('sitemap')) return "<div style='margin-top:6px;'>Paste your sitemap URL (e.g. <code style=\"background:rgba(255,255,255,0.15);padding:2px 6px;border-radius:4px;color:#fff;\">https://example.com/sitemap.xml</code>)</div><div style='margin:8px 0;'>—or—</div><div>enter your website URL (e.g. <code style=\"background:rgba(255,255,255,0.15);padding:2px 6px;border-radius:4px;color:#fff;\">https://example.com</code>). We’ll automatically discover your pages.</div>";
     if (l.includes('email')) return "We will use this email to identify the user and send confirmations.";
     if (l.includes('name')) return "This helps personalise the account and communications.";
     if (l.includes('phone') || l.includes('mobile')) return "This lets us contact the user or send SMS notifications if needed.";
