@@ -337,6 +337,7 @@ const AdminPanel: React.FC = () => {
 
         // Refresh sitemap URLs
         fetchSitemapUrls();
+        fetchCrawledPages();
       } else {
         setSitemapStatus(`❌ Error: ${data.error}`);
         setSitemapLoading(false);
@@ -383,6 +384,8 @@ const AdminPanel: React.FC = () => {
       });
     } catch (err) {
       console.error("Failed to send stop signal to backend:", err);
+    } finally {
+      fetchCrawledPages();
     }
   };
 
