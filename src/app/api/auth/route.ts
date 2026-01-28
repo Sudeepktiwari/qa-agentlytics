@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
       console.log("❌ Auth POST - User already exists:", email);
       return NextResponse.json(
         { error: "User already exists" },
-        { status: 409 }
+        { status: 409 },
       );
     }
     const hashed = await bcrypt.hash(password, 10);
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
           subscriptionStatus: "active",
           extraLeads: 0,
         },
-      }
+      },
     );
 
     // Initialize default subscription limits for Free plan
@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
     } catch (initErr) {
       console.error(
         "[Auth/Register] Failed to init free subscription defaults",
-        initErr
+        initErr,
       );
     }
     const res = NextResponse.json({ token, adminId, apiKey });
@@ -93,11 +93,11 @@ export async function POST(req: NextRequest) {
       "✅ Auth POST - User registered successfully:",
       email,
       "AdminID:",
-      adminId
+      adminId,
     );
     console.log(
       "🍪 Auth POST - Cookie set for token:",
-      "***" + token.slice(-10)
+      "***" + token.slice(-10),
     );
     return res;
   } else if (action === "login") {
@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
       console.log("❌ Auth POST - User not found:", email);
       return NextResponse.json(
         { error: "Invalid credentials" },
-        { status: 401 }
+        { status: 401 },
       );
     }
     const valid = await bcrypt.compare(password, user.password);
@@ -115,7 +115,7 @@ export async function POST(req: NextRequest) {
       console.log("❌ Auth POST - Invalid password for:", email);
       return NextResponse.json(
         { error: "Invalid credentials" },
-        { status: 401 }
+        { status: 401 },
       );
     }
     const adminId = user._id.toString();
@@ -131,7 +131,7 @@ export async function POST(req: NextRequest) {
             apiKey,
             apiKeyCreated: new Date(),
           },
-        }
+        },
       );
     }
 
@@ -141,7 +141,7 @@ export async function POST(req: NextRequest) {
         $set: {
           token,
         },
-      }
+      },
     );
 
     const res = NextResponse.json({ token, adminId, apiKey });
@@ -156,11 +156,11 @@ export async function POST(req: NextRequest) {
       "✅ Auth POST - User logged in successfully:",
       email,
       "AdminID:",
-      adminId
+      adminId,
     );
     console.log(
       "🍪 Auth POST - Cookie set for token:",
-      "***" + token.slice(-10)
+      "***" + token.slice(-10),
     );
     return res;
   } else {
@@ -208,10 +208,18 @@ export async function PUT(req: NextRequest) {
       email: string;
       adminId: string;
     };
-    return NextResponse.json({
+    const res = NextResponse.json({
       email: payload.email,
       adminId: payload.adminId,
     });
+    res.cookies.set("auth_token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24, // 1 day
+    });
+    return res;
   } catch {
     return NextResponse.json({ error: "Invalid token" }, { status: 401 });
   }

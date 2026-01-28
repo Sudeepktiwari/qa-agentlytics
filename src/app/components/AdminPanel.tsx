@@ -191,7 +191,7 @@ const AdminPanel: React.FC = () => {
         const tokenParam = params.get("token");
 
         if (tokenParam) {
-           const res = await fetch("/api/auth", {
+          const res = await fetch("/api/auth", {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             credentials: "include",
@@ -274,6 +274,7 @@ const AdminPanel: React.FC = () => {
       const res = await fetch("/api/sitemap", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ sitemapUrl: url }),
       });
 
