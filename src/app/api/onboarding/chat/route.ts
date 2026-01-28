@@ -276,8 +276,18 @@ export async function POST(request: NextRequest) {
       } catch (e) {
         console.error("[Onboarding] Lead persistence error", e);
       }
+      // Include closing message from admin onboarding settings
+      let closingMessage: string | undefined;
+      try {
+        const settings = await getAdminSettings(adminId, true);
+        closingMessage = (settings.onboarding as any)?.closingMessage;
+      } catch {}
       return NextResponse.json(
-        { success: true, responseBody: result.responseBody || null },
+        {
+          success: true,
+          responseBody: result.responseBody || null,
+          closingMessage: closingMessage || null,
+        },
         { status: 200, headers: corsHeaders },
       );
     }

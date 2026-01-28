@@ -84,6 +84,7 @@ export async function GET(request: Request) {
   function clearActions() { while (actions.firstChild) actions.removeChild(actions.firstChild); }
   function addAction(label, onClick) { var b = document.createElement('button'); b.textContent = label; b.style.cssText = 'padding:8px 12px;border:1px solid #e5e7eb;border-radius:999px;background:#fff;color:#374151;font-weight:600;'; b.onclick = onClick; actions.appendChild(b); return b; }
   function addBubble(role, text) { var row = document.createElement('div'); row.style.cssText = 'display:flex;margin-bottom:10px;'; var bubble = document.createElement('div'); bubble.textContent = text; if (role === 'user') { row.style.justifyContent = 'flex-end'; bubble.style.cssText = 'max-width:70%;background:' + primaryColor + ';color:#fff;padding:10px 12px;border-radius:14px 14px 2px 14px;'; } else { row.style.justifyContent = 'flex-start'; bubble.style.cssText = 'max-width:70%;background:#fff;color:#374151;padding:10px 12px;border-radius:14px 14px 14px 2px;border:1px solid #e5e7eb;'; } row.appendChild(bubble); messages.appendChild(row); messages.scrollTop = messages.scrollHeight; }
+  function addHtmlBubble(html) { var row = document.createElement('div'); row.style.cssText = 'display:flex;margin-bottom:10px;justify-content:flex-start;'; var bubble = document.createElement('div'); bubble.style.cssText = 'max-width:70%;background:#fff;color:#374151;padding:10px 12px;border-radius:14px 14px 14px 2px;border:1px solid #e5e7eb;'; bubble.innerHTML = html; row.appendChild(bubble); messages.appendChild(row); messages.scrollTop = messages.scrollHeight; }
   function addQuestionBubble(question, reason) { var row = document.createElement('div'); row.style.cssText = 'display:flex;margin-bottom:10px;'; var bubble = document.createElement('div'); bubble.style.cssText = 'max-width:70%;background:#fff;color:#374151;padding:10px 12px;border-radius:14px 14px 14px 2px;border:1px solid #e5e7eb;display:flex;flex-direction:column;gap:4px;'; var q = document.createElement('div'); q.textContent = question; q.style.cssText = 'font-size:14px;color:#111827;'; var r = document.createElement('div'); r.textContent = reason; r.style.cssText = 'font-size:12px;color:#6b7280;'; bubble.appendChild(q); if (reason && String(reason).trim().length > 0) bubble.appendChild(r); row.style.justifyContent = 'flex-start'; row.appendChild(bubble); messages.appendChild(row); messages.scrollTop = messages.scrollHeight; }
 
   var typingBubble = null;
@@ -236,6 +237,7 @@ export async function GET(request: Request) {
       startAdditionalSteps();
     } else {
       addBubble('bot', 'Onboarding complete.');
+      if (data.closingMessage) { addHtmlBubble(String(data.closingMessage)); }
       clearActions(); addAction('Close', function(){ container.remove(); });
       state.step = 'complete'; saveState();
     }
