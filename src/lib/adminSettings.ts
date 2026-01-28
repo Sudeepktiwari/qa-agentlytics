@@ -284,11 +284,14 @@ async function getAdminSettingsCollection(): Promise<
  */
 export async function getAdminSettings(
   adminId: string,
+  skipCache: boolean = false,
 ): Promise<AdminSettings> {
   // Try cache first
-  const cached = settingsCache.get(adminId);
-  if (cached) {
-    return cached;
+  if (!skipCache) {
+    const cached = settingsCache.get(adminId);
+    if (cached) {
+      return cached;
+    }
   }
 
   try {

@@ -2097,7 +2097,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
         ))}
       </div>
       <div style={{ marginBottom: 12 }}>
-        <div
+        {/* <div
           style={{
             display: "flex",
             gap: 8,
@@ -2142,7 +2142,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
             />
             Provide Answer/Data
           </label>
-        </div>
+        </div> */}
         <div style={{ display: "flex", gap: 8 }}>
           <input
             type="text"

@@ -2196,19 +2196,20 @@ function mergeFields(base: any[], extra: any[]): any[] {
 
 function promptForField(field: any): string {
   const base = field.label || field.key;
+  const boldBase = `**${base}**`;
   switch (field.type) {
     case "email":
-      return `What is your ${base.toLowerCase()}?`;
+      return `What is your ${boldBase.toLowerCase()}?`;
     case "phone":
-      return `Please share your ${base.toLowerCase()} (digits only).`;
+      return `Please share your ${boldBase.toLowerCase()} (digits only).`;
     case "select":
-      return `Choose your ${base.toLowerCase()}${
+      return `Choose your ${boldBase.toLowerCase()}${
         field.options ? `: ${field.options.join(", ")}` : ""
       }.`;
     case "checkbox":
-      return `Do you consent to ${base.toLowerCase()}? Reply yes or no.`;
+      return `Do you consent to ${boldBase.toLowerCase()}? Reply yes or no.`;
     default:
-      return `What is your ${base.toLowerCase()}?`;
+      return `What is your ${boldBase.toLowerCase()}?`;
   }
 }
 
@@ -2220,7 +2221,7 @@ function buildSafeSummary(data: Record<string, any>): string {
       const kl = k.toLowerCase();
       const isSensitive = redactKeys.some((rk) => kl.includes(rk));
       const display = isSensitive ? "***" : v;
-      return `- ${k}: ${display}`;
+      return `- **${k}**: ${display}`;
     })
     .join("\n");
 }
@@ -2603,6 +2604,17 @@ function countTokens(text: string) {
   return Math.ceil(text.length / 4);
 }
 
+// Helper to format main text with HTML for markdown compatibility
+function formatMainText(text: string): string {
+  if (typeof text !== "string") return text;
+  return text
+    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+    .replace(/\*(.*?)\*/g, "<em>$1</em>")
+    .replace(/\n\n/g, "<br><br>")
+    .replace(/\n/g, "<br>")
+    .trim();
+}
+
 // Robust AI response parser that handles multiple JSON objects and formats
 function parseAIResponse(content: string): {
   mainText: string;
@@ -2630,12 +2642,7 @@ function parseAIResponse(content: string): {
       const parsed = JSON.parse(content);
       let mainText = parsed.mainText || parsed.answer || content;
       if (typeof mainText === "string") {
-        mainText = mainText
-          .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-          .replace(/\*(.*?)\*/g, "<em>$1</em>")
-          .replace(/\n\n/g, "<br><br>")
-          .replace(/\n/g, "<br>")
-          .trim();
+        mainText = formatMainText(mainText);
       }
       return {
         mainText: mainText,
@@ -2660,12 +2667,7 @@ function parseAIResponse(content: string): {
       console.log("[DEBUG] Fixed JSON parsing successful");
       let mainText = fixedParsed.mainText || fixedParsed.answer || content;
       if (typeof mainText === "string") {
-        mainText = mainText
-          .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-          .replace(/\*(.*?)\*/g, "<em>$1</em>")
-          .replace(/\n\n/g, "<br><br>")
-          .replace(/\n/g, "<br>")
-          .trim();
+        mainText = formatMainText(mainText);
       }
       return {
         mainText: mainText,
@@ -5230,7 +5232,9 @@ Keep the response conversational and helpful, focusing on providing value before
       );
       if (!isBundleSignal) {
         const resp = {
-          mainText: `${docContext ? `${docContext}\n\n` : ""}${intro}`,
+          mainText: formatMainText(
+            `${docContext ? `${docContext}\n\n` : ""}${intro}`,
+          ),
           buttons: ["Cancel Onboarding"],
           emailPrompt: "",
           showBookingCalendar: false,
@@ -5259,8 +5263,9 @@ Keep the response conversational and helpful, focusing on providing value before
             ) {
               if (requiresAuth && !hasAuthToken) {
                 const resp = {
-                  mainText:
+                  mainText: formatMainText(
                     "Authentication required to submit initial setup. Please log in or provide credentials.",
+                  ),
                   buttons: ["Log In", "Edit Details"],
                   emailPrompt: "",
                   showBookingCalendar: false,
@@ -5379,7 +5384,7 @@ Keep the response conversational and helpful, focusing on providing value before
               }
 
               if (errorItems.length > 0) {
-                detailsText = `\n\nDetails:\n- ${errorItems.join("\n- ")}`;
+                detailsText = `\n\nDetails:\n\n- ${errorItems.join("\n- ")}`;
               }
             } catch {}
           }
@@ -5491,7 +5496,9 @@ Keep the response conversational and helpful, focusing on providing value before
               );
               const summary = buildSafeSummary(limited);
               const resp = {
-                mainText: `✅ Registration complete. Initial setup is ready to submit with your setup details.\n\nDetails:\n${summary}\n\nReply "Confirm" to submit initial setup, or "Edit" to change any detail.`,
+                mainText: formatMainText(
+                  `✅ Registration complete. Initial setup is ready to submit with your setup details.\n\nDetails:\n\n${summary}\n\nReply "Confirm" to submit initial setup, or "Edit" to change any detail.`,
+                ),
                 buttons: ["Confirm and Submit", "Edit Details"],
                 emailPrompt: "",
                 showBookingCalendar: false,
@@ -5534,9 +5541,9 @@ Keep the response conversational and helpful, focusing on providing value before
               "✅ Registration complete. Now, let’s finish initial setup.";
             const prompt = promptForField(firstField);
             const resp = {
-              mainText: `${
-                docContext ? `${docContext}\n\n` : ""
-              }${intro}\n\n${prompt}`,
+              mainText: formatMainText(
+                `${docContext ? `${docContext}\n\n` : ""}${intro}\n\n${prompt}`,
+              ),
               buttons: [],
               emailPrompt: "",
               showBookingCalendar: false,
@@ -5608,9 +5615,9 @@ Keep the response conversational and helpful, focusing on providing value before
                     "✅ Registration complete. Now, let’s finish initial setup.";
                   const prompt = promptForField(firstField);
                   const resp = {
-                    mainText: `${
-                      docContext ? `${docContext}\n\n` : ""
-                    }${intro}\n\n${prompt}`,
+                    mainText: formatMainText(
+                      `${docContext ? `${docContext}\n\n` : ""}${intro}\n\n${prompt}`,
+                    ),
                     buttons: [],
                     emailPrompt: "",
                     showBookingCalendar: false,
@@ -5685,9 +5692,9 @@ Keep the response conversational and helpful, focusing on providing value before
                   "✅ Registration complete. Now, let’s finish initial setup.";
                 const prompt2 = promptForField(firstField);
                 const resp2 = {
-                  mainText: `${
-                    docContext2 ? `${docContext2}\n\n` : ""
-                  }${intro2}\n\n${prompt2}`,
+                  mainText: formatMainText(
+                    `${docContext2 ? `${docContext2}\n\n` : ""}${intro2}\n\n${prompt2}`,
+                  ),
                   buttons: [],
                   emailPrompt: "",
                   showBookingCalendar: false,
@@ -5752,7 +5759,7 @@ Keep the response conversational and helpful, focusing on providing value before
           if (isSuccess) {
             resp = {
               mainText: externalMsg
-                ? `✅ ${externalMsg}`
+                ? formatMainText(`✅ ${externalMsg}`)
                 : "✅ You’re all set! Your account has been created.",
               buttons: ["Log In", "Talk to Sales"],
               emailPrompt: "",
@@ -5828,11 +5835,13 @@ Keep the response conversational and helpful, focusing on providing value before
                   onboardingConfig?.docsUrl,
                 );
                 resp = {
-                  mainText: `${
-                    docContext ? `${docContext}\n\n` : ""
-                  }We need a few more details to complete your registration. ${promptForField(
-                    firstField,
-                  )}`,
+                  mainText: formatMainText(
+                    `${
+                      docContext ? `${docContext}\n\n` : ""
+                    }We need a few more details to complete your registration. ${promptForField(
+                      firstField,
+                    )}`,
+                  ),
                   buttons: [],
                   emailPrompt: "",
                   showBookingCalendar: false,
@@ -5842,9 +5851,11 @@ Keep the response conversational and helpful, focusing on providing value before
             }
             if (!resp) {
               resp = {
-                mainText: `⚠️ We couldn’t complete registration: ${
-                  result.error || "Unknown error"
-                }.${detailsText}`,
+                mainText: formatMainText(
+                  `⚠️ We couldn’t complete registration: ${
+                    result.error || "Unknown error"
+                  }.${detailsText}`,
+                ),
                 buttons: ["Try Again", "Edit Details"],
                 emailPrompt: "",
                 showBookingCalendar: false,
@@ -5879,7 +5890,9 @@ Keep the response conversational and helpful, focusing on providing value before
             onboardingConfig?.docsUrl,
           );
           const resp = {
-            mainText: `${docContext ? `${docContext}\n\n` : ""}${prompt}`,
+            mainText: formatMainText(
+              `${docContext ? `${docContext}\n\n` : ""}${prompt}`,
+            ),
             buttons: [],
             emailPrompt: "",
             showBookingCalendar: false,
@@ -5893,8 +5906,9 @@ Keep the response conversational and helpful, focusing on providing value before
             { upsert: true },
           );
           const resp = {
-            mainText:
+            mainText: formatMainText(
               "Okay, I’ve cancelled onboarding. Would you like sales or support?",
+            ),
             buttons: ["Talk to Sales", "Contact Support"],
             emailPrompt: "",
             showBookingCalendar: false,
@@ -5926,11 +5940,13 @@ Keep the response conversational and helpful, focusing on providing value before
               lastError || "",
             );
           const resp = {
-            mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\n${
-              isExistingUser
-                ? "Please update your email to continue."
-                : 'Reply "Try Again" to resubmit, or "Edit" to change any detail.'
-            }\n\nCurrent details:\n${summary}`,
+            mainText: formatMainText(
+              `⚠️ We couldn’t complete registration: ${lastError}.\n\n${
+                isExistingUser
+                  ? "Please update your email to continue."
+                  : 'Reply "Try Again" to resubmit, or "Edit" to change any detail.'
+              }\n\nCurrent details:\n${summary}`,
+            ),
             buttons: isExistingUser
               ? ["Change Email"]
               : ["Try Again", "Edit Details"],
@@ -6006,7 +6022,9 @@ Keep the response conversational and helpful, focusing on providing value before
           { $set: { status: "ready_to_submit", updatedAt: now } },
         );
         const resp = {
-          mainText: `Please review your details:\n${summary}\n\nReply "Confirm" to submit, or say "Edit" to change any detail.`,
+          mainText: formatMainText(
+            `Please review your details:\n\n${summary}\n\nReply "Confirm" to submit, or say "Edit" to change any detail.`,
+          ),
           buttons: ["Confirm and Submit", "Edit Details"],
           emailPrompt: "",
           showBookingCalendar: false,
@@ -6055,8 +6073,9 @@ Keep the response conversational and helpful, focusing on providing value before
                           );
                 if (!setupFields || setupFields.length === 0) {
                   const resp = {
-                    mainText:
+                    mainText: formatMainText(
                       "Initial setup fields are not configured. Please configure required fields or cURL body.",
+                    ),
                     buttons: ["Contact Admin"],
                     emailPrompt: "",
                     showBookingCalendar: false,
@@ -6072,7 +6091,9 @@ Keep the response conversational and helpful, focusing on providing value before
                 summary = buildSafeSummary(limited);
               }
               const resp = {
-                mainText: `✅ Logged in successfully.\n\nPlease review your details:\n${summary}\n\nReply "Confirm" to submit initial setup, or say "Edit" to change any detail.`,
+                mainText: formatMainText(
+                  `✅ Logged in successfully.\n\nPlease review your details:\n\n${summary}\n\nReply "Confirm" to submit initial setup, or say "Edit" to change any detail.`,
+                ),
                 buttons: ["Confirm and Submit", "Edit Details"],
                 emailPrompt: "",
                 showBookingCalendar: false,
@@ -6082,7 +6103,7 @@ Keep the response conversational and helpful, focusing on providing value before
             } else {
               const msg = authRes.error || "Authentication failed";
               const resp = {
-                mainText: `⚠️ ${msg}.`,
+                mainText: formatMainText(`⚠️ ${msg}.`),
                 buttons: ["Try Again", "Edit Details"],
                 emailPrompt: "",
                 showBookingCalendar: false,
@@ -6092,7 +6113,9 @@ Keep the response conversational and helpful, focusing on providing value before
             }
           } catch (e: any) {
             const resp = {
-              mainText: `⚠️ Authentication error: ${e?.message || String(e)}.`,
+              mainText: formatMainText(
+                `⚠️ Authentication error: ${e?.message || String(e)}.`,
+              ),
               buttons: ["Try Again", "Edit Details"],
               emailPrompt: "",
               showBookingCalendar: false,
@@ -6245,7 +6268,7 @@ Keep the response conversational and helpful, focusing on providing value before
               }
 
               if (errorItems2.length > 0) {
-                detailsText2 = `\n\nDetails:\n- ${errorItems2.join("\n- ")}`;
+                detailsText2 = `\n\nDetails:\n\n- ${errorItems2.join("\n- ")}`;
               }
             } catch {}
           }
@@ -6322,7 +6345,9 @@ Keep the response conversational and helpful, focusing on providing value before
               );
               const summary = buildSafeSummary(limited);
               const resp = {
-                mainText: `✅ Registration complete. Initial setup is ready to submit with your setup details.\n\nDetails:\n${summary}\n\nReply "Confirm" to submit initial setup, or "Edit" to change any detail.`,
+                mainText: formatMainText(
+                  `✅ Registration complete. Initial setup is ready to submit with your setup details.\n\nDetails:\n\n${summary}\n\nReply "Confirm" to submit initial setup, or "Edit" to change any detail.`,
+                ),
                 buttons: ["Confirm and Submit", "Edit Details"],
                 emailPrompt: "",
                 showBookingCalendar: false,
@@ -6365,9 +6390,9 @@ Keep the response conversational and helpful, focusing on providing value before
               "✅ Registration complete. Now, let’s finish initial setup.";
             const prompt = promptForField(firstField);
             const resp = {
-              mainText: `${
-                docContext ? `${docContext}\n\n` : ""
-              }${intro}\n\n${prompt}`,
+              mainText: formatMainText(
+                `${docContext ? `${docContext}\n\n` : ""}${intro}\n\n${prompt}`,
+              ),
               buttons: [],
               emailPrompt: "",
               showBookingCalendar: false,
@@ -6437,9 +6462,9 @@ Keep the response conversational and helpful, focusing on providing value before
                   "✅ Registration complete. Now, let’s finish initial setup.";
                 const prompt2 = promptForField(firstField2);
                 const resp2 = {
-                  mainText: `${
-                    docContext2 ? `${docContext2}\n\n` : ""
-                  }${intro2}\n\n${prompt2}`,
+                  mainText: formatMainText(
+                    `${docContext2 ? `${docContext2}\n\n` : ""}${intro2}\n\n${prompt2}`,
+                  ),
                   buttons: [],
                   emailPrompt: "",
                   showBookingCalendar: false,
@@ -6516,9 +6541,9 @@ Keep the response conversational and helpful, focusing on providing value before
                     "✅ Registration complete. Now, let’s finish initial setup.";
                   const prompt3 = promptForField(firstField3);
                   const resp3 = {
-                    mainText: `${
-                      docContext3 ? `${docContext3}\n\n` : ""
-                    }${intro3}\n\n${prompt3}`,
+                    mainText: formatMainText(
+                      `${docContext3 ? `${docContext3}\n\n` : ""}${intro3}\n\n${prompt3}`,
+                    ),
                     buttons: [],
                     emailPrompt: "",
                     showBookingCalendar: false,
@@ -6557,12 +6582,36 @@ Keep the response conversational and helpful, focusing on providing value before
               })() ||
               result2?.message ||
               result2?.statusText;
+
+            // RELOAD CONFIG TO ENSURE LATEST CLOSING MSG (Skip Cache)
+            if (adminId) {
+              try {
+                const latestSettings = await getAdminSettings(adminId, true);
+                onboardingConfig = latestSettings.onboarding;
+              } catch (e) {
+                console.log(
+                  "[Onboarding] Failed to reload settings for closingMsg:",
+                  e,
+                );
+              }
+            }
+
             const closingMsg = (onboardingConfig as any)?.closingMessage;
+            console.log(
+              "[DEBUG] closingMsg:",
+              closingMsg,
+              "adminId:",
+              adminId,
+              "onboardingConfig:",
+              JSON.stringify(onboardingConfig),
+            );
             const baseMsg = externalMsg2
               ? `✅ ${externalMsg2}`
               : "✅ You’re all set! Your account has been created.";
             const resp = {
-              mainText: closingMsg ? `${baseMsg}\n\n${closingMsg}` : baseMsg,
+              mainText: formatMainText(
+                closingMsg ? `${baseMsg}\n\n${closingMsg}` : baseMsg,
+              ),
               buttons: ["Log In", "Talk to Sales"],
               emailPrompt: "",
               showBookingCalendar: false,
@@ -6615,12 +6664,33 @@ Keep the response conversational and helpful, focusing on providing value before
             result2?.statusText;
           let resp;
           if (isSuccess2) {
+            // RELOAD CONFIG TO ENSURE LATEST CLOSING MSG (Skip Cache)
+            if (adminId) {
+              try {
+                const latestSettings = await getAdminSettings(adminId, true);
+                onboardingConfig = latestSettings.onboarding;
+              } catch (e) {
+                console.log(
+                  "[Onboarding] Failed to reload settings for closingMsg:",
+                  e,
+                );
+              }
+            }
+
             const closingMsg = (onboardingConfig as any)?.closingMessage;
+            console.log(
+              "[DEBUG] closingMsg (block 2):",
+              closingMsg,
+              "onboardingConfig:",
+              JSON.stringify(onboardingConfig),
+            );
             const baseMsg = externalMsg3
               ? `✅ ${externalMsg3}`
               : "✅ You’re all set! Your account has been created.";
             resp = {
-              mainText: closingMsg ? `${baseMsg}\n\n${closingMsg}` : baseMsg,
+              mainText: formatMainText(
+                closingMsg ? `${baseMsg}\n\n${closingMsg}` : baseMsg,
+              ),
               buttons: ["Log In", "Talk to Sales"],
               emailPrompt: "",
               showBookingCalendar: false,
@@ -6700,11 +6770,9 @@ Keep the response conversational and helpful, focusing on providing value before
                   onboardingConfig?.docsUrl,
                 );
                 resp = {
-                  mainText: `${
-                    docContext2 ? `${docContext2}\n\n` : ""
-                  }We need a few more details to complete your registration. ${promptForField(
-                    firstField2,
-                  )}`,
+                  mainText: formatMainText(
+                    `${docContext2 ? `${docContext2}\n\n` : ""}We need a few more details to complete your registration. ${promptForField(firstField2)}`,
+                  ),
                   buttons: [],
                   emailPrompt: "",
                   showBookingCalendar: false,
@@ -6714,9 +6782,9 @@ Keep the response conversational and helpful, focusing on providing value before
             }
             if (!resp) {
               resp = {
-                mainText: `⚠️ We couldn’t complete registration: ${
-                  result2.error || "Unknown error"
-                }.${detailsText2}`,
+                mainText: formatMainText(
+                  `⚠️ We couldn’t complete registration: ${result2.error || "Unknown error"}.${detailsText2}`,
+                ),
                 buttons: ["Try Again", "Edit Details"],
                 emailPrompt: "",
                 showBookingCalendar: false,
@@ -6776,7 +6844,9 @@ Keep the response conversational and helpful, focusing on providing value before
           if (!filteredEditFields || filteredEditFields.length === 0) {
             const summary = buildSafeSummary(sessionDoc.collectedData || {});
             const resp = {
-              mainText: `There are no editable setup fields configured.\n\nCurrent details:\n${summary}`,
+              mainText: formatMainText(
+                `There are no editable setup fields configured.\n\nCurrent details:\n\n${summary}`,
+              ),
               buttons: ["Confirm and Submit"],
               emailPrompt: "",
               showBookingCalendar: false,
@@ -6812,9 +6882,9 @@ Keep the response conversational and helpful, focusing on providing value before
             ? "Let’s update your initial setup details."
             : "Let’s update your registration details.";
           const resp = {
-            mainText: `${
-              docContext ? `${docContext}\n\n` : ""
-            }${intro}\n\n${prompt}`,
+            mainText: formatMainText(
+              `${docContext ? `${docContext}\n\n` : ""}${intro}\n\n${prompt}`,
+            ),
             buttons: [],
             emailPrompt: "",
             showBookingCalendar: false,
@@ -6850,7 +6920,9 @@ Keep the response conversational and helpful, focusing on providing value before
           );
           const prompt = promptForField(emailField);
           const resp = {
-            mainText: `${docContext ? `${docContext}\n\n` : ""}${prompt}`,
+            mainText: formatMainText(
+              `${docContext ? `${docContext}\n\n` : ""}${prompt}`,
+            ),
             buttons: [],
             emailPrompt: "",
             showBookingCalendar: false,
@@ -6875,7 +6947,9 @@ Keep the response conversational and helpful, focusing on providing value before
         } else {
           const summary = buildSafeSummary(sessionDoc.collectedData || {});
           const resp = {
-            mainText: `Please reply "Confirm" to submit, or "Edit" to change.\n\nCurrent details:\n${summary}`,
+            mainText: formatMainText(
+              `Please reply "Confirm" to submit, or "Edit" to change.\n\nCurrent details:\n\n${summary}`,
+            ),
             buttons: [
               "Confirm and Submit",
               "Edit Details",
@@ -6994,8 +7068,9 @@ Keep the response conversational and helpful, focusing on providing value before
                 : [];
             if (setupFields.length === 0) {
               const resp = {
-                mainText:
+                mainText: formatMainText(
                   "Initial setup fields are not configured. Please configure required fields in admin settings.",
+                ),
                 buttons: ["Contact Admin"],
                 emailPrompt: "",
                 showBookingCalendar: false,
@@ -7056,7 +7131,9 @@ Keep the response conversational and helpful, focusing on providing value before
               );
               const summary = buildSafeSummary(limited);
               const resp = {
-                mainText: `✅ Registration complete. Initial setup is ready to submit with your setup details.\n\nDetails:\n${summary}\n\nReply "Confirm" to submit initial setup, or "Edit" to change any detail.`,
+                mainText: formatMainText(
+                  `✅ Registration complete. Initial setup is ready to submit with your setup details.\n\nDetails:\n\n${summary}\n\nReply "Confirm" to submit initial setup, or "Edit" to change any detail.`,
+                ),
                 buttons: ["Confirm and Submit", "Edit Details"],
                 emailPrompt: "",
                 showBookingCalendar: false,
@@ -7073,9 +7150,9 @@ Keep the response conversational and helpful, focusing on providing value before
               "✅ Registration complete. Now, let’s finish initial setup.";
             const prompt = promptForField(firstField);
             const resp = {
-              mainText: `${
-                docContext ? `${docContext}\n\n` : ""
-              }${intro}\n\n${prompt}`,
+              mainText: formatMainText(
+                `${docContext ? `${docContext}\n\n` : ""}${intro}\n\n${prompt}`,
+              ),
               buttons: [],
               emailPrompt: "",
               showBookingCalendar: false,
@@ -7084,10 +7161,11 @@ Keep the response conversational and helpful, focusing on providing value before
             return NextResponse.json(resp, { headers: corsHeaders });
           }
           const resp = {
-            mainText:
+            mainText: formatMainText(
               String(
                 result?.error || "Registration failed. Please try again.",
               ) || "Registration failed. Please try again.",
+            ),
             buttons: ["Try Again"],
             emailPrompt: "",
             showBookingCalendar: false,
@@ -7103,7 +7181,9 @@ Keep the response conversational and helpful, focusing on providing value before
           onboardingConfig?.docsUrl,
         );
         const resp = {
-          mainText: `${docContext ? `${docContext}\n\n` : ""}${prompt}`,
+          mainText: formatMainText(
+            `${docContext ? `${docContext}\n\n` : ""}${prompt}`,
+          ),
           buttons: [],
           emailPrompt: "",
           showBookingCalendar: false,
@@ -7122,10 +7202,12 @@ Keep the response conversational and helpful, focusing on providing value before
         onboardingConfig?.docsUrl,
       );
       const resp = {
-        mainText: `${docContext ? `${docContext}\n\n` : ""}${
-          check.message ||
-          `Please provide your ${currentField.label || currentField.key}.`
-        }`,
+        mainText: formatMainText(
+          `${docContext ? `${docContext}\n\n` : ""}${
+            check.message ||
+            `Please provide your ${currentField.label || currentField.key}.`
+          }`,
+        ),
         buttons: [],
         emailPrompt: "",
         showBookingCalendar: false,
@@ -7179,8 +7261,9 @@ Keep the response conversational and helpful, focusing on providing value before
             : [];
         if (setupFields.length === 0) {
           const resp = {
-            mainText:
+            mainText: formatMainText(
               "Initial setup fields are not configured. Please configure required fields in admin settings.",
+            ),
             buttons: ["Contact Admin"],
             emailPrompt: "",
             showBookingCalendar: false,
@@ -7241,7 +7324,9 @@ Keep the response conversational and helpful, focusing on providing value before
           );
           const summary = buildSafeSummary(limited);
           const resp = {
-            mainText: `✅ Registration complete. Initial setup is ready to submit with your setup details.\n\nDetails:\n${summary}\n\nReply "Confirm" to submit initial setup, or "Edit" to change any detail.`,
+            mainText: formatMainText(
+              `✅ Registration complete. Initial setup is ready to submit with your setup details.\n\nDetails:\n\n${summary}\n\nReply "Confirm" to submit initial setup, or "Edit" to change any detail.`,
+            ),
             buttons: ["Confirm and Submit", "Edit Details"],
             emailPrompt: "",
             showBookingCalendar: false,
@@ -7258,9 +7343,9 @@ Keep the response conversational and helpful, focusing on providing value before
           "✅ Registration complete. Now, let’s finish initial setup.";
         const prompt = promptForField(firstField);
         const resp = {
-          mainText: `${
-            docContext ? `${docContext}\n\n` : ""
-          }${intro}\n\n${prompt}`,
+          mainText: formatMainText(
+            `${docContext ? `${docContext}\n\n` : ""}${intro}\n\n${prompt}`,
+          ),
           buttons: [],
           emailPrompt: "",
           showBookingCalendar: false,
@@ -7269,9 +7354,10 @@ Keep the response conversational and helpful, focusing on providing value before
         return NextResponse.json(resp, { headers: corsHeaders });
       }
       const resp = {
-        mainText:
+        mainText: formatMainText(
           String(result?.error || "Registration failed. Please try again.") ||
-          "Registration failed. Please try again.",
+            "Registration failed. Please try again.",
+        ),
         buttons: ["Try Again"],
         emailPrompt: "",
         showBookingCalendar: false,
@@ -7287,7 +7373,9 @@ Keep the response conversational and helpful, focusing on providing value before
       onboardingConfig?.docsUrl,
     );
     const resp = {
-      mainText: `${docContext ? `${docContext}\n\n` : ""}${prompt}`,
+      mainText: formatMainText(
+        `${docContext ? `${docContext}\n\n` : ""}${prompt}`,
+      ),
       buttons: [],
       emailPrompt: "",
       showBookingCalendar: false,
@@ -7955,19 +8043,21 @@ Extract key requirements (2-3 bullet points max, be concise):`;
               );
               return NextResponse.json(
                 {
-                  mainText: `⚠️ We couldn’t complete registration: ${lastError}.\n\n${
-                    (typeof (existingOnboarding as any)?.lastErrorHttpStatus ===
-                      "number" &&
-                      ((existingOnboarding as any).lastErrorHttpStatus ===
-                        409 ||
-                        (existingOnboarding as any).lastErrorHttpStatus ===
-                          422)) ||
-                    /duplicate\s*email|email\s*.*already\s*(?:exists|registered)/i.test(
-                      lastError || "",
-                    )
-                      ? "Please update your email to continue."
-                      : 'Reply "Try Again" to resubmit, or "Edit" to change any detail.'
-                  }\n\nCurrent details:\n${summary}`,
+                  mainText: formatMainText(
+                    `⚠️ We couldn’t complete registration: ${lastError}.\n\n${
+                      (typeof (existingOnboarding as any)
+                        ?.lastErrorHttpStatus === "number" &&
+                        ((existingOnboarding as any).lastErrorHttpStatus ===
+                          409 ||
+                          (existingOnboarding as any).lastErrorHttpStatus ===
+                            422)) ||
+                      /duplicate\s*email|email\s*.*already\s*(?:exists|registered)/i.test(
+                        lastError || "",
+                      )
+                        ? "Please update your email to continue."
+                        : 'Reply "Try Again" to resubmit, or "Edit" to change any detail.'
+                    }\n\nCurrent details:\n${summary}`,
+                  ),
                   buttons:
                     (typeof (existingOnboarding as any)?.lastErrorHttpStatus ===
                       "number" &&
