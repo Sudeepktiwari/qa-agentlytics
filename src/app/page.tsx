@@ -416,6 +416,17 @@ const item = {
 };
 
 export default function Page() {
+  const handleScroll = (
+    e: React.MouseEvent<HTMLAnchorElement, MouseEvent>,
+    id: string,
+  ) => {
+    e.preventDefault();
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
   useEffect(() => {
     const prefersReduced = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
@@ -846,19 +857,39 @@ export default function Page() {
         <header className="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-slate-200">
           <div className="w-full h-16 flex items-center justify-center relative md:right-[84px]">
             <nav className="flex items-center gap-4 md:gap-6 text-slate-600 text-sm">
-              <a href="#problem" className="hover:text-slate-900">
+              <a
+                href="#problem"
+                onClick={(e) => handleScroll(e, "problem")}
+                className="hover:text-slate-900"
+              >
                 Problem
               </a>
-              <a href="#value" className="hover:text-slate-900">
+              <a
+                href="#value"
+                onClick={(e) => handleScroll(e, "value")}
+                className="hover:text-slate-900"
+              >
                 Value
               </a>
-              <a href="#how" className="hover:text-slate-900">
+              <a
+                href="#how"
+                onClick={(e) => handleScroll(e, "how")}
+                className="hover:text-slate-900"
+              >
                 How it works
               </a>
-              <a href="#features" className="hover:text-slate-900">
+              <a
+                href="#features"
+                onClick={(e) => handleScroll(e, "features")}
+                className="hover:text-slate-900"
+              >
                 Features
               </a>
-              <a href="#pricing" className="hover:text-slate-900">
+              <a
+                href="#pricing"
+                onClick={(e) => handleScroll(e, "pricing")}
+                className="hover:text-slate-900"
+              >
                 Pricing
               </a>
             </nav>
