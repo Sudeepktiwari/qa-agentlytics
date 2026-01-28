@@ -10,6 +10,7 @@ import AuthSection from "./admin/AuthSection";
 import ContentCrawlingSection from "./admin/ContentCrawlingSection";
 import ApiKeyManagementSection from "./admin/ApiKeyManagementSection";
 import WidgetConfiguratorSection from "./admin/WidgetConfiguratorSection";
+import WidgetInstructionsSection from "./admin/WidgetInstructionsSection";
 import LeadsManagementSection from "./admin/LeadsManagementSection";
 import TestingSection from "./admin/TestingSection";
 import DocumentManagementSection from "./admin/DocumentManagementSection";
@@ -1116,6 +1117,7 @@ const AdminPanel: React.FC = () => {
               onContinueCrawling={handleContinueCrawling}
               onStopCrawling={handleStopCrawling}
             />
+            <WidgetInstructionsSection apiKey={apiKey} />
             <CrawledPagesSection
               crawledPages={crawledPages}
               crawledPagesLoading={crawledPagesLoading}
