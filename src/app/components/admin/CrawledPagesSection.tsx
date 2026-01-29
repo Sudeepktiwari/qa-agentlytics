@@ -34,14 +34,44 @@ const CrawledPagesSection: React.FC<CrawledPagesSectionProps> = ({
   onDeleteCrawledPage,
   onRetryPage,
 }) => {
+  const [activeTab, setActiveTab] = React.useState<"success" | "failed">(
+    "success",
+  );
+  const successPages = crawledPages.filter((p) => p.status !== "failed");
+  const failedPages = crawledPages.filter((p) => p.status === "failed");
+  const displayedPages = activeTab === "success" ? successPages : failedPages;
   return (
     <div className="bg-white/95 backdrop-blur-md rounded-2xl p-4 md:p-8 shadow-lg border border-white/20 mb-6 transition-all">
       <h2 className="mb-4 md:mb-6 text-xl md:text-2xl font-bold text-slate-800 flex items-center gap-3 flex-wrap">
         📚 Crawled Pages Library
         <span className="bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap">
-          {crawledPages.length} pages
+          {activeTab === "success" ? successPages.length : failedPages.length}{" "}
+          {activeTab === "success" ? "pages" : "pending"}
         </span>
       </h2>
+
+      <div className="mb-6 flex items-center gap-2">
+        <button
+          onClick={() => setActiveTab("success")}
+          className={`px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+            activeTab === "success"
+              ? "bg-slate-900 text-white"
+              : "bg-slate-100 text-slate-800"
+          }`}
+        >
+          Crawled
+        </button>
+        <button
+          onClick={() => setActiveTab("failed")}
+          className={`px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+            activeTab === "failed"
+              ? "bg-slate-900 text-white"
+              : "bg-slate-100 text-slate-800"
+          }`}
+        >
+          Pending
+        </button>
+      </div>
 
       {/* Refresh Button */}
       <div className="mb-6">
@@ -71,17 +101,19 @@ const CrawledPagesSection: React.FC<CrawledPagesSectionProps> = ({
           <div className="text-4xl mb-4">⏳</div>
           <p>Loading crawled pages...</p>
         </div>
-      ) : crawledPages.length === 0 ? (
+      ) : displayedPages.length === 0 ? (
         <div className="text-center py-16 text-slate-500">
           <div className="text-4xl mb-4">📭</div>
           <h3 className="text-lg font-semibold text-slate-700 mb-2">
-            No pages crawled yet
+            {activeTab === "success"
+              ? "No pages crawled yet"
+              : "No pending pages"}
           </h3>
           <p>Start crawling your website above to see pages here!</p>
         </div>
       ) : (
         <div className="grid gap-4">
-          {crawledPages.map((page) => (
+          {displayedPages.map((page) => (
             <div
               key={page._id}
               className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5"

@@ -309,11 +309,17 @@ export async function DELETE(request: NextRequest) {
     await client.connect();
     const db = client.db("test");
     const collection = db.collection("crawled_pages");
+    const sitemapUrls = db.collection("sitemap_urls");
 
     // Delete from MongoDB
     const result = await collection.deleteOne({ adminId, url });
 
     if (result.deletedCount === 0) {
+      // Not found in crawled_pages — try deleting failed entry from sitemap_urls
+      const failedDelete = await sitemapUrls.deleteOne({ adminId, url });
+      if (failedDelete.deletedCount > 0) {
+        return NextResponse.json({ success: true, deletedFrom: "sitemap_urls" });
+      }
       return NextResponse.json({ error: "Page not found" }, { status: 404 });
     }
 
