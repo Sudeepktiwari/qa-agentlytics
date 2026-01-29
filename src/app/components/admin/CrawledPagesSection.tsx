@@ -1,6 +1,13 @@
 "use client";
 
 import React from "react";
+import { FileText, CheckCircle, AlertCircle, Globe, RefreshCw, Trash2, Eye, Zap } from "lucide-react";
+
+interface Document {
+  filename: string;
+  count: number;
+  hasStructuredSummary?: boolean;
+}
 
 interface CrawledPage {
   _id: string;
@@ -23,6 +30,11 @@ interface CrawledPagesSectionProps {
   onViewPageSummary: (page: CrawledPage) => void;
   onDeleteCrawledPage: (page: CrawledPage) => void;
   onRetryPage: (page: CrawledPage) => void;
+  // Documents props
+  documents?: Document[];
+  documentsLoading?: boolean;
+  onRefreshDocuments?: () => void;
+  onDeleteDocument?: (filename: string) => void;
 }
 
 const CrawledPagesSection: React.FC<CrawledPagesSectionProps> = ({
@@ -33,165 +45,295 @@ const CrawledPagesSection: React.FC<CrawledPagesSectionProps> = ({
   onViewPageSummary,
   onDeleteCrawledPage,
   onRetryPage,
+  documents = [],
+  documentsLoading = false,
+  onRefreshDocuments,
+  onDeleteDocument,
 }) => {
-  const [activeTab, setActiveTab] = React.useState<"success" | "failed">(
-    "success",
-  );
+  const [activeTab, setActiveTab] = React.useState<"success" | "failed" | "documents">("success");
+
   const successPages = crawledPages.filter((p) => p.status !== "failed");
   const failedPages = crawledPages.filter((p) => p.status === "failed");
-  const displayedPages = activeTab === "success" ? successPages : failedPages;
+  
+  // Filter documents to show only uploaded ones (exclude those that match crawled page URLs)
+  // We assume if a document filename matches a crawled page URL, it's a crawled page entry
+  const crawledUrls = new Set(crawledPages.map(p => p.url));
+  const uploadedDocuments = documents.filter(doc => !crawledUrls.has(doc.filename));
+
+  const displayedItems = 
+    activeTab === "success" ? successPages : 
+    activeTab === "failed" ? failedPages : 
+    uploadedDocuments;
+
+  const isLoading = activeTab === "documents" ? documentsLoading : crawledPagesLoading;
+  
+  const handleRefresh = () => {
+    if (activeTab === "documents" && onRefreshDocuments) {
+      onRefreshDocuments();
+    } else {
+      onRefreshCrawledPages();
+    }
+  };
+
   return (
-    <div className="bg-white/95 backdrop-blur-md rounded-2xl p-4 md:p-8 shadow-lg border border-white/20 mb-6 transition-all">
-      <h2 className="mb-4 md:mb-6 text-xl md:text-2xl font-bold text-slate-800 flex items-center gap-3 flex-wrap">
-        📚 Crawled Pages Library
-        <span className="bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap">
-          {activeTab === "success" ? successPages.length : failedPages.length}{" "}
-          {activeTab === "success" ? "pages" : "pending"}
-        </span>
-      </h2>
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
+      {/* Header & Tabs */}
+      <div className="p-6 border-b border-slate-100">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-6">
+          <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+            <Globe className="text-indigo-600" size={24} />
+            Knowledge Base
+          </h2>
+          
+          <button
+            onClick={handleRefresh}
+            disabled={isLoading}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+              isLoading
+                ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                : "bg-indigo-50 text-indigo-600 hover:bg-indigo-100 active:scale-95"
+            }`}
+          >
+            <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
+            {isLoading ? "Refreshing..." : "Refresh List"}
+          </button>
+        </div>
 
-      <div className="mb-6 flex items-center gap-2">
-        <button
-          onClick={() => setActiveTab("success")}
-          className={`px-3 py-2 rounded-lg text-xs font-bold transition-all ${
-            activeTab === "success"
-              ? "bg-slate-900 text-white"
-              : "bg-slate-100 text-slate-800"
-          }`}
-        >
-          Crawled
-        </button>
-        <button
-          onClick={() => setActiveTab("failed")}
-          className={`px-3 py-2 rounded-lg text-xs font-bold transition-all ${
-            activeTab === "failed"
-              ? "bg-slate-900 text-white"
-              : "bg-slate-100 text-slate-800"
-          }`}
-        >
-          Pending
-        </button>
-      </div>
+        <div className="flex p-1 bg-slate-100 rounded-xl overflow-x-auto">
+          <button
+            onClick={() => setActiveTab("success")}
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
+              activeTab === "success"
+                ? "bg-white text-indigo-600 shadow-sm ring-1 ring-black/5"
+                : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
+            }`}
+          >
+            <CheckCircle size={16} />
+            Crawled Pages
+            <span className={`ml-1 px-2 py-0.5 rounded-full text-xs ${
+              activeTab === "success" ? "bg-indigo-50 text-indigo-600" : "bg-slate-200 text-slate-600"
+            }`}>
+              {successPages.length}
+            </span>
+          </button>
 
-      {/* Refresh Button */}
-      <div className="mb-6">
-        <button
-          onClick={onRefreshCrawledPages}
-          disabled={crawledPagesLoading}
-          className={`w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold text-white transition-all shadow-md active:scale-95 ${
-            crawledPagesLoading
-              ? "bg-slate-400 cursor-not-allowed"
-              : "bg-gradient-to-br from-emerald-500 to-green-600 hover:shadow-lg hover:-translate-y-0.5"
-          }`}
-        >
-          {crawledPagesLoading ? "⏳ Loading..." : "🔄 Refresh Pages"}
-        </button>
+          <button
+            onClick={() => setActiveTab("failed")}
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
+              activeTab === "failed"
+                ? "bg-white text-red-600 shadow-sm ring-1 ring-black/5"
+                : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
+            }`}
+          >
+            <AlertCircle size={16} />
+            Pending / Failed
+            {failedPages.length > 0 && (
+              <span className={`ml-1 px-2 py-0.5 rounded-full text-xs ${
+                activeTab === "failed" ? "bg-red-50 text-red-600" : "bg-slate-200 text-slate-600"
+              }`}>
+                {failedPages.length}
+              </span>
+            )}
+          </button>
+
+          <button
+            onClick={() => setActiveTab("documents")}
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
+              activeTab === "documents"
+                ? "bg-white text-blue-600 shadow-sm ring-1 ring-black/5"
+                : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
+            }`}
+          >
+            <FileText size={16} />
+            Uploaded Documents
+            <span className={`ml-1 px-2 py-0.5 rounded-full text-xs ${
+              activeTab === "documents" ? "bg-blue-50 text-blue-600" : "bg-slate-200 text-slate-600"
+            }`}>
+              {uploadedDocuments.length}
+            </span>
+          </button>
+        </div>
       </div>
 
       {/* Error Display */}
       {crawledPagesError && (
-        <div className="p-4 mb-6 rounded-xl bg-red-50 border border-red-200 text-red-800 font-medium">
+        <div className="mx-6 mt-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-800 flex items-center gap-3">
+          <AlertCircle size={20} />
           {crawledPagesError}
         </div>
       )}
 
       {/* Content */}
-      {crawledPagesLoading ? (
-        <div className="text-center py-16 text-slate-500">
-          <div className="text-4xl mb-4">⏳</div>
-          <p>Loading crawled pages...</p>
-        </div>
-      ) : displayedPages.length === 0 ? (
-        <div className="text-center py-16 text-slate-500">
-          <div className="text-4xl mb-4">📭</div>
-          <h3 className="text-lg font-semibold text-slate-700 mb-2">
-            {activeTab === "success"
-              ? "No pages crawled yet"
-              : "No pending pages"}
-          </h3>
-          <p>Start crawling your website above to see pages here!</p>
-        </div>
-      ) : (
-        <div className="grid gap-4">
-          {displayedPages.map((page) => (
-            <div
-              key={page._id}
-              className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5"
-            >
-              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
-                <div className="flex-1 min-w-0">
-                  <div className="text-base font-semibold text-slate-800 mb-2 break-all">
-                    {page.url}
-                  </div>
-                  {page.status === "failed" ? (
-                    <div className="mb-2">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wide bg-red-50 text-red-600 border border-red-100">
-                          ❌ Failed
-                        </span>
-                        <span className="text-xs text-slate-400">
-                          {new Date(page.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                      {page.error && (
-                        <div className="text-xs text-red-500 mt-1 font-mono bg-red-50/50 p-1.5 rounded border border-red-100">
-                          Error: {page.error}
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="flex flex-wrap items-center gap-3 mb-4">
-                      <span
-                        className={`px-2 py-1 rounded-md text-xs font-bold uppercase tracking-wide ${
-                          page.hasStructuredSummary
-                            ? "bg-green-50 text-green-600"
-                            : "bg-orange-50 text-orange-600"
-                        }`}
-                      >
-                        {page.hasStructuredSummary
-                          ? "✅ Has Summary"
-                          : "⚡ Needs Summary"}
-                      </span>
-                      <span className="text-xs text-slate-500">
-                        {new Date(page.createdAt).toLocaleDateString()}
-                      </span>
-                    </div>
-                  )}
-                </div>
-                <div className="flex gap-2 w-full sm:w-auto">
-                  {page.status === "failed" ? (
-                    <button
-                      onClick={() => onRetryPage(page)}
-                      className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-4 py-2 rounded-lg text-xs font-bold text-white transition-all shadow-sm hover:-translate-y-0.5 bg-gradient-to-br from-blue-500 to-indigo-600 hover:shadow-blue-200"
-                    >
-                      🔄 Try Again
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => onViewPageSummary(page)}
-                      className={`flex-1 sm:flex-none flex items-center justify-center gap-1 px-4 py-2 rounded-lg text-xs font-bold text-white transition-all shadow-sm hover:-translate-y-0.5 ${
-                        page.hasStructuredSummary
-                          ? "bg-gradient-to-br from-emerald-500 to-green-600"
-                          : "bg-gradient-to-br from-orange-400 to-red-500"
-                      }`}
-                    >
-                      {page.hasStructuredSummary
-                        ? "👁️ View Summary"
-                        : "⚡ Generate Summary"}
-                    </button>
-                  )}
-                  <button
-                    onClick={() => onDeleteCrawledPage(page)}
-                    className="flex-none px-3 py-2 rounded-lg text-xs font-bold text-white bg-gradient-to-br from-red-500 to-rose-600 transition-all shadow-sm hover:-translate-y-0.5"
-                  >
-                    🗑️
-                  </button>
-                </div>
-              </div>
+      <div className="p-6">
+        {isLoading && displayedItems.length === 0 ? (
+          <div className="text-center py-20">
+            <div className="animate-spin text-indigo-500 mb-4 mx-auto">
+              <RefreshCw size={32} />
             </div>
-          ))}
-        </div>
-      )}
+            <p className="text-slate-500 font-medium">Loading content...</p>
+          </div>
+        ) : displayedItems.length === 0 ? (
+          <div className="text-center py-20 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+            <div className="text-4xl mb-4 opacity-50">
+              {activeTab === "success" ? "🌐" : activeTab === "failed" ? "⚠️" : "📄"}
+            </div>
+            <h3 className="text-lg font-semibold text-slate-700 mb-1">
+              {activeTab === "success"
+                ? "No crawled pages found"
+                : activeTab === "failed" 
+                  ? "No failed pages" 
+                  : "No uploaded documents"}
+            </h3>
+            <p className="text-slate-500 text-sm">
+              {activeTab === "documents" 
+                ? "Upload documents in the Upload section to see them here." 
+                : "Start crawling your website to populate this list."}
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-3">
+            {activeTab === "documents" ? (
+              // Documents List
+              (displayedItems as Document[]).map((doc) => (
+                <div
+                  key={doc.filename}
+                  className="group bg-white rounded-xl p-4 border border-slate-200 shadow-sm hover:shadow-md hover:border-blue-200 transition-all flex items-center justify-between gap-4"
+                >
+                  <div className="flex items-center gap-4 overflow-hidden">
+                    <div className="p-2.5 bg-blue-50 text-blue-600 rounded-lg group-hover:bg-blue-100 transition-colors">
+                      <FileText size={20} />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="font-semibold text-slate-800 truncate" title={doc.filename}>
+                        {doc.filename}
+                      </div>
+                      <div className="text-xs text-slate-500 flex items-center gap-2">
+                        <span className="bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 font-medium">
+                          {doc.count} chunks
+                        </span>
+                        {doc.hasStructuredSummary && (
+                          <span className="text-green-600 flex items-center gap-1">
+                            <CheckCircle size={10} /> Has Summary
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {onDeleteDocument && (
+                    <button
+                      onClick={() => onDeleteDocument(doc.filename)}
+                      className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Delete document"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  )}
+                </div>
+              ))
+            ) : (
+              // Crawled Pages List (Success or Failed)
+              (displayedItems as CrawledPage[]).map((page) => (
+                <div
+                  key={page._id}
+                  className="group bg-white rounded-xl p-4 border border-slate-200 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all"
+                >
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                    <div className="flex items-start gap-3 overflow-hidden">
+                      <div className={`p-2 rounded-lg mt-0.5 ${
+                        page.status === "failed" 
+                          ? "bg-red-50 text-red-500" 
+                          : "bg-emerald-50 text-emerald-600"
+                      }`}>
+                        {page.status === "failed" ? <AlertCircle size={18} /> : <Globe size={18} />}
+                      </div>
+                      
+                      <div className="min-w-0">
+                        <a 
+                          href={page.url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="font-medium text-slate-800 hover:text-indigo-600 hover:underline truncate block transition-colors"
+                        >
+                          {page.url}
+                        </a>
+                        
+                        <div className="flex flex-wrap items-center gap-3 mt-1.5">
+                          <span className="text-xs text-slate-400 flex items-center gap-1">
+                            Created: {new Date(page.createdAt).toLocaleDateString()}
+                          </span>
+                          
+                          {page.status === "failed" ? (
+                             <span className="text-xs text-red-600 font-medium bg-red-50 px-2 py-0.5 rounded border border-red-100">
+                               Failed
+                             </span>
+                          ) : (
+                            <span className={`text-xs font-medium px-2 py-0.5 rounded flex items-center gap-1 border ${
+                              page.hasStructuredSummary
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                                : "bg-amber-50 text-amber-700 border-amber-100"
+                            }`}>
+                              {page.hasStructuredSummary ? (
+                                <>
+                                  <CheckCircle size={10} />
+                                  Summary Ready
+                                </>
+                              ) : (
+                                <>
+                                  <Zap size={10} />
+                                  Needs Summary
+                                </>
+                              )}
+                            </span>
+                          )}
+                        </div>
+                        
+                        {page.status === "failed" && page.error && (
+                          <div className="mt-2 text-xs text-red-600 bg-red-50 p-2 rounded border border-red-100 font-mono">
+                            {page.error}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 pl-11 sm:pl-0 w-full sm:w-auto">
+                      {page.status === "failed" ? (
+                        <button
+                          onClick={() => onRetryPage(page)}
+                          className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm transition-all"
+                        >
+                          <RefreshCw size={14} />
+                          Retry
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => onViewPageSummary(page)}
+                          className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white shadow-sm transition-all ${
+                            page.hasStructuredSummary
+                              ? "bg-emerald-600 hover:bg-emerald-700"
+                              : "bg-amber-500 hover:bg-amber-600"
+                          }`}
+                        >
+                          {page.hasStructuredSummary ? <Eye size={14} /> : <Zap size={14} />}
+                          {page.hasStructuredSummary ? "View" : "Generate"}
+                        </button>
+                      )}
+                      
+                      <button
+                        onClick={() => onDeleteCrawledPage(page)}
+                        className="flex-none p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all"
+                        title="Delete page"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

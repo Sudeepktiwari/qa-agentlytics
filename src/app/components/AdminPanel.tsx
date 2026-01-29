@@ -1169,6 +1169,10 @@ const AdminPanel: React.FC = () => {
               onViewPageSummary={(page) => viewSummary(page.url)}
               onDeleteCrawledPage={deleteCrawledPage}
               onRetryPage={retryPage}
+              documents={documents}
+              documentsLoading={documentsLoading}
+              onRefreshDocuments={fetchDocuments}
+              onDeleteDocument={deleteDocumentFile}
             />
           </div>
         );
