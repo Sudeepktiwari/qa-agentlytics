@@ -1690,8 +1690,7 @@ function computeBantMissingDims(
   >();
 
   if (profile) {
-    /*
-    // Disable profile-based skipping to ensure questions are asked in the chat flow
+    // Check profile to skip already answered questions
     if (
       profile.requirementsProfile?.budgetRange &&
       profile.requirementsProfile.budgetRange !== "unknown"
@@ -1718,7 +1717,6 @@ function computeBantMissingDims(
     if (profile.companyProfile?.size) {
       answered.add("segment");
     }
-    */
   }
 
   let pendingAsked:
