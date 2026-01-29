@@ -1766,7 +1766,7 @@ function computeBantMissingDims(
       }
       // Authority - expanded to include more roles like CX, Admin, Head, etc.
       if (
-        /i\s*(am|'m)\s*the\s*decision\s*maker|\b(it'?s\s*me|myself)\b|i\s*(decide|approve|buy)\b|my\s*manager|team\s*lead|we\s*decide|manager\s*approval|need\s*approval|procurement|legal|finance|cfo|ceo|owner|founder|director|vp|cx|admin|head|chief|executive|officer|lead|consultant|analyst|developer|engineer|architect/.test(
+        /i\s*(am|'m)\s*the\s*decision\s*maker|\b(it'?s\s*me|myself)\b|i\s*(decide|approve|buy)\b|my\s*manager|team\s*lead|we\s*decide|manager\s*approval|need\s*approval|procurement|legal|finance|cfo|ceo|owner|founder|director|vp|cx|admin|head|chief|executive|officer|consultant|analyst|developer|engineer|architect/.test(
           s,
         )
       ) {
@@ -1774,7 +1774,7 @@ function computeBantMissingDims(
       }
       // Need - expanded to include common business goals and specific options
       if (
-        /workflows|embeds|analytics|integration|automation|reminders|api|webhooks|availability|templates|reporting|compliance|security|scheduling|project\s*management|collaboration|data\s*analytics|capture|leads|qualified|engage|visitors|manual|sales|support|work|understand|intent|behavior|growth|scale|revenue|efficiency|optimize|optimization|conversion|convert|traffic|user\s*experience|ux/.test(
+        /workflows|embeds|analytics|integration|automation|reminders|api|webhooks|availability|templates|reporting|compliance|security|scheduling|project\s*management|collaboration|data\s*analytics|capture|leads|lead\s*gen|lead\s*generation|ai\s*tools|qualified|engage|visitors|manual|sales|support|work|understand|intent|behavior|growth|scale|revenue|efficiency|optimize|optimization|conversion|convert|traffic|user\s*experience|ux/.test(
           s,
         )
       ) {
@@ -3624,9 +3624,17 @@ export async function POST(req: NextRequest) {
   // SPAM PROTECTION
   // Requests triggered by the mirroring function (contextual questions) should not be counted as spam
   // as they are triggered by user scrolling and may happen frequently
-  const isContextualGen = contextualQuestionGeneration === true || question === "Generate a single, detailed contextual message that summarizes the section the user is viewing and asks a clear, helpful question.";
-  
-  if (!isContextualGen && question && typeof question === "string" && question.trim().length > 0) {
+  const isContextualGen =
+    contextualQuestionGeneration === true ||
+    question ===
+      "Generate a single, detailed contextual message that summarizes the section the user is viewing and asks a clear, helpful question.";
+
+  if (
+    !isContextualGen &&
+    question &&
+    typeof question === "string" &&
+    question.trim().length > 0
+  ) {
     const spamCheck = await checkSpam(req, question);
     if (spamCheck.action === "block") {
       return NextResponse.json(
@@ -3647,16 +3655,87 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Check for API key authentication (moved up for profile scoping)
+  const apiKey = req.headers.get("x-api-key") || req.headers.get("X-API-Key");
+  let apiAuth = null;
+  if (apiKey) {
+    apiAuth = await verifyApiKey(apiKey);
+    if (!apiAuth) {
+      return NextResponse.json(
+        { error: "Invalid API key" },
+        { status: 401, headers: corsHeaders },
+      );
+    }
+  }
+
+  // Resolve Admin ID (moved up for profile scoping)
+  let resolvedAdminId: string | null = null;
+  try {
+    const dbAuth = await getDb();
+    const chatsAuth = dbAuth.collection("chats");
+
+    if (apiAuth) {
+      resolvedAdminId = apiAuth.adminId;
+    } else if (adminIdFromBody) {
+      resolvedAdminId = adminIdFromBody;
+    } else {
+      // Cookie check
+      try {
+        const cookieAccess = verifyAdminAccessFromCookie(req);
+        if (cookieAccess?.isValid && cookieAccess.adminId) {
+          resolvedAdminId = cookieAccess.adminId;
+        }
+      } catch (e) {}
+
+      // Previous chat check
+      if (!resolvedAdminId && sessionId) {
+        const lastMsg = await chatsAuth.findOne({
+          sessionId,
+          adminId: { $exists: true },
+        });
+        if (lastMsg && lastMsg.adminId) {
+          resolvedAdminId = lastMsg.adminId;
+        }
+      }
+    }
+  } catch (e) {
+    console.error("Error resolving adminId:", e);
+    if (adminIdFromBody) resolvedAdminId = adminIdFromBody;
+  }
+
+  const finalAdminId = resolvedAdminId || "default-admin";
+
+  // Extract email from question if not provided in body
+  let effectiveEmail = profileUserEmail;
+  if (!effectiveEmail && question && typeof question === "string") {
+    const emailMatch = question.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+    if (emailMatch) {
+      effectiveEmail = emailMatch[0];
+    }
+  }
+
   // Fetch customer profile for BANT logic
   let customerProfile = null;
-  if (sessionId) {
-    try {
-      const db = await getDb();
-      const profiles = db.collection("customer_profiles");
+  try {
+    const db = await getDb();
+    const profiles = db.collection("customer_profiles");
+
+    // 1. Try by sessionId
+    if (sessionId) {
       customerProfile = await profiles.findOne({ sessionIds: sessionId });
-    } catch (e) {
-      console.error("[Chat API] Error fetching customer profile:", e);
     }
+
+    // 2. Try by email if not found
+    if (!customerProfile && effectiveEmail) {
+      const query: any = { email: effectiveEmail, adminId: finalAdminId };
+      customerProfile = await profiles.findOne(query);
+
+      if (customerProfile) {
+        console.log(`[Chat API] Found profile by email: ${effectiveEmail}`);
+      }
+    }
+  } catch (e) {
+    console.error("[Chat API] Error fetching customer profile:", e);
   }
 
   // Resolve user email from session if not in current request
@@ -3792,24 +3871,10 @@ export async function POST(req: NextRequest) {
       { status: 400, headers: corsHeaders },
     );
 
-  // Check for API key authentication (for external widget usage)
-  const apiKey = req.headers.get("x-api-key") || req.headers.get("X-API-Key");
-  let apiAuth = null;
-  if (apiKey) {
-    apiAuth = await verifyApiKey(apiKey);
-    console.log("[DEBUG] apiAuth result:", apiAuth);
-    if (!apiAuth) {
-      return NextResponse.json(
-        { error: "Invalid API key" },
-        { status: 401, headers: corsHeaders },
-      );
-    }
-  }
-
   // Fetch personas for BANT generation
   let personas: any[] = [];
   try {
-    const finalAdminId = apiAuth?.adminId || adminIdFromBody || "default-admin";
+    // const finalAdminId = apiAuth?.adminId || adminIdFromBody || "default-admin"; (using outer scope)
     const db = await getDb();
     const personasCollection = db.collection("customer_personas");
     const personaDoc = await personasCollection.findOne({
@@ -3825,7 +3890,7 @@ export async function POST(req: NextRequest) {
   // Fetch BANT configuration
   let bantConfig: any = null;
   try {
-    const finalAdminId = apiAuth?.adminId || adminIdFromBody || "default-admin";
+    // const finalAdminId = apiAuth?.adminId || adminIdFromBody || "default-admin"; (using outer scope)
     console.log(
       `[Chat API ${requestId}] Loading BANT config for adminId: ${finalAdminId}`,
     );
@@ -4992,38 +5057,10 @@ Keep the response conversational and helpful, focusing on providing value before
   const chats = db.collection("chats");
   const now = new Date();
 
-  // Get adminId if available (prioritize API key auth, then request body, then previous chat)
-  let adminId: string | null = null;
-  if (apiAuth) {
-    // Use adminId from API key authentication (highest priority)
-    adminId = apiAuth.adminId;
-    console.log(`[DEBUG] Using adminId from API key: ${adminId}`);
-  } else if (adminIdFromBody) {
-    adminId = adminIdFromBody;
-    console.log(`[DEBUG] Using adminId from request body: ${adminId}`);
-  } else {
-    // Try cookie-based admin resolution
-    try {
-      const cookieAccess = verifyAdminAccessFromCookie(req);
-      if (cookieAccess?.isValid && cookieAccess.adminId) {
-        adminId = cookieAccess.adminId;
-        console.log(`[DEBUG] Using adminId from cookie: ${adminId}`);
-      }
-    } catch (err) {
-      console.log(`[DEBUG] Cookie-based adminId resolution failed:`, err);
-    }
-
-    // Fallback to previous chat history
-    if (!adminId) {
-      const lastMsg = await chats.findOne({
-        sessionId,
-        adminId: { $exists: true },
-      });
-      if (lastMsg && lastMsg.adminId) {
-        adminId = lastMsg.adminId;
-        console.log(`[DEBUG] Using adminId from previous chat: ${adminId}`);
-      }
-    }
+  // Admin ID resolved at top of function
+  const adminId = resolvedAdminId;
+  if (adminId) {
+    console.log(`[DEBUG] Using resolved adminId: ${adminId}`);
   }
 
   // 🔥 PHASE 1: CHECK BOOKING STATUS
