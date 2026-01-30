@@ -51,21 +51,6 @@ export default function SaPage() {
     >
   >({});
 
-  useEffect(() => {
-    if (accounts.length > 0) {
-      const forms: Record<string, any> = {};
-      accounts.forEach((a) => {
-        forms[a.id] = {
-          planKey: a.planKey || "free",
-          creditsUnits: a.creditsUnits || 0,
-          leadsUnits: a.leadsUnits || 0,
-          saving: false,
-        };
-      });
-      setPlanForms(forms);
-    }
-  }, [accounts]);
-
   const isDirty = (id: string) => {
     const account = accounts.find((a) => a.id === id);
     const form = planForms[id];
@@ -88,7 +73,20 @@ export default function SaPage() {
       });
       if (res.ok) {
         const data = await res.json();
-        setAccounts(data.accounts || []);
+        const newAccounts = data.accounts || [];
+        setAccounts(newAccounts);
+
+        const forms: Record<string, any> = {};
+        newAccounts.forEach((a: any) => {
+          forms[a.id] = {
+            planKey: a.planKey || "free",
+            creditsUnits: a.creditsUnits || 0,
+            leadsUnits: a.leadsUnits || 0,
+            saving: false,
+          };
+        });
+        setPlanForms(forms);
+
         setAuthorized(true);
       } else {
         setAuthorized(false);
