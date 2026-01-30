@@ -152,6 +152,37 @@ export default function SaPage() {
     }
   };
 
+  const discontinueAccount = async (adminId: string) => {
+    if (
+      !confirm(
+        "Are you sure you want to discontinue this account? This will cancel any active subscription and rename the email.",
+      )
+    ) {
+      return;
+    }
+
+    setFormValue(adminId, { saving: true });
+    setError("");
+    try {
+      const res = await fetch("/api/sa/accounts/discontinue", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ adminId }),
+      });
+      if (res.ok) {
+        await fetchAccounts();
+      } else {
+        const data = await res.json();
+        setError(data.error || "Discontinue failed");
+      }
+    } catch {
+      setError("Discontinue failed");
+    } finally {
+      setFormValue(adminId, { saving: false });
+    }
+  };
+
   useEffect(() => {
     fetchAccounts();
   }, []);
@@ -603,6 +634,15 @@ export default function SaPage() {
                                       ? "Saving..."
                                       : "Apply Changes"}
                                   </button>
+                                  {!a.email.startsWith("DIS_") && (
+                                    <button
+                                      onClick={() => discontinueAccount(a.id)}
+                                      disabled={planForms[a.id]?.saving}
+                                      className="w-full px-3 py-1.5 text-xs font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 h-[34px] whitespace-nowrap shrink-0"
+                                    >
+                                      Discontinue
+                                    </button>
+                                  )}
                                 </div>
                               </div>
                             </td>
@@ -847,6 +887,15 @@ export default function SaPage() {
                         >
                           {planForms[a.id]?.saving ? "Saving..." : "Apply Plan"}
                         </button>
+                        {!a.email.startsWith("DIS_") && (
+                          <button
+                            onClick={() => discontinueAccount(a.id)}
+                            disabled={planForms[a.id]?.saving}
+                            className="px-3 py-2 text-sm font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-60"
+                          >
+                            Discontinue
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}
