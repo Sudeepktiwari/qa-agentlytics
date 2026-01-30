@@ -1749,7 +1749,7 @@ function computeBantMissingDims(
       const s = content.toLowerCase();
       // Stricter regex for unsolicited budget info to avoid false positives on questions like "what is the price?"
       if (
-        /\b\d+\s*(usd|dollars|\$|k|grand)\b|per\s*month|\/mo\b|per\s*year|\/yr\b|budget\s*(is|of|range)|less\s*than|under|below|more\s*than|above|over|free/.test(
+        /\b\d+\s*(usd|dollars|\$|k|grand)\b|per\s*month|\/mo\b|per\s*year|\/yr\b|budget\s*(is|of|range)|less\s*than|\bunder\b|\bbelow\b|more\s*than|\babove\b|\bover\b|\bfree\b/.test(
           s,
         )
       ) {
@@ -1757,7 +1757,7 @@ function computeBantMissingDims(
       }
       // Stricter regex for timeline
       if (
-        /\b(this\s*week|next\s*week|this\s*month|next\s*month|this\s*year|next\s*year|quarter|q[1-4]|in\s+\d+\s*(days?|weeks?|months?|years?|mos?|yrs?)|\d{4}-\d{2}-\d{2}|immediately|soon|later|evaluating|exploring|just\s*looking|active|months?|weeks?|days?|years?)\b/.test(
+        /\b(this\s*week|next\s*week|this\s*month|next\s*month|this\s*year|next\s*year|quarter|q[1-4]|in\s+\d+\s*(days?|weeks?|months?|years?|mos?|yrs?)|\d{4}-\d{2}-\d{2}|evaluating|exploring|just\s*looking)\b/.test(
           s,
         ) ||
         /\b\d+\s*[-–]\s*\d+\s*(months?|weeks?|days?|yrs?|years?)\b/.test(s)
@@ -1774,7 +1774,7 @@ function computeBantMissingDims(
       }
       // Need - expanded to include common business goals and specific options
       if (
-        /workflows|embeds|analytics|integration|automation|reminders|api|webhooks|availability|templates|reporting|compliance|security|scheduling|project\s*management|collaboration|data\s*analytics|capture|leads|lead\s*gen|lead\s*generation|ai\s*tools|qualified|engage|visitors|manual|sales|support|work|understand|intent|behavior|growth|scale|revenue|efficiency|optimize|optimization|conversion|convert|traffic|user\s*experience|ux/.test(
+        /\b(workflows?|embeds?|analytics|integration|automation|reminders?|api|webhooks?|availability|templates?|reporting|compliance|security|scheduling|project\s*management|collaboration|data\s*analytics|capture|leads?|lead\s*gen|lead\s*generation|ai\s*tools?|qualified|engage|visitors?|intent|behavior|growth|scale|revenue|efficiency|optimize|optimization|conversion|convert|traffic|user\s*experience|ux)\b/.test(
           s,
         )
       ) {
@@ -1839,7 +1839,7 @@ function detectBantDimensionFromText(
   )
     return "authority";
   if (
-    /feature|need|priority|matter|help|workflows|embeds|analytics|integration|engage|visitors/.test(
+    /feature|need|priority|workflows|embeds|analytics|integration|engage|visitors/.test(
       s,
     )
   )
@@ -5058,7 +5058,7 @@ Keep the response conversational and helpful, focusing on providing value before
   const now = new Date();
 
   // Admin ID resolved at top of function
-  const adminId = resolvedAdminId;
+  let adminId = resolvedAdminId;
   if (adminId) {
     console.log(`[DEBUG] Using resolved adminId: ${adminId}`);
   }
