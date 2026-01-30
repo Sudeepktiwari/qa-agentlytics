@@ -860,6 +860,7 @@ async function analyzeForProbing(input: {
   missingDims?: ("budget" | "authority" | "need" | "timeline" | "segment")[];
   personas?: any[]; // Added personas support
   bantConfig?: any; // Added BANT config support
+  hasActiveBooking?: boolean;
 }) {
   console.log("[analyzeForProbing] Inputs:", {
     hasBantConfig: !!input.bantConfig,
@@ -880,6 +881,14 @@ async function analyzeForProbing(input: {
       content: `You are an expert sales consultant. Decide whether to send a short BANT qualification follow-up now. 
       
       GOAL: Move the conversation forward by asking ONE qualification question, but do it conversationally.
+      
+      CONTEXT:
+      Has Active Booking: ${input.hasActiveBooking || false}
+
+      CRITICAL RULES:
+      1. If 'hasActiveBooking' is TRUE, do NOT ask the user to schedule a demo. They already did. Instead, ask about implementation timeline (Go-Live Date) if 'timeline' is missing.
+      2. Do NOT provide plan recommendations or pricing details until ALL BANT dimensions are collected.
+      3. Focus on gathering information.
       
       STRUCTURE:
       1. Bridge/Context: Briefly acknowledge the user's input or context (1 sentence).
@@ -1780,7 +1789,7 @@ function computeBantMissingDims(
       }
       // Need - expanded to include common business goals and specific options
       if (
-        /\b(workflows?|embeds?|(?<!cx\s)analytics|integration\w*|(?<!(onboarding|lifecycle)\s)automation\w*|reminders?|api|webhooks?|availability|templates?|reporting|compliance|security|scheduling|project\s*management|collaboration|data\s*analytics|capture|(?<!from\s)leads?|lead\s*gen|lead\s*generation|ai\s*tools?|qualified|engage\w*|visitors?|intent|behavior\w*|growth|scale|revenue|efficiency|optimize|optimization\w*|(?<!sales\s)conversion\w*|convert|traffic|user\s*experience|ux)\b/.test(
+        /\b(workflows?|embeds?|(?<!cx\s)analytics|integration\w*|(?<!(onboarding|lifecycle)\s)automation\w*|reminders?|api|webhooks?|availability|templates?|reporting|compliance|security|scheduling|project\s*management|collaboration|data\s*analytics|capture|(?<!from\s)leads?|lead\s*gen|lead\s*generation|ai\s*tools?|qualified|(?<!proactive\s)engage\w*|visitors?|intent|behavior\w*(?!\s*triggers)|growth|scale|revenue|efficiency|optimize|optimization\w*|(?<!sales\s)conversion\w*|convert|traffic|user\s*experience|ux)\b/.test(
           s,
         )
       ) {
@@ -1887,7 +1896,7 @@ function isAnswerToAskedDim(
     return true;
   }
   if (dim === "need")
-    return /\b(workflows?|embeds?|(?<!cx\s)analytics|integration\w*|(?<!(onboarding|lifecycle)\s)automation\w*|reminders?|api|webhooks?|availability|templates?|reporting|compliance|security|scheduling|project\s*management|collaboration|data\s*analytics|capture|(?<!from\s)leads?|lead\s*gen|lead\s*generation|ai\s*tools?|qualified|engage\w*|visitors?|intent|behavior\w*|growth|scale|revenue|efficiency|optimize|optimization\w*|(?<!sales\s)conversion\w*|convert|traffic|user\s*experience|ux|feature|features|priority|use\s*case|help|explore|learn|customize|calendar|routing|manual|sales|support|work|understand)\b/.test(
+    return /\b(workflows?|embeds?|(?<!cx\s)analytics|integration\w*|(?<!(onboarding|lifecycle)\s)automation\w*|reminders?|api|webhooks?|availability|templates?|reporting|compliance|security|scheduling|project\s*management|collaboration|data\s*analytics|capture|(?<!from\s)leads?|lead\s*gen|lead\s*generation|ai\s*tools?|qualified|(?<!proactive\s)engage\w*|visitors?|intent|behavior\w*(?!\s*triggers)|growth|scale|revenue|efficiency|optimize|optimization\w*|(?<!sales\s)conversion\w*|convert|traffic|user\s*experience|ux|feature|features|priority|use\s*case|help|explore|learn|customize|calendar|routing|manual|sales|support|work|understand)\b/.test(
       s,
     );
   if (dim === "segment")
@@ -10773,6 +10782,7 @@ How can I help you today?`;
             missingDims: missingDimsQuick,
             personas, // Added missing personas
             bantConfig,
+            hasActiveBooking: bookingStatus.hasActiveBooking,
           });
           if (probingQuick.shouldSendFollowUp && probingQuick.mainText) {
             nextBant = {
