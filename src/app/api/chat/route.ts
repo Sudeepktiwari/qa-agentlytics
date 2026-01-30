@@ -1714,7 +1714,10 @@ function computeBantMissingDims(
     ) {
       answered.add("need");
     }
-    if (profile.companyProfile?.size) {
+    if (
+      profile.companyProfile?.size &&
+      profile.companyProfile.size !== "unknown"
+    ) {
       answered.add("segment");
     }
   }
@@ -1774,7 +1777,7 @@ function computeBantMissingDims(
       }
       // Need - expanded to include common business goals and specific options
       if (
-        /\b(workflows?|embeds?|analytics|integration|automation|reminders?|api|webhooks?|availability|templates?|reporting|compliance|security|scheduling|project\s*management|collaboration|data\s*analytics|capture|leads?|lead\s*gen|lead\s*generation|ai\s*tools?|qualified|engage|visitors?|intent|behavior|growth|scale|revenue|efficiency|optimize|optimization|conversion|convert|traffic|user\s*experience|ux)\b/.test(
+        /\b(workflows?|embeds?|analytics|integration\w*|automation\w*|reminders?|api|webhooks?|availability|templates?|reporting|compliance|security|scheduling|project\s*management|collaboration|data\s*analytics|capture|leads?|lead\s*gen|lead\s*generation|ai\s*tools?|qualified|engage\w*|visitors?|intent|behavior\w*|growth|scale|revenue|efficiency|optimize|optimization\w*|conversion\w*|convert|traffic|user\s*experience|ux)\b/.test(
           s,
         )
       ) {
@@ -1839,7 +1842,7 @@ function detectBantDimensionFromText(
   )
     return "authority";
   if (
-    /feature|need|priority|workflows|embeds|analytics|integration|engage|visitors/.test(
+    /\b(feature|need|priority|workflows?|embeds?|analytics|integration\w*|engage\w*|visitors?|intent|behavior\w*)\b/.test(
       s,
     )
   )
@@ -1881,7 +1884,7 @@ function isAnswerToAskedDim(
     return true;
   }
   if (dim === "need")
-    return /workflows|embeds|analytics|integration|feature|features|need|priority|use\s*case|help|explore|learn|customize|project\s*management|collaboration|data\s*analytics|automation|reminders|calendar|api|webhooks|routing|availability|templates|reporting|compliance|security|scheduling|capture|leads|qualified|engage|visitors|manual|sales|support|work|understand|intent|behavior|growth|scale|revenue|efficiency|optimize|optimization|conversion|convert|traffic|user\s*experience|ux/.test(
+    return /\b(workflows?|embeds?|analytics|integration\w*|automation\w*|reminders?|api|webhooks?|availability|templates?|reporting|compliance|security|scheduling|project\s*management|collaboration|data\s*analytics|capture|leads?|lead\s*gen|lead\s*generation|ai\s*tools?|qualified|engage\w*|visitors?|intent|behavior\w*|growth|scale|revenue|efficiency|optimize|optimization\w*|conversion\w*|convert|traffic|user\s*experience|ux|feature|features|priority|use\s*case|help|explore|learn|customize|calendar|routing|manual|sales|support|work|understand)\b/.test(
       s,
     );
   if (dim === "segment")

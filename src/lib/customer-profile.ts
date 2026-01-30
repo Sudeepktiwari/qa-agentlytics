@@ -211,7 +211,7 @@ ${conversationContent}
 
 Extract and return JSON:
 {
-  "size": "solo|small_business|startup|mid_market|enterprise",
+  "size": "solo|small_business|startup|mid_market|enterprise|unknown",
   "industry": "specific industry if explicitly mentioned by the customer",
   "revenue": "under_100k|100k_1m|1m_10m|10m_plus|unknown",
   "techStack": ["mentioned technologies"],
@@ -228,11 +228,13 @@ ${conversationContent}
 Extract and return JSON:
 {
   "technicalLevel": "low|medium|high|expert",
-  "decisionMaker": true|false,
+  "decisionMaker": true|false|null,
   "researchPhase": "awareness|research|evaluation|decision",
   "urgency": "low|medium|high|urgent",
   "communicationStyle": "analytical|direct|relationship_focused"
 }
+
+CRITICAL: For "decisionMaker", return null if there is no explicit information indicating whether the user is a decision maker. Do not guess.
 
 Base assessment on language used, questions asked, and expressed needs.`,
 
