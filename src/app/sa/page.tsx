@@ -540,6 +540,16 @@ export default function SaPage() {
                                       Disable Key
                                     </button>
                                   ))}
+                                {!a.email.startsWith("DIS_") && (
+                                  <button
+                                    onClick={() => discontinueAccount(a.id)}
+                                    disabled={planForms[a.id]?.saving}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-red-50 hover:text-red-700 hover:border-red-200 transition-all shadow-sm"
+                                  >
+                                    <ShieldAlert className="w-3 h-3" />
+                                    Discontinue
+                                  </button>
+                                )}
                               </div>
                               <div className="mt-3 flex flex-col items-end gap-3">
                                 <div className="flex items-end gap-2">
@@ -634,15 +644,6 @@ export default function SaPage() {
                                       ? "Saving..."
                                       : "Apply Changes"}
                                   </button>
-                                  {!a.email.startsWith("DIS_") && (
-                                    <button
-                                      onClick={() => discontinueAccount(a.id)}
-                                      disabled={planForms[a.id]?.saving}
-                                      className="w-full px-3 py-1.5 text-xs font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 h-[34px] whitespace-nowrap shrink-0"
-                                    >
-                                      Discontinue
-                                    </button>
-                                  )}
                                 </div>
                               </div>
                             </td>
@@ -831,6 +832,16 @@ export default function SaPage() {
                               <Key className="w-4 h-4" /> Disable Key
                             </button>
                           ))}
+
+                        {!a.email.startsWith("DIS_") && (
+                          <button
+                            onClick={() => discontinueAccount(a.id)}
+                            disabled={planForms[a.id]?.saving}
+                            className="flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-red-50 hover:text-red-700 hover:border-red-200 transition-colors"
+                          >
+                            <ShieldAlert className="w-4 h-4" /> Discontinue
+                          </button>
+                        )}
                       </div>
                       <div className="grid grid-cols-2 gap-3 pt-2">
                         <select
@@ -887,15 +898,6 @@ export default function SaPage() {
                         >
                           {planForms[a.id]?.saving ? "Saving..." : "Apply Plan"}
                         </button>
-                        {!a.email.startsWith("DIS_") && (
-                          <button
-                            onClick={() => discontinueAccount(a.id)}
-                            disabled={planForms[a.id]?.saving}
-                            className="px-3 py-2 text-sm font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-60"
-                          >
-                            Discontinue
-                          </button>
-                        )}
                       </div>
                     </div>
                   ))}
