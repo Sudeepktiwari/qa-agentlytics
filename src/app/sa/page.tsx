@@ -587,6 +587,14 @@ export default function SaPage() {
                                       <span className="normal-case">
                                         (x<span className="font-bold">1k</span>)
                                       </span>
+                                      <span className="block text-slate-400 normal-case mt-0.5">
+                                        Curr:{" "}
+                                        {Math.round(
+                                          (a.limits?.creditMonthlyLimit || 0) /
+                                            1000,
+                                        )}
+                                        k
+                                      </span>
                                     </label>
                                     <input
                                       type="number"
@@ -855,17 +863,26 @@ export default function SaPage() {
                             </option>
                           ))}
                         </select>
-                        <input
-                          type="number"
-                          className="border border-slate-200 rounded-lg px-2 py-2 text-sm"
-                          placeholder="Credits x1k"
-                          value={planForms[a.id]?.creditsUnits ?? 0}
-                          onChange={(e) =>
-                            setFormValue(a.id, {
-                              creditsUnits: Number(e.target.value) || 0,
-                            })
-                          }
-                        />
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[10px] text-slate-500 font-medium">
+                            Add Credits (Curr:{" "}
+                            {Math.round(
+                              (a.limits?.creditMonthlyLimit || 0) / 1000,
+                            )}
+                            k)
+                          </label>
+                          <input
+                            type="number"
+                            className="border border-slate-200 rounded-lg px-2 py-2 text-sm w-full"
+                            placeholder="0"
+                            value={planForms[a.id]?.creditsUnits ?? 0}
+                            onChange={(e) =>
+                              setFormValue(a.id, {
+                                creditsUnits: Number(e.target.value) || 0,
+                              })
+                            }
+                          />
+                        </div>
                         <input
                           type="number"
                           className="border border-slate-200 rounded-lg px-2 py-2 text-sm"
