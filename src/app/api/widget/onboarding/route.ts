@@ -617,6 +617,17 @@ export async function GET(request: Request) {
     
     submitButton.addEventListener('click', async () => {
       console.log("🔄 [EMAIL FORM] Continue button clicked");
+      
+      // Prevent multiple clicks
+      if (submitButton.disabled) return;
+      
+      // Disable button and show loading state
+      submitButton.disabled = true;
+      const originalText = submitButton.textContent;
+      submitButton.textContent = 'Processing...';
+      submitButton.style.opacity = '0.7';
+      submitButton.style.cursor = 'wait';
+
       const email = emailInput.value.trim();
       const name = nameInput.value.trim();
       
@@ -627,6 +638,12 @@ export async function GET(request: Request) {
         console.log("❌ [EMAIL FORM] Name is empty");
         nameInput.style.borderColor = '#ef4444';
         nameInput.focus();
+        
+        // Re-enable button
+        submitButton.disabled = false;
+        submitButton.textContent = originalText;
+        submitButton.style.opacity = '1';
+        submitButton.style.cursor = 'pointer';
         return;
       }
       
@@ -665,6 +682,12 @@ export async function GET(request: Request) {
         console.log("❌ [EMAIL FORM] Email regex failed:", !emailRegex.test(email));
         emailInput.style.borderColor = '#ef4444';
         emailInput.focus();
+        
+        // Re-enable button
+        submitButton.disabled = false;
+        submitButton.textContent = originalText;
+        submitButton.style.opacity = '1';
+        submitButton.style.cursor = 'pointer';
         return;
       }
       
