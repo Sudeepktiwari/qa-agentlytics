@@ -58,8 +58,8 @@ export default function SaPage() {
 
     return (
       form.planKey !== (account.planKey || "free") ||
-      form.creditsUnits !== (account.creditsUnits || 0) ||
-      form.leadsUnits !== (account.leadsUnits || 0)
+      form.creditsUnits !== 0 ||
+      form.leadsUnits !== 0
     );
   };
 
@@ -80,8 +80,8 @@ export default function SaPage() {
         newAccounts.forEach((a: any) => {
           forms[a.id] = {
             planKey: a.planKey || "free",
-            creditsUnits: a.creditsUnits || 0,
-            leadsUnits: a.leadsUnits || 0,
+            creditsUnits: 0,
+            leadsUnits: 0,
             saving: false,
           };
         });
@@ -125,6 +125,7 @@ export default function SaPage() {
       leadsUnits: 0,
       saving: false,
     };
+    const account = accounts.find((a) => a.id === adminId);
     setFormValue(adminId, { saving: true });
     setError("");
     try {
@@ -135,8 +136,8 @@ export default function SaPage() {
         body: JSON.stringify({
           adminId,
           planKey: form.planKey,
-          creditsUnits: form.creditsUnits,
-          leadsUnits: form.leadsUnits,
+          creditsUnits: (account?.creditsUnits || 0) + form.creditsUnits,
+          leadsUnits: (account?.leadsUnits || 0) + form.leadsUnits,
         }),
       });
       if (res.ok) {
@@ -587,19 +588,24 @@ export default function SaPage() {
                                       <span className="normal-case">
                                         (x<span className="font-bold">1k</span>)
                                       </span>
+                                      <span className="block text-slate-400 normal-case mt-0.5">
+                                        Curr:{" "}
+                                        {Math.round(
+                                          (a.limits?.creditMonthlyLimit || 0) /
+                                            1000,
+                                        )}
+                                        k
+                                      </span>
                                     </label>
                                     <input
                                       type="number"
-                                      min={0}
                                       className="w-24 border border-slate-200 rounded-lg px-2 py-1.5 text-xs h-[34px]"
                                       placeholder="0"
                                       value={planForms[a.id]?.creditsUnits ?? 0}
                                       onChange={(e) =>
                                         setFormValue(a.id, {
-                                          creditsUnits: Math.max(
-                                            0,
+                                          creditsUnits:
                                             Number(e.target.value) || 0,
-                                          ),
                                         })
                                       }
                                     />
@@ -610,19 +616,24 @@ export default function SaPage() {
                                       <span className="normal-case">
                                         (x<span className="font-bold">1k</span>)
                                       </span>
+                                      <span className="block text-slate-400 normal-case mt-0.5">
+                                        Curr:{" "}
+                                        {Math.round(
+                                          (a.limits?.leadTotalLimit || 0) /
+                                            1000,
+                                        )}
+                                        k
+                                      </span>
                                     </label>
                                     <input
                                       type="number"
-                                      min={0}
                                       className="w-24 border border-slate-200 rounded-lg px-2 py-1.5 text-xs h-[34px]"
                                       placeholder="0"
                                       value={planForms[a.id]?.leadsUnits ?? 0}
                                       onChange={(e) =>
                                         setFormValue(a.id, {
-                                          leadsUnits: Math.max(
-                                            0,
+                                          leadsUnits:
                                             Number(e.target.value) || 0,
-                                          ),
                                         })
                                       }
                                     />
@@ -837,7 +848,7 @@ export default function SaPage() {
                           <button
                             onClick={() => discontinueAccount(a.id)}
                             disabled={planForms[a.id]?.saving}
-                            className="flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-red-50 hover:text-red-700 hover:border-red-200 transition-colors"
+                            className="flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 border border-transparent transition-colors"
                           >
                             <ShieldAlert className="w-4 h-4" /> Discontinue
                           </button>
@@ -863,31 +874,27 @@ export default function SaPage() {
                         </select>
                         <input
                           type="number"
-                          min={0}
                           className="border border-slate-200 rounded-lg px-2 py-2 text-sm"
-                          placeholder="Credits x1k"
+                          placeholder={`Add Credits (Curr: ${Math.round(
+                            (a.limits?.creditMonthlyLimit || 0) / 1000,
+                          )}k)`}
                           value={planForms[a.id]?.creditsUnits ?? 0}
                           onChange={(e) =>
                             setFormValue(a.id, {
-                              creditsUnits: Math.max(
-                                0,
-                                Number(e.target.value) || 0,
-                              ),
+                              creditsUnits: Number(e.target.value) || 0,
                             })
                           }
                         />
                         <input
                           type="number"
-                          min={0}
                           className="border border-slate-200 rounded-lg px-2 py-2 text-sm"
-                          placeholder="Leads x1k"
+                          placeholder={`Add Leads (Curr: ${Math.round(
+                            (a.limits?.leadTotalLimit || 0) / 1000,
+                          )}k)`}
                           value={planForms[a.id]?.leadsUnits ?? 0}
                           onChange={(e) =>
                             setFormValue(a.id, {
-                              leadsUnits: Math.max(
-                                0,
-                                Number(e.target.value) || 0,
-                              ),
+                              leadsUnits: Number(e.target.value) || 0,
                             })
                           }
                         />

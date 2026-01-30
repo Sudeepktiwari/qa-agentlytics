@@ -331,15 +331,33 @@ export async function PATCH(request: NextRequest) {
     const unitCredits = plan.addons?.credits?.amount || 0;
     const unitLeads = plan.addons?.leads?.amount || 0;
 
-    const addonCredits = creditsUnits * unitCredits;
-    const extraLeads = leadsUnits * unitLeads;
+    // Input is in 1k units (from UI "x1k" label)
+    const addonCredits = creditsUnits * 1000;
+    const extraLeads = leadsUnits * 1000;
     const totalCredits = plan.creditsPerMonth + addonCredits;
     const leadTotalLimit = plan.totalLeads + extraLeads;
 
     // Resolve Razorpay Plan ID (Variant)
     let razorpayPlanId = plan.razorpayPlanId;
-    if (creditsUnits > 0 || leadsUnits > 0) {
-      const variantKey = `${creditsUnits}_${leadsUnits}`;
+
+    // Calculate billing units to match Razorpay variants
+    let billingCreditUnits = 0;
+    let billingLeadUnits = 0;
+
+    if (unitCredits > 0 && addonCredits > 0) {
+      if (addonCredits % unitCredits === 0) {
+        billingCreditUnits = addonCredits / unitCredits;
+      }
+    }
+
+    if (unitLeads > 0 && extraLeads > 0) {
+      if (extraLeads % unitLeads === 0) {
+        billingLeadUnits = extraLeads / unitLeads;
+      }
+    }
+
+    if (billingCreditUnits > 0 || billingLeadUnits > 0) {
+      const variantKey = `${billingCreditUnits}_${billingLeadUnits}`;
       // @ts-ignore - variantIds is not in the base interface but exists on specific plans
       if (plan.variantIds && plan.variantIds[variantKey]) {
         // @ts-ignore
