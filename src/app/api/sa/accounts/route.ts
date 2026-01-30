@@ -286,15 +286,16 @@ export async function PATCH(request: NextRequest) {
 
     // Resolve target plan: if planKey not provided, use latest subscription or free
     let selectedPlanKey = planKeyInputRaw as keyof typeof PRICING;
+    let existingSub = await db
+      .collection("subscriptions")
+      .find({ adminId })
+      .sort({ createdAt: -1 })
+      .limit(1)
+      .toArray()
+      .then((arr) => arr[0]);
+
     if (!selectedPlanKey || !(selectedPlanKey in PRICING)) {
-      const latestSub = await db
-        .collection("subscriptions")
-        .find({ adminId })
-        .sort({ createdAt: -1 })
-        .limit(1)
-        .toArray()
-        .then((arr) => arr[0]);
-      selectedPlanKey = (latestSub?.planKey || "free") as keyof typeof PRICING;
+      selectedPlanKey = (existingSub?.planKey || "free") as keyof typeof PRICING;
     }
     const plan = PRICING[selectedPlanKey];
     // Use plan-specific add-on values
@@ -320,8 +321,26 @@ export async function PATCH(request: NextRequest) {
     const now = new Date();
     const monthKey = `${now.getFullYear()}-${now.getMonth() + 1}`;
 
-    const currentLeads =
-      (await db.collection("leads").distinct("email", { adminId })).length || 0;
+    // Preserve existing usage if available, otherwise use defaults
+    // Note: We check if the existing subscription is for the current month
+    let creditsUsed = 0;
+    let leadsUsed = 0;
+    
+    if (existingSub) {
+      // If existing sub is for current month, preserve creditsUsed
+      if (existingSub.cycleMonthKey === monthKey) {
+        creditsUsed = existingSub.usage?.creditsUsed || 0;
+      }
+      // Always preserve leadsUsed from the subscription as it might track lifetime or have specific logic
+      // Fallback to recalculation only if not present
+      if (typeof existingSub.usage?.leadsUsed === 'number') {
+        leadsUsed = existingSub.usage.leadsUsed;
+      } else {
+        leadsUsed = (await db.collection("leads").distinct("email", { adminId })).length || 0;
+      }
+    } else {
+       leadsUsed = (await db.collection("leads").distinct("email", { adminId })).length || 0;
+    }
 
     await db.collection("subscriptions").updateOne(
       { adminId, cycleMonthKey: monthKey },
@@ -332,7 +351,7 @@ export async function PATCH(request: NextRequest) {
           planKey: selectedPlanKey,
           razorpayPlanId, // Store specific Razorpay Plan ID (variant)
           status: "active",
-          createdAt: new Date(),
+          createdAt: existingSub?.createdAt || new Date(), // Keep original creation date if possible
           cycleMonthKey: monthKey,
           addons: { creditsUnits, leadsUnits },
           limits: {
@@ -341,8 +360,8 @@ export async function PATCH(request: NextRequest) {
             leadTotalLimit,
           },
           usage: {
-            creditsUsed: 0,
-            leadsUsed: currentLeads,
+            creditsUsed: creditsUsed,
+            leadsUsed: leadsUsed,
           },
         },
       },
@@ -360,7 +379,8 @@ export async function PATCH(request: NextRequest) {
       }
     );
 
-    await resetMonthlyCredits(adminId, totalCredits);
+    // REMOVED: await resetMonthlyCredits(adminId, totalCredits); 
+    // Reason: resetMonthlyCredits resets usage to 0, which we want to avoid when just updating limits.
 
     return NextResponse.json({
       success: true,
