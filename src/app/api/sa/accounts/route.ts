@@ -337,9 +337,21 @@ export async function PATCH(request: NextRequest) {
         leadsUsed = existingSub.usage.leadsUsed;
       } else {
         leadsUsed = (await db.collection("leads").distinct("email", { adminId })).length || 0;
+        
+        // Fallback: Calculate from chats if leads collection is empty
+        if (leadsUsed === 0) {
+          const chatLeads = await db.collection("chats").distinct("email", { adminId });
+          leadsUsed = chatLeads.filter((e: any) => e && e !== "").length;
+        }
       }
     } else {
        leadsUsed = (await db.collection("leads").distinct("email", { adminId })).length || 0;
+       
+       // Fallback: Calculate from chats if leads collection is empty
+       if (leadsUsed === 0) {
+         const chatLeads = await db.collection("chats").distinct("email", { adminId });
+         leadsUsed = chatLeads.filter((e: any) => e && e !== "").length;
+       }
     }
 
     await db.collection("subscriptions").updateOne(
