@@ -537,7 +537,7 @@ export default function SaPage() {
                               </div>
                               <div className="flex flex-col gap-1">
                                 <label className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
-                                  Add Credits (x1k)
+                                  Add Credits (x<span className="font-bold text-slate-900">1k</span>)
                                 </label>
                                 <input
                                   type="number"
@@ -557,7 +557,7 @@ export default function SaPage() {
                               </div>
                               <div className="flex flex-col gap-1">
                                 <label className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
-                                  Add Leads (x1k)
+                                  Add Leads (x<span className="font-bold text-slate-900">1k</span>)
                                 </label>
                                 <input
                                   type="number"
