@@ -77,6 +77,8 @@ export async function GET(request: NextRequest) {
         planKey: sub?.planKey || "free",
         creditsUnits: sub?.addons?.creditsUnits || 0,
         leadsUnits: sub?.addons?.leadsUnits || 0,
+        usage: sub?.usage || { creditsUsed: 0, leadsUsed: 0 },
+        limits: sub?.limits || { creditMonthlyLimit: 0, leadTotalLimit: 0 },
       });
     }
     return NextResponse.json({ accounts });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Shield,
   ShieldAlert,
@@ -12,6 +12,8 @@ import {
   RefreshCw,
   LogOut,
   Search,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { PRICING } from "@/config/pricing";
 
@@ -30,10 +32,13 @@ export default function SaPage() {
       planKey?: keyof typeof PRICING;
       creditsUnits?: number;
       leadsUnits?: number;
+      usage?: { creditsUsed: number; leadsUsed: number };
+      limits?: { creditMonthlyLimit: number; leadTotalLimit: number };
     }[]
   >([]);
   const [authorized, setAuthorized] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [planForms, setPlanForms] = useState<
     Record<
       string,
@@ -236,6 +241,18 @@ export default function SaPage() {
       a.id.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
+  const toggleRow = (id: string) => {
+    setExpandedRows((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
   if (!authorized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
@@ -392,232 +409,308 @@ export default function SaPage() {
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {filteredAccounts.map((a) => (
-                        <tr
-                          key={a.id}
-                          className="hover:bg-slate-50/80 transition-colors group"
-                        >
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold shrink-0">
-                                {a.email.charAt(0).toUpperCase()}
-                              </div>
-                              <div>
-                                <div className="font-medium text-slate-900">
-                                  {a.email}
+                        <React.Fragment key={a.id}>
+                          <tr className="hover:bg-slate-50/80 transition-colors group">
+                            <td className="px-6 py-4">
+                              <button
+                                onClick={() => toggleRow(a.id)}
+                                className="flex items-center gap-3 w-full text-left group/btn"
+                              >
+                                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold shrink-0 group-hover/btn:bg-blue-50 group-hover/btn:text-blue-600 transition-colors">
+                                  {a.email.charAt(0).toUpperCase()}
                                 </div>
-                                <div className="text-xs text-slate-500 font-mono flex items-center gap-1 mt-0.5">
-                                  <span className="select-all">{a.id}</span>
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-medium text-slate-900 flex items-center gap-2">
+                                    {a.email}
+                                    {expandedRows.has(a.id) ? (
+                                      <ChevronUp className="w-3.5 h-3.5 text-slate-400" />
+                                    ) : (
+                                      <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                                    )}
+                                  </div>
                                 </div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="flex flex-col gap-1">
-                              <div className="flex items-center gap-2 font-mono text-xs text-slate-600 bg-slate-100 px-2 py-1 rounded w-fit">
-                                <Key className="w-3 h-3" />
-                                <span className="truncate max-w-[120px]">
-                                  {a.apiKey || "No Key"}
+                              </button>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex flex-col gap-1">
+                                <div className="flex items-center gap-2 font-mono text-xs text-slate-600 bg-slate-100 px-2 py-1 rounded w-fit">
+                                  <Key className="w-3 h-3" />
+                                  <span className="truncate max-w-[120px]">
+                                    {a.apiKey || "No Key"}
+                                  </span>
+                                </div>
+                                <span
+                                  className={`text-xs font-medium px-2 py-0.5 rounded-full w-fit flex items-center gap-1 ${
+                                    a.blockedApiKey
+                                      ? "bg-red-50 text-red-700 border border-red-100"
+                                      : "bg-green-50 text-green-700 border border-green-100"
+                                  }`}
+                                >
+                                  {a.blockedApiKey ? (
+                                    <>
+                                      <Lock className="w-3 h-3" /> Blocked
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Unlock className="w-3 h-3" /> Active
+                                    </>
+                                  )}
                                 </span>
                               </div>
+                            </td>
+                            <td className="px-6 py-4">
                               <span
-                                className={`text-xs font-medium px-2 py-0.5 rounded-full w-fit flex items-center gap-1 ${
-                                  a.blockedApiKey
-                                    ? "bg-red-50 text-red-700 border border-red-100"
-                                    : "bg-green-50 text-green-700 border border-green-100"
+                                className={`text-xs font-medium px-2.5 py-1 rounded-full border flex items-center gap-1.5 w-fit ${
+                                  a.blockedAdmin
+                                    ? "bg-red-50 text-red-700 border-red-100"
+                                    : "bg-green-50 text-green-700 border-green-100"
                                 }`}
                               >
-                                {a.blockedApiKey ? (
+                                {a.blockedAdmin ? (
                                   <>
-                                    <Lock className="w-3 h-3" /> Blocked
+                                    <ShieldAlert className="w-3.5 h-3.5" />
+                                    Account Blocked
                                   </>
                                 ) : (
                                   <>
-                                    <Unlock className="w-3 h-3" /> Active
+                                    <Shield className="w-3.5 h-3.5" />
+                                    Account Active
                                   </>
                                 )}
                               </span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <span
-                              className={`text-xs font-medium px-2.5 py-1 rounded-full border flex items-center gap-1.5 w-fit ${
-                                a.blockedAdmin
-                                  ? "bg-red-50 text-red-700 border-red-100"
-                                  : "bg-green-50 text-green-700 border-green-100"
-                              }`}
-                            >
-                              {a.blockedAdmin ? (
-                                <>
-                                  <ShieldAlert className="w-3.5 h-3.5" />
-                                  Account Blocked
-                                </>
-                              ) : (
-                                <>
-                                  <Shield className="w-3.5 h-3.5" />
-                                  Account Active
-                                </>
-                              )}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-right">
-                            <div className="flex items-center justify-end gap-2 transition-opacity">
-                              {a.blockedAdmin ? (
-                                <button
-                                  onClick={() =>
-                                    updateBlock({
-                                      adminId: a.id,
-                                      action: "unblock",
-                                    })
-                                  }
-                                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 hover:text-green-700 hover:border-green-200 transition-all shadow-sm"
-                                >
-                                  <Unlock className="w-3 h-3" />
-                                  Unblock Acct
-                                </button>
-                              ) : (
-                                <button
-                                  onClick={() =>
-                                    updateBlock({
-                                      adminId: a.id,
-                                      action: "block",
-                                    })
-                                  }
-                                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-red-50 hover:text-red-700 hover:border-red-200 transition-all shadow-sm"
-                                >
-                                  <Lock className="w-3 h-3" />
-                                  Block Acct
-                                </button>
-                              )}
-
-                              {a.apiKey &&
-                                (a.blockedApiKey ? (
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                              <div className="flex items-center justify-end gap-2 transition-opacity">
+                                {a.blockedAdmin ? (
                                   <button
                                     onClick={() =>
                                       updateBlock({
-                                        apiKey: a.apiKey!,
+                                        adminId: a.id,
                                         action: "unblock",
                                       })
                                     }
                                     className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 hover:text-green-700 hover:border-green-200 transition-all shadow-sm"
                                   >
-                                    <Key className="w-3 h-3" />
-                                    Enable Key
+                                    <Unlock className="w-3 h-3" />
+                                    Unblock Acct
                                   </button>
                                 ) : (
                                   <button
                                     onClick={() =>
                                       updateBlock({
-                                        apiKey: a.apiKey!,
+                                        adminId: a.id,
                                         action: "block",
                                       })
                                     }
-                                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-amber-50 hover:text-amber-700 hover:border-amber-200 transition-all shadow-sm"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-red-50 hover:text-red-700 hover:border-red-200 transition-all shadow-sm"
                                   >
-                                    <Key className="w-3 h-3" />
-                                    Disable Key
+                                    <Lock className="w-3 h-3" />
+                                    Block Acct
                                   </button>
-                                ))}
-                            </div>
-                            <div className="mt-3 flex items-end justify-end gap-2">
-                              <div className="flex flex-col text-left gap-1">
-                                <label className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
-                                  Plan
-                                </label>
-                                <select
-                                  className="border border-slate-200 rounded-lg px-2 py-1.5 text-xs h-[34px]"
-                                  value={
-                                    (planForms[a.id]?.planKey as string) ||
-                                    "free"
-                                  }
-                                  onChange={(e) =>
-                                    setFormValue(a.id, {
-                                      planKey: e.target
-                                        .value as keyof typeof PRICING,
-                                    })
-                                  }
-                                >
-                                  {(
-                                    Object.keys(PRICING) as Array<
-                                      keyof typeof PRICING
+                                )}
+
+                                {a.apiKey &&
+                                  (a.blockedApiKey ? (
+                                    <button
+                                      onClick={() =>
+                                        updateBlock({
+                                          apiKey: a.apiKey!,
+                                          action: "unblock",
+                                        })
+                                      }
+                                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 hover:text-green-700 hover:border-green-200 transition-all shadow-sm"
                                     >
-                                  ).map((k) => (
-                                    <option key={k} value={k}>
-                                      {PRICING[k].name}
-                                    </option>
+                                      <Key className="w-3 h-3" />
+                                      Enable Key
+                                    </button>
+                                  ) : (
+                                    <button
+                                      onClick={() =>
+                                        updateBlock({
+                                          apiKey: a.apiKey!,
+                                          action: "block",
+                                        })
+                                      }
+                                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-amber-50 hover:text-amber-700 hover:border-amber-200 transition-all shadow-sm"
+                                    >
+                                      <Key className="w-3 h-3" />
+                                      Disable Key
+                                    </button>
                                   ))}
-                                </select>
                               </div>
-                              <div className="flex flex-col text-left gap-1">
-                                <label className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
-                                  Add Credits{" "}
-                                  <span className="normal-case">
-                                    (x<span className="font-bold">1k</span>)
-                                  </span>
-                                </label>
-                                <input
-                                  type="number"
-                                  min={0}
-                                  className="w-24 border border-slate-200 rounded-lg px-2 py-1.5 text-xs h-[34px]"
-                                  placeholder="0"
-                                  value={planForms[a.id]?.creditsUnits ?? 0}
-                                  onChange={(e) =>
-                                    setFormValue(a.id, {
-                                      creditsUnits: Math.max(
-                                        0,
-                                        Number(e.target.value) || 0,
-                                      ),
-                                    })
+                              <div className="mt-3 flex items-end justify-end gap-2">
+                                <div className="flex flex-col text-left gap-1">
+                                  <label className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
+                                    Plan
+                                  </label>
+                                  <select
+                                    className="border border-slate-200 rounded-lg px-2 py-1.5 text-xs h-[34px]"
+                                    value={
+                                      (planForms[a.id]?.planKey as string) ||
+                                      "free"
+                                    }
+                                    onChange={(e) =>
+                                      setFormValue(a.id, {
+                                        planKey: e.target
+                                          .value as keyof typeof PRICING,
+                                      })
+                                    }
+                                  >
+                                    {(
+                                      Object.keys(PRICING) as Array<
+                                        keyof typeof PRICING
+                                      >
+                                    ).map((k) => (
+                                      <option key={k} value={k}>
+                                        {PRICING[k].name}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </div>
+                                <div className="flex flex-col text-left gap-1">
+                                  <label className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
+                                    Add Credits{" "}
+                                    <span className="normal-case">
+                                      (x<span className="font-bold">1k</span>)
+                                    </span>
+                                  </label>
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    className="w-24 border border-slate-200 rounded-lg px-2 py-1.5 text-xs h-[34px]"
+                                    placeholder="0"
+                                    value={planForms[a.id]?.creditsUnits ?? 0}
+                                    onChange={(e) =>
+                                      setFormValue(a.id, {
+                                        creditsUnits: Math.max(
+                                          0,
+                                          Number(e.target.value) || 0,
+                                        ),
+                                      })
+                                    }
+                                  />
+                                </div>
+                                <div className="flex flex-col text-left gap-1">
+                                  <label className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
+                                    Add Leads{" "}
+                                    <span className="normal-case">
+                                      (x<span className="font-bold">1k</span>)
+                                    </span>
+                                  </label>
+                                  <input
+                                    type="number"
+                                    min={0}
+                                    className="w-24 border border-slate-200 rounded-lg px-2 py-1.5 text-xs h-[34px]"
+                                    placeholder="0"
+                                    value={planForms[a.id]?.leadsUnits ?? 0}
+                                    onChange={(e) =>
+                                      setFormValue(a.id, {
+                                        leadsUnits: Math.max(
+                                          0,
+                                          Number(e.target.value) || 0,
+                                        ),
+                                      })
+                                    }
+                                  />
+                                </div>
+                                <button
+                                  onClick={() => applyPlan(a.id)}
+                                  disabled={
+                                    planForms[a.id]?.saving || !isDirty(a.id)
                                   }
-                                />
+                                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all h-[34px] ${
+                                    isDirty(a.id)
+                                      ? "bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
+                                      : "bg-slate-100 text-slate-400 cursor-not-allowed"
+                                  }`}
+                                >
+                                  {planForms[a.id]?.saving
+                                    ? "Saving..."
+                                    : "Apply Changes"}
+                                </button>
+                                <button
+                                  onClick={() => setFreePlan(a.id)}
+                                  disabled={planForms[a.id]?.saving}
+                                  className="px-3 py-1.5 text-xs font-medium bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 h-[34px]"
+                                >
+                                  Set Free
+                                </button>
                               </div>
-                              <div className="flex flex-col text-left gap-1">
-                                <label className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
-                                  Add Leads{" "}
-                                  <span className="normal-case">
-                                    (x<span className="font-bold">1k</span>)
-                                  </span>
-                                </label>
-                                <input
-                                  type="number"
-                                  min={0}
-                                  className="w-24 border border-slate-200 rounded-lg px-2 py-1.5 text-xs h-[34px]"
-                                  placeholder="0"
-                                  value={planForms[a.id]?.leadsUnits ?? 0}
-                                  onChange={(e) =>
-                                    setFormValue(a.id, {
-                                      leadsUnits: Math.max(
-                                        0,
-                                        Number(e.target.value) || 0,
-                                      ),
-                                    })
-                                  }
-                                />
-                              </div>
-                              <button
-                                onClick={() => applyPlan(a.id)}
-                                disabled={
-                                  planForms[a.id]?.saving || !isDirty(a.id)
-                                }
-                                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all h-[34px] ${
-                                  isDirty(a.id)
-                                    ? "bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
-                                    : "bg-slate-100 text-slate-400 cursor-not-allowed"
-                                }`}
-                              >
-                                {planForms[a.id]?.saving
-                                  ? "Saving..."
-                                  : "Apply Changes"}
-                              </button>
-                              <button
-                                onClick={() => setFreePlan(a.id)}
-                                disabled={planForms[a.id]?.saving}
-                                className="px-3 py-1.5 text-xs font-medium bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 h-[34px]"
-                              >
-                                Set Free
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
+                            </td>
+                          </tr>
+                          {expandedRows.has(a.id) && (
+                            <tr className="bg-slate-50/50">
+                              <td colSpan={4} className="px-6 py-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                  <div className="space-y-1">
+                                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">
+                                      Account ID
+                                    </p>
+                                    <p className="text-sm font-mono text-slate-700 select-all">
+                                      {a.id}
+                                    </p>
+                                  </div>
+                                  <div className="space-y-1">
+                                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">
+                                      Subscription Plan
+                                    </p>
+                                    <p className="text-sm font-medium text-slate-900 capitalize">
+                                      {PRICING[a.planKey || "free"]?.name ||
+                                        "Free"}
+                                    </p>
+                                  </div>
+                                  <div className="space-y-1">
+                                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">
+                                      Leads Used
+                                    </p>
+                                    <p className="text-sm font-medium text-slate-900">
+                                      {a.usage?.leadsUsed || 0} /{" "}
+                                      {a.limits?.leadTotalLimit === Infinity
+                                        ? "∞"
+                                        : a.limits?.leadTotalLimit || 0}
+                                    </p>
+                                    <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                                      <div
+                                        className="h-full bg-blue-500 rounded-full"
+                                        style={{
+                                          width: `${Math.min(
+                                            100,
+                                            ((a.usage?.leadsUsed || 0) /
+                                              (a.limits?.leadTotalLimit || 1)) *
+                                              100,
+                                          )}%`,
+                                        }}
+                                      />
+                                    </div>
+                                  </div>
+                                  <div className="space-y-1">
+                                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">
+                                      Credits Used
+                                    </p>
+                                    <p className="text-sm font-medium text-slate-900">
+                                      {a.usage?.creditsUsed || 0} /{" "}
+                                      {a.limits?.creditMonthlyLimit || 0}
+                                    </p>
+                                    <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                                      <div
+                                        className="h-full bg-purple-500 rounded-full"
+                                        style={{
+                                          width: `${Math.min(
+                                            100,
+                                            ((a.usage?.creditsUsed || 0) /
+                                              (a.limits?.creditMonthlyLimit ||
+                                                1)) *
+                                              100,
+                                          )}%`,
+                                        }}
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
                       ))}
                     </tbody>
                   </table>
