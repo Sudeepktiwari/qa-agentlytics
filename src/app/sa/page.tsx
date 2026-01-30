@@ -58,8 +58,8 @@ export default function SaPage() {
 
     return (
       form.planKey !== (account.planKey || "free") ||
-      form.creditsUnits !== 0 ||
-      form.leadsUnits !== 0
+      form.creditsUnits !== (account.creditsUnits || 0) ||
+      form.leadsUnits !== (account.leadsUnits || 0)
     );
   };
 
@@ -80,8 +80,8 @@ export default function SaPage() {
         newAccounts.forEach((a: any) => {
           forms[a.id] = {
             planKey: a.planKey || "free",
-            creditsUnits: 0,
-            leadsUnits: 0,
+            creditsUnits: a.creditsUnits || 0,
+            leadsUnits: a.leadsUnits || 0,
             saving: false,
           };
         });
@@ -125,7 +125,6 @@ export default function SaPage() {
       leadsUnits: 0,
       saving: false,
     };
-    const account = accounts.find((a) => a.id === adminId);
     setFormValue(adminId, { saving: true });
     setError("");
     try {
@@ -136,8 +135,8 @@ export default function SaPage() {
         body: JSON.stringify({
           adminId,
           planKey: form.planKey,
-          creditsUnits: (account?.creditsUnits || 0) + form.creditsUnits,
-          leadsUnits: (account?.leadsUnits || 0) + form.leadsUnits,
+          creditsUnits: form.creditsUnits,
+          leadsUnits: form.leadsUnits,
         }),
       });
       if (res.ok) {
@@ -588,14 +587,6 @@ export default function SaPage() {
                                       <span className="normal-case">
                                         (x<span className="font-bold">1k</span>)
                                       </span>
-                                      <span className="block text-slate-400 normal-case mt-0.5">
-                                        Curr:{" "}
-                                        {Math.round(
-                                          (a.limits?.creditMonthlyLimit || 0) /
-                                            1000,
-                                        )}
-                                        k
-                                      </span>
                                     </label>
                                     <input
                                       type="number"
@@ -615,14 +606,6 @@ export default function SaPage() {
                                       Add Leads{" "}
                                       <span className="normal-case">
                                         (x<span className="font-bold">1k</span>)
-                                      </span>
-                                      <span className="block text-slate-400 normal-case mt-0.5">
-                                        Curr:{" "}
-                                        {Math.round(
-                                          (a.limits?.leadTotalLimit || 0) /
-                                            1000,
-                                        )}
-                                        k
                                       </span>
                                     </label>
                                     <input
@@ -875,9 +858,7 @@ export default function SaPage() {
                         <input
                           type="number"
                           className="border border-slate-200 rounded-lg px-2 py-2 text-sm"
-                          placeholder={`Add Credits (Curr: ${Math.round(
-                            (a.limits?.creditMonthlyLimit || 0) / 1000,
-                          )}k)`}
+                          placeholder="Credits x1k"
                           value={planForms[a.id]?.creditsUnits ?? 0}
                           onChange={(e) =>
                             setFormValue(a.id, {
@@ -888,9 +869,7 @@ export default function SaPage() {
                         <input
                           type="number"
                           className="border border-slate-200 rounded-lg px-2 py-2 text-sm"
-                          placeholder={`Add Leads (Curr: ${Math.round(
-                            (a.limits?.leadTotalLimit || 0) / 1000,
-                          )}k)`}
+                          placeholder="Leads x1k"
                           value={planForms[a.id]?.leadsUnits ?? 0}
                           onChange={(e) =>
                             setFormValue(a.id, {
