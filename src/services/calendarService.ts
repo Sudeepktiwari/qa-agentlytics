@@ -245,11 +245,19 @@ export class CalendarService {
   ) {
     // Get all days in the month
     const firstDay = new Date(year, month - 1, 1);
-    const lastDay = new Date(year, month, 0);
+    
+    // Calculate how many days we need to generate to fill 6 rows (42 days)
+    // Start padding (empty cells) + days we generate = 42
+    const startPadding = firstDay.getDay();
+    const totalCells = 42;
+    const daysToGenerate = totalCells - startPadding;
+    
+    const endDate = new Date(firstDay);
+    endDate.setDate(endDate.getDate() + daysToGenerate - 1);
 
     const slots = this.generateAvailableSlots(
       firstDay,
-      lastDay,
+      endDate,
       existingBookings,
     );
 
@@ -266,7 +274,7 @@ export class CalendarService {
     const days = [];
     const currentDate = new Date(firstDay);
 
-    while (currentDate <= lastDay) {
+    while (currentDate <= endDate) {
       // Use local date components to avoid timezone shifts
       const year = currentDate.getFullYear();
       const month = String(currentDate.getMonth() + 1).padStart(2, "0");
