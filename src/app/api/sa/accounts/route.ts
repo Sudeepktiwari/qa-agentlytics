@@ -32,11 +32,32 @@ export async function GET(request: NextRequest) {
       .find({})
       .project({ email: 1, apiKey: 1 })
       .toArray();
+    const userIds = users.map((u) => String((u as any)._id));
+    const subscriptions = await db
+      .collection("subscriptions")
+      .find({ adminId: { $in: userIds } })
+      .toArray();
+
+    // Map adminId to latest subscription
+    const subMap = new Map();
+    for (const sub of subscriptions) {
+      // Assuming sorted by createdAt or we take the last one seen if iterated?
+      // Better to sort properly if we fetch all.
+      // But actually, finding the *latest* for each user in one query is tricky without aggregation.
+      // Simple approach: In-memory group and pick latest.
+      const existing = subMap.get(sub.adminId);
+      if (!existing || new Date(sub.createdAt) > new Date(existing.createdAt)) {
+        subMap.set(sub.adminId, sub);
+      }
+    }
+
     const blocks = db.collection("blocks");
     const accounts = [];
     for (const u of users) {
       const idStr = String((u as any)._id);
       const apiKey = (u as any).apiKey || null;
+      const sub = subMap.get(idStr);
+
       const adminBlocked = await blocks.findOne({
         type: "adminId",
         value: idStr,
@@ -45,12 +66,17 @@ export async function GET(request: NextRequest) {
       const apiKeyBlocked = apiKey
         ? await blocks.findOne({ type: "apiKey", value: apiKey, blocked: true })
         : null;
+
       accounts.push({
         id: idStr,
         email: (u as any).email || "",
         apiKey: apiKey,
         blockedAdmin: Boolean(adminBlocked),
         blockedApiKey: Boolean(apiKeyBlocked),
+        // Add subscription details
+        planKey: sub?.planKey || "free",
+        creditsUnits: sub?.addons?.creditsUnits || 0,
+        leadsUnits: sub?.addons?.leadsUnits || 0,
       });
     }
     return NextResponse.json({ accounts });
@@ -74,7 +100,7 @@ export async function PUT(request: NextRequest) {
     if (!adminId && !apiKey) {
       return NextResponse.json(
         { error: "adminId or apiKey required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
     const db = await getDb();
@@ -96,7 +122,7 @@ export async function PUT(request: NextRequest) {
               reason: "manual_block",
             },
           },
-          { upsert: true }
+          { upsert: true },
         );
       } else {
         await blocks.deleteOne({ type: u.type, value: u.value, blocked: true });
@@ -121,7 +147,7 @@ export async function POST(request: NextRequest) {
     if (!adminIdInput && !emailInput) {
       return NextResponse.json(
         { error: "adminId or email required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -168,7 +194,7 @@ export async function POST(request: NextRequest) {
     ) {
       return NextResponse.json(
         { error: "User has an active non-free subscription" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -202,7 +228,7 @@ export async function POST(request: NextRequest) {
           },
         },
       },
-      { upsert: true }
+      { upsert: true },
     );
 
     // Update user flags cautiously (do not overwrite non-free statuses)
@@ -213,7 +239,7 @@ export async function POST(request: NextRequest) {
           subscriptionPlan: "free",
           subscriptionStatus: "active",
         },
-      }
+      },
     );
 
     return NextResponse.json({
@@ -255,7 +281,7 @@ export async function PATCH(request: NextRequest) {
     if (!adminIdInput && !emailInput) {
       return NextResponse.json(
         { error: "adminId or email required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -295,7 +321,8 @@ export async function PATCH(request: NextRequest) {
       .then((arr) => arr[0]);
 
     if (!selectedPlanKey || !(selectedPlanKey in PRICING)) {
-      selectedPlanKey = (existingSub?.planKey || "free") as keyof typeof PRICING;
+      selectedPlanKey = (existingSub?.planKey ||
+        "free") as keyof typeof PRICING;
     }
     const plan = PRICING[selectedPlanKey];
     // Use plan-specific add-on values
@@ -325,7 +352,7 @@ export async function PATCH(request: NextRequest) {
     // Note: We check if the existing subscription is for the current month
     let creditsUsed = 0;
     let leadsUsed = 0;
-    
+
     if (existingSub) {
       // If existing sub is for current month, preserve creditsUsed
       if (existingSub.cycleMonthKey === monthKey) {
@@ -333,25 +360,33 @@ export async function PATCH(request: NextRequest) {
       }
       // Always preserve leadsUsed from the subscription as it might track lifetime or have specific logic
       // Fallback to recalculation only if not present
-      if (typeof existingSub.usage?.leadsUsed === 'number') {
+      if (typeof existingSub.usage?.leadsUsed === "number") {
         leadsUsed = existingSub.usage.leadsUsed;
       } else {
-        leadsUsed = (await db.collection("leads").distinct("email", { adminId })).length || 0;
-        
+        leadsUsed =
+          (await db.collection("leads").distinct("email", { adminId }))
+            .length || 0;
+
         // Fallback: Calculate from chats if leads collection is empty
         if (leadsUsed === 0) {
-          const chatLeads = await db.collection("chats").distinct("email", { adminId });
+          const chatLeads = await db
+            .collection("chats")
+            .distinct("email", { adminId });
           leadsUsed = chatLeads.filter((e: any) => e && e !== "").length;
         }
       }
     } else {
-       leadsUsed = (await db.collection("leads").distinct("email", { adminId })).length || 0;
-       
-       // Fallback: Calculate from chats if leads collection is empty
-       if (leadsUsed === 0) {
-         const chatLeads = await db.collection("chats").distinct("email", { adminId });
-         leadsUsed = chatLeads.filter((e: any) => e && e !== "").length;
-       }
+      leadsUsed =
+        (await db.collection("leads").distinct("email", { adminId })).length ||
+        0;
+
+      // Fallback: Calculate from chats if leads collection is empty
+      if (leadsUsed === 0) {
+        const chatLeads = await db
+          .collection("chats")
+          .distinct("email", { adminId });
+        leadsUsed = chatLeads.filter((e: any) => e && e !== "").length;
+      }
     }
 
     await db.collection("subscriptions").updateOne(
@@ -377,7 +412,7 @@ export async function PATCH(request: NextRequest) {
           },
         },
       },
-      { upsert: true }
+      { upsert: true },
     );
 
     await db.collection("users").updateOne(
@@ -388,10 +423,10 @@ export async function PATCH(request: NextRequest) {
           subscriptionStatus: "active",
           extraLeads: extraLeads,
         },
-      }
+      },
     );
 
-    // REMOVED: await resetMonthlyCredits(adminId, totalCredits); 
+    // REMOVED: await resetMonthlyCredits(adminId, totalCredits);
     // Reason: resetMonthlyCredits resets usage to 0, which we want to avoid when just updating limits.
 
     return NextResponse.json({

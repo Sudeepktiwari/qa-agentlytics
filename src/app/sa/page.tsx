@@ -27,6 +27,9 @@ export default function SaPage() {
       apiKey: string | null;
       blockedAdmin: boolean;
       blockedApiKey: boolean;
+      planKey?: keyof typeof PRICING;
+      creditsUnits?: number;
+      leadsUnits?: number;
     }[]
   >([]);
   const [authorized, setAuthorized] = useState(false);
@@ -42,6 +45,21 @@ export default function SaPage() {
       }
     >
   >({});
+
+  useEffect(() => {
+    if (accounts.length > 0) {
+      const forms: Record<string, any> = {};
+      accounts.forEach((a) => {
+        forms[a.id] = {
+          planKey: a.planKey || "free",
+          creditsUnits: a.creditsUnits || 0,
+          leadsUnits: a.leadsUnits || 0,
+          saving: false,
+        };
+      });
+      setPlanForms(forms);
+    }
+  }, [accounts]);
 
   const fetchAccounts = async () => {
     setLoading(true);
@@ -72,7 +90,7 @@ export default function SaPage() {
       creditsUnits: number;
       leadsUnits: number;
       saving: boolean;
-    }>
+    }>,
   ) => {
     setPlanForms((prev) => {
       const base = prev[adminId] || {
@@ -203,7 +221,7 @@ export default function SaPage() {
   const filteredAccounts = accounts.filter(
     (a) =>
       a.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      a.id.toLowerCase().includes(searchTerm.toLowerCase())
+      a.id.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   if (!authorized) {
@@ -488,63 +506,79 @@ export default function SaPage() {
                                   </button>
                                 ))}
                             </div>
-                            <div className="mt-3 flex items-center justify-end gap-2">
-                              <select
-                                className="border border-slate-200 rounded-lg px-2 py-1 text-xs"
-                                value={
-                                  (planForms[a.id]?.planKey as string) || "free"
-                                }
-                                onChange={(e) =>
-                                  setFormValue(a.id, {
-                                    planKey: e.target
-                                      .value as keyof typeof PRICING,
-                                  })
-                                }
-                              >
-                                {(
-                                  Object.keys(PRICING) as Array<
-                                    keyof typeof PRICING
-                                  >
-                                ).map((k) => (
-                                  <option key={k} value={k}>
-                                    {PRICING[k].name}
-                                  </option>
-                                ))}
-                              </select>
-                              <input
-                                type="number"
-                                min={0}
-                                className="w-20 border border-slate-200 rounded-lg px-2 py-1 text-xs"
-                                placeholder="Cred x1k"
-                                value={planForms[a.id]?.creditsUnits ?? 0}
-                                onChange={(e) =>
-                                  setFormValue(a.id, {
-                                    creditsUnits: Math.max(
-                                      0,
-                                      Number(e.target.value) || 0
-                                    ),
-                                  })
-                                }
-                              />
-                              <input
-                                type="number"
-                                min={0}
-                                className="w-20 border border-slate-200 rounded-lg px-2 py-1 text-xs"
-                                placeholder="Leads x1k"
-                                value={planForms[a.id]?.leadsUnits ?? 0}
-                                onChange={(e) =>
-                                  setFormValue(a.id, {
-                                    leadsUnits: Math.max(
-                                      0,
-                                      Number(e.target.value) || 0
-                                    ),
-                                  })
-                                }
-                              />
+                            <div className="mt-3 flex items-end justify-end gap-2">
+                              <div className="flex flex-col gap-1">
+                                <label className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
+                                  Plan
+                                </label>
+                                <select
+                                  className="border border-slate-200 rounded-lg px-2 py-1.5 text-xs h-[34px]"
+                                  value={
+                                    (planForms[a.id]?.planKey as string) ||
+                                    "free"
+                                  }
+                                  onChange={(e) =>
+                                    setFormValue(a.id, {
+                                      planKey: e.target
+                                        .value as keyof typeof PRICING,
+                                    })
+                                  }
+                                >
+                                  {(
+                                    Object.keys(PRICING) as Array<
+                                      keyof typeof PRICING
+                                    >
+                                  ).map((k) => (
+                                    <option key={k} value={k}>
+                                      {PRICING[k].name}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                              <div className="flex flex-col gap-1">
+                                <label className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
+                                  Add Credits (x1k)
+                                </label>
+                                <input
+                                  type="number"
+                                  min={0}
+                                  className="w-24 border border-slate-200 rounded-lg px-2 py-1.5 text-xs h-[34px]"
+                                  placeholder="0"
+                                  value={planForms[a.id]?.creditsUnits ?? 0}
+                                  onChange={(e) =>
+                                    setFormValue(a.id, {
+                                      creditsUnits: Math.max(
+                                        0,
+                                        Number(e.target.value) || 0,
+                                      ),
+                                    })
+                                  }
+                                />
+                              </div>
+                              <div className="flex flex-col gap-1">
+                                <label className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
+                                  Add Leads (x1k)
+                                </label>
+                                <input
+                                  type="number"
+                                  min={0}
+                                  className="w-24 border border-slate-200 rounded-lg px-2 py-1.5 text-xs h-[34px]"
+                                  placeholder="0"
+                                  value={planForms[a.id]?.leadsUnits ?? 0}
+                                  onChange={(e) =>
+                                    setFormValue(a.id, {
+                                      leadsUnits: Math.max(
+                                        0,
+                                        Number(e.target.value) || 0,
+                                      ),
+                                    })
+                                  }
+                                />
+                              </div>
                               <button
                                 onClick={() => applyPlan(a.id)}
                                 disabled={planForms[a.id]?.saving}
-                                className="px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-60"
+                                className="px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-60 h-[34px]"
                               >
                                 {planForms[a.id]?.saving
                                   ? "Saving..."
@@ -553,7 +587,7 @@ export default function SaPage() {
                               <button
                                 onClick={() => setFreePlan(a.id)}
                                 disabled={planForms[a.id]?.saving}
-                                className="px-3 py-1.5 text-xs font-medium bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50"
+                                className="px-3 py-1.5 text-xs font-medium bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 h-[34px]"
                               >
                                 Set Free
                               </button>
@@ -693,7 +727,7 @@ export default function SaPage() {
                             setFormValue(a.id, {
                               creditsUnits: Math.max(
                                 0,
-                                Number(e.target.value) || 0
+                                Number(e.target.value) || 0,
                               ),
                             })
                           }
@@ -708,7 +742,7 @@ export default function SaPage() {
                             setFormValue(a.id, {
                               leadsUnits: Math.max(
                                 0,
-                                Number(e.target.value) || 0
+                                Number(e.target.value) || 0,
                               ),
                             })
                           }
