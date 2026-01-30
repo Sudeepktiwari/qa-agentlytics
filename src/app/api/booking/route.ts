@@ -734,8 +734,9 @@ async function verifyBookingAvailability(data: BookingSubmission): Promise<{
 
     const isBooked = existingBookings.bookings.some((booking) => {
       const bookingDate = new Date(booking.preferredDate);
+      const bookingDateString = bookingDate.toISOString().split("T")[0];
       return (
-        bookingDate.toDateString() === requestedDateTime.toDateString() &&
+        bookingDateString === data.preferredDate &&
         booking.preferredTime === data.preferredTime &&
         ["pending", "confirmed"].includes(booking.status)
       );

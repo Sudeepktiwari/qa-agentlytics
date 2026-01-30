@@ -48,7 +48,7 @@ export class CalendarService {
       workingDays: [1, 2, 3, 4, 5], // Monday to Friday
       slotDuration: 30, // 30-minute slots
       bufferTime: 0, // No buffer between slots
-      advanceBookingDays: 1, // Can book starting tomorrow
+      advanceBookingDays: 0, // Can book starting today
       maxBookingDays: 60, // Can book up to 60 days ahead (rolling window)
     };
   }
@@ -66,7 +66,7 @@ export class CalendarService {
   generateAvailableSlots(
     startDate: Date,
     endDate: Date,
-    existingBookings: any[] = []
+    existingBookings: any[] = [],
   ): CalendarSlot[] {
     const slots: CalendarSlot[] = [];
     const currentDate = new Date(startDate);
@@ -81,7 +81,7 @@ export class CalendarService {
       // Skip dates too far in advance
       const today = new Date();
       const diffDays = Math.ceil(
-        (currentDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+        (currentDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
       );
 
       if (
@@ -107,10 +107,14 @@ export class CalendarService {
    */
   private generateDaySlots(
     date: Date,
-    existingBookings: any[]
+    existingBookings: any[],
   ): CalendarSlot[] {
     const slots: CalendarSlot[] = [];
-    const dateString = date.toISOString().split("T")[0];
+    // Use local date components to avoid timezone shifts
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const dateString = `${year}-${month}-${day}`;
 
     // Parse business hours
     const [startHour, startMin] = this.config.businessHours.start
@@ -138,7 +142,7 @@ export class CalendarService {
         dateString,
         timeString,
         slotDateTime,
-        existingBookings
+        existingBookings,
       );
 
       slots.push({
@@ -162,7 +166,7 @@ export class CalendarService {
     date: string,
     time: string,
     datetime: Date,
-    existingBookings: any[]
+    existingBookings: any[],
   ): { available: boolean; reason?: string } {
     // Check if slot is in the past
     const now = new Date();
@@ -198,7 +202,7 @@ export class CalendarService {
   findNextAvailableSlots(
     fromDate: Date,
     count: number = 5,
-    existingBookings: any[] = []
+    existingBookings: any[] = [],
   ): CalendarSlot[] {
     const endDate = new Date(fromDate);
     endDate.setDate(endDate.getDate() + this.config.maxBookingDays);
@@ -206,7 +210,7 @@ export class CalendarService {
     const allSlots = this.generateAvailableSlots(
       fromDate,
       endDate,
-      existingBookings
+      existingBookings,
     );
     const availableSlots = allSlots.filter((slot) => slot.available);
 
@@ -237,7 +241,7 @@ export class CalendarService {
     month: number,
     year: number,
     timezone: string,
-    existingBookings: any[] = []
+    existingBookings: any[] = [],
   ) {
     // Get all days in the month
     const firstDay = new Date(year, month - 1, 1);
@@ -246,7 +250,7 @@ export class CalendarService {
     const slots = this.generateAvailableSlots(
       firstDay,
       lastDay,
-      existingBookings
+      existingBookings,
     );
 
     // Group slots by date
@@ -263,7 +267,11 @@ export class CalendarService {
     const currentDate = new Date(firstDay);
 
     while (currentDate <= lastDay) {
-      const dateString = currentDate.toISOString().split("T")[0];
+      // Use local date components to avoid timezone shifts
+      const year = currentDate.getFullYear();
+      const month = String(currentDate.getMonth() + 1).padStart(2, "0");
+      const day = String(currentDate.getDate()).padStart(2, "0");
+      const dateString = `${year}-${month}-${day}`;
       const daySlots = slotsByDate[dateString] || [];
       const availableSlots = daySlots.filter((slot) => slot.available);
 
@@ -309,7 +317,7 @@ export class CalendarService {
   validateTimeSlot(
     date: string,
     time: string,
-    timezone: string
+    timezone: string,
   ): { valid: boolean; reason?: string } {
     try {
       // Sanitize inputs
@@ -369,7 +377,7 @@ export class CalendarService {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const diffDays = Math.ceil(
-        (slotDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+        (slotDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
       );
 
       if (diffDays < this.config.advanceBookingDays) {
@@ -413,10 +421,10 @@ export class CalendarService {
     requestedDate: string,
     requestedTime: string,
     existingBookings: any[] = [],
-    count: number = 3
+    count: number = 3,
   ): CalendarSlot[] {
     const requestedDateTime = new Date(
-      requestedDate + "T" + requestedTime + ":00"
+      requestedDate + "T" + requestedTime + ":00",
     );
 
     // Look for alternatives starting from the requested date
@@ -426,7 +434,7 @@ export class CalendarService {
     const availableSlots = this.generateAvailableSlots(
       requestedDateTime,
       searchEndDate,
-      existingBookings
+      existingBookings,
     ).filter((slot) => slot.available);
 
     // Sort by proximity to requested time
