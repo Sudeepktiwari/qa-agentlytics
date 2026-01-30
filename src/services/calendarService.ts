@@ -45,7 +45,7 @@ export class CalendarService {
         end: "17:00",
         timezone: "America/New_York",
       },
-      workingDays: [1, 2, 3, 4, 5], // Monday to Friday
+      workingDays: [0, 1, 2, 3, 4, 5, 6], // All days (Sunday-Saturday)
       slotDuration: 30, // 30-minute slots
       bufferTime: 0, // No buffer between slots
       advanceBookingDays: 0, // Can book starting today
