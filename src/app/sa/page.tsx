@@ -507,7 +507,7 @@ export default function SaPage() {
                                 ))}
                             </div>
                             <div className="mt-3 flex items-end justify-end gap-2">
-                              <div className="flex flex-col gap-1">
+                              <div className="flex flex-col text-left gap-1">
                                 <label className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
                                   Plan
                                 </label>
@@ -535,9 +535,13 @@ export default function SaPage() {
                                   ))}
                                 </select>
                               </div>
-                              <div className="flex flex-col gap-1">
+                              <div className="flex flex-col text-left gap-1">
                                 <label className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
-                                  Add Credits (x<span className="font-bold text-slate-900">1k</span>)
+                                  Add Credits (x
+                                  <span className="font-bold text-slate-900">
+                                    1k
+                                  </span>
+                                  )
                                 </label>
                                 <input
                                   type="number"
@@ -555,9 +559,13 @@ export default function SaPage() {
                                   }
                                 />
                               </div>
-                              <div className="flex flex-col gap-1">
+                              <div className="flex flex-col text-left gap-1">
                                 <label className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
-                                  Add Leads (x<span className="font-bold text-slate-900">1k</span>)
+                                  Add Leads (x
+                                  <span className="font-bold text-slate-900">
+                                    1k
+                                  </span>
+                                  )
                                 </label>
                                 <input
                                   type="number"
