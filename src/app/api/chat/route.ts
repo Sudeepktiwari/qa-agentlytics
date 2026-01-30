@@ -1780,7 +1780,7 @@ function computeBantMissingDims(
       }
       // Need - expanded to include common business goals and specific options
       if (
-        /\b(workflows?|embeds?|(?<!cx\s)analytics|integration\w*|(?<!onboarding\s)automation\w*|reminders?|api|webhooks?|availability|templates?|reporting|compliance|security|scheduling|project\s*management|collaboration|data\s*analytics|capture|leads?|lead\s*gen|lead\s*generation|ai\s*tools?|qualified|engage\w*|visitors?|intent|behavior\w*|growth|scale|revenue|efficiency|optimize|optimization\w*|(?<!sales\s)conversion\w*|convert|traffic|user\s*experience|ux)\b/.test(
+        /\b(workflows?|embeds?|(?<!cx\s)analytics|integration\w*|(?<!(onboarding|lifecycle)\s)automation\w*|reminders?|api|webhooks?|availability|templates?|reporting|compliance|security|scheduling|project\s*management|collaboration|data\s*analytics|capture|(?<!from\s)leads?|lead\s*gen|lead\s*generation|ai\s*tools?|qualified|engage\w*|visitors?|intent|behavior\w*|growth|scale|revenue|efficiency|optimize|optimization\w*|(?<!sales\s)conversion\w*|convert|traffic|user\s*experience|ux)\b/.test(
           s,
         )
       ) {
@@ -1887,7 +1887,7 @@ function isAnswerToAskedDim(
     return true;
   }
   if (dim === "need")
-    return /\b(workflows?|embeds?|(?<!cx\s)analytics|integration\w*|(?<!onboarding\s)automation\w*|reminders?|api|webhooks?|availability|templates?|reporting|compliance|security|scheduling|project\s*management|collaboration|data\s*analytics|capture|leads?|lead\s*gen|lead\s*generation|ai\s*tools?|qualified|engage\w*|visitors?|intent|behavior\w*|growth|scale|revenue|efficiency|optimize|optimization\w*|(?<!sales\s)conversion\w*|convert|traffic|user\s*experience|ux|feature|features|priority|use\s*case|help|explore|learn|customize|calendar|routing|manual|sales|support|work|understand)\b/.test(
+    return /\b(workflows?|embeds?|(?<!cx\s)analytics|integration\w*|(?<!(onboarding|lifecycle)\s)automation\w*|reminders?|api|webhooks?|availability|templates?|reporting|compliance|security|scheduling|project\s*management|collaboration|data\s*analytics|capture|(?<!from\s)leads?|lead\s*gen|lead\s*generation|ai\s*tools?|qualified|engage\w*|visitors?|intent|behavior\w*|growth|scale|revenue|efficiency|optimize|optimization\w*|(?<!sales\s)conversion\w*|convert|traffic|user\s*experience|ux|feature|features|priority|use\s*case|help|explore|learn|customize|calendar|routing|manual|sales|support|work|understand)\b/.test(
       s,
     );
   if (dim === "segment")
