@@ -152,33 +152,6 @@ export default function SaPage() {
     }
   };
 
-  const setFreePlan = async (adminId: string) => {
-    setFormValue(adminId, {
-      saving: true,
-      planKey: "free",
-      creditsUnits: 0,
-      leadsUnits: 0,
-    });
-    setError("");
-    try {
-      const res = await fetch("/api/sa/accounts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ adminId }),
-      });
-      if (res.ok) {
-        await fetchAccounts();
-      } else {
-        const data = await res.json();
-        setError(data.error || "Set free failed");
-      }
-    } catch {
-      setError("Set free failed");
-    } finally {
-      setFormValue(adminId, { saving: false });
-    }
-  };
   useEffect(() => {
     fetchAccounts();
   }, []);
@@ -630,13 +603,6 @@ export default function SaPage() {
                                       ? "Saving..."
                                       : "Apply Changes"}
                                   </button>
-                                  <button
-                                    onClick={() => setFreePlan(a.id)}
-                                    disabled={planForms[a.id]?.saving}
-                                    className="w-full px-3 py-1.5 text-xs font-medium bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 h-[34px] whitespace-nowrap shrink-0"
-                                  >
-                                    Set Free
-                                  </button>
                                 </div>
                               </div>
                             </td>
@@ -880,13 +846,6 @@ export default function SaPage() {
                           className="px-3 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-60"
                         >
                           {planForms[a.id]?.saving ? "Saving..." : "Apply Plan"}
-                        </button>
-                        <button
-                          onClick={() => setFreePlan(a.id)}
-                          disabled={planForms[a.id]?.saving}
-                          className="px-3 py-2 text-sm font-medium bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50"
-                        >
-                          Set Free
                         </button>
                       </div>
                     </div>
