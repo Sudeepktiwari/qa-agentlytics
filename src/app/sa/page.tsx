@@ -539,103 +539,107 @@ export default function SaPage() {
                                     </button>
                                   ))}
                               </div>
-                              <div className="mt-3 flex items-end justify-end gap-2">
-                                <div className="flex flex-col text-left gap-1">
-                                  <label className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
-                                    Plan
-                                  </label>
-                                  <select
-                                    className="border border-slate-200 rounded-lg px-2 py-1.5 text-xs h-[34px]"
-                                    value={
-                                      (planForms[a.id]?.planKey as string) ||
-                                      "free"
+                              <div className="mt-3 flex flex-col items-end gap-3">
+                                <div className="flex items-end gap-2">
+                                  <div className="flex flex-col text-left gap-1">
+                                    <label className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
+                                      Plan
+                                    </label>
+                                    <select
+                                      className="border border-slate-200 rounded-lg px-2 py-1.5 text-xs h-[34px]"
+                                      value={
+                                        (planForms[a.id]?.planKey as string) ||
+                                        "free"
+                                      }
+                                      onChange={(e) =>
+                                        setFormValue(a.id, {
+                                          planKey: e.target
+                                            .value as keyof typeof PRICING,
+                                        })
+                                      }
+                                    >
+                                      {(
+                                        Object.keys(PRICING) as Array<
+                                          keyof typeof PRICING
+                                        >
+                                      ).map((k) => (
+                                        <option key={k} value={k}>
+                                          {PRICING[k].name}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                  <div className="flex flex-col text-left gap-1">
+                                    <label className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
+                                      Add Credits{" "}
+                                      <span className="normal-case">
+                                        (x<span className="font-bold">1k</span>)
+                                      </span>
+                                    </label>
+                                    <input
+                                      type="number"
+                                      min={0}
+                                      className="w-24 border border-slate-200 rounded-lg px-2 py-1.5 text-xs h-[34px]"
+                                      placeholder="0"
+                                      value={planForms[a.id]?.creditsUnits ?? 0}
+                                      onChange={(e) =>
+                                        setFormValue(a.id, {
+                                          creditsUnits: Math.max(
+                                            0,
+                                            Number(e.target.value) || 0,
+                                          ),
+                                        })
+                                      }
+                                    />
+                                  </div>
+                                  <div className="flex flex-col text-left gap-1">
+                                    <label className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
+                                      Add Leads{" "}
+                                      <span className="normal-case">
+                                        (x<span className="font-bold">1k</span>)
+                                      </span>
+                                    </label>
+                                    <input
+                                      type="number"
+                                      min={0}
+                                      className="w-24 border border-slate-200 rounded-lg px-2 py-1.5 text-xs h-[34px]"
+                                      placeholder="0"
+                                      value={planForms[a.id]?.leadsUnits ?? 0}
+                                      onChange={(e) =>
+                                        setFormValue(a.id, {
+                                          leadsUnits: Math.max(
+                                            0,
+                                            Number(e.target.value) || 0,
+                                          ),
+                                        })
+                                      }
+                                    />
+                                  </div>
+                                </div>
+                                <div className="flex flex-col items-end gap-2 w-full">
+                                  <button
+                                    onClick={() => applyPlan(a.id)}
+                                    disabled={
+                                      planForms[a.id]?.saving || !isDirty(a.id)
                                     }
-                                    onChange={(e) =>
-                                      setFormValue(a.id, {
-                                        planKey: e.target
-                                          .value as keyof typeof PRICING,
-                                      })
-                                    }
+                                    className={`w-full px-3 py-1.5 text-xs font-medium rounded-lg transition-all h-[34px] whitespace-nowrap shrink-0 ${
+                                      isDirty(a.id)
+                                        ? "bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
+                                        : "bg-slate-100 text-slate-400 cursor-not-allowed"
+                                    }`}
                                   >
-                                    {(
-                                      Object.keys(PRICING) as Array<
-                                        keyof typeof PRICING
-                                      >
-                                    ).map((k) => (
-                                      <option key={k} value={k}>
-                                        {PRICING[k].name}
-                                      </option>
-                                    ))}
-                                  </select>
+                                    {planForms[a.id]?.saving
+                                      ? "Saving..."
+                                      : "Apply Changes"}
+                                  </button>
+                                  <button
+                                    onClick={() => setFreePlan(a.id)}
+                                    disabled={planForms[a.id]?.saving}
+                                    className="w-full px-3 py-1.5 text-xs font-medium bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 h-[34px] whitespace-nowrap shrink-0"
+                                  >
+                                    Set Free
+                                  </button>
                                 </div>
-                                <div className="flex flex-col text-left gap-1">
-                                  <label className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
-                                    Add Credits{" "}
-                                    <span className="normal-case">
-                                      (x<span className="font-bold">1k</span>)
-                                    </span>
-                                  </label>
-                                  <input
-                                    type="number"
-                                    min={0}
-                                    className="w-24 border border-slate-200 rounded-lg px-2 py-1.5 text-xs h-[34px]"
-                                    placeholder="0"
-                                    value={planForms[a.id]?.creditsUnits ?? 0}
-                                    onChange={(e) =>
-                                      setFormValue(a.id, {
-                                        creditsUnits: Math.max(
-                                          0,
-                                          Number(e.target.value) || 0,
-                                        ),
-                                      })
-                                    }
-                                  />
-                                </div>
-                                <div className="flex flex-col text-left gap-1">
-                                  <label className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">
-                                    Add Leads{" "}
-                                    <span className="normal-case">
-                                      (x<span className="font-bold">1k</span>)
-                                    </span>
-                                  </label>
-                                  <input
-                                    type="number"
-                                    min={0}
-                                    className="w-24 border border-slate-200 rounded-lg px-2 py-1.5 text-xs h-[34px]"
-                                    placeholder="0"
-                                    value={planForms[a.id]?.leadsUnits ?? 0}
-                                    onChange={(e) =>
-                                      setFormValue(a.id, {
-                                        leadsUnits: Math.max(
-                                          0,
-                                          Number(e.target.value) || 0,
-                                        ),
-                                      })
-                                    }
-                                  />
-                                </div>
-                                <button
-                                  onClick={() => applyPlan(a.id)}
-                                  disabled={
-                                    planForms[a.id]?.saving || !isDirty(a.id)
-                                  }
-                                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all h-[34px] ${
-                                    isDirty(a.id)
-                                      ? "bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
-                                      : "bg-slate-100 text-slate-400 cursor-not-allowed"
-                                  }`}
-                                >
-                                  {planForms[a.id]?.saving
-                                    ? "Saving..."
-                                    : "Apply Changes"}
-                                </button>
-                                <button
-                                  onClick={() => setFreePlan(a.id)}
-                                  disabled={planForms[a.id]?.saving}
-                                  className="px-3 py-1.5 text-xs font-medium bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50 h-[34px]"
-                                >
-                                  Set Free
-                                </button>
                               </div>
                             </td>
                           </tr>
