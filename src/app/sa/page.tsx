@@ -443,7 +443,7 @@ export default function SaPage() {
                                   className={`text-xs font-medium px-2 py-0.5 rounded-full w-fit flex items-center gap-1 ${
                                     a.blockedApiKey
                                       ? "bg-red-50 text-red-700 border border-red-100"
-                                      : "bg-green-50 text-green-700 border border-green-100"
+                                      : "bg-white text-slate-600 border border-slate-200"
                                   }`}
                                 >
                                   {a.blockedApiKey ? (
@@ -452,7 +452,8 @@ export default function SaPage() {
                                     </>
                                   ) : (
                                     <>
-                                      <Unlock className="w-3 h-3" /> Active
+                                      <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                                      Active
                                     </>
                                   )}
                                 </span>
@@ -463,18 +464,18 @@ export default function SaPage() {
                                 className={`text-xs font-medium px-2.5 py-1 rounded-full border flex items-center gap-1.5 w-fit ${
                                   a.blockedAdmin
                                     ? "bg-red-50 text-red-700 border-red-100"
-                                    : "bg-green-50 text-green-700 border-green-100"
+                                    : "bg-white text-slate-600 border-slate-200"
                                 }`}
                               >
                                 {a.blockedAdmin ? (
                                   <>
                                     <ShieldAlert className="w-3.5 h-3.5" />
-                                    Account Blocked
+                                    Blocked
                                   </>
                                 ) : (
                                   <>
-                                    <Shield className="w-3.5 h-3.5" />
-                                    Account Active
+                                    <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                                    Active
                                   </>
                                 )}
                               </span>
@@ -736,13 +737,20 @@ export default function SaPage() {
                           </div>
                         </div>
                         <span
-                          className={`text-xs font-medium px-2 py-1 rounded-full border ${
+                          className={`text-xs font-medium px-2 py-1 rounded-full border flex items-center gap-1.5 ${
                             a.blockedAdmin
                               ? "bg-red-50 text-red-700 border-red-100"
-                              : "bg-green-50 text-green-700 border-green-100"
+                              : "bg-white text-slate-600 border-slate-200"
                           }`}
                         >
-                          {a.blockedAdmin ? "Blocked" : "Active"}
+                          {a.blockedAdmin ? (
+                            "Blocked"
+                          ) : (
+                            <>
+                              <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                              Active
+                            </>
+                          )}
                         </span>
                       </div>
 
