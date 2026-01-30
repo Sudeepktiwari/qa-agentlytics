@@ -148,7 +148,11 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({
   };
 
   const isToday = (dateString: string): boolean => {
-    const today = new Date().toISOString().split("T")[0];
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    const today = `${year}-${month}-${day}`;
     return dateString === today;
   };
 
@@ -249,7 +253,7 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({
           { length: new Date(currentYear, currentMonth - 1, 1).getDay() },
           (_, i) => (
             <div key={`empty-${i}`} className="calendar-day empty"></div>
-          )
+          ),
         )}
 
         {/* Month days */}
@@ -269,7 +273,9 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({
               (day.available ? "Available" : "No available slots")
             }
           >
-            <span className="day-number">{new Date(day.date).getDate()}</span>
+            <span className="day-number">
+              {parseInt(day.date.split("-")[2], 10)}
+            </span>
             {day.available && (
               <span className="available-count">
                 {day.timeSlots.filter((slot) => slot.available).length}
@@ -326,8 +332,8 @@ const BookingCalendar: React.FC<BookingCalendarProps> = ({
           border: 1px solid #e5e7eb;
           border-radius: 8px;
           padding: 1rem;
-          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-            sans-serif;
+          font-family:
+            -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
           max-width: 400px;
           margin: 0 auto;
         }
