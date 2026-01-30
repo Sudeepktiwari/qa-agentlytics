@@ -1689,6 +1689,8 @@ function computeBantMissingDims(
     "budget" | "authority" | "need" | "timeline" | "segment"
   >();
 
+  /*
+  // Disabled profile check per user request - only check current session
   if (profile) {
     // Check profile to skip already answered questions
     if (
@@ -1721,6 +1723,7 @@ function computeBantMissingDims(
       answered.add("segment");
     }
   }
+  */
 
   let pendingAsked:
     | "budget"
