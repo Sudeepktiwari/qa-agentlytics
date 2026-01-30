@@ -61,6 +61,18 @@ export default function SaPage() {
     }
   }, [accounts]);
 
+  const isDirty = (id: string) => {
+    const account = accounts.find((a) => a.id === id);
+    const form = planForms[id];
+    if (!account || !form) return false;
+
+    return (
+      form.planKey !== (account.planKey || "free") ||
+      form.creditsUnits !== (account.creditsUnits || 0) ||
+      form.leadsUnits !== (account.leadsUnits || 0)
+    );
+  };
+
   const fetchAccounts = async () => {
     setLoading(true);
     setError("");
@@ -583,12 +595,18 @@ export default function SaPage() {
                               </div>
                               <button
                                 onClick={() => applyPlan(a.id)}
-                                disabled={planForms[a.id]?.saving}
-                                className="px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-60 h-[34px]"
+                                disabled={
+                                  planForms[a.id]?.saving || !isDirty(a.id)
+                                }
+                                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all h-[34px] ${
+                                  isDirty(a.id)
+                                    ? "bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
+                                    : "bg-slate-100 text-slate-400 cursor-not-allowed"
+                                }`}
                               >
                                 {planForms[a.id]?.saving
                                   ? "Saving..."
-                                  : "Apply Plan"}
+                                  : "Apply Changes"}
                               </button>
                               <button
                                 onClick={() => setFreePlan(a.id)}
