@@ -5,7 +5,6 @@ import { getUsersCollection, getDb } from "@/lib/mongo";
 import crypto from "crypto";
 import { ObjectId } from "mongodb";
 import { PRICING } from "@/config/pricing";
-import { sendVerificationEmail } from "@/lib/maileroo";
 import { validateEmailWithZeruh } from "@/lib/zeruh";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
@@ -52,18 +51,12 @@ export async function POST(req: NextRequest) {
       const hashed = await bcrypt.hash(password, 10);
       const apiKey = `ak_${crypto.randomBytes(32).toString("hex")}`;
 
-      // Generate verification token
-      const verificationToken = crypto.randomUUID();
-      const verificationTokenExpires = new Date(Date.now() + 1000 * 60 * 15); // 15 mins
-
       const userDoc = {
         email,
         password: hashed,
         apiKey,
         apiKeyCreated: new Date(),
-        emailVerified: false,
-        verificationToken,
-        verificationTokenExpires,
+        emailVerified: true,
         subscriptionPlan: "free",
         subscriptionStatus: "active",
         extraLeads: 0,
@@ -103,19 +96,9 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // Send verification email
-      try {
-        await sendVerificationEmail({ email }, verificationToken);
-      } catch (emailErr) {
-        console.error("❌ Failed to send verification email:", emailErr);
-        // We still proceed but user might need to resend
-      }
-
-      // Do NOT log in automatically. Require verification.
       return NextResponse.json({
         success: true,
-        message:
-          "Registration successful. Please check your email to verify your account.",
+        message: "Registration successful. You can now log in to your account.",
       });
     } else if (action === "login") {
       console.log("🔑 Auth POST - Logging in user:", email);
