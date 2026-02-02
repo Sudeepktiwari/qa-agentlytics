@@ -22,12 +22,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
     }
 
-    const users = await getUsersCollection();
+    // Move DB connection AFTER validation for "register" action
+    // const users = await getUsersCollection(); <--- REMOVED
 
     if (action === "register") {
       console.log("📝 [Auth API] Starting registration flow for:", email);
 
-      // Validate email with Zeruh
+      // Validate email with Zeruh BEFORE connecting to DB
       console.log("🕵️ [Auth API] Validating email with Zeruh...");
       const validation = await validateEmailWithZeruh(email);
       console.log("🕵️ [Auth API] Zeruh validation result:", validation);
@@ -37,6 +38,8 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: validation.error }, { status: 400 });
       }
 
+      // Now connect to DB
+      const users = await getUsersCollection();
       const existing = await users.findOne({ email });
       if (existing) {
         console.log("❌ Auth POST - User already exists:", email);
@@ -115,6 +118,7 @@ export async function POST(req: NextRequest) {
       });
     } else if (action === "login") {
       console.log("🔑 Auth POST - Logging in user:", email);
+      const users = await getUsersCollection();
       const user = await users.findOne({ email });
       if (!user) {
         console.log("❌ Auth POST - User not found:", email);
