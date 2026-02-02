@@ -223,6 +223,7 @@ const AdminPanel: React.FC = () => {
   // Auth form submit
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("🔵 [AdminPanel] handleAuth called with action:", form.action, "email:", form.email);
     setAuthError("");
     setAuthSuccess("");
     setAuthLoading(true);
@@ -238,7 +239,9 @@ const AdminPanel: React.FC = () => {
         }),
       });
 
+      console.log("🔵 [AdminPanel] Response status:", res.status, res.statusText);
       const data = await res.json();
+      console.log("🔵 [AdminPanel] Response data:", data);
 
       if (res.ok) {
         if (form.action === "register") {

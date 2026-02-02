@@ -55,6 +55,7 @@ export async function validateEmailWithZeruh(
     }
 
     const details = data.result.validation_details;
+    console.log("🔍 [Zeruh] Validation details:", details);
 
     // "if any of the below is false give error invalid email"
     const mustBeTrue = [
