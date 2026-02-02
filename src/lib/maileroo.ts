@@ -26,8 +26,8 @@ export async function sendVerificationEmail(
       },
       body: JSON.stringify({
         from: {
-          address: "noreply@agentlytics.com",
-          display_name: "Agentlytics",
+          address: "noreply@advancelytics.com",
+          display_name: "Advancelytics",
         },
         to: [
           {
