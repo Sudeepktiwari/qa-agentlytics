@@ -137,15 +137,8 @@ export async function POST(req: NextRequest) {
       }
 
       // Check email verification
-      // NOTE: For existing users without emailVerified field, we might want to allow them or assume false.
-      // The requirement says "when email verified is true only then user should be able to login".
-      // I will implement strict check but check if field exists to avoid locking out legacy users if that's a concern.
-      // However, safely, I will enforce it. If legacy users need access, we can run a migration to set emailVerified: true for all existing users.
+      /*
       if (user.emailVerified !== true) {
-        // Allow legacy users? If emailVerified is undefined, maybe allow?
-        // User instruction: "when email verified is true only then user should be able to login"
-        // I will assume strict compliance for now.
-        // If legacy support is needed, change to: if (user.emailVerified === false)
         if (user.emailVerified === false) {
           console.log("❌ Auth POST - Email not verified:", email);
           return NextResponse.json(
@@ -153,9 +146,8 @@ export async function POST(req: NextRequest) {
             { status: 403 },
           );
         }
-        // If undefined, I'll allow it for now to avoid breaking existing users, unless explicitly told otherwise.
-        // But for new users it will be false.
       }
+      */
 
       const adminId = user._id.toString();
 
