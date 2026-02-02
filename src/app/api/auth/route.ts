@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { getUsersCollection, getDb } from "@/lib/mongo";
 import crypto from "crypto";
+import { ObjectId } from "mongodb";
 import { PRICING } from "@/config/pricing";
 import { sendVerificationEmail } from "@/lib/maileroo";
 import { validateEmailWithZeruh } from "@/lib/zeruh";
@@ -221,9 +222,13 @@ export async function GET(req: NextRequest) {
       email: string;
       adminId: string;
     };
+    const users = await getUsersCollection();
+    const user = await users.findOne({ _id: new ObjectId(payload.adminId) });
+
     const res = NextResponse.json({
       email: payload.email,
       adminId: payload.adminId,
+      apiKey: user?.apiKey,
     });
     res.cookies.set("auth_token", token, {
       httpOnly: true,
@@ -249,9 +254,13 @@ export async function PUT(req: NextRequest) {
       email: string;
       adminId: string;
     };
+    const users = await getUsersCollection();
+    const user = await users.findOne({ _id: new ObjectId(payload.adminId) });
+
     const res = NextResponse.json({
       email: payload.email,
       adminId: payload.adminId,
+      apiKey: user?.apiKey,
     });
     res.cookies.set("auth_token", token, {
       httpOnly: true,

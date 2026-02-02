@@ -173,6 +173,9 @@ const AdminPanel: React.FC = () => {
         if (res.ok) {
           const data = await res.json();
           setAuth({ email: data.email, adminId: data.adminId });
+          if (data.apiKey) {
+            setApiKey(data.apiKey);
+          }
         }
       } catch {
         // Not authenticated
@@ -202,6 +205,9 @@ const AdminPanel: React.FC = () => {
           if (res.ok) {
             const data = await res.json();
             setAuth({ email: data.email, adminId: data.adminId });
+            if (data.apiKey) {
+              setApiKey(data.apiKey);
+            }
           }
         }
 
@@ -223,7 +229,12 @@ const AdminPanel: React.FC = () => {
   // Auth form submit
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("🔵 [AdminPanel] handleAuth called with action:", form.action, "email:", form.email);
+    console.log(
+      "🔵 [AdminPanel] handleAuth called with action:",
+      form.action,
+      "email:",
+      form.email,
+    );
     setAuthError("");
     setAuthSuccess("");
     setAuthLoading(true);
@@ -239,7 +250,11 @@ const AdminPanel: React.FC = () => {
         }),
       });
 
-      console.log("🔵 [AdminPanel] Response status:", res.status, res.statusText);
+      console.log(
+        "🔵 [AdminPanel] Response status:",
+        res.status,
+        res.statusText,
+      );
       const data = await res.json();
       console.log("🔵 [AdminPanel] Response data:", data);
 
@@ -247,12 +262,15 @@ const AdminPanel: React.FC = () => {
         if (form.action === "register") {
           setAuthSuccess(
             data.message ||
-              "Registration successful! Please check your email to verify your account."
+              "Registration successful! Please check your email to verify your account.",
           );
           setForm((prev) => ({ ...prev, action: "login" }));
         } else {
           // Login success
           setAuth({ email: form.email, adminId: data.adminId });
+          if (data.apiKey) {
+            setApiKey(data.apiKey);
+          }
         }
       } else {
         setAuthError(data.error || "Auth failed");

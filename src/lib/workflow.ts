@@ -1,16 +1,17 @@
 import { getDb } from "./mongo";
 import { ObjectId } from "mongodb";
 
+export interface WorkflowQuestion {
+  question: string;
+  options: string[];
+  tags: string[];
+  workflow: string;
+}
+
 export interface WorkflowSection {
   sectionName: string;
-  leadQuestion: string;
-  leadOptions: string[];
-  leadTags: string[];
-  leadWorkflow: string;
-  salesQuestion: string;
-  salesOptions: string[];
-  salesTags: string[];
-  salesWorkflow: string;
+  leadQuestions: WorkflowQuestion[];
+  salesQuestions: WorkflowQuestion[];
   scripts: {
     diagnosticAnswer: string;
     followUpQuestion: string;
@@ -251,10 +252,13 @@ export async function processWorkflowStep(
 
   // 1. LEAD QUESTION DELIVERY
   if (state.workflowStep === "idle" || state.workflowStep === "lead_question") {
+    const leadQ = currentSection.leadQuestions[0]; // Default to first question
+    if (!leadQ) return null;
+
     // If idle, start lead question
     if (state.workflowStep === "idle") {
-      response.message = currentSection.leadQuestion;
-      response.options = currentSection.leadOptions;
+      response.message = leadQ.question;
+      response.options = leadQ.options;
       response.workflowStep = "lead_question"; // Update response step
       await updateSessionState(sessionId, {
         workflowStep: "lead_question",
@@ -263,7 +267,7 @@ export async function processWorkflowStep(
       await addHistoryEntry(sessionId, {
         step: "lead_question_start",
         section: currentSection.sectionName,
-        question: currentSection.leadQuestion,
+        question: leadQ.question,
       });
       return response;
     }
@@ -271,7 +275,7 @@ export async function processWorkflowStep(
     // If already in lead_question, check if user answered
     if (userMessage) {
       // Check if user selected an option (fuzzy match)
-      const selectedIndex = currentSection.leadOptions.findIndex(
+      const selectedIndex = leadQ.options.findIndex(
         (opt) =>
           userMessage.toLowerCase().includes(opt.toLowerCase()) ||
           opt.toLowerCase().includes(userMessage.toLowerCase()),
@@ -279,11 +283,11 @@ export async function processWorkflowStep(
 
       if (selectedIndex !== -1) {
         // Option Selected -> Route
-        const selectedOption = currentSection.leadOptions[selectedIndex];
-        const tags = currentSection.leadTags;
+        const selectedOption = leadQ.options[selectedIndex];
+        const tags = leadQ.tags;
         const tag = tags[selectedIndex] || "unknown";
 
-        const workflow = currentSection.leadWorkflow; // "ask_sales_question" | "educational_insight" | "stop"
+        const workflow = leadQ.workflow; // "ask_sales_question" | "educational_insight" | "stop"
 
         // CHECK HIGH RISK
         const isHighRisk =
@@ -314,14 +318,23 @@ export async function processWorkflowStep(
           workflow.includes("severity_high")
         ) {
           // Go to Sales Question
-          response.message = currentSection.salesQuestion;
-          response.options = currentSection.salesOptions;
-          response.workflowStep = "sales_question";
-          await updateSessionState(sessionId, {
-            workflowStep: "sales_question",
-            followUpCount: 0,
-          });
-          return response;
+          const salesQ = currentSection.salesQuestions[0]; // Default to first sales question
+          if (salesQ) {
+            response.message = salesQ.question;
+            response.options = salesQ.options;
+            response.workflowStep = "sales_question";
+            await updateSessionState(sessionId, {
+              workflowStep: "sales_question",
+              followUpCount: 0,
+            });
+            return response;
+          } else {
+            // Fallback if no sales question
+            response.message =
+              "Could you tell me a bit more about what you're looking for?";
+            response.workflowStep = "idle";
+            return response;
+          }
         } else {
           // Educational insight / Stop
           response.message =
@@ -336,9 +349,9 @@ export async function processWorkflowStep(
           // Generate follow-up (simplified for now, ideally specific scripts)
           response.message =
             state.followUpCount === 0
-              ? `Just to check - ${currentSection.leadQuestion}` // Follow-up #1
-              : `Quick nudge: ${currentSection.leadQuestion}`; // Follow-up #2
-          response.options = currentSection.leadOptions;
+              ? `Just to check - ${leadQ.question}` // Follow-up #1
+              : `Quick nudge: ${leadQ.question}`; // Follow-up #2
+          response.options = leadQ.options;
           await updateSessionState(sessionId, {
             followUpCount: state.followUpCount + 1,
           });
@@ -357,8 +370,11 @@ export async function processWorkflowStep(
 
   // 2. SALES QUESTION DELIVERY
   if (state.workflowStep === "sales_question") {
+    const salesQ = currentSection.salesQuestions[0];
+    if (!salesQ) return null;
+
     if (userMessage) {
-      const selectedIndex = currentSection.salesOptions.findIndex(
+      const selectedIndex = salesQ.options.findIndex(
         (opt) =>
           userMessage.toLowerCase().includes(opt.toLowerCase()) ||
           opt.toLowerCase().includes(userMessage.toLowerCase()),
@@ -366,12 +382,12 @@ export async function processWorkflowStep(
 
       if (selectedIndex !== -1) {
         // Option Selected -> Diagnostic Response
-        const selectedOption = currentSection.salesOptions[selectedIndex];
+        const selectedOption = salesQ.options[selectedIndex];
         await updateSessionState(sessionId, {
           selectedSalesOption: selectedOption,
         });
 
-        const tag = currentSection.salesTags[selectedIndex] || "unknown";
+        const tag = salesQ.tags[selectedIndex] || "unknown";
 
         // CHECK HIGH RISK
         const isHighRisk =
@@ -413,9 +429,9 @@ export async function processWorkflowStep(
         if (state.followUpCount < 2) {
           response.message =
             state.followUpCount === 0
-              ? `Following up: ${currentSection.salesQuestion}`
-              : `Just checking: ${currentSection.salesQuestion}`;
-          response.options = currentSection.salesOptions;
+              ? `Following up: ${salesQ.question}`
+              : `Just checking: ${salesQ.question}`;
+          response.options = salesQ.options;
           await updateSessionState(sessionId, {
             followUpCount: state.followUpCount + 1,
           });

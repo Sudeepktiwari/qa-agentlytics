@@ -1881,17 +1881,18 @@ async function processBatch(req: NextRequest) {
           console.log(
             `[Retry] Generating structured summary for ${retryUrl}...`,
           );
-          const structuredSummaryResponse = await openai.chat.completions.create({
-            model: "gpt-4o-mini",
-            messages: [
-              {
-                role: "system",
-                content:
-                  "You are an expert web page analyzer. Analyze the provided web page content and extract key business information. Return ONLY a valid JSON object with the specified structure. Do not include any markdown formatting or additional text.",
-              },
-              {
-                role: "user",
-                content: `Analyze this web page content and extract key information:
+          const structuredSummaryResponse =
+            await openai.chat.completions.create({
+              model: "gpt-4o-mini",
+              messages: [
+                {
+                  role: "system",
+                  content:
+                    "You are an expert web page analyzer. Analyze the provided web page content and extract key business information. Return ONLY a valid JSON object with the specified structure. Do not include any markdown formatting or additional text.",
+                },
+                {
+                  role: "user",
+                  content: `Analyze this web page content and extract key information:
 
 ${text}
 
@@ -1910,13 +1911,53 @@ Extract and return a JSON object with:
   "integrations": ["tool1", "tool2"],
   "useCases": ["usecase1", "usecase2"],
   "callsToAction": ["Get Started", "Book Demo"],
-  "trustSignals": ["testimonial", "certification", "clientcount"]
+  "trustSignals": ["testimonial", "certification", "clientcount"],
+  "sections": [
+    {
+      "sectionName": "Name of the section (e.g., Header, Features, Pricing)",
+      "leadQuestions": [
+        {
+          "question": "First lead qualification question",
+          "options": ["Option 1", "Option 2"],
+          "tags": ["tag1", "tag2"],
+          "workflow": "ask_sales_question|educational_insight|stop"
+        },
+        {
+          "question": "Second/Alternative lead qualification question",
+          "options": ["Option A", "Option B"],
+          "tags": ["tagA", "tagB"],
+          "workflow": "ask_sales_question|educational_insight|stop"
+        }
+      ],
+      "salesQuestions": [
+        {
+          "question": "First sales qualification question (high severity)",
+          "options": ["Sales Opt 1", "Sales Opt 2"],
+          "tags": ["sales_tag_1", "sales_tag_2"],
+          "workflow": "diagnostic_response"
+        },
+        {
+          "question": "Second/Alternative sales qualification question",
+          "options": ["Sales Opt A", "Sales Opt B"],
+          "tags": ["sales_tag_A", "sales_tag_B"],
+          "workflow": "diagnostic_response"
+        }
+      ],
+      "scripts": {
+         "diagnosticAnswer": "Script for diagnostic answer (Reflect, Explain, Validate)",
+         "followUpQuestion": "Script for mandatory follow-up question",
+         "followUpOptions": ["Option 1", "Option 2"],
+         "featureMappingAnswer": "Script for feature mapping (Map to ONE feature only)",
+         "loopClosure": "Script for loop closure (Summarize and Stop)"
+       }
+     }
+   ]
 }`,
-              },
-            ],
-            max_tokens: 800,
-            temperature: 0.3,
-          });
+                },
+              ],
+              max_tokens: 800,
+              temperature: 0.3,
+            });
 
           const structuredText =
             structuredSummaryResponse.choices[0]?.message?.content;
@@ -2434,7 +2475,27 @@ Extract and return a JSON object with:
   "integrations": ["tool1", "tool2"],
   "useCases": ["usecase1", "usecase2"],
   "callsToAction": ["Get Started", "Book Demo"],
-  "trustSignals": ["testimonial", "certification", "clientcount"]
+  "trustSignals": ["testimonial", "certification", "clientcount"],
+  "sections": [
+    {
+      "sectionName": "Name of the section (e.g., Header, Features, Pricing)",
+      "leadQuestion": "A specific question to ask the lead based on this section's content",
+      "leadOptions": ["Option 1", "Option 2", "Option 3"],
+      "leadTags": ["tag_for_opt1", "tag_for_opt2", "tag_for_opt3"],
+      "leadWorkflow": "ask_sales_question|educational_insight|stop",
+      "salesQuestion": "A follow-up sales question if severity is high",
+      "salesOptions": ["Sales Opt 1", "Sales Opt 2"],
+      "salesTags": ["sales_tag_1", "sales_tag_2"],
+      "salesWorkflow": "diagnostic_response",
+      "scripts": {
+         "diagnosticAnswer": "Script for diagnostic answer (Reflect, Explain, Validate)",
+         "followUpQuestion": "Script for mandatory follow-up question",
+         "followUpOptions": ["Option 1", "Option 2"],
+         "featureMappingAnswer": "Script for feature mapping (Map to ONE feature only)",
+         "loopClosure": "Script for loop closure (Summarize and Stop)"
+       }
+     }
+   ]
 }`,
                     },
                   ],

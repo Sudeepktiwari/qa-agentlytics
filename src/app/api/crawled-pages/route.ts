@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { MongoClient } from "mongodb";
 import { Pinecone } from "@pinecone-database/pinecone";
 import OpenAI from "openai";
-import { verifyApiKey } from "@/lib/auth";
+import { verifyApiKey, verifyAdminTokenFromCookie } from "@/lib/auth";
 import { z } from "zod";
 import { assertBodyConstraints } from "@/lib/validators";
 
@@ -13,18 +13,28 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 export async function GET(request: NextRequest) {
   let client: MongoClient | null = null;
   try {
-    // Verify API key
+    let adminId: string | null = null;
+
+    // 1. Try API key
     const apiKey = request.headers.get("x-api-key");
-    if (!apiKey) {
-      return NextResponse.json({ error: "API key required" }, { status: 401 });
+    if (apiKey) {
+      const verification = await verifyApiKey(apiKey);
+      if (verification) {
+        adminId = verification.adminId;
+      }
     }
 
-    const verification = await verifyApiKey(apiKey);
-    if (!verification) {
-      return NextResponse.json({ error: "Invalid API key" }, { status: 401 });
+    // 2. Try Cookie if no API key or invalid
+    if (!adminId) {
+      const cookieAuth = verifyAdminTokenFromCookie(request);
+      if (cookieAuth) {
+        adminId = cookieAuth.adminId;
+      }
     }
 
-    const adminId = verification.adminId;
+    if (!adminId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     client = new MongoClient(process.env.MONGODB_URI!);
 

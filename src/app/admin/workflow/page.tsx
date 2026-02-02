@@ -247,75 +247,61 @@ export default function WorkflowPage() {
 
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     {/* Leads Section */}
-                                    <div className="space-y-3">
-                                      <div className="flex items-center gap-2">
+                                    <div className="space-y-6">
+                                      <div className="flex items-center gap-2 border-b border-blue-100 pb-2">
                                         <span className="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-0.5 rounded uppercase">
                                           Leads
                                         </span>
                                         <span className="text-xs text-gray-500 font-mono">
-                                          Lead Question
+                                          Lead Questions
                                         </span>
                                       </div>
-                                      <p className="text-sm font-medium text-gray-900 bg-blue-50/50 p-2 rounded border border-blue-100">
-                                        {section.leadQuestion}
-                                      </p>
 
-                                      <div>
-                                        <span className="text-xs text-gray-500 block mb-1">
-                                          Options & Tags
-                                        </span>
-                                        <ul className="space-y-1">
-                                          {section.leadOptions?.map(
-                                            (opt: string, i: number) => (
-                                              <li
-                                                key={i}
-                                                className="text-sm flex items-center justify-between bg-gray-50 p-1.5 rounded"
-                                              >
-                                                <span>{opt}</span>
-                                                {section.leadTags?.[i] && (
-                                                  <span className="text-[10px] bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded">
-                                                    {section.leadTags[i]}
-                                                  </span>
-                                                )}
-                                              </li>
-                                            ),
-                                          )}
-                                        </ul>
-                                      </div>
-                                    </div>
+                                      {/* Handle new array structure or fallback to legacy single object */}
+                                      {(
+                                        section.leadQuestions ||
+                                        (section.leadQuestion
+                                          ? [
+                                              {
+                                                question: section.leadQuestion,
+                                                options: section.leadOptions,
+                                                tags: section.leadTags,
+                                                workflow: "legacy",
+                                              },
+                                            ]
+                                          : [])
+                                      ).map((q: any, qIdx: number) => (
+                                        <div
+                                          key={qIdx}
+                                          className="space-y-3 p-3 bg-blue-50/30 rounded-lg border border-blue-100"
+                                        >
+                                          <div className="flex justify-between items-start gap-2">
+                                            <span className="text-xs font-bold text-blue-400">
+                                              Q{qIdx + 1}
+                                            </span>
+                                            <span className="text-[10px] font-mono text-gray-400 bg-gray-100 px-1.5 rounded">
+                                              {q.workflow || "legacy"}
+                                            </span>
+                                          </div>
+                                          <p className="text-sm font-medium text-gray-900">
+                                            {q.question}
+                                          </p>
 
-                                    {/* Sales Section */}
-                                    <div className="space-y-3">
-                                      <div className="flex items-center gap-2">
-                                        <span className="bg-green-100 text-green-700 text-xs font-bold px-2 py-0.5 rounded uppercase">
-                                          Sales
-                                        </span>
-                                        <span className="text-xs text-gray-500 font-mono">
-                                          Sales Question
-                                        </span>
-                                      </div>
-                                      <p className="text-sm font-medium text-gray-900 bg-green-50/50 p-2 rounded border border-green-100">
-                                        {section.salesQuestion ||
-                                          "No sales question for this section"}
-                                      </p>
-
-                                      {section.salesOptions &&
-                                        section.salesOptions.length > 0 && (
                                           <div>
                                             <span className="text-xs text-gray-500 block mb-1">
                                               Options & Tags
                                             </span>
                                             <ul className="space-y-1">
-                                              {section.salesOptions.map(
+                                              {q.options?.map(
                                                 (opt: string, i: number) => (
                                                   <li
                                                     key={i}
-                                                    className="text-sm flex items-center justify-between bg-gray-50 p-1.5 rounded"
+                                                    className="text-sm flex items-center justify-between bg-white p-1.5 rounded border border-blue-100"
                                                   >
                                                     <span>{opt}</span>
-                                                    {section.salesTags?.[i] && (
-                                                      <span className="text-[10px] bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded">
-                                                        {section.salesTags[i]}
+                                                    {q.tags?.[i] && (
+                                                      <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">
+                                                        {q.tags[i]}
                                                       </span>
                                                     )}
                                                   </li>
@@ -323,6 +309,81 @@ export default function WorkflowPage() {
                                               )}
                                             </ul>
                                           </div>
+                                        </div>
+                                      ))}
+                                    </div>
+
+                                    {/* Sales Section */}
+                                    <div className="space-y-6">
+                                      <div className="flex items-center gap-2 border-b border-green-100 pb-2">
+                                        <span className="bg-green-100 text-green-700 text-xs font-bold px-2 py-0.5 rounded uppercase">
+                                          Sales
+                                        </span>
+                                        <span className="text-xs text-gray-500 font-mono">
+                                          Sales Questions
+                                        </span>
+                                      </div>
+
+                                      {/* Handle new array structure or fallback to legacy single object */}
+                                      {(
+                                        section.salesQuestions ||
+                                        (section.salesQuestion
+                                          ? [
+                                              {
+                                                question: section.salesQuestion,
+                                                options: section.salesOptions,
+                                                tags: section.salesTags,
+                                                workflow: "legacy",
+                                              },
+                                            ]
+                                          : [])
+                                      ).map((q: any, qIdx: number) => (
+                                        <div
+                                          key={qIdx}
+                                          className="space-y-3 p-3 bg-green-50/30 rounded-lg border border-green-100"
+                                        >
+                                          <div className="flex justify-between items-start gap-2">
+                                            <span className="text-xs font-bold text-green-600">
+                                              Q{qIdx + 1}
+                                            </span>
+                                            <span className="text-[10px] font-mono text-gray-400 bg-gray-100 px-1.5 rounded">
+                                              {q.workflow || "legacy"}
+                                            </span>
+                                          </div>
+                                          <p className="text-sm font-medium text-gray-900">
+                                            {q.question}
+                                          </p>
+
+                                          <div>
+                                            <span className="text-xs text-gray-500 block mb-1">
+                                              Options & Tags
+                                            </span>
+                                            <ul className="space-y-1">
+                                              {q.options?.map(
+                                                (opt: string, i: number) => (
+                                                  <li
+                                                    key={i}
+                                                    className="text-sm flex items-center justify-between bg-white p-1.5 rounded border border-green-100"
+                                                  >
+                                                    <span>{opt}</span>
+                                                    {q.tags?.[i] && (
+                                                      <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded">
+                                                        {q.tags[i]}
+                                                      </span>
+                                                    )}
+                                                  </li>
+                                                ),
+                                              )}
+                                            </ul>
+                                          </div>
+                                        </div>
+                                      ))}
+
+                                      {!section.salesQuestions &&
+                                        !section.salesQuestion && (
+                                          <p className="text-sm text-gray-500 italic p-2">
+                                            No sales questions for this section
+                                          </p>
                                         )}
                                     </div>
                                   </div>
