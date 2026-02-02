@@ -34,6 +34,7 @@ export default function WorkflowPage() {
 
   // Data State
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [crawledPages, setCrawledPages] = useState<any[]>([]);
   const [subscription, setSubscription] = useState<SubscriptionStatus | null>(
     null,
   );
@@ -52,6 +53,13 @@ export default function WorkflowPage() {
       const leadsData = await leadsRes.json();
       if (leadsRes.ok) {
         setLeads(leadsData.leads || []);
+      }
+
+      // Fetch Crawled Pages (Workflow Data)
+      const pagesRes = await fetch("/api/crawled-pages");
+      const pagesData = await pagesRes.json();
+      if (pagesRes.ok) {
+        setCrawledPages(pagesData.pages || []);
       }
 
       // Fetch Subscription/Sales
@@ -190,19 +198,143 @@ export default function WorkflowPage() {
               </div>
 
               {/* Workflow Configuration (Questions, Options, Tags) */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 lg:col-span-2">
                 <div className="mb-6">
                   <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
                     <Settings className="w-5 h-5 text-gray-500" />
-                    Workflow Configuration
+                    Generated Workflow Configuration
                   </h2>
                   <p className="text-sm text-gray-500">
-                    Configure questions, options, and tags for qualification.
+                    Review generated lead and sales qualification questions from
+                    your crawled pages.
                   </p>
                 </div>
 
-                {/* We reuse the BANT Qualification Section here as it handles Questions/Options */}
-                <BantQualificationSection />
+                {crawledPages.length === 0 ? (
+                  <div className="text-center py-8 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                    <p className="text-gray-500">
+                      No crawled pages found. Crawl a website to generate
+                      workflow.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-8">
+                    {crawledPages.map((page, pageIdx) =>
+                      page.structuredSummary?.sections ? (
+                        <div
+                          key={pageIdx}
+                          className="border border-gray-200 rounded-lg overflow-hidden"
+                        >
+                          <div className="bg-gray-50 px-4 py-2 border-b border-gray-200 flex justify-between items-center">
+                            <h3 className="font-medium text-gray-700 truncate max-w-md">
+                              {page.url}
+                            </h3>
+                            <span className="text-xs text-gray-400">
+                              Generated{" "}
+                              {new Date(page.createdAt).toLocaleDateString()}
+                            </span>
+                          </div>
+                          <div className="p-4 space-y-6">
+                            {page.structuredSummary.sections.map(
+                              (section: any, secIdx: number) => (
+                                <div
+                                  key={secIdx}
+                                  className="bg-white border border-gray-100 rounded-lg p-4 shadow-sm"
+                                >
+                                  <h4 className="font-bold text-gray-800 mb-3 border-b border-gray-100 pb-2">
+                                    Section: {section.sectionName}
+                                  </h4>
+
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {/* Leads Section */}
+                                    <div className="space-y-3">
+                                      <div className="flex items-center gap-2">
+                                        <span className="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-0.5 rounded uppercase">
+                                          Leads
+                                        </span>
+                                        <span className="text-xs text-gray-500 font-mono">
+                                          Lead Question
+                                        </span>
+                                      </div>
+                                      <p className="text-sm font-medium text-gray-900 bg-blue-50/50 p-2 rounded border border-blue-100">
+                                        {section.leadQuestion}
+                                      </p>
+
+                                      <div>
+                                        <span className="text-xs text-gray-500 block mb-1">
+                                          Options & Tags
+                                        </span>
+                                        <ul className="space-y-1">
+                                          {section.leadOptions?.map(
+                                            (opt: string, i: number) => (
+                                              <li
+                                                key={i}
+                                                className="text-sm flex items-center justify-between bg-gray-50 p-1.5 rounded"
+                                              >
+                                                <span>{opt}</span>
+                                                {section.leadTags?.[i] && (
+                                                  <span className="text-[10px] bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded">
+                                                    {section.leadTags[i]}
+                                                  </span>
+                                                )}
+                                              </li>
+                                            ),
+                                          )}
+                                        </ul>
+                                      </div>
+                                    </div>
+
+                                    {/* Sales Section */}
+                                    <div className="space-y-3">
+                                      <div className="flex items-center gap-2">
+                                        <span className="bg-green-100 text-green-700 text-xs font-bold px-2 py-0.5 rounded uppercase">
+                                          Sales
+                                        </span>
+                                        <span className="text-xs text-gray-500 font-mono">
+                                          Sales Question
+                                        </span>
+                                      </div>
+                                      <p className="text-sm font-medium text-gray-900 bg-green-50/50 p-2 rounded border border-green-100">
+                                        {section.salesQuestion ||
+                                          "No sales question for this section"}
+                                      </p>
+
+                                      {section.salesOptions &&
+                                        section.salesOptions.length > 0 && (
+                                          <div>
+                                            <span className="text-xs text-gray-500 block mb-1">
+                                              Options & Tags
+                                            </span>
+                                            <ul className="space-y-1">
+                                              {section.salesOptions.map(
+                                                (opt: string, i: number) => (
+                                                  <li
+                                                    key={i}
+                                                    className="text-sm flex items-center justify-between bg-gray-50 p-1.5 rounded"
+                                                  >
+                                                    <span>{opt}</span>
+                                                    {section.salesTags?.[i] && (
+                                                      <span className="text-[10px] bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded">
+                                                        {section.salesTags[i]}
+                                                      </span>
+                                                    )}
+                                                  </li>
+                                                ),
+                                              )}
+                                            </ul>
+                                          </div>
+                                        )}
+                                    </div>
+                                  </div>
+                                </div>
+                              ),
+                            )}
+                          </div>
+                        </div>
+                      ) : null,
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
