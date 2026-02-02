@@ -62,8 +62,8 @@ export async function validateEmailWithZeruh(
       { key: "format_valid", label: "Invalid format" },
       { key: "mx_found", label: "No MX records found" },
       { key: "smtp_check", label: "SMTP check failed" },
-      { key: "catch_all", label: "Domain must be catch-all" },
-      { key: "role", label: "Must be a role account" },
+      // { key: "catch_all", label: "Domain must be catch-all" },
+      // { key: "role", label: "Must be a role account" },
     ];
 
     for (const check of mustBeTrue) {
@@ -78,7 +78,7 @@ export async function validateEmailWithZeruh(
     // "if any of the below are true, give error as per label"
     const mustBeFalse = [
       { key: "disposable", label: "Disposable emails are not allowed" },
-      { key: "free", label: "Free email providers are not allowed" },
+      // { key: "free", label: "Free email providers are not allowed" },
       { key: "tagged", label: "Tagged emails are not allowed" },
       { key: "mailbox_full", label: "Mailbox is full" },
       { key: "mailbox_disabled", label: "Mailbox is disabled" },
