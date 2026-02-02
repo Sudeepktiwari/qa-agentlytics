@@ -5,6 +5,7 @@ import { getUsersCollection, getDb } from "@/lib/mongo";
 import crypto from "crypto";
 import { PRICING } from "@/config/pricing";
 import { sendVerificationEmail } from "@/lib/maileroo";
+import { validateEmailWithZeruh } from "@/lib/zeruh";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
 
@@ -21,6 +22,14 @@ export async function POST(req: NextRequest) {
 
   if (action === "register") {
     console.log("📝 Auth POST - Registering new user:", email);
+    
+    // Validate email with Zeruh
+    const validation = await validateEmailWithZeruh(email);
+    if (!validation.valid) {
+      console.log("❌ Auth POST - Zeruh validation failed:", validation.error);
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
+
     const existing = await users.findOne({ email });
     if (existing) {
       console.log("❌ Auth POST - User already exists:", email);
