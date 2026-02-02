@@ -18,15 +18,23 @@ export async function sendVerificationEmail(
   const verificationLink = `${APP_URL}/api/auth/verify-email?token=${token}`;
 
   try {
-    const res = await fetch("https://api.maileroo.com/v1/email/send", {
+    const res = await fetch("https://smtp.maileroo.com/api/v2/emails", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${MAILEROO_API_KEY}`,
+        "X-Api-Key": MAILEROO_API_KEY,
       },
       body: JSON.stringify({
-        from: "Agentlytics <noreply@agentlytics.com>", // You might want to make this configurable
-        to: user.email,
+        from: {
+          address: "noreply@agentlytics.com",
+          display_name: "Agentlytics",
+        },
+        to: [
+          {
+            address: user.email,
+            display_name: user.name || "User",
+          },
+        ],
         subject: "Verify your email address",
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -45,6 +53,7 @@ export async function sendVerificationEmail(
             <p style="color: #888; font-size: 12px; margin-top: 30px;">If you didn't create an account, you can safely ignore this email.</p>
           </div>
         `,
+        plain: `Welcome! Hi ${user.name || "there"}, Please verify your email address by visiting this link: ${verificationLink}`,
       }),
     });
 
