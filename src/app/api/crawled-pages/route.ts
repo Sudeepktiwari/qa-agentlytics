@@ -9,6 +9,74 @@ import { assertBodyConstraints } from "@/lib/validators";
 const pc = new Pinecone({ apiKey: process.env.PINECONE_KEY! });
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 
+function normalizeStructuredSummary(raw: any) {
+  if (!raw || typeof raw !== "object") return raw;
+  const result: any = { ...raw };
+  if (!Array.isArray(result.sections)) {
+    if (result.sections && typeof result.sections === "object") {
+      result.sections = [result.sections];
+    } else {
+      result.sections = [];
+    }
+  }
+  result.sections = result.sections.map((section: any) => {
+    const s: any = { ...section };
+    if (s.leadQuestions && !Array.isArray(s.leadQuestions)) {
+      s.leadQuestions = [s.leadQuestions];
+    }
+    if (!Array.isArray(s.leadQuestions)) {
+      const arr: any[] = [];
+      if (s.leadQuestion) {
+        arr.push({
+          question: s.leadQuestion,
+          options: Array.isArray(s.leadOptions) ? s.leadOptions : [],
+          tags: Array.isArray(s.leadTags) ? s.leadTags : [],
+          workflow:
+            typeof s.leadWorkflow === "string" ? s.leadWorkflow : "legacy",
+        });
+      }
+      s.leadQuestions = arr;
+    } else {
+      s.leadQuestions = s.leadQuestions.map((q: any) => ({
+        question: q && q.question ? q.question : "",
+        options: Array.isArray(q && q.options) ? q.options : [],
+        tags: Array.isArray(q && q.tags) ? q.tags : [],
+        workflow: typeof (q && q.workflow) === "string" ? q.workflow : "",
+      }));
+    }
+    if (s.salesQuestions && !Array.isArray(s.salesQuestions)) {
+      s.salesQuestions = [s.salesQuestions];
+    }
+    if (!Array.isArray(s.salesQuestions)) {
+      const arr: any[] = [];
+      if (s.salesQuestion) {
+        arr.push({
+          question: s.salesQuestion,
+          options: Array.isArray(s.salesOptions) ? s.salesOptions : [],
+          tags: Array.isArray(s.salesTags) ? s.salesTags : [],
+          workflow:
+            typeof s.salesWorkflow === "string"
+              ? s.salesWorkflow
+              : "diagnostic_response",
+        });
+      }
+      s.salesQuestions = arr;
+    } else {
+      s.salesQuestions = s.salesQuestions.map((q: any) => ({
+        question: q && q.question ? q.question : "",
+        options: Array.isArray(q && q.options) ? q.options : [],
+        tags: Array.isArray(q && q.tags) ? q.tags : [],
+        workflow:
+          typeof (q && q.workflow) === "string"
+            ? q.workflow
+            : "diagnostic_response",
+      }));
+    }
+    return s;
+  });
+  return result;
+}
+
 // GET - List all crawled pages with summary status
 export async function GET(request: NextRequest) {
   let client: MongoClient | null = null;
@@ -464,7 +532,8 @@ IMPORTANT REQUIREMENTS:
       return null;
     }
 
-    return JSON.parse(summaryContent);
+    const parsed = JSON.parse(summaryContent);
+    return normalizeStructuredSummary(parsed);
   } catch (error) {
     console.error("[API] Direct summary generation failed:", error);
     return null;
@@ -635,7 +704,8 @@ IMPORTANT REQUIREMENTS:
       return null;
     }
 
-    return JSON.parse(finalContent);
+    const parsed = JSON.parse(finalContent);
+    return normalizeStructuredSummary(parsed);
   } catch (error) {
     console.error("[API] Chunked summary generation failed:", error);
     return null;
