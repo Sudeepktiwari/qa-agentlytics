@@ -31,6 +31,7 @@ const AdminPanel: React.FC = () => {
     null,
   );
   const [authError, setAuthError] = useState("");
+  const [authSuccess, setAuthSuccess] = useState("");
   const [authLoading, setAuthLoading] = useState(true);
   const [form, setForm] = useState({
     email: "",
@@ -223,6 +224,7 @@ const AdminPanel: React.FC = () => {
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError("");
+    setAuthSuccess("");
     setAuthLoading(true);
     try {
       const res = await fetch("/api/auth", {
@@ -235,11 +237,22 @@ const AdminPanel: React.FC = () => {
           password: form.password,
         }),
       });
+
+      const data = await res.json();
+
       if (res.ok) {
-        const data = await res.json();
-        setAuth({ email: form.email, adminId: data.adminId });
+        if (data.message && !data.token) {
+          // Registration success (or other success message without login)
+          setAuthSuccess(data.message);
+          if (form.action === "register") {
+            // Switch to login mode so they can try logging in after verification
+            setForm((prev) => ({ ...prev, action: "login" }));
+          }
+        } else {
+          // Login success
+          setAuth({ email: form.email, adminId: data.adminId });
+        }
       } else {
-        const data = await res.json();
         setAuthError(data.error || "Auth failed");
       }
     } catch {
@@ -1321,6 +1334,7 @@ const AdminPanel: React.FC = () => {
         <AuthSection
           auth={auth}
           authError={authError}
+          authSuccess={authSuccess}
           authLoading={authLoading}
           form={form}
           onFormChange={setForm}

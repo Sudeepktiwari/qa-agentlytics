@@ -5,6 +5,7 @@ import React from "react";
 interface AuthSectionProps {
   auth: { email: string; adminId?: string } | null;
   authError: string;
+  authSuccess?: string;
   authLoading: boolean;
   form: {
     email: string;
@@ -23,6 +24,7 @@ interface AuthSectionProps {
 const AuthSection: React.FC<AuthSectionProps> = ({
   auth,
   authError,
+  authSuccess,
   authLoading,
   form,
   onFormChange,
@@ -130,6 +132,22 @@ const AuthSection: React.FC<AuthSectionProps> = ({
               Sign in to manage your chatbot
             </p>
           </div>
+
+          {authSuccess && (
+            <div
+              style={{
+                padding: "16px 20px",
+                borderRadius: "12px",
+                background: "linear-gradient(135deg, #d4f7d4, #b2f2b2)",
+                border: "1px solid #68d391",
+                color: "#22543d",
+                marginBottom: "24px",
+                fontSize: "14px",
+              }}
+            >
+              {authSuccess}
+            </div>
+          )}
 
           {authError && (
             <div
