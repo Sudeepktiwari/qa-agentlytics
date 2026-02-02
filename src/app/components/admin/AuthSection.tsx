@@ -297,33 +297,67 @@ const AuthSection: React.FC<AuthSectionProps> = ({
                   ? "🚀 Sign In"
                   : "✨ Create Account"}
             </button>
-            <button
-              type="button"
-              onClick={handleOnboardingRegisterClick}
-              style={{
-                width: "100%",
-                marginTop: "12px",
-                padding: "12px 20px",
-                background: "white",
-                color: "#4a5568",
-                border: "1px solid #cbd5e0",
-                borderRadius: "12px",
-                fontSize: "14px",
-                fontWeight: "500",
-                cursor: "pointer",
-                transition: "all 0.2s ease",
-              }}
-              onMouseEnter={(e) => {
-                const target = e.target as HTMLButtonElement;
-                target.style.backgroundColor = "#f7fafc";
-              }}
-              onMouseLeave={(e) => {
-                const target = e.target as HTMLButtonElement;
-                target.style.backgroundColor = "white";
-              }}
-            >
-              ✨ Register Your Business
-            </button>
+
+            <div style={{ marginTop: "16px", textAlign: "center" }}>
+              <span style={{ color: "#718096", fontSize: "14px" }}>
+                {form.action === "login"
+                  ? "Don't have an account? "
+                  : "Already have an account? "}
+              </span>
+              <button
+                type="button"
+                onClick={() =>
+                  onFormChange({
+                    ...form,
+                    action: form.action === "login" ? "register" : "login",
+                  })
+                }
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "#667eea",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  padding: 0,
+                  textDecoration: "underline",
+                }}
+              >
+                {form.action === "login" ? "Sign Up" : "Sign In"}
+              </button>
+            </div>
+
+            <div style={{ marginTop: "20px", borderTop: "1px solid #e2e8f0", paddingTop: "20px" }}>
+              <p style={{ margin: "0 0 12px 0", fontSize: "14px", color: "#718096", textAlign: "center" }}>
+                Or try our onboarding assistant:
+              </p>
+              <button
+                type="button"
+                onClick={handleOnboardingRegisterClick}
+                style={{
+                  width: "100%",
+                  padding: "12px 20px",
+                  background: "white",
+                  color: "#4a5568",
+                  border: "1px solid #cbd5e0",
+                  borderRadius: "12px",
+                  fontSize: "14px",
+                  fontWeight: "500",
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                }}
+                onMouseEnter={(e) => {
+                  const target = e.target as HTMLButtonElement;
+                  target.style.backgroundColor = "#f7fafc";
+                }}
+                onMouseLeave={(e) => {
+                  const target = e.target as HTMLButtonElement;
+                  target.style.backgroundColor = "white";
+                }}
+              >
+                ✨ Register with AI Assistant
+              </button>
+            </div>
           </form>
         </div>
       </div>
