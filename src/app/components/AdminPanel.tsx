@@ -241,13 +241,12 @@ const AdminPanel: React.FC = () => {
       const data = await res.json();
 
       if (res.ok) {
-        if (data.message && !data.token) {
-          // Registration success (or other success message without login)
-          setAuthSuccess(data.message);
-          if (form.action === "register") {
-            // Switch to login mode so they can try logging in after verification
-            setForm((prev) => ({ ...prev, action: "login" }));
-          }
+        if (form.action === "register") {
+          setAuthSuccess(
+            data.message ||
+              "Registration successful! Please check your email to verify your account."
+          );
+          setForm((prev) => ({ ...prev, action: "login" }));
         } else {
           // Login success
           setAuth({ email: form.email, adminId: data.adminId });
@@ -255,8 +254,8 @@ const AdminPanel: React.FC = () => {
       } else {
         setAuthError(data.error || "Auth failed");
       }
-    } catch {
-      setAuthError("Auth failed");
+    } catch (err: any) {
+      setAuthError(err.message || "Auth failed");
     } finally {
       setAuthLoading(false);
     }
