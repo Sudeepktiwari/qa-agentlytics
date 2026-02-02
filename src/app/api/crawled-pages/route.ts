@@ -318,7 +318,10 @@ export async function DELETE(request: NextRequest) {
       // Not found in crawled_pages — try deleting failed entry from sitemap_urls
       const failedDelete = await sitemapUrls.deleteOne({ adminId, url });
       if (failedDelete.deletedCount > 0) {
-        return NextResponse.json({ success: true, deletedFrom: "sitemap_urls" });
+        return NextResponse.json({
+          success: true,
+          deletedFrom: "sitemap_urls",
+        });
       }
       return NextResponse.json({ error: "Page not found" }, { status: 404 });
     }
@@ -390,7 +393,27 @@ Extract and return a JSON object with:
   "integrations": ["tool1", "tool2"],
   "useCases": ["usecase1", "usecase2"],
   "callsToAction": ["Get Started", "Book Demo"],
-  "trustSignals": ["testimonial", "certification", "clientcount"]
+  "trustSignals": ["testimonial", "certification", "clientcount"],
+  "sections": [
+    {
+      "sectionName": "Name of the section (e.g., Header, Features, Pricing)",
+      "leadQuestion": "A specific question to ask the lead based on this section's content",
+      "leadOptions": ["Option 1", "Option 2", "Option 3"],
+      "leadTags": ["tag_for_opt1", "tag_for_opt2", "tag_for_opt3"],
+      "leadWorkflow": "ask_sales_question|educational_insight|stop",
+      "salesQuestion": "A follow-up sales question if severity is high",
+      "salesOptions": ["Sales Opt 1", "Sales Opt 2"],
+      "salesTags": ["sales_tag_1", "sales_tag_2"],
+      "salesWorkflow": "diagnostic_response",
+      "scripts": {
+         "diagnosticAnswer": "Script for diagnostic answer (Reflect, Explain, Validate)",
+         "followUpQuestion": "Script for mandatory follow-up question",
+         "followUpOptions": ["Option 1", "Option 2"],
+         "featureMappingAnswer": "Script for feature mapping (Map to ONE feature only)",
+         "loopClosure": "Script for loop closure (Summarize and Stop)"
+       }
+     }
+   ]
 }`,
         },
       ],
@@ -514,7 +537,27 @@ Extract and return a JSON object with:
   "integrations": ["tool1", "tool2"],
   "useCases": ["usecase1", "usecase2"],
   "callsToAction": ["Get Started", "Book Demo"],
-  "trustSignals": ["testimonial", "certification", "clientcount"]
+  "trustSignals": ["testimonial", "certification", "clientcount"],
+  "sections": [
+    {
+      "sectionName": "Name of the section (e.g., Header, Features, Pricing)",
+      "leadQuestion": "A specific question to ask the lead based on this section's content",
+      "leadOptions": ["Option 1", "Option 2", "Option 3"],
+      "leadTags": ["tag_for_opt1", "tag_for_opt2", "tag_for_opt3"],
+      "leadWorkflow": "ask_sales_question|educational_insight|stop",
+      "salesQuestion": "A follow-up sales question if severity is high",
+      "salesOptions": ["Sales Opt 1", "Sales Opt 2"],
+      "salesTags": ["sales_tag_1", "sales_tag_2"],
+      "salesWorkflow": "diagnostic_response",
+      "scripts": {
+        "diagnosticAnswer": "Script for diagnostic answer (Reflect, Explain, Validate)",
+        "followUpQuestion": "Script for mandatory follow-up question",
+        "followUpOptions": ["Option 1", "Option 2"],
+        "featureMappingAnswer": "Script for feature mapping (Map to ONE feature only)",
+        "loopClosure": "Script for loop closure (Summarize and Stop)"
+      }
+    }
+  ]
 }`,
         },
       ],

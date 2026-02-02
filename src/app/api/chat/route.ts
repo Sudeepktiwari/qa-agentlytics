@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ChatBodySchema, assertBodyConstraints } from "@/lib/validators";
+import { processWorkflowStep } from "@/lib/workflow";
 import OpenAI from "openai";
 import { querySimilarChunks } from "@/lib/chroma";
 import { getDb } from "@/lib/mongo";
@@ -3782,6 +3783,47 @@ export async function POST(req: NextRequest) {
     autoResponse,
     timestamp: new Date().toISOString(),
   });
+
+  // -------------------------------------------------------------------------
+  // WORKFLOW ENGINE INTEGRATION (PHASE 2)
+  // -------------------------------------------------------------------------
+  // Check workflow engine before proceeding to standard RAG/OpenAI
+  if (sessionId && pageUrl && !contextualQuestionGeneration && !autoResponse) {
+    try {
+      // If this is a proactive trigger (no user question yet), pass null
+      // Otherwise pass the user's question
+      const workflowUserMessage = proactive || !question ? null : question;
+
+      const workflowResponse = await processWorkflowStep(
+        sessionId,
+        workflowUserMessage,
+        pageUrl,
+        finalAdminId,
+      );
+
+      if (workflowResponse) {
+        console.log(
+          `[Chat API ${requestId}] Workflow engine active step: ${workflowResponse.workflowStep}`,
+        );
+
+        return NextResponse.json({
+          mainText: workflowResponse.message,
+          buttons: workflowResponse.options || [],
+          workflowStep: workflowResponse.workflowStep,
+          showBookingCalendar: workflowResponse.showBookingCalendar || false,
+          emailPrompt: "",
+          role: "assistant",
+          // Ensure these are present to prevent client errors
+          sources: [],
+          threadId: null,
+        });
+      }
+    } catch (error) {
+      console.error(`[Chat API ${requestId}] Workflow engine error:`, error);
+      // Fall through to standard logic on error
+    }
+  }
+  // -------------------------------------------------------------------------
 
   // Parse a combined registration reply for name, email, and password
   function parseRegistrationBundle(ans: string): {
