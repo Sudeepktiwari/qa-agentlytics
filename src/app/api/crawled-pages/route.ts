@@ -380,15 +380,15 @@ async function generateDirectSummary(content: string) {
         {
           role: "system",
           content:
-            "You are an expert web page analyzer. Analyze the provided web page content and extract key business information. Return ONLY a valid JSON object with the specified structure. Do not include any markdown formatting or additional text.",
+            "You are an expert web page analyzer. Your goal is to deconstruct a web page into its distinct logical sections (e.g., Hero, Features, Pricing, Testimonials, FAQ, Footer) and extract key business intelligence for EACH section. Return ONLY a valid JSON object. Do not include markdown.",
         },
         {
           role: "user",
-          content: `Analyze this web page content and extract key information:
+          content: `Analyze this web page content:
 
 ${content}
 
-Extract and return a JSON object with:
+Extract and return a JSON object with this exact structure:
 {
   "pageType": "homepage|pricing|features|about|contact|blog|product|service",
   "businessVertical": "fitness|healthcare|legal|restaurant|saas|ecommerce|consulting|other",
@@ -406,15 +406,36 @@ Extract and return a JSON object with:
   "trustSignals": ["testimonial", "certification", "clientcount"],
   "sections": [
     {
-      "sectionName": "Name of the section (e.g., Header, Features, Pricing)",
-      "leadQuestion": "A specific question to ask the lead based on this section's content",
-      "leadOptions": ["Option 1", "Option 2", "Option 3"],
-      "leadTags": ["tag_for_opt1", "tag_for_opt2", "tag_for_opt3"],
-      "leadWorkflow": "ask_sales_question|educational_insight|stop",
-      "salesQuestion": "A follow-up sales question if severity is high",
-      "salesOptions": ["Sales Opt 1", "Sales Opt 2"],
-      "salesTags": ["sales_tag_1", "sales_tag_2"],
-      "salesWorkflow": "diagnostic_response",
+      "sectionName": "Name of the section (e.g., Hero, Features, Testimonials, Pricing)",
+      "sectionSummary": "Brief summary of this section's content",
+      "leadQuestions": [
+        {
+          "question": "First lead qualification question specific to this section",
+          "options": ["Option 1", "Option 2", "Option 3"],
+          "tags": ["tag1", "tag2", "tag3"],
+          "workflow": "ask_sales_question|educational_insight|stop"
+        },
+        {
+          "question": "Second lead qualification question specific to this section",
+          "options": ["Option A", "Option B", "Option C"],
+          "tags": ["tagA", "tagB", "tagC"],
+          "workflow": "ask_sales_question|educational_insight|stop"
+        }
+      ],
+      "salesQuestions": [
+        {
+          "question": "First sales qualification question (high severity)",
+          "options": ["Sales Opt 1", "Sales Opt 2"],
+          "tags": ["sales_tag_1", "sales_tag_2"],
+          "workflow": "diagnostic_response"
+        },
+        {
+          "question": "Second sales qualification question",
+          "options": ["Sales Opt A", "Sales Opt B"],
+          "tags": ["sales_tag_A", "sales_tag_B"],
+          "workflow": "diagnostic_response"
+        }
+      ],
       "scripts": {
          "diagnosticAnswer": "Script for diagnostic answer (Reflect, Explain, Validate)",
          "followUpQuestion": "Script for mandatory follow-up question",
@@ -424,7 +445,13 @@ Extract and return a JSON object with:
        }
      }
    ]
-}`,
+}
+
+IMPORTANT REQUIREMENTS:
+1. Identify ALL distinct sections on the page (at least 3-5 sections for a typical landing page). Do not collapse everything into one section.
+2. For EACH section, generate EXACTLY 2 distinct lead questions and 2 distinct sales questions.
+3. Ensure questions are relevant to the specific content of that section.
+`,
         },
       ],
       temperature: 0.3,
@@ -524,7 +551,7 @@ Focus on: business features, pain points, solutions, target customers, pricing, 
         {
           role: "system",
           content:
-            "You are an expert business analyst. Combine the provided chunk summaries into a comprehensive business intelligence summary. Return ONLY a valid JSON object.",
+            "You are an expert web page analyzer. Your goal is to deconstruct a web page into its distinct logical sections (e.g., Hero, Features, Pricing, Testimonials, FAQ, Footer) and extract key business intelligence for EACH section. Return ONLY a valid JSON object. Do not include markdown.",
         },
         {
           role: "user",
@@ -532,7 +559,7 @@ Focus on: business features, pain points, solutions, target customers, pricing, 
 
 ${combinedSummary}
 
-Extract and return a JSON object with:
+Extract and return a JSON object with this exact structure:
 {
   "pageType": "homepage|pricing|features|about|contact|blog|product|service",
   "businessVertical": "fitness|healthcare|legal|restaurant|saas|ecommerce|consulting|other",
@@ -550,25 +577,52 @@ Extract and return a JSON object with:
   "trustSignals": ["testimonial", "certification", "clientcount"],
   "sections": [
     {
-      "sectionName": "Name of the section (e.g., Header, Features, Pricing)",
-      "leadQuestion": "A specific question to ask the lead based on this section's content",
-      "leadOptions": ["Option 1", "Option 2", "Option 3"],
-      "leadTags": ["tag_for_opt1", "tag_for_opt2", "tag_for_opt3"],
-      "leadWorkflow": "ask_sales_question|educational_insight|stop",
-      "salesQuestion": "A follow-up sales question if severity is high",
-      "salesOptions": ["Sales Opt 1", "Sales Opt 2"],
-      "salesTags": ["sales_tag_1", "sales_tag_2"],
-      "salesWorkflow": "diagnostic_response",
+      "sectionName": "Name of the section (e.g., Hero, Features, Testimonials, Pricing)",
+      "sectionSummary": "Brief summary of this section's content",
+      "leadQuestions": [
+        {
+          "question": "First lead qualification question specific to this section",
+          "options": ["Option 1", "Option 2", "Option 3"],
+          "tags": ["tag1", "tag2", "tag3"],
+          "workflow": "ask_sales_question|educational_insight|stop"
+        },
+        {
+          "question": "Second lead qualification question specific to this section",
+          "options": ["Option A", "Option B", "Option C"],
+          "tags": ["tagA", "tagB", "tagC"],
+          "workflow": "ask_sales_question|educational_insight|stop"
+        }
+      ],
+      "salesQuestions": [
+        {
+          "question": "First sales qualification question (high severity)",
+          "options": ["Sales Opt 1", "Sales Opt 2"],
+          "tags": ["sales_tag_1", "sales_tag_2"],
+          "workflow": "diagnostic_response"
+        },
+        {
+          "question": "Second sales qualification question",
+          "options": ["Sales Opt A", "Sales Opt B"],
+          "tags": ["sales_tag_A", "sales_tag_B"],
+          "workflow": "diagnostic_response"
+        }
+      ],
       "scripts": {
-        "diagnosticAnswer": "Script for diagnostic answer (Reflect, Explain, Validate)",
-        "followUpQuestion": "Script for mandatory follow-up question",
-        "followUpOptions": ["Option 1", "Option 2"],
-        "featureMappingAnswer": "Script for feature mapping (Map to ONE feature only)",
-        "loopClosure": "Script for loop closure (Summarize and Stop)"
-      }
+         "diagnosticAnswer": "Script for diagnostic answer (Reflect, Explain, Validate)",
+         "followUpQuestion": "Script for mandatory follow-up question",
+         "followUpOptions": ["Option 1", "Option 2"],
+         "featureMappingAnswer": "Script for feature mapping (Map to ONE feature only)",
+         "loopClosure": "Script for loop closure (Summarize and Stop)"
+       }
     }
   ]
-}`,
+}
+
+IMPORTANT REQUIREMENTS:
+1. Identify ALL distinct sections in the combined content (at least 3-5 sections for a typical landing page). Do not collapse everything into one section.
+2. For EACH section, generate EXACTLY 2 distinct lead questions and 2 distinct sales questions.
+3. Ensure questions are relevant to the specific content of that section.
+`,
         },
       ],
       temperature: 0.3,
