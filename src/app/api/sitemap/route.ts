@@ -63,12 +63,34 @@ function normalizeStructuredSummary(raw: any) {
       }
       s.leadQuestions = arr;
     } else {
-      s.leadQuestions = s.leadQuestions.map((q: any) => ({
-        question: q && q.question ? q.question : "",
-        options: Array.isArray(q && q.options) ? q.options : [],
-        tags: Array.isArray(q && q.tags) ? q.tags : [],
-        workflow: typeof (q && q.workflow) === "string" ? q.workflow : "",
-      }));
+      s.leadQuestions = s.leadQuestions.map((q: any) => {
+        const optsRaw = Array.isArray(q?.options) ? q.options : [];
+        const options = optsRaw.map((o: any) => {
+          if (o && typeof o === "object" && typeof o.label === "string") {
+            return {
+              label: String(o.label),
+              tags: Array.isArray(o.tags)
+                ? o.tags.map((t: any) => snakeTag(String(t)))
+                : [],
+              workflow:
+                typeof o.workflow === "string" ? o.workflow : "education_path",
+            };
+          }
+          const label = String(o || "");
+          return {
+            label,
+            tags: [],
+            workflow: "education_path",
+          };
+        });
+        return {
+          question: q && q.question ? q.question : "",
+          options,
+          tags: [], // question-level tags suppressed per spec
+          workflow:
+            typeof q?.workflow === "string" ? q.workflow : "validation_path",
+        };
+      });
     }
     if (s.salesQuestions && !Array.isArray(s.salesQuestions)) {
       s.salesQuestions = [s.salesQuestions];
@@ -88,16 +110,35 @@ function normalizeStructuredSummary(raw: any) {
       }
       s.salesQuestions = arr;
     } else {
-      s.salesQuestions = s.salesQuestions.map((q: any) => ({
-        question: q && q.question ? q.question : "",
-        options: Array.isArray(q && q.options) ? q.options : [],
-        tags: Array.isArray(q && q.tags) ? q.tags : [],
-        workflow:
-          typeof (q && q.workflow) === "string"
-            ? q.workflow
-            : "diagnostic_response",
-        optionFlows: Array.isArray(q && q.optionFlows) ? q.optionFlows : [],
-      }));
+      s.salesQuestions = s.salesQuestions.map((q: any) => {
+        const optsRaw = Array.isArray(q?.options) ? q.options : [];
+        const options = optsRaw.map((o: any) => {
+          if (o && typeof o === "object" && typeof o.label === "string") {
+            return {
+              label: String(o.label),
+              tags: Array.isArray(o.tags)
+                ? o.tags.map((t: any) => snakeTag(String(t)))
+                : [],
+              workflow:
+                typeof o.workflow === "string"
+                  ? o.workflow
+                  : "optimization_workflow",
+            };
+          }
+          const label = String(o || "");
+          return {
+            label,
+            tags: [],
+            workflow: "optimization_workflow",
+          };
+        });
+        return {
+          question: q && q.question ? q.question : "",
+          options,
+          tags: [], // question-level tags suppressed per spec
+          workflow: "diagnostic_education",
+        };
+      });
     }
     const baseTitle =
       typeof s.sectionName === "string" && s.sectionName.trim().length > 0
@@ -116,11 +157,19 @@ function normalizeStructuredSummary(raw: any) {
             : summarySnippet
               ? `What are you hoping to improve related to ${baseTitle}?`
               : `What are you hoping to improve in ${baseTitle}?`,
-        options:
-          idx === 0
-            ? ["Just exploring", "Actively evaluating", "Ready to get started"]
-            : ["Learn more", "Compare options", "Talk to sales"],
-        tags: [baseTitle.toLowerCase()],
+        options: [
+          {
+            label: "Exploring options",
+            tags: ["unknown_state"],
+            workflow: "education_path",
+          },
+          {
+            label: "Evaluating solutions",
+            tags: ["semi_structured"],
+            workflow: "optimization_workflow",
+          },
+        ],
+        tags: [],
         workflow: "ask_sales_question",
       });
     }
@@ -131,45 +180,81 @@ function normalizeStructuredSummary(raw: any) {
           idx === 0
             ? `How urgent is it for you to improve ${baseTitle}?`
             : `What stage are you at in deciding about ${baseTitle}?`,
-        options:
-          idx === 0
-            ? ["In the next month", "In 1-3 months", "Just researching"]
-            : ["Just researching", "Shortlisting options", "Ready to decide"],
-        tags: [baseTitle.toLowerCase(), "sales"],
-        workflow: "diagnostic_response",
-        optionFlows: [],
+        options: [
+          {
+            label: "Immediate need",
+            tags: ["high_governance"],
+            workflow: "optimization_workflow",
+          },
+          {
+            label: "Researching",
+            tags: ["unknown_state"],
+            workflow: "education_path",
+          },
+        ],
+        tags: [],
+        workflow: "diagnostic_education",
       });
     }
+    // Enforce exactly 2 questions and options 2–4 with object structure
     s.leadQuestions = s.leadQuestions.slice(0, 2).map((q: any) => {
-      let opts = Array.isArray(q.options)
-        ? q.options.map((o: any) => String(o))
-        : [];
-      if (opts.length < 2) opts = ["Option 1", "Option 2"];
+      let opts = Array.isArray(q.options) ? q.options : [];
+      // normalize each option to object
+      opts = opts.map((o: any) =>
+        typeof o === "object" && typeof o.label === "string"
+          ? {
+              label: String(o.label),
+              tags: Array.isArray(o.tags)
+                ? o.tags.map((t: any) => snakeTag(String(t)))
+                : [],
+              workflow:
+                typeof o.workflow === "string" ? o.workflow : "education_path",
+            }
+          : { label: String(o || ""), tags: [], workflow: "education_path" },
+      );
+      if (opts.length < 2) {
+        while (opts.length < 2) {
+          opts.push({
+            label: `Option ${opts.length + 1}`,
+            tags: [],
+            workflow: "education_path",
+          });
+        }
+      }
       if (opts.length > 4) opts = opts.slice(0, 4);
-      return { ...q, options: opts };
+      return { ...q, options: opts, tags: [] };
     });
     s.salesQuestions = s.salesQuestions.slice(0, 2).map((q: any) => {
-      let opts = Array.isArray(q.options)
-        ? q.options.map((o: any) => String(o))
-        : [];
-      if (opts.length < 2) opts = ["Option 1", "Option 2"];
+      let opts = Array.isArray(q.options) ? q.options : [];
+      opts = opts.map((o: any) =>
+        typeof o === "object" && typeof o.label === "string"
+          ? {
+              label: String(o.label),
+              tags: Array.isArray(o.tags)
+                ? o.tags.map((t: any) => snakeTag(String(t)))
+                : [],
+              workflow:
+                typeof o.workflow === "string"
+                  ? o.workflow
+                  : "optimization_workflow",
+            }
+          : {
+              label: String(o || ""),
+              tags: [],
+              workflow: "optimization_workflow",
+            },
+      );
+      if (opts.length < 2) {
+        while (opts.length < 2) {
+          opts.push({
+            label: `Option ${opts.length + 1}`,
+            tags: [],
+            workflow: "optimization_workflow",
+          });
+        }
+      }
       if (opts.length > 4) opts = opts.slice(0, 4);
-      const flows = Array.isArray(q.optionFlows) ? q.optionFlows : [];
-      const ensured = opts.map((label: string) => {
-        const f =
-          flows.find((x: any) => String(x?.forOption || "") === label) || {};
-        return {
-          forOption: label,
-          diagnosticAnswer: String(f.diagnosticAnswer || ""),
-          followUpQuestion: String(f.followUpQuestion || ""),
-          followUpOptions: Array.isArray(f.followUpOptions)
-            ? f.followUpOptions
-            : [],
-          featureMappingAnswer: String(f.featureMappingAnswer || ""),
-          loopClosure: String(f.loopClosure || ""),
-        };
-      });
-      return { ...q, options: opts, optionFlows: ensured };
+      return { ...q, options: opts, tags: [] };
     });
     return s;
   });
