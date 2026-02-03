@@ -143,6 +143,68 @@ function normalizeStructuredSummary(raw: any) {
   return result;
 }
 
+function buildFallbackStructuredSummaryFromText(text: string) {
+  if (!text || typeof text !== "string") return null;
+  const sections: any[] = [];
+  const sectionRegex =
+    /\[SECTION\s+(\d+)\]\s*([^\n]*)\n?([\s\S]*?)(?=(\[SECTION\s+\d+\])|$)/g;
+  let match: RegExpExecArray | null;
+  while ((match = sectionRegex.exec(text)) !== null) {
+    const index = match[1];
+    const title = (match[2] || "").trim() || `Section ${index}`;
+    const body = (match[3] || "").trim();
+    const summary =
+      body.length > 400 ? body.slice(0, 400) + "..." : body || title;
+    sections.push({
+      sectionName: title,
+      sectionSummary: summary,
+      leadQuestions: [],
+      salesQuestions: [],
+      scripts: {
+        diagnosticAnswer: "",
+        followUpQuestion: "",
+        followUpOptions: [],
+        featureMappingAnswer: "",
+        loopClosure: "",
+      },
+    });
+  }
+  if (sections.length === 0) {
+    const snippet =
+      text.length > 400 ? text.slice(0, 400) + "..." : text.trim();
+    sections.push({
+      sectionName: "Main Content",
+      sectionSummary: snippet,
+      leadQuestions: [],
+      salesQuestions: [],
+      scripts: {
+        diagnosticAnswer: "",
+        followUpQuestion: "",
+        followUpOptions: [],
+        featureMappingAnswer: "",
+        loopClosure: "",
+      },
+    });
+  }
+  return {
+    pageType: "blog",
+    businessVertical: "other",
+    primaryFeatures: [],
+    painPointsAddressed: [],
+    solutions: [],
+    targetCustomers: [],
+    businessOutcomes: [],
+    competitiveAdvantages: [],
+    industryTerms: [],
+    pricePoints: [],
+    integrations: [],
+    useCases: [],
+    callsToAction: [],
+    trustSignals: [],
+    sections,
+  };
+}
+
 // Auto-extract personas after crawling is complete
 import { generateBantFromContent } from "@/lib/bant-generation";
 
@@ -2127,6 +2189,15 @@ IMPORTANT REQUIREMENTS:
               );
             }
           }
+          if (!structuredSummary && text && text.trim().length > 0) {
+            const fallback = buildFallbackStructuredSummaryFromText(text);
+            if (fallback) {
+              structuredSummary = normalizeStructuredSummary(fallback);
+              console.log(
+                `[Retry] Using fallback structured summary for ${retryUrl}`,
+              );
+            }
+          }
         } catch (summaryError) {
           console.error(
             `[Retry] Error generating structured summary:`,
@@ -2706,6 +2777,15 @@ IMPORTANT REQUIREMENTS:
               console.error(
                 `[Crawl] Error generating structured summary for ${url}:`,
                 summaryError,
+              );
+            }
+          }
+          if (!structuredSummary && text && text.trim().length > 0) {
+            const fallback = buildFallbackStructuredSummaryFromText(text);
+            if (fallback) {
+              structuredSummary = normalizeStructuredSummary(fallback);
+              console.log(
+                `[Crawl] Using fallback structured summary for ${url}`,
               );
             }
           }
