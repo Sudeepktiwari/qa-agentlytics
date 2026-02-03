@@ -107,7 +107,7 @@ function normalizeStructuredSummary(raw: any) {
       typeof s.sectionSummary === "string" && s.sectionSummary.trim().length > 0
         ? s.sectionSummary.trim()
         : "";
-    while (s.leadQuestions.length < 1) {
+    while (s.leadQuestions.length < 2) {
       const idx = s.leadQuestions.length;
       s.leadQuestions.push({
         question:
@@ -124,7 +124,7 @@ function normalizeStructuredSummary(raw: any) {
         workflow: "ask_sales_question",
       });
     }
-    while (s.salesQuestions.length < 1) {
+    while (s.salesQuestions.length < 2) {
       const idx = s.salesQuestions.length;
       s.salesQuestions.push({
         question:
@@ -282,27 +282,52 @@ ${sectionText}
 
 Return JSON:
 {
-  "leadQuestion": {
-    "question": "specific to this section's problems or states",
-    "options": ["opt1", "opt2", "opt3", "opt4"],
-    "tags": ["snake_case_tag_for_opt1", "snake_case_tag_for_opt2", "snake_case_tag_for_opt3", "snake_case_tag_for_opt4"],
-    "workflow": "ask_sales_question|educational_insight|validation"
-  },
-  "salesQuestion": {
-    "question": "diagnostic question specific to section's root causes",
-    "options": ["cause1", "cause2", "cause3", "cause4"],
-    "tags": ["cause_tag_1", "cause_tag_2", "cause_tag_3", "cause_tag_4"],
-    "workflow": "diagnostic_response",
-    "optionFlows": [
-      {
-        "forOption": "cause1",
-        "diagnosticAnswer": "reflection tied to this cause",
-        "followUpQuestion": "narrowing follow-up",
-        "featureMappingAnswer": "one feature mapped to solve this cause",
-        "loopClosure": "closing summary"
-      }
-    ]
-  }
+  "leadQuestions": [
+    {
+      "question": "specific to this section's problems or states",
+      "options": ["opt1", "opt2", "opt3", "opt4"],
+      "tags": ["snake_case_tag_for_opt1", "snake_case_tag_for_opt2", "snake_case_tag_for_opt3", "snake_case_tag_for_opt4"],
+      "workflow": "ask_sales_question|educational_insight|validation"
+    },
+    {
+      "question": "another state recognition question tied to content",
+      "options": ["optA", "optB", "optC", "optD"],
+      "tags": ["opt_a_tag", "opt_b_tag", "opt_c_tag", "opt_d_tag"],
+      "workflow": "ask_sales_question|educational_insight|validation"
+    }
+  ],
+  "salesQuestions": [
+    {
+      "question": "diagnostic question specific to section's root causes",
+      "options": ["cause1", "cause2", "cause3", "cause4"],
+      "tags": ["cause_tag_1", "cause_tag_2", "cause_tag_3", "cause_tag_4"],
+      "workflow": "diagnostic_response",
+      "optionFlows": [
+        {
+          "forOption": "cause1",
+          "diagnosticAnswer": "reflection tied to this cause",
+          "followUpQuestion": "narrowing follow-up",
+          "featureMappingAnswer": "one feature mapped to solve this cause",
+          "loopClosure": "closing summary"
+        }
+      ]
+    },
+    {
+      "question": "second diagnostic question tied to another set of root causes",
+      "options": ["causeA", "causeB", "causeC", "causeD"],
+      "tags": ["cause_tag_a", "cause_tag_b", "cause_tag_c", "cause_tag_d"],
+      "workflow": "diagnostic_response",
+      "optionFlows": [
+        {
+          "forOption": "causeA",
+          "diagnosticAnswer": "reflection tied to cause A",
+          "followUpQuestion": "follow-up for cause A",
+          "featureMappingAnswer": "feature mapped to cause A",
+          "loopClosure": "closing summary"
+        }
+      ]
+    }
+  ]
 }`,
         },
       ],
@@ -2208,7 +2233,7 @@ async function processBatch(req: NextRequest) {
                 {
                   role: "system",
                   content:
-                    "You are an expert web page analyzer. Your goal is to deconstruct a web page into its distinct logical sections based on the provided [SECTION N] markers and extract key business intelligence for EACH section.\n\nFor EACH section detected, generate:\n1. A Section Title (inferred from content).\n2. EXACTLY ONE Lead Question (Problem Recognition) with options mapping to customer states/risks.\n3. EXACTLY ONE Sales Question (Diagnostic) with options mapping to root causes.\n4. For the Sales Question, generate a specific 'Option Flow' for EACH option, containing a Diagnostic Answer, Follow-Up Question, Feature Mapping, and Loop Closure.\n\nReturn ONLY a valid JSON object. Do not include markdown.",
+                    "You are an expert web page analyzer. Your goal is to deconstruct a web page into its distinct logical sections based on the provided [SECTION N] markers and extract key business intelligence for EACH section.\n\nFor EACH section detected, generate:\n1. A Section Title (inferred from content).\n2. EXACTLY TWO Lead Questions (Problem Recognition) with options mapping to customer states/risks.\n3. EXACTLY TWO Sales Questions (Diagnostic) with options mapping to root causes.\n4. For each Sales Question, generate a specific 'Option Flow' for EACH option, containing a Diagnostic Answer, Follow-Up Question, Feature Mapping, and Loop Closure.\n\nReturn ONLY a valid JSON object. Do not include markdown.",
                 },
                 {
                   role: "user",
@@ -2230,6 +2255,12 @@ Extract and return a JSON object with this exact structure:
           "options": ["Option 1", "Option 2", "Option 3", "Option 4"],
           "tags": ["tag_for_opt1", "tag_for_opt2", "tag_for_opt3", "tag_for_opt4"],
           "workflow": "ask_sales_question|educational_insight|validation"
+        },
+        {
+          "question": "Second state-recognition question",
+          "options": ["Option A", "Option B", "Option C", "Option D"],
+          "tags": ["tag_for_optA", "tag_for_optB", "tag_for_optC", "tag_for_optD"],
+          "workflow": "ask_sales_question|educational_insight|validation"
         }
       ],
       "salesQuestions": [
@@ -2245,13 +2276,21 @@ Extract and return a JSON object with this exact structure:
               "followUpQuestion": "Specific follow-up to narrow down context.",
               "featureMappingAnswer": "Explanation of ONE specific feature that solves this cause.",
               "loopClosure": "Summary statement closing the loop."
-            },
+            }
+          ]
+        },
+        {
+          "question": "Second diagnostic question",
+          "options": ["Cause A", "Cause B", "Cause C", "Cause D"],
+          "tags": ["cause_tag_a", "cause_tag_b", "cause_tag_c", "cause_tag_d"],
+          "workflow": "diagnostic_response",
+          "optionFlows": [
             {
-              "forOption": "Cause 2",
-              "diagnosticAnswer": "...",
-              "followUpQuestion": "...",
-              "featureMappingAnswer": "...",
-              "loopClosure": "..."
+              "forOption": "Cause A",
+              "diagnosticAnswer": "Empathic reflection for cause A.",
+              "followUpQuestion": "Follow-up for cause A.",
+              "featureMappingAnswer": "Feature mapping for cause A.",
+              "loopClosure": "Closing loop."
             }
           ]
         }
@@ -2262,10 +2301,11 @@ Extract and return a JSON object with this exact structure:
 
 IMPORTANT REQUIREMENTS:
 1. Use the [SECTION N] markers to delineate sections.
-2. Ensure Lead Questions focus on identifying the user's current state or problem awareness.
-3. Ensure Sales Questions focus on diagnosing the specific root cause of that problem.
-4. The 'optionFlows' array MUST have an entry for every option in the Sales Question.
-5. Tags should be snake_case (e.g., 'onboarding_delay').
+2. Generate EXACTLY TWO Lead Questions and EXACTLY TWO Sales Questions per section.
+3. Ensure Lead Questions focus on identifying the user's current state or problem awareness.
+4. Ensure Sales Questions focus on diagnosing the specific root cause of that problem.
+5. The 'optionFlows' array MUST have an entry for every option in each Sales Question.
+6. Tags should be snake_case (e.g., 'onboarding_delay').
 `,
                 },
               ],
@@ -2883,70 +2923,72 @@ IMPORTANT REQUIREMENTS:
                               );
                             }
                             if (refined && typeof refined === "object") {
-                              const leadQ = refined.leadQuestion || {};
-                              const salesQ = refined.salesQuestion || {};
-                              const leadTags = Array.isArray(leadQ.tags)
-                                ? leadQ.tags.map((t: any) =>
-                                    snakeTag(String(t)),
-                                  )
+                              const leadArr = Array.isArray(
+                                refined.leadQuestions,
+                              )
+                                ? refined.leadQuestions
                                 : [];
-                              const salesTags = Array.isArray(salesQ.tags)
-                                ? salesQ.tags.map((t: any) =>
-                                    snakeTag(String(t)),
-                                  )
+                              const salesArr = Array.isArray(
+                                refined.salesQuestions,
+                              )
+                                ? refined.salesQuestions
                                 : [];
-                              const salesOptions = Array.isArray(salesQ.options)
-                                ? salesQ.options.map((o: any) => String(o))
-                                : [];
-                              const flows = Array.isArray(salesQ.optionFlows)
-                                ? salesQ.optionFlows
-                                : [];
-                              const ensuredFlows = salesOptions.map(
-                                (opt: string, i: number) => {
-                                  const f =
-                                    flows.find(
-                                      (x: any) =>
-                                        String(
-                                          x?.forOption || "",
-                                        ).toLowerCase() === opt.toLowerCase(),
-                                    ) || {};
-                                  return {
-                                    forOption: opt,
-                                    diagnosticAnswer: String(
-                                      f.diagnosticAnswer || "",
-                                    ),
-                                    followUpQuestion: String(
-                                      f.followUpQuestion || "",
-                                    ),
-                                    featureMappingAnswer: String(
-                                      f.featureMappingAnswer || "",
-                                    ),
-                                    loopClosure: String(f.loopClosure || ""),
-                                  };
-                                },
-                              );
-                              sec.leadQuestions = [
-                                {
-                                  question: String(leadQ.question || ""),
-                                  options: Array.isArray(leadQ.options)
-                                    ? leadQ.options
-                                    : [],
-                                  tags: leadTags,
-                                  workflow:
-                                    typeof leadQ.workflow === "string"
-                                      ? leadQ.workflow
-                                      : "ask_sales_question",
-                                },
-                              ];
-                              sec.salesQuestions = [
-                                {
-                                  question: String(salesQ.question || ""),
+                              sec.leadQuestions = leadArr.map((lq: any) => ({
+                                question: String(lq?.question || ""),
+                                options: Array.isArray(lq?.options)
+                                  ? lq.options
+                                  : [],
+                                tags: Array.isArray(lq?.tags)
+                                  ? lq.tags.map((t: any) => snakeTag(String(t)))
+                                  : [],
+                                workflow:
+                                  typeof lq?.workflow === "string"
+                                    ? lq.workflow
+                                    : "ask_sales_question",
+                              }));
+                              sec.salesQuestions = salesArr.map((sq: any) => {
+                                const salesOptions = Array.isArray(sq?.options)
+                                  ? sq.options.map((o: any) => String(o))
+                                  : [];
+                                const flows = Array.isArray(sq?.optionFlows)
+                                  ? sq.optionFlows
+                                  : [];
+                                const ensuredFlows = salesOptions.map(
+                                  (opt: string) => {
+                                    const f =
+                                      flows.find(
+                                        (x: any) =>
+                                          String(
+                                            x?.forOption || "",
+                                          ).toLowerCase() === opt.toLowerCase(),
+                                      ) || {};
+                                    return {
+                                      forOption: opt,
+                                      diagnosticAnswer: String(
+                                        f.diagnosticAnswer || "",
+                                      ),
+                                      followUpQuestion: String(
+                                        f.followUpQuestion || "",
+                                      ),
+                                      featureMappingAnswer: String(
+                                        f.featureMappingAnswer || "",
+                                      ),
+                                      loopClosure: String(f.loopClosure || ""),
+                                    };
+                                  },
+                                );
+                                return {
+                                  question: String(sq?.question || ""),
                                   options: salesOptions,
-                                  tags: salesTags,
+                                  tags: Array.isArray(sq?.tags)
+                                    ? sq.tags.map((t: any) =>
+                                        snakeTag(String(t)),
+                                      )
+                                    : [],
                                   workflow: "diagnostic_response",
                                   optionFlows: ensuredFlows,
-                                },
-                              ];
+                                };
+                              });
                             }
                             return sec;
                           },
@@ -2999,65 +3041,66 @@ IMPORTANT REQUIREMENTS:
                           summary,
                         );
                         if (refined && typeof refined === "object") {
-                          const leadQ = refined.leadQuestion || {};
-                          const salesQ = refined.salesQuestion || {};
-                          const leadTags = Array.isArray(leadQ.tags)
-                            ? leadQ.tags.map((t: any) => snakeTag(String(t)))
+                          const leadArr = Array.isArray(refined.leadQuestions)
+                            ? refined.leadQuestions
                             : [];
-                          const salesTags = Array.isArray(salesQ.tags)
-                            ? salesQ.tags.map((t: any) => snakeTag(String(t)))
+                          const salesArr = Array.isArray(refined.salesQuestions)
+                            ? refined.salesQuestions
                             : [];
-                          const salesOptions = Array.isArray(salesQ.options)
-                            ? salesQ.options.map((o: any) => String(o))
-                            : [];
-                          const flows = Array.isArray(salesQ.optionFlows)
-                            ? salesQ.optionFlows
-                            : [];
-                          const ensuredFlows = salesOptions.map(
-                            (opt: string) => {
-                              const f =
-                                flows.find(
-                                  (x: any) =>
-                                    String(x?.forOption || "").toLowerCase() ===
-                                    opt.toLowerCase(),
-                                ) || {};
-                              return {
-                                forOption: opt,
-                                diagnosticAnswer: String(
-                                  f.diagnosticAnswer || "",
-                                ),
-                                followUpQuestion: String(
-                                  f.followUpQuestion || "",
-                                ),
-                                featureMappingAnswer: String(
-                                  f.featureMappingAnswer || "",
-                                ),
-                                loopClosure: String(f.loopClosure || ""),
-                              };
-                            },
-                          );
-                          sec.leadQuestions = [
-                            {
-                              question: String(leadQ.question || ""),
-                              options: Array.isArray(leadQ.options)
-                                ? leadQ.options
-                                : [],
-                              tags: leadTags,
-                              workflow:
-                                typeof leadQ.workflow === "string"
-                                  ? leadQ.workflow
-                                  : "ask_sales_question",
-                            },
-                          ];
-                          sec.salesQuestions = [
-                            {
-                              question: String(salesQ.question || ""),
+                          sec.leadQuestions = leadArr.map((lq: any) => ({
+                            question: String(lq?.question || ""),
+                            options: Array.isArray(lq?.options)
+                              ? lq.options
+                              : [],
+                            tags: Array.isArray(lq?.tags)
+                              ? lq.tags.map((t: any) => snakeTag(String(t)))
+                              : [],
+                            workflow:
+                              typeof lq?.workflow === "string"
+                                ? lq.workflow
+                                : "ask_sales_question",
+                          }));
+                          sec.salesQuestions = salesArr.map((sq: any) => {
+                            const salesOptions = Array.isArray(sq?.options)
+                              ? sq.options.map((o: any) => String(o))
+                              : [];
+                            const flows = Array.isArray(sq?.optionFlows)
+                              ? sq.optionFlows
+                              : [];
+                            const ensuredFlows = salesOptions.map(
+                              (opt: string) => {
+                                const f =
+                                  flows.find(
+                                    (x: any) =>
+                                      String(
+                                        x?.forOption || "",
+                                      ).toLowerCase() === opt.toLowerCase(),
+                                  ) || {};
+                                return {
+                                  forOption: opt,
+                                  diagnosticAnswer: String(
+                                    f.diagnosticAnswer || "",
+                                  ),
+                                  followUpQuestion: String(
+                                    f.followUpQuestion || "",
+                                  ),
+                                  featureMappingAnswer: String(
+                                    f.featureMappingAnswer || "",
+                                  ),
+                                  loopClosure: String(f.loopClosure || ""),
+                                };
+                              },
+                            );
+                            return {
+                              question: String(sq?.question || ""),
                               options: salesOptions,
-                              tags: salesTags,
+                              tags: Array.isArray(sq?.tags)
+                                ? sq.tags.map((t: any) => snakeTag(String(t)))
+                                : [],
                               workflow: "diagnostic_response",
                               optionFlows: ensuredFlows,
-                            },
-                          ];
+                            };
+                          });
                         }
                         return sec;
                       },
