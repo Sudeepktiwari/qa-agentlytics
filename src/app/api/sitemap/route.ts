@@ -207,6 +207,114 @@ function buildFallbackStructuredSummaryFromText(text: string) {
   };
 }
 
+function parseSectionBlocks(text: string) {
+  const blocks: { title: string; body: string }[] = [];
+  const regex =
+    /\[SECTION\s+(\d+)\]\s*([^\n]*)\n?([\s\S]*?)(?=(\[SECTION\s+\d+\])|$)/g;
+  let m: RegExpExecArray | null;
+  while ((m = regex.exec(text)) !== null) {
+    const title = (m[2] || "").trim();
+    const body = (m[3] || "").trim();
+    blocks.push({ title, body });
+  }
+  return blocks;
+}
+
+function snakeTag(s: string) {
+  return s
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "_");
+}
+
+function isGenericLead(sectionName: string, q: any) {
+  const base = (sectionName || "").toLowerCase();
+  const opts = Array.isArray(q?.options)
+    ? q.options.map((o: any) => String(o))
+    : [];
+  const def =
+    opts.length === 3 &&
+    opts[0] === "Just exploring" &&
+    opts[1] === "Actively evaluating" &&
+    opts[2] === "Ready to get started";
+  const phr = String(q?.question || "").toLowerCase();
+  return def && phr.includes("which best describes your interest");
+}
+
+function isGenericSales(sectionName: string, q: any) {
+  const opts = Array.isArray(q?.options)
+    ? q.options.map((o: any) => String(o))
+    : [];
+  const def =
+    opts.length === 3 &&
+    opts[0] === "In the next month" &&
+    opts[1] === "In 1-3 months" &&
+    opts[2] === "Just researching";
+  const flows = Array.isArray(q?.optionFlows) ? q.optionFlows : [];
+  return def && flows.length === 0;
+}
+
+async function refineSectionQuestions(
+  openaiClient: any,
+  sectionName: string,
+  sectionText: string,
+  sectionSummary: string,
+) {
+  try {
+    const resp = await openaiClient.chat.completions.create({
+      model: "gpt-4o-mini",
+      response_format: { type: "json_object" },
+      temperature: 0.2,
+      max_tokens: 900,
+      messages: [
+        {
+          role: "system",
+          content:
+            "You generate context-specific lead and sales questions strictly tied to the provided section content. Return ONLY JSON.",
+        },
+        {
+          role: "user",
+          content: `Section Name: ${sectionName}
+Section Summary: ${sectionSummary}
+Section Text:
+${sectionText}
+
+Return JSON:
+{
+  "leadQuestion": {
+    "question": "specific to this section's problems or states",
+    "options": ["opt1", "opt2", "opt3", "opt4"],
+    "tags": ["snake_case_tag_for_opt1", "snake_case_tag_for_opt2", "snake_case_tag_for_opt3", "snake_case_tag_for_opt4"],
+    "workflow": "ask_sales_question|educational_insight|validation"
+  },
+  "salesQuestion": {
+    "question": "diagnostic question specific to section's root causes",
+    "options": ["cause1", "cause2", "cause3", "cause4"],
+    "tags": ["cause_tag_1", "cause_tag_2", "cause_tag_3", "cause_tag_4"],
+    "workflow": "diagnostic_response",
+    "optionFlows": [
+      {
+        "forOption": "cause1",
+        "diagnosticAnswer": "reflection tied to this cause",
+        "followUpQuestion": "narrowing follow-up",
+        "featureMappingAnswer": "one feature mapped to solve this cause",
+        "loopClosure": "closing summary"
+      }
+    ]
+  }
+}`,
+        },
+      ],
+    });
+    const txt = resp.choices[0]?.message?.content || "";
+    const data = JSON.parse(txt);
+    return data;
+  } catch {
+    return null;
+  }
+}
+
 // Auto-extract personas after crawling is complete
 import { generateBantFromContent } from "@/lib/bant-generation";
 
@@ -2739,6 +2847,113 @@ IMPORTANT REQUIREMENTS:
                 try {
                   const parsed = JSON.parse(structuredText);
                   structuredSummary = normalizeStructuredSummary(parsed);
+                  try {
+                    const blocks = parseSectionBlocks(text);
+                    if (Array.isArray(structuredSummary?.sections)) {
+                      structuredSummary.sections = await Promise.all(
+                        structuredSummary.sections.map(
+                          async (sec: any, idx: number) => {
+                            const name = String(
+                              sec?.sectionName || `Section ${idx + 1}`,
+                            );
+                            const summary = String(sec?.sectionSummary || "");
+                            const block = blocks.find(
+                              (b) =>
+                                b.title &&
+                                name &&
+                                b.title.toLowerCase() === name.toLowerCase(),
+                            ) ||
+                              blocks[idx] || { title: name, body: summary };
+                            const lead = Array.isArray(sec.leadQuestions)
+                              ? sec.leadQuestions[0]
+                              : null;
+                            const sales = Array.isArray(sec.salesQuestions)
+                              ? sec.salesQuestions[0]
+                              : null;
+                            let refined: any = null;
+                            if (
+                              isGenericLead(name, lead) ||
+                              isGenericSales(name, sales)
+                            ) {
+                              refined = await refineSectionQuestions(
+                                openai,
+                                name,
+                                String(block.body || ""),
+                                summary,
+                              );
+                            }
+                            if (refined && typeof refined === "object") {
+                              const leadQ = refined.leadQuestion || {};
+                              const salesQ = refined.salesQuestion || {};
+                              const leadTags = Array.isArray(leadQ.tags)
+                                ? leadQ.tags.map((t: any) =>
+                                    snakeTag(String(t)),
+                                  )
+                                : [];
+                              const salesTags = Array.isArray(salesQ.tags)
+                                ? salesQ.tags.map((t: any) =>
+                                    snakeTag(String(t)),
+                                  )
+                                : [];
+                              const salesOptions = Array.isArray(salesQ.options)
+                                ? salesQ.options.map((o: any) => String(o))
+                                : [];
+                              const flows = Array.isArray(salesQ.optionFlows)
+                                ? salesQ.optionFlows
+                                : [];
+                              const ensuredFlows = salesOptions.map(
+                                (opt: string, i: number) => {
+                                  const f =
+                                    flows.find(
+                                      (x: any) =>
+                                        String(
+                                          x?.forOption || "",
+                                        ).toLowerCase() === opt.toLowerCase(),
+                                    ) || {};
+                                  return {
+                                    forOption: opt,
+                                    diagnosticAnswer: String(
+                                      f.diagnosticAnswer || "",
+                                    ),
+                                    followUpQuestion: String(
+                                      f.followUpQuestion || "",
+                                    ),
+                                    featureMappingAnswer: String(
+                                      f.featureMappingAnswer || "",
+                                    ),
+                                    loopClosure: String(f.loopClosure || ""),
+                                  };
+                                },
+                              );
+                              sec.leadQuestions = [
+                                {
+                                  question: String(leadQ.question || ""),
+                                  options: Array.isArray(leadQ.options)
+                                    ? leadQ.options
+                                    : [],
+                                  tags: leadTags,
+                                  workflow:
+                                    typeof leadQ.workflow === "string"
+                                      ? leadQ.workflow
+                                      : "ask_sales_question",
+                                },
+                              ];
+                              sec.salesQuestions = [
+                                {
+                                  question: String(salesQ.question || ""),
+                                  options: salesOptions,
+                                  tags: salesTags,
+                                  workflow: "diagnostic_response",
+                                  optionFlows: ensuredFlows,
+                                },
+                              ];
+                            }
+                            return sec;
+                          },
+                        ),
+                      );
+                    }
+                  } catch {}
                   console.log(
                     `[Crawl] Structured summary generated successfully for ${url}`,
                   );
@@ -2760,6 +2975,96 @@ IMPORTANT REQUIREMENTS:
             const fallback = buildFallbackStructuredSummaryFromText(text);
             if (fallback) {
               structuredSummary = normalizeStructuredSummary(fallback);
+              try {
+                const blocks = parseSectionBlocks(text);
+                if (Array.isArray(structuredSummary?.sections)) {
+                  structuredSummary.sections = await Promise.all(
+                    structuredSummary.sections.map(
+                      async (sec: any, idx: number) => {
+                        const name = String(
+                          sec?.sectionName || `Section ${idx + 1}`,
+                        );
+                        const summary = String(sec?.sectionSummary || "");
+                        const block = blocks.find(
+                          (b) =>
+                            b.title &&
+                            name &&
+                            b.title.toLowerCase() === name.toLowerCase(),
+                        ) ||
+                          blocks[idx] || { title: name, body: summary };
+                        const refined = await refineSectionQuestions(
+                          openai,
+                          name,
+                          String(block.body || ""),
+                          summary,
+                        );
+                        if (refined && typeof refined === "object") {
+                          const leadQ = refined.leadQuestion || {};
+                          const salesQ = refined.salesQuestion || {};
+                          const leadTags = Array.isArray(leadQ.tags)
+                            ? leadQ.tags.map((t: any) => snakeTag(String(t)))
+                            : [];
+                          const salesTags = Array.isArray(salesQ.tags)
+                            ? salesQ.tags.map((t: any) => snakeTag(String(t)))
+                            : [];
+                          const salesOptions = Array.isArray(salesQ.options)
+                            ? salesQ.options.map((o: any) => String(o))
+                            : [];
+                          const flows = Array.isArray(salesQ.optionFlows)
+                            ? salesQ.optionFlows
+                            : [];
+                          const ensuredFlows = salesOptions.map(
+                            (opt: string) => {
+                              const f =
+                                flows.find(
+                                  (x: any) =>
+                                    String(x?.forOption || "").toLowerCase() ===
+                                    opt.toLowerCase(),
+                                ) || {};
+                              return {
+                                forOption: opt,
+                                diagnosticAnswer: String(
+                                  f.diagnosticAnswer || "",
+                                ),
+                                followUpQuestion: String(
+                                  f.followUpQuestion || "",
+                                ),
+                                featureMappingAnswer: String(
+                                  f.featureMappingAnswer || "",
+                                ),
+                                loopClosure: String(f.loopClosure || ""),
+                              };
+                            },
+                          );
+                          sec.leadQuestions = [
+                            {
+                              question: String(leadQ.question || ""),
+                              options: Array.isArray(leadQ.options)
+                                ? leadQ.options
+                                : [],
+                              tags: leadTags,
+                              workflow:
+                                typeof leadQ.workflow === "string"
+                                  ? leadQ.workflow
+                                  : "ask_sales_question",
+                            },
+                          ];
+                          sec.salesQuestions = [
+                            {
+                              question: String(salesQ.question || ""),
+                              options: salesOptions,
+                              tags: salesTags,
+                              workflow: "diagnostic_response",
+                              optionFlows: ensuredFlows,
+                            },
+                          ];
+                        }
+                        return sec;
+                      },
+                    ),
+                  );
+                }
+              } catch {}
               console.log(
                 `[Crawl] Using fallback structured summary for ${url}`,
               );
