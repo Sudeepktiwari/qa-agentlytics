@@ -72,6 +72,46 @@ function normalizeStructuredSummary(raw: any) {
             : "diagnostic_response",
       }));
     }
+    const baseTitle =
+      typeof s.sectionName === "string" && s.sectionName.trim().length > 0
+        ? s.sectionName.trim()
+        : "this section";
+    const summarySnippet =
+      typeof s.sectionSummary === "string" && s.sectionSummary.trim().length > 0
+        ? s.sectionSummary.trim()
+        : "";
+    while (s.leadQuestions.length < 2) {
+      const idx = s.leadQuestions.length;
+      s.leadQuestions.push({
+        question:
+          idx === 0
+            ? `Which best describes your interest in ${baseTitle}?`
+            : summarySnippet
+              ? `What are you hoping to improve related to ${baseTitle}?`
+              : `What are you hoping to improve in ${baseTitle}?`,
+        options:
+          idx === 0
+            ? ["Just exploring", "Actively evaluating", "Ready to get started"]
+            : ["Learn more", "Compare options", "Talk to sales"],
+        tags: [baseTitle.toLowerCase()],
+        workflow: "ask_sales_question",
+      });
+    }
+    while (s.salesQuestions.length < 2) {
+      const idx = s.salesQuestions.length;
+      s.salesQuestions.push({
+        question:
+          idx === 0
+            ? `How urgent is it for you to improve ${baseTitle}?`
+            : `What stage are you at in deciding about ${baseTitle}?`,
+        options:
+          idx === 0
+            ? ["In the next month", "In 1-3 months", "Just researching"]
+            : ["Just researching", "Shortlisting options", "Ready to decide"],
+        tags: [baseTitle.toLowerCase(), "sales"],
+        workflow: "diagnostic_response",
+      });
+    }
     return s;
   });
   return result;
