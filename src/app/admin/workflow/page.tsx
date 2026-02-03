@@ -293,17 +293,41 @@ export default function WorkflowPage() {
                                             </span>
                                             <ul className="space-y-1">
                                               {q.options?.map(
-                                                (opt: string, i: number) => (
+                                                (opt: any, i: number) => (
                                                   <li
                                                     key={i}
                                                     className="text-sm flex items-center justify-between bg-white p-1.5 rounded border border-blue-100"
                                                   >
-                                                    <span>{opt}</span>
-                                                    {q.tags?.[i] && (
-                                                      <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">
-                                                        {q.tags[i]}
-                                                      </span>
-                                                    )}
+                                                    <span>
+                                                      {typeof opt ===
+                                                        "object" &&
+                                                      opt &&
+                                                      typeof opt.label ===
+                                                        "string"
+                                                        ? opt.label
+                                                        : String(opt)}
+                                                    </span>
+                                                    <div className="flex items-center gap-1">
+                                                      {Array.isArray(
+                                                        opt?.tags,
+                                                      ) &&
+                                                      opt.tags.length > 0 ? (
+                                                        <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">
+                                                          {opt.tags.join(", ")}
+                                                        </span>
+                                                      ) : q.tags?.[i] ? (
+                                                        <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">
+                                                          {q.tags[i]}
+                                                        </span>
+                                                      ) : null}
+                                                      {typeof opt?.workflow ===
+                                                        "string" &&
+                                                      opt.workflow ? (
+                                                        <span className="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
+                                                          {opt.workflow}
+                                                        </span>
+                                                      ) : null}
+                                                    </div>
                                                   </li>
                                                 ),
                                               )}
@@ -360,17 +384,41 @@ export default function WorkflowPage() {
                                             </span>
                                             <ul className="space-y-1">
                                               {q.options?.map(
-                                                (opt: string, i: number) => (
+                                                (opt: any, i: number) => (
                                                   <li
                                                     key={i}
                                                     className="text-sm flex items-center justify-between bg-white p-1.5 rounded border border-green-100"
                                                   >
-                                                    <span>{opt}</span>
-                                                    {q.tags?.[i] && (
-                                                      <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded">
-                                                        {q.tags[i]}
-                                                      </span>
-                                                    )}
+                                                    <span>
+                                                      {typeof opt ===
+                                                        "object" &&
+                                                      opt &&
+                                                      typeof opt.label ===
+                                                        "string"
+                                                        ? opt.label
+                                                        : String(opt)}
+                                                    </span>
+                                                    <div className="flex items-center gap-1">
+                                                      {Array.isArray(
+                                                        opt?.tags,
+                                                      ) &&
+                                                      opt.tags.length > 0 ? (
+                                                        <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded">
+                                                          {opt.tags.join(", ")}
+                                                        </span>
+                                                      ) : q.tags?.[i] ? (
+                                                        <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded">
+                                                          {q.tags[i]}
+                                                        </span>
+                                                      ) : null}
+                                                      {typeof opt?.workflow ===
+                                                        "string" &&
+                                                      opt.workflow ? (
+                                                        <span className="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
+                                                          {opt.workflow}
+                                                        </span>
+                                                      ) : null}
+                                                    </div>
                                                   </li>
                                                 ),
                                               )}
