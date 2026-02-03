@@ -1469,7 +1469,46 @@ async function extractTextFromUrl(
 
     console.log(`[ExtractText] Parsing HTML content...`);
     $("script, style, noscript").remove();
-    const text = $("body").text().replace(/\s+/g, " ").trim();
+
+    const sections: string[] = [];
+    let currentTitle = "";
+    let currentContent: string[] = [];
+    let sectionCount = 0;
+
+    $("body")
+      .find("h1, h2, h3, h4, p, li")
+      .each((_, el) => {
+        const tagName = (el as any).tagName
+          ? (el as any).tagName.toLowerCase()
+          : "";
+        const elText = $(el).text().replace(/\s+/g, " ").trim();
+        if (!elText) return;
+
+        if (/^h[1-4]$/.test(tagName)) {
+          if (currentTitle || currentContent.length) {
+            sectionCount += 1;
+            sections.push(
+              `[SECTION ${sectionCount}] ${currentTitle || "Untitled Section"}\n${currentContent.join(" ")}`,
+            );
+          }
+          currentTitle = elText;
+          currentContent = [];
+        } else {
+          currentContent.push(elText);
+        }
+      });
+
+    if (currentTitle || currentContent.length) {
+      sectionCount += 1;
+      sections.push(
+        `[SECTION ${sectionCount}] ${currentTitle || "Untitled Section"}\n${currentContent.join(" ")}`,
+      );
+    }
+
+    const text =
+      sections.length > 0
+        ? sections.join("\n\n")
+        : $("body").text().replace(/\s+/g, " ").trim();
 
     console.log(
       `[ExtractText] SUCCESS - Extracted ${text.length} chars from ${url}`,
@@ -1944,7 +1983,7 @@ async function processBatch(req: NextRequest) {
 
       // Generate structured summary
       let structuredSummary = null;
-      if (text.length >= 100) {
+      if (text && text.trim().length > 0) {
         try {
           console.log(
             `[Retry] Generating structured summary for ${retryUrl}...`,
@@ -1952,11 +1991,12 @@ async function processBatch(req: NextRequest) {
           const structuredSummaryResponse =
             await openai.chat.completions.create({
               model: "gpt-4o-mini",
+              response_format: { type: "json_object" },
               messages: [
                 {
                   role: "system",
                   content:
-                    "You are an expert web page analyzer. Your goal is to deconstruct a web page into its distinct logical sections (e.g., Hero, Features, Pricing, Testimonials, FAQ, Footer) and extract key business intelligence for EACH section. Return ONLY a valid JSON object. Do not include markdown.",
+                    "You are an expert web page analyzer. Your goal is to deconstruct a web page into its distinct logical sections (e.g., Hero, Features, Pricing, Testimonials, FAQ, Footer) and extract key business intelligence for EACH section. The input text is annotated with [SECTION N] markers derived from page headings; treat each [SECTION N] block as a candidate logical section. Return ONLY a valid JSON object. Do not include markdown.",
                 },
                 {
                   role: "user",
@@ -2515,8 +2555,7 @@ IMPORTANT REQUIREMENTS:
 
           // Generate structured summary (NEW - automatic during crawling)
           let structuredSummary = null;
-          if (text.length >= 100) {
-            // Only generate if we have sufficient content
+          if (text && text.trim().length > 0) {
             try {
               console.log(
                 `[Crawl] Generating structured summary for ${url}...`,
@@ -2524,6 +2563,7 @@ IMPORTANT REQUIREMENTS:
               const structuredSummaryResponse =
                 await openai.chat.completions.create({
                   model: "gpt-4o-mini",
+                  response_format: { type: "json_object" },
                   messages: [
                     {
                       role: "system",
