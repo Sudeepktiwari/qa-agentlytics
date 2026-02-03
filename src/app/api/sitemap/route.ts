@@ -405,29 +405,38 @@ ${JSON.stringify(WORKFLOWS)}
 FEATURE REGISTRY (for later mapping reference):
 ${JSON.stringify(FEATURE_REGISTRY)}
 
-SCHEMA:
+OUTPUT JSON SCHEMA:
 {
   "section_id": "string",
-  "lead": {
-    "question": "string",
-    "options": [
-      { "label": "string", "tags": ["string","string"], "workflow": "ask_sales_question|validation_path|education_path" }
-    ]
-  },
-  "sales": {
-    "question": "string",
-    "options": [
-      {
-        "label": "string",
-        "tags": ["string","string"],
-        "workflow": "optimization_workflow|validation_path|diagnostic_education|sales_alert|role_clarification",
-        "diagnostic_answer": "string",
-        "follow_up": { "question": "string", "options": [ { "label": "string", "tags": ["string","string"] } ] },
-        "loop_closure": "string"
-      }
-    ]
-  }
+  "leadQuestions": [
+    {
+      "question": "string",
+      "options": [
+        { "label": "string", "tags": ["string","string"], "workflow": "ask_sales_question|validation_path|education_path" }
+      ]
+    }
+  ],
+  "salesQuestions": [
+    {
+      "question": "string",
+      "options": [
+        {
+          "label": "string",
+          "tags": ["string","string"],
+          "workflow": "optimization_workflow|validation_path|diagnostic_education|sales_alert|role_clarification",
+          "diagnostic_answer": "string",
+          "follow_up": { "question": "string", "options": [ { "label": "string", "tags": ["string","string"] } ] },
+          "loop_closure": "string"
+        }
+      ]
+    }
+  ]
 }
+
+REQUIREMENTS:
+- Produce EXACTLY TWO lead questions and EXACTLY TWO sales questions.
+- Each question must have 2–4 options.
+- Every sales option must include diagnostic_answer, follow_up (question + 2–4 cause options), and loop_closure.
 
 Return JSON only.`,
         },
@@ -3080,84 +3089,129 @@ IMPORTANT REQUIREMENTS:
                               );
                             }
                             if (refined && typeof refined === "object") {
-                              const leadObj = refined.lead || {};
-                              const salesObj = refined.sales || {};
-                              const leadOptions = Array.isArray(leadObj.options)
-                                ? leadObj.options.map((o: any) =>
-                                    String(o?.label || ""),
-                                  )
-                                : [];
-                              const leadTags = Array.isArray(leadObj.options)
-                                ? Array.from(
-                                    new Set(
-                                      leadObj.options
-                                        .flatMap((o: any) =>
-                                          Array.isArray(o?.tags) ? o.tags : [],
-                                        )
-                                        .map((t: any) => snakeTag(String(t))),
-                                    ),
-                                  )
-                                : [];
-                              sec.leadQuestions = [
-                                {
-                                  question: String(leadObj.question || ""),
-                                  options: leadOptions,
-                                  tags: leadTags,
-                                  workflow: "ask_sales_question",
-                                },
-                              ];
-                              const salesOptionsRaw = Array.isArray(
-                                salesObj.options,
+                              const leadArr = Array.isArray(
+                                refined.leadQuestions,
                               )
-                                ? salesObj.options
+                                ? refined.leadQuestions
                                 : [];
-                              const salesOptionLabels = salesOptionsRaw.map(
-                                (o: any) => String(o?.label || ""),
-                              );
-                              const salesTags = Array.from(
-                                new Set(
-                                  salesOptionsRaw
-                                    .flatMap((o: any) =>
-                                      Array.isArray(o?.tags) ? o.tags : [],
-                                    )
-                                    .map((t: any) => snakeTag(String(t))),
-                                ),
-                              );
-                              const ensuredFlows = salesOptionsRaw.map(
-                                (o: any) => ({
-                                  forOption: String(o?.label || ""),
-                                  diagnosticAnswer: String(
-                                    o?.diagnostic_answer || "",
-                                  ),
-                                  followUpQuestion: String(
-                                    o?.follow_up?.question || "",
-                                  ),
-                                  followUpOptions: Array.isArray(
-                                    o?.follow_up?.options,
-                                  )
-                                    ? o.follow_up.options.map((fo: any) =>
-                                        String(fo?.label || ""),
+                              const salesArr = Array.isArray(
+                                refined.salesQuestions,
+                              )
+                                ? refined.salesQuestions
+                                : [];
+                              // Map lead questions
+                              sec.leadQuestions = leadArr
+                                .slice(0, 2)
+                                .map((lq: any) => {
+                                  let opts = Array.isArray(lq?.options)
+                                    ? lq.options.map((o: any) =>
+                                        String(o?.label || ""),
                                       )
-                                    : [],
-                                  featureMappingAnswer: "",
-                                  loopClosure: String(o?.loop_closure || ""),
-                                }),
-                              );
-                              sec.salesQuestions = [
-                                {
-                                  question: String(salesObj.question || ""),
-                                  options: salesOptionLabels,
-                                  tags: salesTags,
-                                  workflow: "diagnostic_response",
-                                  optionFlows: ensuredFlows,
-                                },
-                              ];
+                                    : [];
+                                  if (opts.length < 2)
+                                    opts = ["Option 1", "Option 2"];
+                                  if (opts.length > 4) opts = opts.slice(0, 4);
+                                  const tags = Array.isArray(lq?.options)
+                                    ? Array.from(
+                                        new Set(
+                                          lq.options
+                                            .flatMap((o: any) =>
+                                              Array.isArray(o?.tags)
+                                                ? o.tags
+                                                : [],
+                                            )
+                                            .map((t: any) =>
+                                              snakeTag(String(t)),
+                                            ),
+                                        ),
+                                      )
+                                    : [];
+                                  return {
+                                    question: String(lq?.question || ""),
+                                    options: opts,
+                                    tags,
+                                    workflow:
+                                      typeof lq?.workflow === "string"
+                                        ? lq.workflow
+                                        : "ask_sales_question",
+                                  };
+                                });
+                              // Map sales questions
+                              sec.salesQuestions = salesArr
+                                .slice(0, 2)
+                                .map((sq: any) => {
+                                  let opts = Array.isArray(sq?.options)
+                                    ? sq.options.map((o: any) =>
+                                        String(o?.label || ""),
+                                      )
+                                    : [];
+                                  if (opts.length < 2)
+                                    opts = ["Option 1", "Option 2"];
+                                  if (opts.length > 4) opts = opts.slice(0, 4);
+                                  const flowsRaw = Array.isArray(sq?.options)
+                                    ? sq.options
+                                    : [];
+                                  const ensuredFlows = opts.map(
+                                    (label: string) => {
+                                      const match =
+                                        flowsRaw.find(
+                                          (o: any) =>
+                                            String(o?.label || "") === label,
+                                        ) || {};
+                                      return {
+                                        forOption: label,
+                                        diagnosticAnswer: String(
+                                          match?.diagnostic_answer || "",
+                                        ),
+                                        followUpQuestion: String(
+                                          match?.follow_up?.question || "",
+                                        ),
+                                        followUpOptions: Array.isArray(
+                                          match?.follow_up?.options,
+                                        )
+                                          ? match.follow_up.options.map(
+                                              (fo: any) =>
+                                                String(fo?.label || ""),
+                                            )
+                                          : [],
+                                        featureMappingAnswer: "",
+                                        loopClosure: String(
+                                          match?.loop_closure || "",
+                                        ),
+                                      };
+                                    },
+                                  );
+                                  const tags = Array.isArray(sq?.options)
+                                    ? Array.from(
+                                        new Set(
+                                          sq.options
+                                            .flatMap((o: any) =>
+                                              Array.isArray(o?.tags)
+                                                ? o.tags
+                                                : [],
+                                            )
+                                            .map((t: any) =>
+                                              snakeTag(String(t)),
+                                            ),
+                                        ),
+                                      )
+                                    : [];
+                                  return {
+                                    question: String(sq?.question || ""),
+                                    options: opts,
+                                    tags,
+                                    workflow: "diagnostic_response",
+                                    optionFlows: ensuredFlows,
+                                  };
+                                });
                             }
                             return sec;
                           },
                         ),
                       );
                     }
+                    structuredSummary =
+                      normalizeStructuredSummary(structuredSummary);
                   } catch {}
                   console.log(
                     `[Crawl] Structured summary generated successfully for ${url}`,
