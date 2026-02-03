@@ -2917,37 +2917,34 @@ IMPORTANT REQUIREMENTS:
         break;
       }
 
+      // 1. Fetch pages already crawled FOR THIS SITEMAP
       const updatedCrawledDocs = await sitemapUrls
         .find({ adminId, crawled: true })
         .project({ url: 1, _id: 0 })
         .toArray();
-      updatedCrawledUrls = new Set(
+      const sitemapCrawledSet = new Set(
         updatedCrawledDocs.map((doc: any) => doc.url),
       );
 
-      // We only care about what has been crawled FOR THIS SITEMAP SUBMISSION
-      // or if the content is missing from our vector store.
-      // If a page exists in another sitemap or was crawled previously,
-      // we might still want to re-crawl it if it's explicitly part of THIS sitemap request
-      // and hasn't been processed in this context yet.
+      // 2. Fetch pages crawled GLOBALLY for this admin (to avoid re-crawling content)
+      const existingPagesDocs = await pages
+        .find({ adminId })
+        .project({ url: 1, _id: 0 })
+        .toArray();
+      const globalCrawledSet = new Set(
+        existingPagesDocs.map((doc: any) => doc.url),
+      );
 
-      // However, to save resources, we usually skip if it was crawled VERY recently (e.g. 24h)
-      // But for now, let's strictly check against the current sitemap context
-      // AND the global "crawled_pages" collection to avoid duplicate work if the data is fresh.
+      // 3. Remove problematic URLs from global set to force re-crawl
+      problematicUrls.forEach((url) => globalCrawledSet.delete(url));
 
-      // NOTE: The user wants to see 50 pages. If they were crawled under a different sitemap URL
-      // or without a sitemap URL, they might be skipped here.
-      // Let's relax the check: we will only skip if it's marked as crawled for THIS sitemapUrl
-      // OR if it was crawled recently and we have vectors.
-
-      // UPDATE: We now check globally for the admin to prevent duplicate crawling across different sitemaps
-      const alreadyCrawledUrls = new Set<string>([
-        ...Array.from(updatedCrawledUrls),
-        ...Array.from(processedInSession),
-      ]);
-
+      // 4. Identify URLs that need processing (either crawl or status update)
+      // We do NOT filter out globalCrawledSet here, because we want to iterate over them
+      // and update their status in the sitemapUrls collection without re-fetching.
       const uncrawledUrls = urls
-        .filter((url) => !alreadyCrawledUrls.has(url))
+        .filter(
+          (url) => !sitemapCrawledSet.has(url) && !processedInSession.has(url),
+        )
         .slice(0, MAX_PAGES);
 
       if (uncrawledUrls.length === 0) {
@@ -2968,6 +2965,19 @@ IMPORTANT REQUIREMENTS:
       );
 
       for (const url of uncrawledUrls) {
+        // Fast-Track: If already crawled globally, skip fetch but update sitemap status
+        if (globalCrawledSet.has(url)) {
+          console.log(
+            `[Crawl] Skipping fetch for ${url} - already exists in global pages`,
+          );
+          await sitemapUrls.updateOne(
+            { adminId, url, sitemapUrl },
+            { $set: { crawled: true, crawledAt: new Date() } },
+          );
+          processedInSession.add(url);
+          continue;
+        }
+
         // Check for stop signal
         if (adminId) {
           const db = await getDb();
