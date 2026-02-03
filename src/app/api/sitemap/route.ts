@@ -344,6 +344,29 @@ function snakeTag(s: string) {
     .replace(/\s+/g, "_");
 }
 
+function classifySectionType(
+  sectionName: string,
+  sectionSummary: string,
+  sectionText: string,
+) {
+  const blob = `${sectionName} ${sectionSummary} ${sectionText}`.toLowerCase();
+  if (
+    /availability|buffer|working hours|multi[-\s]?calendar|slot|rule/i.test(
+      blob,
+    )
+  )
+    return "availability";
+  if (/secure|security|compliance|admin|governance|privacy|audit/i.test(blob))
+    return "security";
+  if (
+    /roi|return on investment|increase|decrease|bookings|errors|time-to-hire|speed|cycle|customers reached/i.test(
+      blob,
+    )
+  )
+    return "roi";
+  return "hero";
+}
+
 function isGenericLead(sectionName: string, q: any) {
   const base = (sectionName || "").toLowerCase();
   const opts = Array.isArray(q?.options)
@@ -448,6 +471,8 @@ async function refineSectionQuestions(
   sectionName: string,
   sectionText: string,
   sectionSummary: string,
+  sectionType: "hero" | "availability" | "roi" | "security",
+  variant: boolean,
 ) {
   try {
     const keywords = extractKeywordsFromText(sectionText);
@@ -460,70 +485,56 @@ async function refineSectionQuestions(
         {
           role: "system",
           content:
-            "You are generating deterministic conversation configuration for a diagnostic sales assistant. Do not pitch, sell, or use CTAs. Keep writing concise and factual. Return ONLY valid JSON matching the schema.",
+            "You are generating deterministic conversation configuration for a diagnostic sales assistant. Do not pitch, sell, or use CTAs. Keep writing concise and factual. Return ONLY valid JSON.",
         },
         {
           role: "user",
-          content: `SYSTEM:
-You are generating deterministic conversation configuration for a diagnostic sales assistant.
-No CTAs, no hype. Output JSON only. Use allowed tag taxonomy and workflows.
+          content: `Generate Lead and Sales questions with options for the given section.
+Follow these rules exactly:
 
-INPUT CONTEXT:
+1) Question Requirements
+- Lead must match section intent:
+  - Hero → scheduling friction
+  - Availability → availability rules & constraints
+  - ROI → desired business outcome
+  - Security → compliance & data governance
+- Sales must be the next logical diagnostic step for the same intent.
+
+2) Option Requirements
+Each option must be an object:
+{ "label": "", "tags": [], "workflow": "" }
+
+3) Tag Rules
+- Tags per option only; snake_case
+- Allowed tag types: cause-based, readiness-based, risk-based
+
+4) Workflow Rules (one per option):
+- optimization_workflow, validation_path, education_path, diagnostic_education, sales_alert, role_clarification
+
+Workflow decision logic:
+- Problem → diagnostic_education
+- Desired outcome → optimization_workflow
+- Advanced user → validation_path
+- Confusion → education_path
+- Security/compliance risk → sales_alert
+- Wrong persona → role_clarification
+
+5) Final Output JSON ONLY:
+{
+  "lead": { "question": "", "options": [] },
+  "sales": { "question": "", "options": [] }
+}
+
+Context:
 page_url: ${pageUrl}
 page_type: ${pageType}
 section_id: ${sectionId}
 section_heading: ${sectionName}
-section_subheading: 
-section_body_bullets: 
+section_summary: ${sectionSummary}
+section_type: ${sectionType}
 keywords_in_section: ${JSON.stringify(keywords)}
-
-ALLOWED TAG TAXONOMY (problem/readiness/risk):
-${JSON.stringify({
-  problem: TAGS_PROBLEM,
-  readiness: TAGS_READINESS,
-  risk: TAGS_RISK,
-})}
-
-WORKFLOWS (allowed):
-${JSON.stringify(WORKFLOWS)}
-
-FEATURE REGISTRY (for later mapping reference):
-${JSON.stringify(FEATURE_REGISTRY)}
-
-OUTPUT JSON SCHEMA:
-{
-  "section_id": "string",
-  "leadQuestions": [
-    {
-      "question": "string",
-      "options": [
-        { "label": "string", "tags": ["string","string"], "workflow": "ask_sales_question|validation_path|education_path" }
-      ]
-    }
-  ],
-  "salesQuestions": [
-    {
-      "question": "string",
-      "options": [
-        {
-          "label": "string",
-          "tags": ["string","string"],
-          "workflow": "optimization_workflow|validation_path|diagnostic_education|sales_alert|role_clarification",
-          "diagnostic_answer": "string",
-          "follow_up": { "question": "string", "options": [ { "label": "string", "tags": ["string","string"] } ] },
-          "loop_closure": "string"
-        }
-      ]
-    }
-  ]
-}
-
-REQUIREMENTS:
-- Produce EXACTLY TWO lead questions and EXACTLY TWO sales questions.
-- Each question must have 2–4 options.
-- Every sales option must include diagnostic_answer, follow_up (question + 2–4 cause options), and loop_closure.
-
-Return JSON only.`,
+${variant ? "variant_directive: Generate an alternative question within the same intent, distinct from the previous." : ""}
+`,
         },
       ],
     });
@@ -3158,34 +3169,41 @@ IMPORTANT REQUIREMENTS:
                             const sales = Array.isArray(sec.salesQuestions)
                               ? sec.salesQuestions[0]
                               : null;
-                            let refined: any = null;
-                            if (
-                              isGenericLead(name, lead) ||
-                              isGenericSales(name, sales)
-                            ) {
-                              refined = await refineSectionQuestions(
-                                openai,
-                                url,
-                                String(structuredSummary?.pageType || "other"),
-                                String(idx + 1),
-                                name,
-                                String(block.body || ""),
-                                summary,
-                              );
-                            }
-                            if (refined && typeof refined === "object") {
-                              const leadArr = Array.isArray(
-                                refined.leadQuestions,
-                              )
-                                ? refined.leadQuestions
-                                : [];
-                              const salesArr = Array.isArray(
-                                refined.salesQuestions,
-                              )
-                                ? refined.salesQuestions
-                                : [];
+                            const sectionType = classifySectionType(
+                              name,
+                              summary,
+                              String(block.body || ""),
+                            );
+                            // Always generate two variants (base + alternative)
+                            const basePair = await refineSectionQuestions(
+                              openai,
+                              url,
+                              String(structuredSummary?.pageType || "other"),
+                              String(idx + 1),
+                              name,
+                              String(block.body || ""),
+                              summary,
+                              sectionType,
+                              false,
+                            );
+                            const altPair = await refineSectionQuestions(
+                              openai,
+                              url,
+                              String(structuredSummary?.pageType || "other"),
+                              String(idx + 1),
+                              name,
+                              String(block.body || ""),
+                              summary,
+                              sectionType,
+                              true,
+                            );
+                            const pairs = [basePair, altPair].filter(
+                              (p) => p && typeof p === "object",
+                            );
+                            if (pairs.length > 0) {
                               // Map lead questions
-                              sec.leadQuestions = leadArr
+                              sec.leadQuestions = pairs
+                                .map((p) => p.lead)
                                 .slice(0, 2)
                                 .map((lq: any) => {
                                   let opts = Array.isArray(lq?.options)
@@ -3222,7 +3240,8 @@ IMPORTANT REQUIREMENTS:
                                   };
                                 });
                               // Map sales questions
-                              sec.salesQuestions = salesArr
+                              sec.salesQuestions = pairs
+                                .map((p) => p.sales)
                                 .slice(0, 2)
                                 .map((sq: any) => {
                                   let opts = Array.isArray(sq?.options)
@@ -3245,24 +3264,11 @@ IMPORTANT REQUIREMENTS:
                                         ) || {};
                                       return {
                                         forOption: label,
-                                        diagnosticAnswer: String(
-                                          match?.diagnostic_answer || "",
-                                        ),
-                                        followUpQuestion: String(
-                                          match?.follow_up?.question || "",
-                                        ),
-                                        followUpOptions: Array.isArray(
-                                          match?.follow_up?.options,
-                                        )
-                                          ? match.follow_up.options.map(
-                                              (fo: any) =>
-                                                String(fo?.label || ""),
-                                            )
-                                          : [],
+                                        diagnosticAnswer: "",
+                                        followUpQuestion: "",
+                                        followUpOptions: [],
                                         featureMappingAnswer: "",
-                                        loopClosure: String(
-                                          match?.loop_closure || "",
-                                        ),
+                                        loopClosure: "",
                                       };
                                     },
                                   );
@@ -3336,7 +3342,12 @@ IMPORTANT REQUIREMENTS:
                             b.title.toLowerCase() === name.toLowerCase(),
                         ) ||
                           blocks[idx] || { title: name, body: summary };
-                        const refined = await refineSectionQuestions(
+                        const sectionType = classifySectionType(
+                          name,
+                          summary,
+                          String(block.body || ""),
+                        );
+                        const basePair = await refineSectionQuestions(
                           openai,
                           url,
                           String(structuredSummary?.pageType || "other"),
@@ -3344,80 +3355,94 @@ IMPORTANT REQUIREMENTS:
                           name,
                           String(block.body || ""),
                           summary,
+                          sectionType,
+                          false,
                         );
-                        if (refined && typeof refined === "object") {
-                          const leadObj = refined.lead || {};
-                          const salesObj = refined.sales || {};
-                          const leadOptions = Array.isArray(leadObj.options)
-                            ? leadObj.options.map((o: any) =>
-                                String(o?.label || ""),
-                              )
-                            : [];
-                          const leadTags = Array.isArray(leadObj.options)
-                            ? Array.from(
-                                new Set(
-                                  leadObj.options
-                                    .flatMap((o: any) =>
-                                      Array.isArray(o?.tags) ? o.tags : [],
-                                    )
-                                    .map((t: any) => snakeTag(String(t))),
-                                ),
-                              )
-                            : [];
-                          sec.leadQuestions = [
-                            {
-                              question: String(leadObj.question || ""),
-                              options: leadOptions,
-                              tags: leadTags,
-                              workflow: "ask_sales_question",
-                            },
-                          ];
-                          const salesOptionsRaw = Array.isArray(
-                            salesObj.options,
-                          )
-                            ? salesObj.options
-                            : [];
-                          const salesOptionLabels = salesOptionsRaw.map(
-                            (o: any) => String(o?.label || ""),
-                          );
-                          const salesTags = Array.from(
-                            new Set(
-                              salesOptionsRaw
-                                .flatMap((o: any) =>
-                                  Array.isArray(o?.tags) ? o.tags : [],
-                                )
-                                .map((t: any) => snakeTag(String(t))),
-                            ),
-                          );
-                          const ensuredFlows = salesOptionsRaw.map(
-                            (o: any) => ({
-                              forOption: String(o?.label || ""),
-                              diagnosticAnswer: String(
-                                o?.diagnostic_answer || "",
-                              ),
-                              followUpQuestion: String(
-                                o?.follow_up?.question || "",
-                              ),
-                              followUpOptions: Array.isArray(
-                                o?.follow_up?.options,
-                              )
-                                ? o.follow_up.options.map((fo: any) =>
-                                    String(fo?.label || ""),
-                                  )
-                                : [],
-                              featureMappingAnswer: "",
-                              loopClosure: String(o?.loop_closure || ""),
-                            }),
-                          );
-                          sec.salesQuestions = [
-                            {
-                              question: String(salesObj.question || ""),
-                              options: salesOptionLabels,
-                              tags: salesTags,
-                              workflow: "diagnostic_response",
-                              optionFlows: ensuredFlows,
-                            },
-                          ];
+                        const altPair = await refineSectionQuestions(
+                          openai,
+                          url,
+                          String(structuredSummary?.pageType || "other"),
+                          String(idx + 1),
+                          name,
+                          String(block.body || ""),
+                          summary,
+                          sectionType,
+                          true,
+                        );
+                        const pairs = [basePair, altPair].filter(
+                          (p) => p && typeof p === "object",
+                        );
+                        if (pairs.length > 0) {
+                          // Lead
+                          sec.leadQuestions = pairs
+                            .map((p) => p.lead)
+                            .slice(0, 2)
+                            .map((lq: any) => {
+                              let opts = Array.isArray(lq?.options)
+                                ? lq.options
+                                : [];
+                              opts = opts.map((o: any) => ({
+                                label: String(o?.label || ""),
+                                tags: Array.isArray(o?.tags)
+                                  ? o.tags.map((t: any) => snakeTag(String(t)))
+                                  : [],
+                                workflow:
+                                  typeof o?.workflow === "string"
+                                    ? o.workflow
+                                    : "education_path",
+                              }));
+                              if (opts.length < 2) {
+                                while (opts.length < 2) {
+                                  opts.push({
+                                    label: `Option ${opts.length + 1}`,
+                                    tags: [],
+                                    workflow: "education_path",
+                                  });
+                                }
+                              }
+                              if (opts.length > 4) opts = opts.slice(0, 4);
+                              return {
+                                question: String(lq?.question || ""),
+                                options: opts,
+                                tags: [],
+                                workflow: "validation_path",
+                              };
+                            });
+                          // Sales
+                          sec.salesQuestions = pairs
+                            .map((p) => p.sales)
+                            .slice(0, 2)
+                            .map((sq: any) => {
+                              let opts = Array.isArray(sq?.options)
+                                ? sq.options
+                                : [];
+                              opts = opts.map((o: any) => ({
+                                label: String(o?.label || ""),
+                                tags: Array.isArray(o?.tags)
+                                  ? o.tags.map((t: any) => snakeTag(String(t)))
+                                  : [],
+                                workflow:
+                                  typeof o?.workflow === "string"
+                                    ? o.workflow
+                                    : "optimization_workflow",
+                              }));
+                              if (opts.length < 2) {
+                                while (opts.length < 2) {
+                                  opts.push({
+                                    label: `Option ${opts.length + 1}`,
+                                    tags: [],
+                                    workflow: "optimization_workflow",
+                                  });
+                                }
+                              }
+                              if (opts.length > 4) opts = opts.slice(0, 4);
+                              return {
+                                question: String(sq?.question || ""),
+                                options: opts,
+                                tags: [],
+                                workflow: "diagnostic_education",
+                              };
+                            });
                         }
                         return sec;
                       },
