@@ -140,6 +140,37 @@ function normalizeStructuredSummary(raw: any) {
         optionFlows: [],
       });
     }
+    s.leadQuestions = s.leadQuestions.slice(0, 2).map((q: any) => {
+      let opts = Array.isArray(q.options)
+        ? q.options.map((o: any) => String(o))
+        : [];
+      if (opts.length < 2) opts = ["Option 1", "Option 2"];
+      if (opts.length > 4) opts = opts.slice(0, 4);
+      return { ...q, options: opts };
+    });
+    s.salesQuestions = s.salesQuestions.slice(0, 2).map((q: any) => {
+      let opts = Array.isArray(q.options)
+        ? q.options.map((o: any) => String(o))
+        : [];
+      if (opts.length < 2) opts = ["Option 1", "Option 2"];
+      if (opts.length > 4) opts = opts.slice(0, 4);
+      const flows = Array.isArray(q.optionFlows) ? q.optionFlows : [];
+      const ensured = opts.map((label: string) => {
+        const f =
+          flows.find((x: any) => String(x?.forOption || "") === label) || {};
+        return {
+          forOption: label,
+          diagnosticAnswer: String(f.diagnosticAnswer || ""),
+          followUpQuestion: String(f.followUpQuestion || ""),
+          followUpOptions: Array.isArray(f.followUpOptions)
+            ? f.followUpOptions
+            : [],
+          featureMappingAnswer: String(f.featureMappingAnswer || ""),
+          loopClosure: String(f.loopClosure || ""),
+        };
+      });
+      return { ...q, options: opts, optionFlows: ensured };
+    });
     return s;
   });
   return result;
