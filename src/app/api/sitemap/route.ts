@@ -96,6 +96,7 @@ function normalizeStructuredSummary(raw: any) {
           typeof (q && q.workflow) === "string"
             ? q.workflow
             : "diagnostic_response",
+        optionFlows: Array.isArray(q && q.optionFlows) ? q.optionFlows : [],
       }));
     }
     const baseTitle =
@@ -106,7 +107,7 @@ function normalizeStructuredSummary(raw: any) {
       typeof s.sectionSummary === "string" && s.sectionSummary.trim().length > 0
         ? s.sectionSummary.trim()
         : "";
-    while (s.leadQuestions.length < 2) {
+    while (s.leadQuestions.length < 1) {
       const idx = s.leadQuestions.length;
       s.leadQuestions.push({
         question:
@@ -123,7 +124,7 @@ function normalizeStructuredSummary(raw: any) {
         workflow: "ask_sales_question",
       });
     }
-    while (s.salesQuestions.length < 2) {
+    while (s.salesQuestions.length < 1) {
       const idx = s.salesQuestions.length;
       s.salesQuestions.push({
         question:
@@ -136,6 +137,7 @@ function normalizeStructuredSummary(raw: any) {
             : ["Just researching", "Shortlisting options", "Ready to decide"],
         tags: [baseTitle.toLowerCase(), "sales"],
         workflow: "diagnostic_response",
+        optionFlows: [],
       });
     }
     return s;
@@ -2098,7 +2100,7 @@ async function processBatch(req: NextRequest) {
                 {
                   role: "system",
                   content:
-                    "You are an expert web page analyzer. Your goal is to deconstruct a web page into its distinct logical sections (e.g., Hero, Features, Pricing, Testimonials, FAQ, Footer) and extract key business intelligence for EACH section. The input text is annotated with [SECTION N] markers derived from page headings; treat each [SECTION N] block as a candidate logical section. Return ONLY a valid JSON object. Do not include markdown.",
+                    "You are an expert web page analyzer. Your goal is to deconstruct a web page into its distinct logical sections based on the provided [SECTION N] markers and extract key business intelligence for EACH section.\n\nFor EACH section detected, generate:\n1. A Section Title (inferred from content).\n2. EXACTLY ONE Lead Question (Problem Recognition) with options mapping to customer states/risks.\n3. EXACTLY ONE Sales Question (Diagnostic) with options mapping to root causes.\n4. For the Sales Question, generate a specific 'Option Flow' for EACH option, containing a Diagnostic Answer, Follow-Up Question, Feature Mapping, and Loop Closure.\n\nReturn ONLY a valid JSON object. Do not include markdown.",
                 },
                 {
                   role: "user",
@@ -2110,65 +2112,52 @@ Extract and return a JSON object with this exact structure:
 {
   "pageType": "homepage|pricing|features|about|contact|blog|product|service",
   "businessVertical": "fitness|healthcare|legal|restaurant|saas|ecommerce|consulting|other",
-  "primaryFeatures": ["feature1", "feature2", "feature3"],
-  "painPointsAddressed": ["pain1", "pain2", "pain3"],
-  "solutions": ["solution1", "solution2", "solution3"],
-  "targetCustomers": ["small business", "enterprise", "startups"],
-  "businessOutcomes": ["outcome1", "outcome2"],
-  "competitiveAdvantages": ["advantage1", "advantage2"],
-  "industryTerms": ["term1", "term2", "term3"],
-  "pricePoints": ["free", "$X/month", "enterprise"],
-  "integrations": ["tool1", "tool2"],
-  "useCases": ["usecase1", "usecase2"],
-  "callsToAction": ["Get Started", "Book Demo"],
-  "trustSignals": ["testimonial", "certification", "clientcount"],
   "sections": [
     {
-      "sectionName": "Name of the section (e.g., Hero, Features, Testimonials, Pricing)",
-      "sectionSummary": "Brief summary of this section's content",
+      "sectionName": "Inferred Title (e.g., Onboarding Momentum, Renewals)",
+      "sectionSummary": "Brief summary",
       "leadQuestions": [
         {
-          "question": "First lead qualification question specific to this section",
-          "options": ["Option 1", "Option 2", "Option 3"],
-          "tags": ["tag1", "tag2", "tag3"],
-          "workflow": "ask_sales_question|educational_insight|stop"
-        },
-        {
-          "question": "Second lead qualification question specific to this section",
-          "options": ["Option A", "Option B", "Option C"],
-          "tags": ["tagA", "tagB", "tagC"],
-          "workflow": "ask_sales_question|educational_insight|stop"
+          "question": "Problem Recognition Question (e.g., What usually happens after...?)",
+          "options": ["Option 1", "Option 2", "Option 3", "Option 4"],
+          "tags": ["tag_for_opt1", "tag_for_opt2", "tag_for_opt3", "tag_for_opt4"],
+          "workflow": "ask_sales_question|educational_insight|validation"
         }
       ],
       "salesQuestions": [
         {
-          "question": "First sales qualification question (high severity)",
-          "options": ["Sales Opt 1", "Sales Opt 2"],
-          "tags": ["sales_tag_1", "sales_tag_2"],
-          "workflow": "diagnostic_response"
-        },
-        {
-          "question": "Second sales qualification question",
-          "options": ["Sales Opt A", "Sales Opt B"],
-          "tags": ["sales_tag_A", "sales_tag_B"],
-          "workflow": "diagnostic_response"
+          "question": "Diagnostic Question (e.g., What prevents...?)",
+          "options": ["Cause 1", "Cause 2", "Cause 3", "Cause 4"],
+          "tags": ["cause_tag_1", "cause_tag_2", "cause_tag_3", "cause_tag_4"],
+          "workflow": "diagnostic_response",
+          "optionFlows": [
+            {
+              "forOption": "Cause 1",
+              "diagnosticAnswer": "Empathic reflection and validation of the problem.",
+              "followUpQuestion": "Specific follow-up to narrow down context.",
+              "featureMappingAnswer": "Explanation of ONE specific feature that solves this cause.",
+              "loopClosure": "Summary statement closing the loop."
+            },
+            {
+              "forOption": "Cause 2",
+              "diagnosticAnswer": "...",
+              "followUpQuestion": "...",
+              "featureMappingAnswer": "...",
+              "loopClosure": "..."
+            }
+          ]
         }
-      ],
-      "scripts": {
-         "diagnosticAnswer": "Script for diagnostic answer (Reflect, Explain, Validate)",
-         "followUpQuestion": "Script for mandatory follow-up question",
-         "followUpOptions": ["Option 1", "Option 2"],
-         "featureMappingAnswer": "Script for feature mapping (Map to ONE feature only)",
-         "loopClosure": "Script for loop closure (Summarize and Stop)"
-       }
+      ]
     }
   ]
 }
 
 IMPORTANT REQUIREMENTS:
-1. Identify ALL distinct sections on the page (at least 3-5 sections for a typical landing page). Do not collapse everything into one section.
-2. For EACH section, generate EXACTLY 2 distinct lead questions and 2 distinct sales questions.
-3. Ensure questions are relevant to the specific content of that section.
+1. Use the [SECTION N] markers to delineate sections.
+2. Ensure Lead Questions focus on identifying the user's current state or problem awareness.
+3. Ensure Sales Questions focus on diagnosing the specific root cause of that problem.
+4. The 'optionFlows' array MUST have an entry for every option in the Sales Question.
+5. Tags should be snake_case (e.g., 'onboarding_delay').
 `,
                 },
               ],
@@ -2679,7 +2668,7 @@ IMPORTANT REQUIREMENTS:
                     {
                       role: "system",
                       content:
-                        "You are an expert web page analyzer. Your goal is to deconstruct a web page into its distinct logical sections (e.g., Hero, Features, Pricing, Testimonials, FAQ, Footer) and extract key business intelligence for EACH section. Return ONLY a valid JSON object. Do not include markdown.",
+                        "You are an expert web page analyzer. Your goal is to deconstruct a web page into its distinct logical sections based on the provided [SECTION N] markers and extract key business intelligence for EACH section.\n\nFor EACH section detected, generate:\n1. A Section Title (inferred from content).\n2. EXACTLY ONE Lead Question (Problem Recognition) with options mapping to customer states/risks.\n3. EXACTLY ONE Sales Question (Diagnostic) with options mapping to root causes.\n4. For the Sales Question, generate a specific 'Option Flow' for EACH option, containing a Diagnostic Answer, Follow-Up Question, Feature Mapping, and Loop Closure.\n\nReturn ONLY a valid JSON object. Do not include markdown.",
                     },
                     {
                       role: "user",
@@ -2691,65 +2680,52 @@ Extract and return a JSON object with this exact structure:
 {
   "pageType": "homepage|pricing|features|about|contact|blog|product|service",
   "businessVertical": "fitness|healthcare|legal|restaurant|saas|ecommerce|consulting|other",
-  "primaryFeatures": ["feature1", "feature2", "feature3"],
-  "painPointsAddressed": ["pain1", "pain2", "pain3"],
-  "solutions": ["solution1", "solution2", "solution3"],
-  "targetCustomers": ["small business", "enterprise", "startups"],
-  "businessOutcomes": ["outcome1", "outcome2"],
-  "competitiveAdvantages": ["advantage1", "advantage2"],
-  "industryTerms": ["term1", "term2", "term3"],
-  "pricePoints": ["free", "$X/month", "enterprise"],
-  "integrations": ["tool1", "tool2"],
-  "useCases": ["usecase1", "usecase2"],
-  "callsToAction": ["Get Started", "Book Demo"],
-  "trustSignals": ["testimonial", "certification", "clientcount"],
   "sections": [
     {
-      "sectionName": "Name of the section (e.g., Hero, Features, Testimonials, Pricing)",
-      "sectionSummary": "Brief summary of this section's content",
+      "sectionName": "Inferred Title (e.g., Onboarding Momentum, Renewals)",
+      "sectionSummary": "Brief summary",
       "leadQuestions": [
         {
-          "question": "First lead qualification question specific to this section",
-          "options": ["Option 1", "Option 2", "Option 3"],
-          "tags": ["tag1", "tag2", "tag3"],
-          "workflow": "ask_sales_question|educational_insight|stop"
-        },
-        {
-          "question": "Second lead qualification question specific to this section",
-          "options": ["Option A", "Option B", "Option C"],
-          "tags": ["tagA", "tagB", "tagC"],
-          "workflow": "ask_sales_question|educational_insight|stop"
+          "question": "Problem Recognition Question (e.g., What usually happens after...?)",
+          "options": ["Option 1", "Option 2", "Option 3", "Option 4"],
+          "tags": ["tag_for_opt1", "tag_for_opt2", "tag_for_opt3", "tag_for_opt4"],
+          "workflow": "ask_sales_question|educational_insight|validation"
         }
       ],
       "salesQuestions": [
         {
-          "question": "First sales qualification question (high severity)",
-          "options": ["Sales Opt 1", "Sales Opt 2"],
-          "tags": ["sales_tag_1", "sales_tag_2"],
-          "workflow": "diagnostic_response"
-        },
-        {
-          "question": "Second sales qualification question",
-          "options": ["Sales Opt A", "Sales Opt B"],
-          "tags": ["sales_tag_A", "sales_tag_B"],
-          "workflow": "diagnostic_response"
+          "question": "Diagnostic Question (e.g., What prevents...?)",
+          "options": ["Cause 1", "Cause 2", "Cause 3", "Cause 4"],
+          "tags": ["cause_tag_1", "cause_tag_2", "cause_tag_3", "cause_tag_4"],
+          "workflow": "diagnostic_response",
+          "optionFlows": [
+            {
+              "forOption": "Cause 1",
+              "diagnosticAnswer": "Empathic reflection and validation of the problem.",
+              "followUpQuestion": "Specific follow-up to narrow down context.",
+              "featureMappingAnswer": "Explanation of ONE specific feature that solves this cause.",
+              "loopClosure": "Summary statement closing the loop."
+            },
+            {
+              "forOption": "Cause 2",
+              "diagnosticAnswer": "...",
+              "followUpQuestion": "...",
+              "featureMappingAnswer": "...",
+              "loopClosure": "..."
+            }
+          ]
         }
-      ],
-      "scripts": {
-         "diagnosticAnswer": "Script for diagnostic answer (Reflect, Explain, Validate)",
-         "followUpQuestion": "Script for mandatory follow-up question",
-         "followUpOptions": ["Option 1", "Option 2"],
-         "featureMappingAnswer": "Script for feature mapping (Map to ONE feature only)",
-         "loopClosure": "Script for loop closure (Summarize and Stop)"
-       }
+      ]
     }
   ]
 }
 
 IMPORTANT REQUIREMENTS:
-1. Identify ALL distinct sections on the page (at least 3-5 sections for a typical landing page). Do not collapse everything into one section.
-2. For EACH section, generate EXACTLY 2 distinct lead questions and 2 distinct sales questions.
-3. Ensure questions are relevant to the specific content of that section.
+1. Use the [SECTION N] markers to delineate sections.
+2. Ensure Lead Questions focus on identifying the user's current state or problem awareness.
+3. Ensure Sales Questions focus on diagnosing the specific root cause of that problem.
+4. The 'optionFlows' array MUST have an entry for every option in the Sales Question.
+5. Tags should be snake_case (e.g., 'onboarding_delay').
 `,
                     },
                   ],
