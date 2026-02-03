@@ -1807,46 +1807,99 @@ async function extractTextFromUrl(
 
     console.log(`[ExtractText] Parsing HTML content...`);
     $("script, style, noscript").remove();
+    $(
+      "header, nav, footer, aside, .site-header, .site-footer, .navbar, .global-nav, .global-header, .cookie-banner, .newsletter, .modal, .offcanvas",
+    ).remove();
+
+    const NOISE_PATTERNS = [
+      /log\s*in/i,
+      /sign\s*up/i,
+      /get\s*a\s*demo/i,
+      /talk\s*to\s*sales/i,
+      /pricing/i,
+      /help\s*center/i,
+      /resource\s*center/i,
+      /developer\s*tools/i,
+      /become\s*a\s*partner/i,
+      /careers/i,
+    ];
+    const isNoiseText = (t: string) => NOISE_PATTERNS.some((re) => re.test(t));
+    const normalize = (t: string) => t.replace(/\s+/g, " ").trim();
+
+    const scope = $("main,[role='main'],article").first().length
+      ? $("main,[role='main'],article").first()
+      : $("body");
 
     const sections: string[] = [];
     let currentTitle = "";
     let currentContent: string[] = [];
     let sectionCount = 0;
+    const seenBodies = new Set<string>();
 
-    $("body")
-      .find("h1, h2, h3, h4, p, li")
-      .each((_, el) => {
-        const tagName = (el as any).tagName
-          ? (el as any).tagName.toLowerCase()
-          : "";
-        const elText = $(el).text().replace(/\s+/g, " ").trim();
-        if (!elText) return;
-
-        if (/^h[1-4]$/.test(tagName)) {
-          if (currentTitle || currentContent.length) {
-            sectionCount += 1;
-            sections.push(
-              `[SECTION ${sectionCount}] ${currentTitle || "Untitled Section"}\n${currentContent.join(" ")}`,
-            );
-          }
-          currentTitle = elText;
-          currentContent = [];
-        } else {
-          currentContent.push(elText);
-        }
-      });
-
-    if (currentTitle || currentContent.length) {
+    const pushSection = () => {
+      const rawBody = normalize(currentContent.join(" "));
+      const body = rawBody
+        .split(" ")
+        .filter((w) => w.length > 0)
+        .join(" ");
+      if (!body || body.length < 120) {
+        currentTitle = "";
+        currentContent = [];
+        return;
+      }
+      if (isNoiseText(body)) {
+        currentTitle = "";
+        currentContent = [];
+        return;
+      }
+      // Infer title if missing
+      let title = normalize(currentTitle);
+      if (!title) {
+        title = body.split(".")[0].split(" ").slice(0, 8).join(" ");
+      }
+      // Suppress global promo banners commonly reused
+      if (
+        /the state of meetings 2024/i.test(title) &&
+        !/report|state/i.test(url)
+      ) {
+        currentTitle = "";
+        currentContent = [];
+        return;
+      }
+      const key = (title + "::" + body.slice(0, 300)).toLowerCase();
+      if (seenBodies.has(key)) {
+        currentTitle = "";
+        currentContent = [];
+        return;
+      }
+      seenBodies.add(key);
       sectionCount += 1;
-      sections.push(
-        `[SECTION ${sectionCount}] ${currentTitle || "Untitled Section"}\n${currentContent.join(" ")}`,
-      );
-    }
+      sections.push(`[SECTION ${sectionCount}] ${title}\n${body}`);
+      currentTitle = "";
+      currentContent = [];
+    };
+
+    scope.find("h1, h2, h3, h4, p, li").each((_, el) => {
+      const tagName = (el as any).tagName
+        ? (el as any).tagName.toLowerCase()
+        : "";
+      const elText = normalize($(el).text());
+      if (!elText) return;
+
+      if (/^h[1-4]$/.test(tagName)) {
+        if (currentTitle || currentContent.length) pushSection();
+        currentTitle = elText;
+        currentContent = [];
+      } else {
+        currentContent.push(elText);
+      }
+    });
+    if (currentTitle || currentContent.length) pushSection();
 
     const text =
       sections.length > 0
         ? sections.join("\n\n")
-        : $("body").text().replace(/\s+/g, " ").trim();
+        : scope.text().replace(/\s+/g, " ").trim();
 
     console.log(
       `[ExtractText] SUCCESS - Extracted ${text.length} chars from ${url}`,
