@@ -255,13 +255,86 @@ function isGenericSales(sectionName: string, q: any) {
   return def && flows.length === 0;
 }
 
+const TAGS_PROBLEM = [
+  "manual_scheduling",
+  "scheduling_gap",
+  "onboarding_delay",
+  "onboarding_dropoff",
+  "pipeline_leakage",
+  "inconsistent_process",
+  "handoff_friction",
+  "visibility_gap",
+  "no_show_risk",
+  "late_engagement",
+  "stakeholder_coordination",
+  "capacity_constraint",
+];
+const TAGS_READINESS = [
+  "validated_flow",
+  "optimization_ready",
+  "awareness_missing",
+  "unknown_state",
+  "low_friction",
+  "high_friction",
+];
+const TAGS_RISK = ["low_risk", "conversion_risk", "high_risk", "critical_risk"];
+const CAUSE_TAGS = [
+  "email_back_and_forth",
+  "availability_conflicts",
+  "ownership_confusion",
+  "stakeholder_delay",
+  "no_next_step",
+  "calendar_mismatch",
+  "reminder_missing",
+];
+const WORKFLOWS = [
+  "ask_sales_question",
+  "validation_path",
+  "education_path",
+  "optimization_workflow",
+  "diagnostic_education",
+  "sales_alert",
+  "role_clarification",
+];
+const FEATURE_REGISTRY = [
+  "scheduling_links",
+  "real_time_availability",
+  "routing_rules",
+  "group_scheduling",
+  "event_type_templates",
+  "recurring_scheduling",
+  "calendar_sync",
+  "automated_reminders",
+  "booking_pages",
+  "embedded_booking",
+  "scheduling_analytics",
+];
+
+function extractKeywordsFromText(t: string) {
+  const words = (t || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter((w) => w.length > 3);
+  const freq: Record<string, number> = {};
+  for (const w of words) freq[w] = (freq[w] || 0) + 1;
+  return Object.entries(freq)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 12)
+    .map(([w]) => w);
+}
+
 async function refineSectionQuestions(
   openaiClient: any,
+  pageUrl: string,
+  pageType: string,
+  sectionId: string,
   sectionName: string,
   sectionText: string,
   sectionSummary: string,
 ) {
   try {
+    const keywords = extractKeywordsFromText(sectionText);
     const resp = await openaiClient.chat.completions.create({
       model: "gpt-4o-mini",
       response_format: { type: "json_object" },
@@ -271,64 +344,61 @@ async function refineSectionQuestions(
         {
           role: "system",
           content:
-            "You generate context-specific lead and sales questions strictly tied to the provided section content. Return ONLY JSON.",
+            "You are generating deterministic conversation configuration for a diagnostic sales assistant. Do not pitch, sell, or use CTAs. Keep writing concise and factual. Return ONLY valid JSON matching the schema.",
         },
         {
           role: "user",
-          content: `Section Name: ${sectionName}
-Section Summary: ${sectionSummary}
-Section Text:
-${sectionText}
+          content: `SYSTEM:
+You are generating deterministic conversation configuration for a diagnostic sales assistant.
+No CTAs, no hype. Output JSON only. Use allowed tag taxonomy and workflows.
 
-Return JSON:
+INPUT CONTEXT:
+page_url: ${pageUrl}
+page_type: ${pageType}
+section_id: ${sectionId}
+section_heading: ${sectionName}
+section_subheading: 
+section_body_bullets: 
+keywords_in_section: ${JSON.stringify(keywords)}
+
+ALLOWED TAG TAXONOMY (problem/readiness/risk):
+${JSON.stringify({
+  problem: TAGS_PROBLEM,
+  readiness: TAGS_READINESS,
+  risk: TAGS_RISK,
+})}
+
+WORKFLOWS (allowed):
+${JSON.stringify(WORKFLOWS)}
+
+FEATURE REGISTRY (for later mapping reference):
+${JSON.stringify(FEATURE_REGISTRY)}
+
+SCHEMA:
 {
-  "leadQuestions": [
-    {
-      "question": "specific to this section's problems or states",
-      "options": ["opt1", "opt2", "opt3", "opt4"],
-      "tags": ["snake_case_tag_for_opt1", "snake_case_tag_for_opt2", "snake_case_tag_for_opt3", "snake_case_tag_for_opt4"],
-      "workflow": "ask_sales_question|educational_insight|validation"
-    },
-    {
-      "question": "another state recognition question tied to content",
-      "options": ["optA", "optB", "optC", "optD"],
-      "tags": ["opt_a_tag", "opt_b_tag", "opt_c_tag", "opt_d_tag"],
-      "workflow": "ask_sales_question|educational_insight|validation"
-    }
-  ],
-  "salesQuestions": [
-    {
-      "question": "diagnostic question specific to section's root causes",
-      "options": ["cause1", "cause2", "cause3", "cause4"],
-      "tags": ["cause_tag_1", "cause_tag_2", "cause_tag_3", "cause_tag_4"],
-      "workflow": "diagnostic_response",
-      "optionFlows": [
-        {
-          "forOption": "cause1",
-          "diagnosticAnswer": "reflection tied to this cause",
-          "followUpQuestion": "narrowing follow-up",
-          "featureMappingAnswer": "one feature mapped to solve this cause",
-          "loopClosure": "closing summary"
-        }
-      ]
-    },
-    {
-      "question": "second diagnostic question tied to another set of root causes",
-      "options": ["causeA", "causeB", "causeC", "causeD"],
-      "tags": ["cause_tag_a", "cause_tag_b", "cause_tag_c", "cause_tag_d"],
-      "workflow": "diagnostic_response",
-      "optionFlows": [
-        {
-          "forOption": "causeA",
-          "diagnosticAnswer": "reflection tied to cause A",
-          "followUpQuestion": "follow-up for cause A",
-          "featureMappingAnswer": "feature mapped to cause A",
-          "loopClosure": "closing summary"
-        }
-      ]
-    }
-  ]
-}`,
+  "section_id": "string",
+  "lead": {
+    "question": "string",
+    "options": [
+      { "label": "string", "tags": ["string","string"], "workflow": "ask_sales_question|validation_path|education_path" }
+    ]
+  },
+  "sales": {
+    "question": "string",
+    "options": [
+      {
+        "label": "string",
+        "tags": ["string","string"],
+        "workflow": "optimization_workflow|validation_path|diagnostic_education|sales_alert|role_clarification",
+        "diagnostic_answer": "string",
+        "follow_up": { "question": "string", "options": [ { "label": "string", "tags": ["string","string"] } ] },
+        "loop_closure": "string"
+      }
+    ]
+  }
+}
+
+Return JSON only.`,
         },
       ],
     });
@@ -2219,7 +2289,7 @@ async function processBatch(req: NextRequest) {
         "Summary not available";
 
       // Generate structured summary
-      let structuredSummary = null;
+      let structuredSummary: any = null;
       if (text && text.trim().length > 0) {
         try {
           console.log(
@@ -2802,7 +2872,7 @@ IMPORTANT REQUIREMENTS:
             "Summary not available";
 
           // Generate structured summary (NEW - automatic during crawling)
-          let structuredSummary = null;
+          let structuredSummary: any = null;
           if (text && text.trim().length > 0) {
             try {
               console.log(
@@ -2917,78 +2987,87 @@ IMPORTANT REQUIREMENTS:
                             ) {
                               refined = await refineSectionQuestions(
                                 openai,
+                                url,
+                                String(structuredSummary?.pageType || "other"),
+                                String(idx + 1),
                                 name,
                                 String(block.body || ""),
                                 summary,
                               );
                             }
                             if (refined && typeof refined === "object") {
-                              const leadArr = Array.isArray(
-                                refined.leadQuestions,
-                              )
-                                ? refined.leadQuestions
+                              const leadObj = refined.lead || {};
+                              const salesObj = refined.sales || {};
+                              const leadOptions = Array.isArray(leadObj.options)
+                                ? leadObj.options.map((o: any) =>
+                                    String(o?.label || ""),
+                                  )
                                 : [];
-                              const salesArr = Array.isArray(
-                                refined.salesQuestions,
-                              )
-                                ? refined.salesQuestions
+                              const leadTags = Array.isArray(leadObj.options)
+                                ? Array.from(
+                                    new Set(
+                                      leadObj.options
+                                        .flatMap((o: any) =>
+                                          Array.isArray(o?.tags) ? o.tags : [],
+                                        )
+                                        .map((t: any) => snakeTag(String(t))),
+                                    ),
+                                  )
                                 : [];
-                              sec.leadQuestions = leadArr.map((lq: any) => ({
-                                question: String(lq?.question || ""),
-                                options: Array.isArray(lq?.options)
-                                  ? lq.options
-                                  : [],
-                                tags: Array.isArray(lq?.tags)
-                                  ? lq.tags.map((t: any) => snakeTag(String(t)))
-                                  : [],
-                                workflow:
-                                  typeof lq?.workflow === "string"
-                                    ? lq.workflow
-                                    : "ask_sales_question",
-                              }));
-                              sec.salesQuestions = salesArr.map((sq: any) => {
-                                const salesOptions = Array.isArray(sq?.options)
-                                  ? sq.options.map((o: any) => String(o))
-                                  : [];
-                                const flows = Array.isArray(sq?.optionFlows)
-                                  ? sq.optionFlows
-                                  : [];
-                                const ensuredFlows = salesOptions.map(
-                                  (opt: string) => {
-                                    const f =
-                                      flows.find(
-                                        (x: any) =>
-                                          String(
-                                            x?.forOption || "",
-                                          ).toLowerCase() === opt.toLowerCase(),
-                                      ) || {};
-                                    return {
-                                      forOption: opt,
-                                      diagnosticAnswer: String(
-                                        f.diagnosticAnswer || "",
-                                      ),
-                                      followUpQuestion: String(
-                                        f.followUpQuestion || "",
-                                      ),
-                                      featureMappingAnswer: String(
-                                        f.featureMappingAnswer || "",
-                                      ),
-                                      loopClosure: String(f.loopClosure || ""),
-                                    };
-                                  },
-                                );
-                                return {
-                                  question: String(sq?.question || ""),
-                                  options: salesOptions,
-                                  tags: Array.isArray(sq?.tags)
-                                    ? sq.tags.map((t: any) =>
-                                        snakeTag(String(t)),
+                              sec.leadQuestions = [
+                                {
+                                  question: String(leadObj.question || ""),
+                                  options: leadOptions,
+                                  tags: leadTags,
+                                  workflow: "ask_sales_question",
+                                },
+                              ];
+                              const salesOptionsRaw = Array.isArray(
+                                salesObj.options,
+                              )
+                                ? salesObj.options
+                                : [];
+                              const salesOptionLabels = salesOptionsRaw.map(
+                                (o: any) => String(o?.label || ""),
+                              );
+                              const salesTags = Array.from(
+                                new Set(
+                                  salesOptionsRaw
+                                    .flatMap((o: any) =>
+                                      Array.isArray(o?.tags) ? o.tags : [],
+                                    )
+                                    .map((t: any) => snakeTag(String(t))),
+                                ),
+                              );
+                              const ensuredFlows = salesOptionsRaw.map(
+                                (o: any) => ({
+                                  forOption: String(o?.label || ""),
+                                  diagnosticAnswer: String(
+                                    o?.diagnostic_answer || "",
+                                  ),
+                                  followUpQuestion: String(
+                                    o?.follow_up?.question || "",
+                                  ),
+                                  followUpOptions: Array.isArray(
+                                    o?.follow_up?.options,
+                                  )
+                                    ? o.follow_up.options.map((fo: any) =>
+                                        String(fo?.label || ""),
                                       )
                                     : [],
+                                  featureMappingAnswer: "",
+                                  loopClosure: String(o?.loop_closure || ""),
+                                }),
+                              );
+                              sec.salesQuestions = [
+                                {
+                                  question: String(salesObj.question || ""),
+                                  options: salesOptionLabels,
+                                  tags: salesTags,
                                   workflow: "diagnostic_response",
                                   optionFlows: ensuredFlows,
-                                };
-                              });
+                                },
+                              ];
                             }
                             return sec;
                           },
@@ -3036,71 +3115,86 @@ IMPORTANT REQUIREMENTS:
                           blocks[idx] || { title: name, body: summary };
                         const refined = await refineSectionQuestions(
                           openai,
+                          url,
+                          String(structuredSummary?.pageType || "other"),
+                          String(idx + 1),
                           name,
                           String(block.body || ""),
                           summary,
                         );
                         if (refined && typeof refined === "object") {
-                          const leadArr = Array.isArray(refined.leadQuestions)
-                            ? refined.leadQuestions
+                          const leadObj = refined.lead || {};
+                          const salesObj = refined.sales || {};
+                          const leadOptions = Array.isArray(leadObj.options)
+                            ? leadObj.options.map((o: any) =>
+                                String(o?.label || ""),
+                              )
                             : [];
-                          const salesArr = Array.isArray(refined.salesQuestions)
-                            ? refined.salesQuestions
+                          const leadTags = Array.isArray(leadObj.options)
+                            ? Array.from(
+                                new Set(
+                                  leadObj.options
+                                    .flatMap((o: any) =>
+                                      Array.isArray(o?.tags) ? o.tags : [],
+                                    )
+                                    .map((t: any) => snakeTag(String(t))),
+                                ),
+                              )
                             : [];
-                          sec.leadQuestions = leadArr.map((lq: any) => ({
-                            question: String(lq?.question || ""),
-                            options: Array.isArray(lq?.options)
-                              ? lq.options
-                              : [],
-                            tags: Array.isArray(lq?.tags)
-                              ? lq.tags.map((t: any) => snakeTag(String(t)))
-                              : [],
-                            workflow:
-                              typeof lq?.workflow === "string"
-                                ? lq.workflow
-                                : "ask_sales_question",
-                          }));
-                          sec.salesQuestions = salesArr.map((sq: any) => {
-                            const salesOptions = Array.isArray(sq?.options)
-                              ? sq.options.map((o: any) => String(o))
-                              : [];
-                            const flows = Array.isArray(sq?.optionFlows)
-                              ? sq.optionFlows
-                              : [];
-                            const ensuredFlows = salesOptions.map(
-                              (opt: string) => {
-                                const f =
-                                  flows.find(
-                                    (x: any) =>
-                                      String(
-                                        x?.forOption || "",
-                                      ).toLowerCase() === opt.toLowerCase(),
-                                  ) || {};
-                                return {
-                                  forOption: opt,
-                                  diagnosticAnswer: String(
-                                    f.diagnosticAnswer || "",
-                                  ),
-                                  followUpQuestion: String(
-                                    f.followUpQuestion || "",
-                                  ),
-                                  featureMappingAnswer: String(
-                                    f.featureMappingAnswer || "",
-                                  ),
-                                  loopClosure: String(f.loopClosure || ""),
-                                };
-                              },
-                            );
-                            return {
-                              question: String(sq?.question || ""),
-                              options: salesOptions,
-                              tags: Array.isArray(sq?.tags)
-                                ? sq.tags.map((t: any) => snakeTag(String(t)))
+                          sec.leadQuestions = [
+                            {
+                              question: String(leadObj.question || ""),
+                              options: leadOptions,
+                              tags: leadTags,
+                              workflow: "ask_sales_question",
+                            },
+                          ];
+                          const salesOptionsRaw = Array.isArray(
+                            salesObj.options,
+                          )
+                            ? salesObj.options
+                            : [];
+                          const salesOptionLabels = salesOptionsRaw.map(
+                            (o: any) => String(o?.label || ""),
+                          );
+                          const salesTags = Array.from(
+                            new Set(
+                              salesOptionsRaw
+                                .flatMap((o: any) =>
+                                  Array.isArray(o?.tags) ? o.tags : [],
+                                )
+                                .map((t: any) => snakeTag(String(t))),
+                            ),
+                          );
+                          const ensuredFlows = salesOptionsRaw.map(
+                            (o: any) => ({
+                              forOption: String(o?.label || ""),
+                              diagnosticAnswer: String(
+                                o?.diagnostic_answer || "",
+                              ),
+                              followUpQuestion: String(
+                                o?.follow_up?.question || "",
+                              ),
+                              followUpOptions: Array.isArray(
+                                o?.follow_up?.options,
+                              )
+                                ? o.follow_up.options.map((fo: any) =>
+                                    String(fo?.label || ""),
+                                  )
                                 : [],
+                              featureMappingAnswer: "",
+                              loopClosure: String(o?.loop_closure || ""),
+                            }),
+                          );
+                          sec.salesQuestions = [
+                            {
+                              question: String(salesObj.question || ""),
+                              options: salesOptionLabels,
+                              tags: salesTags,
                               workflow: "diagnostic_response",
                               optionFlows: ensuredFlows,
-                            };
-                          });
+                            },
+                          ];
                         }
                         return sec;
                       },
