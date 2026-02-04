@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Settings } from "lucide-react";
+import { Settings, Loader2 } from "lucide-react";
 
 interface WorkflowSectionProps {
   // No specific props needed based on the source file,
@@ -182,7 +182,12 @@ export default function WorkflowSection() {
         </div>
       </div>
 
-      {crawledPages.length === 0 ? (
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-12 bg-slate-50 rounded-lg border border-dashed border-slate-300">
+          <Loader2 className="w-8 h-8 text-blue-600 animate-spin mb-3" />
+          <p className="text-slate-600 font-medium">Loading workflow data...</p>
+        </div>
+      ) : crawledPages.length === 0 ? (
         <div className="text-center py-8 bg-slate-50 rounded-lg border border-dashed border-slate-300">
           <p className="text-slate-500">
             No crawled pages found with workflow data. Crawl a website to
