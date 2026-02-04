@@ -47,7 +47,14 @@ export async function addChunks(
     createdAt: new Date(),
   }));
   if (docs.length > 0) {
-    await pineconeVectors.insertMany(docs);
+    try {
+      console.log(`[Crawl] Inserting ${docs.length} vector records into MongoDB...`);
+      const result = await pineconeVectors.insertMany(docs);
+      console.log(`[Crawl] MongoDB insert result:`, result.insertedCount);
+    } catch (err) {
+      console.error("[Crawl] MongoDB insertMany error:", err);
+      throw err;
+    }
   }
 }
 

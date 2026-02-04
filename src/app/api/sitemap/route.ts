@@ -3482,7 +3482,12 @@ IMPORTANT REQUIREMENTS:
             pageData.summaryGeneratedAt = new Date();
           }
 
-          await pages.insertOne(pageData);
+          // Use upsert to prevent duplicate entries for the same URL
+          await pages.updateOne(
+            { adminId, url },
+            { $set: pageData },
+            { upsert: true },
+          );
           console.log(
             `[Crawl] Page data stored successfully${
               structuredSummary ? " with structured summary" : ""
@@ -3533,6 +3538,11 @@ IMPORTANT REQUIREMENTS:
                 url,
                 chunkIndex: i,
               }));
+
+              // Clean up old vectors for this URL before adding new ones
+              console.log(`[Crawl] Cleaning up old vectors for ${url}...`);
+              await deleteChunksByUrl(url, adminId);
+
               console.log(
                 `[Crawl] Upserting ${embeddings.length} embeddings to Pinecone...`,
               );
