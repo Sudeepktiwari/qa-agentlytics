@@ -163,7 +163,7 @@ const AdminPanel: React.FC = () => {
     },
     workflow: {
       title: "Workflow Management",
-      description: "Configure conversation flows and qualification logic.",
+      description: "Configure conversation flows and dialogue structure.",
     },
     knowledge: {
       title: "Knowledge Base",

@@ -13,7 +13,9 @@ export default function WorkflowSection() {
   const [pagePage, setPagePage] = useState(1);
   const [pagePageSize, setPagePageSize] = useState(10);
   const [pageTotal, setPageTotal] = useState(0);
-  const [selectedPageIndex, setSelectedPageIndex] = useState(0);
+  const [selectedPageIndex, setSelectedPageIndex] = useState<number | null>(
+    null,
+  );
   const [selectedSectionIndex, setSelectedSectionIndex] = useState<
     number | null
   >(null);
@@ -68,7 +70,7 @@ export default function WorkflowSection() {
         setPageTotal(filtered.length || 0);
         setPagePage(targetPage);
         setPageSearch(targetSearch);
-        setSelectedPageIndex(0);
+        setSelectedPageIndex(null);
         setSelectedSectionIndex(null);
       }
     } catch (error) {
@@ -86,7 +88,7 @@ export default function WorkflowSection() {
           Workflow Rules
         </h2>
         <p className="text-sm text-slate-500">
-          Manage qualification questions and logical flows for each page.
+          Visualize and manage the conversation workflow for each page.
         </p>
       </div>
 
@@ -188,315 +190,371 @@ export default function WorkflowSection() {
           </p>
         </div>
       ) : (
-        <div className="flex flex-col lg:flex-row gap-6">
-          <div className="w-full lg:w-1/3 border border-slate-200 rounded-lg overflow-hidden bg-white">
-            <div className="bg-slate-50 px-4 py-2 border-b border-slate-200 text-xs font-medium text-slate-500">
-              Pages
-            </div>
-            <div className="max-h-[400px] overflow-y-auto divide-y divide-slate-100">
-              {crawledPages.map((page, idx) => {
-                const isActive = idx === selectedPageIndex;
-                const summary = page.structuredSummary || {};
-                const sections =
-                  Array.isArray(summary.sections) && summary.sections.length > 0
-                    ? summary.sections
-                    : [];
-                return (
-                  <button
-                    key={idx}
-                    onClick={() => {
+        <div className="space-y-4">
+          {crawledPages.map((page, idx) => {
+            const isPageExpanded = idx === selectedPageIndex;
+            const summary = page.structuredSummary || {};
+            const sections =
+              Array.isArray(summary.sections) && summary.sections.length > 0
+                ? summary.sections
+                : [];
+
+            return (
+              <div
+                key={idx}
+                className="border border-slate-200 rounded-lg bg-white overflow-hidden shadow-sm"
+              >
+                <button
+                  onClick={() => {
+                    if (isPageExpanded) {
+                      setSelectedPageIndex(null);
+                    } else {
                       setSelectedPageIndex(idx);
                       setSelectedSectionIndex(null);
-                    }}
-                    className={`w-full text-left px-4 py-3 text-sm ${
-                      isActive
-                        ? "bg-blue-50 border-l-2 border-blue-500"
-                        : "hover:bg-slate-50"
-                    }`}
-                  >
-                    <div className="flex justify-between items-center gap-2">
-                      <div className="flex-1 overflow-hidden">
-                        <div className="font-medium text-slate-800 truncate">
-                          {page.url}
-                        </div>
-                        <div className="text-xs text-slate-500 mt-1">
+                    }
+                  }}
+                  className={`w-full text-left px-4 py-4 flex items-center justify-between hover:bg-slate-50 transition-colors ${
+                    isPageExpanded
+                      ? "bg-slate-50 border-b border-slate-200"
+                      : ""
+                  }`}
+                >
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    <div
+                      className={`p-2 rounded-lg ${isPageExpanded ? "bg-blue-100 text-blue-600" : "bg-slate-100 text-slate-500"}`}
+                    >
+                      <Settings className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 overflow-hidden">
+                      <div className="font-medium text-slate-900 truncate text-base">
+                        {page.url}
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
                           {summary.pageType
                             ? String(summary.pageType)
                             : "Unknown type"}
-                        </div>
-                      </div>
-                      <div className="text-right text-xs text-slate-400 flex-shrink-0">
-                        <div>
-                          {new Date(page.createdAt).toLocaleDateString()}
-                        </div>
-                        <div>{sections.length} sections</div>
+                        </span>
+                        <span className="text-xs text-slate-400">
+                          • {new Date(page.createdAt).toLocaleDateString()}
+                        </span>
                       </div>
                     </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+                  </div>
 
-          <div className="w-full lg:flex-1 border border-slate-200 rounded-lg overflow-hidden bg-white">
-            {crawledPages[selectedPageIndex] ? (
-              <div className="flex flex-col h-full">
-                <div className="bg-slate-50 px-4 py-2 border-b border-slate-200 flex justify-between items-center">
-                  <div className="flex-1 overflow-hidden mr-2">
-                    <div className="text-xs text-slate-400">Selected page</div>
-                    <div className="text-sm font-medium text-slate-800 truncate">
-                      {crawledPages[selectedPageIndex].url}
+                  <div className="flex items-center gap-4 text-slate-500">
+                    <div className="text-right hidden sm:block">
+                      <div className="text-sm font-medium text-slate-700">
+                        {sections.length} Sections
+                      </div>
+                      <div className="text-xs text-slate-400">
+                        Click to expand
+                      </div>
                     </div>
+                    <span
+                      className={`transform transition-transform duration-200 ${isPageExpanded ? "rotate-90" : ""}`}
+                    >
+                      ▸
+                    </span>
                   </div>
-                  <div className="text-xs text-slate-400 flex-shrink-0">
-                    {new Date(
-                      crawledPages[selectedPageIndex].createdAt,
-                    ).toLocaleDateString()}
-                  </div>
-                </div>
-                <div className="p-4 space-y-4 overflow-y-auto max-h-[420px]">
-                  {(() => {
-                    const page = crawledPages[selectedPageIndex];
-                    const summary = page.structuredSummary || {};
-                    const sections =
-                      Array.isArray(summary.sections) &&
-                      summary.sections.length > 0
-                        ? summary.sections
-                        : [];
-                    if (sections.length === 0) {
-                      return (
-                        <div className="text-sm text-slate-500">
+                </button>
+
+                {isPageExpanded && (
+                  <div className="p-4 bg-slate-50/50">
+                    <div className="space-y-3">
+                      {sections.length === 0 ? (
+                        <div className="text-sm text-slate-500 italic p-4 text-center">
                           No sections found for this page.
                         </div>
-                      );
-                    }
-                    return sections.map((section: any, secIdx: number) => {
-                      const isOpen = selectedSectionIndex === secIdx;
-                      const leadCount = Array.isArray(section.leadQuestions)
-                        ? section.leadQuestions.length
-                        : section.leadQuestion
-                          ? 1
-                          : 0;
-                      const salesCount = Array.isArray(section.salesQuestions)
-                        ? section.salesQuestions.length
-                        : section.salesQuestion
-                          ? 1
-                          : 0;
-                      return (
-                        <div
-                          key={secIdx}
-                          className="border border-slate-200 rounded-lg"
-                        >
-                          <button
-                            onClick={() =>
-                              setSelectedSectionIndex(isOpen ? null : secIdx)
-                            }
-                            className="w-full flex items-center justify-between px-4 py-3 text-left"
-                          >
-                            <div className="flex-1">
-                              <div className="text-sm font-semibold text-slate-800">
-                                {section.sectionName || `Section ${secIdx + 1}`}
-                              </div>
-                              <div className="text-xs text-slate-500 mt-1">
-                                {summary.pageType
-                                  ? String(summary.pageType)
-                                  : "Unknown type"}
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-3 text-xs text-slate-500 mr-2">
-                              <span>
-                                Leads: {leadCount} • Sales: {salesCount}
-                              </span>
-                              <span
-                                className={`transform transition-transform ${
-                                  isOpen ? "rotate-90" : ""
-                                }`}
-                              >
-                                ▸
-                              </span>
-                            </div>
-                          </button>
-                          {isOpen && (
-                            <div className="px-4 pb-4 pt-1 space-y-4 bg-white">
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-6">
-                                  <div className="flex items-center gap-2 border-b border-blue-100 pb-2">
-                                    <span className="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-0.5 rounded uppercase">
-                                      Leads
-                                    </span>
-                                    <span className="text-xs text-slate-500 font-mono">
-                                      Lead Questions
-                                    </span>
-                                  </div>
-                                  {(
-                                    section.leadQuestions ||
-                                    (section.leadQuestion
-                                      ? [
-                                          {
-                                            question: section.leadQuestion,
-                                            options: section.leadOptions,
-                                            tags: section.leadTags,
-                                            workflow: "legacy",
-                                          },
-                                        ]
-                                      : [])
-                                  ).map((q: any, qIdx: number) => (
-                                    <div
-                                      key={qIdx}
-                                      className="space-y-3 p-3 bg-blue-50/30 rounded-lg border border-blue-100"
-                                    >
-                                      <div className="flex justify-between items-start gap-2">
-                                        <span className="text-xs font-bold text-blue-400">
-                                          Q{qIdx + 1}
-                                        </span>
-                                        <span className="text-[10px] font-mono text-slate-400 bg-slate-100 px-1.5 rounded">
-                                          {q.workflow || "legacy"}
-                                        </span>
-                                      </div>
-                                      <p className="text-sm font-medium text-slate-900">
-                                        {q.question}
-                                      </p>
-                                      <div>
-                                        <span className="text-xs text-slate-500 block mb-1">
-                                          Options & Tags
-                                        </span>
-                                        <ul className="space-y-1">
-                                          {q.options?.map(
-                                            (opt: any, i: number) => (
-                                              <li
-                                                key={i}
-                                                className="text-sm flex items-center justify-between bg-white p-1.5 rounded border border-blue-100"
-                                              >
-                                                <span>
-                                                  {typeof opt === "object" &&
-                                                  opt &&
-                                                  typeof opt.label === "string"
-                                                    ? opt.label
-                                                    : String(opt)}
-                                                </span>
-                                                <div className="flex items-center gap-1">
-                                                  {Array.isArray(opt?.tags) &&
-                                                  opt.tags.length > 0 ? (
-                                                    <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">
-                                                      {opt.tags.join(", ")}
-                                                    </span>
-                                                  ) : q.tags?.[i] ? (
-                                                    <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">
-                                                      {q.tags[i]}
-                                                    </span>
-                                                  ) : null}
-                                                  {typeof opt?.workflow ===
-                                                    "string" && opt.workflow ? (
-                                                    <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">
-                                                      {opt.workflow}
-                                                    </span>
-                                                  ) : null}
-                                                </div>
-                                              </li>
-                                            ),
-                                          )}
-                                        </ul>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
+                      ) : (
+                        sections.map((section: any, secIdx: number) => {
+                          const isOpen = selectedSectionIndex === secIdx;
+                          const leadCount = Array.isArray(section.leadQuestions)
+                            ? section.leadQuestions.length
+                            : section.leadQuestion
+                              ? 1
+                              : 0;
+                          const salesCount = Array.isArray(
+                            section.salesQuestions,
+                          )
+                            ? section.salesQuestions.length
+                            : section.salesQuestion
+                              ? 1
+                              : 0;
 
-                                <div className="space-y-6">
-                                  <div className="flex items-center gap-2 border-b border-green-100 pb-2">
-                                    <span className="bg-green-100 text-green-700 text-xs font-bold px-2 py-0.5 rounded uppercase">
-                                      Sales
+                          return (
+                            <div
+                              key={secIdx}
+                              className="border border-slate-200 rounded-lg bg-white shadow-sm"
+                            >
+                              <button
+                                onClick={() =>
+                                  setSelectedSectionIndex(
+                                    isOpen ? null : secIdx,
+                                  )
+                                }
+                                className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-slate-50 transition-colors rounded-lg"
+                              >
+                                <div className="flex-1">
+                                  <div className="text-sm font-semibold text-slate-800 flex items-center gap-2">
+                                    {section.sectionName ||
+                                      `Section ${secIdx + 1}`}
+                                  </div>
+                                  <div className="flex items-center gap-3 mt-1 text-xs text-slate-500">
+                                    <span className="flex items-center gap-1">
+                                      <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                                      {leadCount} Lead Qs
                                     </span>
-                                    <span className="text-xs text-slate-500 font-mono">
-                                      Sales Questions
+                                    <span className="flex items-center gap-1">
+                                      <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                                      {salesCount} Sales Qs
                                     </span>
                                   </div>
-                                  {(
-                                    section.salesQuestions ||
-                                    (section.salesQuestion
-                                      ? [
-                                          {
-                                            question: section.salesQuestion,
-                                            options: section.salesOptions,
-                                            tags: section.salesTags,
-                                            workflow: "legacy",
-                                          },
-                                        ]
-                                      : [])
-                                  ).map((q: any, qIdx: number) => (
-                                    <div
-                                      key={qIdx}
-                                      className="space-y-3 p-3 bg-green-50/30 rounded-lg border border-green-100"
-                                    >
-                                      <div className="flex justify-between items-start gap-2">
-                                        <span className="text-xs font-bold text-green-600">
-                                          Q{qIdx + 1}
-                                        </span>
-                                        <span className="text-[10px] font-mono text-slate-400 bg-slate-100 px-1.5 rounded">
-                                          {q.workflow || "legacy"}
-                                        </span>
-                                      </div>
-                                      <p className="text-sm font-medium text-slate-900">
-                                        {q.question}
-                                      </p>
-                                      <div>
-                                        <span className="text-xs text-slate-500 block mb-1">
-                                          Options & Tags
-                                        </span>
-                                        <ul className="space-y-1">
-                                          {q.options?.map(
-                                            (opt: any, i: number) => (
-                                              <li
-                                                key={i}
-                                                className="text-sm flex items-center justify-between bg-white p-1.5 rounded border border-green-100"
-                                              >
-                                                <span>
-                                                  {typeof opt === "object" &&
-                                                  opt &&
-                                                  typeof opt.label === "string"
-                                                    ? opt.label
-                                                    : String(opt)}
-                                                </span>
-                                                <div className="flex items-center gap-1">
-                                                  {Array.isArray(opt?.tags) &&
-                                                  opt.tags.length > 0 ? (
-                                                    <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded">
-                                                      {opt.tags.join(", ")}
-                                                    </span>
-                                                  ) : q.tags?.[i] ? (
-                                                    <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded">
-                                                      {q.tags[i]}
-                                                    </span>
-                                                  ) : null}
-                                                  {typeof opt?.workflow ===
-                                                    "string" && opt.workflow ? (
-                                                    <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">
-                                                      {opt.workflow}
-                                                    </span>
-                                                  ) : null}
-                                                </div>
-                                              </li>
-                                            ),
-                                          )}
-                                        </ul>
-                                      </div>
-                                    </div>
-                                  ))}
                                 </div>
-                              </div>
+                                <div className="flex items-center gap-2">
+                                  <span
+                                    className={`text-slate-400 transform transition-transform ${isOpen ? "rotate-180" : ""}`}
+                                  >
+                                    ▼
+                                  </span>
+                                </div>
+                              </button>
+
+                              {isOpen && (
+                                <div className="px-4 pb-4 pt-1 border-t border-slate-100">
+                                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-4">
+                                    {/* Lead Questions Column */}
+                                    <div className="space-y-4">
+                                      <div className="flex items-center gap-2 pb-2 border-b border-blue-100">
+                                        <div className="bg-blue-100 p-1 rounded">
+                                          <div className="w-3 h-3 bg-blue-600 rounded-full"></div>
+                                        </div>
+                                        <span className="text-xs font-bold text-blue-700 uppercase tracking-wider">
+                                          Lead Workflow
+                                        </span>
+                                      </div>
+
+                                      {(
+                                        section.leadQuestions ||
+                                        (section.leadQuestion
+                                          ? [
+                                              {
+                                                question: section.leadQuestion,
+                                                options: section.leadOptions,
+                                                tags: section.leadTags,
+                                                workflow: "legacy",
+                                              },
+                                            ]
+                                          : [])
+                                      ).map((q: any, qIdx: number) => (
+                                        <div
+                                          key={qIdx}
+                                          className="bg-blue-50/50 rounded-lg border border-blue-100 overflow-hidden"
+                                        >
+                                          <div className="p-3 border-b border-blue-100/50 bg-blue-50/80 flex justify-between items-start gap-2">
+                                            <span className="text-xs font-bold text-blue-600">
+                                              Q{qIdx + 1}
+                                            </span>
+                                            <span className="text-[10px] font-mono text-slate-500 bg-white px-1.5 py-0.5 rounded border border-blue-100">
+                                              {q.workflow || "legacy"}
+                                            </span>
+                                          </div>
+                                          <div className="p-3 space-y-3">
+                                            <p className="text-sm font-medium text-slate-800">
+                                              {q.question}
+                                            </p>
+
+                                            {/* Options */}
+                                            {q.options &&
+                                              q.options.length > 0 && (
+                                                <div className="space-y-2">
+                                                  <span className="text-xs text-slate-400 font-medium uppercase tracking-wider">
+                                                    Options
+                                                  </span>
+                                                  <ul className="space-y-1.5">
+                                                    {q.options.map(
+                                                      (opt: any, i: number) => (
+                                                        <li
+                                                          key={i}
+                                                          className="text-sm bg-white p-2 rounded border border-slate-200 flex flex-wrap items-center justify-between gap-2"
+                                                        >
+                                                          <span className="text-slate-700">
+                                                            {typeof opt ===
+                                                              "object" &&
+                                                            opt &&
+                                                            typeof opt.label ===
+                                                              "string"
+                                                              ? opt.label
+                                                              : String(opt)}
+                                                          </span>
+                                                          <div className="flex items-center gap-1 flex-wrap">
+                                                            {/* Tags */}
+                                                            {Array.isArray(
+                                                              opt?.tags,
+                                                            ) &&
+                                                            opt.tags.length >
+                                                              0 ? (
+                                                              <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded border border-blue-200">
+                                                                {opt.tags.join(
+                                                                  ", ",
+                                                                )}
+                                                              </span>
+                                                            ) : q.tags?.[i] ? (
+                                                              <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded border border-blue-200">
+                                                                {q.tags[i]}
+                                                              </span>
+                                                            ) : null}
+
+                                                            {/* Workflow Next Step */}
+                                                            {typeof opt?.workflow ===
+                                                              "string" &&
+                                                              opt.workflow && (
+                                                                <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200 flex items-center gap-1">
+                                                                  <span>→</span>{" "}
+                                                                  {opt.workflow}
+                                                                </span>
+                                                              )}
+                                                          </div>
+                                                        </li>
+                                                      ),
+                                                    )}
+                                                  </ul>
+                                                </div>
+                                              )}
+                                          </div>
+                                        </div>
+                                      ))}
+
+                                      {!section.leadQuestions &&
+                                        !section.leadQuestion && (
+                                          <div className="text-sm text-slate-400 italic text-center py-4 bg-slate-50 rounded border border-dashed border-slate-200">
+                                            No lead questions generated.
+                                          </div>
+                                        )}
+                                    </div>
+
+                                    {/* Sales Questions Column */}
+                                    <div className="space-y-4">
+                                      <div className="flex items-center gap-2 pb-2 border-b border-green-100">
+                                        <div className="bg-green-100 p-1 rounded">
+                                          <div className="w-3 h-3 bg-green-600 rounded-full"></div>
+                                        </div>
+                                        <span className="text-xs font-bold text-green-700 uppercase tracking-wider">
+                                          Sales Workflow
+                                        </span>
+                                      </div>
+
+                                      {(
+                                        section.salesQuestions ||
+                                        (section.salesQuestion
+                                          ? [
+                                              {
+                                                question: section.salesQuestion,
+                                                options: section.salesOptions,
+                                                tags: section.salesTags,
+                                                workflow: "legacy",
+                                              },
+                                            ]
+                                          : [])
+                                      ).map((q: any, qIdx: number) => (
+                                        <div
+                                          key={qIdx}
+                                          className="bg-green-50/50 rounded-lg border border-green-100 overflow-hidden"
+                                        >
+                                          <div className="p-3 border-b border-green-100/50 bg-green-50/80 flex justify-between items-start gap-2">
+                                            <span className="text-xs font-bold text-green-600">
+                                              Q{qIdx + 1}
+                                            </span>
+                                            <span className="text-[10px] font-mono text-slate-500 bg-white px-1.5 py-0.5 rounded border border-green-100">
+                                              {q.workflow || "legacy"}
+                                            </span>
+                                          </div>
+                                          <div className="p-3 space-y-3">
+                                            <p className="text-sm font-medium text-slate-800">
+                                              {q.question}
+                                            </p>
+
+                                            {/* Options */}
+                                            {q.options &&
+                                              q.options.length > 0 && (
+                                                <div className="space-y-2">
+                                                  <span className="text-xs text-slate-400 font-medium uppercase tracking-wider">
+                                                    Options
+                                                  </span>
+                                                  <ul className="space-y-1.5">
+                                                    {q.options.map(
+                                                      (opt: any, i: number) => (
+                                                        <li
+                                                          key={i}
+                                                          className="text-sm bg-white p-2 rounded border border-slate-200 flex flex-wrap items-center justify-between gap-2"
+                                                        >
+                                                          <span className="text-slate-700">
+                                                            {typeof opt ===
+                                                              "object" &&
+                                                            opt &&
+                                                            typeof opt.label ===
+                                                              "string"
+                                                              ? opt.label
+                                                              : String(opt)}
+                                                          </span>
+                                                          <div className="flex items-center gap-1 flex-wrap">
+                                                            {/* Tags */}
+                                                            {Array.isArray(
+                                                              opt?.tags,
+                                                            ) &&
+                                                            opt.tags.length >
+                                                              0 ? (
+                                                              <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded border border-green-200">
+                                                                {opt.tags.join(
+                                                                  ", ",
+                                                                )}
+                                                              </span>
+                                                            ) : q.tags?.[i] ? (
+                                                              <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded border border-green-200">
+                                                                {q.tags[i]}
+                                                              </span>
+                                                            ) : null}
+
+                                                            {/* Workflow Next Step */}
+                                                            {typeof opt?.workflow ===
+                                                              "string" &&
+                                                              opt.workflow && (
+                                                                <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200 flex items-center gap-1">
+                                                                  <span>→</span>{" "}
+                                                                  {opt.workflow}
+                                                                </span>
+                                                              )}
+                                                          </div>
+                                                        </li>
+                                                      ),
+                                                    )}
+                                                  </ul>
+                                                </div>
+                                              )}
+                                          </div>
+                                        </div>
+                                      ))}
+
+                                      {!section.salesQuestions &&
+                                        !section.salesQuestion && (
+                                          <div className="text-sm text-slate-400 italic text-center py-4 bg-slate-50 rounded border border-dashed border-slate-200">
+                                            No sales questions generated.
+                                          </div>
+                                        )}
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
-                      );
-                    });
-                  })()}
-                </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
-            ) : (
-              <div className="p-4 text-sm text-slate-500">
-                Select a page from the list to view its workflow configuration.
-              </div>
-            )}
-          </div>
+            );
+          })}
         </div>
       )}
     </div>
