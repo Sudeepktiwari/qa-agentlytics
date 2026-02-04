@@ -1931,9 +1931,12 @@ async function extractTextFromUrl(
     const isNoiseText = (t: string) => NOISE_PATTERNS.some((re) => re.test(t));
     const normalize = (t: string) => t.replace(/\s+/g, " ").trim();
 
-    const scope = $("main,[role='main'],article").first().length
-      ? $("main,[role='main'],article").first()
-      : $("body");
+    const scope =
+      $("main, [role='main']").length > 0
+        ? $("main, [role='main']")
+        : $("article").length > 0
+          ? $("article")
+          : $("body");
 
     const sections: string[] = [];
     let currentTitle = "";
@@ -1947,12 +1950,14 @@ async function extractTextFromUrl(
         .split(" ")
         .filter((w) => w.length > 0)
         .join(" ");
-      if (!body || body.length < 120) {
+      if (!body || body.length < 60) {
         currentTitle = "";
         currentContent = [];
         return;
       }
-      if (isNoiseText(body)) {
+      // Only filter noise if text is relatively short (less than 300 chars)
+      // This prevents dropping long valid sections that just happen to contain a "Sign up" button
+      if (body.length < 300 && isNoiseText(body)) {
         currentTitle = "";
         currentContent = [];
         return;
