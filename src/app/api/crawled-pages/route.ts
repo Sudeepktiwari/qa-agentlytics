@@ -553,12 +553,25 @@ export async function DELETE(request: NextRequest) {
     const adminId = verification.adminId;
     const body = await request.json();
     assertBodyConstraints(body, { maxBytes: 64 * 1024, maxDepth: 6 });
-    const DeleteSchema = z.object({ url: z.string().url().max(2048) }).strict();
+
+    // Allow single url or array of urls
+    const DeleteSchema = z
+      .object({
+        url: z.string().url().max(2048).optional(),
+        urls: z.array(z.string().url().max(2048)).optional(),
+      })
+      .strict()
+      .refine((data) => data.url || (data.urls && data.urls.length > 0), {
+        message: "Either 'url' or 'urls' must be provided",
+      });
+
     const parsedDelete = DeleteSchema.safeParse(body);
     if (!parsedDelete.success) {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
     }
-    const { url } = parsedDelete.data;
+
+    const { url, urls } = parsedDelete.data;
+    const targets = urls || (url ? [url] : []);
 
     client = new MongoClient(process.env.MONGODB_URI!);
     await client.connect();
@@ -567,33 +580,52 @@ export async function DELETE(request: NextRequest) {
     const sitemapUrls = db.collection("sitemap_urls");
     const structuredSummaries = db.collection("structured_summaries");
 
-    // Delete from MongoDB
-    const result = await collection.deleteOne({ adminId, url });
+    let deletedCount = 0;
+    const errors: string[] = [];
 
-    // Always delete structured summary if it exists
-    await structuredSummaries.deleteOne({ adminId, url });
+    // Process deletions
+    await Promise.all(
+      targets.map(async (targetUrl) => {
+        try {
+          // Delete from MongoDB
+          const result = await collection.deleteOne({
+            adminId,
+            url: targetUrl,
+          });
 
-    if (result.deletedCount === 0) {
-      // Not found in crawled_pages — try deleting failed entry from sitemap_urls
-      const failedDelete = await sitemapUrls.deleteOne({ adminId, url });
-      if (failedDelete.deletedCount > 0) {
-        return NextResponse.json({
-          success: true,
-          deletedFrom: "sitemap_urls",
-        });
-      }
-      return NextResponse.json({ error: "Page not found" }, { status: 404 });
+          // Always delete structured summary if it exists
+          await structuredSummaries.deleteOne({ adminId, url: targetUrl });
+
+          // Also try deleting from sitemap_urls if not in crawled_pages
+          if (result.deletedCount === 0) {
+            await sitemapUrls.deleteOne({ adminId, url: targetUrl });
+          } else {
+            deletedCount++;
+          }
+
+          // Delete from Pinecone and Mongo vector tracking
+          await deleteChunksByUrl(targetUrl, adminId);
+        } catch (err) {
+          console.error(`Error deleting ${targetUrl}:`, err);
+          errors.push(
+            `Failed to delete ${targetUrl}: ${err instanceof Error ? err.message : String(err)}`,
+          );
+        }
+      }),
+    );
+
+    if (deletedCount === 0 && errors.length > 0) {
+      return NextResponse.json(
+        { error: "Failed to delete pages", details: errors },
+        { status: 500 },
+      );
     }
 
-    // Delete from Pinecone and Mongo vector tracking using shared helper
-    try {
-      await deleteChunksByUrl(url, adminId);
-    } catch (pineconeError) {
-      console.error("Error deleting vectors:", pineconeError);
-      // Continue even if Pinecone deletion fails
-    }
-
-    return NextResponse.json({ success: true });
+    return NextResponse.json({
+      success: true,
+      deletedCount,
+      errors: errors.length > 0 ? errors : undefined,
+    });
   } catch (error) {
     console.error("Error deleting page:", error);
     return NextResponse.json(

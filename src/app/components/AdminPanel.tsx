@@ -651,6 +651,56 @@ const AdminPanel: React.FC = () => {
     }
   };
 
+  const deleteCrawledPages = async (pages: CrawledPage[]) => {
+    if (!apiKey) return;
+
+    if (
+      !window.confirm(
+        `Delete ${pages.length} crawled pages? This action cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+
+    // Optimistic update
+    const previousPages = crawledPages;
+    const previousDocuments = documents;
+
+    const urlsToDelete = new Set(pages.map((p) => p.url));
+    setCrawledPages((prev) => prev.filter((p) => !urlsToDelete.has(p.url)));
+    setDocuments((prev) => prev.filter((d) => !urlsToDelete.has(d.filename)));
+
+    try {
+      const res = await fetch("/api/crawled-pages", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
+        },
+        body: JSON.stringify({ urls: Array.from(urlsToDelete) }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        showToast(
+          `Successfully deleted ${data.deletedCount || pages.length} pages`,
+        );
+      } else {
+        // Revert on failure
+        setCrawledPages(previousPages);
+        setDocuments(previousDocuments);
+        const data = await res.json();
+        setCrawledPagesError(data.error || "Failed to delete pages");
+      }
+    } catch (error) {
+      // Revert on error
+      setCrawledPages(previousPages);
+      setDocuments(previousDocuments);
+      setCrawledPagesError("Failed to delete pages");
+      console.error("Error deleting pages:", error);
+    }
+  };
+
   const retryPage = async (page: CrawledPage) => {
     if (!apiKey) {
       showToast("API key required to retry crawl", "error");
@@ -1201,6 +1251,7 @@ const AdminPanel: React.FC = () => {
               onRefreshCrawledPages={fetchCrawledPages}
               onViewPageSummary={(page) => viewSummary(page.url)}
               onDeleteCrawledPage={deleteCrawledPage}
+              onDeleteCrawledPages={deleteCrawledPages}
               onRetryPage={retryPage}
               documents={documents}
               documentsLoading={documentsLoading}
