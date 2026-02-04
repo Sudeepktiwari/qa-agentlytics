@@ -836,7 +836,10 @@ async function discoverSitemapCandidates(inputUrl: string): Promise<string[]> {
   return Array.from(candidates);
 }
 
-async function extractLinksUsingBrowser(pageUrl: string): Promise<string[]> {
+async function extractLinksUsingBrowser(
+  pageUrl: string,
+  adminId?: string | null,
+): Promise<string[]> {
   console.log(`[JSCrawl] Starting JavaScript-enabled crawl for: ${pageUrl}`);
 
   let browser;
@@ -884,6 +887,18 @@ async function extractLinksUsingBrowser(pageUrl: string): Promise<string[]> {
     const maxScrollAttempts = 15; // Increased attempts for more thorough scrolling
 
     while (scrollAttempts < maxScrollAttempts) {
+      // Check for stop signal
+      if (adminId) {
+        const db = await getDb();
+        const state = await db.collection("crawl_states").findOne({ adminId });
+        if (state?.status === "stopped") {
+          console.log(
+            `[JSCrawl] Stop signal detected for admin ${adminId}. Stopping infinite scroll.`,
+          );
+          break;
+        }
+      }
+
       // Get current link count and content-specific count
       const { currentLinkCount, currentContentCount } = await page.evaluate(
         () => {
@@ -1655,6 +1670,7 @@ function calculateConfidence(
 
 async function discoverUrls(
   inputUrl: string,
+  adminId?: string | null,
 ): Promise<{ urls: string[]; type: "sitemap" | "webpage" | "javascript" }> {
   console.log(`[Discovery] Starting discovery for: ${inputUrl}`);
 
@@ -1735,7 +1751,7 @@ async function discoverUrls(
       );
 
       try {
-        const jsUrls = await extractLinksUsingBrowser(inputUrl);
+        const jsUrls = await extractLinksUsingBrowser(inputUrl, adminId);
         const jsUrlAnalysis = analyzeUrlPatterns(jsUrls, inputUrl);
         const jsContentUrls = jsUrlAnalysis.contentUrls.length;
 
@@ -2750,7 +2766,7 @@ IMPORTANT REQUIREMENTS:
     let discoveryType: "sitemap" | "webpage" | "javascript" = "sitemap";
     try {
       console.log(`[Crawl] Starting URL discovery for: ${normalizedUrl}`);
-      const result = await discoverUrls(normalizedUrl);
+      const result = await discoverUrls(normalizedUrl, adminId);
       urls = result.urls;
       discoveryType = result.type;
       // Clean and filter discovered URLs to the requested locale (reduces batch size)

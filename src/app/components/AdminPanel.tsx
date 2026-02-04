@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { Users, FileText, Database, Activity, Menu } from "lucide-react";
 import DocumentUploader from "./DocumentUploader";
 import Sidebar from "./admin/Sidebar";
@@ -288,6 +288,18 @@ const AdminPanel: React.FC = () => {
   const [totalProcessed, setTotalProcessed] = useState(0);
   const [totalRemaining, setTotalRemaining] = useState(0);
 
+  // Refs for checking state inside async closures
+  const autoContinueRef = useRef(autoContinue);
+  const continueCrawlingRef = useRef(continueCrawling);
+
+  useEffect(() => {
+    autoContinueRef.current = autoContinue;
+  }, [autoContinue]);
+
+  useEffect(() => {
+    continueCrawlingRef.current = continueCrawling;
+  }, [continueCrawling]);
+
   // Sitemap submission handler with auto-continue
   const handleSitemapSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -344,7 +356,10 @@ const AdminPanel: React.FC = () => {
         );
 
         // Auto-continue if there are more pages and auto-continue is enabled
-        if (data.hasMorePages && (autoContinue || continueCrawling)) {
+        if (
+          data.hasMorePages &&
+          (autoContinueRef.current || continueCrawlingRef.current)
+        ) {
           setSitemapStatus(
             (prev) => prev + `\n\n🔄 Auto-continuing in 2 seconds...`,
           );
