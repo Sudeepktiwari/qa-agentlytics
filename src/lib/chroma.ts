@@ -126,15 +126,33 @@ export async function listDocuments(adminId?: string) {
 export async function deleteDocument(filename: string, adminId?: string) {
   const db = await getDb();
   const pineconeVectors = db.collection("pinecone_vectors");
-  const match = adminId ? { filename, adminId } : { filename };
-  const ids = await pineconeVectors
-    .find(match)
-    .project({ vectorId: 1, _id: 0 })
-    .toArray();
-  const vectorIds = ids.map((d) => (d as { vectorId: string }).vectorId);
-  if (vectorIds.length > 0) {
-    await index.deleteMany(vectorIds);
+  
+  // 1. Try deleting from Pinecone using metadata filter (most robust)
+  try {
+    const filter: any = { filename: { $eq: filename } };
+    if (adminId) {
+      filter.adminId = { $eq: adminId };
+    }
+    // @ts-ignore - deleteMany supports filter in v6 but types might be tricky
+    await index.deleteMany(filter);
+    console.log(`[Pinecone] Deleted vectors for ${filename} using filter`);
+  } catch (err) {
+    console.warn("[Pinecone] Delete by filter failed, falling back to ID deletion:", err);
+    
+    // Fallback: Delete by IDs tracked in MongoDB
+    const match = adminId ? { filename, adminId } : { filename };
+    const ids = await pineconeVectors
+      .find(match)
+      .project({ vectorId: 1, _id: 0 })
+      .toArray();
+    const vectorIds = ids.map((d) => (d as { vectorId: string }).vectorId);
+    if (vectorIds.length > 0) {
+      await index.deleteMany(vectorIds);
+    }
   }
+
+  // 2. Delete from MongoDB
+  const match = adminId ? { filename, adminId } : { filename };
   await pineconeVectors.deleteMany(match);
 }
 

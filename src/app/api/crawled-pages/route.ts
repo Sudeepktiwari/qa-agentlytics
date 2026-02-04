@@ -5,6 +5,7 @@ import OpenAI from "openai";
 import { verifyApiKey, verifyAdminTokenFromCookie } from "@/lib/auth";
 import { z } from "zod";
 import { assertBodyConstraints } from "@/lib/validators";
+import { deleteChunksByUrl } from "@/lib/chroma";
 
 const pc = new Pinecone({ apiKey: process.env.PINECONE_KEY! });
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
@@ -564,9 +565,13 @@ export async function DELETE(request: NextRequest) {
     const db = client.db("test");
     const collection = db.collection("crawled_pages");
     const sitemapUrls = db.collection("sitemap_urls");
+    const structuredSummaries = db.collection("structured_summaries");
 
     // Delete from MongoDB
     const result = await collection.deleteOne({ adminId, url });
+
+    // Always delete structured summary if it exists
+    await structuredSummaries.deleteOne({ adminId, url });
 
     if (result.deletedCount === 0) {
       // Not found in crawled_pages — try deleting failed entry from sitemap_urls
@@ -580,23 +585,11 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Page not found" }, { status: 404 });
     }
 
-    // Delete from Pinecone using the vector tracking collection
+    // Delete from Pinecone and Mongo vector tracking using shared helper
     try {
-      const vectorCollection = db.collection("pinecone_vectors");
-      const vectors = await vectorCollection
-        .find({ adminId, filename: url })
-        .toArray();
-
-      if (vectors.length > 0) {
-        const index = pc.index(process.env.PINECONE_INDEX!);
-        const vectorIds = vectors.map((v: any) => v.vectorId);
-        await index.deleteMany(vectorIds);
-
-        // Remove vector tracking records
-        await vectorCollection.deleteMany({ adminId, filename: url });
-      }
+      await deleteChunksByUrl(url, adminId);
     } catch (pineconeError) {
-      console.error("Error deleting from Pinecone:", pineconeError);
+      console.error("Error deleting vectors:", pineconeError);
       // Continue even if Pinecone deletion fails
     }
 
