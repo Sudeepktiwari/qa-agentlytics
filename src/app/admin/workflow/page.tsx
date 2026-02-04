@@ -59,7 +59,16 @@ export default function WorkflowPage() {
       const pagesRes = await fetch("/api/crawled-pages");
       const pagesData = await pagesRes.json();
       if (pagesRes.ok) {
-        setCrawledPages(pagesData.pages || []);
+        const pages =
+          (pagesData.pages || []).filter(
+            (p: any) =>
+              p &&
+              p.hasStructuredSummary &&
+              p.structuredSummary &&
+              Array.isArray(p.structuredSummary.sections) &&
+              p.structuredSummary.sections.length > 0,
+          ) || [];
+        setCrawledPages(pages);
       }
 
       // Fetch Subscription/Sales
