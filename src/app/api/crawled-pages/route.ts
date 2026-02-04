@@ -223,6 +223,19 @@ export async function GET(request: NextRequest) {
     const sitemapUrls = db.collection("sitemap_urls");
     const structuredSummaries = db.collection("structured_summaries");
 
+    const searchParam =
+      request.nextUrl.searchParams.get("search")?.toLowerCase() || "";
+    const pageParam = request.nextUrl.searchParams.get("page");
+    const pageSizeParam = request.nextUrl.searchParams.get("pageSize");
+    const page =
+      pageParam && !Number.isNaN(parseInt(pageParam, 10))
+        ? Math.max(parseInt(pageParam, 10), 1)
+        : 1;
+    const pageSize =
+      pageSizeParam && !Number.isNaN(parseInt(pageSizeParam, 10))
+        ? Math.max(parseInt(pageSizeParam, 10), 1)
+        : 500;
+
     const [pages, failedDocs] = await Promise.all([
       collection.find({ adminId }).sort({ createdAt: -1 }).toArray(),
       sitemapUrls
@@ -284,14 +297,30 @@ export async function GET(request: NextRequest) {
     }));
 
     // Merge and sort by date descending
-    const allPages = [...pagesWithStatus, ...failedPages].sort(
+    let allPages = [...pagesWithStatus, ...failedPages].sort(
       (a, b) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
 
+    if (searchParam) {
+      allPages = allPages.filter((p) =>
+        (p.url || "").toLowerCase().includes(searchParam),
+      );
+    }
+
+    const total = allPages.length;
+    const startIndex = (page - 1) * pageSize;
+    const pagedPages =
+      startIndex >= 0 && startIndex < total
+        ? allPages.slice(startIndex, startIndex + pageSize)
+        : [];
+
     return NextResponse.json({
       success: true,
-      pages: allPages,
+      pages: pagedPages,
+      total,
+      page,
+      pageSize,
     });
   } catch (error) {
     console.error("Error fetching crawled pages:", error);
