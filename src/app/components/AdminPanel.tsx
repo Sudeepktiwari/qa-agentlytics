@@ -151,6 +151,61 @@ const AdminPanel: React.FC = () => {
   // Navigation state
   const [activeSection, setActiveSection] = useState("overview");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  // Section Metadata Configuration
+  const SECTION_METADATA: Record<
+    string,
+    { title: string; description: string }
+  > = {
+    overview: {
+      title: "Dashboard",
+      description: "Overview of your agent's performance and usage.",
+    },
+    workflow: {
+      title: "Workflow Management",
+      description: "Configure conversation flows and qualification logic.",
+    },
+    knowledge: {
+      title: "Knowledge Base",
+      description: "Manage your agent's knowledge sources and crawled content.",
+    },
+    leads: {
+      title: "Lead Management",
+      description: "View and manage captured leads and conversations.",
+    },
+    configuration: {
+      title: "Widget Configuration",
+      description: "Customize the appearance and behavior of your chat widget.",
+    },
+    testing: {
+      title: "Test Sandbox",
+      description: "Test your agent's responses in a safe environment.",
+    },
+    bookings: {
+      title: "Bookings",
+      description: "Manage appointment bookings and schedules.",
+    },
+    subscription: {
+      title: "Subscription",
+      description: "Manage your plan and billing details.",
+    },
+    qualification: {
+      title: "Qualification Rules",
+      description: "Define BANT and persona-based qualification criteria.",
+    },
+    onboarding: {
+      title: "Onboarding Setup",
+      description: "Review onboarding analytics and setup progress.",
+    },
+    documents: {
+      title: "Documents",
+      description: "Upload and manage reference documents.",
+    },
+    "live-preview": {
+      title: "Live Preview",
+      description: "Interact with your agent in real-time.",
+    },
+  };
   const [subscriptionUsage, setSubscriptionUsage] = useState<null | {
     plan: string;
     usage: {
@@ -1467,10 +1522,12 @@ const AdminPanel: React.FC = () => {
               <header className="mb-6 md:mb-8 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
                 <div>
                   <h1 className="text-2xl font-bold text-slate-900 capitalize">
-                    {activeSection.replace("-", " ")}
+                    {SECTION_METADATA[activeSection]?.title ||
+                      activeSection.replace("-", " ")}
                   </h1>
                   <p className="text-slate-500 text-sm mt-1">
-                    Manage your chatbot and data
+                    {SECTION_METADATA[activeSection]?.description ||
+                      "Manage your chatbot and data"}
                   </p>
                 </div>
                 <div className="flex items-center gap-4">
