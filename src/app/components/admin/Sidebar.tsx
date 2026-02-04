@@ -13,6 +13,7 @@ import {
   LogOut,
   GraduationCap,
   X,
+  GitBranch,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -35,6 +36,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       title: "Core",
       items: [
         { id: "overview", label: "Overview", icon: LayoutDashboard },
+        { id: "workflow", label: "Workflow", icon: GitBranch },
         { id: "qualification", label: "Qualification", icon: GraduationCap },
         // { id: "live-preview", label: "Live Preview", icon: MessageSquare },
       ],
