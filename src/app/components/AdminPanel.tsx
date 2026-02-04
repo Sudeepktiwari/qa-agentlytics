@@ -22,6 +22,7 @@ import BookingManagementSection from "./admin/BookingManagementSection";
 import SubscriptionSection from "./admin/SubscriptionSection";
 import { AdminSettingsSection } from "./admin/AdminSettingsSection";
 import OnboardingSettingsSection from "./admin/OnboardingSettingsSection";
+import WorkflowSection from "./admin/WorkflowSection";
 import SummaryModal from "./admin/SummaryModal";
 import { PRICING } from "@/config/pricing";
 
@@ -1410,16 +1411,7 @@ const AdminPanel: React.FC = () => {
         );
 
       case "workflow":
-        return (
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 md:p-6">
-            <h3 className="text-lg font-semibold text-slate-800 mb-4">
-              Workflow Settings
-            </h3>
-            <div className="text-slate-500">
-              Workflow configuration will appear here.
-            </div>
-          </div>
-        );
+        return <WorkflowSection />;
 
       default:
         return <div>Select a section from the sidebar</div>;
