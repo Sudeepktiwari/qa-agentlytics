@@ -4,6 +4,14 @@ import { getDb } from "./mongo";
 // Pinecone environment variables must be set:
 // - PINECONE_API_KEY (your Pinecone API key)
 // - PINECONE_CONTROLLER_HOST (your Pinecone environment's controller host, e.g., https://controller.us-east1-gcp.pinecone.io)
+
+if (!process.env.PINECONE_KEY) {
+  console.error("❌ PINECONE_KEY is not set in environment variables!");
+}
+if (!process.env.PINECONE_INDEX) {
+  console.error("❌ PINECONE_INDEX is not set in environment variables!");
+}
+
 const pinecone = new Pinecone({
   apiKey: process.env.PINECONE_KEY!,
 });
@@ -48,7 +56,9 @@ export async function addChunks(
   }));
   if (docs.length > 0) {
     try {
-      console.log(`[Crawl] Inserting ${docs.length} vector records into MongoDB...`);
+      console.log(
+        `[Crawl] Inserting ${docs.length} vector records into MongoDB...`,
+      );
       const result = await pineconeVectors.insertMany(docs);
       console.log(`[Crawl] MongoDB insert result:`, result.insertedCount);
     } catch (err) {

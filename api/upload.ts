@@ -95,7 +95,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Batch embedding for all chunks
   const embedResp = await openai.embeddings.create({
     input: chunks,
-    model: "text-embedding-3-small",
+    model: "text-embedding-3-small", dimensions: 1024,
   });
   const embeddings = embedResp.data.map(
     (d: { embedding: number[] }) => d.embedding

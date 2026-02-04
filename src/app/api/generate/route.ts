@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     // Embed the prompt
     const embedResp = await openai.embeddings.create({
       input: [prompt.trim()],
-      model: "text-embedding-3-small",
+      model: "text-embedding-3-small", dimensions: 1024,
     });
     const promptEmbedding = embedResp.data[0].embedding;
 

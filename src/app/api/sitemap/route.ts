@@ -1989,14 +1989,26 @@ async function extractTextFromUrl(
       currentContent = [];
     };
 
-    scope.find("h1, h2, h3, h4, p, li").each((_, el) => {
+    const contentSelector =
+      "h1, h2, h3, h4, h5, h6, p, li, blockquote, td, th, div, article, section";
+    scope.find(contentSelector).each((_, el) => {
+      const $el = $(el);
+      // Avoid duplication: if this element has children that are also in our selector,
+      // we let the children handle the text extraction (unless it's a header).
+      // Headers should be treated as titles regardless of content.
       const tagName = (el as any).tagName
         ? (el as any).tagName.toLowerCase()
         : "";
-      const elText = normalize($(el).text());
+      const isHeader = /^h[1-6]$/.test(tagName);
+
+      if (!isHeader && $el.find(contentSelector).length > 0) {
+        return;
+      }
+
+      const elText = normalize($el.text());
       if (!elText) return;
 
-      if (/^h[1-4]$/.test(tagName)) {
+      if (isHeader) {
         if (currentTitle || currentContent.length) pushSection();
         currentTitle = elText;
         currentContent = [];
@@ -2646,6 +2658,7 @@ IMPORTANT REQUIREMENTS:
               const response = await openai.embeddings.create({
                 model: "text-embedding-3-small",
                 input: chunk,
+                dimensions: 1024,
               });
               return response.data[0].embedding;
             }),
@@ -3507,7 +3520,9 @@ IMPORTANT REQUIREMENTS:
           );
           // Chunk and embed for Pinecone
           let chunks = chunkText(text);
-          console.log(`[Crawl] Chunks for ${url}:`, chunks.length);
+          console.log(
+            `[Crawl] Chunks for ${url}: ${chunks.length} (Text length: ${text.length})`,
+          );
 
           // Debug: If no chunks created, log why and try to create a minimal chunk
           if (chunks.length === 0) {
@@ -3527,16 +3542,21 @@ IMPORTANT REQUIREMENTS:
 
           if (chunks.length > 0) {
             console.log(
-              `[Crawl] Creating embeddings for ${chunks.length} chunks...`,
+              `[Crawl] Starting embedding process for ${chunks.length} chunks of ${url}...`,
             );
             try {
               const embedResp = await openai.embeddings.create({
                 input: chunks,
                 model: "text-embedding-3-small",
+                dimensions: 1024,
               });
               const embeddings = embedResp.data.map(
                 (d: { embedding: number[] }) => d.embedding,
               );
+              console.log(
+                `[Crawl] Generated ${embeddings.length} embeddings for ${url}`,
+              );
+
               const metadata = chunks.map((chunk, i) => ({
                 filename: url,
                 adminId,
@@ -3549,7 +3569,7 @@ IMPORTANT REQUIREMENTS:
               await deleteChunksByUrl(url, adminId);
 
               console.log(
-                `[Crawl] Upserting ${embeddings.length} embeddings to Pinecone...`,
+                `[Crawl] Upserting ${embeddings.length} embeddings to Pinecone and MongoDB...`,
               );
               await addChunks(chunks, embeddings, metadata);
               totalChunks += chunks.length;
@@ -3558,7 +3578,7 @@ IMPORTANT REQUIREMENTS:
               );
             } catch (embeddingError) {
               console.error(
-                `[Crawl] EMBEDDING ERROR for ${url}:`,
+                `[Crawl] EMBEDDING/VECTOR ERROR for ${url}:`,
                 embeddingError,
               );
               if (embeddingError instanceof Error) {
@@ -3567,7 +3587,7 @@ IMPORTANT REQUIREMENTS:
             }
           } else {
             console.log(
-              `[Crawl] WARNING - No chunks created for ${url}. Text length: ${
+              `[Crawl] WARNING - No chunks created for ${url} (skipping vector creation). Text length: ${
                 text.length
               }, Content: ${text.slice(0, 200)}`,
             );

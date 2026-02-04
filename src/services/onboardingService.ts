@@ -257,7 +257,7 @@ async function inferRequestFormatFromDocs(adminId: string, docsUrl?: string) {
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
       const embedResp = await openai.embeddings.create({
         input: ["registration required fields and content-type"],
-        model: "text-embedding-3-small",
+        model: "text-embedding-3-small", dimensions: 1024,
       });
       const embedding = embedResp.data[0].embedding as number[];
       const similar = await querySimilarChunks(embedding, 5, adminId);
@@ -1704,7 +1704,7 @@ export const onboardingService = {
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
       const embedResp = await openai.embeddings.create({
         input: [question],
-        model: "text-embedding-3-small",
+        model: "text-embedding-3-small", dimensions: 1024,
       });
       const embedding = embedResp.data[0].embedding;
       console.log(
@@ -1782,7 +1782,7 @@ export async function deriveFieldsFromDocsForAdmin(
               ? "initial setup request body required fields including nested keys and headers"
               : "registration request body required fields and content-type",
         ],
-        model: "text-embedding-3-small",
+        model: "text-embedding-3-small", dimensions: 1024,
       });
       const embedding = embedResp.data[0].embedding as number[];
       const similar = await querySimilarChunks(embedding, 5, adminId);
@@ -1894,7 +1894,7 @@ export async function deriveSpecFromDocsForAdmin(
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
       const embedResp = await openai.embeddings.create({
         input: ["registration required fields and content-type"],
-        model: "text-embedding-3-small",
+        model: "text-embedding-3-small", dimensions: 1024,
       });
       const embedding = embedResp.data[0].embedding as number[];
       const similar = await querySimilarChunks(embedding, 5, adminId);
@@ -2255,7 +2255,7 @@ export async function getReasonFromDocs(
 
     const embedResp = await openai.embeddings.create({
       input: [query],
-      model: "text-embedding-3-small",
+      model: "text-embedding-3-small", dimensions: 1024,
     });
     const embedding = embedResp.data[0].embedding as number[];
     const similar = await querySimilarChunks(embedding, 3, adminId);
@@ -2373,7 +2373,7 @@ export async function answerQuestion(
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const embedResp = await openai.embeddings.create({
       input: [question],
-      model: "text-embedding-3-small",
+      model: "text-embedding-3-small", dimensions: 1024,
     });
     const embedding = embedResp.data[0].embedding as number[];
     // Search within the user's knowledge base (scoped to adminId) to ensure relevant answers

@@ -2066,7 +2066,7 @@ async function inferFieldsFromDocs(
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
       const embedResp = await openai.embeddings.create({
         input: [queryPhrase || "registration required fields"],
-        model: "text-embedding-3-small",
+        model: "text-embedding-3-small", dimensions: 1024,
       });
       const embedding = embedResp.data[0].embedding as number[];
       const similar = await querySimilarChunks(embedding, 5, adminId);
@@ -2285,7 +2285,7 @@ async function buildOnboardingDocContext(
       const query = `registration ${label} requirement`;
       const embedResp = await openai.embeddings.create({
         input: [query],
-        model: "text-embedding-3-small",
+        model: "text-embedding-3-small", dimensions: 1024,
       });
       const embedding = embedResp.data[0].embedding as number[];
       const similar = await querySimilarChunks(embedding, 5, adminId);
@@ -8052,7 +8052,7 @@ Extract key requirements (2-3 bullet points max, be concise):`;
           if (chunks.length > 0) {
             const embedResp = await openai.embeddings.create({
               input: chunks,
-              model: "text-embedding-3-small",
+              model: "text-embedding-3-small", dimensions: 1024,
             });
             const embeddings = embedResp.data.map(
               (d: { embedding: number[] }) => d.embedding,
@@ -10608,7 +10608,7 @@ How can I help you today?`;
 
   const embedResp = await openai.embeddings.create({
     input: [question.trim()],
-    model: "text-embedding-3-small",
+    model: "text-embedding-3-small", dimensions: 1024,
   });
   const questionEmbedding = embedResp.data[0].embedding;
 

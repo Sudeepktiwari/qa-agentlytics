@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
 
     // Embed chunks
     const embedResp = await openai.embeddings.create({
-      model: "text-embedding-3-small",
+      model: "text-embedding-3-small", dimensions: 1024,
       input: chunks,
     });
     const embeddings = embedResp.data.map((d) => d.embedding);
