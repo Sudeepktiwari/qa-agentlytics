@@ -3496,7 +3496,6 @@ IMPORTANT REQUIREMENTS:
 
           // Add structured summary if generated
           if (structuredSummary) {
-            pageData.structuredSummary = structuredSummary;
             pageData.summaryGeneratedAt = new Date();
           }
 
@@ -3506,6 +3505,27 @@ IMPORTANT REQUIREMENTS:
             { $set: pageData },
             { upsert: true },
           );
+          if (structuredSummary) {
+            const dbRef = await getDb();
+            const structuredSummaries = dbRef.collection(
+              "structured_summaries",
+            );
+            const pageDoc = await pages.findOne({ adminId, url });
+            const pageId = pageDoc?._id;
+            await structuredSummaries.updateOne(
+              { adminId, pageId },
+              {
+                $set: {
+                  adminId,
+                  pageId,
+                  url,
+                  structuredSummary,
+                  summaryGeneratedAt: new Date(),
+                },
+              },
+              { upsert: true },
+            );
+          }
           console.log(
             `[Crawl] Page data stored successfully${
               structuredSummary ? " with structured summary" : ""

@@ -221,6 +221,7 @@ export async function GET(request: NextRequest) {
     const db = client.db("test");
     const collection = db.collection("crawled_pages");
     const sitemapUrls = db.collection("sitemap_urls");
+    const structuredSummaries = db.collection("structured_summaries");
 
     const [pages, failedDocs] = await Promise.all([
       collection.find({ adminId }).sort({ createdAt: -1 }).toArray(),
@@ -229,6 +230,17 @@ export async function GET(request: NextRequest) {
         .sort({ failedAt: -1 })
         .toArray(),
     ]);
+
+    const summaries = await structuredSummaries
+      .find({ adminId })
+      .project({ pageId: 1, url: 1, structuredSummary: 1 })
+      .toArray();
+    const byPageId = new Map<string, any>();
+    const byUrl = new Map<string, any>();
+    for (const s of summaries) {
+      if (s.pageId) byPageId.set(String(s.pageId), s);
+      if (s.url) byUrl.set(String(s.url), s);
+    }
 
     // Define a common interface for the merged pages
     interface MergedPage {
@@ -246,10 +258,18 @@ export async function GET(request: NextRequest) {
     const pagesWithStatus: MergedPage[] = pages.map((page) => ({
       _id: page._id,
       url: page.url,
-      hasStructuredSummary: !!(page.structuredSummary || page.summary),
+      hasStructuredSummary: !!(
+        byPageId.get(String(page._id)) ||
+        byUrl.get(String(page.url)) ||
+        page.summary
+      ),
       createdAt: page.createdAt,
       status: "success",
-      structuredSummary: page.structuredSummary,
+      structuredSummary: (
+        byPageId.get(String(page._id)) ||
+        byUrl.get(String(page.url)) ||
+        {}
+      ).structuredSummary,
       summary: page.summary,
     }));
 
@@ -429,8 +449,6 @@ export async function POST(request: NextRequest) {
       adminId,
       url,
       text: reconstructedContent,
-      structuredSummary,
-      summaryGeneratedAt: new Date(),
       createdAt: new Date(),
       source: "reconstructed_from_pinecone_chunks",
     };
@@ -442,6 +460,24 @@ export async function POST(request: NextRequest) {
       { upsert: true },
     );
     console.log("[API] Upserted crawled_pages entry from Pinecone chunks");
+
+    const pageDoc = await collection.findOne({ adminId, url });
+    if (pageDoc && pageDoc._id) {
+      const structuredSummaries = db.collection("structured_summaries");
+      await structuredSummaries.updateOne(
+        { adminId, pageId: pageDoc._id },
+        {
+          $set: {
+            adminId,
+            pageId: pageDoc._id,
+            url,
+            structuredSummary,
+            summaryGeneratedAt: new Date(),
+          },
+        },
+        { upsert: true },
+      );
+    }
 
     return NextResponse.json({
       success: true,
