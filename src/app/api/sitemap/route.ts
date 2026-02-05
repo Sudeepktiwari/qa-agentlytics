@@ -612,6 +612,69 @@ Example:
   }
 }
 
+async function generateDiagnosticAnswers(
+  items: { label: string; workflow: string }[],
+) {
+  if (!items || items.length === 0) return {};
+
+  const uniqueItems = Array.from(
+    new Set(items.map((i) => JSON.stringify(i))),
+  ).map((s) => JSON.parse(s));
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      response_format: { type: "json_object" },
+      temperature: 0.2,
+      messages: [
+        {
+          role: "system",
+          content: `Write a diagnostic answer based on the workflow type.
+
+RULES:
+Follow the correct template:
+- validation_path → reflect stability → explain why it matters → conceptual Calendly support.
+- optimization_workflow → reflect friction → explain impact → conceptual resolution → validate fit.
+- diagnostic_education → reflect uncertainty → explain hidden loss → conceptual visibility → validate fit.
+- sales_alert → reflect severity → explain consequence → conceptual stabilizer → validate fit.
+
+No features, no CTAs. Keep it concise.
+
+INPUT: List of options with labels and workflows.
+OUTPUT: JSON object with "results" array containing "label", "workflow", and "diagnostic_answer".
+Example:
+{
+  "results": [
+    { "label": "Option A", "workflow": "validation_path", "diagnostic_answer": "..." }
+  ]
+}`,
+        },
+        {
+          role: "user",
+          content: JSON.stringify(uniqueItems),
+        },
+      ],
+    });
+
+    const content = response.choices[0]?.message?.content || "{}";
+    const data = JSON.parse(content);
+    const map: Record<string, string> = {};
+
+    if (Array.isArray(data.results)) {
+      data.results.forEach((item: any) => {
+        if (item && item.label && item.workflow && item.diagnostic_answer) {
+          const key = `${item.label}::${item.workflow}`;
+          map[key] = item.diagnostic_answer;
+        }
+      });
+    }
+    return map;
+  } catch (error) {
+    console.error("Error generating diagnostic answers:", error);
+    return {};
+  }
+}
+
 async function processQuestionsWithTags(questions: any[]) {
   if (!questions || !questions.length) return questions;
 
@@ -628,7 +691,7 @@ async function processQuestionsWithTags(questions: any[]) {
 
   const tagMap = await generateOptionTags(allLabels);
 
-  return await Promise.all(
+  const processedQuestions = await Promise.all(
     questions.map(async (q) => {
       let opts = Array.isArray(q.options) ? q.options : [];
       const originalOpts = [...opts];
@@ -770,6 +833,38 @@ async function processQuestionsWithTags(questions: any[]) {
       return { ...q, options: newOpts };
     }),
   );
+
+  // Generate diagnostic answers for all options
+  const allOptionsForDiagnostic: { label: string; workflow: string }[] = [];
+  processedQuestions.forEach((q) => {
+    if (q.options) {
+      q.options.forEach((o: any) => {
+        if (o.label && o.workflow) {
+          allOptionsForDiagnostic.push({
+            label: o.label,
+            workflow: o.workflow,
+          });
+        }
+      });
+    }
+  });
+
+  const diagnosticMap = await generateDiagnosticAnswers(
+    allOptionsForDiagnostic,
+  );
+
+  processedQuestions.forEach((q) => {
+    if (q.options) {
+      q.options.forEach((o: any) => {
+        const key = `${o.label}::${o.workflow}`;
+        if (diagnosticMap[key]) {
+          o.diagnostic_answer = diagnosticMap[key];
+        }
+      });
+    }
+  });
+
+  return processedQuestions;
 }
 
 // Auto-extract personas after crawling is complete
