@@ -697,6 +697,57 @@ async function processQuestionsWithTags(questions: any[]) {
         } catch {}
       }
 
+      // Assign workflows using deterministic rules
+      newOpts = newOpts.map((o: any) => {
+        const tags = Array.isArray(o.tags) ? o.tags : [];
+        let workflow = "education_path"; // Default
+
+        // Lead Options Rules
+        if (
+          tags.includes("critical_risk") ||
+          tags.includes("high_risk") ||
+          tags.includes("conversion_risk")
+        ) {
+          workflow = "ask_sales_question";
+        } else if (tags.includes("validated_flow")) {
+          workflow = "validation_path";
+        } else if (tags.includes("awareness_missing")) {
+          workflow = "education_path";
+        }
+
+        // Sales Options Rules (Overrides if specific conditions met)
+        // If option is part of a sales question (context inferred or if tags match sales specific logic)
+        // Here we apply sales logic generally as it's more specific
+        if (
+          tags.includes("critical_risk") ||
+          tags.includes("pipeline_leakage") ||
+          tags.includes("onboarding_dropoff")
+        ) {
+          workflow = "sales_alert";
+        } else if (
+          tags.includes("manual_scheduling") ||
+          tags.includes("scheduling_gap") ||
+          tags.includes("handoff_friction") ||
+          tags.includes("capacity_constraint")
+        ) {
+          workflow = "optimization_workflow";
+        } else if (
+          tags.includes("visibility_gap") ||
+          tags.includes("unknown_state")
+        ) {
+          workflow = "diagnostic_education";
+        } else if (tags.includes("stakeholder_coordination")) {
+          workflow = "role_clarification";
+        } else if (
+          tags.includes("validated_flow") ||
+          tags.includes("low_friction")
+        ) {
+          workflow = "validation_path";
+        }
+
+        return { ...o, workflow };
+      });
+
       if (newOpts.length < 2) {
         for (const orig of originalOpts) {
           if (newOpts.length >= 2) break;
@@ -708,6 +759,7 @@ async function processQuestionsWithTags(questions: any[]) {
               ...base,
               label,
               tags: ["unknown_state", "low_risk"],
+              workflow: "diagnostic_education", // Fallback workflow
             });
           }
         }
