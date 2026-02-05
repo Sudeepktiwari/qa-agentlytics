@@ -2466,6 +2466,59 @@ async function processBatch(req: NextRequest) {
     const pineconeVectors = db.collection("pinecone_vectors");
     const structuredSummaries = db.collection("structured_summaries");
 
+    const enrichStructuredSummaryWithQuestions = async (
+      summary: any,
+      pageText: string,
+    ) => {
+      if (!summary || !pageText || typeof summary !== "object") return summary;
+      const sections = Array.isArray(summary.sections) ? summary.sections : [];
+      if (!sections.length) return summary;
+      const blocks = parseSectionBlocks(pageText);
+      summary.sections = await Promise.all(
+        sections.map(async (sec: any, idx: number) => {
+          const name = String(sec?.sectionName || `Section ${idx + 1}`);
+          const sectionSummary = String(sec?.sectionSummary || "");
+          const block = blocks[idx] || { title: name, body: sectionSummary };
+          const sectionType = classifySectionType(
+            name,
+            sectionSummary,
+            String(block.body || ""),
+          );
+          const basePair = await refineSectionQuestions(
+            openai,
+            retryUrl,
+            String(summary?.pageType || "other"),
+            String(idx + 1),
+            name,
+            String(block.body || ""),
+            sectionSummary,
+            sectionType as any,
+            false,
+          );
+          const altPair = await refineSectionQuestions(
+            openai,
+            retryUrl,
+            String(summary?.pageType || "other"),
+            String(idx + 1),
+            name,
+            String(block.body || ""),
+            sectionSummary,
+            sectionType as any,
+            true,
+          );
+          const pairs = [basePair, altPair].filter(
+            (p) => p && typeof p === "object",
+          );
+          if (pairs.length) {
+            sec.leadQuestions = pairs.map((p: any) => p.lead).slice(0, 2);
+            sec.salesQuestions = pairs.map((p: any) => p.sales).slice(0, 2);
+          }
+          return sec;
+        }),
+      );
+      return normalizeStructuredSummary(summary);
+    };
+
     // Find the failed entry to get context (sitemapUrl)
     const failedEntry = await sitemapUrls.findOne({ adminId, url: retryUrl });
     if (!failedEntry) {
@@ -2617,6 +2670,10 @@ IMPORTANT REQUIREMENTS:
             try {
               const parsed = JSON.parse(structuredText);
               structuredSummary = normalizeStructuredSummary(parsed);
+              structuredSummary = await enrichStructuredSummaryWithQuestions(
+                structuredSummary,
+                text,
+              );
             } catch (parseError) {
               console.error(
                 `[Retry] Failed to parse structured summary JSON:`,
@@ -2628,6 +2685,10 @@ IMPORTANT REQUIREMENTS:
             const fallback = buildFallbackStructuredSummaryFromText(text);
             if (fallback) {
               structuredSummary = normalizeStructuredSummary(fallback);
+              structuredSummary = await enrichStructuredSummaryWithQuestions(
+                structuredSummary,
+                text,
+              );
               console.log(
                 `[Retry] Using fallback structured summary for ${retryUrl}`,
               );
