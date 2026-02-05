@@ -19,6 +19,10 @@ export default function WorkflowSection() {
   const [selectedSectionIndex, setSelectedSectionIndex] = useState<
     number | null
   >(null);
+  const [selectedDiagnostic, setSelectedDiagnostic] = useState<{
+    title: string;
+    answer: string;
+  } | null>(null);
   const [pageTypeFilter, setPageTypeFilter] = useState<string>("");
   const [loading, setLoading] = useState(true);
 
@@ -381,7 +385,26 @@ export default function WorkflowSection() {
                                                       (opt: any, i: number) => (
                                                         <li
                                                           key={i}
-                                                          className="text-sm bg-white p-2 rounded border border-slate-200 flex flex-wrap items-center justify-between gap-2"
+                                                          onClick={() => {
+                                                            if (
+                                                              opt?.diagnostic_answer
+                                                            ) {
+                                                              setSelectedDiagnostic(
+                                                                {
+                                                                  title:
+                                                                    opt.label ||
+                                                                    String(opt),
+                                                                  answer:
+                                                                    opt.diagnostic_answer,
+                                                                },
+                                                              );
+                                                            }
+                                                          }}
+                                                          className={`text-sm bg-white p-2 rounded border border-slate-200 flex flex-wrap items-center justify-between gap-2 ${
+                                                            opt?.diagnostic_answer
+                                                              ? "cursor-pointer hover:border-blue-400 hover:shadow-sm transition-all ring-1 ring-transparent hover:ring-blue-100"
+                                                              : ""
+                                                          }`}
                                                         >
                                                           <span className="text-slate-700">
                                                             {typeof opt ===
@@ -419,6 +442,14 @@ export default function WorkflowSection() {
                                                                   {opt.workflow}
                                                                 </span>
                                                               )}
+
+                                                            {/* Diagnostic Indicator */}
+                                                            {opt?.diagnostic_answer && (
+                                                              <span className="text-[10px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 flex items-center gap-1">
+                                                                <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                                                                View
+                                                              </span>
+                                                            )}
                                                           </div>
                                                         </li>
                                                       ),
@@ -491,7 +522,26 @@ export default function WorkflowSection() {
                                                       (opt: any, i: number) => (
                                                         <li
                                                           key={i}
-                                                          className="text-sm bg-white p-2 rounded border border-slate-200 flex flex-wrap items-center justify-between gap-2"
+                                                          onClick={() => {
+                                                            if (
+                                                              opt?.diagnostic_answer
+                                                            ) {
+                                                              setSelectedDiagnostic(
+                                                                {
+                                                                  title:
+                                                                    opt.label ||
+                                                                    String(opt),
+                                                                  answer:
+                                                                    opt.diagnostic_answer,
+                                                                },
+                                                              );
+                                                            }
+                                                          }}
+                                                          className={`text-sm bg-white p-2 rounded border border-slate-200 flex flex-wrap items-center justify-between gap-2 ${
+                                                            opt?.diagnostic_answer
+                                                              ? "cursor-pointer hover:border-green-400 hover:shadow-sm transition-all ring-1 ring-transparent hover:ring-green-100"
+                                                              : ""
+                                                          }`}
                                                         >
                                                           <span className="text-slate-700">
                                                             {typeof opt ===
@@ -529,6 +579,14 @@ export default function WorkflowSection() {
                                                                   {opt.workflow}
                                                                 </span>
                                                               )}
+
+                                                            {/* Diagnostic Indicator */}
+                                                            {opt?.diagnostic_answer && (
+                                                              <span className="text-[10px] text-green-600 bg-green-50 px-1.5 py-0.5 rounded border border-green-100 flex items-center gap-1">
+                                                                <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                                                                View
+                                                              </span>
+                                                            )}
                                                           </div>
                                                         </li>
                                                       ),
@@ -560,6 +618,44 @@ export default function WorkflowSection() {
               </div>
             );
           })}
+        </div>
+      )}
+      {selectedDiagnostic && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-xl shadow-lg max-w-lg w-full max-h-[80vh] flex flex-col overflow-hidden">
+            <div className="p-4 border-b border-slate-200 flex items-center justify-between">
+              <h3 className="font-semibold text-slate-800">
+                Diagnostic Answer
+              </h3>
+              <button
+                onClick={() => setSelectedDiagnostic(null)}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-4 overflow-y-auto">
+              <div className="mb-4 bg-slate-50 p-3 rounded border border-slate-200">
+                <span className="text-xs font-bold text-slate-500 uppercase">
+                  Selected Option
+                </span>
+                <p className="font-medium text-slate-800">
+                  {selectedDiagnostic.title}
+                </p>
+              </div>
+              <div className="prose prose-sm max-w-none text-slate-600 whitespace-pre-wrap">
+                {selectedDiagnostic.answer}
+              </div>
+            </div>
+            <div className="p-4 border-t border-slate-200 bg-slate-50 flex justify-end">
+              <button
+                onClick={() => setSelectedDiagnostic(null)}
+                className="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-medium hover:bg-slate-800"
+              >
+                Close
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

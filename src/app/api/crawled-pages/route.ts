@@ -53,6 +53,10 @@ function normalizeStructuredSummary(raw: any) {
                 : [],
               workflow:
                 typeof o.workflow === "string" ? o.workflow : "education_path",
+              diagnostic_answer:
+                typeof o.diagnostic_answer === "string"
+                  ? o.diagnostic_answer
+                  : undefined,
             };
           }
           const label = String(o || "");
@@ -102,6 +106,10 @@ function normalizeStructuredSummary(raw: any) {
                 typeof o.workflow === "string"
                   ? o.workflow
                   : "optimization_workflow",
+              diagnostic_answer:
+                typeof o.diagnostic_answer === "string"
+                  ? o.diagnostic_answer
+                  : undefined,
             };
           }
           const label = String(o || "");
