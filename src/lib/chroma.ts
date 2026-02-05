@@ -135,10 +135,17 @@ export async function deleteDocument(filename: string, adminId?: string) {
     }
     // @ts-ignore - deleteMany supports filter in v6 but types might be tricky
     await index.deleteMany(filter);
-    console.log(`[Pinecone] Deleted vectors for ${filename} using filter`);
+    console.log(
+      `[Pinecone] Deleted vectors for ${filename} using filter (adminId: ${
+        adminId || "none"
+      })`,
+    );
   } catch (err) {
-    console.warn("[Pinecone] Delete by filter failed, falling back to ID deletion:", err);
-    
+    console.warn(
+      "[Pinecone] Delete by filter failed, falling back to ID deletion:",
+      err,
+    );
+
     // Fallback: Delete by IDs tracked in MongoDB
     const match = adminId ? { filename, adminId } : { filename };
     const ids = await pineconeVectors
@@ -147,12 +154,107 @@ export async function deleteDocument(filename: string, adminId?: string) {
       .toArray();
     const vectorIds = ids.map((d) => (d as { vectorId: string }).vectorId);
     if (vectorIds.length > 0) {
-      await index.deleteMany(vectorIds);
+      console.log(
+        `[Pinecone] Fallback: Deleting ${vectorIds.length} vectors by ID...`,
+      );
+      const BATCH_SIZE = 1000;
+      for (let i = 0; i < vectorIds.length; i += BATCH_SIZE) {
+        const batch = vectorIds.slice(i, i + BATCH_SIZE);
+        try {
+          await index.deleteMany(batch);
+          console.log(
+            `[Pinecone] Deleted batch ${Math.floor(i / BATCH_SIZE) + 1} (${
+              batch.length
+            } vectors)`,
+          );
+        } catch (batchErr) {
+          console.error(
+            `[Pinecone] Error deleting batch ${
+              Math.floor(i / BATCH_SIZE) + 1
+            }:`,
+            batchErr,
+          );
+        }
+      }
+    } else {
+      console.warn(
+        `[Pinecone] No vectors found in MongoDB for filename: ${filename} (adminId: ${adminId})`,
+      );
     }
   }
 
   // 2. Delete from MongoDB
   const match = adminId ? { filename, adminId } : { filename };
+  await pineconeVectors.deleteMany(match);
+}
+
+export async function deleteChunksByUrls(urls: string[], adminId?: string) {
+  if (!urls || urls.length === 0) return;
+  const db = await getDb();
+  const pineconeVectors = db.collection("pinecone_vectors");
+
+  console.log(
+    `[Pinecone] Bulk deleting vectors for ${urls.length} URLs (adminId: ${
+      adminId || "none"
+    })...`,
+  );
+
+  // 1. Try deleting from Pinecone using metadata filter ($in)
+  try {
+    const filter: any = { filename: { $in: urls } };
+    if (adminId) {
+      filter.adminId = { $eq: adminId };
+    }
+    // @ts-ignore
+    await index.deleteMany(filter);
+    console.log(
+      `[Pinecone] Deleted vectors for ${urls.length} URLs using batch filter`,
+    );
+  } catch (err) {
+    console.warn(
+      "[Pinecone] Batch delete by filter failed, falling back to ID deletion:",
+      err,
+    );
+
+    // Fallback: Delete by IDs tracked in MongoDB
+    const match: any = { filename: { $in: urls } };
+    if (adminId) match.adminId = adminId;
+
+    const ids = await pineconeVectors
+      .find(match)
+      .project({ vectorId: 1, _id: 0 })
+      .toArray();
+    const vectorIds = ids.map((d) => (d as { vectorId: string }).vectorId);
+
+    if (vectorIds.length > 0) {
+      console.log(
+        `[Pinecone] Fallback: Deleting ${vectorIds.length} vectors by ID (batch)...`,
+      );
+      const BATCH_SIZE = 1000;
+      for (let i = 0; i < vectorIds.length; i += BATCH_SIZE) {
+        const batch = vectorIds.slice(i, i + BATCH_SIZE);
+        try {
+          await index.deleteMany(batch);
+          console.log(
+            `[Pinecone] Deleted batch ${Math.floor(i / BATCH_SIZE) + 1} (${
+              batch.length
+            } vectors)`,
+          );
+        } catch (batchErr) {
+          console.error(
+            `[Pinecone] Error deleting batch ${
+              Math.floor(i / BATCH_SIZE) + 1
+            }:`,
+            batchErr,
+          );
+        }
+      }
+    }
+  }
+
+  // 2. Delete from MongoDB
+  const match: any = { filename: { $in: urls } };
+  if (adminId) match.adminId = adminId;
   await pineconeVectors.deleteMany(match);
 }
 

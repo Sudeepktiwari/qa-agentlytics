@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { bookingService } from "@/services/bookingService";
 import { verifyApiKey, verifyAdminTokenFromCookie } from "@/lib/auth";
-import { deleteChunksByUrl } from "@/lib/chroma";
+import { deleteChunksByUrls } from "@/lib/chroma";
 import { MongoClient, ObjectId } from "mongodb";
 
 /**
@@ -27,8 +27,11 @@ export async function POST(request: NextRequest) {
 
     if (!action || (!bookingIds && !pageIds)) {
       return NextResponse.json(
-        { success: false, error: "Action and target IDs (bookingIds or pageIds) are required" },
-        { status: 400 }
+        {
+          success: false,
+          error: "Action and target IDs (bookingIds or pageIds) are required",
+        },
+        { status: 400 },
       );
     }
 
@@ -44,12 +47,12 @@ export async function POST(request: NextRequest) {
                 success: false,
                 error: "Status is required for updateStatus action",
               },
-              { status: 400 }
+              { status: 400 },
             );
           }
           result = await bookingService.bulkUpdateStatus(
             bookingIds,
-            updates.status
+            updates.status,
           );
           message = `Updated ${result} bookings to ${updates.status}`;
         }
@@ -67,10 +70,13 @@ export async function POST(request: NextRequest) {
         } else if (pageIds && pageIds.length > 0) {
           // Strict auth check for page deletion to ensure safe vector cleanup
           if (!adminId) {
-             return NextResponse.json(
-               { success: false, error: "Unauthorized: Admin ID required for page deletion" },
-               { status: 401 }
-             );
+            return NextResponse.json(
+              {
+                success: false,
+                error: "Unauthorized: Admin ID required for page deletion",
+              },
+              { status: 401 },
+            );
           }
 
           // Bulk delete crawled pages
@@ -86,33 +92,48 @@ export async function POST(request: NextRequest) {
             const errors: string[] = [];
 
             // Convert string IDs to ObjectId
-            const objectIds = pageIds.map((id: string) => {
-              try {
-                return new ObjectId(id);
-              } catch {
-                return null;
-              }
-            }).filter((id: any) => id !== null);
+            const objectIds = pageIds
+              .map((id: string) => {
+                try {
+                  return new ObjectId(id);
+                } catch {
+                  return null;
+                }
+              })
+              .filter((id: any) => id !== null);
 
             // Find pages to get their URLs before deletion
             const query: any = { _id: { $in: objectIds }, adminId };
             const pagesToDelete = await crawledPages.find(query).toArray();
 
+            // OPTIMIZATION: Bulk delete vectors for all pages at once
+            const urlsToDelete = pagesToDelete
+              .map((p) => p.url)
+              .filter(
+                (url) => typeof url === "string" && url.length > 0,
+              ) as string[];
+
+            if (urlsToDelete.length > 0) {
+              try {
+                await deleteChunksByUrls(urlsToDelete, adminId);
+              } catch (vectorErr) {
+                console.error("Failed to bulk delete vectors:", vectorErr);
+                // We continue to delete pages from MongoDB to ensure eventual consistency
+                // The vectors might be orphaned but better than UI mismatch
+              }
+            }
+
             for (const page of pagesToDelete) {
               try {
-                // CRITICAL: Delete vectors from Pinecone and MongoDB FIRST
-                // This ensures we don't lose the link to the vectors if MongoDB page deletion succeeds but vector deletion fails/crashes
-                if (page.url) {
-                  await deleteChunksByUrl(page.url, adminId);
-                  
-                  // Delete related metadata
-                  await structuredSummaries.deleteOne({ adminId, url: page.url });
-                  await sitemapUrls.deleteOne({ adminId, url: page.url });
-                }
+                // Vectors are already deleted in bulk above
+
+                // Delete related metadata
+                await structuredSummaries.deleteOne({ adminId, url: page.url });
+                await sitemapUrls.deleteOne({ adminId, url: page.url });
 
                 // Delete the page itself from MongoDB
                 await crawledPages.deleteOne({ _id: page._id });
-                
+
                 deleteCount++;
               } catch (err) {
                 console.error(`Error deleting page ${page._id}:`, err);
@@ -136,7 +157,7 @@ export async function POST(request: NextRequest) {
             success: false,
             error: "Invalid action. Supported: updateStatus, delete",
           },
-          { status: 400 }
+          { status: 400 },
         );
     }
 
@@ -155,7 +176,7 @@ export async function POST(request: NextRequest) {
             ? error.message
             : "Failed to perform bulk action",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
