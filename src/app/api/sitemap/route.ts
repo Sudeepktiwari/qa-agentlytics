@@ -615,7 +615,6 @@ Example:
 async function processQuestionsWithTags(questions: any[]) {
   if (!questions || !questions.length) return questions;
 
-  // 1. Collect all options
   const allLabels: string[] = [];
   questions.forEach((q) => {
     if (q && Array.isArray(q.options)) {
@@ -625,59 +624,100 @@ async function processQuestionsWithTags(questions: any[]) {
       });
     }
   });
-
   if (allLabels.length === 0) return questions;
 
-  // 2. Generate tags
   const tagMap = await generateOptionTags(allLabels);
 
-  // 3. Apply tags and filter
-  return questions.map((q) => {
-    let opts = Array.isArray(q.options) ? q.options : [];
-    const originalOpts = [...opts];
+  return await Promise.all(
+    questions.map(async (q) => {
+      let opts = Array.isArray(q.options) ? q.options : [];
+      const originalOpts = [...opts];
+      const invalid: string[] = [];
 
-    // Map to tagged options or null
-    let newOpts = opts
-      .map((o: any) => {
-        const label = typeof o === "string" ? o : o.label;
-        const tagged = tagMap[label];
+      let newOpts = opts
+        .map((o: any) => {
+          const label = typeof o === "string" ? o : o.label;
+          const tagged = tagMap[label];
+          if (!tagged) {
+            invalid.push(label);
+            return null;
+          }
+          const base = typeof o === "object" ? o : { label };
+          return { ...base, label, tags: tagged.tags };
+        })
+        .filter((o: any) => o !== null);
 
-        if (!tagged) return null; // Filter out if rejected by AI
-
-        const base = typeof o === "object" ? o : { label };
-        return {
-          ...base,
-          label: label, // ensure label is set
-          tags: tagged.tags,
-        };
-      })
-      .filter((o: any) => o !== null);
-
-    // 4. Enforce minimum 2 options (Fallback)
-    if (newOpts.length < 2) {
-      // Restore missing options from original until we have 2
-      for (const orig of originalOpts) {
-        if (newOpts.length >= 2) break;
-        const label = typeof orig === "string" ? orig : orig.label;
-        const exists = newOpts.find((n: any) => n.label === label);
-        if (!exists) {
-          const base = typeof orig === "object" ? orig : { label };
-          newOpts.push({
-            ...base,
-            label,
-            tags: ["unknown_state", "low_risk"], // Fallback tags
+      if (invalid.length) {
+        try {
+          const existingLabels = newOpts.map((o: any) => o.label);
+          const resp = await openai.chat.completions.create({
+            model: "gpt-4o-mini",
+            response_format: { type: "json_object" },
+            temperature: 0.1,
+            messages: [
+              {
+                role: "system",
+                content:
+                  "Rewrite options into valid stateful options using ONLY the allowed taxonomy. Each output must include a label and exactly two tags: primary (problem/readiness) and secondary (risk/modifier). Remove any that cannot be made valid. Do NOT generate options that are the same or semantically similar to the 'existingOptions' provided. Primary: manual_scheduling, scheduling_gap, onboarding_delay, onboarding_dropoff, pipeline_leakage, inconsistent_process, handoff_friction, visibility_gap, no_show_risk, late_engagement, stakeholder_coordination, capacity_constraint, validated_flow, optimization_ready, awareness_missing, unknown_state, low_friction. Secondary: low_risk, conversion_risk, high_risk, critical_risk, validated_flow, optimization_ready, awareness_missing.",
+              },
+              {
+                role: "user",
+                content: JSON.stringify({
+                  question: String(q?.question || ""),
+                  invalidOptions: invalid,
+                  existingOptions: existingLabels,
+                }),
+              },
+            ],
           });
+          const content = resp.choices[0]?.message?.content || "{}";
+          const data = JSON.parse(content);
+          const regenMap: Record<string, { label: string; tags: string[] }> =
+            {};
+          if (Array.isArray(data.results)) {
+            data.results.forEach((item: any) => {
+              if (
+                item &&
+                item.source &&
+                item.label &&
+                Array.isArray(item.tags) &&
+                item.tags.length === 2
+              ) {
+                regenMap[item.source] = {
+                  label: String(item.label),
+                  tags: item.tags,
+                };
+              }
+            });
+          }
+          invalid.forEach((source) => {
+            const r = regenMap[source];
+            if (r) newOpts.push({ label: r.label, tags: r.tags });
+          });
+        } catch {}
+      }
+
+      if (newOpts.length < 2) {
+        for (const orig of originalOpts) {
+          if (newOpts.length >= 2) break;
+          const label = typeof orig === "string" ? orig : orig.label;
+          const exists = newOpts.find((n: any) => n.label === label);
+          if (!exists) {
+            const base = typeof orig === "object" ? orig : { label };
+            newOpts.push({
+              ...base,
+              label,
+              tags: ["unknown_state", "low_risk"],
+            });
+          }
         }
       }
-    }
 
-    // 5. Enforce max 4 options
-    if (newOpts.length > 4) {
-      newOpts = newOpts.slice(0, 4);
-    }
+      if (newOpts.length > 4) newOpts = newOpts.slice(0, 4);
 
-    return { ...q, options: newOpts };
-  });
+      return { ...q, options: newOpts };
+    }),
+  );
 }
 
 // Auto-extract personas after crawling is complete
