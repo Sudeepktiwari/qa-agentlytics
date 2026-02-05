@@ -760,52 +760,48 @@ async function processQuestionsWithTags(questions: any[]) {
         } catch {}
       }
 
-      // Assign workflows using deterministic rules
+      // Assign workflows using deterministic rules (Strictly mapped to 4 diagnostic templates)
       newOpts = newOpts.map((o: any) => {
         const tags = Array.isArray(o.tags) ? o.tags : [];
-        let workflow = "education_path"; // Default
+        let workflow = "diagnostic_education"; // Default to education/uncertainty
 
-        // Lead Options Rules
-        if (
-          tags.includes("critical_risk") ||
-          tags.includes("high_risk") ||
-          tags.includes("conversion_risk")
-        ) {
-          workflow = "ask_sales_question";
-        } else if (tags.includes("validated_flow")) {
-          workflow = "validation_path";
-        } else if (tags.includes("awareness_missing")) {
-          workflow = "education_path";
-        }
-
-        // Sales Options Rules (Overrides if specific conditions met)
-        // If option is part of a sales question (context inferred or if tags match sales specific logic)
-        // Here we apply sales logic generally as it's more specific
+        // Check for specific tags to determine workflow
+        // Priority 1: Critical Risks -> sales_alert
         if (
           tags.includes("critical_risk") ||
           tags.includes("pipeline_leakage") ||
-          tags.includes("onboarding_dropoff")
+          tags.includes("onboarding_dropoff") ||
+          tags.includes("high_risk") ||
+          tags.includes("conversion_risk")
         ) {
           workflow = "sales_alert";
-        } else if (
+        }
+        // Priority 2: Friction points -> optimization_workflow
+        else if (
           tags.includes("manual_scheduling") ||
           tags.includes("scheduling_gap") ||
           tags.includes("handoff_friction") ||
-          tags.includes("capacity_constraint")
+          tags.includes("capacity_constraint") ||
+          tags.includes("stakeholder_coordination") ||
+          tags.includes("inconsistent_process")
         ) {
           workflow = "optimization_workflow";
-        } else if (
+        }
+        // Priority 3: Validated/Good states -> validation_path
+        else if (
+          tags.includes("validated_flow") ||
+          tags.includes("low_friction") ||
+          tags.includes("optimization_ready")
+        ) {
+          workflow = "validation_path";
+        }
+        // Priority 4: Education/Unknown (Default) -> diagnostic_education
+        else if (
+          tags.includes("awareness_missing") ||
           tags.includes("visibility_gap") ||
           tags.includes("unknown_state")
         ) {
           workflow = "diagnostic_education";
-        } else if (tags.includes("stakeholder_coordination")) {
-          workflow = "role_clarification";
-        } else if (
-          tags.includes("validated_flow") ||
-          tags.includes("low_friction")
-        ) {
-          workflow = "validation_path";
         }
 
         return { ...o, workflow };
@@ -4382,10 +4378,7 @@ export async function DELETE(req: NextRequest) {
       .project({ url: 1 })
       .toArray();
 
-    const result = await pages.deleteMany({ adminId, filename: sitemapUrl });
-    deleteCount = result.deletedCount || 0;
-
-    // Delete chunks for each page found
+    // Delete chunks for each page found FIRST (Critical for data consistency)
     for (const p of pagesToDelete) {
       if (p.url) {
         await deleteChunksByUrl(p.url, adminId);
@@ -4393,11 +4386,18 @@ export async function DELETE(req: NextRequest) {
     }
     // Also try to delete by filename in case some were stored that way
     await deleteChunksByFilename(sitemapUrl, adminId);
+
+    // Then delete the pages from MongoDB
+    const result = await pages.deleteMany({ adminId, filename: sitemapUrl });
+    deleteCount = result.deletedCount || 0;
   } else if (url) {
     // Delete a single page
+    // Delete vectors FIRST
+    await deleteChunksByUrl(url, adminId);
+
+    // Then delete from MongoDB
     const result = await pages.deleteMany({ adminId, url });
     deleteCount = result.deletedCount || 0;
-    await deleteChunksByUrl(url, adminId);
   }
 
   return NextResponse.json({ success: true, deleted: deleteCount });

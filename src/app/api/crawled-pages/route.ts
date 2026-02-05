@@ -587,6 +587,9 @@ export async function DELETE(request: NextRequest) {
     await Promise.all(
       targets.map(async (targetUrl) => {
         try {
+          // Delete from Pinecone and Mongo vector tracking FIRST
+          await deleteChunksByUrl(targetUrl, adminId);
+
           // Delete from MongoDB
           const result = await collection.deleteOne({
             adminId,
@@ -602,9 +605,6 @@ export async function DELETE(request: NextRequest) {
           } else {
             deletedCount++;
           }
-
-          // Delete from Pinecone and Mongo vector tracking
-          await deleteChunksByUrl(targetUrl, adminId);
         } catch (err) {
           console.error(`Error deleting ${targetUrl}:`, err);
           errors.push(
