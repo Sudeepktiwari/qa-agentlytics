@@ -470,6 +470,16 @@ const CrawledPagesSection: React.FC<CrawledPagesSectionProps> = ({
                           </button>
                         )}
 
+                        {page.status !== "failed" && (
+                          <button
+                            onClick={() => onRetryPage(page)}
+                            className="flex-none p-2 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all"
+                            title="Recrawl page"
+                          >
+                            <RefreshCw size={16} />
+                          </button>
+                        )}
+
                         <button
                           onClick={() => onDeleteCrawledPage(page)}
                           className="flex-none p-2 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all"

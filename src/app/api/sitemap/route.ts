@@ -2464,6 +2464,7 @@ async function processBatch(req: NextRequest) {
     const sitemapUrls = db.collection("sitemap_urls");
     const pages = db.collection("crawled_pages");
     const pineconeVectors = db.collection("pinecone_vectors");
+    const structuredSummaries = db.collection("structured_summaries");
 
     // Find the failed entry to get context (sitemapUrl)
     const failedEntry = await sitemapUrls.findOne({ adminId, url: retryUrl });
@@ -2486,6 +2487,11 @@ async function processBatch(req: NextRequest) {
     );
 
     try {
+      await pages.deleteMany({ adminId, url: retryUrl });
+      await structuredSummaries.deleteMany({ adminId, url: retryUrl });
+      await pineconeVectors.deleteMany({ adminId, filename: retryUrl });
+      await deleteChunksByUrl(retryUrl, adminId);
+
       console.log(`[Retry] Extracting text from: ${retryUrl}`);
       const text = await extractTextFromUrl(retryUrl);
 
@@ -2635,7 +2641,6 @@ IMPORTANT REQUIREMENTS:
         }
       }
 
-      // Store page data
       const pageData: any = {
         adminId,
         url: retryUrl,
@@ -2646,11 +2651,26 @@ IMPORTANT REQUIREMENTS:
       };
 
       if (structuredSummary) {
-        pageData.structuredSummary = structuredSummary;
         pageData.summaryGeneratedAt = new Date();
       }
 
-      await pages.insertOne(pageData);
+      const insertResult = await pages.insertOne(pageData);
+      const pageId = insertResult.insertedId;
+      if (structuredSummary && pageId) {
+        await structuredSummaries.updateOne(
+          { adminId, pageId },
+          {
+            $set: {
+              adminId,
+              pageId,
+              url: retryUrl,
+              structuredSummary,
+              summaryGeneratedAt: new Date(),
+            },
+          },
+          { upsert: true },
+        );
+      }
 
       // Mark as crawled
       await sitemapUrls.updateOne(
