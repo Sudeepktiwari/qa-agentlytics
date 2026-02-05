@@ -546,6 +546,140 @@ ${variant ? "variant_directive: Generate an alternative question within the same
   }
 }
 
+async function generateOptionTags(optionTexts: string[]) {
+  if (!optionTexts || optionTexts.length === 0) return {};
+  const uniqueOptions = Array.from(
+    new Set(optionTexts.filter((t) => t && t.trim().length > 0)),
+  );
+  if (uniqueOptions.length === 0) return {};
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      response_format: { type: "json_object" },
+      temperature: 0.1,
+      messages: [
+        {
+          role: "system",
+          content: `You are generating normalized tags for selectable options.
+RULES:
+- Each option must output 2 tags: a problem/readiness tag + a risk/readiness modifier.
+- Use ONLY the allowed tag taxonomy below.
+- Tags must be snake_case, stable, and normalized.
+- If an option expresses no problem, it must express awareness/readiness.
+- If neither is present, do not include it in the output.
+
+TAXONOMY:
+Primary (Problem/Readiness): manual_scheduling, scheduling_gap, onboarding_delay, onboarding_dropoff, pipeline_leakage, inconsistent_process, handoff_friction, visibility_gap, no_show_risk, late_engagement, stakeholder_coordination, capacity_constraint, validated_flow, optimization_ready, awareness_missing, unknown_state, low_friction
+Secondary (Risk/Modifier): low_risk, conversion_risk, high_risk, critical_risk, validated_flow, optimization_ready, awareness_missing
+
+INPUT: List of option texts.
+OUTPUT: JSON object with "results" array containing objects with "label" and "tags".
+Example:
+{
+  "results": [
+    { "label": "Option Text", "tags": ["primary_tag", "modifier_tag"] }
+  ]
+}`,
+        },
+        {
+          role: "user",
+          content: JSON.stringify(uniqueOptions),
+        },
+      ],
+    });
+
+    const content = response.choices[0]?.message?.content || "{}";
+    const data = JSON.parse(content);
+    const map: Record<string, { label: string; tags: string[] }> = {};
+
+    if (Array.isArray(data.results)) {
+      data.results.forEach((item: any) => {
+        if (
+          item &&
+          item.label &&
+          Array.isArray(item.tags) &&
+          item.tags.length === 2
+        ) {
+          map[item.label] = { label: item.label, tags: item.tags };
+        }
+      });
+    }
+    return map;
+  } catch (error) {
+    console.error("Error generating option tags:", error);
+    return {};
+  }
+}
+
+async function processQuestionsWithTags(questions: any[]) {
+  if (!questions || !questions.length) return questions;
+
+  // 1. Collect all options
+  const allLabels: string[] = [];
+  questions.forEach((q) => {
+    if (q && Array.isArray(q.options)) {
+      q.options.forEach((o: any) => {
+        const label = typeof o === "string" ? o : o.label;
+        if (label) allLabels.push(label);
+      });
+    }
+  });
+
+  if (allLabels.length === 0) return questions;
+
+  // 2. Generate tags
+  const tagMap = await generateOptionTags(allLabels);
+
+  // 3. Apply tags and filter
+  return questions.map((q) => {
+    let opts = Array.isArray(q.options) ? q.options : [];
+    const originalOpts = [...opts];
+
+    // Map to tagged options or null
+    let newOpts = opts
+      .map((o: any) => {
+        const label = typeof o === "string" ? o : o.label;
+        const tagged = tagMap[label];
+
+        if (!tagged) return null; // Filter out if rejected by AI
+
+        const base = typeof o === "object" ? o : { label };
+        return {
+          ...base,
+          label: label, // ensure label is set
+          tags: tagged.tags,
+        };
+      })
+      .filter((o: any) => o !== null);
+
+    // 4. Enforce minimum 2 options (Fallback)
+    if (newOpts.length < 2) {
+      // Restore missing options from original until we have 2
+      for (const orig of originalOpts) {
+        if (newOpts.length >= 2) break;
+        const label = typeof orig === "string" ? orig : orig.label;
+        const exists = newOpts.find((n: any) => n.label === label);
+        if (!exists) {
+          const base = typeof orig === "object" ? orig : { label };
+          newOpts.push({
+            ...base,
+            label,
+            tags: ["unknown_state", "low_risk"], // Fallback tags
+          });
+        }
+      }
+    }
+
+    // 5. Enforce max 4 options
+    if (newOpts.length > 4) {
+      newOpts = newOpts.slice(0, 4);
+    }
+
+    return { ...q, options: newOpts };
+  });
+}
+
 // Auto-extract personas after crawling is complete
 import { generateBantFromContent } from "@/lib/bant-generation";
 
@@ -2512,6 +2646,21 @@ async function processBatch(req: NextRequest) {
           if (pairs.length) {
             sec.leadQuestions = pairs.map((p: any) => p.lead).slice(0, 2);
             sec.salesQuestions = pairs.map((p: any) => p.sales).slice(0, 2);
+
+            // Apply standalone tag generation
+            try {
+              sec.leadQuestions = await processQuestionsWithTags(
+                sec.leadQuestions,
+              );
+              sec.salesQuestions = await processQuestionsWithTags(
+                sec.salesQuestions,
+              );
+            } catch (tagError) {
+              console.error(
+                `[Retry] Tag generation failed for section ${idx}:`,
+                tagError,
+              );
+            }
           }
           return sec;
         }),
@@ -3420,6 +3569,23 @@ IMPORTANT REQUIREMENTS:
                                     optionFlows: ensuredFlows,
                                   };
                                 });
+
+                              // Apply standalone tag generation
+                              try {
+                                sec.leadQuestions =
+                                  await processQuestionsWithTags(
+                                    sec.leadQuestions,
+                                  );
+                                sec.salesQuestions =
+                                  await processQuestionsWithTags(
+                                    sec.salesQuestions,
+                                  );
+                              } catch (e) {
+                                console.error(
+                                  `[Crawl] Tag generation failed for ${url} section ${idx}`,
+                                  e,
+                                );
+                              }
                             }
                             return sec;
                           },
@@ -3568,6 +3734,21 @@ IMPORTANT REQUIREMENTS:
                                 workflow: "diagnostic_education",
                               };
                             });
+
+                          // Apply standalone tag generation
+                          try {
+                            sec.leadQuestions = await processQuestionsWithTags(
+                              sec.leadQuestions,
+                            );
+                            sec.salesQuestions = await processQuestionsWithTags(
+                              sec.salesQuestions,
+                            );
+                          } catch (e) {
+                            console.error(
+                              `[Crawl] Tag generation failed for ${url} section ${idx}`,
+                              e,
+                            );
+                          }
                         }
                         return sec;
                       },
