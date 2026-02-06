@@ -134,6 +134,19 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Filter by workflow status if requested
+    const workflowOnly =
+      request.nextUrl.searchParams.get("workflowOnly") === "true";
+    if (workflowOnly) {
+      allPages = allPages.filter(
+        (p) =>
+          p.hasStructuredSummary &&
+          p.structuredSummary &&
+          Array.isArray(p.structuredSummary.sections) &&
+          p.structuredSummary.sections.length > 0,
+      );
+    }
+
     const total = allPages.length;
     const startIndex = (page - 1) * pageSize;
     const pagedPages =

@@ -45,6 +45,7 @@ export default function WorkflowSection() {
       const query = new URLSearchParams();
       query.set("page", String(targetPage));
       query.set("pageSize", String(pagePageSize));
+      query.set("workflowOnly", "true");
       if (targetSearch.trim().length > 0) {
         query.set("search", targetSearch.trim());
       }
@@ -53,15 +54,9 @@ export default function WorkflowSection() {
       const pagesData = await pagesRes.json();
 
       if (pagesRes.ok) {
-        const pages =
-          (pagesData.pages || []).filter(
-            (p: any) =>
-              p &&
-              p.hasStructuredSummary &&
-              p.structuredSummary &&
-              Array.isArray(p.structuredSummary.sections) &&
-              p.structuredSummary.sections.length > 0,
-          ) || [];
+        // Data is already filtered by backend
+        const pages = pagesData.pages || [];
+
         const filtered =
           pageTypeFilter && pageTypeFilter.length > 0
             ? pages.filter(
@@ -70,8 +65,10 @@ export default function WorkflowSection() {
                   pageTypeFilter.toLowerCase(),
               )
             : pages;
+
         setCrawledPages(filtered);
-        setPageTotal(filtered.length || 0);
+        // Use total from backend, or fallback to length if not provided (though backend should provide it)
+        setPageTotal(pagesData.total || filtered.length || 0);
         setPagePage(targetPage);
         setPageSearch(targetSearch);
         setSelectedPageIndex(null);
