@@ -474,19 +474,10 @@ async function refineSectionQuestions(
   sectionText: string,
   sectionSummary: string,
   sectionType: "hero" | "availability" | "roi" | "security",
-  strategy: "intent_process" | "urgency_outcome",
+  variant: boolean,
 ) {
   try {
     const keywords = extractKeywordsFromText(sectionText);
-    const strategyInstructions =
-      strategy === "intent_process"
-        ? `STRATEGY: INTENT & PROCESS
-1. LEAD QUESTION must focus on INTENT/MOTIVATION (e.g., "What prompted you to explore...?", "What problem are you solving?").
-2. SALES QUESTION must focus on CURRENT PROCESS (e.g., "How do you currently handle...?", "What is your current workflow?").`
-        : `STRATEGY: URGENCY & OUTCOME
-1. LEAD QUESTION must focus on URGENCY/TIMELINE (e.g., "How soon are you looking to...?", "What is your timeframe?").
-2. SALES QUESTION must focus on DESIRED OUTCOME (e.g., "What is your primary goal...?", "What metric matters most?").`;
-
     const resp = await openaiClient.chat.completions.create({
       model: "gpt-4o-mini",
       response_format: { type: "json_object" },
@@ -496,19 +487,20 @@ async function refineSectionQuestions(
         {
           role: "system",
           content:
-            "You are an AI chatbot integrated on a website to ask generated leads and sales questions when user seeing a specific section. You are generating deterministic conversation configuration for a diagnostic sales assistant. Do not pitch, sell, or use CTAs. Keep writing concise and factual. Return ONLY valid JSON.",
+            "You are generating deterministic conversation configuration for a diagnostic sales assistant. Do not pitch, sell, or use CTAs. Keep writing concise and factual. Return ONLY valid JSON.",
         },
         {
           role: "user",
           content: `Generate Lead and Sales questions with options for the given section.
 Follow these rules exactly:
 
-${strategyInstructions}
-
 1) Question Requirements
-- Use the provided context (heading, summary, keywords) to make the questions specific to the section's topic.
-- Do NOT hallucinate compliance/security topics unless the section explicitly discusses them.
-- If the section is generic (e.g. "Hero"), stick to the core value proposition.
+- Lead must match section intent:
+  - Hero → scheduling friction
+  - Availability → availability rules & constraints
+  - ROI → desired business outcome
+  - Security → compliance & data governance
+- Sales must be the next logical diagnostic step for the same intent.
 
 2) Option Requirements
 Each option must be an object:
@@ -522,11 +514,12 @@ Each option must be an object:
 - optimization_workflow, validation_path, education_path, diagnostic_education, sales_alert, role_clarification
 
 Workflow decision logic:
-- High Urgency/Intent → sales_alert
-- Ready for Optimization/Sophisticated → validation_path
-- Low Awareness/Early Research → diagnostic_education
-- Confusion/Unknown → education_path
-- Wrong Persona → role_clarification
+- Problem → diagnostic_education
+- Desired outcome → optimization_workflow
+- Advanced user → validation_path
+- Confusion → education_path
+- Security/compliance risk → sales_alert
+- Wrong persona → role_clarification
 
 5) Final Output JSON ONLY:
 {
@@ -542,6 +535,7 @@ section_heading: ${sectionName}
 section_summary: ${sectionSummary}
 section_type: ${sectionType}
 keywords_in_section: ${JSON.stringify(keywords)}
+${variant ? "variant_directive: Generate an alternative question that focuses on a specific feature, capability, or keyword mentioned in the section text. Do NOT ask about timeline, urgency, or implementation stage." : ""}
 `,
         },
       ],
@@ -2790,7 +2784,7 @@ async function processBatch(req: NextRequest) {
             String(block.body || ""),
             sectionSummary,
             sectionType as any,
-            "intent_process",
+            false,
           );
           const altPair = await refineSectionQuestions(
             openai,
@@ -2801,7 +2795,7 @@ async function processBatch(req: NextRequest) {
             String(block.body || ""),
             sectionSummary,
             sectionType as any,
-            "urgency_outcome",
+            true,
           );
           const pairs = [basePair, altPair].filter(
             (p) => p && typeof p === "object",
@@ -2896,7 +2890,7 @@ async function processBatch(req: NextRequest) {
                 {
                   role: "system",
                   content:
-                    "You are an AI chatbot integrated on a website to ask generated leads and sales questions when user seeing a specific section. You are an expert web page analyzer. Your goal is to deconstruct a web page into its distinct logical sections based on the provided [SECTION N] markers and extract key business intelligence for EACH section.\n\nFor EACH section detected, generate:\n1. A Section Title (inferred from content).\n2. EXACTLY TWO Lead Questions (Problem Recognition) with options mapping to customer states/risks.\n3. EXACTLY TWO Sales Questions (Diagnostic) with options mapping to root causes.\n4. For each Sales Question, generate a specific 'Option Flow' for EACH option, containing a Diagnostic Answer, Follow-Up Question, Feature Mapping, and Loop Closure.\n\nReturn ONLY a valid JSON object. Do not include markdown.",
+                    "You are an expert web page analyzer. Your goal is to deconstruct a web page into its distinct logical sections based on the provided [SECTION N] markers and extract key business intelligence for EACH section.\n\nFor EACH section detected, generate:\n1. A Section Title (inferred from content).\n2. EXACTLY TWO Lead Questions (Problem Recognition) with options mapping to customer states/risks.\n3. EXACTLY TWO Sales Questions (Diagnostic) with options mapping to root causes.\n4. For each Sales Question, generate a specific 'Option Flow' for EACH option, containing a Diagnostic Answer, Follow-Up Question, Feature Mapping, and Loop Closure.\n\nReturn ONLY a valid JSON object. Do not include markdown.",
                 },
                 {
                   role: "user",
@@ -3073,34 +3067,36 @@ IMPORTANT REQUIREMENTS:
             }),
           );
 
-          // Prepare metadata for addChunks
-          const metadata = chunks.map((chunk, i) => ({
-            filename: retryUrl,
-            adminId,
-            chunkIndex: i,
-            url: retryUrl,
-            sitemapUrl: sitemapUrlContext,
+          const vectors = chunks.map((chunk, i) => ({
+            id: `${retryUrl}-${i}`,
+            values: embeddings[i],
+            metadata: {
+              url: retryUrl,
+              text: chunk,
+              chunkIndex: i,
+              adminId,
+              sitemapUrl: sitemapUrlContext,
+              createdAt: new Date().toISOString(),
+            },
           }));
 
-          console.log(`[Retry] Cleaning up old vectors for ${retryUrl}...`);
-          await deleteChunksByUrl(retryUrl, adminId);
+          await index.upsert(vectors);
 
-          console.log(`[Retry] Upserting ${embeddings.length} chunks...`);
-          await addChunks(chunks, embeddings, metadata);
+          // Backup vectors to MongoDB
+          await pineconeVectors.deleteMany({ adminId, filename: retryUrl });
+          const vectorDocs = vectors.map((v) => ({
+            adminId,
+            vectorId: v.id,
+            filename: retryUrl,
+            sitemapUrl: sitemapUrlContext,
+            createdAt: new Date(),
+          }));
+          if (vectorDocs.length > 0) {
+            await pineconeVectors.insertMany(vectorDocs);
+          }
         } catch (embedError) {
           console.error(`[Retry] Error generating embeddings:`, embedError);
         }
-      }
-
-      // Generate diagnostic answers for the retried page
-      try {
-        console.log(`[Retry] Generating diagnostic answers for ${retryUrl}...`);
-        await autoGenerateDiagnosticAnswers(adminId, retryUrl);
-      } catch (diagError) {
-        console.error(
-          `[Retry] Error generating diagnostic answers:`,
-          diagError,
-        );
       }
 
       return NextResponse.json({
@@ -3510,7 +3506,7 @@ IMPORTANT REQUIREMENTS:
                     {
                       role: "system",
                       content:
-                        "You are an expert web page analyzer. Your goal is to deconstruct a web page into its distinct logical sections based on the provided [SECTION N] markers and extract key business intelligence for EACH section.\n\nFor EACH section detected, generate:\n1. A Section Title (inferred from content).\n2. EXACTLY ONE Lead Question (Problem Recognition) with options mapping to customer states/risks.\n3. EXACTLY ONE Sales Question (Diagnostic) with options mapping to root causes.\n4. For the Sales Question, generate a specific 'Option Flow' for EACH option, containing a Diagnostic Answer, Follow-Up Question, Feature Mapping, and Loop Closure.\n\nReturn ONLY a valid JSON object. Do not include markdown.",
+                        "You are an expert web page analyzer. Your goal is to deconstruct a web page into its distinct logical sections based on the provided [SECTION N] markers and extract key business intelligence for EACH section.\n\nFor EACH section detected, generate:\n1. A Section Title (inferred from content).\n2. EXACTLY TWO Lead Questions (Problem Recognition) with options mapping to customer states/risks.\n3. EXACTLY TWO Sales Questions (Diagnostic) with options mapping to root causes.\n4. For each Sales Question, generate a specific 'Option Flow' for EACH option, containing a Diagnostic Answer, Follow-Up Question, Feature Mapping, and Loop Closure.\n\nReturn ONLY a valid JSON object. Do not include markdown.",
                     },
                     {
                       role: "user",
@@ -3532,6 +3528,12 @@ Extract and return a JSON object with this exact structure:
           "options": ["Option 1", "Option 2", "Option 3", "Option 4"],
           "tags": ["tag_for_opt1", "tag_for_opt2", "tag_for_opt3", "tag_for_opt4"],
           "workflow": "ask_sales_question|educational_insight|validation"
+        },
+        {
+          "question": "Feature/Keyword Question (e.g., How do you handle [Specific Feature]...?)",
+          "options": ["Option 1", "Option 2", "Option 3", "Option 4"],
+          "tags": [],
+          "workflow": "ask_sales_question|educational_insight|validation"
         }
       ],
       "salesQuestions": [
@@ -3547,15 +3549,15 @@ Extract and return a JSON object with this exact structure:
               "followUpQuestion": "Specific follow-up to narrow down context.",
               "featureMappingAnswer": "Explanation of ONE specific feature that solves this cause.",
               "loopClosure": "Summary statement closing the loop."
-            },
-            {
-              "forOption": "Cause 2",
-              "diagnosticAnswer": "...",
-              "followUpQuestion": "...",
-              "featureMappingAnswer": "...",
-              "loopClosure": "..."
             }
           ]
+        },
+        {
+          "question": "Feature/Capability Question (e.g., How does [Capability] impact...?)",
+          "options": ["Cause 1", "Cause 2", "Cause 3", "Cause 4"],
+          "tags": [],
+          "workflow": "diagnostic_response",
+          "optionFlows": []
         }
       ]
     }
@@ -3566,8 +3568,9 @@ IMPORTANT REQUIREMENTS:
 1. Use the [SECTION N] markers to delineate sections.
 2. Ensure Lead Questions focus on identifying the user's current state or problem awareness.
 3. Ensure Sales Questions focus on diagnosing the specific root cause of that problem.
-4. The 'optionFlows' array MUST have an entry for every option in the Sales Question.
-5. Tags should be snake_case (e.g., 'onboarding_delay').
+4. The second Lead/Sales Question MUST focus on a specific feature, capability, or keyword in the section. Do NOT ask about timeline or urgency.
+5. The 'optionFlows' array MUST have an entry for every option in the Sales Question.
+6. Tags should be snake_case (e.g., 'onboarding_delay').
 `,
                     },
                   ],
@@ -3619,7 +3622,7 @@ IMPORTANT REQUIREMENTS:
                               String(block.body || ""),
                               summary,
                               sectionType,
-                              "intent_process",
+                              false,
                             );
                             const altPair = await refineSectionQuestions(
                               openai,
@@ -3630,7 +3633,7 @@ IMPORTANT REQUIREMENTS:
                               String(block.body || ""),
                               summary,
                               sectionType,
-                              "urgency_outcome",
+                              true,
                             );
                             const pairs = [basePair, altPair].filter(
                               (p) => p && typeof p === "object",
@@ -3808,7 +3811,7 @@ IMPORTANT REQUIREMENTS:
                           String(block.body || ""),
                           summary,
                           sectionType,
-                          "intent_process",
+                          false,
                         );
                         const altPair = await refineSectionQuestions(
                           openai,
@@ -3819,7 +3822,7 @@ IMPORTANT REQUIREMENTS:
                           String(block.body || ""),
                           summary,
                           sectionType,
-                          "urgency_outcome",
+                          true,
                         );
                         const pairs = [basePair, altPair].filter(
                           (p) => p && typeof p === "object",
