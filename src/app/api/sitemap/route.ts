@@ -410,60 +410,6 @@ const TAGS_PROBLEM = [
   "stakeholder_coordination",
   "capacity_constraint",
 ];
-const TAGS_READINESS = [
-  "validated_flow",
-  "optimization_ready",
-  "awareness_missing",
-  "unknown_state",
-  "low_friction",
-  "high_friction",
-];
-const TAGS_RISK = ["low_risk", "conversion_risk", "high_risk", "critical_risk"];
-const CAUSE_TAGS = [
-  "email_back_and_forth",
-  "availability_conflicts",
-  "ownership_confusion",
-  "stakeholder_delay",
-  "no_next_step",
-  "calendar_mismatch",
-  "reminder_missing",
-];
-const WORKFLOWS = [
-  "ask_sales_question",
-  "validation_path",
-  "education_path",
-  "optimization_workflow",
-  "diagnostic_education",
-  "sales_alert",
-  "role_clarification",
-];
-const FEATURE_REGISTRY = [
-  "scheduling_links",
-  "real_time_availability",
-  "routing_rules",
-  "group_scheduling",
-  "event_type_templates",
-  "recurring_scheduling",
-  "calendar_sync",
-  "automated_reminders",
-  "booking_pages",
-  "embedded_booking",
-  "scheduling_analytics",
-];
-
-function extractKeywordsFromText(t: string) {
-  const words = (t || "")
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, " ")
-    .split(/\s+/)
-    .filter((w) => w.length > 3);
-  const freq: Record<string, number> = {};
-  for (const w of words) freq[w] = (freq[w] || 0) + 1;
-  return Object.entries(freq)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 12)
-    .map(([w]) => w);
-}
 
 async function refineSectionQuestions(
   openaiClient: any,
@@ -474,68 +420,122 @@ async function refineSectionQuestions(
   sectionText: string,
   sectionSummary: string,
   sectionType: "hero" | "availability" | "roi" | "security",
-  variant: boolean,
 ) {
   try {
-    const keywords = extractKeywordsFromText(sectionText);
     const resp = await openaiClient.chat.completions.create({
       model: "gpt-4o-mini",
       response_format: { type: "json_object" },
       temperature: 0.2,
-      max_tokens: 900,
+      max_tokens: 1500,
       messages: [
         {
           role: "system",
-          content:
-            "You are generating deterministic conversation configuration for a diagnostic sales assistant. Do not pitch, sell, or use CTAs. Keep writing concise and factual. Return ONLY valid JSON.",
+          content: `You are generating Lead and Sales qualification questions for a SaaS page section.
+
+Use ONLY the section-specific data provided:
+
+- section_title
+- section_text
+- core_keywords
+- features
+- benefits
+- pain_points
+- intent_signals
+- problem_statement
+
+Your output must follow this EXACT format:
+
+LEAD WORKFLOW — 2 Questions + Options
+
+Goal: Identify visitor intent, motivation, readiness, urgency.
+
+Q1 — Lead Intent / Motivation
+[Write a question based on the primary theme or pain point of the section.]
+
+Options
+Option 1 — [Visitor motivation aligned with a strong keyword from the section]
+→ mapping tag
+
+Option 2 — [Another strong motivation aligned with a different insight]
+→ mapping tag
+
+Option 3 — [Exploratory or low-intent option]
+→ mapping tag
+
+Option 4 — [“Just browsing / early stage” option]
+→ mapping tag
+
+Q2 — Secondary Intent / Urgency / Related Need
+IMPORTANT: Q2 must NOT repeat Q1.
+It must use a DIFFERENT keyword, feature, pain point, or benefit from the section.
+
+Options
+(Use the same logic as Q1, but tied to the new keyword/theme.)
+
+---
+
+SALES WORKFLOW — 2 Questions + Options
+
+Goal: Understand sophistication, current workflows, replaceability, and desired outcomes.
+
+Q1 — Current Process
+[Ask based on the process implied by the section: qualification, demo booking, visitor intent detection, automation, etc.]
+
+Options (4)
+- Existing manual process
+- Basic system/process
+- No process
+- Non-sales-oriented tool/process
+(Map each using the awareness + urgency logic.)
+
+Q2 — Desired Outcome / Improvement
+Based on a DIFFERENT benefit or feature than Q1.
+(e.g., quality, automation, workload reduction, accuracy, conversion lift)
+
+Options (4)
+- High-intent desired outcome → sales_alert
+- Medium/optimization → validation_path
+- Low-awareness → diagnostic_education
+- Unknown state → diagnostic_education
+
+---
+
+RULES
+- Do NOT mention the page URL.
+- Do NOT create generic questions. Every question must be grounded in actual keywords from this section.
+- Q2 must always use a different theme from Q1.
+- Output JSON ONLY with structure: { "leadQuestions": [], "salesQuestions": [] }
+- Each question object: { "question": "", "options": [{ "label": "", "tags": [], "workflow": "" }] }
+- Mapping Logic:
+  - awarenesspresent, optimizationready → validation_path
+  - awarenesspresent, mediumintent → validation_path
+  - awarenesspresent, highintent → sales_alert
+  - unknownstate, lowrisk → diagnostic_education
+  - awarenessmissing, lowrisk → diagnostic_education
+`,
         },
         {
           role: "user",
-          content: `Generate Lead and Sales questions with options for the given section.
-Follow these rules exactly:
+          content: `Analyze this section and generate the configuration.
 
-1) Question Requirements
-- Lead must match section intent:
-  - Hero → scheduling friction
-  - Availability → availability rules & constraints
-  - ROI → desired business outcome
-  - Security → compliance & data governance
-- Sales must be the next logical diagnostic step for the same intent.
+First, extract these elements from the text below:
+- core_keywords
+- features
+- benefits
+- pain_points
+- intent_signals
+- problem_statement
 
-2) Option Requirements
-Each option must be an object:
-{ "label": "", "tags": [], "workflow": "" }
-
-3) Tag Rules
-- Tags per option only; snake_case
-- Allowed tag types: cause-based, readiness-based, risk-based
-
-4) Workflow Rules (one per option):
-- optimization_workflow, validation_path, education_path, diagnostic_education, sales_alert, role_clarification
-
-Workflow decision logic:
-- Problem → diagnostic_education
-- Desired outcome → optimization_workflow
-- Advanced user → validation_path
-- Confusion → education_path
-- Security/compliance risk → sales_alert
-- Wrong persona → role_clarification
-
-5) Final Output JSON ONLY:
-{
-  "lead": { "question": "", "options": [] },
-  "sales": { "question": "", "options": [] }
-}
-
-Context:
+SECTION DATA:
 page_url: ${pageUrl}
 page_type: ${pageType}
 section_id: ${sectionId}
 section_heading: ${sectionName}
 section_summary: ${sectionSummary}
 section_type: ${sectionType}
-keywords_in_section: ${JSON.stringify(keywords)}
-${variant ? "variant_directive: Generate an alternative question that focuses on a specific feature, capability, or keyword mentioned in the section text. Do NOT ask about timeline, urgency, or implementation stage." : ""}
+section_text: "${sectionText}"
+
+Generate the JSON response.
 `,
         },
       ],
@@ -2775,7 +2775,7 @@ async function processBatch(req: NextRequest) {
             sectionSummary,
             String(block.body || ""),
           );
-          const basePair = await refineSectionQuestions(
+          const questionsData = await refineSectionQuestions(
             openai,
             retryUrl,
             String(summary?.pageType || "other"),
@@ -2784,25 +2784,91 @@ async function processBatch(req: NextRequest) {
             String(block.body || ""),
             sectionSummary,
             sectionType as any,
-            false,
           );
-          const altPair = await refineSectionQuestions(
-            openai,
-            retryUrl,
-            String(summary?.pageType || "other"),
-            String(idx + 1),
-            name,
-            String(block.body || ""),
-            sectionSummary,
-            sectionType as any,
-            true,
-          );
-          const pairs = [basePair, altPair].filter(
-            (p) => p && typeof p === "object",
-          );
-          if (pairs.length) {
-            sec.leadQuestions = pairs.map((p: any) => p.lead).slice(0, 2);
-            sec.salesQuestions = pairs.map((p: any) => p.sales).slice(0, 2);
+
+          if (questionsData) {
+            sec.leadQuestions = (
+              Array.isArray(questionsData.leadQuestions)
+                ? questionsData.leadQuestions
+                : []
+            )
+              .slice(0, 2)
+              .map((lq: any) => {
+                let opts = Array.isArray(lq?.options)
+                  ? lq.options.map((o: any) => ({
+                      label: String(o?.label || o || ""),
+                      tags: Array.isArray(o?.tags)
+                        ? o.tags.map((t: any) => snakeTag(String(t)))
+                        : [],
+                      workflow:
+                        typeof o?.workflow === "string"
+                          ? o.workflow
+                          : "ask_sales_question",
+                    }))
+                  : [];
+                if (opts.length < 2) {
+                  while (opts.length < 2)
+                    opts.push({
+                      label: `Option ${opts.length + 1}`,
+                      tags: [],
+                      workflow: "ask_sales_question",
+                    });
+                }
+                if (opts.length > 4) opts = opts.slice(0, 4);
+                return {
+                  question: String(lq?.question || ""),
+                  options: opts,
+                  tags: [],
+                  workflow: "ask_sales_question",
+                };
+              });
+
+            sec.salesQuestions = (
+              Array.isArray(questionsData.salesQuestions)
+                ? questionsData.salesQuestions
+                : []
+            )
+              .slice(0, 2)
+              .map((sq: any) => {
+                let opts = Array.isArray(sq?.options)
+                  ? sq.options.map((o: any) => ({
+                      label: String(o?.label || o || ""),
+                      tags: Array.isArray(o?.tags)
+                        ? o.tags.map((t: any) => snakeTag(String(t)))
+                        : [],
+                      workflow:
+                        typeof o?.workflow === "string"
+                          ? o.workflow
+                          : "diagnostic_education",
+                    }))
+                  : [];
+                if (opts.length < 2) {
+                  while (opts.length < 2)
+                    opts.push({
+                      label: `Option ${opts.length + 1}`,
+                      tags: [],
+                      workflow: "diagnostic_education",
+                    });
+                }
+                if (opts.length > 4) opts = opts.slice(0, 4);
+
+                const ensuredFlows = opts.map((o: any) => ({
+                  forOption: o.label,
+                  diagnosticAnswer: "",
+                  followUpQuestion: "",
+                  followUpOptions: [],
+                  featureMappingAnswer: "",
+                  loopClosure: "",
+                }));
+
+                return {
+                  question: String(sq?.question || ""),
+                  options: opts,
+                  tags: [],
+                  workflow: "diagnostic_response",
+                  optionFlows: ensuredFlows,
+                };
+              });
 
             // Apply standalone tag generation
             try {
@@ -3612,8 +3678,8 @@ IMPORTANT REQUIREMENTS:
                               summary,
                               String(block.body || ""),
                             );
-                            // Always generate two variants (base + alternative)
-                            const basePair = await refineSectionQuestions(
+                            // Generate questions using the master prompt
+                            const questionsData = await refineSectionQuestions(
                               openai,
                               url,
                               String(structuredSummary?.pageType || "other"),
@@ -3622,26 +3688,15 @@ IMPORTANT REQUIREMENTS:
                               String(block.body || ""),
                               summary,
                               sectionType,
-                              false,
                             );
-                            const altPair = await refineSectionQuestions(
-                              openai,
-                              url,
-                              String(structuredSummary?.pageType || "other"),
-                              String(idx + 1),
-                              name,
-                              String(block.body || ""),
-                              summary,
-                              sectionType,
-                              true,
-                            );
-                            const pairs = [basePair, altPair].filter(
-                              (p) => p && typeof p === "object",
-                            );
-                            if (pairs.length > 0) {
+
+                            if (questionsData) {
                               // Map lead questions
-                              sec.leadQuestions = pairs
-                                .map((p) => p.lead)
+                              sec.leadQuestions = (
+                                Array.isArray(questionsData.leadQuestions)
+                                  ? questionsData.leadQuestions
+                                  : []
+                              )
                                 .slice(0, 2)
                                 .map((lq: any) => {
                                   let opts = Array.isArray(lq?.options)
@@ -3678,8 +3733,11 @@ IMPORTANT REQUIREMENTS:
                                   };
                                 });
                               // Map sales questions
-                              sec.salesQuestions = pairs
-                                .map((p) => p.sales)
+                              sec.salesQuestions = (
+                                Array.isArray(questionsData.salesQuestions)
+                                  ? questionsData.salesQuestions
+                                  : []
+                              )
                                 .slice(0, 2)
                                 .map((sq: any) => {
                                   let opts = Array.isArray(sq?.options)
@@ -3802,7 +3860,7 @@ IMPORTANT REQUIREMENTS:
                           summary,
                           String(block.body || ""),
                         );
-                        const basePair = await refineSectionQuestions(
+                        const questionsData = await refineSectionQuestions(
                           openai,
                           url,
                           String(structuredSummary?.pageType || "other"),
@@ -3811,26 +3869,15 @@ IMPORTANT REQUIREMENTS:
                           String(block.body || ""),
                           summary,
                           sectionType,
-                          false,
                         );
-                        const altPair = await refineSectionQuestions(
-                          openai,
-                          url,
-                          String(structuredSummary?.pageType || "other"),
-                          String(idx + 1),
-                          name,
-                          String(block.body || ""),
-                          summary,
-                          sectionType,
-                          true,
-                        );
-                        const pairs = [basePair, altPair].filter(
-                          (p) => p && typeof p === "object",
-                        );
-                        if (pairs.length > 0) {
+
+                        if (questionsData) {
                           // Lead
-                          sec.leadQuestions = pairs
-                            .map((p) => p.lead)
+                          sec.leadQuestions = (
+                            Array.isArray(questionsData.leadQuestions)
+                              ? questionsData.leadQuestions
+                              : []
+                          )
                             .slice(0, 2)
                             .map((lq: any) => {
                               let opts = Array.isArray(lq?.options)
@@ -3864,8 +3911,11 @@ IMPORTANT REQUIREMENTS:
                               };
                             });
                           // Sales
-                          sec.salesQuestions = pairs
-                            .map((p) => p.sales)
+                          sec.salesQuestions = (
+                            Array.isArray(questionsData.salesQuestions)
+                              ? questionsData.salesQuestions
+                              : []
+                          )
                             .slice(0, 2)
                             .map((sq: any) => {
                               let opts = Array.isArray(sq?.options)
@@ -3891,11 +3941,22 @@ IMPORTANT REQUIREMENTS:
                                 }
                               }
                               if (opts.length > 4) opts = opts.slice(0, 4);
+
+                              const ensuredFlows = opts.map((o: any) => ({
+                                forOption: o.label,
+                                diagnosticAnswer: "",
+                                followUpQuestion: "",
+                                followUpOptions: [],
+                                featureMappingAnswer: "",
+                                loopClosure: "",
+                              }));
+
                               return {
                                 question: String(sq?.question || ""),
                                 options: opts,
                                 tags: [],
                                 workflow: "diagnostic_education",
+                                optionFlows: ensuredFlows,
                               };
                             });
 
