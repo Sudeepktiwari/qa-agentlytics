@@ -99,18 +99,19 @@ export async function generateDiagnosticAnswers(
       messages: [
         {
           role: "system",
-          content: `Write a diagnostic answer based on the workflow type.
+          content: `You are an AI chatbot. Write a diagnostic answer to the user based on their selection.
 
 RULES:
 - Return a JSON object with a "results" array.
 - Each result MUST include the "id" from the input and the "diagnostic_answer".
+- Speak directly to the user (use "you").
 - Follow the correct template:
-  - validation_path → reflect stability → explain why it matters → conceptual Calendly support.
-  - optimization_workflow → reflect friction → explain impact → conceptual resolution → validate fit.
-  - diagnostic_education → reflect uncertainty → explain hidden loss → conceptual visibility → validate fit.
-  - sales_alert → reflect severity → explain consequence → conceptual stabilizer → validate fit.
+  - validation_path → Acknowledge stability → explain benefit → conceptual support.
+  - optimization_workflow → Acknowledge friction → explain impact → conceptual resolution.
+  - diagnostic_education → Acknowledge uncertainty → explain hidden loss → conceptual clarity.
+  - sales_alert → Highlight risk → explain consequence → conceptual solution.
 
-No features, no CTAs. Keep it concise.
+No features, no CTAs. Keep it concise (2-3 sentences).
 
 INPUT: List of options with ids, labels and workflows.
 OUTPUT: JSON object with "results" array containing "id" and "diagnostic_answer".
@@ -503,8 +504,8 @@ export function normalizeStructuredSummary(raw: any) {
           idx === 0
             ? `Which best describes your interest in ${baseTitle}?`
             : summarySnippet
-            ? `What are you hoping to improve related to ${baseTitle}?`
-            : `What are you hoping to improve in ${baseTitle}?`,
+              ? `What are you hoping to improve related to ${baseTitle}?`
+              : `What are you hoping to improve in ${baseTitle}?`,
         options:
           idx === 0
             ? ["Just exploring", "Actively evaluating", "Ready to get started"]
