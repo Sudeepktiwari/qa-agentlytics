@@ -126,7 +126,7 @@ export async function listDocuments(adminId?: string) {
 export async function deleteDocument(filename: string, adminId?: string) {
   const db = await getDb();
   const pineconeVectors = db.collection("pinecone_vectors");
-  
+
   // 1. Try deleting from Pinecone using metadata filter (most robust)
   try {
     const filter: any = { filename: { $eq: filename } };
@@ -266,7 +266,48 @@ export async function deleteChunksByFilename(
 }
 
 export async function deleteChunksByUrl(url: string, adminId?: string) {
+  // 1. Try deleting by exact filename match first
   await deleteDocument(url, adminId);
+
+  // 2. Also try to clean up variations (trailing slash differences) using regex
+  // This helps if the URL was stored differently in previous crawls
+  const db = await getDb();
+  const pineconeVectors = db.collection("pinecone_vectors");
+
+  const normalizedUrl = url.replace(/\/$/, "");
+  const escaped = normalizedUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  // Match the URL optionally followed by a slash at the end
+  const suffixPattern = new RegExp(`${escaped}\/?$`, "i");
+
+  // Find IDs that match the pattern but might not have been caught by exact match
+  const match: any = { filename: { $regex: suffixPattern } };
+  if (adminId) match.adminId = adminId;
+
+  const ids = await pineconeVectors
+    .find(match)
+    .project({ vectorId: 1, _id: 0 })
+    .toArray();
+  const vectorIds = ids.map((d) => (d as { vectorId: string }).vectorId);
+
+  if (vectorIds.length > 0) {
+    console.log(
+      `[Pinecone] Cleaning up ${vectorIds.length} potentially variable URL vectors for ${url}...`,
+    );
+    // Delete from Pinecone
+    const BATCH_SIZE = 1000;
+    for (let i = 0; i < vectorIds.length; i += BATCH_SIZE) {
+      const batch = vectorIds.slice(i, i + BATCH_SIZE);
+      try {
+        await index.deleteMany(batch);
+      } catch (err) {
+        console.error(`[Pinecone] Error deleting batch cleanup:`, err);
+      }
+    }
+    // Delete from MongoDB
+    await pineconeVectors.deleteMany({
+      vectorId: { $in: vectorIds },
+    });
+  }
 }
 
 export async function getChunksByPageUrl(adminId: string, pageUrl: string) {

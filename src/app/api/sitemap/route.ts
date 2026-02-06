@@ -3498,20 +3498,20 @@ IMPORTANT REQUIREMENTS:
               "structured_summaries",
             );
             const pageDoc = await pages.findOne({ adminId, url });
-            const pageId = pageDoc?._id;
-            await structuredSummaries.updateOne(
-              { adminId, pageId },
-              {
-                $set: {
-                  adminId,
-                  pageId,
-                  url,
-                  structuredSummary,
-                  summaryGeneratedAt: new Date(),
-                },
-              },
-              { upsert: true },
-            );
+            if (pageDoc && pageDoc._id) {
+              const pageId = pageDoc._id;
+
+              // Explicitly delete old structured summary to ensure fresh start and no stale data
+              await structuredSummaries.deleteOne({ adminId, pageId });
+
+              await structuredSummaries.insertOne({
+                adminId,
+                pageId,
+                url,
+                structuredSummary,
+                summaryGeneratedAt: new Date(),
+              });
+            }
           }
           console.log(
             `[Crawl] Page data stored successfully${
