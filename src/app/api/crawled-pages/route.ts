@@ -6,196 +6,13 @@ import { verifyApiKey, verifyAdminTokenFromCookie } from "@/lib/auth";
 import { z } from "zod";
 import { assertBodyConstraints } from "@/lib/validators";
 import { deleteChunksByUrl } from "@/lib/chroma";
+import {
+  enrichStructuredSummary,
+  normalizeStructuredSummary,
+} from "@/lib/diagnostic-generation";
 
 const pc = new Pinecone({ apiKey: process.env.PINECONE_KEY! });
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
-
-function normalizeStructuredSummary(raw: any) {
-  if (!raw || typeof raw !== "object") return raw;
-  const result: any = { ...raw };
-  if (!Array.isArray(result.sections)) {
-    if (result.sections && typeof result.sections === "object") {
-      result.sections = [result.sections];
-    } else {
-      result.sections = [];
-    }
-  }
-  result.sections = result.sections.map((section: any) => {
-    const s: any = { ...section };
-    if (s.leadQuestions && !Array.isArray(s.leadQuestions)) {
-      s.leadQuestions = [s.leadQuestions];
-    }
-    if (!Array.isArray(s.leadQuestions)) {
-      const arr: any[] = [];
-      if (s.leadQuestion) {
-        arr.push({
-          question: s.leadQuestion,
-          options: Array.isArray(s.leadOptions) ? s.leadOptions : [],
-          tags: Array.isArray(s.leadTags) ? s.leadTags : [],
-          workflow:
-            typeof s.leadWorkflow === "string" ? s.leadWorkflow : "legacy",
-        });
-      }
-      s.leadQuestions = arr;
-    } else {
-      s.leadQuestions = s.leadQuestions.map((q: any) => {
-        const optsRaw = Array.isArray(q?.options) ? q.options : [];
-        const options = optsRaw.map((o: any) => {
-          if (o && typeof o === "object" && typeof o.label === "string") {
-            return {
-              label: String(o.label),
-              tags: Array.isArray(o.tags)
-                ? o.tags.map((t: any) =>
-                    String(t)
-                      .toLowerCase()
-                      .replace(/[^a-z0-9_]/g, ""),
-                  )
-                : [],
-              workflow:
-                typeof o.workflow === "string" ? o.workflow : "education_path",
-              diagnostic_answer:
-                typeof o.diagnostic_answer === "string"
-                  ? o.diagnostic_answer
-                  : undefined,
-            };
-          }
-          const label = String(o || "");
-          return { label, tags: [], workflow: "education_path" };
-        });
-        return {
-          question: q && q.question ? q.question : "",
-          options,
-          tags: [],
-          workflow:
-            typeof q?.workflow === "string" ? q.workflow : "validation_path",
-        };
-      });
-    }
-    if (s.salesQuestions && !Array.isArray(s.salesQuestions)) {
-      s.salesQuestions = [s.salesQuestions];
-    }
-    if (!Array.isArray(s.salesQuestions)) {
-      const arr: any[] = [];
-      if (s.salesQuestion) {
-        arr.push({
-          question: s.salesQuestion,
-          options: Array.isArray(s.salesOptions) ? s.salesOptions : [],
-          tags: Array.isArray(s.salesTags) ? s.salesTags : [],
-          workflow:
-            typeof s.salesWorkflow === "string"
-              ? s.salesWorkflow
-              : "diagnostic_response",
-        });
-      }
-      s.salesQuestions = arr;
-    } else {
-      s.salesQuestions = s.salesQuestions.map((q: any) => {
-        const optsRaw = Array.isArray(q?.options) ? q.options : [];
-        const options = optsRaw.map((o: any) => {
-          if (o && typeof o === "object" && typeof o.label === "string") {
-            return {
-              label: String(o.label),
-              tags: Array.isArray(o.tags)
-                ? o.tags.map((t: any) =>
-                    String(t)
-                      .toLowerCase()
-                      .replace(/[^a-z0-9_]/g, ""),
-                  )
-                : [],
-              workflow:
-                typeof o.workflow === "string"
-                  ? o.workflow
-                  : "optimization_workflow",
-              diagnostic_answer:
-                typeof o.diagnostic_answer === "string"
-                  ? o.diagnostic_answer
-                  : undefined,
-            };
-          }
-          const label = String(o || "");
-          return { label, tags: [], workflow: "optimization_workflow" };
-        });
-        return {
-          question: q && q.question ? q.question : "",
-          options,
-          tags: [],
-          workflow: "diagnostic_education",
-        };
-      });
-    }
-    const baseTitle =
-      typeof s.sectionName === "string" && s.sectionName.trim().length > 0
-        ? s.sectionName.trim()
-        : "this section";
-    const summarySnippet =
-      typeof s.sectionSummary === "string" && s.sectionSummary.trim().length > 0
-        ? s.sectionSummary.trim()
-        : "";
-    while (s.leadQuestions.length < 2) {
-      const idx = s.leadQuestions.length;
-      s.leadQuestions.push({
-        question:
-          idx === 0
-            ? `Which best describes your interest in ${baseTitle}?`
-            : summarySnippet
-              ? `What are you hoping to improve related to ${baseTitle}?`
-              : `What are you hoping to improve in ${baseTitle}?`,
-        options:
-          idx === 0
-            ? ["Just exploring", "Actively evaluating", "Ready to get started"]
-            : ["Learn more", "Compare options", "Talk to sales"],
-        tags: [baseTitle.toLowerCase()],
-        workflow: "ask_sales_question",
-      });
-    }
-    while (s.salesQuestions.length < 2) {
-      const idx = s.salesQuestions.length;
-      s.salesQuestions.push({
-        question:
-          idx === 0
-            ? `How urgent is it for you to improve ${baseTitle}?`
-            : `What stage are you at in deciding about ${baseTitle}?`,
-        options:
-          idx === 0
-            ? ["In the next month", "In 1-3 months", "Just researching"]
-            : ["Just researching", "Shortlisting options", "Ready to decide"],
-        tags: [baseTitle.toLowerCase(), "sales"],
-        workflow: "diagnostic_response",
-        optionFlows: [],
-      });
-    }
-    s.leadQuestions = s.leadQuestions.slice(0, 2).map((q: any) => {
-      let opts = Array.isArray(q.options) ? q.options : [];
-      if (opts.length < 2) {
-        while (opts.length < 2) {
-          opts.push({
-            label: `Option ${opts.length + 1}`,
-            tags: [],
-            workflow: "education_path",
-          });
-        }
-      }
-      if (opts.length > 4) opts = opts.slice(0, 4);
-      return { ...q, options: opts, tags: [] };
-    });
-    s.salesQuestions = s.salesQuestions.slice(0, 2).map((q: any) => {
-      let opts = Array.isArray(q.options) ? q.options : [];
-      if (opts.length < 2) {
-        while (opts.length < 2) {
-          opts.push({
-            label: `Option ${opts.length + 1}`,
-            tags: [],
-            workflow: "optimization_workflow",
-          });
-        }
-      }
-      if (opts.length > 4) opts = opts.slice(0, 4);
-      return { ...q, options: opts, tags: [] };
-    });
-    return s;
-  });
-  return result;
-}
 
 // GET - List all crawled pages with summary status
 export async function GET(request: NextRequest) {
@@ -744,7 +561,8 @@ IMPORTANT REQUIREMENTS:
     }
 
     const parsed = JSON.parse(summaryContent);
-    return normalizeStructuredSummary(parsed);
+    const normalized = normalizeStructuredSummary(parsed);
+    return await enrichStructuredSummary(normalized);
   } catch (error) {
     console.error("[API] Direct summary generation failed:", error);
     return null;
@@ -916,7 +734,8 @@ IMPORTANT REQUIREMENTS:
     }
 
     const parsed = JSON.parse(finalContent);
-    return normalizeStructuredSummary(parsed);
+    const normalized = normalizeStructuredSummary(parsed);
+    return await enrichStructuredSummary(normalized);
   } catch (error) {
     console.error("[API] Chunked summary generation failed:", error);
     return null;
