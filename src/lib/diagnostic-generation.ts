@@ -17,15 +17,17 @@ export async function generateOptionTags(optionTexts: string[]) {
   );
   if (uniqueOptions.length === 0) return {};
 
-  try {
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      response_format: { type: "json_object" },
-      temperature: 0.1,
-      messages: [
-        {
-          role: "system",
-          content: `You are generating normalized tags for selectable options.
+  let retries = 3;
+  while (retries > 0) {
+    try {
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        response_format: { type: "json_object" },
+        temperature: 0.1,
+        messages: [
+          {
+            role: "system",
+            content: `You are generating normalized tags for selectable options.
 RULES:
 - Each option must output 2 tags: a problem/readiness tag + a risk/readiness modifier.
 - Use ONLY the allowed tag taxonomy below.
@@ -45,35 +47,45 @@ Example:
     { "label": "Option Text", "tags": ["primary_tag", "modifier_tag"] }
   ]
 }`,
-        },
-        {
-          role: "user",
-          content: JSON.stringify(uniqueOptions),
-        },
-      ],
-    });
-
-    const content = response.choices[0]?.message?.content || "{}";
-    const data = JSON.parse(content);
-    const map: Record<string, { label: string; tags: string[] }> = {};
-
-    if (Array.isArray(data.results)) {
-      data.results.forEach((item: any) => {
-        if (
-          item &&
-          item.label &&
-          Array.isArray(item.tags) &&
-          item.tags.length === 2
-        ) {
-          map[item.label] = { label: item.label, tags: item.tags };
-        }
+          },
+          {
+            role: "user",
+            content: JSON.stringify(uniqueOptions),
+          },
+        ],
       });
+
+      const content = response.choices[0]?.message?.content || "{}";
+      const data = JSON.parse(content);
+      const map: Record<string, { label: string; tags: string[] }> = {};
+
+      if (Array.isArray(data.results)) {
+        data.results.forEach((item: any) => {
+          if (
+            item &&
+            item.label &&
+            Array.isArray(item.tags) &&
+            item.tags.length === 2
+          ) {
+            map[item.label] = { label: item.label, tags: item.tags };
+          }
+        });
+      }
+      return map;
+    } catch (error) {
+      console.error(
+        `Error generating option tags (attempt ${4 - retries}/3):`,
+        error,
+      );
+      retries--;
+      if (retries === 0) return {};
+      // Exponential backoff: 1s, 2s, 4s...
+      await new Promise((resolve) =>
+        setTimeout(resolve, 1000 * Math.pow(2, 3 - retries)),
+      );
     }
-    return map;
-  } catch (error) {
-    console.error("Error generating option tags:", error);
-    return {};
   }
+  return {};
 }
 
 export async function generateDiagnosticAnswers(
@@ -408,15 +420,18 @@ export function normalizeStructuredSummary(raw: any) {
         const optsRaw = Array.isArray(q?.options) ? q.options : [];
         const options = optsRaw.map((o: any) => {
           if (o && typeof o === "object" && typeof o.label === "string") {
-            return {
-              label: String(o.label),
-              tags: Array.isArray(o.tags)
+            const tags =
+              Array.isArray(o.tags) && o.tags.length === 2
                 ? o.tags.map((t: any) =>
                     String(t)
                       .toLowerCase()
                       .replace(/[^a-z0-9_]/g, ""),
                   )
-                : [],
+                : ["unknown_state", "low_risk"];
+
+            return {
+              label: String(o.label),
+              tags,
               workflow:
                 typeof o.workflow === "string" ? o.workflow : "education_path",
               diagnostic_answer:
@@ -426,7 +441,11 @@ export function normalizeStructuredSummary(raw: any) {
             };
           }
           const label = String(o || "");
-          return { label, tags: [], workflow: "education_path" };
+          return {
+            label,
+            tags: ["unknown_state", "low_risk"],
+            workflow: "education_path",
+          };
         });
         return {
           question: q && q.question ? q.question : "",
@@ -459,15 +478,18 @@ export function normalizeStructuredSummary(raw: any) {
         const optsRaw = Array.isArray(q?.options) ? q.options : [];
         const options = optsRaw.map((o: any) => {
           if (o && typeof o === "object" && typeof o.label === "string") {
-            return {
-              label: String(o.label),
-              tags: Array.isArray(o.tags)
+            const tags =
+              Array.isArray(o.tags) && o.tags.length === 2
                 ? o.tags.map((t: any) =>
                     String(t)
                       .toLowerCase()
                       .replace(/[^a-z0-9_]/g, ""),
                   )
-                : [],
+                : ["unknown_state", "low_risk"];
+
+            return {
+              label: o.label,
+              tags,
               workflow:
                 typeof o.workflow === "string"
                   ? o.workflow
@@ -479,7 +501,11 @@ export function normalizeStructuredSummary(raw: any) {
             };
           }
           const label = String(o || "");
-          return { label, tags: [], workflow: "optimization_workflow" };
+          return {
+            label,
+            tags: ["unknown_state", "low_risk"],
+            workflow: "optimization_workflow",
+          };
         });
         return {
           question: q && q.question ? q.question : "",

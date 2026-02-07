@@ -104,11 +104,9 @@ export async function GET(request: NextRequest) {
       ),
       createdAt: page.createdAt,
       status: "success",
-      structuredSummary: (
-        byPageId.get(String(page._id)) ||
-        byUrl.get(String(page.url)) ||
-        {}
-      ).structuredSummary,
+      structuredSummary:
+        byPageId.get(String(page._id))?.structuredSummary ||
+        byUrl.get(String(page.url))?.structuredSummary,
       summary: page.summary,
     }));
 
