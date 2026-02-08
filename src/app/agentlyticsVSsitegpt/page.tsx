@@ -9,7 +9,7 @@ import React, { useMemo, useState, useEffect } from "react";
  *
  * Defaults
  * - "Start free" routes to /signup
- * - "Book a demo" scrolls to #demo (can be swapped to external Calendly)
+ * - "Watch a demo" routes to /demo (can be swapped to external Calendly)
  *
  * Note
  * Some sandboxes don’t compile TS syntax in .tsx reliably. This file is plain JSX (no TS types).
@@ -864,10 +864,10 @@ function CTA() {
                 Start free
               </a>
               <a
-                href="#demo"
+                href="/demo"
                 className="inline-flex w-full items-center justify-center rounded-xl bg-white/15 px-4 py-2.5 text-sm font-semibold text-white ring-1 ring-white/25 hover:bg-white/20"
               >
-                Book a demo
+                Watch a demo
               </a>
             </div>
             <div className="mt-3 text-xs text-white/70">
@@ -968,10 +968,10 @@ function DemoSection() {
             Start free
           </a>
           <a
-            href="#demo"
+            href="/demo"
             className="inline-flex items-center justify-center rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-900 ring-1 ring-slate-200 hover:bg-slate-50"
           >
-            Book a demo
+            Watch a demo
           </a>
         </div>
       </div>
@@ -1110,10 +1110,10 @@ export default function AgentlyticsVsSiteGPTLanding() {
               View comparison
             </a>
             <a
-              href="#demo"
+              href="/demo"
               className="inline-flex items-center justify-center rounded-xl bg-white px-6 py-3 text-sm font-semibold text-slate-900 ring-1 ring-slate-200 hover:bg-slate-50"
             >
-              Book a demo
+              Watch a demo
             </a>
           </div>
 

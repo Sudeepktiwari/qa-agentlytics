@@ -568,10 +568,10 @@ export default function BehavioralTriggersPage() {
                   Start free trial — no credit card
                 </a>
                 <a
-                  href="#demo"
+                  href="/demo"
                   className="px-5 py-3 rounded-2xl border border-slate-200 bg-white font-medium hover:bg-slate-50"
                 >
-                  Watch demo
+                  Watch a demo
                 </a>
               </div>
 
@@ -820,10 +820,10 @@ export default function BehavioralTriggersPage() {
                 Start free — capture intent today
               </a>
               <a
-                href="#demo"
+                href="/demo"
                 className="w-full sm:w-auto text-center px-6 py-3 rounded-2xl border border-slate-200 bg-white font-medium hover:bg-slate-50"
               >
-                Watch demo
+                Watch a demo
               </a>
             </div>
           </div>
@@ -891,7 +891,7 @@ export default function BehavioralTriggersPage() {
                         />
                         <div className="text-[11px] text-slate-600">{t}</div>
                       </motion.div>
-                    )
+                    ),
                   )}
                 </div>
 
@@ -1117,9 +1117,9 @@ export default function BehavioralTriggersPage() {
                 </a>
                 <a
                   className="w-full sm:w-auto text-center break-words px-5 py-3 rounded-2xl border border-white/30 font-medium hover:bg-white/10"
-                  href="#demo"
+                  href="/demo"
                 >
-                  Book a demo
+                  Watch a demo
                 </a>
               </div>
             </div>
@@ -1321,29 +1321,29 @@ const testimonials = [
 if (typeof window !== "undefined" && process.env.NODE_ENV !== "production") {
   console.assert(
     Array.isArray(faqs) && faqs.every((f) => f.q && f.a),
-    "[Agentlytics] FAQ items should have q and a"
+    "[Agentlytics] FAQ items should have q and a",
   );
   console.assert(
     Array.isArray(playbook) && playbook.length === 3,
-    "[Agentlytics] Playbook should render 3 cards"
+    "[Agentlytics] Playbook should render 3 cards",
   );
   console.assert(
     Array.isArray(testimonials) &&
       testimonials.length >= 3 &&
       testimonials.every((t) => t.quote && t.name && t.role),
-    "[Agentlytics] Testimonials should have at least 3 valid items"
+    "[Agentlytics] Testimonials should have at least 3 valid items",
   );
   console.assert(
     SNIPPET_SRC.includes("intent.min.js"),
-    "[Agentlytics] SNIPPET_SRC should contain intent.min.js"
+    "[Agentlytics] SNIPPET_SRC should contain intent.min.js",
   );
   // basic render-shape checks
   console.assert(
     typeof AnimatedBeacon === "function",
-    "[Agentlytics] AnimatedBeacon should be a function"
+    "[Agentlytics] AnimatedBeacon should be a function",
   );
   console.assert(
     typeof PlayCard === "function" && typeof MiniStat === "function",
-    "[Agentlytics] UI helpers should be functions"
+    "[Agentlytics] UI helpers should be functions",
   );
 }

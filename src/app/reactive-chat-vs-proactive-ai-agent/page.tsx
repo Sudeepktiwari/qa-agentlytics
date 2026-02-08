@@ -188,7 +188,7 @@ const VideoHeader = () => (
             <Button variant="secondary" href="/pricing">
               Explore pricing
             </Button>
-            <Button href="#cta">Book a demo</Button>
+            <Button href="/demo">Watch a demo</Button>
           </div>
         </div>
 
@@ -655,8 +655,8 @@ export default function ReactiveChatVsProactiveAgentPage() {
 
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <Button href="/how-it-works">See how it works</Button>
-                  <Button variant="secondary" href="/book-demo">
-                    Book a demo
+                  <Button variant="secondary" href="/demo">
+                    Watch a demo
                   </Button>
                 </div>
               </div>

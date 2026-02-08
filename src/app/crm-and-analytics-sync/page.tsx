@@ -36,10 +36,10 @@ function IconCloudSync() {
           </nav>
           <div className="flex items-center gap-3">
             <a
-              href="#cta"
+              href="/demo"
               className="text-sm font-medium hover:text-indigo-700"
             >
-              Book a demo
+              Watch a demo
             </a>
             <a
               href="#cta"
@@ -107,7 +107,7 @@ function IconCloudSync() {
                 Start free — connect your CRM instantly
               </a>
               <a
-                href="#demo"
+                href="/demo"
                 className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm md:text-base font-semibold text-slate-900 hover:bg-slate-50"
               >
                 See a 2‑minute demo
@@ -417,12 +417,12 @@ function runSmokeTests() {
   try {
     console.assert(
       typeof Testimonial === "function",
-      "Test: Testimonial should be defined"
+      "Test: Testimonial should be defined",
     );
     const el = <Testimonial quote="q" name="n" role="r" />;
     console.assert(
       !!el,
-      "Test: creating <Testimonial/> element should return a React element"
+      "Test: creating <Testimonial/> element should return a React element",
     );
 
     const f = <Feature title="T">Body</Feature>;

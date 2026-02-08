@@ -101,7 +101,7 @@ export default function KnowledgeBasePage() {
   }, []);
   // Mobile nav helper
   const handleMobileNavClick = (
-    e: React.MouseEvent<HTMLAnchorElement, MouseEvent>
+    e: React.MouseEvent<HTMLAnchorElement, MouseEvent>,
   ) => {
     const href = (e.currentTarget.getAttribute("href") || "").trim();
     if (href.startsWith("#")) {
@@ -115,7 +115,7 @@ export default function KnowledgeBasePage() {
               behavior: "smooth",
               block: "start",
             }),
-          0
+          0,
         );
         try {
           history.replaceState(null, "", href);
@@ -151,7 +151,7 @@ export default function KnowledgeBasePage() {
   // Reveal on scroll + animation stagger wiring
   useEffect(() => {
     const prefersReduced = window.matchMedia(
-      "(prefers-reduced-motion: reduce)"
+      "(prefers-reduced-motion: reduce)",
     ).matches;
 
     // Intersection observer for reveal
@@ -166,7 +166,7 @@ export default function KnowledgeBasePage() {
                 (child) => {
                   const d = Number(child.dataset.animDelay || "0");
                   setTimeout(() => child.classList.add("in-view"), d);
-                }
+                },
               );
             }
             el.classList.add("in-view");
@@ -174,7 +174,7 @@ export default function KnowledgeBasePage() {
           }
         });
       },
-      { threshold: 0.12 }
+      { threshold: 0.12 },
     );
 
     const reveals = Array.from(document.querySelectorAll(".reveal"));
@@ -227,7 +227,7 @@ export default function KnowledgeBasePage() {
               idx === i
                 ? { scale: 1.03, boxShadow: "0 18px 40px rgba(2,6,23,0.08)" }
                 : { scale: 1, boxShadow: "0 8px 30px rgba(15,23,42,0.04)" },
-            { duration: 0.42 }
+            { duration: 0.42 },
           );
           await new Promise((r) => setTimeout(r, 520));
         }
@@ -274,7 +274,9 @@ export default function KnowledgeBasePage() {
         .reveal {
           opacity: 0;
           transform: translateY(10px);
-          transition: opacity 0.45s ease, transform 0.45s ease;
+          transition:
+            opacity 0.45s ease,
+            transform 0.45s ease;
         }
         .reveal.in-view {
           opacity: 1;
@@ -376,7 +378,9 @@ export default function KnowledgeBasePage() {
         [data-anim-delay] {
           opacity: 0;
           transform: translateY(6px) scale(0.995);
-          transition: opacity 0.45s ease, transform 0.45s ease;
+          transition:
+            opacity 0.45s ease,
+            transform 0.45s ease;
         }
         [data-anim-delay].in-view {
           opacity: 1;
@@ -385,7 +389,8 @@ export default function KnowledgeBasePage() {
 
         /* hover micro-interactions for cards */
         .card-hover {
-          transition: transform 0.28s cubic-bezier(0.2, 0.9, 0.2, 1),
+          transition:
+            transform 0.28s cubic-bezier(0.2, 0.9, 0.2, 1),
             box-shadow 0.28s cubic-bezier(0.2, 0.9, 0.2, 1);
         }
         .card-hover:hover {
@@ -596,11 +601,11 @@ export default function KnowledgeBasePage() {
               </a>
               <div className="my-2 border-t border-[--border-subtle]" />
               <a
-                href="#demo"
+                href="/demo"
                 className="mt-2 w-full rounded-xl border border-[--border-subtle] px-4 py-2 text-center text-sm font-medium text-slate-700 hover:bg-[--surface]"
                 onClick={handleMobileNavClick}
               >
-                Watch demo
+                Watch a demo
               </a>
               <a
                 href="#cta"
@@ -680,7 +685,7 @@ export default function KnowledgeBasePage() {
                 Start free trial <ArrowRight className="ml-2 h-4 w-4" />
               </a>
               <a
-                href="#demo"
+                href="/demo"
                 className="rounded-2xl border border-[--brand-primary] px-5 py-3 text-sm font-semibold text-[--brand-primary] transition hover:text-white"
                 onMouseEnter={(e) =>
                   (e.currentTarget.style.background = `linear-gradient(90deg, ${brand.primary} 0%, ${brand.accent} 100%)`)
@@ -689,7 +694,7 @@ export default function KnowledgeBasePage() {
                   (e.currentTarget.style.background = "transparent")
                 }
               >
-                Watch demo
+                Watch a demo
               </a>
             </div>
             <div className="mt-6 flex flex-wrap gap-4 text-sm text-slate-500">
@@ -882,7 +887,7 @@ export default function KnowledgeBasePage() {
                           }}
                           data-anim-delay={`${i * 30 + 60}`}
                         />
-                      )
+                      ),
                     )}
                   </div>
 
@@ -892,7 +897,7 @@ export default function KnowledgeBasePage() {
                         <span key={d} className="w-12 text-center">
                           {d}
                         </span>
-                      )
+                      ),
                     )}
                   </div>
                 </div>
@@ -1054,10 +1059,10 @@ export default function KnowledgeBasePage() {
                         {i === 0
                           ? "Ingest"
                           : i === 1
-                          ? "Tag"
-                          : i === 2
-                          ? "Publish"
-                          : "Measure"}
+                            ? "Tag"
+                            : i === 2
+                              ? "Publish"
+                              : "Measure"}
                       </span>
                     </div>
                     <div className="font-medium text-[--brand-primary]">
@@ -1275,11 +1280,11 @@ export default function KnowledgeBasePage() {
 
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <a
-                href="#"
+                href="/demo"
                 className="rounded-2xl px-5 py-3 text-sm font-semibold text-white shadow-md transition-transform duration-150 hover:-translate-y-0.5"
                 style={{ backgroundColor: brand.primary }}
               >
-                Book a demo
+                Watch a demo
               </a>
 
               <a
@@ -1534,7 +1539,7 @@ export default function KnowledgeBasePage() {
                     >
                       {t}
                     </span>
-                  )
+                  ),
                 )}
               </div>
 

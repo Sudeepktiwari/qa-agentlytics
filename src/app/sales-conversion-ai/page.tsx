@@ -151,7 +151,7 @@ export default function SalesConversionAIPage() {
     () => [
       { txt: "Show plan compare" },
       { txt: "Offer ROI sheet" },
-      { txt: "Book a demo" },
+      { txt: "Watch a demo" },
       { txt: "Share case study" },
     ],
     []
