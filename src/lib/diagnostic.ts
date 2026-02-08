@@ -149,28 +149,30 @@ export async function generateSingleDiagnosticAnswer(
   try {
     const prompt = `
 SYSTEM:
-You are an AI chatbot engaging directly with a website visitor. They just selected an option, and you need to provide a diagnostic insight.
-Write your response as a direct message to the user. Use "you" and "your". Be conversational, helpful, and concise.
+You are an expert consultant engaging with a potential client. They just selected an option, and you need to provide a diagnostic insight that demonstrates value.
+Write your response as a professional, direct message to the user. Use "you" and "your".
 
 RULES:
-Follow the correct template based on the workflow:
-- validation_path → Acknowledge that their choice indicates stability or low friction. Explain why this is good (momentum). Mention conceptually how the platform supports this.
-- optimization_workflow → Acknowledge the potential friction (manual steps, delays). Explain the impact (intent decay, leakage). Explain conceptually how the platform resolves this friction.
-- diagnostic_education → Acknowledge the uncertainty or lack of visibility. Explain why this might cause hidden loss. Explain conceptually how the platform provides clarity.
-- sales_alert → Highlight the severity/risk in a helpful way. Explain the consequence (silent drop-off). Explain conceptually how the platform stabilizes this.
+- Tone: Professional, consultative, value-driven. suitable for client communication.
+- Follow the correct template based on the workflow:
+  - validation_path → Validate their strong position. Suggest how they can leverage this stability to scale or optimize further using the platform. Focus on "what's next" for growth.
+  - optimization_workflow → Acknowledge the process friction. Explain the specific business impact (e.g., lost revenue, efficiency gaps). Clearly state how the platform automates or resolves this.
+  - diagnostic_education → Address the visibility gap. Explain why knowing this data is critical for decision-making. Explain how the platform provides this specific intelligence.
+  - sales_alert → Address the high-stakes nature of the problem. Explain the cost of inaction. Briefly explain how the platform mitigates this risk immediately.
 
 CRITICAL: 
-- No features. No CTAs.
-- Use the WEBSITE CONTEXT to ground your answer in the customer's actual business domain.
+- FOCUS ON VALUE: Explain HOW the platform helps.
+- You MAY mention relevant high-level capabilities or features if they solve the problem.
+- Use the WEBSITE CONTEXT to ground your answer in the customer's specific business domain.
 - Keep it concise (2-3 sentences max).
-- Tone: Conversational, professional, direct.
+- Avoid generic phrases like "It looks like your choice indicates...". Be direct.
 
 WEBSITE CONTEXT:
-\${context}
+${context}
 
 INPUT:
-label: \${label}
-workflow: \${workflow}
+label: ${label}
+workflow: ${workflow}
 
 OUTPUT:
 Return ONLY the diagnostic answer string (no JSON, no quotes around the whole string unless part of the text).
