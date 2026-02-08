@@ -98,7 +98,7 @@ export default function HeroLeadSection({
               href="#cta"
               className="rounded-2xl border border-[--brand-primary] px-6 py-3 text-sm font-semibold text-[--brand-primary] transition hover:bg-[--brand-primary] hover:text-white focus:outline-none focus:ring-4 focus:ring-[--brand-primary] focus:ring-offset-2"
             >
-              Book a Demo
+              Watch a Demo
             </a>
           </div>
 

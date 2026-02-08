@@ -6,7 +6,7 @@ import React from "react";
  * Notes:
  * - Tailwind-only styling
  * - Anchor-based primary CTA (scroll to How It Works)
- * - Secondary CTA (Book a Demo)
+ * - Secondary CTA (Watch a Demo)
  * - No "Start Free" CTA
  *
  * Compatibility:
@@ -74,7 +74,7 @@ const Page = () => {
               href="/book-demo"
               className="inline-flex rounded-xl bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
             >
-              Book a Demo
+              Watch a Demo
             </a>
           </div>
         </div>
@@ -118,7 +118,7 @@ const Page = () => {
                 href="/book-demo"
                 className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-900 shadow-sm hover:bg-slate-50"
               >
-                Book a Demo
+                Watch a Demo
               </a>
             </div>
 
@@ -453,7 +453,7 @@ const Page = () => {
                     href="/book-demo"
                     className="inline-flex items-center justify-center rounded-2xl border border-white/40 bg-white/10 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-white/15"
                   >
-                    Book a Demo
+                    Watch a Demo
                   </a>
                 </div>
               </div>
@@ -750,7 +750,7 @@ function LiveQualificationSnapshot() {
           href="/book-demo"
           className="inline-flex flex-1 items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 hover:bg-slate-50"
         >
-          Book a Demo
+          Watch a Demo
         </a>
       </div>
     </div>

@@ -58,28 +58,28 @@ export default function BANTQualificationPage() {
     try {
       console.assert(
         Array.isArray(faqs) && faqs.length >= 3,
-        "FAQ list missing or too short",
+        "FAQ list missing or too short"
       );
       console.assert(
         faqs.every(
           (f) =>
-            typeof f.q === "string" && typeof f.a === "string" && f.q && f.a,
+            typeof f.q === "string" && typeof f.a === "string" && f.q && f.a
         ),
-        "Each FAQ item must have string q & a",
+        "Each FAQ item must have string q & a"
       );
       console.assert(
         Array.isArray(HOW_IT_WORKS) && HOW_IT_WORKS.length === 3,
-        "HOW_IT_WORKS malformed",
+        "HOW_IT_WORKS malformed"
       );
       console.assert(
         HOW_IT_WORKS.every(
-          (s) => typeof s.text === "string" && !/\n$/.test(s.text),
+          (s) => typeof s.text === "string" && !/\n$/.test(s.text)
         ),
-        "HOW_IT_WORKS text contains an unexpected trailing newline",
+        "HOW_IT_WORKS text contains an unexpected trailing newline"
       );
       console.assert(
         Array.isArray(flows) && flows.length === 3,
-        "flows data missing",
+        "flows data missing"
       );
     } catch (e) {
       // Avoid throwing in production; just log

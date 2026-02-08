@@ -27,11 +27,11 @@ const HomePage: React.FC = () => {
             }
           });
         },
-        { threshold: 0.15, rootMargin: "0px 0px -40px 0px" }
+        { threshold: 0.15, rootMargin: "0px 0px -40px 0px" },
       );
 
       const reveals = Array.from(
-        document.querySelectorAll(".reveal")
+        document.querySelectorAll(".reveal"),
       ) as HTMLElement[];
       if (!prefersReduced) {
         reveals.forEach((el, i) => {
@@ -47,10 +47,10 @@ const HomePage: React.FC = () => {
 
     // How It Works interactions
     const howButtons = Array.from(
-      document.querySelectorAll("[data-how-step]")
+      document.querySelectorAll("[data-how-step]"),
     ) as HTMLElement[];
     const howViews = Array.from(
-      document.querySelectorAll("[data-how-view]")
+      document.querySelectorAll("[data-how-view]"),
     ) as HTMLElement[];
     const howProgress = document.getElementById("howProgress");
     const howIndex = document.getElementById("howIndex");
@@ -85,8 +85,8 @@ const HomePage: React.FC = () => {
 
     howButtons.forEach((btn) =>
       btn.addEventListener("click", () =>
-        showHow(Number((btn as HTMLElement).dataset.howStep))
-      )
+        showHow(Number((btn as HTMLElement).dataset.howStep)),
+      ),
     );
 
     function playHow() {
@@ -103,7 +103,7 @@ const HomePage: React.FC = () => {
           const next = (howCurrent % howButtons.length) + 1;
           showHow(next);
         },
-        prefersReduced ? 1000 : 1600
+        prefersReduced ? 1000 : 1600,
       ) as unknown as number;
     }
     playHowBtn?.addEventListener("click", playHow);
@@ -137,37 +137,37 @@ const HomePage: React.FC = () => {
           "Hero title exists",
           !!document
             .querySelector("#top h1")
-            ?.textContent?.includes("AI Salesperson")
+            ?.textContent?.includes("AI Salesperson"),
         );
         expect("Problem section present", !!document.getElementById("problem"));
         expect(
           "Value journey map path anim",
-          !!document.querySelector("#value svg path.animate-dash")
+          !!document.querySelector("#value svg path.animate-dash"),
         );
         expect(
           "How storyboard has 5 steps",
-          document.querySelectorAll("[data-how-step]").length === 5
+          document.querySelectorAll("[data-how-step]").length === 5,
         );
         expect(
           "How views has 5 panels",
-          document.querySelectorAll("[data-how-view]").length === 5
+          document.querySelectorAll("[data-how-view]").length === 5,
         );
         expect(
           "Features cards visible",
-          document.querySelectorAll("#features .group").length === 6
+          document.querySelectorAll("#features .group").length === 6,
         );
         const failed = tests.filter((t) => !t.pass);
         if (failed.length) {
           console.group(
             "%cAgentlytics self-tests",
-            "color:#b91c1c;font-weight:700"
+            "color:#b91c1c;font-weight:700",
           );
           failed.forEach((t) => console.error("❌", t.name));
           console.groupEnd();
         } else {
           console.log(
             "%cAgentlytics self-tests: all passed",
-            "color:#16a34a;font-weight:700"
+            "color:#16a34a;font-weight:700",
           );
         }
       } catch {
@@ -248,7 +248,7 @@ const HomePage: React.FC = () => {
                 href="/demo"
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 text-slate-800 hover:bg-slate-50"
               >
-                Book a Demo
+                Watch a Demo
               </a>
               <a
                 href="#trial"
@@ -280,7 +280,7 @@ const HomePage: React.FC = () => {
                   href="/demo"
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300"
                 >
-                  Book a Demo
+                  Watch a Demo
                 </a>
                 <a
                   href="#trial"
@@ -325,7 +325,7 @@ const HomePage: React.FC = () => {
                     href="/demo"
                     className="inline-flex items-center gap-2 px-5 py-3 rounded-lg border border-slate-300 text-slate-900"
                   >
-                    Book a Demo
+                    Watch a Demo
                   </a>
                 </div>
                 <p className="text-slate-500 mt-3 text-sm">
@@ -935,7 +935,7 @@ const HomePage: React.FC = () => {
                             Start Free Trial
                           </button>
                           <button className="w-full h-10 rounded-lg mt-2 border border-slate-300">
-                            Book a Demo
+                            Watch a Demo
                           </button>
                         </div>
                       </div>
@@ -1313,7 +1313,7 @@ const HomePage: React.FC = () => {
                 href="/demo"
                 className="inline-flex items-center gap-2 px-5 py-3 rounded-lg border border-slate-300"
               >
-                Book a Demo
+                Watch a Demo
               </a>
             </div>
             <p className="text-slate-500 mt-3 text-sm reveal">

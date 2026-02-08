@@ -942,7 +942,7 @@ export default function Page() {
                     href="/demo"
                     className="inline-flex items-center gap-2 px-5 py-3 rounded-lg border border-slate-300 text-slate-900"
                   >
-                    Book a Demo
+                    Watch a Demo
                   </a>
                 </div>
                 <p className="text-slate-500 mt-3 text-sm">
@@ -1672,7 +1672,7 @@ export default function Page() {
                             Start Free Trial
                           </Link>
                           <button className="w-full h-10 rounded-lg mt-2 border border-slate-300">
-                            Book a Demo
+                            Watch a Demo
                           </button>
                         </div>
                       </div>
@@ -2110,7 +2110,7 @@ export default function Page() {
                 href="/demo"
                 className="inline-flex items-center gap-2 px-5 py-3 rounded-lg border border-slate-300"
               >
-                Book a Demo
+                Watch a Demo
               </a>
             </div>
           </div>

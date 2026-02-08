@@ -566,7 +566,7 @@ export default function AgentlyticsBuildersLanding() {
             <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
               <Button>Start Free — Engage Buyers Automatically</Button>
               <Button variant="secondary">
-                Book a Demo — See a Live Builder Flow
+                Watch a Demo — See a Live Builder Flow
               </Button>
             </div>
 

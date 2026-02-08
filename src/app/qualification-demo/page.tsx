@@ -241,7 +241,7 @@ function StickyCTA() {
             className="rounded-full px-5"
             style={{ backgroundColor: ACCENT, color: "white" }}
           >
-            Book a Demo
+            Watch a Demo
           </Button>
         </div>
       </div>
@@ -307,7 +307,7 @@ export default function PricingPageDropOffUseCase() {
                 See How Pricing Visitors Convert
               </Button>
               <Button variant="outline" className="rounded-full px-6">
-                Book a Demo
+                Watch a Demo
               </Button>
             </div>
 
@@ -657,7 +657,7 @@ export default function PricingPageDropOffUseCase() {
               See How Pricing Visitors Are Qualified
             </Button>
             <Button variant="outline" className="rounded-full px-6">
-              Book a Demo
+              Watch a Demo
             </Button>
           </div>
           <div className="mt-4 text-sm text-zinc-600">

@@ -102,9 +102,9 @@ function Section({
 
 function CTA({
   primaryHref = "/signup",
-  secondaryHref = "#demo",
+  secondaryHref = "/demo",
   primaryLabel = "Start Free",
-  secondaryLabel = "Book a Demo",
+  secondaryLabel = "Watch a Demo",
 }: CTAProps) {
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -231,9 +231,9 @@ export default function Page() {
           <div className="hidden sm:block">
             <CTA
               primaryHref="/signup"
-              secondaryHref="#demo"
+              secondaryHref="/demo"
               primaryLabel="Start Free"
-              secondaryLabel="Book a Demo"
+              secondaryLabel="Watch a Demo"
             />
           </div>
 
@@ -314,9 +314,9 @@ export default function Page() {
               <div className="mt-6">
                 <CTA
                   primaryHref="/signup"
-                  secondaryHref="#demo"
+                  secondaryHref="/demo"
                   primaryLabel="Increase Demo Conversions"
-                  secondaryLabel="Book a Demo — See a Live SaaS Flow"
+                  secondaryLabel="Watch a Demo — See a Live SaaS Flow"
                 />
               </div>
 
@@ -729,7 +729,7 @@ export default function Page() {
                   href="#demo"
                   className="inline-flex items-center justify-center rounded-xl border border-white/30 bg-white/10 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-white/15 focus:outline-none focus:ring-2 focus:ring-white/40"
                 >
-                  Book a Demo
+                  Watch a Demo
                 </a>
               </div>
             </div>

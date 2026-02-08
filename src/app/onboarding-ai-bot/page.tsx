@@ -591,7 +591,7 @@ export default function OnboardingAIBotPage() {
                     (e.currentTarget.style.background = "transparent")
                   }
                 >
-                  Book a Demo
+                  Watch a Demo
                 </a>
               </div>
               <p className="text-xs text-slate-500">

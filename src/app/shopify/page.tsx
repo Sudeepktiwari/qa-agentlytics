@@ -812,7 +812,7 @@ export default function ShopifyLandingPage() {
                   href="#final"
                   className="rounded-xl border border-[#d7e1d4] bg-white px-3 py-2 text-center text-sm font-semibold text-[#0b1f19] hover:bg-[#f1f6f0]"
                 >
-                  Book a Demo
+                  Watch a Demo
                 </a>
               </div>
             </div>
@@ -873,7 +873,7 @@ export default function ShopifyLandingPage() {
                 href="#final"
                 className="inline-flex items-center justify-center gap-2 rounded-full border border-[#d7e1d4] bg-white px-6 py-3 text-sm font-semibold text-[#0b1f19] hover:bg-[#f1f6f0]"
               >
-                Book a Demo - See a Live Store Flow
+                Watch a Demo - See a Live Store Flow
               </a>
             </div>
 
@@ -1473,7 +1473,7 @@ export default function ShopifyLandingPage() {
                       href="/signup"
                       className="rounded-xl border border-[#d7e1d4] bg-white px-4 py-3 text-center text-sm font-semibold text-[#0b1f19] hover:bg-[#f1f6f0]"
                     >
-                      Book a Demo
+                      Watch a Demo
                     </a>
                   </div>
 

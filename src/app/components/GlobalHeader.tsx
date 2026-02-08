@@ -656,7 +656,7 @@ export default function GlobalHeader() {
             href="/demo"
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 text-slate-800 hover:bg-slate-50"
           >
-            Book a Demo
+            Watch a Demo
           </Link>
           <a
             href="/admin"
@@ -955,7 +955,7 @@ export default function GlobalHeader() {
                   href="/demo"
                   className="inline-flex items-center gap-2 px-4 py-2 w-full justify-center rounded-lg border border-slate-300"
                 >
-                  Book a Demo
+                  Watch a Demo
                 </Link>
                 <a
                   href="/admin"
