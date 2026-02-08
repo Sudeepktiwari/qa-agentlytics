@@ -2358,9 +2358,13 @@ async function processBatch(req: NextRequest) {
             try {
               sec.leadQuestions = await processQuestionsWithTags(
                 sec.leadQuestions,
+                block.body,
+                adminId || undefined,
               );
               sec.salesQuestions = await processQuestionsWithTags(
                 sec.salesQuestions,
+                block.body,
+                adminId || undefined,
               );
             } catch (tagError) {
               console.error(
@@ -3281,10 +3285,14 @@ IMPORTANT REQUIREMENTS:
                                 sec.leadQuestions =
                                   await processQuestionsWithTags(
                                     sec.leadQuestions,
+                                    block.body,
+                                    adminId || undefined,
                                   );
                                 sec.salesQuestions =
                                   await processQuestionsWithTags(
                                     sec.salesQuestions,
+                                    block.body,
+                                    adminId || undefined,
                                   );
                               } catch (e) {
                                 console.error(
@@ -3448,9 +3456,13 @@ IMPORTANT REQUIREMENTS:
                           try {
                             sec.leadQuestions = await processQuestionsWithTags(
                               sec.leadQuestions,
+                              block.body,
+                              adminId || undefined,
                             );
                             sec.salesQuestions = await processQuestionsWithTags(
                               sec.salesQuestions,
+                              block.body,
+                              adminId || undefined,
                             );
                           } catch (e) {
                             console.error(

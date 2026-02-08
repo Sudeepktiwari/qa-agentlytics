@@ -293,14 +293,17 @@ export async function POST(request: NextRequest) {
     let structuredSummary;
 
     if (estimatedTokens <= maxTokensForDirect) {
-      structuredSummary = await generateDirectSummary(reconstructedContent);
+      structuredSummary = await generateDirectSummary(
+        reconstructedContent,
+        adminId,
+      );
     } else {
       // For chunked summary, pass the vectorDocs with chunk text from Pinecone
       const chunkObjs = vectorDocs.map((doc) => ({
         ...doc,
         text: idToChunk[doc.vectorId] || "",
       }));
-      structuredSummary = await generateChunkedSummary(chunkObjs);
+      structuredSummary = await generateChunkedSummary(chunkObjs, adminId);
     }
 
     if (!structuredSummary) {
@@ -476,7 +479,7 @@ export async function DELETE(request: NextRequest) {
 }
 
 // Helper function for direct summary generation (smaller content)
-async function generateDirectSummary(content: string) {
+async function generateDirectSummary(content: string, adminId?: string) {
   try {
     console.log("[API] Calling OpenAI for direct summary generation...");
     const summaryResponse = await openai.chat.completions.create({
@@ -573,7 +576,7 @@ IMPORTANT REQUIREMENTS:
 
     const parsed = JSON.parse(summaryContent);
     const normalized = normalizeStructuredSummary(parsed);
-    return await enrichStructuredSummary(normalized);
+    return await enrichStructuredSummary(normalized, content, adminId);
   } catch (error) {
     console.error("[API] Direct summary generation failed:", error);
     return null;
@@ -581,7 +584,7 @@ IMPORTANT REQUIREMENTS:
 }
 
 // Helper function for chunked summary generation (large content)
-async function generateChunkedSummary(chunks: any[]) {
+async function generateChunkedSummary(chunks: any[], adminId?: string) {
   try {
     console.log(
       `[API] Starting chunked summary generation for ${chunks.length} chunks...`,
@@ -746,7 +749,7 @@ IMPORTANT REQUIREMENTS:
 
     const parsed = JSON.parse(finalContent);
     const normalized = normalizeStructuredSummary(parsed);
-    return await enrichStructuredSummary(normalized);
+    return await enrichStructuredSummary(normalized, combinedSummary, adminId);
   } catch (error) {
     console.error("[API] Chunked summary generation failed:", error);
     return null;

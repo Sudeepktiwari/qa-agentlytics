@@ -1,4 +1,6 @@
 import OpenAI from "openai";
+import { querySimilarChunks } from "./chroma";
+import { generateSingleDiagnosticAnswer } from "./diagnostic";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -90,20 +92,68 @@ Example:
 
 export async function generateDiagnosticAnswers(
   items: { label: string; workflow: string }[],
+  contextText: string = "",
+  adminId?: string,
 ) {
   if (!items || items.length === 0) return {};
 
-  // Use ID-based mapping to avoid label mismatch issues
-  const itemsWithId = items.map((item, index) => ({
-    id: index,
-    label: item.label,
-    workflow: item.workflow,
-  }));
+  // PRIORITY: If adminId is provided, use Vector Search (RAG) for global context
+  if (adminId) {
+    console.log(
+      `[Diagnostic] Generating answers using Vector Search for ${items.length} items (Admin: ${adminId})...`,
+    );
+    const map: Record<string, string> = {};
+    const CONCURRENCY = 5;
+
+    // Process in batches to control concurrency
+    for (let i = 0; i < items.length; i += CONCURRENCY) {
+      const batch = items.slice(i, i + CONCURRENCY);
+      await Promise.all(
+        batch.map(async (item) => {
+          try {
+            // 1. Embedding
+            const embResp = await openai.embeddings.create({
+              model: "text-embedding-3-small",
+              input: item.label,
+              dimensions: 1024,
+            });
+            const vector = embResp.data[0].embedding;
+
+            // 2. Vector Search
+            const chunks = await querySimilarChunks(vector, 3, adminId);
+            const retrievedContext = chunks.map((c) => c.text).join("\n---\n");
+
+            // Combine specific section context (if any) with retrieved context
+            const fullContext = contextText
+              ? `SECTION CONTEXT:\n${contextText}\n\nKNOWLEDGE BASE:\n${retrievedContext}`
+              : retrievedContext;
+
+            // 3. Generate
+            const answer = await generateSingleDiagnosticAnswer(
+              item.label,
+              item.workflow,
+              fullContext,
+            );
+            if (answer) {
+              map[`${item.label}::${item.workflow}`] = answer;
+            }
+          } catch (e) {
+            console.error(
+              `[Diagnostic] Error generating for "${item.label}":`,
+              e,
+            );
+          }
+        }),
+      );
+    }
+    return map;
+  }
+
+  // FALLBACK: Local Context Only (Batch Generation)
+  // Create a mapping of ID to Item to ensure we can map back the results
+  const itemsWithId = items.map((item, index) => ({ ...item, id: index + 1 }));
 
   try {
-    console.log(
-      `[Diagnostic] Generating answers for ${items.length} options...`,
-    );
     const response = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       response_format: { type: "json_object" },
@@ -123,7 +173,12 @@ RULES:
   - diagnostic_education → Acknowledge uncertainty → explain hidden loss → conceptual clarity.
   - sales_alert → Highlight risk → explain consequence → conceptual solution.
 
-No features, no CTAs. Keep it concise (2-3 sentences).
+CRITICAL:
+- No features, no CTAs.
+- Use the WEBSITE CONTEXT (if provided) to ground your answer.
+- Keep it concise (2-3 sentences).
+
+${contextText ? `WEBSITE CONTEXT:\n${contextText}\n` : ""}
 
 INPUT: List of options with ids, labels and workflows.
 OUTPUT: JSON object with "results" array containing "id" and "diagnostic_answer".
@@ -167,7 +222,11 @@ Example:
   }
 }
 
-export async function processQuestionsWithTags(questions: any[]) {
+export async function processQuestionsWithTags(
+  questions: any[],
+  contextText: string = "",
+  adminId?: string,
+) {
   if (!questions || !questions.length) return questions;
 
   const allLabels: string[] = [];
@@ -337,34 +396,35 @@ export async function processQuestionsWithTags(questions: any[]) {
     }
   });
 
-  // Generate diagnostic answers
-  if (allOptionsForDiagnostic.length > 0) {
-    try {
-      const diagnosticMap = await generateDiagnosticAnswers(
-        allOptionsForDiagnostic,
-      );
-      // Inject back into options
-      processedQuestions.forEach((q) => {
-        if (q && Array.isArray(q.options)) {
-          q.options = q.options.map((o: any) => {
-            const key = `${o.label}::${o.workflow}`;
-            const answer = diagnosticMap[key];
-            if (answer) {
-              return { ...o, diagnostic_answer: answer };
-            }
-            return o;
-          });
+  // Generate diagnostic answers in batch (or via vector search if adminId present)
+  const diagnosticMap = await generateDiagnosticAnswers(
+    allOptionsForDiagnostic,
+    contextText,
+    adminId,
+  );
+
+  // Apply diagnostic answers back to options
+  const finalQuestions = processedQuestions.map((q) => {
+    if (q && Array.isArray(q.options)) {
+      q.options = q.options.map((o: any) => {
+        const key = `${o.label}::${o.workflow}`;
+        const answer = diagnosticMap[key];
+        if (answer) {
+          return { ...o, diagnostic_answer: answer };
         }
+        return o;
       });
-    } catch (err) {
-      console.error("Failed to generate diagnostic answers:", err);
     }
-  }
+  });
 
   return processedQuestions;
 }
 
-export async function enrichStructuredSummary(summary: any) {
+export async function enrichStructuredSummary(
+  summary: any,
+  contextText: string = "",
+  adminId?: string,
+) {
   if (!summary || !Array.isArray(summary.sections)) return summary;
 
   const enrichedSections = await Promise.all(
@@ -373,12 +433,16 @@ export async function enrichStructuredSummary(summary: any) {
       if (Array.isArray(section.leadQuestions)) {
         section.leadQuestions = await processQuestionsWithTags(
           section.leadQuestions,
+          contextText,
+          adminId,
         );
       }
       // Process Sales Questions
       if (Array.isArray(section.salesQuestions)) {
         section.salesQuestions = await processQuestionsWithTags(
           section.salesQuestions,
+          contextText,
+          adminId,
         );
       }
       return section;
