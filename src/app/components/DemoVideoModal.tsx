@@ -1,4 +1,6 @@
-import React, { useEffect } from "react";
+"use client";
+import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 interface DemoVideoModalProps {
   isOpen: boolean;
@@ -11,6 +13,12 @@ const DemoVideoModal: React.FC<DemoVideoModalProps> = ({
   onClose,
   videoId = "CBcpBr-0XsI", // Default placeholder or specific ID
 }) => {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // Prevent scrolling when modal is open
   useEffect(() => {
     if (isOpen) {
@@ -23,9 +31,9 @@ const DemoVideoModal: React.FC<DemoVideoModalProps> = ({
     };
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
       {/* Backdrop */}
       <div
@@ -73,7 +81,8 @@ const DemoVideoModal: React.FC<DemoVideoModalProps> = ({
           ></iframe>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
