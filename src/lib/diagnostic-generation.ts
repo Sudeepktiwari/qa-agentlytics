@@ -134,6 +134,16 @@ export async function generateDiagnosticAnswers(
               item.workflow,
               fullContext,
             );
+
+            // Fallback for missing options
+            if (!result.options || result.options.length === 0) {
+              result.options = [
+                "View Details",
+                "Contact Sales",
+                "Read Documentation",
+              ];
+            }
+
             if (result && result.answer) {
               map[`${item.label}::${item.workflow}`] = result;
             }
@@ -185,7 +195,7 @@ CRITICAL:
 ${contextText ? `WEBSITE CONTEXT:\n${contextText}\n` : ""}
 
 INPUT: List of options with ids, labels and workflows.
-OUTPUT: JSON object with "results" array containing "id", "diagnostic_answer", and "diagnostic_options".
+OUTPUT: JSON object with "results" array containing "id", "diagnostic_answer", and "diagnostic_options" (MUST be an array of 3-4 strings).
 Example:
 {
   "results": [
