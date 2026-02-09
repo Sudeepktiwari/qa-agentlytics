@@ -23,6 +23,7 @@ export default function WorkflowSection() {
   const [selectedDiagnostic, setSelectedDiagnostic] = useState<{
     title: string;
     answer: string;
+    options?: string[];
   } | null>(null);
   const [pageTypeFilter, setPageTypeFilter] = useState<string>("");
   const [loading, setLoading] = useState(true);
@@ -394,6 +395,8 @@ export default function WorkflowSection() {
                                                                     String(opt),
                                                                   answer:
                                                                     opt.diagnostic_answer,
+                                                                  options:
+                                                                    opt.diagnostic_options,
                                                                 },
                                                               );
                                                             }
@@ -644,6 +647,24 @@ export default function WorkflowSection() {
               <div className="prose prose-sm max-w-none text-slate-600 whitespace-pre-wrap">
                 {selectedDiagnostic.answer}
               </div>
+              {selectedDiagnostic.options &&
+                selectedDiagnostic.options.length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-slate-100">
+                    <span className="text-xs font-bold text-slate-500 uppercase block mb-2">
+                      Recommended Actions
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedDiagnostic.options.map((opt, i) => (
+                        <span
+                          key={i}
+                          className="text-xs bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full border border-blue-200 font-medium hover:bg-blue-100 cursor-default transition-colors"
+                        >
+                          {opt}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
             </div>
             <div className="p-4 border-t border-slate-200 bg-slate-50 flex justify-end">
               <button

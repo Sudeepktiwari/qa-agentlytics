@@ -102,7 +102,7 @@ export async function generateDiagnosticAnswers(
     console.log(
       `[Diagnostic] Generating answers using Vector Search for ${items.length} items (Admin: ${adminId})...`,
     );
-    const map: Record<string, string> = {};
+    const map: Record<string, { answer: string; options: string[] }> = {};
     const CONCURRENCY = 5;
 
     // Process in batches to control concurrency
@@ -129,13 +129,13 @@ export async function generateDiagnosticAnswers(
               : retrievedContext;
 
             // 3. Generate
-            const answer = await generateSingleDiagnosticAnswer(
+            const result = await generateSingleDiagnosticAnswer(
               item.label,
               item.workflow,
               fullContext,
             );
-            if (answer) {
-              map[`${item.label}::${item.workflow}`] = answer;
+            if (result && result.answer) {
+              map[`${item.label}::${item.workflow}`] = result;
             }
           } catch (e) {
             console.error(
@@ -165,7 +165,7 @@ export async function generateDiagnosticAnswers(
           
 RULES:
 - Return a JSON object with a "results" array.
-- Each result MUST include the "id" from the input and the "diagnostic_answer".
+- Each result MUST include the "id" from the input, "diagnostic_answer", and "diagnostic_options".
 - Speak directly to the user (use "you").
 - Tone: Professional, consultative, client-ready.
 - Follow the correct template:
@@ -180,15 +180,16 @@ CRITICAL:
 - Use the WEBSITE CONTEXT (if provided) to ground your answer in the customer's specific business domain.
 - Keep it concise (2-3 sentences).
 - Avoid generic phrases like "It looks like your choice indicates...". Be direct.
+- GENERATE OPTIONS: Create 3-4 short, actionable options (max 4 words each) based on the solution mentioned in your answer. These should be next steps for the user. Examples: "View Case Study", "See API Docs", "Book Strategy Call", "Read Integration Guide".
 
 ${contextText ? `WEBSITE CONTEXT:\n${contextText}\n` : ""}
 
 INPUT: List of options with ids, labels and workflows.
-OUTPUT: JSON object with "results" array containing "id" and "diagnostic_answer".
+OUTPUT: JSON object with "results" array containing "id", "diagnostic_answer", and "diagnostic_options".
 Example:
 {
   "results": [
-    { "id": 1, "diagnostic_answer": "..." }
+    { "id": 1, "diagnostic_answer": "...", "diagnostic_options": ["Option 1", "Option 2", "Option 3"] }
   ]
 }`,
         },
@@ -201,7 +202,7 @@ Example:
 
     const content = response.choices[0]?.message?.content || "{}";
     const data = JSON.parse(content);
-    const map: Record<string, string> = {};
+    const map: Record<string, { answer: string; options: string[] }> = {};
 
     if (Array.isArray(data.results)) {
       data.results.forEach((item: any) => {
@@ -210,7 +211,12 @@ Example:
           const original = itemsWithId.find((i) => i.id === item.id);
           if (original) {
             const key = `${original.label}::${original.workflow}`;
-            map[key] = item.diagnostic_answer;
+            map[key] = {
+              answer: item.diagnostic_answer,
+              options: Array.isArray(item.diagnostic_options)
+                ? item.diagnostic_options
+                : [],
+            };
           }
         }
       });
@@ -411,13 +417,18 @@ export async function processQuestionsWithTags(
     if (q && Array.isArray(q.options)) {
       q.options = q.options.map((o: any) => {
         const key = `${o.label}::${o.workflow}`;
-        const answer = diagnosticMap[key];
-        if (answer) {
-          return { ...o, diagnostic_answer: answer };
+        const res = diagnosticMap[key];
+        if (res) {
+          return {
+            ...o,
+            diagnostic_answer: res.answer,
+            diagnostic_options: res.options,
+          };
         }
         return o;
       });
     }
+    return q;
   });
 
   return processedQuestions;
