@@ -186,7 +186,11 @@ CRITICAL:
 - Use the WEBSITE CONTEXT to ground your answer in the customer's specific business domain.
 - Keep it concise (2-3 sentences max).
 - Avoid generic phrases like "It looks like your choice indicates...". Be direct.
-- GENERATE OPTIONS: Create 3-4 short, actionable options (max 4 words each) based on the solution mentioned in your answer. These should be next steps for the user. Examples: "View Case Study", "See API Docs", "Book Strategy Call", "Read Integration Guide".
+- GENERATE OPTIONS: Create 3-4 short, value-driven options (max 5 words each). 
+  - These must be specific SOLUTIONS, BENEFITS, or KEY FEATURES explicitly mentioned in your answer or the website context. 
+  - They should represent what the user can achieve or the specific capability that helps them.
+  - Do NOT use generic CTAs like "Book Call", "View Case Study", "Contact Sales".
+  - Examples of GOOD options: "Automate Qualification", "Enhance Show-up Rates", "Real-time Scoring", "Reduce Sales Cycles".
 
 WEBSITE CONTEXT:
 ${context}
@@ -200,12 +204,12 @@ Return a JSON object with:
 - "diagnostic_answer": The diagnostic text.
 - "diagnostic_options": Array of 3-4 strings (options). MUST be present.
 
-EXAMPLES OF OPTIONS:
-- "View Case Study"
-- "See API Docs"
-- "Book Strategy Call"
-- "Explore Integration"
-- "Calculate ROI"
+EXAMPLES OF OPTIONS (DO NOT COPY THESE EXACTLY, USE CONTEXT):
+- "Automate Qualification"
+- "Enhance Show-up Rates"
+- "Real-time Scoring"
+- "Reduce Sales Cycles"
+- "Identify High Intent"
 `;
 
     const response = await openai.chat.completions.create({
