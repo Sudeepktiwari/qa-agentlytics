@@ -534,6 +534,8 @@ export default function WorkflowSection() {
                                                                     String(opt),
                                                                   answer:
                                                                     opt.diagnostic_answer,
+                                                                  options:
+                                                                    opt.diagnostic_options,
                                                                 },
                                                               );
                                                             }

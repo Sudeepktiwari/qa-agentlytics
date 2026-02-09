@@ -429,10 +429,18 @@ export async function processQuestionsWithTags(
         const key = `${o.label}::${o.workflow}`;
         const res = diagnosticMap[key];
         if (res) {
+          if (!res.options || res.options.length === 0) {
+            console.warn(
+              `[Diagnostic] Warning: Options missing for ${key} in processQuestionsWithTags. Using fallback.`,
+            );
+          }
           return {
             ...o,
             diagnostic_answer: res.answer,
-            diagnostic_options: res.options,
+            diagnostic_options:
+              Array.isArray(res.options) && res.options.length > 0
+                ? res.options
+                : ["View Details", "Contact Sales", "Read Documentation"],
           };
         }
         return o;
@@ -526,6 +534,9 @@ export function normalizeStructuredSummary(raw: any) {
                 typeof o.diagnostic_answer === "string"
                   ? o.diagnostic_answer
                   : undefined,
+              diagnostic_options: Array.isArray(o.diagnostic_options)
+                ? o.diagnostic_options
+                : undefined,
             };
           }
           const label = String(o || "");
@@ -586,6 +597,9 @@ export function normalizeStructuredSummary(raw: any) {
                 typeof o.diagnostic_answer === "string"
                   ? o.diagnostic_answer
                   : undefined,
+              diagnostic_options: Array.isArray(o.diagnostic_options)
+                ? o.diagnostic_options
+                : undefined,
             };
           }
           const label = String(o || "");
