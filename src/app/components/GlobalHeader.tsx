@@ -2,6 +2,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import DemoVideoModal from "./DemoVideoModal";
 
 export default function GlobalHeader() {
   const pathname = usePathname();
@@ -24,6 +25,8 @@ export default function GlobalHeader() {
   const [hoveredDropdown, setHoveredDropdown] = useState<
     null | "products" | "solutions" | "platforms" | "others"
   >(null);
+
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
 
   // Helper: close all <details> menus
   const closeAllMenus = () => {
@@ -62,6 +65,10 @@ export default function GlobalHeader() {
       data-global-header
       className={`${headerPositionClasses} z-50 bg-white/80 backdrop-blur border-b border-slate-200`}
     >
+      <DemoVideoModal
+        isOpen={isDemoModalOpen}
+        onClose={() => setIsDemoModalOpen(false)}
+      />
       <div className="max-w-7xl mx-auto h-16 px-4 md:p-6 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 text-slate-900">
           <img
@@ -652,12 +659,12 @@ export default function GlobalHeader() {
 
         {/* Desktop CTAs */}
         <div className="hidden md:flex items-center gap-3">
-          <Link
-            href="/demo"
+          <button
+            onClick={() => setIsDemoModalOpen(true)}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 text-slate-800 hover:bg-slate-50"
           >
             Watch a Demo
-          </Link>
+          </button>
           <a
             href="/admin"
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[color:var(--brand-blue)] text-white hover:bg-blue-600"
@@ -951,12 +958,12 @@ export default function GlobalHeader() {
                 </div>
               </details>
               <div className="flex-row space-y-2 pt-2 border-t border-slate-200 gap-3">
-                <Link
-                  href="/demo"
+                <button
+                  onClick={() => setIsDemoModalOpen(true)}
                   className="inline-flex items-center gap-2 px-4 py-2 w-full justify-center rounded-lg border border-slate-300"
                 >
                   Watch a Demo
-                </Link>
+                </button>
                 <a
                   href="/admin"
                   className="inline-flex items-center gap-2 px-4 py-2 w-full justify-center rounded-lg bg-[color:var(--brand-blue)] text-white"

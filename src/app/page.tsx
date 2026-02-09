@@ -1,9 +1,10 @@
 "use client";
 import Head from "next/head";
 import Link from "next/link";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { PRICING } from "@/config/pricing";
+import DemoVideoModal from "./components/DemoVideoModal";
 
 // --- Helpers copied from Pricing Page ---
 
@@ -416,6 +417,8 @@ const item = {
 };
 
 export default function Page() {
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
+
   const handleScroll = (
     e: React.MouseEvent<HTMLAnchorElement, MouseEvent>,
     id: string,
@@ -612,6 +615,11 @@ export default function Page() {
           rel="stylesheet"
         />
       </Head>
+
+      <DemoVideoModal
+        isOpen={isDemoModalOpen}
+        onClose={() => setIsDemoModalOpen(false)}
+      />
 
       {/* Global styles to mimic your inline CSS + custom animations without Tailwind config */}
       <style jsx global>{`
@@ -938,12 +946,12 @@ export default function Page() {
                   >
                     Start Free Trial
                   </a>
-                  <a
-                    href="/demo"
+                  <button
+                    onClick={() => setIsDemoModalOpen(true)}
                     className="inline-flex items-center gap-2 px-5 py-3 rounded-lg border border-slate-300 text-slate-900"
                   >
                     Watch a Demo
-                  </a>
+                  </button>
                 </div>
                 <p className="text-slate-500 mt-3 text-sm">
                   No credit card. Get live in minutes.

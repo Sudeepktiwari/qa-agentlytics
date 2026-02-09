@@ -24,6 +24,8 @@ import {
 } from "react-icons/si";
 import { TfiMicrosoftAlt } from "react-icons/tfi";
 import { FaAws } from "react-icons/fa";
+import { useState } from "react";
+import DemoVideoModal from "../components/DemoVideoModal";
 
 /**
  * Agentlytics – BANT-Based Qualification (FULL PAGE, UPDATED + FULL TESTIMONIALS)
@@ -53,33 +55,34 @@ const HOW_IT_WORKS = [
 ];
 
 export default function BANTQualificationPage() {
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
   // 🧪 Smoke tests (run in browser only)
   useEffect(() => {
     try {
       console.assert(
         Array.isArray(faqs) && faqs.length >= 3,
-        "FAQ list missing or too short"
+        "FAQ list missing or too short",
       );
       console.assert(
         faqs.every(
           (f) =>
-            typeof f.q === "string" && typeof f.a === "string" && f.q && f.a
+            typeof f.q === "string" && typeof f.a === "string" && f.q && f.a,
         ),
-        "Each FAQ item must have string q & a"
+        "Each FAQ item must have string q & a",
       );
       console.assert(
         Array.isArray(HOW_IT_WORKS) && HOW_IT_WORKS.length === 3,
-        "HOW_IT_WORKS malformed"
+        "HOW_IT_WORKS malformed",
       );
       console.assert(
         HOW_IT_WORKS.every(
-          (s) => typeof s.text === "string" && !/\n$/.test(s.text)
+          (s) => typeof s.text === "string" && !/\n$/.test(s.text),
         ),
-        "HOW_IT_WORKS text contains an unexpected trailing newline"
+        "HOW_IT_WORKS text contains an unexpected trailing newline",
       );
       console.assert(
         Array.isArray(flows) && flows.length === 3,
-        "flows data missing"
+        "flows data missing",
       );
     } catch (e) {
       // Avoid throwing in production; just log
@@ -89,6 +92,10 @@ export default function BANTQualificationPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-slate-50 text-slate-900">
+      <DemoVideoModal
+        isOpen={isDemoModalOpen}
+        onClose={() => setIsDemoModalOpen(false)}
+      />
       {/* NAV */}
       <header className="sticky top-0 z-40 backdrop-blur supports-[backdrop-filter]:bg-white/70 border-b border-slate-200/70">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -158,12 +165,12 @@ export default function BANTQualificationPage() {
                 >
                   Start free — qualify smarter today.
                 </a>
-                <a
-                  href="/demo"
+                <button
+                  onClick={() => setIsDemoModalOpen(true)}
                   className="px-5 py-3 rounded-2xl border border-slate-200 bg-white font-medium hover:bg-slate-50"
                 >
                   Watch a demo
-                </a>
+                </button>
               </div>
 
               {/* Trust logos */}
@@ -398,12 +405,12 @@ export default function BANTQualificationPage() {
                 >
                   Start free — qualify smarter today.
                 </a>
-                <a
+                <button
+                  onClick={() => setIsDemoModalOpen(true)}
                   className="px-5 py-3 rounded-2xl border border-white/30 font-medium hover:bg-white/10"
-                  href="/demo"
                 >
                   Watch a demo
-                </a>
+                </button>
               </div>
             </div>
             <motion.div

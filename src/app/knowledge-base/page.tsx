@@ -2,6 +2,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import ProcessIllustration from "../components/ProcessIllustration";
+import DemoVideoModal from "../components/DemoVideoModal";
 import { motion, useAnimation } from "framer-motion";
 
 // ===== Theme tokens (Calendly-ish) =====
@@ -83,6 +84,7 @@ function devAssertTheme() {
 devAssertTheme();
 
 export default function KnowledgeBasePage() {
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   // Mobile sticky/floating header state
   const [scrolled, setScrolled] = useState(false);
@@ -601,9 +603,13 @@ export default function KnowledgeBasePage() {
               </a>
               <div className="my-2 border-t border-[--border-subtle]" />
               <a
-                href="/demo"
+                href="#"
                 className="mt-2 w-full rounded-xl border border-[--border-subtle] px-4 py-2 text-center text-sm font-medium text-slate-700 hover:bg-[--surface]"
-                onClick={handleMobileNavClick}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setIsMobileMenuOpen(false);
+                  setIsDemoModalOpen(true);
+                }}
               >
                 Watch a demo
               </a>
@@ -685,8 +691,12 @@ export default function KnowledgeBasePage() {
                 Start free trial <ArrowRight className="ml-2 h-4 w-4" />
               </a>
               <a
-                href="/demo"
+                href="#"
                 className="rounded-2xl border border-[--brand-primary] px-5 py-3 text-sm font-semibold text-[--brand-primary] transition hover:text-white"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setIsDemoModalOpen(true);
+                }}
                 onMouseEnter={(e) =>
                   (e.currentTarget.style.background = `linear-gradient(90deg, ${brand.primary} 0%, ${brand.accent} 100%)`)
                 }

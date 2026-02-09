@@ -2,9 +2,12 @@
 
 import Head from "next/head";
 import Script from "next/script";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import DemoVideoModal from "./components/DemoVideoModal";
 
 const HomePage: React.FC = () => {
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
+
   useEffect(() => {
     const prefersReduced =
       window.matchMedia &&
@@ -244,12 +247,12 @@ const HomePage: React.FC = () => {
               </a>
             </nav>
             <div className="hidden md:flex items-center gap-3">
-              <a
-                href="/demo"
+              <button
+                onClick={() => setIsDemoModalOpen(true)}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 text-slate-800 hover:bg-slate-50"
               >
                 Watch a Demo
-              </a>
+              </button>
               <a
                 href="#trial"
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-blue text-white hover:bg-blue-600"
@@ -276,12 +279,12 @@ const HomePage: React.FC = () => {
               <a href="#features">Features</a>
               <a href="#pricing">Pricing</a>
               <div className="pt-2 border-t border-slate-200 flex gap-3">
-                <a
-                  href="/demo"
+                <button
+                  onClick={() => setIsDemoModalOpen(true)}
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300"
                 >
                   Watch a Demo
-                </a>
+                </button>
                 <a
                   href="#trial"
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-blue text-white"
@@ -321,12 +324,12 @@ const HomePage: React.FC = () => {
                   >
                     Start Free Trial
                   </a>
-                  <a
-                    href="/demo"
+                  <button
+                    onClick={() => setIsDemoModalOpen(true)}
                     className="inline-flex items-center gap-2 px-5 py-3 rounded-lg border border-slate-300 text-slate-900"
                   >
                     Watch a Demo
-                  </a>
+                  </button>
                 </div>
                 <p className="text-slate-500 mt-3 text-sm">
                   No setup needed • Start in 2 mins.
@@ -1309,12 +1312,12 @@ const HomePage: React.FC = () => {
               >
                 Start Free Trial
               </a>
-              <a
-                href="/demo"
+              <button
+                onClick={() => setIsDemoModalOpen(true)}
                 className="inline-flex items-center gap-2 px-5 py-3 rounded-lg border border-slate-300"
               >
                 Watch a Demo
-              </a>
+              </button>
             </div>
             <p className="text-slate-500 mt-3 text-sm reveal">
               No setup needed • Start in 2 mins.
@@ -1418,6 +1421,10 @@ const HomePage: React.FC = () => {
             © 2025 Agentlytics. All rights reserved.
           </div>
         </footer>
+        <DemoVideoModal
+          isOpen={isDemoModalOpen}
+          onClose={() => setIsDemoModalOpen(false)}
+        />
       </main>
     </>
   );

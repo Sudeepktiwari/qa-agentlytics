@@ -1,4 +1,6 @@
 "use client";
+import React, { useState } from "react";
+import DemoVideoModal from "../components/DemoVideoModal";
 import { motion } from "framer-motion";
 import {
   CalendarCheck2,
@@ -16,8 +18,14 @@ import {
  */
 
 export default function BuiltInSchedulingPage() {
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-slate-50 text-slate-900">
+      <DemoVideoModal
+        isOpen={isDemoModalOpen}
+        onClose={() => setIsDemoModalOpen(false)}
+      />
       {/* HERO */}
       <section className="relative overflow-hidden">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-16 md:pt-24 pb-10 text-center">
@@ -40,12 +48,12 @@ export default function BuiltInSchedulingPage() {
           </p>
 
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            <a
-              href="#demo"
+            <button
+              onClick={() => setIsDemoModalOpen(true)}
               className="px-5 py-3 rounded-2xl border border-slate-200 bg-white font-medium hover:bg-slate-50"
             >
               Watch demo
-            </a>
+            </button>
             <a
               href="#cta"
               className="px-5 py-3 rounded-2xl bg-blue-600 text-white font-medium shadow hover:bg-blue-700"

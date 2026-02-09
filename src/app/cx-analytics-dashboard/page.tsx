@@ -10,6 +10,7 @@ import BrainSection from "./brain-section";
 import FeaturesSection from "./features-section";
 import ImpactSection from "./impact-section";
 import TestimonialSection from "./testimonial-section";
+import DemoVideoModal from "../components/DemoVideoModal";
 
 // Advancelytics — Knowledge Automation (FULL PAGE)
 // Fixes: unterminated strings, no `process` usage, safe CTA colors, closed hrefs.
@@ -33,12 +34,14 @@ function CTAButton({
   variant = "primary",
   className = "",
   testId,
+  onClick,
 }: {
   href?: string;
   children: React.ReactNode;
   variant?: "primary" | "secondary";
   className?: string;
   testId?: string;
+  onClick?: () => void;
 }) {
   const prefersReducedMotion = useReducedMotion();
   const isPrimary = variant === "primary";
@@ -55,6 +58,46 @@ function CTAButton({
         color: brand.cta,
         border: `1px solid ${brand.cta}`,
       };
+
+  if (onClick) {
+    return (
+      <motion.button
+        onClick={onClick}
+        data-testid={testId}
+        data-ctabtn
+        className={`${base} ${className}`}
+        style={style}
+        initial={{ scale: 1 }}
+        whileHover={prefersReducedMotion ? undefined : { scale: 1.015 }}
+        whileTap={{ scale: 0.98 }}
+      >
+        {/* shimmer */}
+        <motion.span
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          initial={{ backgroundPosition: "-200% 0%" }}
+          whileHover={
+            prefersReducedMotion ? undefined : { backgroundPosition: "200% 0%" }
+          }
+          transition={{
+            duration: 1.6,
+            ease: "linear",
+            repeat: prefersReducedMotion ? 0 : Infinity,
+          }}
+          style={{
+            backgroundImage:
+              "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.22) 50%, rgba(255,255,255,0) 100%)",
+            backgroundSize: "200% 100%",
+            maskImage: "linear-gradient(#000, #000)",
+            WebkitMaskImage: "linear-gradient(#000, #000)",
+          }}
+        />
+        {/* content */}
+        <motion.span className="relative z-[1]">{children}</motion.span>
+      </motion.button>
+    );
+  }
+
   return (
     <motion.a
       href={href}
@@ -151,6 +194,7 @@ export default function CxAnalyticsDashboardPage() {
     "--border-subtle": string;
   };
   const [tick, setTick] = useState(0);
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
   const prefersReducedMotion = useReducedMotion();
   // Mobile menu state
   const [menuOpen, setMenuOpen] = useState(false);
@@ -199,7 +243,7 @@ export default function CxAnalyticsDashboardPage() {
   }, []);
 
   const handleMobileNavClick = (
-    e: React.MouseEvent<HTMLAnchorElement, MouseEvent>
+    e: React.MouseEvent<HTMLAnchorElement, MouseEvent>,
   ) => {
     const href = (e.currentTarget.getAttribute("href") || "").trim();
     if (href.startsWith("#")) {
@@ -224,7 +268,7 @@ export default function CxAnalyticsDashboardPage() {
   // Illustration data
   const heroChips = useMemo(
     () => ["Open Article", "Share in Chat", "Create Macro"],
-    []
+    [],
   );
   const ingestSources = useMemo(
     () => [
@@ -234,7 +278,7 @@ export default function CxAnalyticsDashboardPage() {
       { k: "Confluence" },
       { k: "Zendesk" },
     ],
-    []
+    [],
   );
   const categories = useMemo(
     () => [
@@ -244,7 +288,7 @@ export default function CxAnalyticsDashboardPage() {
       { k: "Integrations" },
       { k: "Policies" },
     ],
-    []
+    [],
   );
 
   // Stats shown as chips in the hero illustration
@@ -255,7 +299,7 @@ export default function CxAnalyticsDashboardPage() {
       { k: "AHT", v: "2.8m" },
       { k: "Resolution", v: "88%" },
     ],
-    []
+    [],
   );
 
   const brainPhases = [
@@ -286,18 +330,18 @@ export default function CxAnalyticsDashboardPage() {
     try {
       console.assert(
         typeof CTAButton === "function",
-        "CTAButton should be a function"
+        "CTAButton should be a function",
       );
       const ctas = document.querySelectorAll("a[data-ctabtn]");
       console.assert(
         ctas.length >= 3,
-        `Expected at least 3 CTA buttons, found ${ctas.length}`
+        `Expected at least 3 CTA buttons, found ${ctas.length}`,
       );
       ctas.forEach((a) =>
         console.assert(
           (a.textContent || "").trim().length > 0,
-          "CTA text should not be empty"
-        )
+          "CTA text should not be empty",
+        ),
       );
       const meta = document.querySelector('meta[name="keywords"]');
       console.assert(!!meta, "Meta keywords should exist");
@@ -528,14 +572,22 @@ export default function CxAnalyticsDashboardPage() {
           <CTAButton href="#!" testId="cta-start">
             Start Free Trial — Reveal Insights in Minutes
           </CTAButton>
-          <CTAButton href="#!" variant="secondary" testId="cta-request">
-            Request Demo
+          <CTAButton
+            onClick={() => setIsDemoModalOpen(true)}
+            variant="secondary"
+            testId="cta-request"
+          >
+            Watch a Demo
           </CTAButton>
         </div>
         <p className="mt-3 text-xs text-slate-500">
           14‑day free trial · No credit card required
         </p>
       </section>
+      <DemoVideoModal
+        isOpen={isDemoModalOpen}
+        onClose={() => setIsDemoModalOpen(false)}
+      />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import DemoVideoModal from "../components/DemoVideoModal";
 import HeroSection from "./hero-section";
 import WhySection from "./why-section";
 import HowItWorksSection from "./how-it-works";
@@ -28,40 +29,76 @@ const CTAPulse = ({
   href = "#",
   variant = "primary",
   label,
+  onClick,
 }: {
   children: React.ReactNode;
   href?: string;
   variant?: "primary" | "secondary";
   label: string;
-}) => (
-  <motion.a
-    href={href}
-    aria-label={label}
-    whileHover={{ scale: 1.03 }}
-    whileTap={{ scale: 0.98 }}
-    className={
-      variant === "primary"
-        ? "rounded-2xl bg-[#004FCC] px-6 py-3 text-sm font-semibold text-white shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[#003BB5] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
-        : "rounded-2xl bg-[#E8F1FF] border border-[#004FCC] px-6 py-3 text-sm font-semibold text-[#004FCC] shadow-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#004FCC] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
-    }
-    style={{ position: "relative", overflow: "hidden" }}
-    data-testid={label?.toLowerCase().replace(/\s+/g, "-")}
-  >
-    <span className="relative z-10">{children}</span>
-    {/* gradient shimmer */}
-    <motion.span
-      aria-hidden
-      className="absolute inset-0"
-      initial={{ x: "-100%", opacity: 0 }}
-      whileHover={{ x: "100%", opacity: 1 }}
-      transition={{ duration: 0.9, ease: "easeInOut" }}
-      style={{
-        background:
-          "linear-gradient(120deg, transparent 0%, rgba(255,255,255,.15) 50%, transparent 100%)",
-      }}
-    />
-  </motion.a>
-);
+  onClick?: (e: React.MouseEvent) => void;
+}) => {
+  if (onClick) {
+    return (
+      <motion.button
+        onClick={onClick}
+        aria-label={label}
+        whileHover={{ scale: 1.03 }}
+        whileTap={{ scale: 0.98 }}
+        className={
+          variant === "primary"
+            ? "rounded-2xl bg-[#004FCC] px-6 py-3 text-sm font-semibold text-white shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[#003BB5] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+            : "rounded-2xl bg-[#E8F1FF] border border-[#004FCC] px-6 py-3 text-sm font-semibold text-[#004FCC] shadow-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#004FCC] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+        }
+        style={{ position: "relative", overflow: "hidden" }}
+        data-testid={label?.toLowerCase().replace(/\s+/g, "-")}
+      >
+        <span className="relative z-10">{children}</span>
+        {/* gradient shimmer */}
+        <motion.span
+          aria-hidden
+          className="absolute inset-0"
+          initial={{ x: "-100%", opacity: 0 }}
+          whileHover={{ x: "100%", opacity: 1 }}
+          transition={{ duration: 0.9, ease: "easeInOut" }}
+          style={{
+            background:
+              "linear-gradient(120deg, transparent 0%, rgba(255,255,255,.15) 50%, transparent 100%)",
+          }}
+        />
+      </motion.button>
+    );
+  }
+
+  return (
+    <motion.a
+      href={href}
+      aria-label={label}
+      whileHover={{ scale: 1.03 }}
+      whileTap={{ scale: 0.98 }}
+      className={
+        variant === "primary"
+          ? "rounded-2xl bg-[#004FCC] px-6 py-3 text-sm font-semibold text-white shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[#003BB5] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+          : "rounded-2xl bg-[#E8F1FF] border border-[#004FCC] px-6 py-3 text-sm font-semibold text-[#004FCC] shadow-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#004FCC] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+      }
+      style={{ position: "relative", overflow: "hidden" }}
+      data-testid={label?.toLowerCase().replace(/\s+/g, "-")}
+    >
+      <span className="relative z-10">{children}</span>
+      {/* gradient shimmer */}
+      <motion.span
+        aria-hidden
+        className="absolute inset-0"
+        initial={{ x: "-100%", opacity: 0 }}
+        whileHover={{ x: "100%", opacity: 1 }}
+        transition={{ duration: 0.9, ease: "easeInOut" }}
+        style={{
+          background:
+            "linear-gradient(120deg, transparent 0%, rgba(255,255,255,.15) 50%, transparent 100%)",
+        }}
+      />
+    </motion.a>
+  );
+};
 
 export default function SalesConversionAIPage() {
   // Allow CSS custom properties on the style object
@@ -72,7 +109,7 @@ export default function SalesConversionAIPage() {
     "--surface-alt": string;
     "--border-subtle": string;
   };
-  const [tick, setTick] = useState(0);
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
   const prefersReducedMotion = useReducedMotion();
 
   // Mobile menu state and Escape-to-close (match onboarding page)
@@ -103,9 +140,7 @@ export default function SalesConversionAIPage() {
   }, [scrolled]);
 
   // Close menu then smooth-scroll to target anchors (match onboarding handler)
-  const handleMobileNavClick = (
-    e: React.MouseEvent<HTMLAnchorElement, MouseEvent>
-  ) => {
+  const handleMobileNavClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     const href = (e.currentTarget.getAttribute("href") || "").trim();
     if (href.startsWith("#")) {
       e.preventDefault();
@@ -131,84 +166,6 @@ export default function SalesConversionAIPage() {
     }
   };
 
-  useEffect(() => {
-    const id = setInterval(() => setTick((t) => t + 1), 2500);
-    return () => clearInterval(id);
-  }, []);
-
-  // Chips used in HOW section
-  const intents = useMemo(
-    () => [
-      { k: "Pricing viewed 40s" },
-      { k: "Compare plans" },
-      { k: "ROI calculator" },
-      { k: "Enterprise features" },
-      { k: "Integration check" },
-    ],
-    []
-  );
-  const actions = useMemo(
-    () => [
-      { txt: "Show plan compare" },
-      { txt: "Offer ROI sheet" },
-      { txt: "Watch a demo" },
-      { txt: "Share case study" },
-    ],
-    []
-  );
-
-  // 🔎 Dev sanity tests (lightweight, non-blocking)
-  useEffect(() => {
-    console.assert(
-      Array.isArray(intents) && intents.length >= 3,
-      "[TEST] intents should be an array with >=3 items"
-    );
-    console.assert(
-      Array.isArray(actions) && actions.length >= 3,
-      "[TEST] actions should be an array with >=3 items"
-    );
-    console.assert(
-      typeof brand.primary === "string" && brand.primary.startsWith("#"),
-      "[TEST] brand.primary should be a hex color string"
-    );
-  }, [intents, actions]);
-
-  const rollingIntents = useMemo(() => {
-    const a = tick % intents.length;
-    const b = (a + 1) % intents.length;
-    const c = (a + 2) % intents.length;
-    return [intents[a], intents[b], intents[c]];
-  }, [tick, intents]);
-  const rollingActions = useMemo(() => {
-    const a = tick % actions.length;
-    const b = (a + 1) % actions.length;
-    const c = (a + 2) % actions.length;
-    return [actions[a], actions[b], actions[c]];
-  }, [tick, actions]);
-
-  const brainPhases = [
-    {
-      k: "I",
-      t: "Intent Detection",
-      d: "Understands tone, urgency, and scroll behavior.",
-    },
-    {
-      k: "S",
-      t: "Smart Prompts",
-      d: "Suggests ROI, pricing, or demo offers contextually.",
-    },
-    {
-      k: "C",
-      t: "Context Memory",
-      d: "Learns from CRM data and past conversations.",
-    },
-    {
-      k: "L",
-      t: "Lifecycle Aware",
-      d: "Adapts to prospect stage for maximum conversion.",
-    },
-  ];
-
   return (
     <div
       className="relative min-h-screen w-full text-slate-900 scroll-smooth overflow-x-hidden"
@@ -222,23 +179,45 @@ export default function SalesConversionAIPage() {
         } as React.CSSProperties & CSSVars
       }
     >
+      <DemoVideoModal
+        isOpen={isDemoModalOpen}
+        onClose={() => setIsDemoModalOpen(false)}
+      />
       {/* DESKTOP page-specific menu — match /ai-chatbots crossfade */}
       <header
         className={`${scrolled ? "top-0" : "top-16"} fixed left-0 right-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top,opacity,transform] duration-300 ease-out hidden md:block ${floating ? "opacity-0 -translate-y-1 pointer-events-none" : "opacity-100 translate-y-0"}`}
       >
         <div className="mx-auto flex max-w-7xl items-center px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3 md:pr-14">
-            <span className="text-lg font-semibold tracking-tight">Advancelytics</span>
-            <span className="ml-2 rounded-full bg-[--surface] px-2 py-0.5 text-xs font-medium text-slate-600">Sales Conversion AI</span>
+            <span className="text-lg font-semibold tracking-tight">
+              Advancelytics
+            </span>
+            <span className="ml-2 rounded-full bg-[--surface] px-2 py-0.5 text-xs font-medium text-slate-600">
+              Sales Conversion AI
+            </span>
           </div>
           <nav className="hidden md:flex flex-1 gap-6 text-sm text-slate-700">
-            <a href="#why" className="hover:text-slate-900">Why</a>
-            <a href="#how" className="hover:text-slate-900">How it works</a>
-            <a href="#brain" className="hover:text-slate-900">Inside the Brain</a>
-            <a href="#features" className="hover:text-slate-900">Features</a>
-            <a href="#outcomes" className="hover:text-slate-900">Outcomes</a>
-            <a href="#testimonials" className="hover:text-slate-900">Testimonials</a>
-            <a href="#pricing" className="hover:text-slate-900">Pricing</a>
+            <a href="#why" className="hover:text-slate-900">
+              Why
+            </a>
+            <a href="#how" className="hover:text-slate-900">
+              How it works
+            </a>
+            <a href="#brain" className="hover:text-slate-900">
+              Inside the Brain
+            </a>
+            <a href="#features" className="hover:text-slate-900">
+              Features
+            </a>
+            <a href="#outcomes" className="hover:text-slate-900">
+              Outcomes
+            </a>
+            <a href="#testimonials" className="hover:text-slate-900">
+              Testimonials
+            </a>
+            <a href="#pricing" className="hover:text-slate-900">
+              Pricing
+            </a>
           </nav>
           <div className="flex items-center gap-3" />
         </div>
@@ -251,13 +230,27 @@ export default function SalesConversionAIPage() {
       >
         <div className="w-full h-auto min-h-16 px-3 py-2 flex items-center justify-center">
           <nav className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-slate-600 text-sm">
-            <a href="#why" className="hover:text-slate-900">Why</a>
-            <a href="#how" className="hover:text-slate-900">How it works</a>
-            <a href="#brain" className="hover:text-slate-900">Inside the Brain</a>
-            <a href="#features" className="hover:text-slate-900">Features</a>
-            <a href="#outcomes" className="hover:text-slate-900">Outcomes</a>
-            <a href="#testimonials" className="hover:text-slate-900">Testimonials</a>
-            <a href="#pricing" className="hover:text-slate-900">Pricing</a>
+            <a href="#why" className="hover:text-slate-900">
+              Why
+            </a>
+            <a href="#how" className="hover:text-slate-900">
+              How it works
+            </a>
+            <a href="#brain" className="hover:text-slate-900">
+              Inside the Brain
+            </a>
+            <a href="#features" className="hover:text-slate-900">
+              Features
+            </a>
+            <a href="#outcomes" className="hover:text-slate-900">
+              Outcomes
+            </a>
+            <a href="#testimonials" className="hover:text-slate-900">
+              Testimonials
+            </a>
+            <a href="#pricing" className="hover:text-slate-900">
+              Pricing
+            </a>
           </nav>
         </div>
       </header>
@@ -271,13 +264,55 @@ export default function SalesConversionAIPage() {
       >
         <div className="w-full h-auto min-h-16 px-3 py-2 flex items-center justify-center">
           <nav className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-slate-600 text-sm">
-            <a href="#why" className="hover:text-slate-900" onClick={handleMobileNavClick}>Why</a>
-            <a href="#how" className="hover:text-slate-900" onClick={handleMobileNavClick}>How it works</a>
-            <a href="#brain" className="hover:text-slate-900" onClick={handleMobileNavClick}>Inside the Brain</a>
-            <a href="#features" className="hover:text-slate-900" onClick={handleMobileNavClick}>Features</a>
-            <a href="#outcomes" className="hover:text-slate-900" onClick={handleMobileNavClick}>Outcomes</a>
-            <a href="#testimonials" className="hover:text-slate-900" onClick={handleMobileNavClick}>Testimonials</a>
-            <a href="#pricing" className="hover:text-slate-900" onClick={handleMobileNavClick}>Pricing</a>
+            <a
+              href="#why"
+              className="hover:text-slate-900"
+              onClick={handleMobileNavClick}
+            >
+              Why
+            </a>
+            <a
+              href="#how"
+              className="hover:text-slate-900"
+              onClick={handleMobileNavClick}
+            >
+              How it works
+            </a>
+            <a
+              href="#brain"
+              className="hover:text-slate-900"
+              onClick={handleMobileNavClick}
+            >
+              Inside the Brain
+            </a>
+            <a
+              href="#features"
+              className="hover:text-slate-900"
+              onClick={handleMobileNavClick}
+            >
+              Features
+            </a>
+            <a
+              href="#outcomes"
+              className="hover:text-slate-900"
+              onClick={handleMobileNavClick}
+            >
+              Outcomes
+            </a>
+            <a
+              href="#testimonials"
+              className="hover:text-slate-900"
+              onClick={handleMobileNavClick}
+            >
+              Testimonials
+            </a>
+            <a
+              href="#pricing"
+              className="hover:text-slate-900"
+              onClick={handleMobileNavClick}
+            >
+              Pricing
+            </a>
           </nav>
         </div>
       </header>
@@ -292,13 +327,55 @@ export default function SalesConversionAIPage() {
       >
         <div className="w-full h-auto min-h-16 px-3 py-2 flex items-center justify-center">
           <nav className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-slate-600 text-sm">
-            <a href="#why" className="hover:text-slate-900" onClick={handleMobileNavClick}>Why</a>
-            <a href="#how" className="hover:text-slate-900" onClick={handleMobileNavClick}>How it works</a>
-            <a href="#brain" className="hover:text-slate-900" onClick={handleMobileNavClick}>Inside the Brain</a>
-            <a href="#features" className="hover:text-slate-900" onClick={handleMobileNavClick}>Features</a>
-            <a href="#outcomes" className="hover:text-slate-900" onClick={handleMobileNavClick}>Outcomes</a>
-            <a href="#testimonials" className="hover:text-slate-900" onClick={handleMobileNavClick}>Testimonials</a>
-            <a href="#pricing" className="hover:text-slate-900" onClick={handleMobileNavClick}>Pricing</a>
+            <a
+              href="#why"
+              className="hover:text-slate-900"
+              onClick={handleMobileNavClick}
+            >
+              Why
+            </a>
+            <a
+              href="#how"
+              className="hover:text-slate-900"
+              onClick={handleMobileNavClick}
+            >
+              How it works
+            </a>
+            <a
+              href="#brain"
+              className="hover:text-slate-900"
+              onClick={handleMobileNavClick}
+            >
+              Inside the Brain
+            </a>
+            <a
+              href="#features"
+              className="hover:text-slate-900"
+              onClick={handleMobileNavClick}
+            >
+              Features
+            </a>
+            <a
+              href="#outcomes"
+              className="hover:text-slate-900"
+              onClick={handleMobileNavClick}
+            >
+              Outcomes
+            </a>
+            <a
+              href="#testimonials"
+              className="hover:text-slate-900"
+              onClick={handleMobileNavClick}
+            >
+              Testimonials
+            </a>
+            <a
+              href="#pricing"
+              className="hover:text-slate-900"
+              onClick={handleMobileNavClick}
+            >
+              Pricing
+            </a>
           </nav>
         </div>
       </header>
@@ -350,7 +427,14 @@ export default function SalesConversionAIPage() {
           <CTAPulse href="#" variant="primary" label="Get started">
             Get Started
           </CTAPulse>
-          <CTAPulse href="#cta" variant="secondary" label="Request demo">
+          <CTAPulse
+            onClick={(e) => {
+              e.preventDefault();
+              setIsDemoModalOpen(true);
+            }}
+            variant="secondary"
+            label="Request demo"
+          >
             Request Demo
           </CTAPulse>
         </div>

@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { motion } from "framer-motion";
+import DemoVideoModal from "../components/DemoVideoModal";
 import {
   Bot,
   Users,
@@ -34,8 +35,14 @@ import { FaAws } from "react-icons/fa";
  */
 
 export default function MultiPersonaAIPage() {
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-slate-50 text-slate-900">
+      <DemoVideoModal
+        isOpen={isDemoModalOpen}
+        onClose={() => setIsDemoModalOpen(false)}
+      />
       {/* NAV */}
       <header className="sticky top-0 z-40 backdrop-blur supports-[backdrop-filter]:bg-white/70 border-b border-slate-200/70">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -108,12 +115,12 @@ export default function MultiPersonaAIPage() {
                 >
                   Start free — launch in 3 minutes
                 </a>
-                <a
-                  href="#demo"
+                <button
+                  onClick={() => setIsDemoModalOpen(true)}
                   className="px-5 py-3 rounded-2xl border border-slate-200 bg-white font-medium hover:bg-slate-50"
                 >
-                  Book a 15‑min fit check
-                </a>
+                  Watch a demo
+                </button>
               </div>
 
               {/* chips */}
@@ -425,12 +432,12 @@ export default function MultiPersonaAIPage() {
                 >
                   Start free — launch in 3 minutes
                 </a>
-                <a
+                <button
+                  onClick={() => setIsDemoModalOpen(true)}
                   className="px-5 py-3 rounded-2xl border border-white/30 font-medium hover:bg-white/10"
-                  href="#demo"
                 >
-                  Book a 15‑min fit check
-                </a>
+                  Watch a demo
+                </button>
               </div>
             </div>
             <motion.div

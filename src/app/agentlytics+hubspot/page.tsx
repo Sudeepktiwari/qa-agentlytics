@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
+import DemoVideoModal from "../components/DemoVideoModal";
 
 // HubSpot-style palette helpers
 const hs = {
@@ -64,8 +65,15 @@ const PrimaryBtn = ({ children }: { children: React.ReactNode }) => (
   </button>
 );
 
-const GhostBtn = ({ children }: { children: React.ReactNode }) => (
+const GhostBtn = ({
+  children,
+  onClick,
+}: {
+  children: React.ReactNode;
+  onClick?: () => void;
+}) => (
   <button
+    onClick={onClick}
     className="px-5 md:px-6 py-3 rounded-full border border-[#FF7A59] text-[#FF7A59] font-semibold bg-white hover:bg-[#FFF2EE] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FF7A59]"
     aria-label={typeof children === "string" ? children : "Secondary button"}
   >
@@ -372,11 +380,18 @@ const TestimonialCarousel = () => (
         >
           <blockquote
             className="text-[15px] md:text-base break-words whitespace-normal"
-            style={{ color: hs.navy2, wordBreak: "break-word", overflowWrap: "anywhere" }}
+            style={{
+              color: hs.navy2,
+              wordBreak: "break-word",
+              overflowWrap: "anywhere",
+            }}
           >
             “{t.quote}”
           </blockquote>
-          <figcaption className="mt-3 font-semibold whitespace-normal break-words" style={{ color: hs.navy }}>
+          <figcaption
+            className="mt-3 font-semibold whitespace-normal break-words"
+            style={{ color: hs.navy }}
+          >
             — {t.author}
           </figcaption>
         </figure>
@@ -393,6 +408,7 @@ export default function AgentlyticsVsHubSpotPage() {
   const [floating, setFloating] = useState(false);
 
   // Match Agentforce sticky menu behavior
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
   useEffect(() => {
     const handleScroll = () => {
       if (typeof window !== "undefined") setScrolled(window.scrollY > 8);
@@ -416,12 +432,24 @@ export default function AgentlyticsVsHubSpotPage() {
       >
         <div className="w-full relative md:right-[84px] py-2">
           <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 md:gap-x-6 text-slate-600 text-sm px-4">
-            <a href="#overview" className="hover:text-slate-900">Overview</a>
-            <a href="#compare" className="hover:text-slate-900">Quick Compare</a>
-            <a href="#why" className="hover:text-slate-900">Why</a>
-            <a href="#outcomes" className="hover:text-slate-900">Outcomes</a>
-            <a href="#testimonials" className="hover:text-slate-900">Testimonials</a>
-            <a href="#decision" className="hover:text-slate-900">Decision</a>
+            <a href="#overview" className="hover:text-slate-900">
+              Overview
+            </a>
+            <a href="#compare" className="hover:text-slate-900">
+              Quick Compare
+            </a>
+            <a href="#why" className="hover:text-slate-900">
+              Why
+            </a>
+            <a href="#outcomes" className="hover:text-slate-900">
+              Outcomes
+            </a>
+            <a href="#testimonials" className="hover:text-slate-900">
+              Testimonials
+            </a>
+            <a href="#decision" className="hover:text-slate-900">
+              Decision
+            </a>
           </nav>
         </div>
       </header>
@@ -433,12 +461,24 @@ export default function AgentlyticsVsHubSpotPage() {
       >
         <div className="w-full relative md:right-[84px] py-2">
           <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 md:gap-x-6 text-slate-600 text-sm px-4">
-            <a href="#overview" className="hover:text-slate-900">Overview</a>
-            <a href="#compare" className="hover:text-slate-900">Quick Compare</a>
-            <a href="#why" className="hover:text-slate-900">Why</a>
-            <a href="#outcomes" className="hover:text-slate-900">Outcomes</a>
-            <a href="#testimonials" className="hover:text-slate-900">Testimonials</a>
-            <a href="#decision" className="hover:text-slate-900">Decision</a>
+            <a href="#overview" className="hover:text-slate-900">
+              Overview
+            </a>
+            <a href="#compare" className="hover:text-slate-900">
+              Quick Compare
+            </a>
+            <a href="#why" className="hover:text-slate-900">
+              Why
+            </a>
+            <a href="#outcomes" className="hover:text-slate-900">
+              Outcomes
+            </a>
+            <a href="#testimonials" className="hover:text-slate-900">
+              Testimonials
+            </a>
+            <a href="#decision" className="hover:text-slate-900">
+              Decision
+            </a>
           </nav>
         </div>
       </header>
@@ -476,7 +516,9 @@ export default function AgentlyticsVsHubSpotPage() {
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <PrimaryBtn>Start Free Trial</PrimaryBtn>
-            <GhostBtn>Book a Comparison Demo</GhostBtn>
+            <GhostBtn onClick={() => setIsDemoModalOpen(true)}>
+              Watch a Comparison Demo
+            </GhostBtn>
           </div>
           <p className="mt-4 text-sm" style={{ color: hs.navy2 }}>
             🔥 14-day free trial — no card needed (go live in minutes).
@@ -485,9 +527,12 @@ export default function AgentlyticsVsHubSpotPage() {
         </Container>
       </section>
 
-
       {/* Quick Overview */}
-      <section id="overview" className="py-16 md:py-20" style={{ background: hs.bgAlt }}>
+      <section
+        id="overview"
+        className="py-16 md:py-20"
+        style={{ background: hs.bgAlt }}
+      >
         <Container>
           <SectionTitle
             center
@@ -551,7 +596,11 @@ export default function AgentlyticsVsHubSpotPage() {
       </section>
 
       {/* Deep Comparison Bullets */}
-      <section id="compare" className="py-16 md:py-20" style={{ background: hs.bgAlt }}>
+      <section
+        id="compare"
+        className="py-16 md:py-20"
+        style={{ background: hs.bgAlt }}
+      >
         <Container>
           <SectionTitle center title="Deep Comparison (Simplified)" />
           <BulletTable />
@@ -698,7 +747,11 @@ export default function AgentlyticsVsHubSpotPage() {
       </section>
 
       {/* Proof & Outcomes */}
-      <section id="outcomes" className="py-16 md:py-20" style={{ background: hs.bgAlt }}>
+      <section
+        id="outcomes"
+        className="py-16 md:py-20"
+        style={{ background: hs.bgAlt }}
+      >
         <Container>
           <SectionTitle center title="Proof & Outcomes" />
           <div className="overflow-x-auto rounded-xl border border-[#E0E6EB] shadow-sm bg-white">
@@ -802,7 +855,11 @@ export default function AgentlyticsVsHubSpotPage() {
       </section>
 
       {/* When to choose which */}
-      <section id="decision" className="py-16 md:py-20" style={{ background: hs.bgAlt }}>
+      <section
+        id="decision"
+        className="py-16 md:py-20"
+        style={{ background: hs.bgAlt }}
+      >
         <Container>
           <SectionTitle title="When to Choose Which" />
           <div className="grid md:grid-cols-2 gap-6">
@@ -850,7 +907,10 @@ export default function AgentlyticsVsHubSpotPage() {
       </section>
 
       {/* Final CTA */}
-      <section id="cta" className="py-16 md:py-20 text-center text-white bg-gradient-to-r from-[#FF7A59] to-[#FF5C35]">
+      <section
+        id="cta"
+        className="py-16 md:py-20 text-center text-white bg-gradient-to-r from-[#FF7A59] to-[#FF5C35]"
+      >
         <Container>
           <h2 className="text-3xl md:text-4xl font-bold">
             HubSpot Collects Leads. Agentlytics Converts Them.
@@ -863,8 +923,11 @@ export default function AgentlyticsVsHubSpotPage() {
             <button className="px-6 py-3 rounded-full bg-white text-[#FF5C35] font-semibold hover:bg-[#FFF2EE]">
               Start Free Trial — No Credit Card
             </button>
-            <button className="px-6 py-3 rounded-full border border-white hover:bg-white/10">
-              Book Comparison Demo
+            <button
+              onClick={() => setIsDemoModalOpen(true)}
+              className="px-6 py-3 rounded-full border border-white hover:bg-white/10"
+            >
+              Watch Comparison Demo
             </button>
           </div>
           <p className="mt-4 text-sm opacity-90">
@@ -880,6 +943,10 @@ export default function AgentlyticsVsHubSpotPage() {
           purposes.
         </Container>
       </footer>
+      <DemoVideoModal
+        isOpen={isDemoModalOpen}
+        onClose={() => setIsDemoModalOpen(false)}
+      />
     </main>
   );
 }

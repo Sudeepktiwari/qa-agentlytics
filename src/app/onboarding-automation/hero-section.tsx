@@ -10,7 +10,11 @@ const brandBorder = "rgba(0,107,255,0.15)";
 
 const heroChips = ["Invite teammates", "Auto-assign", "Workflow templates"];
 
-export default function HeroSection() {
+export default function HeroSection({
+  onDemoClick,
+}: {
+  onDemoClick?: () => void;
+}) {
   const prefersReducedMotion = useReducedMotion();
 
   return (
@@ -78,8 +82,9 @@ export default function HeroSection() {
               </span>
             </motion.a>
 
-            <a
-              href="#demo"
+            <button
+              type="button"
+              onClick={onDemoClick}
               className="rounded-2xl border px-6 py-3 text-sm font-semibold shadow-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 w-full sm:w-auto text-center"
               style={{
                 borderColor: brandBorder,
@@ -88,7 +93,7 @@ export default function HeroSection() {
               }}
             >
               See It in Action
-            </a>
+            </button>
           </div>
         </div>
 

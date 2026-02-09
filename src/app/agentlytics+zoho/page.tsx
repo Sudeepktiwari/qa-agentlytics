@@ -1,6 +1,7 @@
 "use client";
 import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
+import DemoVideoModal from "../components/DemoVideoModal";
 
 // Lightweight local UI primitives to avoid external modules
 function Button({ children, className = "", ...props }: any) {
@@ -33,6 +34,7 @@ function CardContent({ children, className = "" }: any) {
 // Soft table header: #FBE2DA
 
 export default function ZohoComparisonPage() {
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
   // Page-specific sticky menu state (Intercom-style handoff)
   const [scrolled, setScrolled] = useState(false);
   const [floating, setFloating] = useState(false);
@@ -119,7 +121,7 @@ export default function ZohoComparisonPage() {
               Start Free Trial
             </Button>
             <Button className="bg-white border border-[#E94F2E] text-[#E94F2E] hover:bg-[#FDECE8] rounded-md px-6 py-3 text-lg transition">
-              Book a Comparison Demo
+              Watch a Comparison Demo
             </Button>
           </div>
           <p className="text-sm text-gray-700 mt-2">
@@ -485,7 +487,7 @@ export default function ZohoComparisonPage() {
             Start Free — Engage Visitors Automatically
           </Button>
           <Button className="bg-white border border-[#E94F2E] text-[#E94F2E] hover:bg-[#FDECE8] rounded-md px-6 py-3 text-lg transition">
-            Book a Comparison Demo
+            Watch a Comparison Demo
           </Button>
         </div>
         <p className="text-sm text-gray-700 mt-4">
@@ -493,6 +495,10 @@ export default function ZohoComparisonPage() {
           deals.”
         </p>
       </section>
+      <DemoVideoModal
+        isOpen={isDemoModalOpen}
+        onClose={() => setIsDemoModalOpen(false)}
+      />
     </div>
   );
 }

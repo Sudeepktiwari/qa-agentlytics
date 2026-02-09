@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState } from "react";
+import DemoVideoModal from "../components/DemoVideoModal";
 
 /**
  * Page: Why Reactive Chat Widgets Lose SaaS Leads — and Proactive AI Agents Don’t
@@ -58,13 +59,16 @@ const Button = ({
   children,
   href,
   variant = "primary",
+  onClick,
 }: {
   children: ReactNode;
   href: string;
   variant?: "primary" | "secondary";
+  onClick?: (e: React.MouseEvent) => void;
 }) => (
   <a
     href={href}
+    onClick={onClick}
     className={classNames(
       "inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition",
       variant === "primary"
@@ -164,11 +168,8 @@ const VideoHeader = () => (
       <div className="py-8 sm:py-10">
         <div className="flex items-center justify-between">
           <a href="/" className="flex items-center gap-2">
-            <div className="grid h-9 w-9 place-items-center rounded-xl bg-blue-600 text-sm font-semibold text-white">
-              A
-            </div>
             <div className="text-sm font-semibold text-slate-900">
-              Advancelytics
+              Agentlytics
             </div>
           </a>
 
@@ -183,19 +184,12 @@ const VideoHeader = () => (
               See it live
             </a>
           </div>
-
-          <div className="flex items-center gap-2">
-            <Button variant="secondary" href="/pricing">
-              Explore pricing
-            </Button>
-            <Button href="/demo">Watch a demo</Button>
-          </div>
         </div>
 
         {/* Video container (replace contents with embed) */}
         <div className="mt-6 overflow-hidden rounded-3xl border border-blue-100 bg-white shadow-sm">
           <div className="aspect-video w-full bg-gradient-to-br from-blue-50 to-white">
-            <iframe
+            {/* <iframe
               className="h-full w-full"
               src="https://www.youtube-nocookie.com/embed/CBcpBr-0XsI?si=8be1c_-iVjnobqqh"
               title="YouTube video player"
@@ -203,7 +197,14 @@ const VideoHeader = () => (
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               referrerPolicy="strict-origin-when-cross-origin"
               allowFullScreen
-            />
+            /> */}
+            <iframe
+              src="https://www.youtube.com/embed/VIDEO_ID?rel=0&modestbranding=1&controls=1"
+              width="100%"
+              height="500"
+              allow="autoplay; encrypted-media"
+              allowFullScreen
+            ></iframe>
           </div>
         </div>
       </div>
@@ -215,8 +216,14 @@ const VideoHeader = () => (
 );
 
 export default function ReactiveChatVsProactiveAgentPage() {
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-white">
+      <DemoVideoModal
+        isOpen={isDemoModalOpen}
+        onClose={() => setIsDemoModalOpen(false)}
+      />
       {/* Video header */}
       <VideoHeader />
 
@@ -650,7 +657,14 @@ export default function ReactiveChatVsProactiveAgentPage() {
 
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <Button href="/how-it-works">See how it works</Button>
-                  <Button variant="secondary" href="/demo">
+                  <Button
+                    variant="secondary"
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setIsDemoModalOpen(true);
+                    }}
+                  >
                     Watch a demo
                   </Button>
                 </div>

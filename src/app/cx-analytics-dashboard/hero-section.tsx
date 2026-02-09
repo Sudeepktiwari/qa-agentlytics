@@ -1,5 +1,6 @@
-import React, { JSX } from "react";
+import React, { JSX, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
+import DemoVideoModal from "../components/DemoVideoModal";
 
 // DashboardHeroSection.tsx — Fix semicircle clipping and reposition label
 // - Renders semicircle SVG without clipping (overflow-visible)
@@ -11,6 +12,7 @@ type ShimmerProps = {
   children: React.ReactNode;
   variant?: "solid" | "outline";
   ariaLabel?: string;
+  onClick?: () => void;
 };
 
 function ShimmerButton({
@@ -18,12 +20,26 @@ function ShimmerButton({
   children,
   variant = "solid",
   ariaLabel,
+  onClick,
 }: ShimmerProps) {
   const base =
     "inline-flex items-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2";
   const solid =
     "bg-blue-600 text-white shadow-md hover:bg-blue-700 focus-visible:ring-blue-500";
   const outline = "bg-white text-blue-700 ring-1 ring-blue-50 hover:bg-blue-50";
+
+  if (onClick) {
+    return (
+      <button
+        onClick={onClick}
+        aria-label={ariaLabel}
+        className={`${base} ${variant === "solid" ? solid : outline}`}
+      >
+        {children}
+      </button>
+    );
+  }
+
   return (
     <a
       href={href}
@@ -44,6 +60,7 @@ const heroStats = [
 
 export default function DashboardHeroSection(): React.ReactElement {
   const prefersReducedMotion = useReducedMotion();
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
 
   return (
     <section className="rounded-b-[2rem] bg-gradient-to-b from-white to-blue-50 px-4 py-20 sm:px-6">
@@ -63,11 +80,11 @@ export default function DashboardHeroSection(): React.ReactElement {
               See Live Dashboard
             </ShimmerButton>
             <ShimmerButton
-              href="#cta"
+              onClick={() => setIsDemoModalOpen(true)}
               variant="outline"
               ariaLabel="Request a demo"
             >
-              Request Demo
+              Watch a Demo
             </ShimmerButton>
           </div>
         </div>

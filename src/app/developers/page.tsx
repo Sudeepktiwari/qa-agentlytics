@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState } from "react";
+import DemoVideoModal from "../components/DemoVideoModal";
 
 function HeroIllustrationAnimated() {
   // SVG-only (no external assets) so Canvas preview works reliably.
@@ -422,16 +423,21 @@ const Badge = ({ children }: BadgeProps) => (
 interface ButtonProps {
   variant?: "primary" | "secondary";
   children: React.ReactNode;
+  onClick?: () => void;
 }
 
-const Button = ({ variant = "primary", children }: ButtonProps) => {
+const Button = ({ variant = "primary", children, onClick }: ButtonProps) => {
   const base =
     "inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-offset-2";
   const styles =
     variant === "primary"
       ? "bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-600"
       : "bg-white text-blue-900 border border-blue-100 hover:bg-blue-50 focus:ring-blue-600";
-  return <button className={`${base} ${styles}`}>{children}</button>;
+  return (
+    <button className={`${base} ${styles}`} onClick={onClick}>
+      {children}
+    </button>
+  );
 };
 
 interface CardProps {
@@ -482,8 +488,14 @@ const Stat = ({ label, value }: StatProps) => (
 );
 
 export default function AgentlyticsBuildersLanding() {
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-blue-50 text-blue-900" id="top">
+      <DemoVideoModal
+        isOpen={isDemoModalOpen}
+        onClose={() => setIsDemoModalOpen(false)}
+      />
       {/* Top Bar */}
       <header className="sticky top-0 z-30 border-b border-blue-100 bg-white/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-center md:justify-start px-4 py-3 sm:px-6">
@@ -565,7 +577,10 @@ export default function AgentlyticsBuildersLanding() {
 
             <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
               <Button>Start Free — Engage Buyers Automatically</Button>
-              <Button variant="secondary">
+              <Button
+                variant="secondary"
+                onClick={() => setIsDemoModalOpen(true)}
+              >
                 Watch a Demo — See a Live Builder Flow
               </Button>
             </div>

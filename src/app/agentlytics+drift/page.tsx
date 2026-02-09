@@ -1,5 +1,7 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
+import DemoVideoModal from "../components/DemoVideoModal";
+
 export default function DriftComparisonPage() {
   // Brand palette inspired by Drift blue and neutral base
   const BRAND_BLUE = "#0A5BFF"; // Drift Blue per Brandfetch
@@ -9,6 +11,7 @@ export default function DriftComparisonPage() {
   // Match Agentforce sticky menu behavior
   const [scrolled, setScrolled] = useState(false);
   const [floating, setFloating] = useState(false);
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
   const headerRef = useRef<HTMLElement | null>(null);
   const [headerHeight, setHeaderHeight] = useState(64);
   useEffect(() => {
@@ -213,12 +216,12 @@ export default function DriftComparisonPage() {
                     →
                   </span>
                 </a>
-                <a
-                  href="#demo"
-                  className="inline-flex items-center gap-2 rounded-xl border px-5 py-3 text-slate-900 hover:bg-slate-50 transition"
+                <button
+                  onClick={() => setIsDemoModalOpen(true)}
+                  className="inline-flex items-center gap-2 rounded-xl border px-6 py-3 text-slate-900 hover:bg-slate-50 transition"
                 >
-                  Book a Comparison Demo
-                </a>
+                  Watch a Comparison Demo
+                </button>
               </div>
 
               <p className="mt-3 text-sm text-slate-600">
@@ -710,12 +713,12 @@ export default function DriftComparisonPage() {
                 →
               </span>
             </a>
-            <a
-              href="#demo"
+            <button
+              onClick={() => setIsDemoModalOpen(true)}
               className="inline-flex items-center gap-2 rounded-xl border px-6 py-3 text-slate-900 hover:bg-slate-50 transition"
             >
-              Book a Comparison Demo
-            </a>
+              Watch a Comparison Demo
+            </button>
           </div>
         </div>
       </section>
@@ -736,6 +739,10 @@ export default function DriftComparisonPage() {
           </div>
         </div>
       </footer>
+      <DemoVideoModal
+        isOpen={isDemoModalOpen}
+        onClose={() => setIsDemoModalOpen(false)}
+      />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
+import DemoVideoModal from "../components/DemoVideoModal";
 import {
   Card,
   CardContent,
@@ -217,7 +218,7 @@ function LiveQualificationSnapshot() {
   );
 }
 
-function StickyCTA() {
+function StickyCTA({ onWatchDemo }: { onWatchDemo: () => void }) {
   return (
     <div className="fixed inset-x-0 bottom-0 z-50 border-t border-zinc-200 bg-white/90 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
@@ -240,6 +241,7 @@ function StickyCTA() {
           <Button
             className="rounded-full px-5"
             style={{ backgroundColor: ACCENT, color: "white" }}
+            onClick={onWatchDemo}
           >
             Watch a Demo
           </Button>
@@ -250,8 +252,14 @@ function StickyCTA() {
 }
 
 export default function PricingPageDropOffUseCase() {
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-50 via-white to-white text-zinc-950">
+      <DemoVideoModal
+        isOpen={isDemoModalOpen}
+        onClose={() => setIsDemoModalOpen(false)}
+      />
       <div className="mx-auto max-w-6xl px-4 pb-28 pt-10 md:pt-14">
         {/* Top bar */}
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -686,7 +694,7 @@ export default function PricingPageDropOffUseCase() {
         </div>
       </div>
 
-      <StickyCTA />
+      <StickyCTA onWatchDemo={() => setIsDemoModalOpen(true)} />
     </div>
   );
 }

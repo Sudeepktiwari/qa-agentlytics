@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useState, useEffect } from "react";
+import DemoVideoModal from "../components/DemoVideoModal";
 
 /**
  * Agentlytics vs SiteGPT — Comparison Landing Page (Calendly-inspired)
@@ -820,7 +821,7 @@ function ComparisonTable({ filter }: { filter: string }) {
   );
 }
 
-function CTA() {
+function CTA({ onOpenDemo }: { onOpenDemo?: () => void }) {
   return (
     <div className="rounded-3xl bg-gradient-to-br from-[#006BFF] to-[#005BE0] p-8 sm:p-10 shadow-2xl ring-1 ring-[#006BFF]/20">
       <div className="grid gap-8 lg:grid-cols-12 lg:items-center">
@@ -863,12 +864,12 @@ function CTA() {
               >
                 Start free
               </a>
-              <a
-                href="/demo"
+              <button
+                onClick={onOpenDemo}
                 className="inline-flex w-full items-center justify-center rounded-xl bg-white/15 px-4 py-2.5 text-sm font-semibold text-white ring-1 ring-white/25 hover:bg-white/20"
               >
                 Watch a demo
-              </a>
+              </button>
             </div>
             <div className="mt-3 text-xs text-white/70">
               No credit card required • Works on any website
@@ -940,7 +941,7 @@ function FAQSection() {
   );
 }
 
-function DemoSection() {
+function DemoSection({ onOpenDemo }: { onOpenDemo?: () => void }) {
   return (
     <div
       id="demo"
@@ -967,12 +968,12 @@ function DemoSection() {
           >
             Start free
           </a>
-          <a
-            href="/demo"
+          <button
+            onClick={onOpenDemo}
             className="inline-flex items-center justify-center rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-900 ring-1 ring-slate-200 hover:bg-slate-50"
           >
             Watch a demo
-          </a>
+          </button>
         </div>
       </div>
 
@@ -1062,6 +1063,7 @@ function DevTests({
 
 export default function AgentlyticsVsSiteGPTLanding() {
   const [filter, setFilter] = useState("all");
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
 
   const filterButtons = [
     { id: "all", label: "All" },
@@ -1073,6 +1075,10 @@ export default function AgentlyticsVsSiteGPTLanding() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#F5F9FF] via-white to-white text-slate-900">
+      <DemoVideoModal
+        isOpen={isDemoModalOpen}
+        onClose={() => setIsDemoModalOpen(false)}
+      />
       <DevTests filterButtons={filterButtons} />
       <TopNav />
 
@@ -1109,12 +1115,12 @@ export default function AgentlyticsVsSiteGPTLanding() {
             >
               View comparison
             </a>
-            <a
-              href="/demo"
+            <button
+              onClick={() => setIsDemoModalOpen(true)}
               className="inline-flex items-center justify-center rounded-xl bg-white px-6 py-3 text-sm font-semibold text-slate-900 ring-1 ring-slate-200 hover:bg-slate-50"
             >
               Watch a demo
-            </a>
+            </button>
           </div>
 
           <div className="mt-4 text-xs text-slate-500">
@@ -1256,11 +1262,11 @@ export default function AgentlyticsVsSiteGPTLanding() {
       </section>
 
       <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-14">
-        <CTA />
+        <CTA onOpenDemo={() => setIsDemoModalOpen(true)} />
       </section>
 
       <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-14">
-        <DemoSection />
+        <DemoSection onOpenDemo={() => setIsDemoModalOpen(true)} />
       </section>
 
       <section

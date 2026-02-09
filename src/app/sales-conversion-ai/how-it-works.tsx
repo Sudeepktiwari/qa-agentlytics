@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import DemoVideoModal from "../components/DemoVideoModal";
 
 type Step = { n: string; t: string; d: string };
 
@@ -39,28 +40,30 @@ export default function HowItWorksSection() {
       "Visited Enterprise Page",
       "Clicked Demo CTA",
     ],
-    []
+    [],
   );
 
   const actionsSource = useMemo(
     () => [
       { txt: "Plan compare" },
       { txt: "ROI sheet" },
+      { txt: "Watch a demo" },
       { txt: "Calendar handoff" },
       { txt: "Send proposal" },
       { txt: "Route to SDR" },
     ],
-    []
+    [],
   );
 
   const prefersReducedMotion = useReducedMotion();
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
 
   // rolling arrays and tick (used for keys)
   const [rollingIntents, setRollingIntents] = useState<string[]>(() =>
-    intentsSource.slice(0, 3)
+    intentsSource.slice(0, 3),
   );
   const [rollingActions, setRollingActions] = useState(() =>
-    actionsSource.slice(0, 3)
+    actionsSource.slice(0, 3),
   );
   const [tick, setTick] = useState(0);
 
@@ -106,6 +109,10 @@ export default function HowItWorksSection() {
       id="how"
       className="mx-auto max-w-7xl rounded-3xl bg-[--surface] px-4 py-16 sm:px-6 scroll-mt-24"
     >
+      <DemoVideoModal
+        isOpen={isDemoModalOpen}
+        onClose={() => setIsDemoModalOpen(false)}
+      />
       <h2 className="text-3xl font-bold tracking-tight text-center text-slate-900">
         How It Works
       </h2>
@@ -213,12 +220,19 @@ export default function HowItWorksSection() {
                       initial={{ opacity: 0, x: -8 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: 8 }}
+                      onClick={() => {
+                        if (a.txt === "Watch a demo") {
+                          setIsDemoModalOpen(true);
+                        }
+                      }}
                       transition={{ duration: 0.35, ease: "easeOut" }}
                       className="rounded-full px-3 py-1 text-[11px] font-medium"
                       style={{
                         border: "1px solid rgba(0,107,255,0.18)",
                         background: "#ffffff",
                         color: "#006BFF",
+                        cursor:
+                          a.txt === "Watch a demo" ? "pointer" : "default",
                       }}
                       aria-label={a.txt}
                     >

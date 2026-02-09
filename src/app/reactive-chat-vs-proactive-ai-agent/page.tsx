@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState } from "react";
+import DemoVideoModal from "../components/DemoVideoModal";
 
 /**
  * Page: Why Reactive Chat Widgets Lose SaaS Leads — and Proactive AI Agents Don’t
@@ -58,23 +59,30 @@ const Button = ({
   children,
   href,
   variant = "primary",
+  onClick,
 }: {
   children: ReactNode;
-  href: string;
+  href?: string;
   variant?: "primary" | "secondary";
-}) => (
-  <a
-    href={href}
-    className={classNames(
-      "inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition",
-      variant === "primary"
-        ? "bg-blue-600 text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-600/30"
-        : "border border-slate-200 bg-white text-slate-900 hover:bg-slate-50",
-    )}
-  >
-    {children}
-  </a>
-);
+  onClick?: (e: React.MouseEvent) => void;
+}) => {
+  const Component = href ? "a" : "button";
+  return (
+    <Component
+      href={href}
+      onClick={onClick}
+      type={!href ? "button" : undefined}
+      className={classNames(
+        "inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition",
+        variant === "primary"
+          ? "bg-blue-600 text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-600/30"
+          : "border border-slate-200 bg-white text-slate-900 hover:bg-slate-50",
+      )}
+    >
+      {children}
+    </Component>
+  );
+};
 
 const Stat = ({ label, value }: { label: string; value: string }) => (
   <div className="rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm backdrop-blur">
@@ -158,17 +166,14 @@ const ComparisonTable = () => (
   </div>
 );
 
-const VideoHeader = () => (
+const VideoHeader = ({ onOpenDemo }: { onOpenDemo: () => void }) => (
   <div className="relative overflow-hidden border-b border-slate-200 bg-gradient-to-b from-blue-50/70 via-white to-white">
     <Container>
       <div className="py-8 sm:py-10">
         <div className="flex items-center justify-between">
           <a href="/" className="flex items-center gap-2">
-            <div className="grid h-9 w-9 place-items-center rounded-xl bg-blue-600 text-sm font-semibold text-white">
-              A
-            </div>
             <div className="text-sm font-semibold text-slate-900">
-              Advancelytics
+              Agentlytics
             </div>
           </a>
 
@@ -182,13 +187,15 @@ const VideoHeader = () => (
             <a href="#cta" className="hover:text-slate-900">
               See it live
             </a>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button variant="secondary" href="/pricing">
-              Explore pricing
+            <Button
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                onOpenDemo();
+              }}
+            >
+              Watch a demo
             </Button>
-            <Button href="/demo">Watch a demo</Button>
           </div>
         </div>
 
@@ -220,10 +227,16 @@ const VideoHeader = () => (
 );
 
 export default function ReactiveChatVsProactiveAgentPage() {
+  const [isDemoOpen, setIsDemoOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-white">
+      <DemoVideoModal
+        isOpen={isDemoOpen}
+        onClose={() => setIsDemoOpen(false)}
+      />
       {/* Video header */}
-      <VideoHeader />
+      <VideoHeader onOpenDemo={() => setIsDemoOpen(true)} />
 
       {/* HERO (starts after video) */}
       <section className="py-12 sm:py-16">
@@ -655,7 +668,14 @@ export default function ReactiveChatVsProactiveAgentPage() {
 
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <Button href="/how-it-works">See how it works</Button>
-                  <Button variant="secondary" href="/demo">
+                  <Button
+                    variant="secondary"
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setIsDemoOpen(true);
+                    }}
+                  >
                     Watch a demo
                   </Button>
                 </div>

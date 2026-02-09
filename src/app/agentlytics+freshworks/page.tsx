@@ -1,9 +1,12 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import DemoVideoModal from "../components/DemoVideoModal";
+
 export default function AgentlyticsVsFreshchat() {
   // Page-specific sticky menu state
   const [scrolled, setScrolled] = useState(false);
   const [floating, setFloating] = useState(false);
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
   const headerRef = useRef<HTMLElement | null>(null);
   const [headerHeight, setHeaderHeight] = useState(64);
   useEffect(() => {
@@ -103,7 +106,7 @@ export default function AgentlyticsVsFreshchat() {
               className="px-6 py-3 rounded-full border border-white text-white hover:bg-white/10 font-medium transition"
               data-testid="cta-secondary"
             >
-              Book a Comparison Demo
+              Watch a Comparison Demo
             </button>
           </div>
 
@@ -153,14 +156,22 @@ export default function AgentlyticsVsFreshchat() {
         ref={headerRef}
       >
         <div className="w-full h-auto min-h-[56px] sm:h-16 sm:min-h-0 py-2 sm:py-0 flex items-center justify-center px-3">
-          <nav
-            className="max-w-6xl w-full mx-auto flex flex-wrap sm:flex-nowrap items-center justify-center gap-x-3 gap-y-2 sm:gap-6 text-slate-700 text-sm transform md:translate-x-6"
-          >
-            <a href="#overview" className="px-2 py-1 hover:text-slate-900">Overview</a>
-            <a href="#switch" className="px-2 py-1 hover:text-slate-900">Why Switch</a>
-            <a href="#engine" className="px-2 py-1 hover:text-slate-900">AI Engine</a>
-            <a href="#outcomes" className="px-2 py-1 hover:text-slate-900">Outcomes</a>
-            <a href="#integrations" className="px-2 py-1 hover:text-slate-900">Integrations</a>
+          <nav className="max-w-6xl w-full mx-auto flex flex-wrap sm:flex-nowrap items-center justify-center gap-x-3 gap-y-2 sm:gap-6 text-slate-700 text-sm transform md:translate-x-6">
+            <a href="#overview" className="px-2 py-1 hover:text-slate-900">
+              Overview
+            </a>
+            <a href="#switch" className="px-2 py-1 hover:text-slate-900">
+              Why Switch
+            </a>
+            <a href="#engine" className="px-2 py-1 hover:text-slate-900">
+              AI Engine
+            </a>
+            <a href="#outcomes" className="px-2 py-1 hover:text-slate-900">
+              Outcomes
+            </a>
+            <a href="#integrations" className="px-2 py-1 hover:text-slate-900">
+              Integrations
+            </a>
           </nav>
         </div>
       </header>
@@ -168,14 +179,22 @@ export default function AgentlyticsVsFreshchat() {
         className={`fixed left-0 right-0 top-0 z-50 bg-white/80 backdrop-blur border-b border-slate-200 transition-[top,opacity,transform] duration-300 ease-out ${floating ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-1 pointer-events-none"}`}
       >
         <div className="w-full h-auto min-h-[56px] sm:h-16 sm:min-h-0 py-2 sm:py-0 flex items-center justify-center px-3">
-          <nav
-            className="max-w-6xl w-full mx-auto flex flex-wrap sm:flex-nowrap items-center justify-center gap-x-3 gap-y-2 sm:gap-6 text-slate-700 text-sm transform md:translate-x-6"
-          >
-            <a href="#overview" className="px-2 py-1 hover:text-slate-900">Overview</a>
-            <a href="#switch" className="px-2 py-1 hover:text-slate-900">Why Switch</a>
-            <a href="#engine" className="px-2 py-1 hover:text-slate-900">AI Engine</a>
-            <a href="#outcomes" className="px-2 py-1 hover:text-slate-900">Outcomes</a>
-            <a href="#integrations" className="px-2 py-1 hover:text-slate-900">Integrations</a>
+          <nav className="max-w-6xl w-full mx-auto flex flex-wrap sm:flex-nowrap items-center justify-center gap-x-3 gap-y-2 sm:gap-6 text-slate-700 text-sm transform md:translate-x-6">
+            <a href="#overview" className="px-2 py-1 hover:text-slate-900">
+              Overview
+            </a>
+            <a href="#switch" className="px-2 py-1 hover:text-slate-900">
+              Why Switch
+            </a>
+            <a href="#engine" className="px-2 py-1 hover:text-slate-900">
+              AI Engine
+            </a>
+            <a href="#outcomes" className="px-2 py-1 hover:text-slate-900">
+              Outcomes
+            </a>
+            <a href="#integrations" className="px-2 py-1 hover:text-slate-900">
+              Integrations
+            </a>
           </nav>
         </div>
       </header>
@@ -455,12 +474,19 @@ export default function AgentlyticsVsFreshchat() {
             <button className="px-6 py-3 rounded-full bg-white text-[#2C63F4] font-medium hover:bg-gray-100 transition">
               Start Free — Engage Visitors Automatically
             </button>
-            <button className="px-6 py-3 rounded-full border border-white font-medium hover:bg-white/10 transition">
-              Book a Comparison Demo
+            <button
+              onClick={() => setIsDemoModalOpen(true)}
+              className="px-6 py-3 rounded-full border border-white font-medium hover:bg-white/10 transition"
+            >
+              Watch a Comparison Demo
             </button>
           </div>
         </div>
       </section>
+      <DemoVideoModal
+        isOpen={isDemoModalOpen}
+        onClose={() => setIsDemoModalOpen(false)}
+      />
     </div>
   );
 }

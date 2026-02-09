@@ -2,6 +2,7 @@
 // Calendly-style theme reused; lighter hero; modern sections
 "use client";
 import React, { useEffect, useRef, useState } from "react";
+import DemoVideoModal from "../components/DemoVideoModal";
 import HowItWorks from "./how-it-works";
 import GuidedOnboardingPreview from "./hero-illustration";
 import WhySection from "./why-section";
@@ -243,6 +244,8 @@ function useSEO() {
 export default function OnboardingAIBotPage() {
   useSEO();
 
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
+
   // Before/After toggle in WHY section
   const [isAfter, setIsAfter] = useState(true);
   useEffect(() => {
@@ -380,6 +383,10 @@ export default function OnboardingAIBotPage() {
         } as React.CSSProperties
       }
     >
+      <DemoVideoModal
+        isOpen={isDemoModalOpen}
+        onClose={() => setIsDemoModalOpen(false)}
+      />
       {/* Background */}
       <div
         className="pointer-events-none absolute inset-0 -z-10"
@@ -568,8 +575,8 @@ export default function OnboardingAIBotPage() {
             </p>
             <div className="mt-8 flex flex-col gap-2 sm:flex-row sm:items-center">
               <div className="flex gap-3">
-                <a
-                  href="#cta"
+                <button
+                  onClick={() => setIsDemoModalOpen(true)}
                   className="rounded-2xl px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:shadow-lg"
                   style={{ backgroundColor: brand.primary }}
                   onMouseEnter={(e) =>
@@ -580,9 +587,9 @@ export default function OnboardingAIBotPage() {
                   }
                 >
                   Start Free Trial
-                </a>
-                <a
-                  href="#demo"
+                </button>
+                <button
+                  onClick={() => setIsDemoModalOpen(true)}
                   className="rounded-2xl border border-[--brand-primary] px-6 py-3 text-sm font-semibold text-[--brand-primary] transition hover:text-white"
                   onMouseEnter={(e) =>
                     (e.currentTarget.style.background = `linear-gradient(90deg, ${brand.primary} 0%, ${brand.accent} 100%)`)
@@ -592,7 +599,11 @@ export default function OnboardingAIBotPage() {
                   }
                 >
                   Watch a Demo
-                </a>
+                </button>
+                <DemoVideoModal
+                  isOpen={isDemoModalOpen}
+                  onClose={() => setIsDemoModalOpen(false)}
+                />
               </div>
               <p className="text-xs text-slate-500">
                 Go live in minutes · Start guiding users today

@@ -1,6 +1,9 @@
 // components/HeroSupportSection.jsx
+"use client";
+
 import React from "react";
 import HeroSupportIllustration from "./hero-illustration";
+import DemoVideoModal from "../components/DemoVideoModal";
 
 /**
  * HeroSupportSectionPolished
@@ -37,6 +40,7 @@ export default function HeroSupportSection({
   const [active, setActive] = React.useState(0);
   const [paused, setPaused] = React.useState(false);
   const [visible, setVisible] = React.useState(false);
+  const [isDemoModalOpen, setIsDemoModalOpen] = React.useState(false);
   const rootRef = React.useRef(null);
 
   React.useEffect(() => {
@@ -48,7 +52,7 @@ export default function HeroSupportSection({
             io.disconnect();
           }
       },
-      { threshold: 0.16 }
+      { threshold: 0.16 },
     );
     if (rootRef.current) io.observe(rootRef.current);
     return () => io.disconnect();
@@ -105,13 +109,13 @@ export default function HeroSupportSection({
             </a>
 
             {/* secondary CTA: outline -> filled on hover */}
-            <a
-              href="#demo"
+            <button
+              onClick={() => setIsDemoModalOpen(true)}
               className="rounded-2xl px-6 py-3 text-sm font-semibold border border-[--brand-primary] text-[--brand-primary] transition-colors duration-150 hover:bg-[#006BFF] hover:text-white focus:outline-none focus:ring-4 focus:ring-[--brand-primary]/20"
               aria-label="Watch Demo"
             >
               Watch Demo
-            </a>
+            </button>
           </div>
           <div className="mt-2 sm:mt-6 sm:ml-3 inline-flex items-center gap-2 rounded-full border border-[--border-subtle] bg-white px-3 py-1 text-sm font-medium text-slate-600 shadow-sm">
             <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 animate-dot-pulse" />
@@ -135,6 +139,11 @@ export default function HeroSupportSection({
         {/* RIGHT: polished preview mock */}
         <HeroSupportIllustration />
       </div>
+
+      <DemoVideoModal
+        isOpen={isDemoModalOpen}
+        onClose={() => setIsDemoModalOpen(false)}
+      />
 
       {/* scoped polish animations */}
       <style jsx>{`
@@ -184,7 +193,9 @@ export default function HeroSupportSection({
 
         /* CTA gradient hover nicety */
         .cta-gradient {
-          transition: transform 0.14s ease, filter 0.14s ease;
+          transition:
+            transform 0.14s ease,
+            filter 0.14s ease;
         }
         .cta-gradient:hover {
           transform: translateY(-2px);

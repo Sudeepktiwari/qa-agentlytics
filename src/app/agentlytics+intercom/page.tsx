@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
+import DemoVideoModal from "../components/DemoVideoModal";
 
 // Intercom-style light theme — white backgrounds, blue accents, soft (light) shadows, minimal borders
 
@@ -50,10 +51,10 @@ const FadeIn = ({
         if (entry.isIntersecting)
           (el as HTMLElement | null)?.classList.add(
             "opacity-100",
-            "translate-y-0"
+            "translate-y-0",
           );
       },
-      { threshold: 0.12 }
+      { threshold: 0.12 },
     );
     if (el) obs.observe(el);
     return () => obs.disconnect();
@@ -91,10 +92,12 @@ const Button = ({
   children,
   href = "#",
   variant = "primary",
+  onClick,
 }: {
   children: React.ReactNode;
   href?: string;
   variant?: "primary" | "secondary";
+  onClick?: () => void;
 }) => {
   const base =
     "inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold transition shadow focus:outline-none focus:ring-2 focus:ring-offset-2";
@@ -102,6 +105,13 @@ const Button = ({
     variant === "primary"
       ? "bg-[#006EFF] text-white hover:brightness-95 focus:ring-[#1E73E8]"
       : "bg-white text-[#0B1F33] ring-1 ring-slate-200/70 hover:bg-slate-50 focus:ring-slate-300";
+  if (onClick) {
+    return (
+      <button className={`${base} ${styles}`} onClick={onClick}>
+        {children}
+      </button>
+    );
+  }
   return (
     <a className={`${base} ${styles}`} href={href}>
       {children}
@@ -185,6 +195,7 @@ const Carousel = () => (
 export default function Page() {
   const [scrolled, setScrolled] = useState(false);
   const [floating, setFloating] = useState(false);
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
     onScroll();
@@ -204,10 +215,18 @@ export default function Page() {
       >
         <div className="w-full h-16 flex items-center justify-center relative md:right-[84px]">
           <nav className="flex items-center gap-4 md:gap-6 text-slate-600 text-sm">
-            <a href="#overview" className="hover:text-slate-900">Overview</a>
-            <a href="#difference" className="hover:text-slate-900">Difference</a>
-            <a href="#compare" className="hover:text-slate-900">Deep Compare</a>
-            <a href="#integrations" className="hover:text-slate-900">Integrations</a>
+            <a href="#overview" className="hover:text-slate-900">
+              Overview
+            </a>
+            <a href="#difference" className="hover:text-slate-900">
+              Difference
+            </a>
+            <a href="#compare" className="hover:text-slate-900">
+              Deep Compare
+            </a>
+            <a href="#integrations" className="hover:text-slate-900">
+              Integrations
+            </a>
           </nav>
         </div>
       </header>
@@ -217,10 +236,18 @@ export default function Page() {
       >
         <div className="w-full h-16 flex items-center justify-center">
           <nav className="flex items-center gap-4 md:gap-6 text-slate-600 text-sm">
-            <a href="#overview" className="hover:text-slate-900">Overview</a>
-            <a href="#difference" className="hover:text-slate-900">Difference</a>
-            <a href="#compare" className="hover:text-slate-900">Deep Compare</a>
-            <a href="#integrations" className="hover:text-slate-900">Integrations</a>
+            <a href="#overview" className="hover:text-slate-900">
+              Overview
+            </a>
+            <a href="#difference" className="hover:text-slate-900">
+              Difference
+            </a>
+            <a href="#compare" className="hover:text-slate-900">
+              Deep Compare
+            </a>
+            <a href="#integrations" className="hover:text-slate-900">
+              Integrations
+            </a>
           </nav>
         </div>
       </header>
@@ -255,8 +282,11 @@ export default function Page() {
                 <Button href="#start">
                   Start Free — Engage Visitors Automatically
                 </Button>
-                <Button href="#demo" variant="secondary">
-                  Book a Comparison Demo
+                <Button
+                  onClick={() => setIsDemoModalOpen(true)}
+                  variant="secondary"
+                >
+                  Watch a Comparison Demo
                 </Button>
               </div>
               <div className="mt-3 text-sm text-slate-500">
@@ -405,7 +435,9 @@ export default function Page() {
       <section className="mx-auto max-w-7xl px-4 py-8">
         <FadeIn>
           <div className="rounded-2xl bg-white/95 p-4 sm:p-6 shadow">
-            <h3 className="text-base sm:text-lg font-semibold">⚡ Why It Matters</h3>
+            <h3 className="text-base sm:text-lg font-semibold">
+              ⚡ Why It Matters
+            </h3>
             <p className="mt-2 text-sm sm:text-base text-slate-700">
               Most tools react after users ask for help. Agentlytics acts when
               intent peaks.
@@ -545,7 +577,9 @@ export default function Page() {
         <FadeIn>
           <div className="rounded-2xl bg-white/95 p-6 shadow">
             <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-              <h3 className="text-base sm:text-lg font-semibold">✨ What customers say</h3>
+              <h3 className="text-base sm:text-lg font-semibold">
+                ✨ What customers say
+              </h3>
               <div className="flex items-center gap-2">
                 <Logo label="CloudScale" />
                 <Logo label="FinServe" />
@@ -553,8 +587,12 @@ export default function Page() {
               </div>
             </div>
             <Carousel />
-            <div className="mt-4 hidden md:block text-right text-xs text-slate-500">Hover to pause</div>
-            <div className="mt-4 md:hidden text-center text-xs text-slate-500">Swipe to scroll</div>
+            <div className="mt-4 hidden md:block text-right text-xs text-slate-500">
+              Hover to pause
+            </div>
+            <div className="mt-4 md:hidden text-center text-xs text-slate-500">
+              Swipe to scroll
+            </div>
           </div>
         </FadeIn>
       </section>
@@ -707,8 +745,11 @@ export default function Page() {
                 <Button href="#start">
                   Start Free — Engage Visitors Automatically
                 </Button>
-                <Button href="#demo" variant="secondary">
-                  Book a Comparison Demo
+                <Button
+                  onClick={() => setIsDemoModalOpen(true)}
+                  variant="secondary"
+                >
+                  Watch a Comparison Demo
                 </Button>
               </div>
             </div>
@@ -738,6 +779,10 @@ export default function Page() {
           </div>
         </div>
       </footer>
+      <DemoVideoModal
+        isOpen={isDemoModalOpen}
+        onClose={() => setIsDemoModalOpen(false)}
+      />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
+import DemoVideoModal from "../components/DemoVideoModal";
 import HeroSection from "./hero-section";
 import WhySection from "./why-section";
 import HowItWorksFlow from "./howitworks-section";
@@ -30,18 +31,8 @@ const brand = {
 };
 
 export default function OnboardingAutomationPage() {
-  const [tick, setTick] = useState(0);
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
   const prefersReducedMotion = useReducedMotion();
-  // Mobile menu state and handlers
-  const [menuOpen, setMenuOpen] = useState(false);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setMenuOpen(false);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
 
   // Scroll state for floating headers
   const [scrolled, setScrolled] = useState(false);
@@ -61,7 +52,7 @@ export default function OnboardingAutomationPage() {
   }, [scrolled]);
 
   const handleMobileNavClick = (
-    e: React.MouseEvent<HTMLAnchorElement, MouseEvent>
+    e: React.MouseEvent<HTMLAnchorElement, MouseEvent>,
   ) => {
     const href = (e.currentTarget.getAttribute("href") || "").trim();
     if (href.startsWith("#")) {
@@ -77,21 +68,13 @@ export default function OnboardingAutomationPage() {
           history.replaceState(null, "", `#${id}`);
         } catch {}
       }
-      setMenuOpen(false);
-    } else {
-      setMenuOpen(false);
     }
   };
-
-  useEffect(() => {
-    const id = setInterval(() => setTick((t) => t + 1), 2500);
-    return () => clearInterval(id);
-  }, []);
 
   // Small looping content used in illustrations
   const heroChips = useMemo(
     () => ["Invite team", "Connect Slack", "Import data"],
-    []
+    [],
   );
   const flowSignals = useMemo(
     () => [
@@ -100,7 +83,7 @@ export default function OnboardingAutomationPage() {
       { k: "Goal: Automations" },
       { k: "Industry: SaaS" },
     ],
-    []
+    [],
   );
   const flowActions = useMemo(
     () => [
@@ -109,7 +92,7 @@ export default function OnboardingAutomationPage() {
       { txt: "Setup: Integrations" },
       { txt: "Tour: Workflows" },
     ],
-    []
+    [],
   );
 
   const brainPhases = [
@@ -136,19 +119,19 @@ export default function OnboardingAutomationPage() {
     try {
       console.assert(
         Array.isArray(heroChips) && heroChips.length === 3,
-        "heroChips should have 3 items"
+        "heroChips should have 3 items",
       );
       console.assert(
         Array.isArray(flowSignals) && flowSignals.length === 4,
-        "flowSignals should have 4 items"
+        "flowSignals should have 4 items",
       );
       console.assert(
         Array.isArray(flowActions) && flowActions.length === 4,
-        "flowActions should have 4 items"
+        "flowActions should have 4 items",
       );
       console.assert(
         Array.isArray(brainPhases) && brainPhases.length === 4,
-        "brainPhases should have 4 items"
+        "brainPhases should have 4 items",
       );
     } catch (_) {
       // no-op in production
@@ -168,6 +151,10 @@ export default function OnboardingAutomationPage() {
         } as React.CSSProperties
       }
     >
+      <DemoVideoModal
+        isOpen={isDemoModalOpen}
+        onClose={() => setIsDemoModalOpen(false)}
+      />
       {/* DESKTOP page-specific menu — match /ai-chatbots crossfade */}
       <header
         className={`${
@@ -358,7 +345,7 @@ export default function OnboardingAutomationPage() {
         </div>
       </header>
       {/* 1) HERO */}
-      <HeroSection />
+      <HeroSection onDemoClick={() => setIsDemoModalOpen(true)} />
 
       {/* 2) WHY TRADITIONAL FAILS */}
       <WhySection />
@@ -421,12 +408,13 @@ export default function OnboardingAutomationPage() {
               Start Free Trial — guide users faster
             </span>
           </motion.a>
-          <a
-            href="#"
+          <button
+            type="button"
+            onClick={() => setIsDemoModalOpen(true)}
             className="rounded-2xl bg-[#E8F1FF] border border-[#004FCC] px-6 py-3 text-sm font-semibold text-[#004FCC] shadow-sm transition hover:bg-[#004FCC] hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#004FCC] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
           >
-            Request Demo
-          </a>
+            Watch a Demo
+          </button>
         </div>
         <p className="mt-3 text-xs text-slate-500">
           14‑day free trial · No credit card required

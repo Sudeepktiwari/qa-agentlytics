@@ -9,6 +9,7 @@ import BrainSection from "./brain-section";
 import FeaturesSection from "./features-section";
 import ImpactSection from "./impact-section";
 import TestimonialsSection from "./testimonials-section";
+import DemoVideoModal from "../components/DemoVideoModal";
 
 // Advancelytics — Solution: Knowledge Automation (Full Page, 8 sections)
 // Calendly-style palette, accessible CTAs, modern motion. Chat/doc-sorting hero.
@@ -22,6 +23,7 @@ const brand = {
 };
 
 export default function KnowledgeAutomationPage() {
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
   const [tick, setTick] = useState(0);
   // Mobile menu state
   const [menuOpen, setMenuOpen] = useState(false);
@@ -59,7 +61,7 @@ export default function KnowledgeAutomationPage() {
 
   // Smooth-scroll + close handler
   const handleMobileNavClick = (
-    e: React.MouseEvent<HTMLAnchorElement, MouseEvent>
+    e: React.MouseEvent<HTMLAnchorElement, MouseEvent>,
   ) => {
     const href = (e.currentTarget.getAttribute("href") || "").trim();
     if (href.startsWith("#")) {
@@ -84,7 +86,7 @@ export default function KnowledgeAutomationPage() {
   // Small looping content used in illustrations
   const heroChips = useMemo(
     () => ["Open Article", "Share in Chat", "Create Macro"],
-    []
+    [],
   );
   const ingestSources = useMemo(
     () => [
@@ -94,7 +96,7 @@ export default function KnowledgeAutomationPage() {
       { k: "Confluence" },
       { k: "Zendesk" },
     ],
-    []
+    [],
   );
   const categories = useMemo(
     () => [
@@ -104,7 +106,7 @@ export default function KnowledgeAutomationPage() {
       { k: "Integrations" },
       { k: "Policies" },
     ],
-    []
+    [],
   );
 
   const brainPhases = [
@@ -349,17 +351,21 @@ export default function KnowledgeAutomationPage() {
           >
             Start Free Trial
           </a>
-          <a
-            href="#"
+          <button
+            onClick={() => setIsDemoModalOpen(true)}
             className="rounded-2xl bg-[#E8F1FF] border border-[#004FCC] px-6 py-3 text-sm font-semibold text-[#004FCC] shadow-sm transition hover:bg-[#004FCC] hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#004FCC] focus-visible:ring-offset-2 focus-visible:ring-offset-white"
           >
-            Request Demo
-          </a>
+            Watch a Demo
+          </button>
         </div>
         <p className="mt-3 text-xs text-slate-500">
           14‑day free trial · No credit card required
         </p>
       </section>
+      <DemoVideoModal
+        isOpen={isDemoModalOpen}
+        onClose={() => setIsDemoModalOpen(false)}
+      />
     </div>
   );
 }

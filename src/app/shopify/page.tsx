@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
+import DemoVideoModal from "../components/DemoVideoModal";
 
 /**
  * Agentlytics for Shopify - Landing Page (Shopify-inspired theme)
@@ -740,10 +741,15 @@ function DevTests() {
 
 export default function ShopifyLandingPage() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
   const year = useMemo(() => new Date().getFullYear(), []);
 
   return (
     <div className="min-h-screen bg-[#fbf7ed] text-[#0b1f19]">
+      <DemoVideoModal
+        isOpen={isDemoModalOpen}
+        onClose={() => setIsDemoModalOpen(false)}
+      />
       <DevTests />
 
       {/* Header */}
@@ -808,12 +814,16 @@ export default function ShopifyLandingPage() {
                 >
                   Start Free
                 </a>
-                <a
-                  href="#final"
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileOpen(false);
+                    setIsDemoModalOpen(true);
+                  }}
                   className="rounded-xl border border-[#d7e1d4] bg-white px-3 py-2 text-center text-sm font-semibold text-[#0b1f19] hover:bg-[#f1f6f0]"
                 >
                   Watch a Demo
-                </a>
+                </button>
               </div>
             </div>
           </div>
@@ -869,12 +879,13 @@ export default function ShopifyLandingPage() {
                 Increase Shopify Conversions
                 <ArrowRight className="h-5 w-5" />
               </a>
-              <a
-                href="#final"
+              <button
+                type="button"
+                onClick={() => setIsDemoModalOpen(true)}
                 className="inline-flex items-center justify-center gap-2 rounded-full border border-[#d7e1d4] bg-white px-6 py-3 text-sm font-semibold text-[#0b1f19] hover:bg-[#f1f6f0]"
               >
                 Watch a Demo - See a Live Store Flow
-              </a>
+              </button>
             </div>
 
             <div className="mt-4 text-xs font-medium text-[#66736e]">
@@ -1469,12 +1480,13 @@ export default function ShopifyLandingPage() {
                     >
                       Start Free
                     </button>
-                    <a
-                      href="/signup"
+                    <button
+                      type="button"
+                      onClick={() => setIsDemoModalOpen(true)}
                       className="rounded-xl border border-[#d7e1d4] bg-white px-4 py-3 text-center text-sm font-semibold text-[#0b1f19] hover:bg-[#f1f6f0]"
                     >
                       Watch a Demo
-                    </a>
+                    </button>
                   </div>
 
                   <div className="text-[11px] text-[#66736e]">

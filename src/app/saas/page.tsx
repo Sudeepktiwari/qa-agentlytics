@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
+import DemoVideoModal from "../components/DemoVideoModal";
 
 /**
  * Agentlytics for SaaS — Landing Page (Next.js + Tailwind)
@@ -19,6 +20,7 @@ type CTAProps = {
   secondaryHref?: string;
   primaryLabel?: string;
   secondaryLabel?: string;
+  onWatchDemo?: () => void;
 };
 
 type IconProps = { className?: string };
@@ -105,6 +107,7 @@ function CTA({
   secondaryHref = "/demo",
   primaryLabel = "Start Free",
   secondaryLabel = "Watch a Demo",
+  onWatchDemo,
 }: CTAProps) {
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -115,12 +118,21 @@ function CTA({
         {primaryLabel}
         <ArrowRight className="ml-2" />
       </a>
-      <a
-        href={secondaryHref}
-        className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white/80 px-5 py-3 text-sm font-semibold text-slate-900 shadow-sm backdrop-blur hover:bg-white focus:outline-none focus:ring-2 focus:ring-slate-300 focus:ring-offset-2"
-      >
-        {secondaryLabel}
-      </a>
+      {onWatchDemo ? (
+        <button
+          onClick={onWatchDemo}
+          className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white/80 px-5 py-3 text-sm font-semibold text-slate-900 shadow-sm backdrop-blur hover:bg-white focus:outline-none focus:ring-2 focus:ring-slate-300 focus:ring-offset-2"
+        >
+          {secondaryLabel}
+        </button>
+      ) : (
+        <a
+          href={secondaryHref}
+          className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white/80 px-5 py-3 text-sm font-semibold text-slate-900 shadow-sm backdrop-blur hover:bg-white focus:outline-none focus:ring-2 focus:ring-slate-300 focus:ring-offset-2"
+        >
+          {secondaryLabel}
+        </a>
+      )}
     </div>
   );
 }
@@ -203,10 +215,15 @@ function AnchorLink({ href, label }: { href: string; label: string }) {
 
 export default function Page() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
   const year = new Date().getFullYear();
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-indigo-50 via-white to-white text-slate-900">
+      <DemoVideoModal
+        isOpen={isDemoModalOpen}
+        onClose={() => setIsDemoModalOpen(false)}
+      />
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/70 backdrop-blur">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
@@ -234,6 +251,7 @@ export default function Page() {
               secondaryHref="/demo"
               primaryLabel="Start Free"
               secondaryLabel="Watch a Demo"
+              onWatchDemo={() => setIsDemoModalOpen(true)}
             />
           </div>
 
@@ -263,7 +281,7 @@ export default function Page() {
               <AnchorLink href="#who" label="Who it's for" />
               <AnchorLink href="#demo" label="CTA" />
               <div className="pt-2">
-                <CTA />
+                <CTA onWatchDemo={() => setIsDemoModalOpen(true)} />
               </div>
             </div>
           </div>
@@ -317,6 +335,7 @@ export default function Page() {
                   secondaryHref="/demo"
                   primaryLabel="Increase Demo Conversions"
                   secondaryLabel="Watch a Demo — See a Live SaaS Flow"
+                  onWatchDemo={() => setIsDemoModalOpen(true)}
                 />
               </div>
 

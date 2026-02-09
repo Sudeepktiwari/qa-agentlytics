@@ -1,5 +1,7 @@
 "use client";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
+import DemoVideoModal from "../components/DemoVideoModal";
 
 /**
  * Agentlytics – CRM & Analytics Sync (No external icon deps)
@@ -11,8 +13,14 @@ import { motion } from "framer-motion";
 
 /* ================= Inline SVG Icons ================= */
 function IconCloudSync() {
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-indigo-50 text-slate-900">
+      <DemoVideoModal
+        isOpen={isDemoModalOpen}
+        onClose={() => setIsDemoModalOpen(false)}
+      />
       {/* Top Bar */}
       <header className="sticky top-0 z-30 backdrop-blur bg-white/80 border-b border-slate-200">
         <div className="mx-auto max-w-7xl px-4 py-3 flex items-center justify-between">
@@ -35,12 +43,12 @@ function IconCloudSync() {
             </a>
           </nav>
           <div className="flex items-center gap-3">
-            <a
-              href="/demo"
+            <button
+              onClick={() => setIsDemoModalOpen(true)}
               className="text-sm font-medium hover:text-indigo-700"
             >
               Watch a demo
-            </a>
+            </button>
             <a
               href="#cta"
               className="inline-flex items-center justify-center rounded-xl bg-indigo-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
@@ -106,12 +114,12 @@ function IconCloudSync() {
               >
                 Start free — connect your CRM instantly
               </a>
-              <a
-                href="/demo"
+              <button
+                onClick={() => setIsDemoModalOpen(true)}
                 className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm md:text-base font-semibold text-slate-900 hover:bg-slate-50"
               >
                 See a 2‑minute demo
-              </a>
+              </button>
             </div>
 
             {/* Trust logos */}

@@ -1,26 +1,41 @@
-import React from "react";
+import React, { useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
+import DemoVideoModal from "../components/DemoVideoModal";
 
 type CTAPulseProps = {
   href?: string;
+  onClick?: () => void;
   variant?: "primary" | "secondary";
   children: React.ReactNode;
 };
 
 function CTAPulse({
-  href = "#",
+  href,
+  onClick,
   variant = "primary",
   children,
 }: CTAPulseProps) {
   const base =
-    "inline-flex items-center gap-2 rounded-full px-4 py-2 font-semibold shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2";
+    "inline-flex items-center gap-2 rounded-full px-4 py-2 font-semibold shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 cursor-pointer";
   const primary =
     "bg-blue-600 text-white hover:bg-blue-700 focus-visible:ring-blue-500";
   const secondary =
     "bg-white border border-blue-100 text-blue-700 hover:bg-blue-50";
+  
+  if (onClick) {
+    return (
+      <button
+        onClick={onClick}
+        className={`${base} ${variant === "primary" ? primary : secondary}`}
+      >
+        {children}
+      </button>
+    );
+  }
+  
   return (
     <a
-      href={href}
+      href={href || "#"}
       className={`${base} ${variant === "primary" ? primary : secondary}`}
     >
       {children}
@@ -29,6 +44,7 @@ function CTAPulse({
 }
 
 export default function HeroSection() {
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
   const reduce = useReducedMotion();
 
   const bubble = {
@@ -45,6 +61,7 @@ export default function HeroSection() {
       className="relative isolate rounded-b-[2rem] bg-gradient-to-b from-white to-blue-50 px-4 py-20 sm:px-6 overflow-hidden"
       data-testid="hero"
     >
+      <DemoVideoModal isOpen={isDemoModalOpen} onClose={() => setIsDemoModalOpen(false)} />
       <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-2">
         {/* Left: Copy */}
         <div className="text-center md:text-left">
@@ -61,7 +78,7 @@ export default function HeroSection() {
           </p>
 
           <div className="mt-8 flex justify-center gap-3 lg:justify-start">
-            <CTAPulse href="#cta" variant="primary">
+            <CTAPulse onClick={() => setIsDemoModalOpen(true)} variant="primary">
               Watch demo
             </CTAPulse>
             <CTAPulse href="#cta" variant="secondary">

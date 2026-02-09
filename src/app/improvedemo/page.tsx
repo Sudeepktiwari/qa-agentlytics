@@ -1,4 +1,6 @@
-import React from "react";
+"use client";
+import React, { useState } from "react";
+import DemoVideoModal from "../components/DemoVideoModal";
 
 /**
  * Use Case Page: Improve Demo Quality (Not Demo Volume)
@@ -26,8 +28,14 @@ function currentYearSafe() {
 }
 
 const Page = () => {
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
+
   return (
     <main className="min-h-screen bg-white text-slate-900">
+      <DemoVideoModal
+        isOpen={isDemoModalOpen}
+        onClose={() => setIsDemoModalOpen(false)}
+      />
       {/* Top Nav */}
       <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/80 backdrop-blur">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3 md:px-6">
@@ -70,12 +78,12 @@ const Page = () => {
             >
               See How Demo Quality Improves
             </a>
-            <a
-              href="/book-demo"
+            <button
+              onClick={() => setIsDemoModalOpen(true)}
               className="inline-flex rounded-xl bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
             >
               Watch a Demo
-            </a>
+            </button>
           </div>
         </div>
       </header>
@@ -114,12 +122,12 @@ const Page = () => {
               >
                 See How Low-Fit Demos Are Filtered
               </a>
-              <a
-                href="/book-demo"
+              <button
+                onClick={() => setIsDemoModalOpen(true)}
                 className="inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-900 shadow-sm hover:bg-slate-50"
               >
                 Watch a Demo
-              </a>
+              </button>
             </div>
 
             <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -449,12 +457,12 @@ const Page = () => {
                   >
                     See How Demo Quality Improves
                   </a>
-                  <a
-                    href="/book-demo"
+                  <button
+                    onClick={() => setIsDemoModalOpen(true)}
                     className="inline-flex items-center justify-center rounded-2xl border border-white/40 bg-white/10 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-white/15"
                   >
                     Watch a Demo
-                  </a>
+                  </button>
                 </div>
               </div>
             </div>

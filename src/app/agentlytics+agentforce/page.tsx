@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import DemoVideoModal from "../components/DemoVideoModal";
 import {
   ArrowRight,
   Sparkles,
@@ -28,6 +29,7 @@ import {
 export default function AgentlyticsVsAgentforce() {
   const [scrolled, setScrolled] = useState(false);
   const [floating, setFloating] = useState(false);
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
 
   // Sticky nav shadow
   useEffect(() => {
@@ -276,12 +278,12 @@ export default function AgentlyticsVsAgentforce() {
               >
                 Start Free Trial <ArrowRight className="h-4 w-4" />
               </a>
-              <a
-                href="#demo"
+              <button
+                onClick={() => setIsDemoModalOpen(true)}
                 className="inline-flex items-center gap-2 rounded-full border border-white/40 px-6 py-3 text-white backdrop-blur-md hover:bg-white/10"
               >
-                Book Demo
-              </a>
+                Watch a Demo
+              </button>
             </div>
           </motion.div>
         </div>
@@ -780,12 +782,12 @@ export default function AgentlyticsVsAgentforce() {
               Start Free — See How Fast You Convert{" "}
               <ArrowRight className="h-4 w-4" />
             </a>
-            <a
-              href="#"
+            <button
+              onClick={() => setIsDemoModalOpen(true)}
               className="inline-flex items-center gap-2 rounded-full border border-white/40 px-6 py-3 text-white hover:bg-white/10"
             >
-              Book a Comparison Demo
-            </a>
+              Watch a Comparison Demo
+            </button>
           </div>
         </div>
       </section>
@@ -810,6 +812,10 @@ export default function AgentlyticsVsAgentforce() {
       {/* <div className="pb-12">
         <Diagnostics />
       </div>  */}
+      <DemoVideoModal
+        isOpen={isDemoModalOpen}
+        onClose={() => setIsDemoModalOpen(false)}
+      />
     </div>
   );
 }

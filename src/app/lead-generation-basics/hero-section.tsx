@@ -1,4 +1,6 @@
+"use client";
 import React from "react";
+import DemoVideoModal from "../components/DemoVideoModal";
 
 export default function HeroLeadSection({
   brand = {
@@ -9,6 +11,7 @@ export default function HeroLeadSection({
 }) {
   const [mounted, setMounted] = React.useState(false);
   const [activeIdx, setActiveIdx] = React.useState(0);
+  const [isDemoModalOpen, setIsDemoModalOpen] = React.useState(false);
 
   React.useEffect(() => {
     const t = setTimeout(() => setMounted(true), 60);
@@ -39,6 +42,10 @@ export default function HeroLeadSection({
       }
       aria-labelledby="hero-heading"
     >
+      <DemoVideoModal
+        isOpen={isDemoModalOpen}
+        onClose={() => setIsDemoModalOpen(false)}
+      />
       {/* decorative background halo */}
       <div
         className="pointer-events-none absolute -top-24 right-[-10%] h-[420px] w-[420px] rounded-full blur-3xl"
@@ -94,12 +101,13 @@ export default function HeroLeadSection({
               Start Free — Capture More Leads Instantly
             </a>
 
-            <a
-              href="#cta"
+            <button
+              type="button"
+              onClick={() => setIsDemoModalOpen(true)}
               className="rounded-2xl border border-[--brand-primary] px-6 py-3 text-sm font-semibold text-[--brand-primary] transition hover:bg-[--brand-primary] hover:text-white focus:outline-none focus:ring-4 focus:ring-[--brand-primary] focus:ring-offset-2"
             >
               Watch a Demo
-            </a>
+            </button>
           </div>
 
           <p className="mt-4 text-sm text-slate-500">
