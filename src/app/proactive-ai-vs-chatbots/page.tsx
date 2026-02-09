@@ -190,7 +190,7 @@ const VideoHeader = () => (
         {/* Video container (replace contents with embed) */}
         <div className="mt-6 overflow-hidden rounded-3xl border border-blue-100 bg-white shadow-sm">
           <div className="aspect-video w-full bg-gradient-to-br from-blue-50 to-white">
-            {/* <iframe
+            <iframe
               className="h-full w-full"
               src="https://www.youtube-nocookie.com/embed/CBcpBr-0XsI?si=8be1c_-iVjnobqqh"
               title="YouTube video player"
@@ -198,14 +198,7 @@ const VideoHeader = () => (
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               referrerPolicy="strict-origin-when-cross-origin"
               allowFullScreen
-            /> */}
-            <iframe
-              src="https://www.youtube.com/embed/VIDEO_ID?rel=0&modestbranding=1&controls=1"
-              width="100%"
-              height="500"
-              allow="autoplay; encrypted-media"
-              allowFullScreen
-            ></iframe>
+            />
           </div>
         </div>
       </div>
