@@ -192,7 +192,7 @@ const VideoHeader = () => (
           <div className="aspect-video w-full bg-gradient-to-br from-blue-50 to-white">
             <iframe
               className="h-full w-full"
-              src="https://www.youtube-nocookie.com/embed/CBcpBr-0XsI?si=8be1c_-iVjnobqqh"
+              src="https://www.youtube-nocookie.com/embed/CBcpBr-0XsI?si=8be1c_-iVjnobqqh&loop=1&playlist=CBcpBr-0XsI&rel=0&controls=0&modestbranding=1"
               title="YouTube video player"
               frameBorder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
