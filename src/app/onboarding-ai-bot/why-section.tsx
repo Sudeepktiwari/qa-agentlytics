@@ -1,3 +1,4 @@
+"use client";
 // components/WhySectionAuto.jsx
 import React from "react";
 

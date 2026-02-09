@@ -1,3 +1,4 @@
+"use client";
 import React, { useState, useEffect } from "react";
 import { Settings, Loader2 } from "lucide-react";
 

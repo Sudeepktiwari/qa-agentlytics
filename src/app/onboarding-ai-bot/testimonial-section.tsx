@@ -1,3 +1,4 @@
+"use client";
 // components/TestimonialsSection.jsx
 import React from "react";
 

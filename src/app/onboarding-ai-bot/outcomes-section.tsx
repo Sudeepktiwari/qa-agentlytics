@@ -1,3 +1,4 @@
+"use client";
 // components/OutcomesSection.jsx
 import React from "react";
 

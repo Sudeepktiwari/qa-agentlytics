@@ -1,3 +1,4 @@
+"use client";
 // components/FeaturesSection.jsx
 import React from "react";
 

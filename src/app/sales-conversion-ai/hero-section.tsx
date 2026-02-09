@@ -1,3 +1,4 @@
+"use client";
 import React, { useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import DemoVideoModal from "../components/DemoVideoModal";
@@ -21,7 +22,7 @@ function CTAPulse({
     "bg-blue-600 text-white hover:bg-blue-700 focus-visible:ring-blue-500";
   const secondary =
     "bg-white border border-blue-100 text-blue-700 hover:bg-blue-50";
-  
+
   if (onClick) {
     return (
       <button
@@ -32,7 +33,7 @@ function CTAPulse({
       </button>
     );
   }
-  
+
   return (
     <a
       href={href || "#"}
@@ -61,7 +62,10 @@ export default function HeroSection() {
       className="relative isolate rounded-b-[2rem] bg-gradient-to-b from-white to-blue-50 px-4 py-20 sm:px-6 overflow-hidden"
       data-testid="hero"
     >
-      <DemoVideoModal isOpen={isDemoModalOpen} onClose={() => setIsDemoModalOpen(false)} />
+      <DemoVideoModal
+        isOpen={isDemoModalOpen}
+        onClose={() => setIsDemoModalOpen(false)}
+      />
       <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-2">
         {/* Left: Copy */}
         <div className="text-center md:text-left">
@@ -78,7 +82,10 @@ export default function HeroSection() {
           </p>
 
           <div className="mt-8 flex justify-center gap-3 lg:justify-start">
-            <CTAPulse onClick={() => setIsDemoModalOpen(true)} variant="primary">
+            <CTAPulse
+              onClick={() => setIsDemoModalOpen(true)}
+              variant="primary"
+            >
               Watch demo
             </CTAPulse>
             <CTAPulse href="#cta" variant="secondary">

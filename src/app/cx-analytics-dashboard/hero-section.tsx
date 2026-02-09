@@ -1,3 +1,4 @@
+"use client";
 import React, { JSX, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import DemoVideoModal from "../components/DemoVideoModal";

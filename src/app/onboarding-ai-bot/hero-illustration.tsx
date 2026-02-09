@@ -1,3 +1,4 @@
+"use client";
 // components/GuidedOnboardingPreview.jsx
 import React from "react";
 

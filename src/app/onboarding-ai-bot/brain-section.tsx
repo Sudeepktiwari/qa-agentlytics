@@ -1,3 +1,4 @@
+"use client";
 // components/BrainSection.jsx
 import React from "react";
 
