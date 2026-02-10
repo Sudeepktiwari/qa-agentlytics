@@ -9182,9 +9182,69 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
 
         let personaFollowup = null;
 
+        // NEW: Prioritize triggerLeadQuestion for first followup
+        if (
+          followupCount === 0 &&
+          triggerLeadQuestion &&
+          contextualPageContext
+        ) {
+          console.log(
+            `[Followup] Generating prioritized delayed lead question based on section: "${contextualPageContext.substring(0, 50)}..."`,
+          );
+
+          const fSystemPrompt = `You are an expert sales consultant. Your goal is to engage the user with a specific, relevant question based on the section of the page they are currently reading.
+
+CONTEXT:
+- User is reading this specific section: "${contextualPageContext}"
+- Page URL: ${pageUrl}
+
+TASK:
+1. Analyze the section content to understand the specific problem or feature being discussed.
+2. Generate ONE concise Lead Qualification Question directly related to this content.
+3. Generate 3-4 short, clickable options (buttons) that represent likely answers or interests.
+
+OUTPUT FORMAT:
+Return ONLY valid JSON:
+{
+  "mainText": "Your specific question here?",
+  "buttons": ["Option 1", "Option 2", "Option 3"],
+  "emailPrompt": ""
+}
+
+RULES:
+- Question must be short (under 20 words).
+- Buttons must be very short (1-3 words).
+- Tone: Helpful, professional, curious.
+- Do not be generic. Use terms from the section text.`;
+
+          const fUserPrompt = `Generate a lead question and options based on the section content provided.`;
+
+          try {
+            const completion = await openai.chat.completions.create({
+              model: "gpt-4o-mini",
+              messages: [
+                { role: "system", content: fSystemPrompt },
+                { role: "user", content: fUserPrompt },
+              ],
+              temperature: 0.7,
+              response_format: { type: "json_object" },
+            });
+            const content = completion.choices[0].message.content;
+            if (content) {
+              personaFollowup = JSON.parse(content);
+            }
+          } catch (e) {
+            console.error(
+              "[Followup] Failed to generate prioritized lead question:",
+              e,
+            );
+          }
+        }
+
         // Generate topic-based followup message (skip if message-based preferred)
         // Skip topic-based generation for 3rd sales followup (count=2) to enforce summary/closure
         if (
+          !personaFollowup &&
           !preferMessageBased &&
           followupTopic !== "general" &&
           followupCount !== 2
@@ -9202,6 +9262,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
             !!userHasEmail,
           );
         } else if (
+          !personaFollowup &&
           !preferMessageBased &&
           detectedPersona &&
           pageChunks.length > 0 &&
@@ -9471,50 +9532,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
         );
 
         if (followupCount === 0) {
-          console.log(
-            "[Followup Debug] triggerLeadQuestion:",
-            triggerLeadQuestion,
-          );
-          console.log(
-            "[Followup Debug] contextualPageContext length:",
-            contextualPageContext?.length,
-          );
-
-          if (triggerLeadQuestion && contextualPageContext) {
-            console.log(
-              `[Followup] Generating delayed lead question based on section: "${contextualPageContext.substring(
-                0,
-                50,
-              )}..."`,
-            );
-
-            followupSystemPrompt = `You are an expert sales consultant. Your goal is to engage the user with a specific, relevant question based on the section of the page they are currently reading.
-
-CONTEXT:
-- User is reading this specific section: "${contextualPageContext}"
-- Page URL: ${pageUrl}
-
-TASK:
-1. Analyze the section content to understand the specific problem or feature being discussed.
-2. Generate ONE concise Lead Qualification Question directly related to this content.
-3. Generate 3-4 short, clickable options (buttons) that represent likely answers or interests.
-
-OUTPUT FORMAT:
-Return ONLY valid JSON:
-{
-  "mainText": "Your specific question here?",
-  "buttons": ["Option 1", "Option 2", "Option 3"],
-  "emailPrompt": ""
-}
-
-RULES:
-- Question must be short (under 20 words).
-- Buttons must be very short (1-3 words).
-- Tone: Helpful, professional, curious.
-- Do not be generic. Use terms from the section text.`;
-
-            followupUserPrompt = `Generate a lead question and options based on the section content provided.`;
-          } else if (preferMessageBased) {
+          if (preferMessageBased) {
             console.log(
               `[Followup] First followup based on last user message: "${lastUserContent}"`,
             );
