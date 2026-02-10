@@ -8374,6 +8374,7 @@ Extract key requirements (2-3 bullet points max, be concise):`;
         }
 
         let summaryPrompt;
+        let systemInstruction;
 
         if (!hasBeenGreeted) {
           // Check if user already has email (sales mode activation) or preserved SDR status
@@ -8466,12 +8467,10 @@ ANALYSIS REQUIRED:
 1. What is this page actually about? (features, pricing, use cases, etc.)
 2. What would someone visiting this page likely be trying to accomplish?
 3. What questions would help understand their specific needs or situation?
-4. What are the most relevant next actions available on this page?
 
 Generate response in JSON format:
 {
-  "mainText": "<Context-aware message (under 30 words) that shows you understand what they're viewing and asks a specific question about their needs/situation>",
-  "buttons": ["<3-4 short options (2-4 words) based on actual page content. They should read like tappable choices>"]
+  "mainText": "<Context-aware message (under 30 words) that shows you understand what they're viewing and asks a specific question about their needs/situation>"
 }
 
 EXAMPLE APPROACH:
@@ -8510,14 +8509,72 @@ PREFERRED CREATIVE OPENINGS:
 - Achievement: "Join [others] who...", "Like [similar companies]..."
 - Direct benefit: "Automate your...", "Transform your...", "Optimize your..."
 - Social proof: "Over 1000 companies...", "Top brands rely on..."
-
-BUTTONS REQUIREMENTS:
-- Based on actual functionality/content available on this page
-- Help them accomplish what they likely came to do
-- Be specific and actionable (not generic categories)
-- Match what a user would naturally want to do next on this specific page
-
 `;
+
+          systemInstruction = `You are an intelligent sales consultant that creates personalized, context-aware messages. Your expertise is understanding what users are viewing and asking the right questions to uncover their specific needs and decision criteria.
+
+CORE INTELLIGENCE:
+1. CONTENT ANALYSIS: Deeply understand what's on the page (features, benefits, use cases, pricing, etc.)
+2. USER PSYCHOLOGY: Consider what someone viewing this content is trying to accomplish
+3. NEEDS DISCOVERY: Ask questions that reveal their situation, priorities, and decision factors
+4. CONTEXTUAL RELEVANCE: Reference specific elements they can actually see and interact with
+
+CONVERSATION PRINCIPLES:
+- Act like a knowledgeable consultant who's reviewed their current page
+- Ask questions that sales professionals would ask to understand needs
+- Show you understand their current context and exploration process
+- Help them identify what matters most for their specific situation
+
+QUESTION STRATEGY:
+- Ask about their current situation or challenges
+- Understand their decision criteria or priorities
+- Identify their timeline or urgency
+- Uncover what's most important to them
+
+RESPONSE FORMAT:
+- Always return valid JSON with ONLY "mainText" field
+- Keep responses conversational and consultative
+- Reference actual page content when relevant
+- Ask questions that lead to meaningful lead qualification
+- NEVER use personal names (no "Hi John", "Hello Sarah", etc.)
+- Use situational language instead ("Running a startup?", "Managing a team?")
+
+LEAD QUALIFICATION FOCUS:
+- Company size or role (when relevant to the page content)
+- Specific use cases or challenges they're trying to solve
+- Decision timeline and process
+- Budget considerations (when contextually appropriate)
+- Technical requirements or preferences
+- Current solutions or alternatives they're considering
+
+MESSAGING APPROACH:
+- Use business/situational context, not personal identity
+- Address their likely role or company stage
+- Reference their business challenges, not personal details
+- Focus on what they're trying to accomplish professionally
+
+CORE PRINCIPLES:
+1. Analyze the actual page content to understand what's available
+2. Create messages that feel natural and conversational
+3. Avoid repetitive patterns or formulaic responses
+4. Be specific to the actual content, not generic page types
+5. Keep responses short but meaningful
+6. Sound like a helpful human, not a script
+
+RESPONSE FORMAT:
+- Always return valid JSON with ONLY "mainText" field
+- Keep mainText under 30 words
+- Base everything on the actual page content provided
+- Be genuinely helpful based on what the user can actually do
+
+AVOID:
+- Hardcoded examples or patterns
+- Repetitive greeting styles
+- Formulaic responses
+- Long feature lists or bullet points
+- Overly enthusiastic or salesy tone
+
+Focus on being genuinely useful based on what the user is actually viewing.`;
         } else {
           // Follow-up proactive message - deeper context analysis
           const isRevisit = visitedPages.some((page: string) =>
@@ -8581,13 +8638,8 @@ BUTTONS REQUIREMENTS:
 - Provide specific resources or actions that help with decision-making
 - Based on actual page content and functionality
 - Help them get answers to likely concerns at this stage`;
-        }
-        const summaryResp = await openai.chat.completions.create({
-          model: "gpt-4o-mini",
-          messages: [
-            {
-              role: "system",
-              content: `You are an intelligent sales consultant that creates personalized, context-aware messages. Your expertise is understanding what users are viewing and asking the right questions to uncover their specific needs and decision criteria.
+
+          systemInstruction = `You are an intelligent sales consultant that creates personalized, context-aware messages. Your expertise is understanding what users are viewing and asking the right questions to uncover their specific needs and decision criteria.
 
 CORE INTELLIGENCE:
 1. CONTENT ANALYSIS: Deeply understand what's on the page (features, benefits, use cases, pricing, etc.)
@@ -8656,7 +8708,14 @@ AVOID:
 - Long feature lists or bullet points
 - Overly enthusiastic or salesy tone
 
-Focus on being genuinely useful based on what the user is actually viewing.`,
+Focus on being genuinely useful based on what the user is actually viewing.`;
+        }
+        const summaryResp = await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: [
+            {
+              role: "system",
+              content: systemInstruction,
             },
             { role: "user", content: summaryPrompt },
           ],
@@ -8709,39 +8768,8 @@ Focus on being genuinely useful based on what the user is actually viewing.`,
         const proactiveMsg = proactiveResponse.mainText;
         let buttons = proactiveResponse.buttons || [];
         if (!hasBeenGreeted) {
-          let structuredButtons: string[] = [];
-          if (adminId && pageUrl) {
-            try {
-              const db = await getDb();
-              const pageDoc = await db
-                .collection("crawled_pages")
-                .findOne({ adminId, url: pageUrl });
-              const ss: any = pageDoc?.structuredSummary;
-              if (ss && typeof ss === "object") {
-                const pool: string[] = [];
-                if (Array.isArray(ss.primaryFeatures))
-                  pool.push(...ss.primaryFeatures);
-                if (Array.isArray(ss.solutions)) pool.push(...ss.solutions);
-                const cleaned = pool
-                  .map((s) => toTitleCase(String(s || "").trim()))
-                  .filter((s) => s && s.length > 0 && s.length <= 60);
-                if (cleaned.length > 0) {
-                  const shuffled = cleaned.sort(() => Math.random() - 0.5);
-                  structuredButtons = shuffled.slice(0, 4);
-                }
-              }
-            } catch {}
-          }
-          if (structuredButtons.length > 0) {
-            buttons = structuredButtons;
-          } else {
-            const featureButtons = extractFeatureOptionsFromText(
-              summaryContext || "",
-            );
-            if (featureButtons.length > 0) {
-              buttons = featureButtons.slice(0, 4);
-            }
-          }
+          // Explicitly clear buttons for first interaction as requested
+          buttons = [];
         }
 
         // Determine bot mode for proactive message
