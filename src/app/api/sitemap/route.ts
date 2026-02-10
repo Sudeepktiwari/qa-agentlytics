@@ -28,7 +28,7 @@ import { Pinecone } from "@pinecone-database/pinecone";
 import puppeteer from "puppeteer";
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
-const MAX_PAGES = 5;
+const MAX_PAGES = 20;
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // Initialize Pinecone
@@ -2184,7 +2184,7 @@ export async function POST(req: NextRequest) {
 
 async function processBatch(req: NextRequest) {
   const startTime = Date.now();
-  const MAX_EXECUTION_TIME = 50000; // 50 seconds (10 seconds buffer before Vercel Pro timeout of 60s)
+  const MAX_EXECUTION_TIME = 240000; // 240 seconds (4 minutes) to stay within Vercel 300s limit
 
   console.log(`[Sitemap] POST request received at ${new Date().toISOString()}`);
   console.log(
