@@ -505,7 +505,18 @@ async function parseSitemap(
   const timeoutId = setTimeout(() => controller.abort(), 60000);
 
   try {
-    const res = await fetch(sitemapUrl, { signal: controller.signal });
+    const res = await fetch(sitemapUrl, {
+      signal: controller.signal,
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        Accept:
+          "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Cache-Control": "no-cache",
+        Pragma: "no-cache",
+      },
+    });
     clearTimeout(timeoutId);
 
     if (!res.ok) throw new Error("Failed to fetch sitemap");
@@ -594,6 +605,11 @@ async function discoverSitemapCandidates(inputUrl: string): Promise<string[]> {
     const timeoutId = setTimeout(() => controller.abort(), 15000);
     const res = await fetch(`${origin}/robots.txt`, {
       signal: controller.signal,
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        Accept: "text/plain,text/html,*/*",
+      },
     });
     clearTimeout(timeoutId);
     if (res.ok) {
@@ -1397,6 +1413,8 @@ function detectDynamicContentPage(
 
   // Determine if this looks like a dynamic content page
   const shouldUseJavaScript =
+    // Case 0: Almost no links found (likely SPA/JS-rendered)
+    totalUrls < 5 ||
     // Case 1: It's clearly a listing page
     isListingPage ||
     // Case 2: Has content keywords but found very few/no content URLs (likely dynamic)
