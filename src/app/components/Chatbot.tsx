@@ -16,7 +16,7 @@ function getSessionId() {
 
 function getPageUrl() {
   if (typeof window === "undefined") return "/";
-  return window.location.pathname;
+  return window.location.href;
 }
 
 interface Message {

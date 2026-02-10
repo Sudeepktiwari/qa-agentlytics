@@ -8098,6 +8098,19 @@ Extract key requirements (2-3 bullet points max, be concise):`;
       );
     }
     let pageSummary = "(No specific information found for this page.)";
+
+    // Inject contextual context if chunks are empty but we have frontend context for lead question
+    if (
+      pageChunks.length === 0 &&
+      contextualPageContext &&
+      triggerLeadQuestion
+    ) {
+      console.log(
+        "[Proactive] Injecting contextualPageContext as pageChunk for lead question",
+      );
+      pageChunks = [contextualPageContext];
+    }
+
     if (pageChunks.length > 0) {
       if (proactive) {
         // Summarize the page content and ask a relevant question
@@ -9458,6 +9471,15 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
         );
 
         if (followupCount === 0) {
+          console.log(
+            "[Followup Debug] triggerLeadQuestion:",
+            triggerLeadQuestion,
+          );
+          console.log(
+            "[Followup Debug] contextualPageContext length:",
+            contextualPageContext?.length,
+          );
+
           if (triggerLeadQuestion && contextualPageContext) {
             console.log(
               `[Followup] Generating delayed lead question based on section: "${contextualPageContext.substring(
@@ -9529,7 +9551,7 @@ Rules:
           } else {
             // No user message yet - use existing page-context driven logic
             console.log(
-              `[Followup] No user message found, using page-context driven first followup`,
+              `[Followup] No user message found, using page-context driven first followup (triggerLeadQuestion: ${triggerLeadQuestion}, context: ${!!contextualPageContext})`,
             );
 
             followupSystemPrompt = `
@@ -10036,6 +10058,10 @@ ${previousQnA}
             try {
               parsed = JSON.parse(followupMsg || "");
             } catch {
+              console.warn(
+                "[Followup Debug] JSON parse failed, using raw msg:",
+                followupMsg,
+              );
               parsed = { mainText: followupMsg, buttons: [], emailPrompt: "" };
             }
             // Check main text similarity and options overlap
@@ -10232,6 +10258,12 @@ ${previousQnA}
             `[Followup] Error generating followup for session ${sessionId}:`,
             error,
           );
+          if (followupSystemPrompt)
+            console.log(
+              "[Followup Debug] System Prompt:",
+              followupSystemPrompt,
+            );
+
           let userEmail: string | null = null;
           const lastEmailMsg = await chats.findOne(
             { sessionId, email: { $exists: true } },
