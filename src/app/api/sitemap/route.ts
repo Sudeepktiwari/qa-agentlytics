@@ -2738,7 +2738,29 @@ IMPORTANT REQUIREMENTS:
           const localeMatch = u.pathname.match(/\/hc\/(\w[\w-]*)/);
           const locale = localeMatch ? localeMatch[1] : null;
           const originHost = u.hostname;
-          const filtered = cleanedUrls.filter((link) => {
+
+          // FIX: Rewrite URLs to match the requested domain
+          // This fixes the issue where a staging site (vercel.app) has a sitemap
+          // generated for production (custom domain), causing all links to be filtered out.
+          const rewrittenUrls = cleanedUrls
+            .map((link) => {
+              try {
+                const linkUrl = new URL(link);
+                if (!isSameDomain(linkUrl.hostname, originHost)) {
+                  // Keep the path and query, but switch to the requested host
+                  linkUrl.protocol = u.protocol;
+                  linkUrl.hostname = originHost;
+                  linkUrl.port = u.port;
+                  return linkUrl.href;
+                }
+                return link;
+              } catch {
+                return null;
+              }
+            })
+            .filter((l): l is string => l !== null);
+
+          const filtered = rewrittenUrls.filter((link) => {
             try {
               const lu = new URL(link);
               const sameHost = isSameDomain(lu.hostname, originHost);
