@@ -3614,6 +3614,7 @@ export async function POST(req: NextRequest) {
     visitedPages = [],
     contextualQuestionGeneration = false,
     contextualPageContext = null,
+    triggerLeadQuestion = false,
     autoResponse = false,
     contextualQuestion = null,
     assistantCountClient = 0,
@@ -9457,7 +9458,41 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
         );
 
         if (followupCount === 0) {
-          if (preferMessageBased) {
+          if (triggerLeadQuestion && contextualPageContext) {
+            console.log(
+              `[Followup] Generating delayed lead question based on section: "${contextualPageContext.substring(
+                0,
+                50,
+              )}..."`,
+            );
+
+            followupSystemPrompt = `You are an expert sales consultant. Your goal is to engage the user with a specific, relevant question based on the section of the page they are currently reading.
+
+CONTEXT:
+- User is reading this specific section: "${contextualPageContext}"
+- Page URL: ${pageUrl}
+
+TASK:
+1. Analyze the section content to understand the specific problem or feature being discussed.
+2. Generate ONE concise Lead Qualification Question directly related to this content.
+3. Generate 3-4 short, clickable options (buttons) that represent likely answers or interests.
+
+OUTPUT FORMAT:
+Return ONLY valid JSON:
+{
+  "mainText": "Your specific question here?",
+  "buttons": ["Option 1", "Option 2", "Option 3"],
+  "emailPrompt": ""
+}
+
+RULES:
+- Question must be short (under 20 words).
+- Buttons must be very short (1-3 words).
+- Tone: Helpful, professional, curious.
+- Do not be generic. Use terms from the section text.`;
+
+            followupUserPrompt = `Generate a lead question and options based on the section content provided.`;
+          } else if (preferMessageBased) {
             console.log(
               `[Followup] First followup based on last user message: "${lastUserContent}"`,
             );

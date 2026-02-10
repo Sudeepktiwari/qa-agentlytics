@@ -510,7 +510,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
             setLastUserAction(Date.now());
             followupTimer.current = setTimeout(() => {
               setFollowupSent(true);
-            }, 120000); // 120 seconds (2 minutes)
+            }, 30000); // 30 seconds
           });
       });
     // Cleanup timer on unmount
@@ -532,6 +532,52 @@ const Chatbot: React.FC<ChatbotProps> = ({
     disableProactive,
     seedAssistantMessages /*, proactiveTriggered, selectedLink */,
   ]);
+
+  const getVisibleSectionContext = () => {
+    if (typeof document === "undefined") return "";
+
+    // Find all potential section headers or containers
+    const elements = document.querySelectorAll(
+      "h1, h2, h3, section, article, div[id]",
+    );
+    let mostVisibleElement = null;
+    let maxVisibility = 0;
+
+    const viewportHeight = window.innerHeight;
+
+    elements.forEach((el) => {
+      const rect = el.getBoundingClientRect();
+
+      // Calculate intersection with viewport
+      const intersectionHeight = Math.max(
+        0,
+        Math.min(rect.bottom, viewportHeight) - Math.max(rect.top, 0),
+      );
+      const elementVisibility = intersectionHeight / rect.height; // Percentage of element visible
+      const viewportCoverage = intersectionHeight / viewportHeight; // Percentage of viewport covered
+
+      // Combine metrics to find "most relevant" section
+      // Prefer elements that cover significant viewport area or are mostly visible
+      const score = viewportCoverage * 2 + elementVisibility;
+
+      if (
+        score > maxVisibility &&
+        (el as HTMLElement).innerText?.trim().length > 50
+      ) {
+        maxVisibility = score;
+        mostVisibleElement = el;
+      }
+    });
+
+    if (mostVisibleElement) {
+      // Get text from the element and its immediate siblings/children
+      // Limit to 500 chars to avoid huge payloads
+      return (mostVisibleElement as HTMLElement).innerText.substring(0, 800);
+    }
+
+    // Fallback: get text from the middle of the viewport
+    return document.body.innerText.substring(0, 800);
+  };
 
   useEffect(() => {
     if (messages.length === 0) return;
@@ -598,6 +644,13 @@ const Chatbot: React.FC<ChatbotProps> = ({
 
       console.log("[Chatbot] Sending follow-up request to backend");
       const sessionId = getSessionId();
+
+      // For first follow-up (count=0), include visible section context for lead questions
+      const isFirstFollowup = followupCount === 0;
+      const sectionContext = isFirstFollowup
+        ? getVisibleSectionContext()
+        : null;
+
       fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -608,6 +661,12 @@ const Chatbot: React.FC<ChatbotProps> = ({
           previousQuestions,
           followupCount, // <-- backend uses follow-up stage
           ...(adminId ? { adminId } : {}),
+          ...(isFirstFollowup
+            ? {
+                triggerLeadQuestion: true,
+                contextualPageContext: sectionContext,
+              }
+            : {}),
         }),
       })
         .then((res) => res.json())
