@@ -1981,37 +1981,151 @@ async function extractTextUsingBrowser(url: string): Promise<string> {
     // Extract text content from the rendered page
     const text = await page.evaluate(() => {
       // Remove script and style elements
-      const scripts = document.querySelectorAll("script, style, noscript");
+      const scripts = document.querySelectorAll(
+        "script, style, noscript, nav, footer, aside, .site-header, .site-footer, .navbar, .global-nav, .global-header, .cookie-banner, .newsletter, .modal, .offcanvas",
+      );
       scripts.forEach((el) => el.remove());
 
-      // For slide pages, try to get content from common slide containers
-      const slideSelectors = [
-        ".slide-content",
-        ".presentation-content",
-        ".slide-container",
-        '[class*="slide"]',
-        ".content",
-        "main",
-        "article",
-      ];
-
-      let slideText = "";
-      for (const selector of slideSelectors) {
-        const elements = document.querySelectorAll(selector);
-        elements.forEach((el) => {
-          const elementText = el.textContent || "";
-          if (elementText.length > slideText.length) {
-            slideText = elementText;
-          }
-        });
+      // Remove main header if it contains nav
+      const mainHeader = document.querySelector("body > header");
+      if (
+        mainHeader &&
+        (mainHeader.querySelector("nav") || mainHeader.tagName === "HEADER")
+      ) {
+        mainHeader.remove();
       }
 
-      // Get the main content text (fallback to body if slide-specific content not found)
-      const bodyText = document.body?.innerText || "";
-      const finalText = slideText.length > 100 ? slideText : bodyText;
+      // Define content selectors
+      const contentSelector =
+        "h1, h2, h3, h4, h5, h6, p, li, blockquote, td, th, div, article, section, dt, summary, legend";
 
-      // Clean up whitespace
-      return finalText.replace(/\s+/g, " ").trim();
+      // Helper to check if an element is a header
+      const isHeaderElement = (el: Element) => {
+        const tagName = el.tagName.toLowerCase();
+        const role = el.getAttribute("role");
+        const className = el.className || "";
+
+        // Tag based
+        if (
+          /^h[1-6]$/.test(tagName) ||
+          ["dt", "summary", "legend"].includes(tagName)
+        )
+          return true;
+
+        // Role based
+        if (role === "heading") return true;
+
+        // Class based (only if leaf node or minimal children)
+        if (
+          typeof className === "string" &&
+          /(\s|^)(section-title|section-header|headline|title)(\s|$)/i.test(
+            className,
+          )
+        ) {
+          // Check if it's not a container for other content
+          return (
+            el.children.length === 0 ||
+            (el as HTMLElement).innerText.length < 100
+          );
+        }
+
+        return false;
+      };
+
+      const sections: string[] = [];
+      let currentTitle = "";
+      let currentContent: string[] = [];
+      let sectionCount = 0;
+      const seenBodies = new Set<string>();
+
+      const normalize = (t: string) => t.replace(/\s+/g, " ").trim();
+
+      const pushSection = () => {
+        const rawBody = normalize(currentContent.join(" "));
+        if (!rawBody || rawBody.length < 60) {
+          currentTitle = "";
+          currentContent = [];
+          return;
+        }
+
+        // Deduplication
+        const key = (currentTitle + "::" + rawBody.slice(0, 300)).toLowerCase();
+        if (seenBodies.has(key)) {
+          currentTitle = "";
+          currentContent = [];
+          return;
+        }
+        seenBodies.add(key);
+
+        // Infer title if missing
+        let title = normalize(currentTitle);
+        if (!title) {
+          title = rawBody.split(".")[0].split(" ").slice(0, 8).join(" ");
+        }
+
+        sectionCount++;
+        sections.push(`[SECTION ${sectionCount}] ${title}\n${rawBody}`);
+        currentTitle = "";
+        currentContent = [];
+      };
+
+      // Traverse the DOM to extract sections
+      // We'll focus on the main content area if possible
+      const main =
+        document.querySelector("main") ||
+        document.querySelector("[role='main']") ||
+        document.body;
+
+      // Get all relevant elements in document order
+      const elements = main.querySelectorAll(contentSelector);
+
+      elements.forEach((el) => {
+        // Skip hidden elements
+        if ((el as HTMLElement).offsetParent === null) return;
+
+        // Skip if inside another element we already processed?
+        // Actually, querySelectorAll returns all descendants. We want to avoid duplication.
+        // Simple strategy: If it's a header, treat as header. If it's text, append.
+        // But nested elements (div > p) will cause double text.
+        // We should only process 'leaf' nodes or nodes that contain text directly.
+
+        // Better approach for flat traversal:
+        // Iterate all elements, check if header.
+        // If header -> push previous section, start new.
+        // If content -> append.
+
+        // To avoid duplication, we can check if the element has direct text nodes.
+        const hasDirectText = Array.from(el.childNodes).some(
+          (node) =>
+            node.nodeType === Node.TEXT_NODE &&
+            node.textContent &&
+            node.textContent.trim().length > 0,
+        );
+
+        if (isHeaderElement(el)) {
+          if (currentTitle || currentContent.length > 0) pushSection();
+          currentTitle = (el as HTMLElement).innerText;
+          currentContent = [];
+        } else if (hasDirectText) {
+          // Only add the direct text content?
+          // HTMLElement.innerText gets all descendant text.
+          // If we use innerText on a div that contains p, and then visit p, we get text twice.
+
+          // We should only process elements that DON'T have children matching our selector?
+          const hasChildContentElements =
+            el.querySelector(contentSelector) !== null;
+
+          if (!hasChildContentElements) {
+            currentContent.push((el as HTMLElement).innerText);
+          }
+        }
+      });
+
+      if (currentTitle || currentContent.length > 0) pushSection();
+
+      return sections.length > 0
+        ? sections.join("\n\n")
+        : document.body.innerText.replace(/\s+/g, " ").trim();
     });
 
     console.log(
