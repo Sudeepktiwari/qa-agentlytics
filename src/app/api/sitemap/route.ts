@@ -1724,8 +1724,11 @@ async function extractTextFromUrl(
     console.log(`[ExtractText] Parsing HTML content...`);
     $("script, style, noscript").remove();
     $(
-      "header, nav, footer, aside, .site-header, .site-footer, .navbar, .global-nav, .global-header, .cookie-banner, .newsletter, .modal, .offcanvas",
+      "nav, footer, aside, .site-header, .site-footer, .navbar, .global-nav, .global-header, .cookie-banner, .newsletter, .modal, .offcanvas",
     ).remove();
+    // Only remove header if it looks like a main site header (contains nav or is top level)
+    $("body > header").remove();
+    $("header:has(nav)").remove();
 
     const NOISE_PATTERNS = [
       /log\s*in/i,
@@ -1801,7 +1804,7 @@ async function extractTextFromUrl(
     };
 
     const contentSelector =
-      "h1, h2, h3, h4, h5, h6, p, li, blockquote, td, th, div, article, section";
+      "h1, h2, h3, h4, h5, h6, p, li, blockquote, td, th, div, article, section, dt, summary, legend";
     scope.find(contentSelector).each((_, el) => {
       const $el = $(el);
       // Avoid duplication: if this element has children that are also in our selector,
@@ -1810,9 +1813,24 @@ async function extractTextFromUrl(
       const tagName = (el as any).tagName
         ? (el as any).tagName.toLowerCase()
         : "";
-      const isHeader = /^h[1-6]$/.test(tagName);
 
-      if (!isHeader && $el.find(contentSelector).length > 0) {
+      const role = $el.attr("role");
+      const className = $el.attr("class") || "";
+      const hasChildren = $el.find(contentSelector).length > 0;
+
+      // Header detection: tags, roles, or class heuristics (leaf nodes only for classes)
+      const isTagHeader =
+        /^h[1-6]$/.test(tagName) ||
+        ["dt", "summary", "legend"].includes(tagName) ||
+        role === "heading";
+      const isClassHeader =
+        /(\s|^)(section-title|section-header|headline|title)(\s|$)/i.test(
+          className,
+        );
+
+      const isHeader = isTagHeader || (isClassHeader && !hasChildren);
+
+      if (!isHeader && hasChildren) {
         return;
       }
 
