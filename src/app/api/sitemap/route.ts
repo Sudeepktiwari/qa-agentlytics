@@ -251,31 +251,33 @@ SALES WORKFLOW — 2 Questions + Options
 
 Goal: Understand sophistication, current workflows, replaceability, and desired outcomes.
 
-Q1 — Current Process
-[Ask based on the process implied by the section: qualification, demo booking, visitor intent detection, automation, etc.]
+Q1 — Current Process (Problem-Aware)
+[Ask about the specific current workflow or problem identified in the 'problem_statement' and 'core_keywords'.]
+[The question must reference the specific domain topic of this section.]
 
 Options (4)
-- Existing manual process
-- Basic system/process
-- No process
-- Non-sales-oriented tool/process
+- [Specific manual/inefficient method from section text]
+- [Specific basic/partial solution from section text]
+- [Specific lack of solution/process from section text]
+- [Specific alternative/competitor approach from section text]
 (Map each using the awareness + urgency logic.)
 
 Q2 — Desired Outcome / Improvement
-Based on a DIFFERENT benefit or feature than Q1.
-(e.g., quality, automation, workload reduction, accuracy, conversion lift)
+Based on a DIFFERENT 'benefit' or 'feature' keyword from Q1.
+[Ask what they want to achieve regarding the specific section topic.]
 
 Options (4)
-- High-intent desired outcome → sales_alert
-- Medium/optimization → validation_path
-- Low-awareness → diagnostic_education
-- Unknown state → diagnostic_education
+- [Specific high-value outcome mentioned in section benefits] → sales_alert
+- [Specific optimization/efficiency outcome] → validation_path
+- [Specific learning/curiosity outcome] → diagnostic_education
+- [Specific uncertainty/researching outcome] → diagnostic_education
 
 ---
 
 RULES
 - Do NOT mention the page URL.
 - Do NOT create generic questions. Every question must be grounded in actual keywords from this section.
+- Do NOT use generic option labels like "Manual process" or "No process". Make them specific to the domain (e.g. "Using spreadsheets", "Calling manually").
 - Q2 must always use a different theme from Q1.
 - Output JSON ONLY with structure: { "leadQuestions": [], "salesQuestions": [] }
 - Each question object: { "question": "", "options": [{ "label": "", "tags": [], "workflow": "" }] }
