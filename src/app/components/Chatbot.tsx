@@ -81,6 +81,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
   >("lead_generation");
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
   const [othersInputValue, setOthersInputValue] = useState("");
+  const [hasBeenGreeted, setHasBeenGreeted] = useState(false);
 
   // Helper function to clean malformed JSON strings
   const cleanJsonString = (jsonStr: string): string => {
@@ -277,6 +278,30 @@ const Chatbot: React.FC<ChatbotProps> = ({
     )
       .then((res) => res.json())
       .then((data) => {
+        let shouldTriggerProactive = true;
+        const alreadyGreeted =
+          typeof window !== "undefined" &&
+          localStorage.getItem("appointy_has_been_greeted") === "true";
+
+        // Track visited pages
+        let visitedPages: string[] = [];
+        if (typeof window !== "undefined") {
+          try {
+            const stored = localStorage.getItem("appointy_visited_pages");
+            visitedPages = stored ? JSON.parse(stored) : [];
+            if (!Array.isArray(visitedPages)) visitedPages = [];
+            if (!visitedPages.includes(effectivePageUrl)) {
+              visitedPages.push(effectivePageUrl);
+              localStorage.setItem(
+                "appointy_visited_pages",
+                JSON.stringify(visitedPages),
+              );
+            }
+          } catch (e) {
+            console.error("Error updating visited pages:", e);
+          }
+        }
+
         if (data.history) {
           const mapped = data.history.map((msg: Message) => {
             if (msg.role === "assistant") {
@@ -319,127 +344,117 @@ const Chatbot: React.FC<ChatbotProps> = ({
           } else {
             setMessages(mapped);
           }
-        }
 
-        // Check if we should clear history before showing proactive message (after reset)
-        const clearHistoryFirst =
-          localStorage.getItem("clearHistoryBeforeProactive") === "true";
-        if (clearHistoryFirst) {
-          localStorage.removeItem("clearHistoryBeforeProactive");
-          console.log(
-            "[Chatbot] Clearing chat history before showing proactive message",
-          );
+          // Determine if we should trigger a "Welcome Back" message
+          if (alreadyGreeted && mapped.length >= 2) {
+            shouldTriggerProactive = true;
+          } else {
+            shouldTriggerProactive = false;
+          }
 
-          // Clear chat history from backend first
-          fetch("/api/chat", {
-            method: "DELETE",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              sessionId,
-              clearHistory: true,
-            }),
-          })
-            .then(() => {
-              console.log(
-                "[Chatbot] Chat history cleared, now showing proactive message",
-              );
-              // Now show the proactive message with clean history
-              return fetch("/api/chat", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  sessionId,
-                  pageUrl: effectivePageUrl,
-                  proactive: true,
-                  ...(adminId ? { adminId } : {}),
-                }),
-              });
+          // Check if we should clear history before showing proactive message (after reset)
+          const clearHistoryFirst =
+            localStorage.getItem("clearHistoryBeforeProactive") === "true";
+          if (clearHistoryFirst) {
+            localStorage.removeItem("clearHistoryBeforeProactive");
+            console.log(
+              "[Chatbot] Clearing chat history before showing proactive message",
+            );
+
+            // Clear chat history from backend first
+            fetch("/api/chat", {
+              method: "DELETE",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                sessionId,
+                clearHistory: true,
+              }),
             })
-            .then((res) => res.json())
-            .then((data) => {
-              if (data.botMode) {
-                setCurrentBotMode(data.botMode);
-              }
-              if (data.userEmail !== undefined) {
-                setCurrentUserEmail(data.userEmail);
-              }
+              .then(() => {
+                console.log(
+                  "[Chatbot] Chat history cleared, now showing proactive message",
+                );
+                // Now show the proactive message with clean history
+                return fetch("/api/chat", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    sessionId,
+                    pageUrl: effectivePageUrl,
+                    proactive: true,
+                    hasBeenGreeted: alreadyGreeted,
+                    visitedPages: (() => {
+                      if (typeof window === "undefined") return [];
+                      try {
+                        const stored = localStorage.getItem(
+                          "appointy_visited_pages",
+                        );
+                        return stored ? JSON.parse(stored) : [];
+                      } catch {
+                        return [];
+                      }
+                    })(),
+                    ...(adminId ? { adminId } : {}),
+                  }),
+                });
+              })
+              .then((res) => res.json())
+              .then((data) => {
+                if (data.botMode) {
+                  setCurrentBotMode(data.botMode);
+                }
+                if (data.userEmail !== undefined) {
+                  setCurrentUserEmail(data.userEmail);
+                }
 
-              if (data.answer)
-                setMessages([
-                  {
-                    role: "assistant",
-                    content:
-                      typeof data.answer === "string"
-                        ? normalizeMainText(data.answer)
-                        : data.answer,
-                    buttons: Array.isArray(data.buttons)
-                      ? data.buttons.map(sanitizeButtonLabel).filter(Boolean)
-                      : [],
-                    emailPrompt: "",
+                if (data.answer)
+                  setMessages([
+                    {
+                      role: "assistant",
+                      content:
+                        typeof data.answer === "string"
+                          ? normalizeMainText(data.answer)
+                          : data.answer,
+                      buttons: Array.isArray(data.buttons)
+                        ? data.buttons.map(sanitizeButtonLabel).filter(Boolean)
+                        : [],
+                      emailPrompt: "",
+                      botMode: data.botMode,
+                      userEmail: data.userEmail,
+                      topicsDiscussed: data.topicsDiscussed,
+                    },
+                  ]);
+                if (data.secondary) {
+                  const secParsed = parseBotResponse(data.secondary);
+                  const secMsg = {
+                    role: "assistant" as const,
+                    content: secParsed.mainText,
+                    buttons: secParsed.buttons,
+                    emailPrompt: secParsed.emailPrompt,
                     botMode: data.botMode,
                     userEmail: data.userEmail,
                     topicsDiscussed: data.topicsDiscussed,
-                    domain: data.domain,
-                    domainMatch: data.domainMatch,
-                    confidence:
-                      typeof data.confidence === "number"
-                        ? data.confidence
-                        : undefined,
-                    suggestedActions: Array.isArray(data.suggestedActions)
-                      ? data.suggestedActions
-                      : undefined,
-                  },
-                ]);
-              if (data.secondary) {
-                const secParsed = parseBotResponse(data.secondary);
-                const secMsg = {
-                  role: "assistant" as const,
-                  content: secParsed.mainText,
-                  buttons: secParsed.buttons,
-                  emailPrompt: secParsed.emailPrompt,
-                  botMode: data.botMode,
-                  userEmail: data.userEmail,
-                  topicsDiscussed: data.topicsDiscussed,
-                  domain: (data.secondary as any)?.domain,
-                  domainMatch: (data.secondary as any)?.domainMatch,
-                  confidence:
-                    typeof (data.secondary as any)?.confidence === "number"
-                      ? (data.secondary as any)?.confidence
-                      : undefined,
-                  suggestedActions: Array.isArray(
-                    (data.secondary as any)?.suggestedActions,
-                  )
-                    ? (data.secondary as any)?.suggestedActions
-                    : undefined,
-                };
-                console.log("[Followup] Received", {
-                  type: (data.secondary as any)?.type || "unknown",
-                  preview:
-                    typeof (data.secondary as any)?.mainText === "string"
-                      ? (data.secondary as any)?.mainText.slice(0, 100)
-                      : "",
-                  buttonsCount: Array.isArray(secParsed.buttons)
-                    ? secParsed.buttons.length
-                    : 0,
-                });
-                setMessages((msgs) => [...msgs, secMsg]);
-                console.log("[Followup] Appended to chat");
-              }
-              // Start follow-up timer
-              if (followupTimer.current) clearTimeout(followupTimer.current);
-              setFollowupSent(false);
-              setFollowupCount(0);
-              setUserIsActive(false);
-              setLastUserAction(Date.now());
-              followupTimer.current = setTimeout(() => {
-                setFollowupSent(true);
-              }, 120000); // 120 seconds (2 minutes)
-            })
-            .catch((error) => {
-              console.error("[Chatbot] Proactive error", error);
-            });
-          return;
+                  };
+                  setMessages((msgs) => [...msgs, secMsg]);
+                }
+                // Start follow-up timer
+                if (followupTimer.current) clearTimeout(followupTimer.current);
+                setFollowupSent(false);
+                setFollowupCount(0);
+                setUserIsActive(false);
+                setLastUserAction(Date.now());
+                followupTimer.current = setTimeout(() => {
+                  setFollowupSent(true);
+                }, 30000); // 30 seconds
+              })
+              .catch((error) => {
+                console.error("[Chatbot] Proactive error", error);
+              });
+            return;
+          }
         }
+
+        if (!shouldTriggerProactive) return;
 
         // Always trigger proactive bot message and follow-up timer on mount or after link selection
         fetch("/api/chat", {
@@ -449,6 +464,16 @@ const Chatbot: React.FC<ChatbotProps> = ({
             sessionId,
             pageUrl: effectivePageUrl,
             proactive: true,
+            hasBeenGreeted: alreadyGreeted,
+            visitedPages: (() => {
+              if (typeof window === "undefined") return [];
+              try {
+                const stored = localStorage.getItem("appointy_visited_pages");
+                return stored ? JSON.parse(stored) : [];
+              } catch {
+                return [];
+              }
+            })(),
             ...(adminId ? { adminId } : {}),
           }),
         })
@@ -461,8 +486,15 @@ const Chatbot: React.FC<ChatbotProps> = ({
               setCurrentUserEmail(data.userEmail);
             }
 
-            if (data.answer)
-              setMessages([
+            if (data.answer) {
+              // Mark as greeted if not already
+              if (!alreadyGreeted) {
+                localStorage.setItem("appointy_has_been_greeted", "true");
+                setHasBeenGreeted(true);
+              }
+
+              setMessages((prev) => [
+                ...prev,
                 {
                   role: "assistant",
                   content:
@@ -478,6 +510,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
                   topicsDiscussed: data.topicsDiscussed,
                 },
               ]);
+            }
             if (data.secondary) {
               const secParsed = parseBotResponse(data.secondary);
               const secMsg = {

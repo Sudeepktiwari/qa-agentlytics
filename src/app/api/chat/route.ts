@@ -8525,7 +8525,7 @@ PREFERRED CREATIVE OPENINGS:
 - Social proof: "Over 1000 companies...", "Top brands rely on..."
 `;
 
-          systemInstruction = `You are an intelligent sales consultant that creates personalized, context-aware messages. Your expertise is understanding what users are viewing and asking the right questions to uncover their specific needs and decision criteria.
+          systemInstruction = `You are an intelligent assistant. Be proactive but not pushy. Offer help related to visible page elements. Your expertise is understanding what users are viewing and asking the right questions to uncover their specific needs.
 
 CORE INTELLIGENCE:
 1. CONTENT ANALYSIS: Deeply understand what's on the page (features, benefits, use cases, pricing, etc.)

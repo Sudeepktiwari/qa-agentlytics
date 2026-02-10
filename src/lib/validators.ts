@@ -11,7 +11,7 @@ export function clampNumber(n: number, min: number, max: number) {
 
 export function computeDepth(
   value: unknown,
-  visited = new Set<object>()
+  visited = new Set<object>(),
 ): number {
   if (value === null || typeof value !== "object") return 0;
   const obj = value as Record<string, unknown>;
@@ -26,7 +26,7 @@ export function computeDepth(
 
 export function assertBodyConstraints(
   body: unknown,
-  opts?: { maxBytes?: number; maxDepth?: number }
+  opts?: { maxBytes?: number; maxDepth?: number },
 ) {
   const maxBytes = opts?.maxBytes ?? 128 * 1024;
   const maxDepth = opts?.maxDepth ?? 8;
@@ -60,6 +60,8 @@ export const ChatBodySchema = z
     messageType: z.enum(["question", "data"]).optional(),
     followup: z.union([z.boolean(), z.number().int().min(0).max(5)]).optional(),
     proactive: z.boolean().optional(),
+    hasBeenGreeted: z.boolean().optional(),
+    visitedPages: z.array(z.string()).optional(),
   })
   .passthrough();
 
