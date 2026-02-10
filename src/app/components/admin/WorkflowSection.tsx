@@ -388,6 +388,10 @@ export default function WorkflowSection() {
                                                             if (
                                                               opt?.diagnostic_answer
                                                             ) {
+                                                              console.log(
+                                                                "Sales Option Clicked:",
+                                                                opt,
+                                                              );
                                                               setSelectedDiagnostic(
                                                                 {
                                                                   title:
@@ -396,7 +400,9 @@ export default function WorkflowSection() {
                                                                   answer:
                                                                     opt.diagnostic_answer,
                                                                   options:
-                                                                    opt.diagnostic_options,
+                                                                    opt.diagnostic_options ||
+                                                                    opt.diagnosticOptions ||
+                                                                    [],
                                                                 },
                                                               );
                                                             }
@@ -527,6 +533,10 @@ export default function WorkflowSection() {
                                                             if (
                                                               opt?.diagnostic_answer
                                                             ) {
+                                                              console.log(
+                                                                "Sales Option Clicked:",
+                                                                opt,
+                                                              );
                                                               setSelectedDiagnostic(
                                                                 {
                                                                   title:
@@ -535,7 +545,9 @@ export default function WorkflowSection() {
                                                                   answer:
                                                                     opt.diagnostic_answer,
                                                                   options:
-                                                                    opt.diagnostic_options,
+                                                                    opt.diagnostic_options ||
+                                                                    opt.diagnosticOptions ||
+                                                                    [],
                                                                 },
                                                               );
                                                             }
