@@ -9160,11 +9160,8 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
         let personaFollowup = null;
 
         // NEW: Prioritize triggerLeadQuestion for first followup
-        if (
-          followupCount === 0 &&
-          triggerLeadQuestion &&
-          contextualPageContext
-        ) {
+        // Also enable for any first followup where we have section context (Gold Standard)
+        if (followupCount === 0 && contextualPageContext) {
           // 1. Try to find stored question from crawled data first
           if (
             structuredSummaryDoc?.structuredSummary?.sections &&
