@@ -291,20 +291,37 @@ export async function POST(request: NextRequest) {
     const estimatedTokens = Math.ceil(reconstructedContent.length / 4);
     const maxTokensForDirect = 30000; // Leave room for prompt + response (GPT-4o-mini limit ~128k)
 
+    // Inject sectionContent from raw text if available (for both direct and chunked)
+    // This ensures [SECTION] markers are respected if present in reconstructedContent
+    const blocks = parseSectionBlocks(reconstructedContent);
+    console.log(
+      `[API] Parsed ${blocks.length} sections from reconstructedContent`,
+    );
+
     let structuredSummary;
 
-    if (estimatedTokens <= maxTokensForDirect) {
-      structuredSummary = await generateDirectSummary(
-        reconstructedContent,
-        adminId,
+    if (blocks.length > 0) {
+      console.log(
+        "[API] Using parsed blocks to generate section-aware summary...",
       );
+      structuredSummary = await generateSummaryFromSections(blocks, adminId);
     } else {
-      // For chunked summary, pass the vectorDocs with chunk text from Pinecone
-      const chunkObjs = vectorDocs.map((doc) => ({
-        ...doc,
-        text: idToChunk[doc.vectorId] || "",
-      }));
-      structuredSummary = await generateChunkedSummary(chunkObjs, adminId);
+      console.log(
+        "[API] No section markers found, falling back to standard generation...",
+      );
+      if (estimatedTokens <= maxTokensForDirect) {
+        structuredSummary = await generateDirectSummary(
+          reconstructedContent,
+          adminId,
+        );
+      } else {
+        // For chunked summary, pass the vectorDocs with chunk text from Pinecone
+        const chunkObjs = vectorDocs.map((doc) => ({
+          ...doc,
+          text: idToChunk[doc.vectorId] || "",
+        }));
+        structuredSummary = await generateChunkedSummary(chunkObjs, adminId);
+      }
     }
 
     if (!structuredSummary) {
@@ -314,79 +331,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Inject sectionContent from raw text if available (for both direct and chunked)
-    // This ensures [SECTION] markers are respected if present in reconstructedContent
-    const blocks = parseSectionBlocks(reconstructedContent);
-    console.log(
-      `[API] Parsed ${blocks.length} sections from reconstructedContent`,
-    );
-
     // Create a new summary object to ensure we are updating the one we save
     const finalStructuredSummary = { ...structuredSummary };
 
+    // If we used the new flow, sectionContent is already correct.
+    // If we used fallback, we might still want to try injection if blocks exist (unlikely if we are here)
+    // But let's keep the injection logic just in case blocks were found but we skipped new flow for some reason?
+    // Actually, if blocks > 0, we used new flow. If blocks == 0, injection won't do anything.
+    // So we can remove the redundant injection logic OR keep it as a safety net if we ever change the condition.
+    // For now, let's keep the fallback injection logic ONLY if we didn't use the new flow (i.e. blocks were 0 but maybe something else happened?)
+    // Wait, if blocks > 0, we entered the IF. If blocks == 0, we entered the ELSE.
+    // So the injection logic below is only useful if we want to cross-verify.
+    // But since we built the summary FROM blocks, it's guaranteed to match.
+    // So we can simplify the following block to just fallback for "whole content" if needed.
+
     if (
-      blocks.length > 0 &&
-      finalStructuredSummary.sections &&
-      Array.isArray(finalStructuredSummary.sections)
-    ) {
-      console.log(
-        `[API] Mapping ${blocks.length} blocks to ${finalStructuredSummary.sections.length} sections`,
-      );
-
-      const normalize = (s: string) =>
-        s.toLowerCase().replace(/[^a-z0-9]/g, "");
-
-      finalStructuredSummary.sections.forEach((sec: any, idx: number) => {
-        // Strategy 1: Exact index match (most reliable if AI respects order)
-        let matchedBlock = blocks[idx];
-
-        // Strategy 2: Fuzzy title match (if index match seems wrong, e.g. different titles)
-        // Only verify if title is drastically different?
-        // Actually, let's prioritize index, but if content is missing, try title?
-        // Let's stick to index as primary, but if we run out of blocks, try title search?
-
-        // Revised Strategy:
-        // 1. Check index.
-        // 2. If title matches loosely, good.
-        // 3. If not, search for title in other blocks?
-
-        // Simple approach first: Trust index, but log title mismatch
-        if (matchedBlock) {
-          const titleSim =
-            normalize(matchedBlock.title) === normalize(sec.sectionName);
-          if (!titleSim) {
-            console.log(
-              `[API] Title mismatch at index ${idx}: '${sec.sectionName}' vs '${matchedBlock.title}'. Using index mapping.`,
-            );
-          }
-          sec.sectionContent = matchedBlock.body;
-        } else {
-          // Try finding by title if index out of bounds
-          const found = blocks.find(
-            (b) => normalize(b.title) === normalize(sec.sectionName),
-          );
-          if (found) {
-            console.log(`[API] Found block by title for '${sec.sectionName}'`);
-            sec.sectionContent = found.body;
-          }
-        }
-
-        if (sec.sectionContent) {
-          console.log(
-            `[API] Injected ${sec.sectionContent.length} chars into '${sec.sectionName}'`,
-          );
-        } else {
-          console.warn(
-            `[API] Failed to inject content for '${sec.sectionName}'`,
-          );
-        }
-      });
-    } else if (
       finalStructuredSummary.sections &&
       Array.isArray(finalStructuredSummary.sections) &&
       reconstructedContent
     ) {
-      // Fallback: If no markers, store the whole content in the first section (Hero)
+      // Fallback: If no markers and no content, store the whole content in the first section (Hero)
       if (
         finalStructuredSummary.sections.length > 0 &&
         !finalStructuredSummary.sections[0].sectionContent
@@ -728,6 +692,151 @@ IMPORTANT REQUIREMENTS:
     return await enrichStructuredSummary(normalized, content, adminId);
   } catch (error) {
     console.error("[API] Direct summary generation failed:", error);
+    return null;
+  }
+}
+
+// Helper function for new flow: generate summary from pre-parsed blocks
+async function generateSummaryFromSections(blocks: any[], adminId?: string) {
+  try {
+    console.log(
+      `[API] Generating summary from ${blocks.length} pre-parsed sections...`,
+    );
+
+    // 1. Generate Page Metadata (Type, Vertical, etc)
+    // We can use the titles and the first few sections to guess this
+    const metadataPrompt = `Analyze these section titles and the first section content to determine the page type and business vertical.
+    
+    Sections:
+    ${blocks.map((b, i) => `${i + 1}. ${b.title}`).join("\n")}
+    
+    First Section Content:
+    ${blocks[0]?.body?.substring(0, 1000) || ""}
+    
+    Return a JSON object with:
+    {
+      "pageType": "homepage|pricing|features|about|contact|blog|product|service",
+      "businessVertical": "fitness|healthcare|legal|restaurant|saas|ecommerce|consulting|other",
+      "primaryFeatures": ["feature1", "feature2"],
+      "painPointsAddressed": ["pain1", "pain2"],
+      "solutions": ["solution1", "solution2"],
+      "targetCustomers": ["target1", "target2"]
+    }`;
+
+    const metadataResponse = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are an expert web page analyzer. Return ONLY valid JSON.",
+        },
+        { role: "user", content: metadataPrompt },
+      ],
+      temperature: 0.3,
+    });
+
+    let metadata = {};
+    try {
+      metadata = JSON.parse(
+        metadataResponse.choices[0]?.message?.content || "{}",
+      );
+    } catch (e) {
+      console.error("[API] Failed to parse metadata JSON", e);
+    }
+
+    // 2. Generate details for EACH section (Parallel with concurrency limit)
+    const sections = [];
+    const concurrency = 5;
+
+    for (let i = 0; i < blocks.length; i += concurrency) {
+      const batch = blocks.slice(i, i + concurrency);
+      console.log(
+        `[API] Processing section batch ${i / concurrency + 1}/${Math.ceil(blocks.length / concurrency)}`,
+      );
+
+      const batchPromises = batch.map(async (block) => {
+        const prompt = `Analyze this specific website section and generate lead/sales questions.
+        
+        Section Title: "${block.title}"
+        Section Content:
+        "${block.body.substring(0, 8000)}" 
+        
+        Return a JSON object with:
+        {
+          "sectionSummary": "Brief summary of this section",
+          "leadQuestions": [
+            { "question": "Problem Recognition Question", "options": ["Opt1", "Opt2"], "tags": ["tag1", "tag2"], "workflow": "legacy" },
+            { "question": "Problem Recognition Question 2", "options": ["Opt1", "Opt2"], "tags": ["tag1", "tag2"], "workflow": "legacy" }
+          ],
+          "salesQuestions": [
+             { "question": "Diagnostic Question", "options": ["Opt1", "Opt2"], "tags": ["tag1", "tag2"], "workflow": "diagnostic_response" },
+             { "question": "Diagnostic Question 2", "options": ["Opt1", "Opt2"], "tags": ["tag1", "tag2"], "workflow": "diagnostic_response" }
+          ]
+        }
+        
+        REQUIREMENTS:
+        - EXACTLY 2 Lead Questions and 2 Sales Questions.
+        - Questions must be relevant to THIS section's content.
+        `;
+
+        try {
+          const res = await openai.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages: [
+              {
+                role: "system",
+                content:
+                  "You are an expert sales strategist. Return ONLY valid JSON.",
+              },
+              { role: "user", content: prompt },
+            ],
+            temperature: 0.3,
+          });
+
+          const data = JSON.parse(res.choices[0]?.message?.content || "{}");
+          return {
+            sectionName: block.title,
+            sectionContent: block.body, // EXPLICITLY SET HERE
+            sectionSummary: data.sectionSummary || "No summary available",
+            leadQuestions: data.leadQuestions || [],
+            salesQuestions: data.salesQuestions || [],
+          };
+        } catch (err) {
+          console.error(
+            `[API] Failed to process section '${block.title}'`,
+            err,
+          );
+          // Return basic fallback
+          return {
+            sectionName: block.title,
+            sectionContent: block.body,
+            sectionSummary: "Analysis failed",
+            leadQuestions: [],
+            salesQuestions: [],
+          };
+        }
+      });
+
+      const batchResults = await Promise.all(batchPromises);
+      sections.push(...batchResults);
+    }
+
+    // 3. Assemble final object
+    const finalSummary = {
+      ...metadata,
+      sections,
+    };
+
+    // 4. Enrich/Normalize
+    const normalized = normalizeStructuredSummary(finalSummary);
+    return await enrichStructuredSummary(
+      normalized,
+      blocks.map((b) => b.body).join("\n\n"),
+      adminId,
+    );
+  } catch (error) {
+    console.error("[API] generateSummaryFromSections failed:", error);
     return null;
   }
 }
