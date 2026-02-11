@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import jwt from "jsonwebtoken";
+// import jwt from "jsonwebtoken"; // Unused in middleware, removed to prevent Edge Runtime issues
 
 const RATE_LIMIT = 100; // requests
 const WINDOW_MS = 60 * 1000; // 1 minute
@@ -24,27 +24,8 @@ export function middleware(req: NextRequest) {
     return new NextResponse("Rate limit exceeded", { status: 429 });
   }
 
-  // Protect admin APIs
-  if (
-    req.nextUrl.pathname.startsWith("/api/admin-docs") ||
-    req.nextUrl.pathname.startsWith("/api/upload")
-  ) {
-    const token = req.cookies.get("auth_token")?.value;
-    if (!token) {
-      return NextResponse.json(
-        { error: "Unauthorized: No token" },
-        { status: 401 }
-      );
-    }
-    try {
-      jwt.verify(token, JWT_SECRET);
-    } catch {
-      return NextResponse.json(
-        { error: "Unauthorized: Invalid token" },
-        { status: 401 }
-      );
-    }
-  }
+  // Auth checks are now handled in individual route handlers to avoid Edge Runtime issues with jsonwebtoken
+  // and to support cookie-based auth consistently.
 
   return NextResponse.next();
 }

@@ -601,15 +601,9 @@ const AdminPanel: React.FC = () => {
       let crawledPages: any[] = [];
       const urlSummaryStatusMap: Record<string, boolean> = {};
 
-      if (apiKey || auth) {
-        const headers: Record<string, string> = {};
-        if (apiKey) {
-          headers["x-api-key"] = apiKey;
-        }
-
+      if (auth) {
         const pagesRes = await fetch("/api/crawled-pages", {
           method: "GET",
-          headers,
           credentials: "include", // Ensure cookies are sent for auth fallback
         });
         const pagesData = await pagesRes.json();
@@ -660,20 +654,14 @@ const AdminPanel: React.FC = () => {
 
   // Crawled pages management functions
   const fetchCrawledPages = async () => {
-    // Allow fetching if we have auth (cookie) OR apiKey
-    if (!auth && !apiKey) return;
+    // Allow fetching if we have auth (cookie)
+    if (!auth) return;
 
     setCrawledPagesLoading(true);
     setCrawledPagesError("");
     try {
-      const headers: Record<string, string> = {};
-      if (apiKey) {
-        headers["x-api-key"] = apiKey;
-      }
-
       const res = await fetch("/api/crawled-pages", {
         method: "GET",
-        headers,
         credentials: "include", // Ensure cookies are sent for auth fallback
       });
       const data = await res.json();
@@ -691,8 +679,8 @@ const AdminPanel: React.FC = () => {
   };
 
   const deleteCrawledPage = async (page: CrawledPage) => {
-    // Allow deletion if we have auth (cookie) OR apiKey
-    if (!auth && !apiKey) return;
+    // Allow deletion if we have auth (cookie)
+    if (!auth) return;
 
     if (
       !window.confirm(
@@ -710,16 +698,11 @@ const AdminPanel: React.FC = () => {
     setDocuments((prev) => prev.filter((d) => d.filename !== page.url));
 
     try {
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-      if (apiKey) {
-        headers["x-api-key"] = apiKey;
-      }
-
       const res = await fetch("/api/crawled-pages", {
         method: "DELETE",
-        headers,
+        headers: {
+          "Content-Type": "application/json",
+        },
         credentials: "include", // Ensure cookies are sent for auth fallback
         body: JSON.stringify({ url: page.url }),
       });
@@ -743,8 +726,8 @@ const AdminPanel: React.FC = () => {
   };
 
   const deleteCrawledPages = async (pages: CrawledPage[]) => {
-    // Allow deletion if we have auth (cookie) OR apiKey
-    if (!auth && !apiKey) return;
+    // Allow deletion if we have auth (cookie)
+    if (!auth) return;
 
     if (
       !window.confirm(
@@ -763,16 +746,11 @@ const AdminPanel: React.FC = () => {
     setDocuments((prev) => prev.filter((d) => !urlsToDelete.has(d.filename)));
 
     try {
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-      if (apiKey) {
-        headers["x-api-key"] = apiKey;
-      }
-
       const res = await fetch("/api/crawled-pages", {
         method: "DELETE",
-        headers,
+        headers: {
+          "Content-Type": "application/json",
+        },
         credentials: "include", // Ensure cookies are sent for auth fallback
         body: JSON.stringify({ urls: Array.from(urlsToDelete) }),
       });
@@ -799,8 +777,8 @@ const AdminPanel: React.FC = () => {
   };
 
   const retryPage = async (page: CrawledPage) => {
-    // Allow retry if we have auth (cookie) OR apiKey
-    if (!auth && !apiKey) {
+    // Allow retry if we have auth (cookie)
+    if (!auth) {
       showToast("Authentication required to retry crawl", "error");
       return;
     }
@@ -811,16 +789,11 @@ const AdminPanel: React.FC = () => {
       // Update local state to show loading/retrying status if needed
       // For now we just trigger the toast
 
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-      if (apiKey) {
-        headers["x-api-key"] = apiKey;
-      }
-
       const res = await fetch("/api/sitemap", {
         method: "POST",
-        headers,
+        headers: {
+          "Content-Type": "application/json",
+        },
         credentials: "include", // Ensure cookies are sent for auth fallback
         body: JSON.stringify({ retryUrl: page.url }),
       });
@@ -879,8 +852,8 @@ const AdminPanel: React.FC = () => {
 
   // View summary function for crawled pages
   const viewSummary = async (url: string) => {
-    // Allow viewing if we have auth (cookie) OR apiKey
-    if (!auth && !apiKey) {
+    // Allow viewing if we have auth (cookie)
+    if (!auth) {
       alert("Authentication required to view summary");
       return;
     }
@@ -895,16 +868,8 @@ const AdminPanel: React.FC = () => {
 
     // Fetch the actual summary data from crawled pages collection
     try {
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-      if (apiKey) {
-        headers["x-api-key"] = apiKey;
-      }
-
       const res = await fetch("/api/crawled-pages", {
         method: "GET",
-        headers,
         credentials: "include", // Ensure cookies are sent for auth fallback
       });
 
@@ -933,8 +898,8 @@ const AdminPanel: React.FC = () => {
 
   // Generate summary function that replaces existing summary
   const generateSummary = async (page: CrawledPage) => {
-    // Allow generation if we have auth (cookie) OR apiKey
-    if (!auth && !apiKey) {
+    // Allow generation if we have auth (cookie)
+    if (!auth) {
       showToast("Authentication required to generate summary", "error");
       return;
     }
@@ -946,16 +911,11 @@ const AdminPanel: React.FC = () => {
         hasStructuredSummary: false,
       });
 
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-      if (apiKey) {
-        headers["x-api-key"] = apiKey;
-      }
-
       const response = await fetch("/api/crawled-pages", {
         method: "POST",
-        headers,
+        headers: {
+          "Content-Type": "application/json",
+        },
         credentials: "include", // Ensure cookies are sent for auth fallback
         body: JSON.stringify({
           url: page.url,
@@ -1012,18 +972,12 @@ const AdminPanel: React.FC = () => {
 
   // Fetch URL summary status for all crawled pages
   const fetchUrlSummaryStatus = async () => {
-    // Allow fetching if we have auth (cookie) OR apiKey
-    if (!auth && !apiKey) return;
+    // Allow fetching if we have auth (cookie)
+    if (!auth) return;
 
     try {
-      const headers: Record<string, string> = {};
-      if (apiKey) {
-        headers["x-api-key"] = apiKey;
-      }
-
       const response = await fetch("/api/crawled-pages", {
         method: "GET",
-        headers,
         credentials: "include", // Ensure cookies are sent for auth fallback
       });
 
@@ -1110,6 +1064,7 @@ const AdminPanel: React.FC = () => {
       fetchApiKey();
       fetchLeads();
       fetchCrawledPages();
+      fetchDocuments();
       fetch("/api/admin/subscription/status", { credentials: "include" })
         .then((res) => res.json())
         .then((data) => {
@@ -1118,20 +1073,6 @@ const AdminPanel: React.FC = () => {
         .catch(() => {});
     }
   }, [auth, fetchLeads]);
-
-  // Ensure fetchDocuments runs when apiKey and auth are both available
-  useEffect(() => {
-    if (apiKey && auth) {
-      fetchDocuments();
-    }
-  }, [apiKey, auth]);
-
-  // Fetch crawled pages when API key becomes available
-  useEffect(() => {
-    if (apiKey && auth) {
-      fetchCrawledPages();
-    }
-  }, [apiKey, auth]);
 
   // Render content based on active section
   const renderContent = () => {
