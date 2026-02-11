@@ -9159,9 +9159,9 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
 
         let personaFollowup = null;
 
-        // NEW: Prioritize triggerLeadQuestion for first followup
-        // Also enable for any first followup where we have section context (Gold Standard)
-        if (followupCount === 0 && contextualPageContext) {
+        // NEW: Prioritize triggerLeadQuestion for first two followups
+        // Also enable for any followup where we have section context (Gold Standard)
+        if (followupCount <= 1 && contextualPageContext) {
           // 1. Try to find stored question from crawled data first
           if (
             structuredSummaryDoc?.structuredSummary?.sections &&
@@ -9259,12 +9259,12 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
               if (
                 matchedSection &&
                 matchedSection.leadQuestions &&
-                matchedSection.leadQuestions.length > 0
+                matchedSection.leadQuestions.length > followupCount
               ) {
-                const q = matchedSection.leadQuestions[0];
+                const q = matchedSection.leadQuestions[followupCount];
                 if (q && q.question) {
                   console.log(
-                    `[Followup] Found stored lead question for section: ${matchedSection.sectionName}`,
+                    `[Followup] Found stored lead question for section: ${matchedSection.sectionName} (Index: ${followupCount})`,
                   );
                   const rawOptions = q.options || [];
                   const buttons = rawOptions.map((o: any) =>
@@ -9345,6 +9345,51 @@ RULES:
             }
           } // End of triggerLeadQuestion logic (closes if (!personaFollowup))
         } // Closes outer if (followupCount === 0 && triggerLeadQuestion)
+
+        // NEW: Chat Closure for 3rd Followup (count=2)
+        if (followupCount === 2 && !personaFollowup) {
+          console.log("[Followup] Generating chat closure for 3rd followup");
+
+          const closureSystemPrompt = `You are a helpful sales assistant closing a conversation.
+CONTEXT:
+- User has been browsing: ${pageUrl}
+- Previous interaction history is available.
+
+TASK:
+1. Generate a brief, friendly closing message.
+2. Include a very short summary of what was discussed or the page context.
+3. Offer help if they need anything else in the future.
+4. Do NOT ask another question. This is a closure message.
+
+OUTPUT FORMAT:
+Return ONLY valid JSON:
+{
+  "mainText": "Your closing message here.",
+  "buttons": ["Start Free Trial", "Contact Sales", "View Pricing"],
+  "emailPrompt": ""
+}
+Note: Buttons should be generic call-to-actions like "Start Free Trial" or "Contact Sales".`;
+
+          const closureUserPrompt = `Generate a closure message with a short summary and offer of help.`;
+
+          try {
+            const completion = await openai.chat.completions.create({
+              model: "gpt-4o-mini",
+              messages: [
+                { role: "system", content: closureSystemPrompt },
+                { role: "user", content: closureUserPrompt },
+              ],
+              temperature: 0.7,
+              response_format: { type: "json_object" },
+            });
+            const content = completion.choices[0].message.content;
+            if (content) {
+              personaFollowup = JSON.parse(content);
+            }
+          } catch (e) {
+            console.error("[Followup] Failed to generate closure:", e);
+          }
+        }
 
         // Generate topic-based followup message (skip if message-based preferred)
         // Skip topic-based generation for 3rd sales followup (count=2) to enforce summary/closure

@@ -678,9 +678,11 @@ const Chatbot: React.FC<ChatbotProps> = ({
       console.log("[Chatbot] Sending follow-up request to backend");
       const sessionId = getSessionId();
 
-      // For first follow-up (count=0), include visible section context for lead questions
-      const isFirstFollowup = followupCount === 0;
-      const sectionContext = isFirstFollowup
+      // Include visible section context for first two follow-ups (count 0 & 1)
+      // count 0 -> Lead Question 1
+      // count 1 -> Lead Question 2
+      const shouldSendContext = followupCount <= 1;
+      const sectionContext = shouldSendContext
         ? getVisibleSectionContext()
         : null;
 
@@ -694,7 +696,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
           previousQuestions,
           followupCount, // <-- backend uses follow-up stage
           ...(adminId ? { adminId } : {}),
-          ...(isFirstFollowup
+          ...(shouldSendContext
             ? {
                 triggerLeadQuestion: true,
                 contextualPageContext: sectionContext,
