@@ -9249,8 +9249,8 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
                   }
                 });
 
-                // Threshold: 10 points (Stronger match required to prefer stored data over live context AI generation)
-                if (bestScore >= 10) {
+                // Threshold: 5 points (Lowered to allow more lenient matching of section-based questions)
+                if (bestScore >= 5) {
                   matchedSection = bestSection;
                 }
               }
