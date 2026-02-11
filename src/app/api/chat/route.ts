@@ -8107,6 +8107,7 @@ Extract key requirements (2-3 bullet points max, be concise):`;
       );
     }
     let pageSummary = "(No specific information found for this page.)";
+    let summaryContext = "";
 
     // Inject contextual context if chunks are empty but we have frontend context for lead question
     if (
@@ -8123,7 +8124,7 @@ Extract key requirements (2-3 bullet points max, be concise):`;
     if (pageChunks.length > 0) {
       if (proactive) {
         // Summarize the page content and ask a relevant question
-        let summaryContext = pageChunks.slice(0, 10).join("\n---\n");
+        summaryContext = pageChunks.slice(0, 10).join("\n---\n");
         const fullPageText = pageChunks.join(" ");
         const tokenCount = countTokens(fullPageText);
         console.log(`[Proactive] Page content token count: ${tokenCount}`);
@@ -8479,10 +8480,14 @@ Extract key requirements (2-3 bullet points max, be concise):`;
           }
 
           // First time greeting - create intelligent, page-specific messages
+          const contextPreview = summaryContext
+            ? summaryContext.substring(0, 800)
+            : `(No page content available. CRITICAL: Analyze the URL "${pageUrl}" to infer the page topic and user intent)`;
+
           summaryPrompt = `CONTEXT ANALYSIS:
 Page URL: ${pageUrl}
 User Intent: ${detectedIntent}
-Page Content Preview: ${summaryContext.substring(0, 800)}...
+Page Content Preview: ${contextPreview}...
 
 TASK: Create a highly contextual, "read-my-mind" style opening question based on the specific page content they are viewing.
 
@@ -8509,10 +8514,11 @@ MAINTEXT REQUIREMENTS:
 - End with a question that reveals their intent/needs
 - Show understanding of what they're viewing
 
- GREETING REQUIREMENT:
- - Begin with "Welcome to ${businessName}" followed by a brief connector (e.g., "—" or ",") before the context-aware question
- - Write a single, grammatically correct sentence ending with a question mark
- - Do not assume industry or role unless explicitly mentioned
+GREETING REQUIREMENT:
+ - Begin with "Welcome to ${businessName}" followed by a brief connector (e.g., "—" or ",") before the context-aware question.
+ - Write a single, grammatically correct sentence ending with a question mark.
+ - Do not assume industry or role unless explicitly mentioned.
+ - STRICTLY FORBIDDEN to use "We're glad you're here" or "We're here to help" or "How can we assist you today?" as the connector. The connector must be minimal or immediately transition to the question.
 
 CREATIVE VARIETY ENFORCEMENT - AVOID THESE BANNED PATTERNS:
 - "Tired of..." (BANNED - overused)
@@ -8524,6 +8530,11 @@ CREATIVE VARIETY ENFORCEMENT - AVOID THESE BANNED PATTERNS:
 - "Noticed you're..." (BANNED - becoming repetitive)
 - "Exhausted from..." (BANNED - similar to tired)
 - "Sick of..." (BANNED - similar to tired)
+- "We're glad you're here" (BANNED - filler)
+- "We're here to help" (BANNED - filler)
+- "How can we assist you today" (BANNED - generic)
+- "Is there something specific" (BANNED - generic)
+- "Welcome to [Name]! We're glad..." (BANNED - redundant)
 
 PREFERRED CREATIVE OPENINGS:
 - Question-based: "Growing fast?", "Exploring options?", "Time for an upgrade?"

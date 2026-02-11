@@ -314,17 +314,33 @@ export async function getChunksByPageUrl(adminId: string, pageUrl: string) {
   const db = await getDb();
   const pineconeVectors = db.collection("pinecone_vectors");
 
-  // Normalize URL by removing trailing slash for regex creation
-  const normalizedUrl = pageUrl.replace(/\/$/, "");
-  const escaped = normalizedUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  // Helper to find vectors for a specific URL
+  const findVectorsForUrl = async (urlToCheck: string) => {
+    const normalizedUrl = urlToCheck.replace(/\/$/, "");
+    const escaped = normalizedUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const suffixPattern = new RegExp(`${escaped}\/?$`, "i");
+    return pineconeVectors
+      .find({ adminId, filename: { $regex: suffixPattern } })
+      .project({ vectorId: 1, _id: 0 })
+      .toArray();
+  };
 
-  // Match the URL optionally followed by a slash at the end
-  const suffixPattern = new RegExp(`${escaped}\/?$`, "i");
+  // 1. Try the exact requested URL (e.g. QA URL)
+  let ids = await findVectorsForUrl(pageUrl);
 
-  const ids = await pineconeVectors
-    .find({ adminId, filename: { $regex: suffixPattern } })
-    .project({ vectorId: 1, _id: 0 })
-    .toArray();
+  // 2. QA/Testing Fallback: If no chunks found on QA domain, try Production domain
+  // This allows testing the QA site using data crawled from the Production site
+  if (ids.length === 0 && pageUrl.includes("qa-agentlytics.vercel.app")) {
+    const prodUrl = pageUrl.replace(
+      "https://qa-agentlytics.vercel.app",
+      "https://agentlytics.advancelytics.com",
+    );
+    console.log(
+      `[getChunksByPageUrl] No chunks for QA URL ${pageUrl}, fallback to Prod URL: ${prodUrl}`,
+    );
+    ids = await findVectorsForUrl(prodUrl);
+  }
+
   const vectorIds = ids.map((d) => (d as { vectorId: string }).vectorId);
   console.log("[DEBUG] Vector IDs to fetch:", vectorIds);
   if (vectorIds.length === 0) return [];
