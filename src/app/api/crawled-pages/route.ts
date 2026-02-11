@@ -533,6 +533,8 @@ Extract and return a JSON object with this exact structure:
     {
       "sectionName": "Inferred Title (e.g., Onboarding Momentum, Renewals)",
       "sectionContent": "The full verbatim text content of this section",
+      "startSubstring": "The first 30 characters of this section's text (must match verbatim)",
+      "endSubstring": "The last 30 characters of this section's text (must match verbatim)",
       "sectionSummary": "Brief summary",
       "leadQuestions": [
         {
@@ -614,6 +616,25 @@ IMPORTANT REQUIREMENTS:
 
     // Inject sectionContent from raw text if available
     const blocks = parseSectionBlocks(content);
+
+    // First pass: try to use startSubstring/endSubstring locators from AI
+    if (normalized.sections && Array.isArray(normalized.sections)) {
+      normalized.sections.forEach((sec: any) => {
+        if (!sec.sectionContent && sec.startSubstring && sec.endSubstring) {
+          const startIdx = content.indexOf(sec.startSubstring);
+          if (startIdx !== -1) {
+            const endIdx = content.indexOf(sec.endSubstring, startIdx);
+            if (endIdx !== -1) {
+              sec.sectionContent = content.substring(
+                startIdx,
+                endIdx + sec.endSubstring.length,
+              );
+            }
+          }
+        }
+      });
+    }
+
     if (
       blocks.length > 0 &&
       normalized.sections &&
@@ -636,7 +657,17 @@ IMPORTANT REQUIREMENTS:
         normalized.sections.length > 0 &&
         !normalized.sections[0].sectionContent
       ) {
-        normalized.sections[0].sectionContent = content;
+        // Only force inject if content length is reasonable (< 100k chars) to avoid bloat
+        if (content.length < 100000) {
+          normalized.sections[0].sectionContent = content;
+        }
+      } else if (normalized.sections.length > 0) {
+        // Ensure ALL sections have content - if missing, try to infer from summary or fallback
+        normalized.sections.forEach((sec: any) => {
+          if (!sec.sectionContent) {
+            sec.sectionContent = sec.sectionSummary || "Content not available";
+          }
+        });
       }
     }
 
@@ -692,7 +723,10 @@ Focus on: business features, pain points, solutions, target customers, pricing, 
             max_tokens: 300,
           });
 
-          return response.choices[0]?.message?.content || null;
+          return {
+            index: i + index,
+            summary: response.choices[0]?.message?.content || "",
+          };
         } catch (error) {
           console.error(`[API] Failed to process chunk ${i + index}:`, error);
           return null;
@@ -700,7 +734,7 @@ Focus on: business features, pain points, solutions, target customers, pricing, 
       });
 
       const batchResults = await Promise.all(batchPromises);
-      chunkSummaries.push(...batchResults.filter(Boolean));
+      chunkSummaries.push(...batchResults.filter((item) => item !== null));
 
       // Small delay between batches to avoid rate limits
       if (i + batchSize < chunks.length) {
@@ -716,7 +750,10 @@ Focus on: business features, pain points, solutions, target customers, pricing, 
     }
 
     // Step 2: Combine all chunk summaries into final structured summary
-    const combinedSummary = chunkSummaries.join("\n\n");
+    // We include chunk indices to allow mapping back to original text
+    const combinedSummary = chunkSummaries
+      .map((c: any) => `[CHUNK ${c.index}]: ${c.summary}`)
+      .join("\n\n");
     console.log(
       "[API] Generating final structured summary from chunk summaries...",
     );
@@ -754,7 +791,7 @@ Extract and return a JSON object with this exact structure:
   "sections": [
     {
       "sectionName": "Name of the section (e.g., Hero, Features, Testimonials, Pricing)",
-      "sectionContent": "The full verbatim text content of this section",
+      "chunkIndices": [0, 1],
       "sectionSummary": "Brief summary of this section's content",
       "leadQuestions": [
         {
@@ -796,10 +833,10 @@ Extract and return a JSON object with this exact structure:
 }
 
 IMPORTANT REQUIREMENTS:
-1. Identify ALL distinct sections in the combined content (at least 3-5 sections for a typical landing page). Do not collapse everything into one section.
-2. For EACH section, generate EXACTLY 2 distinct lead questions and 2 distinct sales questions.
-3. Ensure questions are relevant to the specific content of that section.
-4. If available, populate 'sectionContent' with the text from the summary chunks that corresponds to this section.
+1. Identify ALL distinct sections in the combined content.
+2. For EACH section, specify which [CHUNK N] indices belong to it in the 'chunkIndices' array.
+3. Generate EXACTLY 2 distinct lead questions and 2 distinct sales questions per section.
+4. Ensure questions are relevant to the specific content of that section.
 `,
         },
       ],
@@ -815,6 +852,39 @@ IMPORTANT REQUIREMENTS:
 
     const parsed = JSON.parse(finalContent);
     const normalized = normalizeStructuredSummary(parsed);
+
+    // Ensure sectionContent is populated for chunked summaries
+    if (normalized.sections && Array.isArray(normalized.sections)) {
+      normalized.sections.forEach((sec: any) => {
+        // Use chunkIndices to reconstruct section content from original chunks
+        if (Array.isArray(sec.chunkIndices) && sec.chunkIndices.length > 0) {
+          const contentParts = sec.chunkIndices
+            .map((idx: any) => {
+              const chunkIndex = Number(idx);
+              if (
+                !isNaN(chunkIndex) &&
+                chunks[chunkIndex] &&
+                chunks[chunkIndex].text
+              ) {
+                return chunks[chunkIndex].text;
+              }
+              return "";
+            })
+            .filter((t: string) => t.length > 0);
+
+          if (contentParts.length > 0) {
+            sec.sectionContent = contentParts.join("\n\n");
+          }
+        }
+
+        if (!sec.sectionContent) {
+          // Fallback: use summary as content if raw text is missing
+          // This prevents "undefined" content which breaks matching
+          sec.sectionContent = sec.sectionSummary || "Content not available";
+        }
+      });
+    }
+
     return await enrichStructuredSummary(normalized, combinedSummary, adminId);
   } catch (error) {
     console.error("[API] Chunked summary generation failed:", error);
