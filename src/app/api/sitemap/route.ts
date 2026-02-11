@@ -2733,6 +2733,55 @@ IMPORTANT REQUIREMENTS:
         }
       }
 
+      // INJECT SECTION CONTENT (Fix for Retry/Recrawl flow)
+      if (structuredSummary && Array.isArray(structuredSummary.sections)) {
+        const blocks = parseSectionBlocks(text);
+        console.log(
+          `[Retry] Injecting section content. Found ${blocks.length} blocks.`,
+        );
+        structuredSummary.sections.forEach((sec: any, idx: number) => {
+          // ALWAYS inject content to ensure it matches the parsed text
+          const name = sec.sectionName || "";
+          // Try to match by index or name
+          let block = blocks[idx];
+          if (
+            !block ||
+            (block.title &&
+              name &&
+              block.title.toLowerCase() !== name.toLowerCase())
+          ) {
+            block =
+              blocks.find(
+                (b) =>
+                  b.title &&
+                  name &&
+                  b.title.toLowerCase() === name.toLowerCase(),
+              ) || block;
+          }
+
+          if (!block) {
+            block = { title: "", body: "" };
+          }
+
+          // Fallback: If no parsed blocks found (no [SECTION] markers), use full text for the first section
+          if (blocks.length === 0 && idx === 0 && text && text.length > 50) {
+            sec.sectionContent = text;
+            console.log(
+              `[Retry] No blocks found. Injecting full text into Section 0 (${text.length} chars)`,
+            );
+          } else {
+            sec.sectionContent = block.body || "";
+            if (idx === 0) {
+              console.log(
+                `[Retry] Section 0 injected with ${sec.sectionContent.length} chars. Block title: "${block.title}"`,
+              );
+            }
+          }
+        });
+        // Re-normalize to ensure consistency
+        structuredSummary = normalizeStructuredSummary(structuredSummary);
+      }
+
       const pageData: any = {
         adminId,
         url: retryUrl,
@@ -3367,9 +3416,17 @@ IMPORTANT REQUIREMENTS:
                               text &&
                               text.length > 50
                             ) {
+                              console.log(
+                                `[Crawl] No blocks found. Injecting full text into Section 0 (${text.length} chars)`,
+                              );
                               sec.sectionContent = text;
                             } else {
                               sec.sectionContent = block.body || "";
+                              if (idx === 0) {
+                                console.log(
+                                  `[Crawl] Section 0 using block body. Block title: "${block.title}", Body length: ${block.body?.length || 0}. Total blocks: ${blocks.length}`,
+                                );
+                              }
                             }
 
                             // Generate questions using the master prompt
@@ -3566,9 +3623,17 @@ IMPORTANT REQUIREMENTS:
                           text &&
                           text.length > 50
                         ) {
+                          console.log(
+                            `[Crawl-Fallback] No blocks found. Injecting full text into Section 0 (${text.length} chars)`,
+                          );
                           sec.sectionContent = text;
                         } else {
                           sec.sectionContent = block.body || "";
+                          if (idx === 0) {
+                            console.log(
+                              `[Crawl-Fallback] Section 0 using block body. Block title: "${block.title}", Body length: ${block.body?.length || 0}. Total blocks: ${blocks.length}`,
+                            );
+                          }
                         }
 
                         const questionsData = await refineSectionQuestions(
