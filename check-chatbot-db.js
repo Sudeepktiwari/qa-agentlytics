@@ -8,12 +8,12 @@ async function checkChatbotDb() {
     await client.connect();
     console.log("Connected to MongoDB successfully");
 
-    // Check the chatbot_db database instead of sample-chatbot
-    const db = client.db("chatbot_db");
+    // Check the test database
+    const db = client.db("test");
 
     // List all collections
     const collections = await db.listCollections().toArray();
-    console.log(`\nFound ${collections.length} collections in chatbot_db:`);
+    console.log(`\nFound ${collections.length} collections in test:`);
 
     for (const collection of collections) {
       console.log(`\n=== ${collection.name.toUpperCase()} COLLECTION ===`);

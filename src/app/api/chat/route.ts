@@ -9090,6 +9090,8 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
           followupTopic,
           "Count:",
           followupCount,
+          "Raw:",
+          rawFollowupCount,
         );
 
         // Check if user already has email (sales mode)
