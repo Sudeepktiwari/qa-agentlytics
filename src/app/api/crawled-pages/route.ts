@@ -334,7 +334,10 @@ export async function POST(request: NextRequest) {
       reconstructedContent
     ) {
       // Fallback: If no markers, store the whole content in the first section (Hero)
-      if (structuredSummary.sections.length > 0) {
+      if (
+        structuredSummary.sections.length > 0 &&
+        !structuredSummary.sections[0].sectionContent
+      ) {
         structuredSummary.sections[0].sectionContent = reconstructedContent;
       }
     }
@@ -514,7 +517,7 @@ async function generateDirectSummary(content: string, adminId?: string) {
         {
           role: "system",
           content:
-            "You are an expert web page analyzer. Your goal is to deconstruct a web page into its distinct logical sections (e.g., Hero, Features, Pricing, Testimonials, FAQ, Footer) and extract key business intelligence for EACH section.\n\nThe input text may contain [SECTION N] markers. If present, please respect these section boundaries and titles exactly.\n\nFor EACH section detected, generate:\n1. A Section Title (inferred from content).\n2. EXACTLY TWO Lead Questions (Problem Recognition) with options mapping to customer states/risks.\n3. EXACTLY TWO Sales Questions (Diagnostic) with options mapping to root causes.\n4. For each Sales Question, generate a specific 'Option Flow' for EACH option, containing a Diagnostic Answer, Follow-Up Question, Feature Mapping, and Loop Closure.\n\nReturn ONLY a valid JSON object. Do not include markdown.",
+            "You are an expert web page analyzer. Your goal is to deconstruct a web page into its distinct logical sections (e.g., Hero, Features, Pricing, Testimonials, FAQ, Footer) and extract key business intelligence for EACH section.\n\nThe input text may contain [SECTION N] markers. If present, please respect these section boundaries and titles exactly.\n\nFor EACH section detected, generate:\n1. A Section Title (inferred from content).\n2. The Section Content (the verbatim text belonging to this section).\n3. EXACTLY TWO Lead Questions (Problem Recognition) with options mapping to customer states/risks.\n4. EXACTLY TWO Sales Questions (Diagnostic) with options mapping to root causes.\n5. For each Sales Question, generate a specific 'Option Flow' for EACH option, containing a Diagnostic Answer, Follow-Up Question, Feature Mapping, and Loop Closure.\n\nReturn ONLY a valid JSON object. Do not include markdown.",
         },
         {
           role: "user",
@@ -529,6 +532,7 @@ Extract and return a JSON object with this exact structure:
   "sections": [
     {
       "sectionName": "Inferred Title (e.g., Onboarding Momentum, Renewals)",
+      "sectionContent": "The full verbatim text content of this section",
       "sectionSummary": "Brief summary",
       "leadQuestions": [
         {
@@ -591,7 +595,7 @@ IMPORTANT REQUIREMENTS:
         },
       ],
       temperature: 0.3,
-      max_tokens: 1500,
+      max_tokens: 10000,
     });
 
     const summaryContent = summaryResponse.choices[0]?.message?.content;
@@ -623,7 +627,10 @@ IMPORTANT REQUIREMENTS:
     ) {
       // Fallback: If no markers, store the whole content in the first section (Hero) or distribute?
       // Better to leave it empty or store full content in the first section as fallback
-      if (normalized.sections.length > 0) {
+      if (
+        normalized.sections.length > 0 &&
+        !normalized.sections[0].sectionContent
+      ) {
         normalized.sections[0].sectionContent = content;
       }
     }
