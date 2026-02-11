@@ -321,19 +321,22 @@ export async function POST(request: NextRequest) {
       `[API] Parsed ${blocks.length} sections from reconstructedContent`,
     );
 
+    // Create a new summary object to ensure we are updating the one we save
+    const finalStructuredSummary = { ...structuredSummary };
+
     if (
       blocks.length > 0 &&
-      structuredSummary.sections &&
-      Array.isArray(structuredSummary.sections)
+      finalStructuredSummary.sections &&
+      Array.isArray(finalStructuredSummary.sections)
     ) {
       console.log(
-        `[API] Mapping ${blocks.length} blocks to ${structuredSummary.sections.length} sections`,
+        `[API] Mapping ${blocks.length} blocks to ${finalStructuredSummary.sections.length} sections`,
       );
 
       const normalize = (s: string) =>
         s.toLowerCase().replace(/[^a-z0-9]/g, "");
 
-      structuredSummary.sections.forEach((sec: any, idx: number) => {
+      finalStructuredSummary.sections.forEach((sec: any, idx: number) => {
         // Strategy 1: Exact index match (most reliable if AI respects order)
         let matchedBlock = blocks[idx];
 
@@ -379,16 +382,17 @@ export async function POST(request: NextRequest) {
         }
       });
     } else if (
-      structuredSummary.sections &&
-      Array.isArray(structuredSummary.sections) &&
+      finalStructuredSummary.sections &&
+      Array.isArray(finalStructuredSummary.sections) &&
       reconstructedContent
     ) {
       // Fallback: If no markers, store the whole content in the first section (Hero)
       if (
-        structuredSummary.sections.length > 0 &&
-        !structuredSummary.sections[0].sectionContent
+        finalStructuredSummary.sections.length > 0 &&
+        !finalStructuredSummary.sections[0].sectionContent
       ) {
-        structuredSummary.sections[0].sectionContent = reconstructedContent;
+        finalStructuredSummary.sections[0].sectionContent =
+          reconstructedContent;
       }
     }
 
@@ -419,7 +423,7 @@ export async function POST(request: NextRequest) {
             adminId,
             pageId: pageDoc._id,
             url,
-            structuredSummary,
+            structuredSummary: finalStructuredSummary,
             summaryGeneratedAt: new Date(),
           },
         },
@@ -429,7 +433,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      summary: structuredSummary,
+      summary: finalStructuredSummary,
       cached: false,
       source: "pinecone_chunks",
     });

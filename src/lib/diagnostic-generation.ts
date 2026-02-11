@@ -494,8 +494,22 @@ export function normalizeStructuredSummary(raw: any) {
       result.sections = [];
     }
   }
+
+  // Create a new array for sections
   result.sections = result.sections.map((section: any) => {
+    // Explicitly copy all properties including sectionContent and chunkIndices
     const s: any = { ...section };
+
+    // Ensure sectionContent is preserved (paranoid check)
+    if (section.sectionContent) {
+      s.sectionContent = section.sectionContent;
+    }
+
+    // Ensure chunkIndices is preserved
+    if (section.chunkIndices) {
+      s.chunkIndices = section.chunkIndices;
+    }
+
     if (s.leadQuestions && !Array.isArray(s.leadQuestions)) {
       s.leadQuestions = [s.leadQuestions];
     }
