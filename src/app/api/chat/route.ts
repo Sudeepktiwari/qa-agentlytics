@@ -9249,16 +9249,21 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
                   }
                 });
 
-                // Threshold: 3 points
-                if (bestScore >= 3) {
+                // Threshold: 10 points (Stronger match required to prefer stored data over live context AI generation)
+                if (bestScore >= 10) {
                   matchedSection = bestSection;
                 }
               }
 
-              // B. Fallback to Section 1 (Hero) if no specific match found
-              if (!matchedSection && sections.length > 0) {
+              // B. Fallback to Section 1 (Hero) if no specific match found AND no context provided
+              // If context IS provided but didn't match, we prefer AI generation (below) over generic Hero fallback
+              if (
+                !matchedSection &&
+                sections.length > 0 &&
+                !contextualPageContext
+              ) {
                 console.log(
-                  "[Followup] No specific section matched (or no context). Falling back to Section 1 (Hero).",
+                  "[Followup] No specific section matched (and no context). Falling back to Section 1 (Hero).",
                 );
                 matchedSection = sections[0];
               }
@@ -9345,6 +9350,12 @@ RULES:
                 "[Followup] Failed to generate prioritized lead question:",
                 e,
               );
+              // CRITICAL FALLBACK: Ensure we return a section-related response even if AI fails
+              personaFollowup = {
+                mainText: "Does this section address what you're looking for?",
+                buttons: ["Yes", "Tell me more", "No, I have questions"],
+                emailPrompt: "",
+              };
             }
           } // End of triggerLeadQuestion logic (closes if (!personaFollowup))
         } // Closes outer if (followupCount === 0 && triggerLeadQuestion)
