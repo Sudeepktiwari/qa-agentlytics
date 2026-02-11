@@ -2001,7 +2001,7 @@ async function extractTextUsingBrowser(url: string): Promise<string> {
       });
     });
     // Wait a bit after scrolling for final animations
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 2000));
 
     // Extract text content from the rendered page
     const text = await page.evaluate(() => {
@@ -2022,7 +2022,7 @@ async function extractTextUsingBrowser(url: string): Promise<string> {
 
       // Define content selectors
       const contentSelector =
-        "h1, h2, h3, h4, h5, h6, p, li, blockquote, td, th, div, article, section, dt, summary, legend";
+        "h1, h2, h3, h4, h5, h6, p, li, blockquote, td, th, div, article, section, dt, summary, legend, button, a";
 
       // Helper to check if an element is a header
       const isHeaderElement = (el: Element) => {
@@ -2049,8 +2049,7 @@ async function extractTextUsingBrowser(url: string): Promise<string> {
         ) {
           // Check if it's not a container for other content
           return (
-            el.children.length === 0 ||
-            (el as HTMLElement).innerText.length < 100
+            el.children.length === 0 || (el.textContent || "").length < 100
           );
         }
 
@@ -2067,7 +2066,7 @@ async function extractTextUsingBrowser(url: string): Promise<string> {
 
       const pushSection = () => {
         const rawBody = normalize(currentContent.join(" "));
-        if (!rawBody || rawBody.length < 60) {
+        if (!rawBody || rawBody.length < 20) {
           currentTitle = "";
           currentContent = [];
           return;
@@ -2105,8 +2104,10 @@ async function extractTextUsingBrowser(url: string): Promise<string> {
       const elements = main.querySelectorAll(contentSelector);
 
       elements.forEach((el) => {
-        // Skip hidden elements
-        if ((el as HTMLElement).offsetParent === null) return;
+        // Skip hidden elements (if strict visibility check is needed)
+        // BUT for Framer Motion opacity:0, we want to capture them.
+        // So we remove the offsetParent check or make it lenient.
+        // if ((el as HTMLElement).offsetParent === null) return;
 
         // Skip if inside another element we already processed?
         // Actually, querySelectorAll returns all descendants. We want to avoid duplication.
@@ -2132,13 +2133,13 @@ async function extractTextUsingBrowser(url: string): Promise<string> {
 
         if (isHeaderElement(el)) {
           if (currentTitle || currentContent.length > 0) pushSection();
-          currentTitle = (el as HTMLElement).innerText;
+          currentTitle = el.textContent || "";
           currentContent = [];
         } else if (!hasChildContentElements) {
           // Leaf node (from our selector's perspective) - capture all text
           // This captures text in elements not in our selector (buttons, links, spans)
           // that are inside a container that IS in our selector (div, p)
-          const text = (el as HTMLElement).innerText;
+          const text = el.textContent || "";
           if (text && text.trim().length > 0) {
             currentContent.push(text);
           }
