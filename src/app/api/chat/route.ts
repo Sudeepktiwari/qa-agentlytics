@@ -8484,19 +8484,20 @@ Page URL: ${pageUrl}
 User Intent: ${detectedIntent}
 Page Content Preview: ${summaryContext.substring(0, 800)}...
 
-TASK: Create an intelligent proactive message that demonstrates understanding of this specific page and asks a contextual question to understand the user's needs.
+TASK: Create a highly contextual, "read-my-mind" style opening question based on the specific page content they are viewing.
 
-ANALYSIS REQUIRED:
-1. What is this page actually about? (features, pricing, use cases, etc.)
-2. What would someone visiting this page likely be trying to accomplish?
-3. What questions would help understand their specific needs or situation?
+BEHAVIORAL ANALYSIS:
+1. What is the PRIMARY value proposition of this specific page?
+2. What problem is a user trying to solve if they are reading this content?
+3. What is the most logical next step or question they would have?
 
 Generate response in JSON format:
 {
-  "mainText": "<Context-aware message (under 30 words) that shows you understand what they're viewing and asks a specific question about their needs/situation>"
+  "mainText": "<Context-aware opening (under 30 words) that proves you know what they are looking at>",
+  "buttons": []
 }
 
-EXAMPLE APPROACH:
+GREETING APPROACH:
 Instead of: "Hi! How can I help?"
 Create: "I see you're exploring [specific feature/page]. Are you looking to solve [specific problem] or are you in the [situation] phase?"
 
