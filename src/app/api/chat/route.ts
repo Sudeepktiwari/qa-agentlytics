@@ -9161,7 +9161,8 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
 
         // NEW: Prioritize triggerLeadQuestion for first two followups
         // Also enable for any followup where we have section context (Gold Standard)
-        if (followupCount <= 1 && contextualPageContext) {
+        // CHANGE: Relaxed condition to allow fallback to Section 1 if no context is provided
+        if (followupCount <= 1) {
           // 1. Try to find stored question from crawled data first
           if (
             structuredSummaryDoc?.structuredSummary?.sections &&
@@ -9169,93 +9170,98 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
           ) {
             try {
               const sections = structuredSummaryDoc.structuredSummary.sections;
-              const lowerContext = contextualPageContext.toLowerCase();
+              let matchedSection: any = null;
 
-              // Find section that best matches the context via Scoring
-              // Priority: Title Match > Content Overlap (Exact) > Summary Overlap (Fuzzy)
-              let bestSection: any = null;
-              let bestScore = -1;
+              // A. Try Matching if context is available
+              if (contextualPageContext) {
+                const lowerContext = contextualPageContext.toLowerCase();
+                let bestScore = -1;
+                let bestSection: any = null;
 
-              console.log(
-                `[Followup] Matching context (${lowerContext.length} chars) against ${sections.length} sections...`,
-              );
+                console.log(
+                  `[Followup] Matching context (${lowerContext.length} chars) against ${sections.length} sections...`,
+                );
 
-              sections.forEach((s: any) => {
-                const sName = (s.sectionName || "").toLowerCase();
-                const sSummary = (s.sectionSummary || "").toLowerCase();
-                const sContent = (s.sectionContent || "").toLowerCase(); // New field
+                sections.forEach((s: any) => {
+                  const sName = (s.sectionName || "").toLowerCase();
+                  const sSummary = (s.sectionSummary || "").toLowerCase();
+                  const sContent = (s.sectionContent || "").toLowerCase(); // New field
 
-                let score = 0;
+                  let score = 0;
 
-                // 1. Exact Title Match (Strongest signal if explicit)
-                // Use word boundary to avoid partial matches (e.g. "pricing" in "enterprising")
-                // Score depends on length: longer titles are more unique/reliable.
-                try {
-                  const escapedName = sName.replace(
-                    /[.*+?^${}()|[\]\\]/g,
-                    "\\$&",
-                  );
-                  const titleRegex = new RegExp(`\\b${escapedName}\\b`, "i");
-                  if (
-                    sName &&
-                    sName.length > 3 &&
-                    titleRegex.test(lowerContext)
-                  ) {
-                    // Base score 10 + length (max 30). e.g. "Pricing" (7) -> 17. "Revenue Leaks" (13) -> 23.
-                    score += Math.min(10 + sName.length, 30);
+                  // 1. Exact Title Match (Strongest signal if explicit)
+                  try {
+                    const escapedName = sName.replace(
+                      /[.*+?^${}()|[\]\\]/g,
+                      "\\$&",
+                    );
+                    const titleRegex = new RegExp(`\\b${escapedName}\\b`, "i");
+                    if (
+                      sName &&
+                      sName.length > 3 &&
+                      titleRegex.test(lowerContext)
+                    ) {
+                      score += Math.min(10 + sName.length, 30);
+                    }
+                  } catch (e) {
+                    if (
+                      sName &&
+                      sName.length > 3 &&
+                      lowerContext.includes(sName)
+                    ) {
+                      score += 10;
+                    }
                   }
-                } catch (e) {
-                  // Fallback to simple includes if regex fails
-                  if (
-                    sName &&
-                    sName.length > 3 &&
-                    lowerContext.includes(sName)
-                  ) {
-                    score += 10;
+
+                  // 2. Content Overlap
+                  if (sContent && sContent.length > 20) {
+                    const viewportWords = lowerContext
+                      .split(/[\s,.-]+/)
+                      .filter((w: string) => w.length > 4);
+                    let hits = 0;
+                    for (const w of viewportWords) {
+                      if (sContent.includes(w)) hits++;
+                    }
+                    score += hits * 5;
+                  } else {
+                    // Fallback: Summary Overlap
+                    const summaryWords = sSummary
+                      .split(/[\s,.-]+/)
+                      .filter((w: string) => w.length > 4);
+                    let hitCount = 0;
+                    for (const w of summaryWords) {
+                      if (lowerContext.includes(w)) hitCount++;
+                    }
+                    score += hitCount * 3;
                   }
-                }
 
-                // 2. Content Overlap
-                // If we have the exact section content (Gold Standard), check overlap there.
-                // Otherwise, fall back to summary keywords.
-                if (sContent && sContent.length > 20) {
-                  const viewportWords = lowerContext
-                    .split(/[\s,.-]+/)
-                    .filter((w: string) => w.length > 4);
-                  let hits = 0;
-                  for (const w of viewportWords) {
-                    if (sContent.includes(w)) hits++;
+                  if (score > 0) {
+                    console.log(
+                      `[Followup] Section "${sName}" Score: ${score}`,
+                    );
                   }
-                  // Gold Standard: High confidence in exact content match.
-                  // 5 points per significant word match. 4 words = 20 pts (beating simple title match).
-                  score += hits * 5;
-                } else {
-                  // Fallback: Summary Overlap
-                  const summaryWords = sSummary
-                    .split(/[\s,.-]+/)
-                    .filter((w: string) => w.length > 4);
-                  let hitCount = 0;
-                  for (const w of summaryWords) {
-                    if (lowerContext.includes(w)) hitCount++;
+
+                  if (score > bestScore) {
+                    bestScore = score;
+                    bestSection = s;
                   }
-                  // Silver Standard: Summary is fuzzy.
-                  // 3 points per significant word match.
-                  score += hitCount * 3;
+                });
+
+                // Threshold: 3 points
+                if (bestScore >= 3) {
+                  matchedSection = bestSection;
                 }
+              }
 
-                if (score > 0) {
-                  console.log(`[Followup] Section "${sName}" Score: ${score}`);
-                }
+              // B. Fallback to Section 1 (Hero) if no specific match found
+              if (!matchedSection && sections.length > 0) {
+                console.log(
+                  "[Followup] No specific section matched (or no context). Falling back to Section 1 (Hero).",
+                );
+                matchedSection = sections[0];
+              }
 
-                if (score > bestScore) {
-                  bestScore = score;
-                  bestSection = s;
-                }
-              });
-
-              // Threshold: 3 points (either title match or 3 keyword hits)
-              const matchedSection = bestScore >= 3 ? bestSection : null;
-
+              // C. Extract Question from Matched Section (or Fallback)
               if (
                 matchedSection &&
                 matchedSection.leadQuestions &&
@@ -9276,12 +9282,6 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
                     emailPrompt: "",
                   };
                 }
-              } else {
-                // Fallback: Check if any section summary is highly similar?
-                // For now, we'll log that no stored section matched
-                console.log(
-                  `[Followup] No stored section matched for context length ${contextualPageContext.length}`,
-                );
               }
             } catch (err) {
               console.error(
@@ -9291,7 +9291,8 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
             }
           }
 
-          if (!personaFollowup) {
+          // D. AI Generation Fallback (only if we have context but NO stored question found)
+          if (!personaFollowup && contextualPageContext) {
             console.log(
               `[Followup] Generating prioritized delayed lead question based on section: "${contextualPageContext.substring(0, 50)}..."`,
             );
@@ -9345,51 +9346,6 @@ RULES:
             }
           } // End of triggerLeadQuestion logic (closes if (!personaFollowup))
         } // Closes outer if (followupCount === 0 && triggerLeadQuestion)
-
-        // NEW: Chat Closure for 3rd Followup (count=2)
-        if (followupCount === 2 && !personaFollowup) {
-          console.log("[Followup] Generating chat closure for 3rd followup");
-
-          const closureSystemPrompt = `You are a helpful sales assistant closing a conversation.
-CONTEXT:
-- User has been browsing: ${pageUrl}
-- Previous interaction history is available.
-
-TASK:
-1. Generate a brief, friendly closing message.
-2. Include a very short summary of what was discussed or the page context.
-3. Offer help if they need anything else in the future.
-4. Do NOT ask another question. This is a closure message.
-
-OUTPUT FORMAT:
-Return ONLY valid JSON:
-{
-  "mainText": "Your closing message here.",
-  "buttons": ["Start Free Trial", "Contact Sales", "View Pricing"],
-  "emailPrompt": ""
-}
-Note: Buttons should be generic call-to-actions like "Start Free Trial" or "Contact Sales".`;
-
-          const closureUserPrompt = `Generate a closure message with a short summary and offer of help.`;
-
-          try {
-            const completion = await openai.chat.completions.create({
-              model: "gpt-4o-mini",
-              messages: [
-                { role: "system", content: closureSystemPrompt },
-                { role: "user", content: closureUserPrompt },
-              ],
-              temperature: 0.7,
-              response_format: { type: "json_object" },
-            });
-            const content = completion.choices[0].message.content;
-            if (content) {
-              personaFollowup = JSON.parse(content);
-            }
-          } catch (e) {
-            console.error("[Followup] Failed to generate closure:", e);
-          }
-        }
 
         // Generate topic-based followup message (skip if message-based preferred)
         // Skip topic-based generation for 3rd sales followup (count=2) to enforce summary/closure
