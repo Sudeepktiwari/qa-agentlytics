@@ -607,6 +607,11 @@ IMPORTANT REQUIREMENTS:
     const parsed = JSON.parse(summaryContent);
     const normalized = normalizeStructuredSummary(parsed);
 
+    console.log(
+      "[API] Direct summary sections keys:",
+      normalized.sections.map((s: any) => Object.keys(s)),
+    );
+
     // Inject sectionContent from raw text if available
     const blocks = parseSectionBlocks(content);
     if (
@@ -749,6 +754,7 @@ Extract and return a JSON object with this exact structure:
   "sections": [
     {
       "sectionName": "Name of the section (e.g., Hero, Features, Testimonials, Pricing)",
+      "sectionContent": "The full verbatim text content of this section",
       "sectionSummary": "Brief summary of this section's content",
       "leadQuestions": [
         {
@@ -793,6 +799,7 @@ IMPORTANT REQUIREMENTS:
 1. Identify ALL distinct sections in the combined content (at least 3-5 sections for a typical landing page). Do not collapse everything into one section.
 2. For EACH section, generate EXACTLY 2 distinct lead questions and 2 distinct sales questions.
 3. Ensure questions are relevant to the specific content of that section.
+4. If available, populate 'sectionContent' with the text from the summary chunks that corresponds to this section.
 `,
         },
       ],
