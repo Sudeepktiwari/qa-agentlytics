@@ -72,7 +72,7 @@ export async function GET(request: Request) {
     size: getAttr('data-size', 'medium'),
     position: getAttr('data-position', 'bottom-right'),
     chatTitle: getAttr('data-chat-title', 'Chat with us'),
-    welcomeMessage: getAttr('data-welcome-message', 'Hello! How can I help you today?'),
+    welcomeMessage: getAttr('data-welcome-message', ''),
     buttonText: getAttr('data-button-text', '💬'),
     customColor: getAttr('data-custom-color', '#0070f3'),
     autoOpenProactive: getBoolAttr('data-auto-open-proactive', true),
@@ -4024,6 +4024,7 @@ export async function GET(request: Request) {
       sessionId,
       pageUrl: currentPageUrl,
       assistantCountClient,
+      hasBeenGreeted: true, // User is interacting, so treat as greeted/engaged
       userInactiveForMs: Date.now() - lastUserAction,
       isScrolling: isScrolling,
       scrollDepth: (getViewportContext() || {}).scrollDepth || 0
