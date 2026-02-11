@@ -1880,15 +1880,32 @@ async function extractTextFromUrl(
     const isSlidePageWithMinimalContent =
       url.includes("/slide") && text.length < 500;
 
-    if ((text.length < 200 && isContentPage) || isSlidePageWithMinimalContent) {
+    const hasNoSections = sections.length === 0;
+
+    // Trigger JS extraction if:
+    // 1. Content is very short (< 500 chars) - likely loading state
+    // 2. Slide page with minimal content
+    // 3. No sections found but content is not huge (< 20000 chars) - likely dynamic rendering masking structure
+    // 4. Explicitly matches content patterns and is relatively short
+    if (
+      text.length < 500 ||
+      isSlidePageWithMinimalContent ||
+      (hasNoSections && text.length < 20000) ||
+      (text.length < 1000 && isContentPage)
+    ) {
       console.log(
-        `[Crawl] Content seems minimal (${text.length} chars) or slide page with little content, trying JavaScript extraction...`,
+        `[Crawl] Triggering JavaScript extraction: Length=${text.length}, Sections=${sections.length}, isSlide=${isSlidePageWithMinimalContent}, isContent=${isContentPage}`,
       );
       try {
         const jsText = await extractTextUsingBrowser(url);
-        if (jsText.length > text.length) {
+        // Use JS text if it found more content OR if it found sections when we had none
+        const jsHasSections = jsText.includes("[SECTION");
+        if (
+          jsText.length > text.length ||
+          (jsHasSections && !sections.length)
+        ) {
           console.log(
-            `[Crawl] JavaScript extraction found more content (${jsText.length} vs ${text.length} chars)`,
+            `[Crawl] JavaScript extraction improved result: ${jsText.length} chars, Sections found: ${jsHasSections}`,
           );
           return jsText;
         }
@@ -1965,18 +1982,26 @@ async function extractTextUsingBrowser(url: string): Promise<string> {
     );
     await new Promise((resolve) => setTimeout(resolve, waitTime));
 
-    // For slide pages, try scrolling to load more content
-    if (url.includes("/slide")) {
-      console.log(
-        `[JSExtract] Slide page detected, attempting scroll to load content...`,
-      );
-      await page.evaluate(() => {
-        window.scrollTo(0, document.body.scrollHeight);
-        // Try to trigger any lazy loading
-        window.dispatchEvent(new Event("scroll"));
+    // Scroll to trigger lazy loading/animations for all pages
+    console.log(`[JSExtract] Scrolling to load dynamic content...`);
+    await page.evaluate(async () => {
+      await new Promise<void>((resolve) => {
+        let totalHeight = 0;
+        const distance = 400; // Scroll in larger chunks
+        const timer = setInterval(() => {
+          const scrollHeight = document.body.scrollHeight;
+          window.scrollBy(0, distance);
+          totalHeight += distance;
+
+          if (totalHeight >= scrollHeight) {
+            clearInterval(timer);
+            resolve();
+          }
+        }, 100);
       });
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-    }
+    });
+    // Wait a bit after scrolling for final animations
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
     // Extract text content from the rendered page
     const text = await page.evaluate(() => {
@@ -2095,6 +2120,9 @@ async function extractTextUsingBrowser(url: string): Promise<string> {
         // If content -> append.
 
         // To avoid duplication, we can check if the element has direct text nodes.
+        const hasChildContentElements =
+          el.querySelector(contentSelector) !== null;
+
         const hasDirectText = Array.from(el.childNodes).some(
           (node) =>
             node.nodeType === Node.TEXT_NODE &&
@@ -2106,18 +2134,19 @@ async function extractTextUsingBrowser(url: string): Promise<string> {
           if (currentTitle || currentContent.length > 0) pushSection();
           currentTitle = (el as HTMLElement).innerText;
           currentContent = [];
-        } else if (hasDirectText) {
-          // Only add the direct text content?
-          // HTMLElement.innerText gets all descendant text.
-          // If we use innerText on a div that contains p, and then visit p, we get text twice.
-
-          // We should only process elements that DON'T have children matching our selector?
-          const hasChildContentElements =
-            el.querySelector(contentSelector) !== null;
-
-          if (!hasChildContentElements) {
-            currentContent.push((el as HTMLElement).innerText);
+        } else if (!hasChildContentElements) {
+          // Leaf node (from our selector's perspective) - capture all text
+          // This captures text in elements not in our selector (buttons, links, spans)
+          // that are inside a container that IS in our selector (div, p)
+          const text = (el as HTMLElement).innerText;
+          if (text && text.trim().length > 0) {
+            currentContent.push(text);
           }
+        } else if (hasDirectText) {
+          // Container with direct text AND child content elements.
+          // We skip to avoid duplication, assuming the child elements will be visited.
+          // Note: This risks losing direct text in mixed containers (e.g. "Intro: <p>Body</p>"),
+          // but prevents "Header <p>Header</p>" duplication.
         }
       });
 
