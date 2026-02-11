@@ -343,16 +343,23 @@ export async function POST(request: NextRequest) {
     // Create a new summary object to ensure we are updating the one we save
     const finalStructuredSummary = { ...structuredSummary };
 
-    // If we used the new flow, sectionContent is already correct.
-    // If we used fallback, we might still want to try injection if blocks exist (unlikely if we are here)
-    // But let's keep the injection logic just in case blocks were found but we skipped new flow for some reason?
-    // Actually, if blocks > 0, we used new flow. If blocks == 0, injection won't do anything.
-    // So we can remove the redundant injection logic OR keep it as a safety net if we ever change the condition.
-    // For now, let's keep the fallback injection logic ONLY if we didn't use the new flow (i.e. blocks were 0 but maybe something else happened?)
-    // Wait, if blocks > 0, we entered the IF. If blocks == 0, we entered the ELSE.
-    // So the injection logic below is only useful if we want to cross-verify.
-    // But since we built the summary FROM blocks, it's guaranteed to match.
-    // So we can simplify the following block to just fallback for "whole content" if needed.
+    // DEBUG: Log sectionContent presence before saving
+    if (
+      finalStructuredSummary.sections &&
+      finalStructuredSummary.sections.length > 0
+    ) {
+      const firstSection = finalStructuredSummary.sections[0];
+      console.log(
+        `[API] PRE-SAVE CHECK: Section 1 has content? ${!!firstSection.sectionContent}, Length: ${firstSection.sectionContent?.length || 0}`,
+      );
+      if (!firstSection.sectionContent) {
+        console.warn(
+          "[API] WARNING: sectionContent is MISSING in finalStructuredSummary before save!",
+        );
+      }
+    } else {
+      console.warn("[API] WARNING: No sections in finalStructuredSummary!");
+    }
 
     if (
       finalStructuredSummary.sections &&

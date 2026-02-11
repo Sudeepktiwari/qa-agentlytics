@@ -3360,7 +3360,17 @@ IMPORTANT REQUIREMENTS:
                               String(block.body || ""),
                             );
                             // STORE RAW CONTENT for accurate chatbot matching
-                            sec.sectionContent = block.body || "";
+                            // Fallback: If no parsed blocks found (no [SECTION] markers), use full text for the first section
+                            if (
+                              blocks.length === 0 &&
+                              idx === 0 &&
+                              text &&
+                              text.length > 50
+                            ) {
+                              sec.sectionContent = text;
+                            } else {
+                              sec.sectionContent = block.body || "";
+                            }
 
                             // Generate questions using the master prompt
                             const questionsData = await refineSectionQuestions(
@@ -3549,7 +3559,17 @@ IMPORTANT REQUIREMENTS:
                           String(block.body || ""),
                         );
                         // STORE RAW CONTENT for accurate chatbot matching
-                        sec.sectionContent = block.body || "";
+                        // Fallback: If no parsed blocks found (no [SECTION] markers), use full text for the first section
+                        if (
+                          blocks.length === 0 &&
+                          idx === 0 &&
+                          text &&
+                          text.length > 50
+                        ) {
+                          sec.sectionContent = text;
+                        } else {
+                          sec.sectionContent = block.body || "";
+                        }
 
                         const questionsData = await refineSectionQuestions(
                           openai,
