@@ -3370,6 +3370,9 @@ IMPORTANT REQUIREMENTS:
                               summary,
                               String(block.body || ""),
                             );
+                            // STORE RAW CONTENT for accurate chatbot matching
+                            sec.sectionContent = block.body || "";
+
                             // Generate questions using the master prompt
                             const questionsData = await refineSectionQuestions(
                               openai,
@@ -3556,6 +3559,9 @@ IMPORTANT REQUIREMENTS:
                           summary,
                           String(block.body || ""),
                         );
+                        // STORE RAW CONTENT for accurate chatbot matching
+                        sec.sectionContent = block.body || "";
+
                         const questionsData = await refineSectionQuestions(
                           openai,
                           url,

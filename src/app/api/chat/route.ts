@@ -2486,52 +2486,6 @@ function isApiKeyFieldKey(
   return false;
 }
 
-// Advanced booking conflict detection
-async function detectBookingConflicts(
-  sessionId: string,
-  newBookingRequest: any,
-  adminId?: string,
-) {
-  try {
-    const db = await getDb();
-    const bookings = db.collection("bookings");
-
-    // Check for overlapping bookings
-    const conflicts = await bookings
-      .find({
-        sessionId,
-        status: { $in: ["confirmed", "pending"] },
-        preferredDate: newBookingRequest.preferredDate,
-        ...(adminId && { adminId }),
-      })
-      .toArray();
-
-    if (conflicts.length > 0) {
-      return {
-        hasConflict: true,
-        conflictingBookings: conflicts,
-        suggestion:
-          "You already have a booking on this date. Would you like to reschedule the existing one or choose a different time?",
-      };
-    }
-
-    return {
-      hasConflict: false,
-      conflictingBookings: [],
-      suggestion: null,
-    };
-  } catch (error) {
-    console.error("[Booking] Error detecting conflicts:", error);
-    return {
-      hasConflict: false,
-      conflictingBookings: [],
-      suggestion: null,
-    };
-  }
-
-  //
-}
-
 // CORS headers for cross-origin requests
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -9155,13 +9109,15 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
 
         // Build summary-first page context for prompts
         let pageContextForPrompt = pageChunks.slice(0, 10).join("\n---\n");
+        let structuredSummaryDoc: any = null;
         if (adminId && pageUrl) {
           try {
             const db = await getDb();
-            const pageDoc = await db
-              .collection("crawled_pages")
+            structuredSummaryDoc = await db
+              .collection("structured_summaries")
               .findOne({ adminId, url: pageUrl });
-            const ss: any = pageDoc?.structuredSummary;
+
+            const ss: any = structuredSummaryDoc?.structuredSummary;
             if (ss && typeof ss === "object") {
               const parts: string[] = [];
               if (ss.pageType) parts.push(`Page Type: ${ss.pageType}`);
@@ -9209,11 +9165,119 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
           triggerLeadQuestion &&
           contextualPageContext
         ) {
-          console.log(
-            `[Followup] Generating prioritized delayed lead question based on section: "${contextualPageContext.substring(0, 50)}..."`,
-          );
+          // 1. Try to find stored question from crawled data first
+          if (
+            structuredSummaryDoc?.structuredSummary?.sections &&
+            Array.isArray(structuredSummaryDoc.structuredSummary.sections)
+          ) {
+            try {
+              const sections = structuredSummaryDoc.structuredSummary.sections;
+              const lowerContext = contextualPageContext.toLowerCase();
 
-          const fSystemPrompt = `You are an expert sales consultant. Your goal is to engage the user with a specific, relevant question based on the section of the page they are currently reading.
+              // Find section that best matches the context via Scoring
+              // Priority: Title Match > Content Overlap (Exact) > Summary Overlap (Fuzzy)
+              let bestSection: any = null;
+              let bestScore = -1;
+
+              console.log(
+                `[Followup] Matching context (${lowerContext.length} chars) against ${sections.length} sections...`,
+              );
+
+              sections.forEach((s: any) => {
+                const sName = (s.sectionName || "").toLowerCase();
+                const sSummary = (s.sectionSummary || "").toLowerCase();
+                const sContent = (s.sectionContent || "").toLowerCase(); // New field
+
+                let score = 0;
+
+                // 1. Exact Title Match (Strongest signal)
+                if (sName && sName.length > 3 && lowerContext.includes(sName)) {
+                  score += 50;
+                }
+
+                // 2. Content Overlap
+                // If we have the exact section content (Gold Standard), check overlap there.
+                // Otherwise, fall back to summary keywords.
+                if (sContent && sContent.length > 20) {
+                  // Check how much of the viewport text exists in the section content
+                  // Since viewport is small and section is large, we check if viewport is a substring?
+                  // No, viewport might be partial. Let's check keyword hits from viewport IN section content.
+                  const viewportWords = lowerContext
+                    .split(/[\s,.-]+/)
+                    .filter((w: string) => w.length > 4);
+                  let hits = 0;
+                  for (const w of viewportWords) {
+                    if (sContent.includes(w)) hits++;
+                  }
+                  // Normalize score: e.g. 50% of viewport words found = good match
+                  // Let's just add hits directly.
+                  score += hits;
+                } else {
+                  // Fallback: Summary Overlap
+                  const summaryWords = sSummary
+                    .split(/[\s,.-]+/)
+                    .filter((w: string) => w.length > 4);
+                  let hitCount = 0;
+                  for (const w of summaryWords) {
+                    if (lowerContext.includes(w)) hitCount++;
+                  }
+                  score += hitCount;
+                }
+
+                if (score > 0) {
+                  console.log(`[Followup] Section "${sName}" Score: ${score}`);
+                }
+
+                if (score > bestScore) {
+                  bestScore = score;
+                  bestSection = s;
+                }
+              });
+
+              // Threshold: 3 points (either title match or 3 keyword hits)
+              const matchedSection = bestScore >= 3 ? bestSection : null;
+
+              if (
+                matchedSection &&
+                matchedSection.leadQuestions &&
+                matchedSection.leadQuestions.length > 0
+              ) {
+                const q = matchedSection.leadQuestions[0];
+                if (q && q.question) {
+                  console.log(
+                    `[Followup] Found stored lead question for section: ${matchedSection.sectionName}`,
+                  );
+                  const rawOptions = q.options || [];
+                  const buttons = rawOptions.map((o: any) =>
+                    typeof o === "string" ? o : o.label || JSON.stringify(o),
+                  );
+                  personaFollowup = {
+                    mainText: q.question,
+                    buttons: buttons,
+                    emailPrompt: "",
+                  };
+                }
+              } else {
+                // Fallback: Check if any section summary is highly similar?
+                // For now, we'll log that no stored section matched
+                console.log(
+                  `[Followup] No stored section matched for context length ${contextualPageContext.length}`,
+                );
+              }
+            } catch (err) {
+              console.error(
+                "[Followup] Error finding stored section question:",
+                err,
+              );
+            }
+          }
+
+          if (!personaFollowup) {
+            console.log(
+              `[Followup] Generating prioritized delayed lead question based on section: "${contextualPageContext.substring(0, 50)}..."`,
+            );
+
+            const fSystemPrompt = `You are an expert sales consultant. Your goal is to engage the user with a specific, relevant question based on the section of the page they are currently reading.
 
 CONTEXT:
 - User is reading this specific section: "${contextualPageContext}"
@@ -9238,29 +9302,30 @@ RULES:
 - Tone: Helpful, professional, curious.
 - Do not be generic. Use terms from the section text.`;
 
-          const fUserPrompt = `Generate a lead question and options based on the section content provided.`;
+            const fUserPrompt = `Generate a lead question and options based on the section content provided.`;
 
-          try {
-            const completion = await openai.chat.completions.create({
-              model: "gpt-4o-mini",
-              messages: [
-                { role: "system", content: fSystemPrompt },
-                { role: "user", content: fUserPrompt },
-              ],
-              temperature: 0.7,
-              response_format: { type: "json_object" },
-            });
-            const content = completion.choices[0].message.content;
-            if (content) {
-              personaFollowup = JSON.parse(content);
+            try {
+              const completion = await openai.chat.completions.create({
+                model: "gpt-4o-mini",
+                messages: [
+                  { role: "system", content: fSystemPrompt },
+                  { role: "user", content: fUserPrompt },
+                ],
+                temperature: 0.7,
+                response_format: { type: "json_object" },
+              });
+              const content = completion.choices[0].message.content;
+              if (content) {
+                personaFollowup = JSON.parse(content);
+              }
+            } catch (e) {
+              console.error(
+                "[Followup] Failed to generate prioritized lead question:",
+                e,
+              );
             }
-          } catch (e) {
-            console.error(
-              "[Followup] Failed to generate prioritized lead question:",
-              e,
-            );
-          }
-        }
+          } // End of triggerLeadQuestion logic (closes if (!personaFollowup))
+        } // Closes outer if (followupCount === 0 && triggerLeadQuestion)
 
         // Generate topic-based followup message (skip if message-based preferred)
         // Skip topic-based generation for 3rd sales followup (count=2) to enforce summary/closure
