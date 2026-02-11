@@ -2691,7 +2691,7 @@ IMPORTANT REQUIREMENTS:
 `,
                 },
               ],
-              max_tokens: 800,
+              max_tokens: 12000,
               temperature: 0.3,
             });
 
@@ -3370,7 +3370,7 @@ IMPORTANT REQUIREMENTS:
 `,
                     },
                   ],
-                  max_tokens: 800,
+                  max_tokens: 12000,
                   temperature: 0.3,
                 });
 
