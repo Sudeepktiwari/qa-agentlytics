@@ -9190,18 +9190,38 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
 
                 let score = 0;
 
-                // 1. Exact Title Match (Strongest signal)
-                if (sName && sName.length > 3 && lowerContext.includes(sName)) {
-                  score += 50;
+                // 1. Exact Title Match (Strongest signal if explicit)
+                // Use word boundary to avoid partial matches (e.g. "pricing" in "enterprising")
+                // Score depends on length: longer titles are more unique/reliable.
+                try {
+                  const escapedName = sName.replace(
+                    /[.*+?^${}()|[\]\\]/g,
+                    "\\$&",
+                  );
+                  const titleRegex = new RegExp(`\\b${escapedName}\\b`, "i");
+                  if (
+                    sName &&
+                    sName.length > 3 &&
+                    titleRegex.test(lowerContext)
+                  ) {
+                    // Base score 10 + length (max 30). e.g. "Pricing" (7) -> 17. "Revenue Leaks" (13) -> 23.
+                    score += Math.min(10 + sName.length, 30);
+                  }
+                } catch (e) {
+                  // Fallback to simple includes if regex fails
+                  if (
+                    sName &&
+                    sName.length > 3 &&
+                    lowerContext.includes(sName)
+                  ) {
+                    score += 10;
+                  }
                 }
 
                 // 2. Content Overlap
                 // If we have the exact section content (Gold Standard), check overlap there.
                 // Otherwise, fall back to summary keywords.
                 if (sContent && sContent.length > 20) {
-                  // Check how much of the viewport text exists in the section content
-                  // Since viewport is small and section is large, we check if viewport is a substring?
-                  // No, viewport might be partial. Let's check keyword hits from viewport IN section content.
                   const viewportWords = lowerContext
                     .split(/[\s,.-]+/)
                     .filter((w: string) => w.length > 4);
@@ -9209,9 +9229,9 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
                   for (const w of viewportWords) {
                     if (sContent.includes(w)) hits++;
                   }
-                  // Normalize score: e.g. 50% of viewport words found = good match
-                  // Let's just add hits directly.
-                  score += hits;
+                  // Gold Standard: High confidence in exact content match.
+                  // 5 points per significant word match. 4 words = 20 pts (beating simple title match).
+                  score += hits * 5;
                 } else {
                   // Fallback: Summary Overlap
                   const summaryWords = sSummary
@@ -9221,7 +9241,9 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
                   for (const w of summaryWords) {
                     if (lowerContext.includes(w)) hitCount++;
                   }
-                  score += hitCount;
+                  // Silver Standard: Summary is fuzzy.
+                  // 3 points per significant word match.
+                  score += hitCount * 3;
                 }
 
                 if (score > 0) {
