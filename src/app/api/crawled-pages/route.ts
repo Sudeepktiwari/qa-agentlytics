@@ -317,15 +317,65 @@ export async function POST(request: NextRequest) {
     // Inject sectionContent from raw text if available (for both direct and chunked)
     // This ensures [SECTION] markers are respected if present in reconstructedContent
     const blocks = parseSectionBlocks(reconstructedContent);
+    console.log(
+      `[API] Parsed ${blocks.length} sections from reconstructedContent`,
+    );
+
     if (
       blocks.length > 0 &&
       structuredSummary.sections &&
       Array.isArray(structuredSummary.sections)
     ) {
-      // Try to map blocks to sections 1:1 if counts match
+      console.log(
+        `[API] Mapping ${blocks.length} blocks to ${structuredSummary.sections.length} sections`,
+      );
+
+      const normalize = (s: string) =>
+        s.toLowerCase().replace(/[^a-z0-9]/g, "");
+
       structuredSummary.sections.forEach((sec: any, idx: number) => {
-        if (blocks[idx]) {
-          sec.sectionContent = blocks[idx].body;
+        // Strategy 1: Exact index match (most reliable if AI respects order)
+        let matchedBlock = blocks[idx];
+
+        // Strategy 2: Fuzzy title match (if index match seems wrong, e.g. different titles)
+        // Only verify if title is drastically different?
+        // Actually, let's prioritize index, but if content is missing, try title?
+        // Let's stick to index as primary, but if we run out of blocks, try title search?
+
+        // Revised Strategy:
+        // 1. Check index.
+        // 2. If title matches loosely, good.
+        // 3. If not, search for title in other blocks?
+
+        // Simple approach first: Trust index, but log title mismatch
+        if (matchedBlock) {
+          const titleSim =
+            normalize(matchedBlock.title) === normalize(sec.sectionName);
+          if (!titleSim) {
+            console.log(
+              `[API] Title mismatch at index ${idx}: '${sec.sectionName}' vs '${matchedBlock.title}'. Using index mapping.`,
+            );
+          }
+          sec.sectionContent = matchedBlock.body;
+        } else {
+          // Try finding by title if index out of bounds
+          const found = blocks.find(
+            (b) => normalize(b.title) === normalize(sec.sectionName),
+          );
+          if (found) {
+            console.log(`[API] Found block by title for '${sec.sectionName}'`);
+            sec.sectionContent = found.body;
+          }
+        }
+
+        if (sec.sectionContent) {
+          console.log(
+            `[API] Injected ${sec.sectionContent.length} chars into '${sec.sectionName}'`,
+          );
+        } else {
+          console.warn(
+            `[API] Failed to inject content for '${sec.sectionName}'`,
+          );
         }
       });
     } else if (
