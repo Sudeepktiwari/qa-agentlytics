@@ -2630,7 +2630,7 @@ Extract and return a JSON object with this exact structure:
   "sections": [
     {
       "sectionName": "Inferred Title (e.g., Onboarding Momentum, Renewals)",
-      "sectionSummary": "Brief summary",
+      "sectionSummary": "A concise 2-5 line summary of this section's content (AI generated)",
       "leadQuestions": [
         {
           "question": "Problem Recognition Question (e.g., What usually happens after...?)",
@@ -3317,7 +3317,7 @@ Extract and return a JSON object with this exact structure:
   "sections": [
     {
       "sectionName": "Inferred Title (e.g., Onboarding Momentum, Renewals)",
-      "sectionSummary": "Brief summary",
+      "sectionSummary": "A concise 2-5 line summary of this section's content (AI generated)",
       "leadQuestions": [
         {
           "question": "Problem Recognition Question (e.g., What usually happens after...?)",
