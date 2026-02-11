@@ -10628,11 +10628,80 @@ How can I help you today?`;
           ? "sales"
           : "lead_generation";
 
+      // 🎯 DYNAMIC FALLBACK FOR FOLLOWUP (When specific generation fails)
+      let fallbackMsg = "Is there anything else I can help you with?";
+      let fallbackButtons = ["Get Help", "Contact Support", "View Pricing"];
+
+      try {
+        // Simple dynamic generation to avoid repetition
+        const businessName = (() => {
+          try {
+            const host = new URL(pageUrl || "").hostname.replace(/^www\./, "");
+            const base = host.split(".")[0] || "";
+            return base
+              ? base.charAt(0).toUpperCase() + base.slice(1)
+              : "Our Team";
+          } catch {
+            return "Our Team";
+          }
+        })();
+
+        const completion = await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: [
+            {
+              role: "system",
+              content: `You are a helpful assistant for ${businessName}. The user is visiting ${pageUrl}.
+              We need a general follow-up question because specific context generation failed.
+              
+              Task: Generate a short, polite, open-ended question offering help.
+              Constraints:
+              - Max 20 words.
+              - Friendly and professional.
+              - Do NOT use "Is there anything else you'd like to know about the available features?" (too repetitive).
+              - Vary the phrasing.
+              - Return JSON: { "mainText": "...", "buttons": ["Btn1", "Btn2", "Btn3"] }`,
+            },
+          ],
+          response_format: { type: "json_object" },
+          temperature: 0.9, // Higher temperature for variety
+        });
+
+        const content = completion.choices[0]?.message?.content;
+        if (content) {
+          const parsed = JSON.parse(content);
+          if (parsed.mainText) fallbackMsg = parsed.mainText;
+          if (Array.isArray(parsed.buttons) && parsed.buttons.length > 0) {
+            fallbackButtons = parsed.buttons.slice(0, 3);
+          }
+        }
+      } catch (e) {
+        console.error("[Followup] Dynamic fallback generation failed:", e);
+        // Randomize static fallback if AI fails
+        const fallbacks = [
+          {
+            text: "How can I help you move forward today?",
+            btns: ["Book Demo", "View Pricing", "Contact Us"],
+          },
+          {
+            text: "Do you have any specific questions I can answer?",
+            btns: ["Product Features", "Support", "Sales"],
+          },
+          {
+            text: "I'm here if you need any assistance navigating.",
+            btns: ["Find Features", "Get Help", "Talk to Sales"],
+          },
+        ];
+        const randomFallback =
+          fallbacks[Math.floor(Math.random() * fallbacks.length)];
+        fallbackMsg = randomFallback.text;
+        fallbackButtons = randomFallback.btns;
+      }
+
       return NextResponse.json(
         {
-          mainText:
-            "Is there anything else you'd like to know about the available features?",
-          buttons: ["Learn More Features", "Get Demo", "Contact Support"],
+          mainText: fallbackMsg,
+          buttons: fallbackButtons,
           emailPrompt: "",
           botMode,
           userEmail: userEmail || null,
