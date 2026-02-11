@@ -272,7 +272,7 @@ export async function POST(request: NextRequest) {
       ]),
     );
     // Reconstruct content from Pinecone chunk text
-    const reconstructedContent = vectorDocs
+    let reconstructedContent = vectorDocs
       .map((doc) => {
         const chunk = idToChunk[doc.vectorId];
         return typeof chunk === "string" ? chunk : "";
@@ -280,9 +280,18 @@ export async function POST(request: NextRequest) {
       .filter((text) => typeof text === "string" && text.length > 0)
       .join("\n\n");
 
+    // Check if we have the raw text in crawled_pages (which might preserve [SECTION] markers better)
+    const existingPage = await collection.findOne({ adminId, url });
+    if (existingPage && existingPage.text && existingPage.text.length > 50) {
+      console.log(
+        "[API] Found raw text in crawled_pages, using it instead of Pinecone chunks",
+      );
+      reconstructedContent = existingPage.text;
+    }
+
     if (!reconstructedContent || reconstructedContent.length < 50) {
       return NextResponse.json(
-        { error: "Insufficient content in chunks to generate summary" },
+        { error: "Insufficient content to generate summary" },
         { status: 400 },
       );
     }
