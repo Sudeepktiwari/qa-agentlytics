@@ -8876,7 +8876,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
 
         // NEW: Check for Stored Lead Question to use as SECONDARY (Immediate Delivery)
         // This ensures the Lead Question appears immediately AFTER the welcome message
-        if (!hasBeenGreeted && adminId && pageUrl) {
+        if (adminId && pageUrl) {
           try {
             const structuredSummaryDoc = await db
               .collection("structured_summaries")
