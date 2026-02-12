@@ -3236,7 +3236,7 @@ async function generatePersonaBasedFollowup(
       : "";
 
     const systemPrompt = `
-You are a helpful, friendly assistant. Generate a followup message that resonates with this specific customer type.
+You are a helpful, friendly assistant. Generate a LEAD QUALIFICATION QUESTION that resonates with this specific customer type.
 Tone: Simple, conversational, and human-like. Use contractions. Avoid buzzwords.
 
 Customer Segment Profile:
@@ -3261,7 +3261,7 @@ Current Context:
 
 Generate your response in JSON format:
 {
-  "mainText": "<Under 30 words. Inform about a specific important item on the page/section and invite a quick response. End with: 'Please tap an option below.' No personal names>",
+  "mainText": "<Under 30 words. Ask a specific LEAD QUESTION based on the section content. End with: 'Please tap an option below.' No personal names>",
   "buttons": ["<Generate exactly 3 short options (2-4 words) that are actionable and specific to the page/section. IMPORTANT: Do NOT include options related to topics already discussed.>"] ,
   "emailPrompt": "${hasEmail ? "" : "<ONLY include this if followupCount >= 2. Otherwise empty string>"}"
 }
@@ -3283,6 +3283,7 @@ LEAD GENERATION BUTTON STRATEGY - 3-Button Framework (PERSONA-BASED):
 Conversation Flow Intelligence:
 - Reference actual page content (features, solutions, use cases) and avoid repetition from the last 1-2 messages.
 - Build logically from the previous message; introduce new details.
+- CRITICAL: If Followup # is 2 (index 1), you MUST focus on a DIFFERENT aspect/feature/pain point than the previous message in the conversation history. Do not repeat the same topic.
 `;
 
     const completion = await openai.chat.completions.create({
@@ -3366,7 +3367,7 @@ async function generateTopicBasedFollowup(
     const systemPrompt = `You are a helpful, friendly assistant focused on ${
       topicInfo.mainFocus
     }. 
-    Generate a simple, helpful followup message.
+    Generate a SPECIFIC LEAD QUALIFICATION QUESTION.
     Tone: Conversational and human. Use contractions.
     
     Context:
@@ -3383,7 +3384,7 @@ async function generateTopicBasedFollowup(
     ${sectionInstruction}
     
     Generate a response that:
-    1. Focuses specifically on ${topicInfo.mainFocus}
+    1. Asks a specific question about ${topicInfo.mainFocus} related to the content
     2. Is helpful and informative
     3. Encourages engagement
     4. Includes relevant action buttons
@@ -3395,11 +3396,15 @@ async function generateTopicBasedFollowup(
     
     Return JSON in this exact format:
     {
-      "mainText": "<your focused message about ${
+      "mainText": "<your focused QUESTION about ${
         topicInfo.mainFocus
       } (max 100 words). Use \\n\\n for spacing.>",
       "buttons": ${
-        filteredButtons.length > 0 ? JSON.stringify(filteredButtons) : "[]"
+        visibleSectionContext
+          ? `["<Generate 3 specific options based on the visible section content>"]`
+          : filteredButtons.length > 0
+            ? JSON.stringify(filteredButtons)
+            : `["<Generate 3 specific options based on the topic>"]`
       },
       "emailPrompt": "${hasEmail ? "" : "<ONLY include this if followupCount >= 2. Otherwise empty string>"}"
     }`;
@@ -9370,27 +9375,22 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
 CONTEXT:
 - User Context: "${effectiveContext}"
 - Page URL: ${pageUrl}
+- Conversation History: ${JSON.stringify(previousQnA || [])}
+- Followup Count: ${followupCount} (0 = First question, 1 = Second question)
 
 TASK:
 1. Analyze the context to understand the specific problem or feature being discussed.
 2. Generate ONE concise Lead Qualification Question directly related to this content.
-3. Generate 3-4 short, clickable options (buttons) that represent likely answers or interests.
+3. Generate 3 short, clickable options (buttons) that represent likely answers or interests.
 
-OUTPUT FORMAT:
-Return ONLY valid JSON:
-{
-  "mainText": "Your specific question here?",
-  "buttons": ["Option 1", "Option 2", "Option 3"],
-  "emailPrompt": ""
-}
-
-RULES:
-- Question must be short (under 20 words).
-- Buttons must be very short (1-3 words).
+CRITICAL RULES:
+- If Followup Count is 1 (Second Question), you MUST focus on a DIFFERENT aspect/feature than the previous question. Do not repeat the same topic.
+- Question must be under 20 words.
+- Buttons must be 1-3 words.
 - Tone: Helpful, professional, curious.
-- Do not be generic. Use terms from the text.`;
+- Do NOT use generic phrases like "How can I help?". Ask about the specific content (e.g., "Need help with [Feature]?" or "Exploring [Solution]?").`;
 
-              const fUserPrompt = `Generate a lead question and options based on the section content provided.`;
+              const fUserPrompt = `Generate a specific lead question and 3 actionable options based on the section content.`;
 
               try {
                 const completion = await openai.chat.completions.create({
