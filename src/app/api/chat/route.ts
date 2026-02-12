@@ -9201,8 +9201,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
           // SKIP if we have a detected persona + context, as we prefer dynamic persona-aware generation
           if (
             structuredSummaryDoc?.structuredSummary?.sections &&
-            Array.isArray(structuredSummaryDoc.structuredSummary.sections) &&
-            !contextualPageContext // Always prefer dynamic generation if we have live context
+            Array.isArray(structuredSummaryDoc.structuredSummary.sections)
           ) {
             try {
               const sections = structuredSummaryDoc.structuredSummary.sections;
