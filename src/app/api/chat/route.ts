@@ -9328,12 +9328,15 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
           }
 
           // D. AI Generation Fallback (only if we have context but NO stored question found)
-          if (!personaFollowup && contextualPageContext) {
+          // Uses visible section (primary) or page summary (secondary) to ensure relevance
+          const effectiveContext =
+            contextualPageContext || summaryContext || "";
+
+          if (!personaFollowup && effectiveContext) {
             console.log(
-              `[Followup] Generating prioritized delayed lead question based on section: "${contextualPageContext.substring(
-                0,
-                50,
-              )}..."`,
+              `[Followup] Generating prioritized delayed lead question based on context source: "${
+                contextualPageContext ? "Visible Section" : "Page Summary"
+              }"`,
             );
 
             // TRY PERSONA-AWARE GENERATION FIRST if available
@@ -9350,7 +9353,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
                   followupCount,
                   customerProfile?.intelligenceProfile?.topicsDiscussed || [],
                   !!userHasEmail,
-                  contextualPageContext, // Pass visible section
+                  effectiveContext, // Pass effective context
                 );
               } catch (err) {
                 console.error(
@@ -9362,14 +9365,14 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
 
             // Fallback to generic if no persona or persona generation failed
             if (!personaFollowup) {
-              const fSystemPrompt = `You are an expert sales consultant. Your goal is to engage the user with a specific, relevant question based on the section of the page they are currently reading.
+              const fSystemPrompt = `You are an expert sales consultant. Your goal is to engage the user with a specific, relevant question based on the content they are viewing.
 
 CONTEXT:
-- User is reading this specific section: "${contextualPageContext}"
+- User Context: "${effectiveContext}"
 - Page URL: ${pageUrl}
 
 TASK:
-1. Analyze the section content to understand the specific problem or feature being discussed.
+1. Analyze the context to understand the specific problem or feature being discussed.
 2. Generate ONE concise Lead Qualification Question directly related to this content.
 3. Generate 3-4 short, clickable options (buttons) that represent likely answers or interests.
 
@@ -9385,7 +9388,7 @@ RULES:
 - Question must be short (under 20 words).
 - Buttons must be very short (1-3 words).
 - Tone: Helpful, professional, curious.
-- Do not be generic. Use terms from the section text.`;
+- Do not be generic. Use terms from the text.`;
 
               const fUserPrompt = `Generate a lead question and options based on the section content provided.`;
 

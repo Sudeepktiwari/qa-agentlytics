@@ -572,8 +572,9 @@ const Chatbot: React.FC<ChatbotProps> = ({
     if (typeof document === "undefined") return "";
 
     // Find all potential section headers or containers
+    // Expanded selectors to catch more content types
     const elements = document.querySelectorAll(
-      "h1, h2, h3, section, article, div[id]",
+      "h1, h2, h3, h4, section, article, div[id], main, header, p, li",
     );
     let mostVisibleElement = null;
     let maxVisibility = 0;
@@ -582,6 +583,9 @@ const Chatbot: React.FC<ChatbotProps> = ({
 
     elements.forEach((el) => {
       const rect = el.getBoundingClientRect();
+
+      // Skip invisible elements
+      if (rect.height === 0 || rect.width === 0) return;
 
       // Calculate intersection with viewport
       const intersectionHeight = Math.max(
@@ -597,21 +601,35 @@ const Chatbot: React.FC<ChatbotProps> = ({
 
       if (
         score > maxVisibility &&
-        (el as HTMLElement).innerText?.trim().length > 50
+        (el as HTMLElement).innerText?.trim().length > 20 // Lower threshold to catch smaller valid sections
       ) {
         maxVisibility = score;
         mostVisibleElement = el;
       }
     });
 
+    let contextText = "";
     if (mostVisibleElement) {
       // Get text from the element and its immediate siblings/children
-      // Limit to 500 chars to avoid huge payloads
-      return (mostVisibleElement as HTMLElement).innerText.substring(0, 800);
+      // Limit to 800 chars to avoid huge payloads
+      contextText = (mostVisibleElement as HTMLElement).innerText.substring(
+        0,
+        800,
+      );
+      console.log("[Chatbot] Found specific visible section:", {
+        tag: (mostVisibleElement as HTMLElement).tagName,
+        textPreview: contextText.substring(0, 50),
+      });
+    } else {
+      // Fallback: get text from the middle of the viewport or body
+      contextText = document.body.innerText.substring(0, 800);
+      console.log(
+        "[Chatbot] No specific section found, using body fallback:",
+        contextText.substring(0, 50),
+      );
     }
 
-    // Fallback: get text from the middle of the viewport
-    return document.body.innerText.substring(0, 800);
+    return contextText;
   };
 
   useEffect(() => {
