@@ -3314,6 +3314,7 @@ async function generateTopicBasedFollowup(
   followupCount: number,
   topicsDiscussed: string[] = [],
   hasEmail: boolean = false,
+  visibleSectionContext: string | null = null,
 ) {
   try {
     const topicPrompts = {
@@ -3353,6 +3354,15 @@ async function generateTopicBasedFollowup(
       topicsDiscussed,
     );
 
+    const sectionInstruction = visibleSectionContext
+      ? `\nCRITICAL: The user is currently reading this specific section:\n"${visibleSectionContext.slice(
+          0,
+          800,
+        )}"\n\nMake your question and buttons explicitly about this section's content while keeping the topic focus on ${
+          topicInfo.mainFocus
+        }.`
+      : "";
+
     const systemPrompt = `You are a helpful, friendly assistant focused on ${
       topicInfo.mainFocus
     }. 
@@ -3370,6 +3380,7 @@ async function generateTopicBasedFollowup(
     
     Page Content:
     ${pageContent}
+    ${sectionInstruction}
     
     Generate a response that:
     1. Focuses specifically on ${topicInfo.mainFocus}
@@ -8071,11 +8082,12 @@ Extract key requirements (2-3 bullet points max, be concise):`;
     let pageSummary = "(No specific information found for this page.)";
     let summaryContext = "";
 
-    // Inject contextual context if chunks are empty but we have frontend context for lead question
+    // Inject contextual context if chunks are empty but we have frontend context
+    // Allow for lead question OR proactive greeting (first message)
     if (
       pageChunks.length === 0 &&
       contextualPageContext &&
-      triggerLeadQuestion
+      (triggerLeadQuestion || proactive || !hasBeenGreeted)
     ) {
       console.log(
         "[Proactive] Injecting contextualPageContext as pageChunk for lead question",
@@ -8442,20 +8454,27 @@ Extract key requirements (2-3 bullet points max, be concise):`;
           }
 
           // First time greeting - create intelligent, page-specific messages
-          const contextPreview = summaryContext
-            ? summaryContext.substring(0, 800)
+          // PRIORITIZE: If we have specific section context from frontend, use that as the primary signal
+          const activeContext = contextualPageContext || summaryContext || "";
+          const contextSource = contextualPageContext
+            ? "User is currently viewing this section (High Priority)"
+            : "Page content summary";
+
+          const contextPreview = activeContext
+            ? activeContext.substring(0, 800)
             : `(No page content available. CRITICAL: Analyze the URL "${pageUrl}" to infer the page topic and user intent)`;
 
           summaryPrompt = `CONTEXT ANALYSIS:
 Page URL: ${pageUrl}
 User Intent: ${detectedIntent}
-Page Content Preview: ${contextPreview}...
+Context Source: ${contextSource}
+Content Preview: ${contextPreview}...
 
-TASK: Create a highly contextual, "read-my-mind" style opening question based on the specific page content they are viewing.
+TASK: Create a highly contextual, "read-my-mind" style opening question based on the specific content.
 
 BEHAVIORAL ANALYSIS:
-1. What is the PRIMARY value proposition of this specific page?
-2. What problem is a user trying to solve if they are reading this content?
+1. What is the PRIMARY value proposition of this specific content?
+2. What problem is a user trying to solve if they are reading this?
 3. What is the most logical next step or question they would have?
 
 Generate response in JSON format:
@@ -8466,14 +8485,14 @@ Generate response in JSON format:
 
 GREETING APPROACH:
 Instead of: "Hi! How can I help?"
-Create: "I see you're exploring [specific feature/page]. Are you looking to solve [specific problem] or are you in the [situation] phase?"
+Create: "I see you're exploring [specific feature]. Are you looking to solve [specific problem]?"
 
 MAINTEXT REQUIREMENTS:
-- Reference the actual page content or purpose
-- Ask a specific question that helps understand their situation, needs, or goals
-- Be conversational and natural (like a knowledgeable consultant would ask)
+- Reference the actual section/page content
+- Ask a specific question that helps understand their situation
+- Be conversational and natural
 - Under 30 words total
-- End with a question that reveals their intent/needs
+- End with a question
 - Show understanding of what they're viewing
 
 GREETING REQUIREMENT:
@@ -9178,7 +9197,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
           if (
             structuredSummaryDoc?.structuredSummary?.sections &&
             Array.isArray(structuredSummaryDoc.structuredSummary.sections) &&
-            !(detectedPersona && contextualPageContext)
+            !contextualPageContext // Always prefer dynamic generation if we have live context
           ) {
             try {
               const sections = structuredSummaryDoc.structuredSummary.sections;
@@ -9420,6 +9439,7 @@ RULES:
             followupCount,
             customerProfile?.intelligenceProfile?.topicsDiscussed || [],
             !!userHasEmail,
+            contextualPageContext,
           );
         } else if (
           !personaFollowup &&

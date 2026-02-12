@@ -457,6 +457,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
         if (!shouldTriggerProactive) return;
 
         // Always trigger proactive bot message and follow-up timer on mount or after link selection
+        const initialSectionContext = getVisibleSectionContext();
         fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -465,6 +466,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
             pageUrl: effectivePageUrl,
             proactive: true,
             hasBeenGreeted: alreadyGreeted,
+            contextualPageContext: initialSectionContext,
             visitedPages: (() => {
               if (typeof window === "undefined") return [];
               try {
