@@ -9822,6 +9822,16 @@ Context:
 
 ‼️ CRITICAL INSTRUCTION: You MUST analyze and use the following page content to create industry-specific, relevant responses. DO NOT create generic "scheduling" or "management" responses. Extract actual terms, features, and pain points from the content below:
 
+${
+  contextualPageContext
+    ? `
+**CURRENT VISIBLE SECTION CONTENT (HIGHEST PRIORITY):**
+User is currently looking at this section. Base your question and buttons primarily on this content:
+"${contextualPageContext}"
+`
+    : ""
+}
+
 Page Context (summary-first if available):
 ${pageContextForPrompt}
 General Context:
@@ -9993,6 +10003,16 @@ Context:
 
 ‼️ CRITICAL INSTRUCTION: You MUST analyze and use the following page content to create industry-specific, relevant responses. DO NOT create generic "scheduling" or "management" responses. Extract actual terms, features, and pain points from the content below that are DIFFERENT from Followup #1:
 
+${
+  contextualPageContext
+    ? `
+**CURRENT VISIBLE SECTION CONTENT (HIGHEST PRIORITY):**
+User is currently looking at this section. If it offers a DIFFERENT aspect than Followup #1, prioritize using this content:
+"${contextualPageContext}"
+`
+    : ""
+}
+
 Page Context (summary-first if available):
 ${pageContextForPrompt}
 General Context:
@@ -10006,7 +10026,11 @@ ${previousQnA}
 - Respond with ONLY valid JSON - no additional text before or after
 - NEVER include JSON objects or button arrays within the mainText field
 - Your mainText must be a micro-conversion nudge, referencing the user's last action, detected intent, page context, or actual page content. Do NOT ask for a discovery call or email directly. Vary the nudge text for each follow-up.`;
-          followupUserPrompt = `CRITICAL: You MUST create a response based on the ACTUAL page content provided above that is DIFFERENT from Followup #1. Do NOT use generic terms like "scheduling chaos" or "auto scheduling" or any similar concepts to previous followups.
+          followupUserPrompt = `CRITICAL: You MUST create a response based on the ACTUAL page content provided above that is DIFFERENT from Followup #1. ${
+            contextualPageContext
+              ? "Use the 'CURRENT VISIBLE SECTION CONTENT' if it provides a new angle."
+              : ""
+          } Do NOT use generic terms like "scheduling chaos" or "auto scheduling" or any similar concepts to previous followups.
 
 Ask a micro-conversion nudge—a small, low-friction ask that's specific to the page content and represents a DIFFERENT business aspect than Followup #1. Extract real features, benefits, or services from the page content. Do NOT ask for a discovery call or email directly. 
 
