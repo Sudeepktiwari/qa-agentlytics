@@ -8873,6 +8873,120 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
         });
 
         let secondary: any = null;
+
+        // NEW: Check for Stored Lead Question to use as SECONDARY (Immediate Delivery)
+        // This ensures the Lead Question appears immediately AFTER the welcome message
+        if (!hasBeenGreeted && adminId && pageUrl) {
+          try {
+            const structuredSummaryDoc = await db
+              .collection("structured_summaries")
+              .findOne({ adminId, url: pageUrl });
+
+            if (
+              structuredSummaryDoc?.structuredSummary?.sections &&
+              Array.isArray(structuredSummaryDoc.structuredSummary.sections)
+            ) {
+              const sections = structuredSummaryDoc.structuredSummary.sections;
+              let matchedSection: any = null;
+
+              // A. Try Matching if context is available
+              if (contextualPageContext) {
+                const lowerContext = contextualPageContext.toLowerCase();
+                let bestScore = -1;
+                let bestSection: any = null;
+
+                sections.forEach((s: any) => {
+                  const sName = (s.sectionName || "").toLowerCase();
+                  const sContent = (s.sectionContent || "").toLowerCase();
+                  let score = 0;
+
+                  // 1. Exact Title Match
+                  try {
+                    const escapedName = sName.replace(
+                      /[.*+?^${}()|[\]\\]/g,
+                      "\\$&",
+                    );
+                    const titleRegex = new RegExp(`\\b${escapedName}\\b`, "i");
+                    if (
+                      sName &&
+                      sName.length > 3 &&
+                      titleRegex.test(lowerContext)
+                    ) {
+                      score += Math.min(10 + sName.length, 30);
+                    }
+                  } catch (e) {
+                    if (
+                      sName &&
+                      sName.length > 3 &&
+                      lowerContext.includes(sName)
+                    ) {
+                      score += 10;
+                    }
+                  }
+
+                  // 2. Content Overlap
+                  if (sContent && sContent.length > 20) {
+                    const viewportWords = lowerContext
+                      .split(/[\s,.-]+/)
+                      .filter((w: string) => w.length > 4);
+                    let hits = 0;
+                    for (const w of viewportWords) {
+                      if (sContent.includes(w)) hits++;
+                    }
+                    score += hits * 5;
+                  }
+
+                  if (score > bestScore) {
+                    bestScore = score;
+                    bestSection = s;
+                  }
+                });
+
+                // Threshold: 5 points
+                if (bestScore >= 5) {
+                  matchedSection = bestSection;
+                }
+              }
+
+              // B. Fallback to Section 1 (Hero) if no specific match
+              if (!matchedSection && sections.length > 0) {
+                // If no context provided or no match, assume top of page -> Hero
+                matchedSection = sections[0];
+              }
+
+              // C. Extract Question from Matched Section
+              if (
+                matchedSection &&
+                matchedSection.leadQuestions &&
+                matchedSection.leadQuestions.length > 0
+              ) {
+                const q = matchedSection.leadQuestions[0];
+                if (q && q.question) {
+                  console.log(
+                    `[Proactive] Found stored lead question for secondary message: ${matchedSection.sectionName}`,
+                  );
+                  const rawOptions = q.options || [];
+                  const secButtons = rawOptions.map((o: any) =>
+                    typeof o === "string" ? o : o.label || JSON.stringify(o),
+                  );
+                  secondary = {
+                    mainText: q.question,
+                    buttons: secButtons,
+                    emailPrompt: "",
+                  };
+                  // Clear primary buttons to focus on the lead question
+                  enhancedProactiveData.buttons = [];
+                }
+              }
+            }
+          } catch (e) {
+            console.error(
+              "[Proactive] Error finding stored secondary lead question:",
+              e,
+            );
+          }
+        }
+
         const enableProactiveFollowups = false;
         if (enableProactiveFollowups) {
           const db = await getDb();
@@ -9201,7 +9315,8 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
           // SKIP if we have a detected persona + context, as we prefer dynamic persona-aware generation
           if (
             structuredSummaryDoc?.structuredSummary?.sections &&
-            Array.isArray(structuredSummaryDoc.structuredSummary.sections)
+            Array.isArray(structuredSummaryDoc.structuredSummary.sections) &&
+            !contextualPageContext // Always prefer dynamic generation if we have live context
           ) {
             try {
               const sections = structuredSummaryDoc.structuredSummary.sections;

@@ -540,7 +540,11 @@ const Chatbot: React.FC<ChatbotProps> = ({
             // Start follow-up timer
             if (followupTimer.current) clearTimeout(followupTimer.current);
             setFollowupSent(false);
-            setFollowupCount(0); // Reset followup count for new URL
+            if (data.secondary) {
+              setFollowupCount(1); // Advance count since we just showed the first lead question
+            } else {
+              setFollowupCount(0); // Reset followup count for new URL
+            }
             setUserIsActive(false); // Reset user activity
             setLastUserAction(Date.now());
             followupTimer.current = setTimeout(() => {
