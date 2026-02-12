@@ -627,7 +627,8 @@ const Chatbot: React.FC<ChatbotProps> = ({
       if (followupCount < 3) {
         // Align client timer with backend gating (backend suppresses followup if user active < 25s)
         // Use a consistent 30s delay to avoid premature suppression
-        let timerDelay = 30000; // 30 seconds for both modes
+        // EXCEPTION: First follow-up (Lead Question) should be immediate
+        let timerDelay = followupCount === 0 ? 500 : 30000; // 0.5s for first, 30s for others
 
         console.log(
           `[Chatbot] Setting inactivity follow-up timer for ${
@@ -637,7 +638,8 @@ const Chatbot: React.FC<ChatbotProps> = ({
         followupTimer.current = setTimeout(() => {
           // Only send followup if user is not currently active and hasn't interacted recently
           const timeSinceLastAction = Date.now() - lastUserAction;
-          const bufferTime = 25000; // 25 seconds to match backend suppression window
+          // No buffer for first follow-up to ensure it sends immediately
+          const bufferTime = followupCount === 0 ? 0 : 25000; // 25 seconds to match backend suppression window
 
           if (!userIsActive && timeSinceLastAction >= bufferTime) {
             console.log(

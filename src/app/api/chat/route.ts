@@ -9174,9 +9174,11 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
         // CHANGE: Relaxed condition to allow fallback to Section 1 if no context is provided
         if (followupCount <= 1) {
           // 1. Try to find stored question from crawled data first
+          // SKIP if we have a detected persona + context, as we prefer dynamic persona-aware generation
           if (
             structuredSummaryDoc?.structuredSummary?.sections &&
-            Array.isArray(structuredSummaryDoc.structuredSummary.sections)
+            Array.isArray(structuredSummaryDoc.structuredSummary.sections) &&
+            !(detectedPersona && contextualPageContext)
           ) {
             try {
               const sections = structuredSummaryDoc.structuredSummary.sections;
