@@ -3225,8 +3225,16 @@ async function generatePersonaBasedFollowup(
   followupCount: number,
   topicsDiscussed: string[] = [],
   hasEmail: boolean = false,
+  visibleSectionContext: string | null = null,
 ): Promise<any> {
   try {
+    const sectionInstruction = visibleSectionContext
+      ? `\nCRITICAL: The user is currently reading this specific section:\n"${visibleSectionContext.slice(
+          0,
+          800,
+        )}"\n\nMake your question and buttons explicitly about this section's content (e.g., "I see you're looking at [Feature]..."). Do not ask about general things if they are reading something specific.`
+      : "";
+
     const systemPrompt = `
 You are a helpful, friendly assistant. Generate a followup message that resonates with this specific customer type.
 Tone: Simple, conversational, and human-like. Use contractions. Avoid buzzwords.
@@ -3249,24 +3257,24 @@ Current Context:
 - Followup #: ${followupCount + 1}
 - Page Content: ${pageContext.slice(0, 500)}
 - Conversation: ${conversationHistory.slice(-500)}
-- User Has Email: ${hasEmail}
+- User Has Email: ${hasEmail}${sectionInstruction}
 
 Generate your response in JSON format:
 {
-  "mainText": "<Under 30 words. Inform about a specific important item on the page and invite a quick response. End with: 'Please tap an option below.' No personal names>",
-  "buttons": ["<Generate exactly 3 short options (2-4 words) that are actionable and specific to the page. IMPORTANT: Do NOT include options related to topics already discussed.>"] ,
+  "mainText": "<Under 30 words. Inform about a specific important item on the page/section and invite a quick response. End with: 'Please tap an option below.' No personal names>",
+  "buttons": ["<Generate exactly 3 short options (2-4 words) that are actionable and specific to the page/section. IMPORTANT: Do NOT include options related to topics already discussed.>"] ,
   "emailPrompt": "${hasEmail ? "" : "<ONLY include this if followupCount >= 2. Otherwise empty string>"}"
 }
 
 STYLE GUIDELINES (no hard blacklist):
-- Prefer informative openings that highlight a concrete feature, benefit, or update from the current page.
+- Prefer informative openings that highlight a concrete feature, benefit, or update from the current page/section.
 - Vary openings and sentence structures; avoid repeating the same pattern as the last message.
 - Keep tone helpful and business-focused; avoid negative or accusatory phrasing.
 - Stay specific to the page content and segment needs; avoid generic scheduling language.
 
 LEAD GENERATION BUTTON STRATEGY - 3-Button Framework (PERSONA-BASED):
 1) Persona Pain Point  2) Persona Solution  3) Persona Requirement
-- Extract these directly from page content where possible.
+- Extract these directly from page/section content where possible.
 - Buttons must be 2-4 words, actionable, and distinct.
 - Do NOT generate buttons for topics already discussed: ${topicsDiscussed.join(
       ", ",
@@ -9301,10 +9309,39 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
           // D. AI Generation Fallback (only if we have context but NO stored question found)
           if (!personaFollowup && contextualPageContext) {
             console.log(
-              `[Followup] Generating prioritized delayed lead question based on section: "${contextualPageContext.substring(0, 50)}..."`,
+              `[Followup] Generating prioritized delayed lead question based on section: "${contextualPageContext.substring(
+                0,
+                50,
+              )}..."`,
             );
 
-            const fSystemPrompt = `You are an expert sales consultant. Your goal is to engage the user with a specific, relevant question based on the section of the page they are currently reading.
+            // TRY PERSONA-AWARE GENERATION FIRST if available
+            if (detectedPersona) {
+              console.log(
+                `[Followup] Using Persona-Aware Section Generation for: ${detectedPersona.type}`,
+              );
+              try {
+                personaFollowup = await generatePersonaBasedFollowup(
+                  detectedPersona,
+                  pageContextForPrompt,
+                  pageUrl,
+                  previousQnA,
+                  followupCount,
+                  customerProfile?.intelligenceProfile?.topicsDiscussed || [],
+                  !!userHasEmail,
+                  contextualPageContext, // Pass visible section
+                );
+              } catch (err) {
+                console.error(
+                  "[Followup] Error generating persona-based section lead question:",
+                  err,
+                );
+              }
+            }
+
+            // Fallback to generic if no persona or persona generation failed
+            if (!personaFollowup) {
+              const fSystemPrompt = `You are an expert sales consultant. Your goal is to engage the user with a specific, relevant question based on the section of the page they are currently reading.
 
 CONTEXT:
 - User is reading this specific section: "${contextualPageContext}"
@@ -9329,33 +9366,35 @@ RULES:
 - Tone: Helpful, professional, curious.
 - Do not be generic. Use terms from the section text.`;
 
-            const fUserPrompt = `Generate a lead question and options based on the section content provided.`;
+              const fUserPrompt = `Generate a lead question and options based on the section content provided.`;
 
-            try {
-              const completion = await openai.chat.completions.create({
-                model: "gpt-4o-mini",
-                messages: [
-                  { role: "system", content: fSystemPrompt },
-                  { role: "user", content: fUserPrompt },
-                ],
-                temperature: 0.7,
-                response_format: { type: "json_object" },
-              });
-              const content = completion.choices[0].message.content;
-              if (content) {
-                personaFollowup = JSON.parse(content);
+              try {
+                const completion = await openai.chat.completions.create({
+                  model: "gpt-4o-mini",
+                  messages: [
+                    { role: "system", content: fSystemPrompt },
+                    { role: "user", content: fUserPrompt },
+                  ],
+                  temperature: 0.7,
+                  response_format: { type: "json_object" },
+                });
+                const content = completion.choices[0].message.content;
+                if (content) {
+                  personaFollowup = JSON.parse(content);
+                }
+              } catch (e) {
+                console.error(
+                  "[Followup] Failed to generate prioritized lead question:",
+                  e,
+                );
+                // CRITICAL FALLBACK: Ensure we return a section-related response even if AI fails
+                personaFollowup = {
+                  mainText:
+                    "Does this section address what you're looking for?",
+                  buttons: ["Yes", "Tell me more", "No, I have questions"],
+                  emailPrompt: "",
+                };
               }
-            } catch (e) {
-              console.error(
-                "[Followup] Failed to generate prioritized lead question:",
-                e,
-              );
-              // CRITICAL FALLBACK: Ensure we return a section-related response even if AI fails
-              personaFollowup = {
-                mainText: "Does this section address what you're looking for?",
-                buttons: ["Yes", "Tell me more", "No, I have questions"],
-                emailPrompt: "",
-              };
             }
           } // End of triggerLeadQuestion logic (closes if (!personaFollowup))
         } // Closes outer if (followupCount === 0 && triggerLeadQuestion)
@@ -9400,6 +9439,7 @@ RULES:
             followupCount,
             customerProfile?.intelligenceProfile?.topicsDiscussed || [],
             !!userHasEmail,
+            contextualPageContext,
           );
         }
 
