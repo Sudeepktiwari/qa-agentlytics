@@ -7711,6 +7711,8 @@ Extract key requirements (2-3 bullet points max, be concise):`;
       if (!sitemapEntry) {
         // console.log removed
         // console.log removed
+        // Fallback: Try fetching chunks anyway (handles QA -> Prod fallback or orphaned vectors)
+        pageChunks = await getChunksByPageUrl(adminId, pageUrl);
       } else if (!sitemapEntry.crawled) {
         // console.log removed
       } else {
