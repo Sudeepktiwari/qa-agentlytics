@@ -77,7 +77,7 @@ export default function WorkflowSection() {
         setSelectedSectionIndex(null);
       }
     } catch (error) {
-      console.error("Failed to fetch workflow data:", error);
+      // console.error("Failed to fetch workflow data:", error);
     } finally {
       setLoading(false);
     }
@@ -388,10 +388,10 @@ export default function WorkflowSection() {
                                                             if (
                                                               opt?.diagnostic_answer
                                                             ) {
-                                                              console.log(
-                                                                "Sales Option Clicked:",
-                                                                opt,
-                                                              );
+                                                              // console.log(
+                                                              //   "Sales Option Clicked:",
+                                                              //   opt,
+                                                              // );
                                                               setSelectedDiagnostic(
                                                                 {
                                                                   title:

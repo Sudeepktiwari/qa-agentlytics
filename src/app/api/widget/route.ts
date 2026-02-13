@@ -54,15 +54,15 @@ export async function GET(request: Request) {
   
   // Validate API Key is provided - STRICTLY REQUIRED
   if (!API_KEY || API_KEY.trim() === '') {
-    console.error('[Widget] API key is required. Please add data-api-key attribute to the script tag.');
-    console.error('Widget will not initialize without a valid API key.');
+    // console.error removed
+    // console.error removed
     throw new Error('API key required');
   }
   
   // Validate API Key format (should start with 'ak_' and be 67 characters total)
   if (!API_KEY.startsWith('ak_') || API_KEY.length !== 67) {
-    console.error('[Widget] Invalid API key format. API key should start with ak_ and be 67 characters long.');
-    console.error('Widget will not initialize with invalid API key format.');
+    // console.error removed
+    // console.error removed
     throw new Error('Invalid API key format');
   }
   
@@ -138,9 +138,9 @@ export async function GET(request: Request) {
   if (existingMainContainer) {
     try {
       existingMainContainer.remove();
-      console.log('🧹 [WIDGET INIT] Removed existing widget container to avoid duplicate IDs');
+      // console.log('🧹 [WIDGET INIT] Removed existing widget container to avoid duplicate IDs');
     } catch (e) {
-      console.warn('⚠️ [WIDGET INIT] Failed to remove existing widget container:', e);
+      // console.warn('⚠️ [WIDGET INIT] Failed to remove existing widget container:', e);
     }
   }
   const widgetMainContainer = document.createElement('div');
@@ -348,11 +348,11 @@ export async function GET(request: Request) {
   let sectionObserver = null;
   let mirrorMessageScrollThreshold = 40;
   
-  console.log('🔍 [WIDGET MIRROR] Mirror configuration:', {
-    mirrorMode: config.mirrorMode,
-    windowWidth: window.innerWidth,
-    mirrorEnabled: mirrorEnabled
-  });
+  // console.log removed
+  // console.log removed
+  // console.log removed
+  // console.log removed
+  // console.log removed
 
   // Messages array
   let messages = [];
@@ -442,7 +442,7 @@ export async function GET(request: Request) {
     
     // For proactive messages, only speak if user has already interacted
     if (isProactive && !speechAllowed) {
-      console.log('Speech not allowed for proactive messages without user interaction');
+      // console.log('Speech not allowed for proactive messages without user interaction');
       return;
     }
     
@@ -496,17 +496,17 @@ export async function GET(request: Request) {
       
       // Add event listeners
       utterance.onstart = () => {
-        console.log('Speech started');
+        // console.log('Speech started');
       };
       
       utterance.onend = () => {
-        console.log('Speech ended');
+        // console.log('Speech ended');
       };
       
       utterance.onerror = (event) => {
-        console.error('Speech error:', event.error);
+        // console.error('Speech error:', event.error);
         if (event.error === 'not-allowed') {
-          console.log('Speech not allowed - user interaction required first');
+          // console.log('Speech not allowed - user interaction required first');
           speechAllowed = false;
         }
       };
@@ -515,7 +515,7 @@ export async function GET(request: Request) {
       speechSynthesis.speak(utterance);
       
     } catch (error) {
-      console.error('Text-to-speech error:', error);
+      // console.error('Text-to-speech error:', error);
     }
   }
   
@@ -532,9 +532,9 @@ export async function GET(request: Request) {
       testUtterance.volume = 0;
       speechSynthesis.speak(testUtterance);
       speechSynthesis.cancel();
-      console.log('Speech synthesis initialized');
+      // console.log('Speech synthesis initialized');
     } catch (error) {
-      console.error('Failed to initialize speech:', error);
+      // console.error('Failed to initialize speech:', error);
     }
   }
   
@@ -563,12 +563,12 @@ export async function GET(request: Request) {
 
   // Show email collection form before booking
   function showEmailCollectionForm(bubbleDiv, bookingType) {
-    console.log("📧 [EMAIL FORM] Creating email collection form for booking type:", bookingType);
+    // console.log("📧 [EMAIL FORM] Creating email collection form for booking type:", bookingType);
     
     const formDiv = document.createElement('div');
     formDiv.style.cssText = 'margin-top: 12px; background: white; border-radius: 8px; padding: 20px; color: #333; border: 1px solid #e5e7eb;';
     
-    console.log("📧 [EMAIL FORM] Form div created with styles");
+    // console.log("📧 [EMAIL FORM] Form div created with styles");
     
     // Form header
     const formHeader = document.createElement('div');
@@ -579,7 +579,7 @@ export async function GET(request: Request) {
     \`;
     formDiv.appendChild(formHeader);
     
-    console.log("📧 [EMAIL FORM] Form header created and added");
+    // console.log removed
     
     // Email input
     const emailDiv = document.createElement('div');
@@ -654,7 +654,7 @@ export async function GET(request: Request) {
     });
     
     submitButton.addEventListener('click', async () => {
-      console.log("🔄 [EMAIL FORM] Continue button clicked");
+      // console.log("🔄 [EMAIL FORM] Continue button clicked");
       
       // Prevent multiple clicks
       if (submitButton.disabled) return;
@@ -669,11 +669,11 @@ export async function GET(request: Request) {
       const email = emailInput.value.trim();
       const name = nameInput.value.trim();
       
-      console.log("📧 [EMAIL FORM] Collected data:", { email, name });
+      // console.log("📧 [EMAIL FORM] Collected data:", { email, name });
       
       // Validate name
       if (!name) {
-        console.log("❌ [EMAIL FORM] Name is empty");
+        // console.log("❌ [EMAIL FORM] Name is empty");
         nameInput.style.borderColor = '#ef4444';
         nameInput.focus();
         
@@ -688,15 +688,15 @@ export async function GET(request: Request) {
       // Validate email with detailed debugging
       // Using a simpler but robust email regex pattern
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      console.log("📧 [EMAIL FORM] Email string:", JSON.stringify(email));
-      console.log("📧 [EMAIL FORM] Email character codes:", email.split('').map(c => c.charCodeAt(0)));
-      console.log("📧 [EMAIL FORM] Email regex pattern:", emailRegex.toString());
-      console.log("📧 [EMAIL FORM] Email regex test result:", emailRegex.test(email));
-      console.log("📧 [EMAIL FORM] Email length check:", email.length > 0);
+      // console.log("📧 [EMAIL FORM] Email string:", JSON.stringify(email));
+      // console.log("📧 [EMAIL FORM] Email character codes:", email.split('').map(c => c.charCodeAt(0)));
+      // console.log("📧 [EMAIL FORM] Email regex pattern:", emailRegex.toString());
+      // console.log("📧 [EMAIL FORM] Email regex test result:", emailRegex.test(email));
+      // console.log("📧 [EMAIL FORM] Email length check:", email.length > 0);
       
       // Test with a known working email for comparison
       const testEmail = "test@example.com";
-      console.log("📧 [EMAIL FORM] Test email regex result:", emailRegex.test(testEmail));
+      // console.log("📧 [EMAIL FORM] Test email regex result:", emailRegex.test(testEmail));
       
       // Additional validation: check for basic email structure manually
       const hasAtSymbol = email.includes('@');
@@ -704,20 +704,20 @@ export async function GET(request: Request) {
       const hasDot = email.includes('.');
       const dotIndex = email.lastIndexOf('.');
       
-      console.log("📧 [EMAIL FORM] Manual checks:");
-      console.log("  - Has @ symbol:", hasAtSymbol);
-      console.log("  - @ index:", atIndex);
-      console.log("  - Has dot:", hasDot);
-      console.log("  - Dot index:", dotIndex);
-      console.log("  - Valid structure:", hasAtSymbol && atIndex > 0 && hasDot && dotIndex > atIndex);
+      // console.log("📧 [EMAIL FORM] Manual checks:");
+      // console.log("  - Has @ symbol:", hasAtSymbol);
+      // console.log("  - @ index:", atIndex);
+      // console.log("  - Has dot:", hasDot);
+      // console.log("  - Dot index:", dotIndex);
+      // console.log("  - Valid structure:", hasAtSymbol && atIndex > 0 && hasDot && dotIndex > atIndex);
       
       // Use a more permissive validation for now
       const isValidEmail = email && hasAtSymbol && atIndex > 0 && hasDot && dotIndex > atIndex && email.length > 5;
       
       if (!isValidEmail) {
-        console.log("❌ [EMAIL FORM] Invalid email:", email);
-        console.log("❌ [EMAIL FORM] Email is empty:", !email);
-        console.log("❌ [EMAIL FORM] Email regex failed:", !emailRegex.test(email));
+        // console.log("❌ [EMAIL FORM] Invalid email:", email);
+        // console.log("❌ [EMAIL FORM] Email is empty:", !email);
+        // console.log("❌ [EMAIL FORM] Email regex failed:", !emailRegex.test(email));
         emailInput.style.borderColor = '#ef4444';
         emailInput.focus();
         
@@ -729,7 +729,7 @@ export async function GET(request: Request) {
         return;
       }
       
-      console.log("✅ [EMAIL FORM] Email validated, storing data");
+      // console.log("✅ [EMAIL FORM] Email validated, storing data");
       
       // Store user data
       userBookingData.email = email;
@@ -743,7 +743,7 @@ export async function GET(request: Request) {
       
       // 🔥 UPDATE SESSION WITH EMAIL FOR CUSTOMER INTELLIGENCE
       try {
-        console.log("📊 [EMAIL FORM] Updating session with email for customer intelligence");
+        // console.log("📊 [EMAIL FORM] Updating session with email for customer intelligence");
         
         await sendApiRequest('chat', {
           sessionId: sessionId,
@@ -756,16 +756,16 @@ export async function GET(request: Request) {
           question: \`User provided email: \${email} for \${bookingType} booking\`
         });
         
-        console.log("✅ [EMAIL FORM] Session updated with user email for customer intelligence");
+        // console.log("✅ [EMAIL FORM] Session updated with user email for customer intelligence");
       } catch (error) {
-        console.warn("⚠️ [EMAIL FORM] Failed to update session with email:", error);
+        // console.warn("⚠️ [EMAIL FORM] Failed to update session with email:", error);
         // Don't block the booking flow if this fails
       }
       
-      console.log("📊 [EMAIL FORM] User data stored:", userBookingData);
+      // console.log("📊 [EMAIL FORM] User data stored:", userBookingData);
       
       // Show success message and calendar
-      console.log("🔄 [EMAIL FORM] Hiding form and showing calendar");
+      // console.log("🔄 [EMAIL FORM] Hiding form and showing calendar");
       formDiv.style.display = 'none';
       enableForceScrollBottom(2000);
       scrollToBottomEnhanced();
@@ -777,24 +777,24 @@ export async function GET(request: Request) {
     // Add the button to the form
     formDiv.appendChild(submitButton);
     
-    console.log("📧 [EMAIL FORM] Submit button created and added to form");
+    // console.log("📧 [EMAIL FORM] Submit button created and added to form");
     
     bubbleDiv.appendChild(formDiv);
     
-    console.log("📧 [EMAIL FORM] Form added to bubble div");
-    console.log("📧 [EMAIL FORM] Form div innerHTML:", formDiv.innerHTML.substring(0, 200) + "...");
+    // console.log("📧 [EMAIL FORM] Form added to bubble div");
+    // console.log("📧 [EMAIL FORM] Form div innerHTML:", formDiv.innerHTML.substring(0, 200) + "...");
     
     // Focus email input
     setTimeout(() => {
-      console.log("📧 [EMAIL FORM] Focusing email input");
+      // console.log("📧 [EMAIL FORM] Focusing email input");
       emailInput.focus();
     }, 300);
   }
   
   // Show booking calendar after email collection
   function showBookingCalendar(bubbleDiv, bookingType) {
-    console.log("📅 [BOOKING CALENDAR] Starting to show calendar for:", bookingType);
-    console.log("📊 [BOOKING CALENDAR] Current user data:", userBookingData);
+    // console.log("📅 [BOOKING CALENDAR] Starting to show calendar for:", bookingType);
+    // console.log("📊 [BOOKING CALENDAR] Current user data:", userBookingData);
     
     const calendarDiv = document.createElement('div');
     calendarDiv.style.cssText = 'margin-top: 12px; background: white; border-radius: 8px; padding: 16px; color: #333;';
@@ -808,7 +808,7 @@ export async function GET(request: Request) {
     \`;
     calendarDiv.appendChild(calendarHeader);
     
-    console.log("📅 [BOOKING CALENDAR] Calendar header created");
+    // console.log("📅 [BOOKING CALENDAR] Calendar header created");
     
     // Loading state
     const loadingDiv = document.createElement('div');
@@ -816,7 +816,7 @@ export async function GET(request: Request) {
     loadingDiv.innerHTML = '<div style="margin-bottom: 8px;">📅</div>Loading available times...';
     calendarDiv.appendChild(loadingDiv);
     
-    console.log("📅 [BOOKING CALENDAR] Loading state created");
+    // console.log("📅 [BOOKING CALENDAR] Loading state created");
     
     // Add calendar container
     const calendarContainer = document.createElement('div');
@@ -824,25 +824,25 @@ export async function GET(request: Request) {
     calendarContainer.style.cssText = 'display: none;';
     calendarDiv.appendChild(calendarContainer);
     
-    console.log("📅 [BOOKING CALENDAR] Calendar container created");
+    // console.log("📅 [BOOKING CALENDAR] Calendar container created");
     
     bubbleDiv.appendChild(calendarDiv);
     
-    console.log("📅 [BOOKING CALENDAR] Calendar div added to bubble");
+    // console.log("📅 [BOOKING CALENDAR] Calendar div added to bubble");
     enableForceScrollBottom(2000);
     scrollToBottomEnhanced();
     setTimeout(() => scrollToBottomEnhanced(), 120);
     setTimeout(() => scrollToBottomEnhanced(), 300);
     
     // Load calendar data
-    console.log("📅 [BOOKING CALENDAR] Starting to load calendar data in 500ms");
+    // console.log("📅 [BOOKING CALENDAR] Starting to load calendar data in 500ms");
     setTimeout(() => loadBookingCalendar(calendarContainer, loadingDiv, bookingType), 500);
   }
 
   // Load and render booking calendar with enhanced UI
   async function loadBookingCalendar(container, loadingDiv, bookingType) {
     try {
-      console.log("📅 [WIDGET CALENDAR] Loading calendar for:", bookingType);
+      // console.log("📅 [WIDGET CALENDAR] Loading calendar for:", bookingType);
       
       // Show enhanced loading state
       loadingDiv.innerHTML = '<div style="text-align: center; padding: 30px; color: #6b7280;"><div style="margin-bottom: 12px; font-size: 24px;">📅</div><div style="margin-bottom: 8px; font-weight: 500;">Loading available times...</div><div style="font-size: 13px; opacity: 0.7;">Finding the perfect slot for your ' + bookingType + '</div></div>';
@@ -929,7 +929,7 @@ export async function GET(request: Request) {
       container.appendChild(footer);
       
     } catch (error) {
-      console.error('❌ [WIDGET CALENDAR] Failed to load calendar:', error);
+      // console.error('❌ [WIDGET CALENDAR] Failed to load calendar:', error);
       loadingDiv.innerHTML = '<div style="text-align: center; padding: 20px; color: #dc3545; background: #fef2f2; border-radius: 8px; border: 1px solid #fecaca;"><div style="margin-bottom: 8px; font-size: 18px;">⚠️</div><div style="font-weight: 500; margin-bottom: 4px;">Failed to load calendar</div><div style="font-size: 13px; margin-bottom: 12px;">We\\'re having trouble loading available times</div><button onclick="sendMessage(\\'I need help scheduling my ' + bookingType + '\\')" style="background: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 13px;">Contact Support</button></div>';
     }
   }
@@ -945,7 +945,7 @@ export async function GET(request: Request) {
 
   // Show date selection (Step 1 of calendar)
   function showDateSelection(contentArea, availableDays, bookingType, stepIndicator) {
-    console.log("📅 [CALENDAR STEP 1] Showing date selection");
+    // console.log("📅 [CALENDAR STEP 1] Showing date selection");
     
     contentArea.innerHTML = '';
     
@@ -1026,7 +1026,7 @@ export async function GET(request: Request) {
       });
       
       dateCard.addEventListener('click', () => {
-        console.log("📅 [CALENDAR STEP 1] Date selected:", day.date);
+        // console.log("📅 [CALENDAR STEP 1] Date selected:", day.date); // console.log removed
         
         // Add click animation
         dateCard.style.transform = 'scale(0.95)';
@@ -1194,7 +1194,7 @@ export async function GET(request: Request) {
       });
       
       timeButton.addEventListener('click', () => {
-        console.log("📅 [CALENDAR STEP 2] Time selected:", slot.time, "for date:", selectedDay.date);
+        // console.log("📅 [CALENDAR STEP 2] Time selected:", slot.time, "for date:", selectedDay.date);
         
         // Add click animation
         timeButton.style.transform = 'scale(0.95)';
@@ -1217,16 +1217,16 @@ export async function GET(request: Request) {
   // Handle booking time selection
   async function handleBookingSelection(slot, bookingType) {
     try {
-      console.log("📅 [WIDGET BOOKING] Selected slot:", slot);
+      // console.log("📅 [WIDGET BOOKING] Selected slot:", slot);
       if (bookingInProgress) {
-        console.log('⏳ [WIDGET BOOKING] Submission in progress, ignoring duplicate click');
+        // console.log('⏳ [WIDGET BOOKING] Submission in progress, ignoring duplicate click');
         return;
       }
       bookingInProgress = true;
 
       // Validate that user email is collected
       if (!userBookingData.email) {
-        console.error("❌ [WIDGET BOOKING] No email collected");
+        // console.error("❌ [WIDGET BOOKING] No email collected");
         alert("Please provide your email address first to book an appointment.");
         return;
       }
@@ -1310,7 +1310,7 @@ export async function GET(request: Request) {
               : 'Booking confirmed: ' + bookingType + ' on ' + preferredDate + ' at ' + preferredTime
           });
 
-          console.log("✅ [WIDGET BOOKING] Customer intelligence updated with booking confirmation");
+          // console.log("✅ [WIDGET BOOKING] Customer intelligence updated with booking confirmation"); // console.log removed
           
           // Update bot mode if returned from API (Critical for switching to sales mode immediately)
           if (profileRes && profileRes.botMode) {
@@ -1335,7 +1335,7 @@ export async function GET(request: Request) {
             }, 1500);
           } else if (profileRes && profileRes.mainText) {
             if (!isOpen) {
-                 console.log("🚪 [WIDGET BOOKING] Restoring chat interface for post-booking message");
+                 // console.log("🚪 [WIDGET BOOKING] Restoring chat interface for post-booking message");
                  toggleWidget();
             }
             setTimeout(() => {
@@ -1347,11 +1347,11 @@ export async function GET(request: Request) {
             }, 1500);
           } else {
              // Client-side fallback if backend doesn't return followUpMessage for any reason
-             console.log("⚠️ [WIDGET BOOKING] No BANT follow-up received, using client-side fallback");
+             // console.log("⚠️ [WIDGET BOOKING] No BANT follow-up received, using client-side fallback");
              
              // Ensure widget is open and visible
             if (!isOpen) {
-                 console.log("🚪 [WIDGET BOOKING] Restoring chat interface for BANT follow-up (fallback)");
+                 // console.log("🚪 [WIDGET BOOKING] Restoring chat interface for BANT follow-up (fallback)");
                  toggleWidget();
             }
 
@@ -1418,12 +1418,12 @@ export async function GET(request: Request) {
 
       } else {
         const error = await response.json();
-        console.error('❌ [WIDGET BOOKING] Booking error response:', error);
+        // console.error('❌ [WIDGET BOOKING] Booking error response:', error);
         throw new Error(error.error || error.message || 'Booking failed');
       }
 
     } catch (error) {
-      console.error('❌ [WIDGET BOOKING] Booking failed:', error);
+      // console.error('❌ [WIDGET BOOKING] Booking failed:', error);
 
       // Add error message to chat with more specific details
       let errorText = "I'm sorry, there was an issue booking that time slot.";
@@ -1450,7 +1450,7 @@ export async function GET(request: Request) {
   // Expose simple booking management helpers for testing and integration
   window.appointyBooking = {
     enterRescheduleMode: function(booking) {
-      console.log('🔁 [WIDGET] Entering reschedule mode with booking:', booking);
+      // console.log('🔁 [WIDGET] Entering reschedule mode with booking:', booking);
       isRescheduleMode = true;
       currentBookingData = booking || null;
       if (!isOpen) toggleWidget();
@@ -1474,7 +1474,7 @@ export async function GET(request: Request) {
         renderMessages();
         return true;
       } catch (err) {
-        console.error('❌ [WIDGET] Cancel booking failed:', err);
+        // console.error('❌ [WIDGET] Cancel booking failed:', err); // console.error removed
         messages.push({ role: 'assistant', content: 'Sorry, I could not cancel that booking. Please try again.', timestamp: new Date().toISOString() });
         renderMessages();
         return false;
@@ -1517,12 +1517,12 @@ export async function GET(request: Request) {
     };
     
     const emoji = typeEmojis[messageType] || '🎯';
-    console.log(emoji + ' [WIDGET ' + messageType + '] Sending ' + messageType.toLowerCase() + ' message:', text.substring(0, 100) + '...');
+    // console.log(emoji + ' [WIDGET ' + messageType + '] Sending ' + messageType.toLowerCase() + ' message:', text.substring(0, 100) + '...');
     if (buttons && buttons.length > 0) {
-      console.log(emoji + ' [WIDGET ' + messageType + '] Including buttons:', buttons);
+      // console.log(emoji + ' [WIDGET ' + messageType + '] Including buttons:', buttons);
     }
     if (emailPrompt) {
-      console.log(emoji + ' [WIDGET ' + messageType + '] Including email prompt:', emailPrompt.substring(0, 50) + '...');
+      // console.log(emoji + ' [WIDGET ' + messageType + '] Including email prompt:', emailPrompt.substring(0, 50) + '...');
     }
     
     // Update conversation state tracking
@@ -1626,10 +1626,10 @@ export async function GET(request: Request) {
         .filter(Boolean).length;
       const delayMs = Math.max(4000, Math.min(wordCount * 350, 20000));
       const totalDelayMs = delayMs + 120000;
-      console.log('⏳ [WIDGET FOLLOWUP] Total followup delay (ms):', totalDelayMs, 'readerDelayMs:', delayMs, 'wordCount:', wordCount);
+      // console.log('⏳ [WIDGET FOLLOWUP] Total followup delay (ms):', totalDelayMs, 'readerDelayMs:', delayMs, 'wordCount:', wordCount);
       setTimeout(() => {
         messages.push(proactiveMessage);
-        console.log('📝 [WIDGET PROACTIVE] Followup message added after delay. Total messages:', messages.length);
+        // console.log('📝 [WIDGET PROACTIVE] Followup message added after delay. Total messages:', messages.length);
         renderMessages();
         scrollToBottom();
         startFollowupTimer();
@@ -1638,51 +1638,51 @@ export async function GET(request: Request) {
     }
 
     messages.push(proactiveMessage);
-    console.log('📝 [WIDGET PROACTIVE] Proactive message added to messages array. Total messages:', messages.length);
+    // console.log('📝 [WIDGET PROACTIVE] Proactive message added to messages array. Total messages:', messages.length);
     
     // Auto-open chat if configured and currently closed
     if (config.autoOpenProactive && !isOpen) {
-      console.log('🚪 [WIDGET PROACTIVE] Auto-opening chat widget for proactive message');
+      // console.log('🚪 [WIDGET PROACTIVE] Auto-opening chat widget for proactive message');
       toggleWidget();
       // Small delay to ensure widget is opened before rendering
       setTimeout(() => {
         renderMessages();
       }, 100);
     } else if (isOpen) {
-      console.log('🎨 [WIDGET PROACTIVE] Chat already open, rendering proactive message');
+      // console.log('🎨 [WIDGET PROACTIVE] Chat already open, rendering proactive message');
       // Re-render messages if chat is already open
       renderMessages();
     } else {
-      console.log('🔒 [WIDGET PROACTIVE] Auto-open disabled, not opening chat for proactive message');
+      // console.log('🔒 [WIDGET PROACTIVE] Auto-open disabled, not opening chat for proactive message');
     }
     
     // Only speak if user has already interacted with the page
     if (config.voiceEnabled && speechAllowed) {
-      console.log('🔊 [WIDGET PROACTIVE] Speaking proactive message (user interaction detected)');
+      // console.log('🔊 [WIDGET PROACTIVE] Speaking proactive message (user interaction detected)');
       // Initialize voices first, then speak
       initializeVoices().then(() => {
         // Small delay to ensure chat is open and visible
         setTimeout(() => {
           speakText(text, true);
-          console.log('🎵 [WIDGET PROACTIVE] Speech initiated for proactive message - timer continues independently');
+          // console.log('🎵 [WIDGET PROACTIVE] Speech initiated for proactive message - timer continues independently');
         }, 500);
       });
     } else if (config.voiceEnabled) {
-      console.log('🔇 [WIDGET PROACTIVE] Proactive message voice disabled - waiting for user interaction');
+      // console.log('🔇 [WIDGET PROACTIVE] Proactive message voice disabled - waiting for user interaction');
     }
     
     // Update bubble if chat is closed (shouldn't happen with auto-open, but just in case)
     if (!isOpen) {
-      console.log('🔔 [WIDGET PROACTIVE] Updating bubble for closed chat');
+      // console.log('🔔 [WIDGET PROACTIVE] Updating bubble for closed chat'); // console.log removed
       updateBubble();
     }
     
     // Start follow-up timer after proactive message unless explicitly suppressed
     if (messageType !== 'CONTEXTUAL_SINGLE') {
-      console.log('⏰ [WIDGET PROACTIVE] Starting follow-up timer after proactive message - runs independently of speech');
+      // console.log('⏰ [WIDGET PROACTIVE] Starting follow-up timer after proactive message - runs independently of speech'); // console.log removed
       startFollowupTimer();
     } else {
-      console.log('⏹️ [WIDGET PROACTIVE] Skipping follow-up timer for single contextual message');
+      // console.log('⏹️ [WIDGET PROACTIVE] Skipping follow-up timer for single contextual message'); // console.log removed
     }
     if (ONBOARDING_ONLY) {
       onboardingProactiveSent = true;
@@ -1693,7 +1693,7 @@ export async function GET(request: Request) {
   function detectPageChange() {
     const newUrl = window.location.href;
     if (newUrl !== currentPageUrl) {
-      console.log('[ChatWidget] Page changed from', currentPageUrl, 'to', newUrl);
+      // console.log('[ChatWidget] Page changed from', currentPageUrl, 'to', newUrl); // console.log removed
       currentPageUrl = newUrl;
       isPageContextLoaded = false;
       
@@ -1708,17 +1708,17 @@ export async function GET(request: Request) {
   // Load page-specific context
   async function loadPageContext() {
     if (isPageContextLoaded || isPageContextLoading) {
-      console.log('📋 [WIDGET CONTEXT] Page context already loaded, skipping');
+      // console.log('📋 [WIDGET CONTEXT] Page context already loaded, skipping'); // console.log removed
       return;
     }
     
     try {
       isPageContextLoading = true;
-      console.log('🔍 [WIDGET CONTEXT] Loading context for page:', currentPageUrl);
+      // console.log('🔍 [WIDGET CONTEXT] Loading context for page:', currentPageUrl); // console.log removed
       
       // Extract page summary
       const pageSummary = extractPageSummary();
-      console.log('📄 [WIDGET CONTEXT] Page summary extracted:', pageSummary);
+      // console.log('📄 [WIDGET CONTEXT] Page summary extracted:', pageSummary); // console.log removed
       
       // Get page-specific proactive message
       const data = await sendApiRequest('chat', {
@@ -1732,7 +1732,7 @@ export async function GET(request: Request) {
         // Don't specify adminId - let the API extract it from the API key
       });
       
-      console.log('📨 [WIDGET CONTEXT] API response for proactive request:', data);
+      // console.log('📨 [WIDGET CONTEXT] API response for proactive request:', data);
       
       // Update bot mode indicator
       if (data.botMode) {
@@ -1740,13 +1740,13 @@ export async function GET(request: Request) {
       }
       
       if (data.mainText) {
-        console.log('✉️ [WIDGET CONTEXT] Received proactive message from API:', data.mainText.substring(0, 100) + '...');
+        // console.log('✉️ [WIDGET CONTEXT] Received proactive message from API:', data.mainText.substring(0, 100) + '...'); // console.log removed
         // In onboarding-only mode, suppress generic proactive message so initializeChat can lead with detail-first prompt
         if (ONBOARDING_ONLY) {
-          console.log('🛑 [WIDGET CONTEXT] Onboarding-only mode: suppressing generic proactive message');
+          // console.log('🛑 [WIDGET CONTEXT] Onboarding-only mode: suppressing generic proactive message'); // console.log removed
         } else if (config.autoOpenProactive || isOpen) {
           const reason = isOpen ? '💬 [WIDGET CONTEXT] Chat is open, rendering proactive message' : '🎯 [WIDGET CONTEXT] Auto-open enabled, sending proactive message';
-          console.log(reason);
+          // console.log(reason); // console.log removed
           const assistantCountBefore = messages.filter((m) => m && m.role === 'assistant').length;
           sendProactiveMessage(data.mainText, data.buttons || [], data.emailPrompt || '', 'PROACTIVE');
           // Suppress secondary follow-up for very first bot message
@@ -1761,17 +1761,17 @@ export async function GET(request: Request) {
             );
           }
         } else {
-          console.log('🔒 [WIDGET CONTEXT] Auto-open disabled and chat closed, not sending proactive message');
+          // console.log('🔒 [WIDGET CONTEXT] Auto-open disabled and chat closed, not sending proactive message'); // console.log removed
         }
         isPageContextLoaded = true;
-        console.log('✅ [WIDGET CONTEXT] Page context loaded successfully');
-        console.log('🔀 [WIDGET FLOW] ===== INITIAL PROACTIVE MESSAGE FLOW COMPLETE =====');
+        // console.log('✅ [WIDGET CONTEXT] Page context loaded successfully'); // console.log removed
+        // console.log('🔀 [WIDGET FLOW] ===== INITIAL PROACTIVE MESSAGE FLOW COMPLETE ====='); // console.log removed
       } else {
-        console.log('❌ [WIDGET CONTEXT] No proactive message received from API');
-        console.log('🔍 [WIDGET CONTEXT] Full API response:', data);
+        // console.log('❌ [WIDGET CONTEXT] No proactive message received from API'); // console.log removed
+        // console.log('🔍 [WIDGET CONTEXT] Full API response:', data); // console.log removed
       }
     } catch (error) {
-      console.error('❌ [WIDGET CONTEXT] Failed to load page context:', error);
+      // console.error('❌ [WIDGET CONTEXT] Failed to load page context:', error); // console.log removed
     } finally {
       isPageContextLoading = false;
     }
@@ -1782,7 +1782,7 @@ export async function GET(request: Request) {
     const indicator = document.getElementById('appointy-bot-mode-indicator');
     if (!indicator) return;
     
-    console.log('[Widget] Updating bot mode indicator:', { botMode, userEmail });
+    // console.log('[Widget] Updating bot mode indicator:', { botMode, userEmail });
     if (ONBOARDING_ONLY) {
       indicator.style.backgroundColor = '#10b981';
       indicator.title = 'Onboarding Mode';
@@ -1824,27 +1824,27 @@ export async function GET(request: Request) {
   // Initialize mirror iframe
   function initializeMirror() {
     if (!mirrorEnabled || !isOpen) {
-      console.log('🔍 [WIDGET MIRROR] Mirror not enabled or widget not open', { mirrorEnabled, isOpen });
+      // console.log('🔍 [WIDGET MIRROR] Mirror not enabled or widget not open', { mirrorEnabled, isOpen });
       return;
     }
     
-    console.log('🔍 [WIDGET MIRROR] Initializing page mirror');
+    // console.log('🔍 [WIDGET MIRROR] Initializing page mirror');
     
     mirrorIframe = document.getElementById('appointy-mirror');
     if (!mirrorIframe) {
-      console.error('❌ [WIDGET MIRROR] Mirror iframe element not found!');
+      // console.error('❌ [WIDGET MIRROR] Mirror iframe element not found!');
       return;
     }
     
-    console.log('✅ [WIDGET MIRROR] Mirror iframe element found');
+    // console.log('✅ [WIDGET MIRROR] Mirror iframe element found');
     
     // Load current page in mirror
     mirrorIframe.src = window.location.href;
-    console.log('🔄 [WIDGET MIRROR] Loading mirror with URL:', window.location.href);
+    // console.log('🔄 [WIDGET MIRROR] Loading mirror with URL:', window.location.href);
     
     // Add load event listener
     mirrorIframe.addEventListener('load', () => {
-      console.log('✅ [WIDGET MIRROR] Mirror iframe loaded successfully');
+      // console.log('✅ [WIDGET MIRROR] Mirror iframe loaded successfully');
       
       // Make mirror more visible for testing
       mirrorIframe.style.opacity = '1';
@@ -1899,7 +1899,7 @@ export async function GET(request: Request) {
       try {
         mirrorIframe.contentWindow.postMessage(scrollData, window.location.origin);
       } catch (error) {
-        console.warn('[WIDGET MIRROR] Failed to send scroll update:', error);
+        // console.warn('[WIDGET MIRROR] Failed to send scroll update:', error);
       }
       
       scrollRaf = null;
@@ -1935,7 +1935,7 @@ export async function GET(request: Request) {
   
   // Setup smart scroll detection
   function setupSmartScrollDetection() {
-    console.log('🧠 [WIDGET SCROLL] Setting up smart scroll detection');
+    // console.log('🧠 [WIDGET SCROLL] Setting up smart scroll detection');
     
     function handleScroll() {
       const currentTime = Date.now();
@@ -1947,7 +1947,7 @@ export async function GET(request: Request) {
         lastScrollTime = currentTime;
         lastScrollPosition = currentScrollPosition;
         
-        console.log('📜 [WIDGET SCROLL] User is actively scrolling - delaying messages');
+        // console.log('📜 [WIDGET SCROLL] User is actively scrolling - delaying messages');
         
         // Clear any existing timeout
         clearTimeout(scrollTimeout);
@@ -1974,7 +1974,7 @@ export async function GET(request: Request) {
       const currentSection = getCurrentVisibleSection();
       const viewportContext = getViewportContext();
       
-      console.log('🎯 [WIDGET SCROLL] Scroll stopped on section:', currentSection);
+      // console.log('🎯 [WIDGET SCROLL] Scroll stopped on section:', currentSection);
       
       if (currentSection && viewportContext.visibleElements.length > 0) {
         const sectionData = {
@@ -2038,19 +2038,19 @@ export async function GET(request: Request) {
     if (ONBOARDING_ONLY) {
       return null;
     }
-    console.log('🔀 [WIDGET FLOW] ===== SCHEDULING AI CONTEXTUAL QUESTION GENERATION =====');
+    // console.log('🔀 [WIDGET FLOW] ===== SCHEDULING AI CONTEXTUAL QUESTION GENERATION =====');
     try {
-      console.log('🤖 [WIDGET AI] Scheduling contextual question generation for:', sectionName);
+      // console.log('🤖 [WIDGET AI] Scheduling contextual question generation for:', sectionName);
       
       // Check if another contextual message delay is already active
       if (contextualMessageDelayActive) {
-        console.log('⏸️ [WIDGET AI] Another contextual message delay is active, skipping AI question');
+        // console.log('⏸️ [WIDGET AI] Another contextual message delay is active, skipping AI question');
         return null;
       }
       
       // Set delay flag to prevent other contextual messages
       contextualMessageDelayActive = true;
-      console.log('🚩 [WIDGET AI] Setting contextualMessageDelayActive flag to prevent interference');
+      // console.log('🚩 [WIDGET AI] Setting contextualMessageDelayActive flag to prevent interference');
       
       // Enhanced content context for AI with richer data
       const contentForAi = {
@@ -2103,7 +2103,7 @@ export async function GET(request: Request) {
 
       // Wait 10 seconds before making the API request for contextual message
       setTimeout(async () => {
-        console.log('🎯 [WIDGET AI] 10-second delay complete, NOW making API request for contextual message');
+        // console.log('🎯 [WIDGET AI] 10-second delay complete, NOW making API request for contextual message'); // console.log removed
         try {
           const data = await sendApiRequest('chat', {
             sessionId: sessionId,
@@ -2133,24 +2133,24 @@ export async function GET(request: Request) {
             const buttons = data.buttons || [];
             const emailPrompt = data.emailPrompt || '';
 
-            console.log('✅ [WIDGET AI] AI generated single contextual message:', mainText);
+            // console.log('✅ [WIDGET AI] AI generated single contextual message:', mainText);
             sendProactiveMessage(mainText, buttons, emailPrompt, 'CONTEXTUAL_SINGLE');
             contextualMessageDelayActive = false;
-            console.log('🔀 [WIDGET FLOW] ===== SINGLE CONTEXTUAL MESSAGE FLOW COMPLETE =====');
+            // console.log('🔀 [WIDGET FLOW] ===== SINGLE CONTEXTUAL MESSAGE FLOW COMPLETE =====');
             return mainText;
           } else {
-            console.log('❌ [WIDGET AI] No valid response from API for contextual message');
+            // console.log('❌ [WIDGET AI] No valid response from API for contextual message');
             contextualMessageDelayActive = false;
           }
         } catch (error) {
-          console.error('❌ [WIDGET AI] Error making API request for contextual message:', error);
+          // console.error('❌ [WIDGET AI] Error making API request for contextual message:', error);
           contextualMessageDelayActive = false;
         }
       }, 60000);
 
       return true;
   } catch (error) {
-    console.warn('⚠️ [WIDGET AI] Error in AI question generation setup:', error);
+    // console.warn('⚠️ [WIDGET AI] Error in AI question generation setup:', error);
     contextualMessageDelayActive = false;
   }
   return null;
@@ -2224,7 +2224,7 @@ export async function GET(request: Request) {
           "Curious about our ROI or want to see a cost comparison?"
         ];
         question = questions[Math.floor(Math.random() * questions.length)];
-        console.log('🎯 [WIDGET SCROLL] Matched PRICING section');
+        // console.log('🎯 [WIDGET SCROLL] Matched PRICING section');
       } 
       else if (sectionLower.includes('feature') || sectionLower.includes('benefit')) {
         const questions = [
@@ -2244,7 +2244,7 @@ export async function GET(request: Request) {
           "How do these results compare to your current situation?"
         ];
         question = questions[Math.floor(Math.random() * questions.length)];
-        console.log('🎯 [WIDGET SCROLL] Matched TESTIMONIALS section');
+        // console.log('🎯 [WIDGET SCROLL] Matched TESTIMONIALS section');
       }
       else if (sectionLower.includes('contact') || sectionLower.includes('form') || viewportContext.visibleElements.some(el => el.isForm)) {
         const questions = [
@@ -2254,7 +2254,7 @@ export async function GET(request: Request) {
           "What's the best way to get you set up?"
         ];
         question = questions[Math.floor(Math.random() * questions.length)];
-        console.log('🎯 [WIDGET SCROLL] Matched CONTACT section');
+        // console.log('🎯 [WIDGET SCROLL] Matched CONTACT section');
       }
       else if (sectionLower.includes('hero') || scrollPercentage < 20) {
         const questions = [
@@ -2264,7 +2264,7 @@ export async function GET(request: Request) {
           "What challenges are you hoping to solve?"
         ];
         question = questions[Math.floor(Math.random() * questions.length)];
-        console.log('🎯 [WIDGET SCROLL] Matched HERO section');
+        // console.log('🎯 [WIDGET SCROLL] Matched HERO section'); // console.log removed
       }
       else {
         // Generic contextual questions based on visible content
@@ -2315,17 +2315,17 @@ export async function GET(request: Request) {
         const buttons = data.buttons || [];
         const emailPrompt = data.emailPrompt || '';
         
-        console.log('🎯 [WIDGET SCROLL] Received scroll-based response, adding 2-minute delay before displaying');
+        // console.log('🎯 [WIDGET SCROLL] Received scroll-based response, adding 2-minute delay before displaying'); // console.log removed
         
         // Add 2-minute delay before displaying the response
         setTimeout(() => {
           // Abort if user has become active during the delay
           if (userIsActive) {
-            console.log('🛑 [WIDGET SCROLL] User became active during delay, aborting scroll-based message');
+            // console.log('🛑 [WIDGET SCROLL] User became active during delay, aborting scroll-based message'); // console.log removed
             return;
           }
 
-          console.log('🎯 [WIDGET SCROLL] 2-minute delay complete, now displaying message');
+          // console.log('🎯 [WIDGET SCROLL] 2-minute delay complete, now displaying message'); // console.log removed
           
           // Create structured contextual question data
           const contextualQuestionData = {
@@ -2341,13 +2341,13 @@ export async function GET(request: Request) {
           
           // Start auto-response timer for contextual questions
           if (buttons && buttons.length > 0) {
-            console.log('🕐 [WIDGET AUTO] Starting 60-second auto-response timer for contextual question');
+            // console.log('🕐 [WIDGET AUTO] Starting 60-second auto-response timer for contextual question'); // console.log removed
             startAutoResponseTimer(contextualQuestionData);
           }
         }, 120000); // 2-minute delay before displaying the response
       }
     } catch (error) {
-      console.error('❌ [WIDGET SCROLL] Failed to send scroll-based question:', error);
+      // console.error('❌ [WIDGET SCROLL] Failed to send scroll-based question:', error); // console.log removed
     }
   }
 
@@ -2355,7 +2355,7 @@ export async function GET(request: Request) {
   function setupSectionObserver() {
     if (!window.IntersectionObserver) return;
     
-    console.log('👁️ [WIDGET MIRROR] Setting up section observer');
+    // console.log('👁️ [WIDGET MIRROR] Setting up section observer'); // console.log removed
     
     // Observe major page sections
     const sectionsToObserve = [
@@ -2377,7 +2377,7 @@ export async function GET(request: Request) {
           const sectionName = getSectionName(element);
           
           if (sectionName !== currentViewportSection) {
-            console.log('📍 [WIDGET MIRROR] User entered section:', sectionName);
+            // console.log('📍 [WIDGET MIRROR] User entered section:', sectionName);
             currentViewportSection = sectionName;
             onSectionEnter(sectionName, element);
           }
@@ -2688,27 +2688,27 @@ export async function GET(request: Request) {
     const questions = [];
     const { sectionName, sectionContent, viewportContext } = sectionData;
     
-    console.log('🤔 [WIDGET QUESTIONS] Generating questions for section:', sectionName);
-    console.log('📊 [WIDGET QUESTIONS] Viewport context:', viewportContext);
+    // console.log('🤔 [WIDGET QUESTIONS] Generating questions for section:', sectionName); // console.log removed
+    // console.log('📊 [WIDGET QUESTIONS] Viewport context:', viewportContext); // console.log removed
     
     // Check if another contextual message delay is already active
     if (contextualMessageDelayActive) {
-      console.log('⏸️ [WIDGET QUESTIONS] Another contextual message delay is active, skipping AI question generation');
+      // console.log('⏸️ [WIDGET QUESTIONS] Another contextual message delay is active, skipping AI question generation'); // console.log removed
       return;
     }
     
-    console.log('🔀 [WIDGET FLOW] ===== STARTING CONTEXTUAL QUESTION GENERATION =====');
+    // console.log('🔀 [WIDGET FLOW] ===== STARTING CONTEXTUAL QUESTION GENERATION ====='); // console.log removed
     
     // Try AI first for more intelligent questions
     let aiQuestion = null;
     try {
       aiQuestion = await generateAiContextualQuestion(sectionName, viewportContext, sectionData.scrollPercentage, sectionData);
       if (aiQuestion) {
-        console.log('🤖 [WIDGET QUESTIONS] AI successfully generated and displayed question - returning');
+        // console.log('🤖 [WIDGET QUESTIONS] AI successfully generated and displayed question - returning'); // console.log removed
         return; // AI function already handles display with proper timing, no need to continue
       }
     } catch (error) {
-      console.warn('⚠️ [WIDGET QUESTIONS] AI generation failed, using fallback:', error);
+      // console.warn('⚠️ [WIDGET QUESTIONS] AI generation failed, using fallback:', error); // console.log removed
     }
     
     // Fallback to rule-based questions (case-insensitive)

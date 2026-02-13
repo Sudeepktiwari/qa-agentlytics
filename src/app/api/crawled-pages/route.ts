@@ -161,7 +161,7 @@ export async function GET(request: NextRequest) {
       pageSize,
     });
   } catch (error) {
-    console.error("Error fetching crawled pages:", error);
+    // console.error removed
     return NextResponse.json(
       { error: "Failed to fetch pages" },
       { status: 500 },
@@ -177,24 +177,24 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   let client: MongoClient | null = null;
   try {
-    console.log("[API] POST /api/crawled-pages - Starting request");
+    // console.log removed
 
     // Verify API key
     const apiKey = request.headers.get("x-api-key");
     if (!apiKey) {
-      console.log("[API] No API key provided");
+      // console.log removed
       return NextResponse.json({ error: "API key required" }, { status: 401 });
     }
 
-    console.log("[API] Verifying API key...");
+    // console.log removed
     const verification = await verifyApiKey(apiKey);
     if (!verification) {
-      console.log("[API] API key verification failed");
+      // console.log removed
       return NextResponse.json({ error: "Invalid API key" }, { status: 401 });
     }
 
     const adminId = verification.adminId;
-    console.log("[API] API key verified for adminId:", adminId);
+    // console.log removed
 
     const body = await request.json();
     assertBodyConstraints(body, { maxBytes: 256 * 1024, maxDepth: 10 });
@@ -209,9 +209,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
     }
     const { url, regenerate } = parsed.data;
-    console.log("[API] Request data:", { url, regenerate });
+    // console.log removed
 
-    console.log("[API] Connecting to MongoDB...");
+    // console.log removed
     client = new MongoClient(process.env.MONGODB_URI!);
     await client.connect();
     const db = client.db("test");
@@ -219,13 +219,7 @@ export async function POST(request: NextRequest) {
 
     // Always use Pinecone chunk data for summary generation
     const vectorCollection = db.collection("pinecone_vectors");
-    console.log(
-      "[API] Forcing use of pinecone_vectors for summary generation:",
-      {
-        adminId,
-        filename: url,
-      },
-    );
+    // console.log removed
 
     // Get all vector IDs for this URL and admin
     const vectorDocs = await vectorCollection
@@ -283,9 +277,7 @@ export async function POST(request: NextRequest) {
     // Check if we have the raw text in crawled_pages (which might preserve [SECTION] markers better)
     const existingPage = await collection.findOne({ adminId, url });
     if (existingPage && existingPage.text && existingPage.text.length > 50) {
-      console.log(
-        "[API] Found raw text in crawled_pages, using it instead of Pinecone chunks",
-      );
+      // console.log removed
       reconstructedContent = existingPage.text;
     }
 
@@ -303,21 +295,15 @@ export async function POST(request: NextRequest) {
     // Inject sectionContent from raw text if available (for both direct and chunked)
     // This ensures [SECTION] markers are respected if present in reconstructedContent
     const blocks = parseSectionBlocks(reconstructedContent);
-    console.log(
-      `[API] Parsed ${blocks.length} sections from reconstructedContent`,
-    );
+    // console.log removed
 
     let structuredSummary;
 
     if (blocks.length > 0) {
-      console.log(
-        "[API] Using parsed blocks to generate section-aware summary...",
-      );
+      // console.log removed
       structuredSummary = await generateSummaryFromSections(blocks, adminId);
     } else {
-      console.log(
-        "[API] No section markers found, falling back to standard generation...",
-      );
+      // console.log removed
       if (estimatedTokens <= maxTokensForDirect) {
         structuredSummary = await generateDirectSummary(
           reconstructedContent,
@@ -349,16 +335,12 @@ export async function POST(request: NextRequest) {
       finalStructuredSummary.sections.length > 0
     ) {
       const firstSection = finalStructuredSummary.sections[0];
-      console.log(
-        `[API] PRE-SAVE CHECK: Section 1 has content? ${!!firstSection.sectionContent}, Length: ${firstSection.sectionContent?.length || 0}`,
-      );
+      // console.log removed
       if (!firstSection.sectionContent) {
-        console.warn(
-          "[API] WARNING: sectionContent is MISSING in finalStructuredSummary before save!",
-        );
+        // console.warn removed
       }
     } else {
-      console.warn("[API] WARNING: No sections in finalStructuredSummary!");
+      // console.warn removed
     }
 
     if (
@@ -391,7 +373,7 @@ export async function POST(request: NextRequest) {
       { $set: newPageEntry },
       { upsert: true },
     );
-    console.log("[API] Upserted crawled_pages entry from Pinecone chunks");
+    // console.log removed
 
     const pageDoc = await collection.findOne({ adminId, url });
     if (pageDoc && pageDoc._id) {
@@ -418,11 +400,8 @@ export async function POST(request: NextRequest) {
       source: "pinecone_chunks",
     });
   } catch (error) {
-    console.error("Error generating summary:", error);
-    console.error("Error details:", {
-      message: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-    });
+    // console.error removed
+    // console.error removed
     return NextResponse.json(
       {
         error: "Failed to generate summary",
@@ -508,7 +487,7 @@ export async function DELETE(request: NextRequest) {
             deletedCount++;
           }
         } catch (err) {
-          console.error(`Error deleting ${targetUrl}:`, err);
+          // console.error removed
           errors.push(
             `Failed to delete ${targetUrl}: ${err instanceof Error ? err.message : String(err)}`,
           );
@@ -529,7 +508,7 @@ export async function DELETE(request: NextRequest) {
       errors: errors.length > 0 ? errors : undefined,
     });
   } catch (error) {
-    console.error("Error deleting page:", error);
+    // console.error removed
     return NextResponse.json(
       { error: "Failed to delete page" },
       { status: 500 },
@@ -544,7 +523,7 @@ export async function DELETE(request: NextRequest) {
 // Helper function for direct summary generation (smaller content)
 async function generateDirectSummary(content: string, adminId?: string) {
   try {
-    console.log("[API] Calling OpenAI for direct summary generation...");
+    // console.log removed
     const summaryResponse = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
@@ -636,17 +615,14 @@ IMPORTANT REQUIREMENTS:
 
     const summaryContent = summaryResponse.choices[0]?.message?.content;
     if (!summaryContent) {
-      console.log("[API] OpenAI returned empty response");
+      // console.log removed
       return null;
     }
 
     const parsed = JSON.parse(summaryContent);
     const normalized = normalizeStructuredSummary(parsed);
 
-    console.log(
-      "[API] Direct summary sections keys:",
-      normalized.sections.map((s: any) => Object.keys(s)),
-    );
+    // console.log removed
 
     // Inject sectionContent from raw text if available
     const blocks = parseSectionBlocks(content);
@@ -707,7 +683,7 @@ IMPORTANT REQUIREMENTS:
 
     return await enrichStructuredSummary(normalized, content, adminId);
   } catch (error) {
-    console.error("[API] Direct summary generation failed:", error);
+    // console.error removed
     return null;
   }
 }
@@ -758,7 +734,7 @@ async function generateSummaryFromSections(blocks: any[], adminId?: string) {
         metadataResponse.choices[0]?.message?.content || "{}",
       );
     } catch (e) {
-      console.error("[API] Failed to parse metadata JSON", e);
+      // console.error removed
     }
 
     // 2. Generate details for EACH section (Parallel with concurrency limit)
@@ -767,9 +743,7 @@ async function generateSummaryFromSections(blocks: any[], adminId?: string) {
 
     for (let i = 0; i < blocks.length; i += concurrency) {
       const batch = blocks.slice(i, i + concurrency);
-      console.log(
-        `[API] Processing section batch ${i / concurrency + 1}/${Math.ceil(blocks.length / concurrency)}`,
-      );
+      // console.log removed
 
       const batchPromises = batch.map(async (block) => {
         const prompt = `Analyze this specific website section and generate lead/sales questions.
@@ -852,7 +826,7 @@ async function generateSummaryFromSections(blocks: any[], adminId?: string) {
       adminId,
     );
   } catch (error) {
-    console.error("[API] generateSummaryFromSections failed:", error);
+    // console.error removed
     return null;
   }
 }
@@ -860,9 +834,7 @@ async function generateSummaryFromSections(blocks: any[], adminId?: string) {
 // Helper function for chunked summary generation (large content)
 async function generateChunkedSummary(chunks: any[], adminId?: string) {
   try {
-    console.log(
-      `[API] Starting chunked summary generation for ${chunks.length} chunks...`,
-    );
+    // console.log removed
 
     // Step 1: Generate individual summaries for chunks (process in batches of 5)
     const chunkSummaries = [];
@@ -870,11 +842,7 @@ async function generateChunkedSummary(chunks: any[], adminId?: string) {
 
     for (let i = 0; i < chunks.length; i += batchSize) {
       const batch = chunks.slice(i, i + batchSize);
-      console.log(
-        `[API] Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(
-          chunks.length / batchSize,
-        )}`,
-      );
+      // console.log removed
 
       const batchPromises = batch.map(async (chunk, index) => {
         const chunkContent = chunk.text || chunk.content || "";
@@ -921,10 +889,10 @@ Focus on: business features, pain points, solutions, target customers, pricing, 
       }
     }
 
-    console.log(`[API] Generated ${chunkSummaries.length} chunk summaries`);
+    // console.log removed
 
     if (chunkSummaries.length === 0) {
-      console.log("[API] No valid chunk summaries generated");
+      // console.log removed
       return null;
     }
 
@@ -933,9 +901,7 @@ Focus on: business features, pain points, solutions, target customers, pricing, 
     const combinedSummary = chunkSummaries
       .map((c: any) => `[CHUNK ${c.index}]: ${c.summary}`)
       .join("\n\n");
-    console.log(
-      "[API] Generating final structured summary from chunk summaries...",
-    );
+    // console.log removed
 
     const finalResponse = await openai.chat.completions.create({
       model: "gpt-4o-mini",
@@ -1025,7 +991,7 @@ IMPORTANT REQUIREMENTS:
 
     const finalContent = finalResponse.choices[0]?.message?.content;
     if (!finalContent) {
-      console.log("[API] Final summary generation failed");
+      // console.log removed
       return null;
     }
 
@@ -1066,7 +1032,7 @@ IMPORTANT REQUIREMENTS:
 
     return await enrichStructuredSummary(normalized, combinedSummary, adminId);
   } catch (error) {
-    console.error("[API] Chunked summary generation failed:", error);
+    // console.error removed
     return null;
   }
 }

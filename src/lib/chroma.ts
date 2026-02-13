@@ -6,10 +6,10 @@ import { getDb } from "./mongo";
 // - PINECONE_CONTROLLER_HOST (your Pinecone environment's controller host, e.g., https://controller.us-east1-gcp.pinecone.io)
 
 if (!process.env.PINECONE_KEY) {
-  console.error("❌ PINECONE_KEY is not set in environment variables!");
+  // console.error removed
 }
 if (!process.env.PINECONE_INDEX) {
-  console.error("❌ PINECONE_INDEX is not set in environment variables!");
+  // console.error removed
 }
 
 const pinecone = new Pinecone({
@@ -17,7 +17,7 @@ const pinecone = new Pinecone({
 });
 const index = pinecone.index(process.env.PINECONE_INDEX!);
 
-console.log("[DEBUG] PINECONE_INDEX:", process.env.PINECONE_INDEX);
+// console.log removed
 
 // Helper to build Pinecone vector objects
 function buildVectors(
@@ -38,12 +38,9 @@ export async function addChunks(
   metadata: { filename: string; chunkIndex: number; adminId: string }[],
 ) {
   const vectors = buildVectors(chunks, embeddings, metadata);
-  console.log(
-    "[Crawl] Upserting vector IDs:",
-    vectors.map((v) => v.id),
-  );
+  // console.log removed
   const upsertResponse = await index.upsert(vectors);
-  console.log("[Crawl] Pinecone upsert response:", upsertResponse);
+  // console.log removed
   // Track in MongoDB
   const db = await getDb();
   const pineconeVectors = db.collection("pinecone_vectors");
@@ -56,13 +53,11 @@ export async function addChunks(
   }));
   if (docs.length > 0) {
     try {
-      console.log(
-        `[Crawl] Inserting ${docs.length} vector records into MongoDB...`,
-      );
+      // console.log removed
       const result = await pineconeVectors.insertMany(docs);
-      console.log(`[Crawl] MongoDB insert result:`, result.insertedCount);
+      // console.log removed
     } catch (err) {
-      console.error("[Crawl] MongoDB insertMany error:", err);
+      // console.error removed
       throw err;
     }
   }
@@ -91,11 +86,7 @@ export async function querySimilarChunks(
 
   const result = await index.query(queryParams);
 
-  console.log(
-    `[Pinecone] Query (adminId: ${effectiveAdminId}, mode: ${searchMode}) returned ${
-      result.matches?.length || 0
-    } matches`,
-  );
+  // console.log removed
 
   type PineconeMatch = {
     metadata?: { adminId?: string; chunk?: string; filename?: string };
@@ -135,16 +126,9 @@ export async function deleteDocument(filename: string, adminId?: string) {
     }
     // @ts-ignore - deleteMany supports filter in v6 but types might be tricky
     await index.deleteMany(filter);
-    console.log(
-      `[Pinecone] Deleted vectors for ${filename} using filter (adminId: ${
-        adminId || "none"
-      })`,
-    );
+    // console.log removed
   } catch (err) {
-    console.warn(
-      "[Pinecone] Delete by filter failed, falling back to ID deletion:",
-      err,
-    );
+    // console.warn removed
 
     // Fallback: Delete by IDs tracked in MongoDB
     const match = adminId ? { filename, adminId } : { filename };
@@ -154,32 +138,19 @@ export async function deleteDocument(filename: string, adminId?: string) {
       .toArray();
     const vectorIds = ids.map((d) => (d as { vectorId: string }).vectorId);
     if (vectorIds.length > 0) {
-      console.log(
-        `[Pinecone] Fallback: Deleting ${vectorIds.length} vectors by ID...`,
-      );
+      // console.log removed
       const BATCH_SIZE = 1000;
       for (let i = 0; i < vectorIds.length; i += BATCH_SIZE) {
         const batch = vectorIds.slice(i, i + BATCH_SIZE);
         try {
           await index.deleteMany(batch);
-          console.log(
-            `[Pinecone] Deleted batch ${Math.floor(i / BATCH_SIZE) + 1} (${
-              batch.length
-            } vectors)`,
-          );
+          // console.log removed
         } catch (batchErr) {
-          console.error(
-            `[Pinecone] Error deleting batch ${
-              Math.floor(i / BATCH_SIZE) + 1
-            }:`,
-            batchErr,
-          );
+          // console.error removed
         }
       }
     } else {
-      console.warn(
-        `[Pinecone] No vectors found in MongoDB for filename: ${filename} (adminId: ${adminId})`,
-      );
+      // console.warn removed
     }
   }
 
@@ -193,11 +164,7 @@ export async function deleteChunksByUrls(urls: string[], adminId?: string) {
   const db = await getDb();
   const pineconeVectors = db.collection("pinecone_vectors");
 
-  console.log(
-    `[Pinecone] Bulk deleting vectors for ${urls.length} URLs (adminId: ${
-      adminId || "none"
-    })...`,
-  );
+  // console.log removed
 
   // 1. Try deleting from Pinecone using metadata filter ($in)
   try {
@@ -207,14 +174,9 @@ export async function deleteChunksByUrls(urls: string[], adminId?: string) {
     }
     // @ts-ignore
     await index.deleteMany(filter);
-    console.log(
-      `[Pinecone] Deleted vectors for ${urls.length} URLs using batch filter`,
-    );
+    // console.log removed
   } catch (err) {
-    console.warn(
-      "[Pinecone] Batch delete by filter failed, falling back to ID deletion:",
-      err,
-    );
+    // console.warn removed
 
     // Fallback: Delete by IDs tracked in MongoDB
     const match: any = { filename: { $in: urls } };
@@ -227,26 +189,15 @@ export async function deleteChunksByUrls(urls: string[], adminId?: string) {
     const vectorIds = ids.map((d) => (d as { vectorId: string }).vectorId);
 
     if (vectorIds.length > 0) {
-      console.log(
-        `[Pinecone] Fallback: Deleting ${vectorIds.length} vectors by ID (batch)...`,
-      );
+      // console.log removed
       const BATCH_SIZE = 1000;
       for (let i = 0; i < vectorIds.length; i += BATCH_SIZE) {
         const batch = vectorIds.slice(i, i + BATCH_SIZE);
         try {
           await index.deleteMany(batch);
-          console.log(
-            `[Pinecone] Deleted batch ${Math.floor(i / BATCH_SIZE) + 1} (${
-              batch.length
-            } vectors)`,
-          );
+          // console.log removed
         } catch (batchErr) {
-          console.error(
-            `[Pinecone] Error deleting batch ${
-              Math.floor(i / BATCH_SIZE) + 1
-            }:`,
-            batchErr,
-          );
+          // console.error removed
         }
       }
     }
@@ -290,9 +241,7 @@ export async function deleteChunksByUrl(url: string, adminId?: string) {
   const vectorIds = ids.map((d) => (d as { vectorId: string }).vectorId);
 
   if (vectorIds.length > 0) {
-    console.log(
-      `[Pinecone] Cleaning up ${vectorIds.length} potentially variable URL vectors for ${url}...`,
-    );
+    // console.log removed
     // Delete from Pinecone
     const BATCH_SIZE = 1000;
     for (let i = 0; i < vectorIds.length; i += BATCH_SIZE) {
@@ -300,7 +249,7 @@ export async function deleteChunksByUrl(url: string, adminId?: string) {
       try {
         await index.deleteMany(batch);
       } catch (err) {
-        console.error(`[Pinecone] Error deleting batch cleanup:`, err);
+        // console.error removed
       }
     }
     // Delete from MongoDB
@@ -335,18 +284,16 @@ export async function getChunksByPageUrl(adminId: string, pageUrl: string) {
       "https://qa-agentlytics.vercel.app",
       "https://agentlytics.advancelytics.com",
     );
-    console.log(
-      `[getChunksByPageUrl] No chunks for QA URL ${pageUrl}, fallback to Prod URL: ${prodUrl}`,
-    );
+    // console.log removed
     ids = await findVectorsForUrl(prodUrl);
   }
 
   const vectorIds = ids.map((d) => (d as { vectorId: string }).vectorId);
-  console.log("[DEBUG] Vector IDs to fetch:", vectorIds);
+  // console.log removed
   if (vectorIds.length === 0) return [];
   // Query Pinecone for these vectors
   const result = await index.fetch(vectorIds);
-  console.log("[DEBUG] Pinecone fetch result:", result);
+  // console.log removed
   // Return the chunk text from metadata (use result.records)
   return Object.values(result.records || {}).map(
     (v: { metadata?: { chunk?: string } }) => v.metadata?.chunk || "",

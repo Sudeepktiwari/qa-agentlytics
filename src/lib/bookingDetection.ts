@@ -141,10 +141,10 @@ export function testBookingDetection() {
     "What's your pricing?" // Should not trigger
   ];
   
-  console.log('🧪 Testing booking detection...');
+  // console.log('🧪 Testing booking detection...');
   
   testCases.forEach(testCase => {
     const result = detectBookingIntent(testCase);
-    console.log(`"${testCase}" -> ${result.hasBookingRequest ? 'BOOKING' : 'NO BOOKING'} (${result.requestType}, confidence: ${result.confidence.toFixed(2)})`);
+    // console.log(`"${testCase}" -> ${result.hasBookingRequest ? 'BOOKING' : 'NO BOOKING'} (${result.requestType}, confidence: ${result.confidence.toFixed(2)})`);
   });
 }

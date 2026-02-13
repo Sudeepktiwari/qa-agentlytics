@@ -8,6 +8,6 @@ export function parseSectionBlocks(text: string) {
     const body = (m[3] || "").trim();
     blocks.push({ title, body });
   }
-  console.log(`[Parsing] Found ${blocks.length} blocks. First block title: "${blocks[0]?.title}", Body length: ${blocks[0]?.body?.length}`);
+  // console.log removed
   return blocks;
 }

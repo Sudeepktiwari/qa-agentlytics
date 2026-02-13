@@ -157,58 +157,28 @@ const Chatbot: React.FC<ChatbotProps> = ({
     return t;
   };
 
-  // Debug logging for bot mode state
-  console.log("[Chatbot] Current bot mode state:", {
-    currentBotMode,
-    currentUserEmail,
-    timestamp: new Date().toISOString(),
-  });
+  // Debug logging for bot mode state removed
 
-  // Track bot mode changes
-  useEffect(() => {
-    console.log("[Chatbot] Bot mode state changed:", {
-      currentBotMode,
-      currentUserEmail,
-      timestamp: new Date().toISOString(),
-    });
-  }, [currentBotMode, currentUserEmail]);
+  // Track bot mode changes removed
 
-  // Component mount/unmount logging
-  useEffect(() => {
-    console.log("[Chatbot] Component mounted with props:", {
-      pageUrl,
-      adminId,
-      timestamp: new Date().toISOString(),
-    });
-
-    return () => {
-      console.log("[Chatbot] Component unmounting");
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Component mount/unmount logging removed
 
   // Lead Generation Strategy: Keep followup timer running even when page is hidden
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        console.log(
-          "[LeadGen] Page hidden - preserving followup timer for continued engagement",
-        );
+        // console.log removed
         // DO NOT clear the followup timer when page becomes hidden
         // This allows us to continue engaging users even when they switch tabs
       } else {
-        console.log(
-          "[LeadGen] Page visible - user returned, updating engagement strategy",
-        );
+        // console.log removed
         // Update last user action time when they return to the page
         setLastUserAction(Date.now());
 
         // Lead Generation Strategy: If user returns and there's an active timer,
         // slightly accelerate it to re-engage them faster
         if (followupTimer.current && !followupSent) {
-          console.log(
-            "[LeadGen] User returned to page - accelerating followup timer",
-          );
+          // console.log removed
           clearTimeout(followupTimer.current);
 
           // Shorter timer since they just returned (shows renewed interest)
@@ -219,9 +189,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
             const bufferTime = 3000; // Shorter buffer for returning users
 
             if (!userIsActive && timeSinceLastAction >= bufferTime) {
-              console.log(
-                "[LeadGen] Accelerated followup triggered after user return",
-              );
+              // console.log removed
               setFollowupSent(true);
             }
           }, acceleratedDelay);
@@ -267,9 +235,6 @@ const Chatbot: React.FC<ChatbotProps> = ({
     const effectivePageUrl = isTestEnv /* && selectedLink */
       ? /* selectedLink */ "/"
       : pageUrl || getPageUrl();
-    console.log(
-      `[Chatbot] URL changed to: ${effectivePageUrl}, resetting followup state`,
-    );
     const adminIdParam = adminId ? `&adminId=${adminId}` : "";
     fetch(
       `/api/chat?sessionId=${sessionId}&pageUrl=${encodeURIComponent(
@@ -298,7 +263,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
               );
             }
           } catch (e) {
-            console.error("Error updating visited pages:", e);
+            // console.error removed
           }
         }
 
@@ -357,9 +322,6 @@ const Chatbot: React.FC<ChatbotProps> = ({
             localStorage.getItem("clearHistoryBeforeProactive") === "true";
           if (clearHistoryFirst) {
             localStorage.removeItem("clearHistoryBeforeProactive");
-            console.log(
-              "[Chatbot] Clearing chat history before showing proactive message",
-            );
 
             // Clear chat history from backend first
             fetch("/api/chat", {
@@ -371,9 +333,6 @@ const Chatbot: React.FC<ChatbotProps> = ({
               }),
             })
               .then(() => {
-                console.log(
-                  "[Chatbot] Chat history cleared, now showing proactive message",
-                );
                 // Now show the proactive message with clean history
                 return fetch("/api/chat", {
                   method: "POST",
@@ -448,7 +407,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
                 }, 30000); // 30 seconds
               })
               .catch((error) => {
-                console.error("[Chatbot] Proactive error", error);
+                // console.error removed
               });
             return;
           }
@@ -524,18 +483,8 @@ const Chatbot: React.FC<ChatbotProps> = ({
                 userEmail: data.userEmail,
                 topicsDiscussed: data.topicsDiscussed,
               };
-              console.log("[Followup] Received", {
-                type: (data.secondary as any)?.type || "unknown",
-                preview:
-                  typeof (data.secondary as any)?.mainText === "string"
-                    ? (data.secondary as any)?.mainText.slice(0, 100)
-                    : "",
-                buttonsCount: Array.isArray(secParsed.buttons)
-                  ? secParsed.buttons.length
-                  : 0,
-              });
+              // console.log removed
               setMessages((msgs) => [...msgs, secMsg]);
-              console.log("[Followup] Appended to chat");
             }
             // Start follow-up timer
             if (followupTimer.current) clearTimeout(followupTimer.current);
@@ -555,11 +504,11 @@ const Chatbot: React.FC<ChatbotProps> = ({
     // Cleanup timer on unmount
     return () => {
       if (followupTimer.current) {
-        console.log("[Chatbot] Clearing follow-up timer on unmount");
+        // console.log removed
         clearTimeout(followupTimer.current);
       }
       if (typingStopTimer.current) {
-        console.log("[Chatbot] Clearing typing stop timer on unmount");
+        // console.log removed
         clearTimeout(typingStopTimer.current);
         typingStopTimer.current = null;
       }
@@ -620,17 +569,11 @@ const Chatbot: React.FC<ChatbotProps> = ({
         0,
         800,
       );
-      console.log("[Chatbot] Found specific visible section:", {
-        tag: (mostVisibleElement as HTMLElement).tagName,
-        textPreview: contextText.substring(0, 50),
-      });
+      // console.log removed
     } else {
       // Fallback: get text from the middle of the viewport or body
       contextText = document.body.innerText.substring(0, 800);
-      console.log(
-        "[Chatbot] No specific section found, using body fallback:",
-        contextText.substring(0, 50),
-      );
+      // console.log removed
     }
 
     return contextText;
@@ -654,11 +597,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
         // EXCEPTION: First follow-up (Lead Question) should be immediate
         let timerDelay = followupCount === 0 ? 500 : 30000; // 0.5s for first, 30s for others
 
-        console.log(
-          `[Chatbot] Setting inactivity follow-up timer for ${
-            timerDelay / 1000
-          } seconds after bot message (mode: ${currentBotMode}, followup: ${followupCount})`,
-        );
+        // console.log removed
         followupTimer.current = setTimeout(() => {
           // Only send followup if user is not currently active and hasn't interacted recently
           const timeSinceLastAction = Date.now() - lastUserAction;
@@ -666,24 +605,16 @@ const Chatbot: React.FC<ChatbotProps> = ({
           const bufferTime = followupCount === 0 ? 0 : 25000; // 25 seconds to match backend suppression window
 
           if (!userIsActive && timeSinceLastAction >= bufferTime) {
-            console.log(
-              `[Chatbot] Inactivity timer triggered (${
-                timerDelay / 1000
-              }s), setting followupSent to true`,
-            );
+            // console.log removed
             setFollowupSent(true);
           } else {
-            console.log(
-              "[Chatbot] Skipping followup - user was active recently or currently typing",
-            );
+            // console.log removed
           }
         }, timerDelay);
       }
     } else if (lastMsg.role === "user") {
       if (followupTimer.current) {
-        console.log(
-          "[Chatbot] User responded, clearing inactivity follow-up timer",
-        );
+        // console.log removed
         clearTimeout(followupTimer.current);
         followupTimer.current = null;
       }
@@ -696,12 +627,12 @@ const Chatbot: React.FC<ChatbotProps> = ({
     if (followupSent && lastMsg.role === "assistant" && followupCount < 3) {
       // Additional check: don't send if user is currently active (typing)
       if (userIsActive) {
-        console.log("[Chatbot] Skipping followup - user currently active");
+        // console.log removed
         setFollowupSent(false);
         return;
       }
 
-      console.log("[Chatbot] Sending follow-up request to backend");
+      // console.log removed
       const sessionId = getSessionId();
 
       // Include visible section context for first two follow-ups (count 0 & 1)
@@ -771,13 +702,13 @@ const Chatbot: React.FC<ChatbotProps> = ({
           setFollowupCount((c) => c + 1);
         })
         .catch((err) => {
-          console.error("❌ [Chatbot] Error fetching followup:", err);
+          // console.error removed
         });
     }
     // Cleanup on unmount
     return () => {
       if (followupTimer.current) {
-        console.log("[Chatbot] Clearing inactivity follow-up timer on unmount");
+        // console.log removed
         clearTimeout(followupTimer.current);
       }
     };
@@ -797,17 +728,10 @@ const Chatbot: React.FC<ChatbotProps> = ({
     buttons: string[];
     emailPrompt: string;
   } {
-    console.log("🔬 [PARSE] Starting parseBotResponse with:", {
-      dataType: typeof data,
-      dataValue: data,
-      isString: typeof data === "string",
-      isObject: typeof data === "object" && data !== null,
-      isNull: data === null,
-      isUndefined: data === undefined,
-    });
+    // console.log removed
 
     if (!data) {
-      console.error("❌ [PARSE] No followup content received from api");
+      // console.error removed
       return {
         mainText:
           "I'm here if you need anything else! Feel free to ask me anything.",
@@ -818,43 +742,18 @@ const Chatbot: React.FC<ChatbotProps> = ({
 
     // If data is a string, try to parse as JSON, else treat as plain text
     if (typeof data === "string") {
-      console.log("📄 [PARSE] Processing string data:", {
-        stringLength: data.length,
-        stringPreview:
-          data.substring(0, 200) + (data.length > 200 ? "..." : ""),
-        looksLikeJSON: data.trim().startsWith("{") && data.trim().endsWith("}"),
-        containsButtons: data.includes('"buttons"'),
-        containsEmailPrompt: data.includes('"emailPrompt"'),
-      });
+      // console.log removed
 
       try {
         const cleanedData = cleanJsonString(data);
-        console.log("🧹 [PARSE] Cleaned JSON string:", {
-          originalLength: data.length,
-          cleanedLength: cleanedData.length,
-          cleanedPreview:
-            cleanedData.substring(0, 200) +
-            (cleanedData.length > 200 ? "..." : ""),
-          changes: data !== cleanedData,
-        });
+        // console.log removed
 
         const parsed = JSON.parse(cleanedData);
         if (
           typeof parsed === "object" &&
           (parsed.mainText || parsed.buttons || parsed.emailPrompt)
         ) {
-          console.log("✅ [PARSE] Successfully parsed JSON from string:", {
-            hasMainText: !!parsed.mainText,
-            mainTextLength: parsed.mainText ? parsed.mainText.length : 0,
-            hasButtons: !!(parsed.buttons && Array.isArray(parsed.buttons)),
-            buttonsCount: Array.isArray(parsed.buttons)
-              ? parsed.buttons.length
-              : 0,
-            buttons: parsed.buttons,
-            hasEmailPrompt: !!parsed.emailPrompt,
-            emailPrompt: parsed.emailPrompt,
-            fullParsed: parsed,
-          });
+          // console.log removed
 
           return {
             mainText: normalizeMainText(
@@ -866,55 +765,28 @@ const Chatbot: React.FC<ChatbotProps> = ({
             emailPrompt: parsed.emailPrompt || "",
           };
         } else {
-          console.log("⚠️ [PARSE] Parsed JSON but missing expected fields:", {
-            parsedType: typeof parsed,
-            parsedKeys: Object.keys(parsed || {}),
-            parsed: parsed,
-          });
+          // console.log removed
         }
       } catch (parseError) {
         // Not JSON, treat as plain text
-        console.log("❌ [PARSE] JSON parsing failed, treating as plain text:", {
-          error:
-            parseError instanceof Error
-              ? parseError.message
-              : String(parseError),
-          stringLength: data.length,
-          stringStart: data.substring(0, 100),
-        });
+        // console.log removed
       }
       // Look for JSON blocks in the text - improved regex for multi-line JSON with arrays
       const jsonMatch = data.match(/\{[\s\S]*?"buttons"[\s\S]*?\}/);
       if (jsonMatch) {
-        console.log("🔍 [PARSE] Found potential JSON block:", {
-          matchedText: jsonMatch[0],
-          matchLength: jsonMatch[0].length,
-          originalDataLength: data.length,
-        });
+        // console.log removed
 
         try {
           const jsonPart = cleanJsonString(jsonMatch[0]);
-          console.log("🧹 [PARSE] Cleaned JSON part:", jsonPart);
+          // console.log removed
 
           const parsed = JSON.parse(jsonPart);
-          console.log("✅ [PARSE] Successfully parsed JSON block from text:", {
-            originalJsonMatch: jsonMatch[0],
-            cleanedJson: jsonPart,
-            parsedResult: parsed,
-            hasButtons: !!(parsed.buttons && Array.isArray(parsed.buttons)),
-            buttonCount: Array.isArray(parsed.buttons)
-              ? parsed.buttons.length
-              : 0,
-          });
+          // console.log removed
 
           // Extract the main text (everything before the JSON block)
           let mainText = data.replace(jsonMatch[0], "").trim();
 
-          console.log("📝 [PARSE] Extracted main text before cleaning:", {
-            mainTextLength: mainText.length,
-            mainTextPreview: mainText.substring(0, 200),
-            removedJsonLength: jsonMatch[0].length,
-          });
+          // console.log removed
 
           // Clean up the main text - remove any remaining JSON artifacts
           mainText = mainText.replace(/\{[\s\S]*?\}/g, "");
@@ -928,22 +800,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
           mainText = mainText.replace(/\\n\\n/g, "\n\n");
           mainText = mainText.replace(/\\n/g, "\n");
 
-          console.log("🎉 [PARSE] Final result from JSON block extraction:", {
-            finalMainText: mainText.trim(),
-            finalMainTextLength: mainText.trim().length,
-            finalButtons: Array.isArray(parsed.buttons)
-              ? parsed.buttons.map(sanitizeButtonLabel).filter(Boolean)
-              : [],
-            finalButtonCount: Array.isArray(parsed.buttons)
-              ? parsed.buttons.length
-              : 0,
-            finalEmailPrompt: parsed.emailPrompt || "",
-            hasAllComponents: !!(
-              mainText.trim() &&
-              Array.isArray(parsed.buttons) &&
-              parsed.buttons.length > 0
-            ),
-          });
+          // console.log removed
 
           return {
             mainText: normalizeMainText(mainText.trim()),
@@ -953,11 +810,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
             emailPrompt: parsed.emailPrompt || "",
           };
         } catch (e) {
-          console.log("❌ [PARSE] Failed to parse JSON block:", {
-            error: e instanceof Error ? e.message : String(e),
-            jsonMatchedText: jsonMatch[0],
-            dataLength: data.length,
-          });
+          // console.log removed
         }
       }
 
@@ -973,13 +826,10 @@ const Chatbot: React.FC<ChatbotProps> = ({
             extractedButtons = buttonsArray
               .map(sanitizeButtonLabel)
               .filter(Boolean);
-            console.log(
-              "[Chatbot] Extracted buttons from text format:",
-              extractedButtons,
-            );
+            // console.log removed
           }
         } catch (e) {
-          console.log("[Chatbot] Failed to parse buttons from text:", e);
+          // console.log removed
         }
       }
 
@@ -988,10 +838,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
       let extractedEmailPrompt = "";
       if (emailMatch) {
         extractedEmailPrompt = emailMatch[1];
-        console.log(
-          "[Chatbot] Extracted email prompt from text:",
-          extractedEmailPrompt,
-        );
+        // console.log removed
       }
 
       // Remove any JSON-like instructions from plain text
@@ -1014,7 +861,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
       cleaned = cleaned.replace(/\\n\\n/g, "\n\n");
       cleaned = cleaned.replace(/\\n/g, "\n");
 
-      console.log("[Chatbot] Cleaned string content:", cleaned.trim());
+      // console.log removed
       return {
         mainText: normalizeMainText(cleaned.trim()),
         buttons: extractedButtons.map(sanitizeButtonLabel).filter(Boolean),
@@ -1023,30 +870,11 @@ const Chatbot: React.FC<ChatbotProps> = ({
     }
 
     // If data is an object, extract fields safely
-    console.log("🗂️ [PARSE] Processing object response:", {
-      dataType: typeof data,
-      dataKeys: Object.keys(data || {}),
-      hasMainText: "mainText" in data,
-      mainTextType: typeof data.mainText,
-      mainTextValue: data.mainText,
-      hasButtons: "buttons" in data,
-      buttonsType: typeof data.buttons,
-      buttonsIsArray: Array.isArray(data.buttons),
-      buttonsLength: Array.isArray(data.buttons) ? data.buttons.length : "N/A",
-      buttonsValue: data.buttons,
-      hasEmailPrompt: "emailPrompt" in data,
-      emailPromptType: typeof data.emailPrompt,
-      emailPromptValue: data.emailPrompt,
-      fullObject: data,
-    });
+    // console.log removed
 
     let mainText = typeof data.mainText === "string" ? data.mainText : "";
 
-    console.log("📝 [PARSE] Initial mainText extraction:", {
-      foundMainText: !!mainText,
-      mainTextLength: mainText.length,
-      mainTextPreview: mainText.substring(0, 100),
-    });
+    // console.log removed
 
     // If no mainText but we have buttons or emailPrompt, provide a default message
     if (
@@ -1054,9 +882,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
       ((Array.isArray(data.buttons) && data.buttons.length > 0) ||
         data.emailPrompt)
     ) {
-      console.log(
-        "🎯 [PARSE] No mainText found but has buttons/emailPrompt, using default message",
-      );
+      // console.log removed
       mainText = "Here are some options for you:";
     }
 
@@ -1074,17 +900,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
       emailPrompt: typeof data.emailPrompt === "string" ? data.emailPrompt : "",
     };
 
-    console.log("🎉 [PARSE] Final parsed result from object:", {
-      finalMainText: result.mainText,
-      finalMainTextLength: result.mainText.length,
-      finalButtons: result.buttons,
-      finalButtonsCount: result.buttons.length,
-      finalEmailPrompt: result.emailPrompt,
-      hasContent: !!result.mainText,
-      hasButtons: result.buttons.length > 0,
-      hasEmailPrompt: !!result.emailPrompt,
-      completeResult: result,
-    });
+    // console.log removed
 
     return result;
   }
@@ -1092,7 +908,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
   // Add a simple nudge tracking function
   async function trackNudge(label: string, context?: unknown) {
     // Log to the console
-    console.log(`[Nudge Track] Button clicked: ${label}`, context);
+    // console.log removed
     // Send to backend analytics endpoint
     try {
       await fetch("/api/track-nudge", {
@@ -1134,9 +950,9 @@ const Chatbot: React.FC<ChatbotProps> = ({
       await navigator.clipboard.writeText(conversationText);
 
       // Show success feedback (you could add a toast notification here)
-      console.log("[Chatbot] Conversation copied to clipboard");
+      // console.log removed
     } catch (error) {
-      console.error("[Chatbot] Failed to copy conversation:", error);
+      // console.error removed
 
       // Fallback for older browsers
       try {
@@ -1164,16 +980,16 @@ const Chatbot: React.FC<ChatbotProps> = ({
         textArea.select();
         document.execCommand("copy");
         document.body.removeChild(textArea);
-        console.log("[Chatbot] Conversation copied to clipboard (fallback)");
+        // console.log removed
       } catch (fallbackError) {
-        console.error("[Chatbot] Copy fallback also failed:", fallbackError);
+        // console.error removed
       }
     }
   };
 
   // Handle clicking an action option button
   const handleActionClick = (action: string, msg: Message) => {
-    console.log("[Chatbot] Action option clicked", action);
+    // console.log removed
     // Reset followup timer when button is clicked
     if (followupTimer.current) {
       clearTimeout(followupTimer.current);
@@ -1203,7 +1019,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
         return lb.includes(topic) || topic.includes(lb);
       });
       if (isDiscussed) {
-        console.log("[BUTTON DEBUG] Filtered out discussed topic button:", btn);
+        // console.log removed
       }
       return !isDiscussed;
     });
@@ -1216,7 +1032,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
   ): string[] => {
     if (!text) return [];
 
-    console.log("[BUTTON DEBUG] Extracting buttons from text:", text);
+    // console.log removed
 
     // Clean up the text and remove button headers
     let cleaned = text.replace(/^---+$/gm, "");
@@ -1231,7 +1047,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
     const lines = cleaned.split(/\r?\n/);
     const buttons: string[] = [];
 
-    console.log("[BUTTON DEBUG] Processing lines:", lines);
+    // console.log removed
 
     for (const raw of lines) {
       const line = raw.trim();
@@ -1267,9 +1083,9 @@ const Chatbot: React.FC<ChatbotProps> = ({
         // Simple validation: reasonable length and not empty
         if (label.length >= 3 && label.length <= 60) {
           buttons.push(label);
-          console.log("[BUTTON DEBUG] Added button:", label);
+          // console.log removed
         } else {
-          console.log("[BUTTON DEBUG] Skipped (length):", label);
+          // console.log removed
         }
       }
 
@@ -1280,7 +1096,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
     // Filter out buttons related to discussed topics
     const filteredButtons = filterButtonsByTopics(buttons, topicsDiscussed);
 
-    console.log("[BUTTON DEBUG] Final extracted buttons:", filteredButtons);
+    // console.log removed
     return filteredButtons;
   };
 
@@ -1340,7 +1156,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
 
     // Clear followup timer and reset activity state when user sends message
     if (followupTimer.current) {
-      console.log("[Chatbot] User sending message, clearing followup timer");
+      // console.log removed
       clearTimeout(followupTimer.current);
       followupTimer.current = null;
     }
@@ -1353,28 +1169,13 @@ const Chatbot: React.FC<ChatbotProps> = ({
     setInput("");
     setLoading(true);
 
-    console.log("🚀 [CHAT DEBUG] Starting message send process:", {
-      userInput,
-      sessionId: getSessionId(),
-      pageUrl: pageUrl || getPageUrl(),
-      adminId,
-      timestamp: new Date().toISOString(),
-    });
+    // console.log removed
 
     try {
       const sessionId = getSessionId();
       const effectivePageUrl = pageUrl || getPageUrl();
 
-      console.log("📤 [CHAT DEBUG] Sending API request:", {
-        method: "POST",
-        url: "/api/chat",
-        body: {
-          question: userMsg.content,
-          sessionId,
-          pageUrl: effectivePageUrl,
-          ...(adminId ? { adminId } : {}),
-        },
-      });
+      // console.log removed
 
       const res = await fetch("/api/chat", {
         method: "POST",
@@ -1432,17 +1233,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
         return newMessages;
       });
       if (data.secondary) {
-        console.log("[Chatbot] Secondary follow-up received", {
-          type: (data.secondary as any)?.type || "unknown",
-          hasMainText: !!(data.secondary as any)?.mainText,
-          buttonsCount: Array.isArray((data.secondary as any)?.buttons)
-            ? (data.secondary as any)?.buttons.length
-            : 0,
-          preview:
-            typeof (data.secondary as any)?.mainText === "string"
-              ? (data.secondary as any)?.mainText.slice(0, 100)
-              : "",
-        });
+        // console.log removed
         const secParsed = parseBotResponse(data.secondary);
         const secMsg = {
           role: "assistant" as const,
@@ -1465,25 +1256,13 @@ const Chatbot: React.FC<ChatbotProps> = ({
             .filter(Boolean).length;
           const delayMs = Math.max(4000, Math.min(words * 350, 20000));
           const totalDelayMs = delayMs + 120000;
-          console.log("⏳ [Chatbot] Total followup delay", {
-            totalDelayMs,
-            readerDelayMs: delayMs,
-            words,
-          });
+          // console.log removed
           setTimeout(() => {
-            console.log("[Chatbot] Appending follow-up message", {
-              type: (data.secondary as any)?.type || "unknown",
-              contentLength: secParsed.mainText?.length || 0,
-              buttonsCount: Array.isArray(secParsed.buttons)
-                ? secParsed.buttons.length
-                : 0,
-            });
+            // console.log removed
             setMessages((msgs) => [...msgs, secMsg]);
           }, totalDelayMs);
         } else {
-          console.log(
-            "[Chatbot] Skipping follow-up for first assistant message",
-          );
+          // console.log removed
         }
       }
       // Clear follow-up timer on user message
@@ -1514,7 +1293,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
 
     // Mark user as active when they start typing
     if (e.target.value.length > 0 && !userIsActive) {
-      console.log("[Chatbot] User started typing, marking as active");
+      // console.log removed
       setUserIsActive(true);
       setLastUserAction(Date.now());
 
@@ -1523,13 +1302,13 @@ const Chatbot: React.FC<ChatbotProps> = ({
         clearTimeout(typingStopTimer.current);
       }
       typingStopTimer.current = setTimeout(() => {
-        console.log("[Chatbot] Typing stopped, marking user inactive");
+        // console.log removed
         setUserIsActive(false);
       }, 3000);
 
       // Reset followup timer when user starts typing
       if (followupTimer.current) {
-        console.log("[Chatbot] User typing, resetting followup timer");
+        // console.log removed
         clearTimeout(followupTimer.current);
         setFollowupSent(false);
 
@@ -1644,25 +1423,13 @@ const Chatbot: React.FC<ChatbotProps> = ({
               }`,
             }}
             onMouseEnter={() => {
-              console.log("[Chatbot] Indicator hover - Current state:", {
-                currentBotMode,
-                currentUserEmail,
-                indicatorText:
-                  currentBotMode === "sales" ? "SALES MODE" : "LEAD MODE",
-              });
+              // console.log removed
             }}
           >
             {(() => {
               const indicatorText =
                 currentBotMode === "sales" ? "SALES MODE" : "LEAD MODE";
-              console.log("[Chatbot] Rendering indicator:", {
-                currentBotMode,
-                currentUserEmail,
-                indicatorText,
-                backgroundColor:
-                  currentBotMode === "sales" ? "#e3f2fd" : "#f3e5f5",
-                timestamp: new Date().toISOString(),
-              });
+              // console.log removed
               return indicatorText;
             })()}
             {currentUserEmail && (
@@ -1790,16 +1557,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
                 </div>
                 {/* Always render action buttons if present */}
                 {(() => {
-                  console.log(
-                    "[BUTTON DEBUG] Starting button processing for message:",
-                    {
-                      messageIndex: i,
-                      messageRole: msg.role,
-                      messageContent: msg.content,
-                      apiButtons: msg.buttons,
-                      hasApiButtons: !!(msg.buttons && msg.buttons.length > 0),
-                    },
-                  );
+                  // console.log removed
 
                   // Always extract buttons from bullets if no buttons array, or if buttons array is empty
                   let finalButtons: string[] = [];
@@ -1827,28 +1585,17 @@ const Chatbot: React.FC<ChatbotProps> = ({
                       msg.buttons,
                       msg.topicsDiscussed,
                     );
-                    console.log(
-                      "[BUTTON DEBUG] Using buttons from API response (filtered):",
-                      finalButtons,
-                    );
+                    // console.log removed
                   } else if (allowOptions) {
-                    console.log(
-                      "[BUTTON DEBUG] No API buttons found, extracting from content...",
-                    );
+                    // console.log removed
                     finalButtons = extractButtonsFromText(
                       msg.content,
                       msg.topicsDiscussed,
                     );
-                    console.log(
-                      "[BUTTON DEBUG] Extracted buttons from content:",
-                      finalButtons,
-                    );
+                    // console.log removed
                   }
 
-                  console.log(
-                    "[BUTTON DEBUG] Final buttons to render:",
-                    finalButtons,
-                  );
+                  // console.log removed
 
                   if (finalButtons.length === 0 && allowOptions) {
                     const fallback = getDefaultBantButtons(
@@ -1857,10 +1604,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
                     );
                     if (fallback.length > 0) {
                       finalButtons = fallback;
-                      console.log(
-                        "[BUTTON DEBUG] Using fallback BANT buttons:",
-                        finalButtons,
-                      );
+                      // console.log removed
                     }
                   }
 
@@ -1876,20 +1620,13 @@ const Chatbot: React.FC<ChatbotProps> = ({
                         }}
                       >
                         {finalButtons.map((action, idx) => {
-                          console.log(
-                            `[BUTTON DEBUG] Rendering button ${
-                              idx + 1
-                            }: "${action}"`,
-                          );
+                          // console.log removed
                           return (
                             <button
                               key={idx}
                               type="button"
                               onClick={() => {
-                                console.log(
-                                  "[Chatbot] Button clicked:",
-                                  action,
-                                );
+                                // console.log removed
                                 handleActionClick(action, msg);
                               }}
                               style={{
@@ -2087,9 +1824,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
                         onSubmit={(e) => {
                           e.preventDefault();
                           if (emailInputValue.trim()) {
-                            console.log(
-                              "[Chatbot] Email submitted, resetting followup timer",
-                            );
+                            // console.log removed
                             // Reset followup timer when email is submitted
                             if (followupTimer.current) {
                               clearTimeout(followupTimer.current);

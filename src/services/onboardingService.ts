@@ -257,7 +257,8 @@ async function inferRequestFormatFromDocs(adminId: string, docsUrl?: string) {
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
       const embedResp = await openai.embeddings.create({
         input: ["registration required fields and content-type"],
-        model: "text-embedding-3-small", dimensions: 1024,
+        model: "text-embedding-3-small",
+        dimensions: 1024,
       });
       const embedding = embedResp.data[0].embedding as number[];
       const similar = await querySimilarChunks(embedding, 5, adminId);
@@ -412,14 +413,7 @@ export const onboardingService = {
       }),
     );
 
-    console.log(
-      `[Onboarding] Executing additional step ${step.name} (${step.id})`,
-      {
-        url,
-        method,
-        payload: safePayloadForLog,
-      },
-    );
+    // console.log removed
 
     try {
       const bodyStr = JSON.stringify(filtered);
@@ -438,11 +432,7 @@ export const onboardingService = {
           (parsedResp as any)?.message ||
           "Step execution failed";
 
-        console.error(`[Onboarding] ❌ Step ${step.name} failed`, {
-          status: res.status,
-          error: errorMessage,
-          response: parsedResp,
-        });
+        // console.error removed
 
         return {
           success: false,
@@ -452,9 +442,7 @@ export const onboardingService = {
         };
       }
 
-      console.log(`[Onboarding] ✅ Step ${step.name} succeeded`, {
-        status: res.status,
-      });
+      // console.log removed
 
       return {
         success: true,
@@ -462,7 +450,7 @@ export const onboardingService = {
         responseBody: parsedResp,
       };
     } catch (error: any) {
-      console.error(`[Onboarding] ❌ Step ${step.name} execution error`, error);
+      // console.error removed
       return {
         success: false,
         error: error.message || "Execution error",
@@ -509,13 +497,7 @@ export const onboardingService = {
       const contentType = (parsed.contentType as any) || "application/json";
 
       if (!url) {
-        console.error(
-          "[Onboarding] ❌ cURL parsing failed for authentication: no URL found",
-          {
-            adminId,
-            curlSnippet: (authCurl || "").slice(0, 200),
-          },
-        );
+        // console.error removed
         return {
           success: false,
           error: "Auth URL not found in cURL command",
@@ -554,10 +536,7 @@ export const onboardingService = {
         payloadKeys: keysUsed,
         payload: payloadUsedLog,
       };
-      console.log(
-        "[Onboarding] Calling external auth API via cURL:",
-        requestDebug,
-      );
+      // console.log removed
 
       const res = await fetch(url as string, { method, headers, body });
       const bodyText = await res.text();
@@ -701,14 +680,7 @@ export const onboardingService = {
         .trim()
         .replace(/^["']|["']$/g, "");
       if (!finalToken) {
-        console.warn(
-          "[Onboarding] ⚠️ Auth response did not include a token field",
-          {
-            adminId,
-            url,
-            responseBodyType: typeof parsedResp,
-          },
-        );
+        // console.warn removed
       }
 
       const respSummary = (() => {
@@ -751,12 +723,7 @@ export const onboardingService = {
         const txt = String(parsedResp || "");
         return { previewText: txt.slice(0, 200), length: txt.length };
       })();
-      console.log("[Onboarding] ✅ External authentication succeeded", {
-        status: res.status,
-        adminId,
-        tokenPresent: !!token,
-        response: respSummary,
-      });
+      // console.log removed
       return {
         success: true,
         status: res.status,
@@ -766,11 +733,7 @@ export const onboardingService = {
         debug: { request: requestDebug, response: respSummary },
       };
     } catch (error: any) {
-      console.error("[Onboarding] ❌ External authentication error", {
-        adminId,
-        message: error?.message || String(error),
-        stack: error?.stack,
-      });
+      // console.error removed
       return {
         success: false,
         error: error?.message || String(error),
@@ -898,16 +861,7 @@ export const onboardingService = {
       } catch {}
 
       if (!url) {
-        console.error(
-          "[Onboarding] ❌ cURL parsing failed for initial setup: no URL found",
-          {
-            adminId,
-            curlSnippet: (onboarding.initialSetupCurlCommand || "").slice(
-              0,
-              200,
-            ),
-          },
-        );
+        // console.error removed
         return {
           success: false,
           error: "Initial setup URL not found in cURL command",
@@ -933,19 +887,8 @@ export const onboardingService = {
           return [k, isSensitive ? "***" : v];
         }),
       );
-
       try {
-        console.log(
-          "[Onboarding] Calling external initial setup API via cURL:",
-          {
-            url,
-            method,
-            contentType,
-            headerKeys: Object.keys(headers),
-            headers: redactHeadersForLog(headers),
-            payloadKeys: keysUsed,
-          },
-        );
+        // console.log removed
 
         let res = await fetch(url as string, { method, headers, body });
 
@@ -1012,14 +955,7 @@ export const onboardingService = {
                 retryParsed = retryText;
               }
               if (!res.ok) {
-                console.error("[Onboarding] ❌ External initial setup failed", {
-                  status: res.status,
-                  adminId,
-                  url,
-                  responseBody: retryParsed,
-                  payload: safePayloadForLog,
-                  errorMessage,
-                });
+                // console.error removed
                 return {
                   success: false,
                   error: errorMessage,
@@ -1027,27 +963,14 @@ export const onboardingService = {
                   responseBody: retryParsed,
                 };
               }
-              console.log(
-                "[Onboarding] ✅ External initial setup succeeded (retry)",
-                {
-                  status: res.status,
-                  adminId,
-                },
-              );
+              // console.log removed
               return {
                 success: true,
                 status: res.status,
                 responseBody: retryParsed,
               };
             } catch {
-              console.error("[Onboarding] ❌ External initial setup failed", {
-                status: res.status,
-                adminId,
-                url,
-                responseBody: parsedResp,
-                payload: safePayloadForLog,
-                errorMessage,
-              });
+              // console.error removed
               return {
                 success: false,
                 error: errorMessage,
@@ -1056,14 +979,7 @@ export const onboardingService = {
               };
             }
           }
-          console.error("[Onboarding] ❌ External initial setup failed", {
-            status: res.status,
-            adminId,
-            url,
-            responseBody: parsedResp,
-            payload: safePayloadForLog,
-            errorMessage,
-          });
+          // console.error removed
           return {
             success: false,
             error: errorMessage,
@@ -1072,30 +988,14 @@ export const onboardingService = {
           };
         }
 
-        console.log("[Onboarding] ✅ External initial setup succeeded", {
-          status: res.status,
-          adminId,
-        });
+        // console.log removed
         return {
           success: true,
           status: res.status,
           responseBody: parsedResp,
         };
       } catch (error: any) {
-        console.error("[Onboarding] ❌ External initial setup error", {
-          adminId,
-          url,
-          method,
-          message: error?.message || String(error),
-          stack: error?.stack,
-          payload: Object.fromEntries(
-            Object.entries(payload).map(([k, v]) => {
-              const kl = k.toLowerCase();
-              const isSensitive = redactKeys.some((rk) => kl.includes(rk));
-              return [k, isSensitive ? "***" : v];
-            }),
-          ),
-        });
+        // console.error removed
         return {
           success: false,
           error: error?.message || String(error),
@@ -1443,14 +1343,7 @@ export const onboardingService = {
             );
           })();
 
-          console.error("[Onboarding] ❌ External registration failed", {
-            status: res.status,
-            adminId,
-            url,
-            responseBody: parsedResp,
-            payload: safePayloadForLog,
-            errorMessage,
-          });
+          // console.error removed
           return {
             success: false,
             error: errorMessage,
@@ -1459,30 +1352,14 @@ export const onboardingService = {
           };
         }
 
-        console.log("[Onboarding] ✅ External registration succeeded", {
-          status: res.status,
-          adminId,
-        });
+        // console.log removed
         return {
           success: true,
           status: res.status,
           responseBody: parsedResp,
         };
       } catch (error: any) {
-        console.error("[Onboarding] ❌ External registration error", {
-          adminId,
-          url,
-          method,
-          message: error?.message || String(error),
-          stack: error?.stack,
-          payload: Object.fromEntries(
-            Object.entries(payload).map(([k, v]) => {
-              const kl = k.toLowerCase();
-              const isSensitive = redactKeys.some((rk) => kl.includes(rk));
-              return [k, isSensitive ? "***" : v];
-            }),
-          ),
-        });
+        // console.error removed
         return {
           success: false,
           error: error?.message || String(error),
@@ -1539,14 +1416,7 @@ export const onboardingService = {
     );
 
     try {
-      console.log("[Onboarding] Calling external registration API:", {
-        url,
-        method,
-        headerKeyUsed: onboarding.authHeaderKey || "Authorization",
-        apiKeyPresent: !!onboarding.apiKey,
-        contentType,
-        payloadKeys: Object.keys(payload),
-      });
+      // console.log removed
       const body =
         contentType === "application/x-www-form-urlencoded"
           ? new URLSearchParams(
@@ -1617,14 +1487,7 @@ export const onboardingService = {
                 retryParsed = retryText;
               }
               if (!res.ok) {
-                console.error("[Onboarding] ❌ External registration failed", {
-                  status: res.status,
-                  adminId,
-                  url,
-                  responseBody: retryParsed,
-                  payload: safePayloadForLog,
-                  errorMessage,
-                });
+                // console.error removed
                 return {
                   success: false,
                   error: errorMessage,
@@ -1632,13 +1495,7 @@ export const onboardingService = {
                   responseBody: retryParsed,
                 };
               }
-              console.log(
-                "[Onboarding] ✅ External registration succeeded (retry)",
-                {
-                  status: res.status,
-                  adminId,
-                },
-              );
+              // console.log removed
               return {
                 success: true,
                 status: res.status,
@@ -1647,14 +1504,7 @@ export const onboardingService = {
             }
           } catch {}
         }
-        console.error("[Onboarding] ❌ External registration failed", {
-          status: res.status,
-          adminId,
-          url,
-          responseBody: parsedResp,
-          payload: safePayloadForLog,
-          errorMessage,
-        });
+        // console.error removed
         return {
           success: false,
           error: errorMessage,
@@ -1663,30 +1513,14 @@ export const onboardingService = {
         };
       }
 
-      console.log("[Onboarding] ✅ External registration succeeded", {
-        status: res.status,
-        adminId,
-      });
+      // console.log removed
       return {
         success: true,
         status: res.status,
         responseBody: parsedResp,
       };
     } catch (error: any) {
-      console.error("[Onboarding] ❌ External registration error", {
-        adminId,
-        url,
-        method,
-        message: error?.message || String(error),
-        stack: error?.stack,
-        payload: Object.fromEntries(
-          Object.entries(payload).map(([k, v]) => {
-            const kl = k.toLowerCase();
-            const isSensitive = redactKeys.some((rk) => kl.includes(rk));
-            return [k, isSensitive ? "***" : v];
-          }),
-        ),
-      });
+      // console.error removed
       return {
         success: false,
         error: error?.message || String(error),
@@ -1704,12 +1538,11 @@ export const onboardingService = {
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
       const embedResp = await openai.embeddings.create({
         input: [question],
-        model: "text-embedding-3-small", dimensions: 1024,
+        model: "text-embedding-3-small",
+        dimensions: 1024,
       });
       const embedding = embedResp.data[0].embedding;
-      console.log(
-        `[Onboarding] Search params - Admin: ${adminId}, Mode: user, TopK: 10`,
-      );
+      // console.log removed
 
       let context = "";
 
@@ -1718,20 +1551,18 @@ export const onboardingService = {
         try {
           const pageChunks = await getChunksByPageUrl(adminId, pageUrl);
           if (pageChunks && pageChunks.length > 0) {
-            console.log(
-              `[Onboarding] Found ${pageChunks.length} page-specific chunks for ${pageUrl}`,
-            );
+            // console.log removed
             context +=
               "Page Context:\n" + pageChunks.slice(0, 10).join("\n\n") + "\n\n";
           }
         } catch (e) {
-          console.error("[Onboarding] Error fetching page chunks:", e);
+          // console.error removed
         }
       }
 
       // 2. Fetch global chunks via vector search
       const similar = await querySimilarChunks(embedding, 10, adminId, "user");
-      console.log(`[Onboarding] Found ${similar.length} global chunks`);
+      // console.log removed
       context += "General Context:\n" + similar.map((s) => s.text).join("\n\n");
 
       const systemPrompt = `You are a helpful assistant for an onboarding bot.
@@ -1751,7 +1582,7 @@ ${context}`;
 
       return chatCompletion.choices[0].message.content || "";
     } catch (error) {
-      console.error("[Onboarding] Error answering question:", error);
+      // console.error removed
       return "Sorry, I encountered an error while trying to answer your question.";
     }
   },
@@ -1782,7 +1613,8 @@ export async function deriveFieldsFromDocsForAdmin(
               ? "initial setup request body required fields including nested keys and headers"
               : "registration request body required fields and content-type",
         ],
-        model: "text-embedding-3-small", dimensions: 1024,
+        model: "text-embedding-3-small",
+        dimensions: 1024,
       });
       const embedding = embedResp.data[0].embedding as number[];
       const similar = await querySimilarChunks(embedding, 5, adminId);
@@ -1894,7 +1726,8 @@ export async function deriveSpecFromDocsForAdmin(
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
       const embedResp = await openai.embeddings.create({
         input: ["registration required fields and content-type"],
-        model: "text-embedding-3-small", dimensions: 1024,
+        model: "text-embedding-3-small",
+        dimensions: 1024,
       });
       const embedding = embedResp.data[0].embedding as number[];
       const similar = await querySimilarChunks(embedding, 5, adminId);
@@ -2255,7 +2088,8 @@ export async function getReasonFromDocs(
 
     const embedResp = await openai.embeddings.create({
       input: [query],
-      model: "text-embedding-3-small", dimensions: 1024,
+      model: "text-embedding-3-small",
+      dimensions: 1024,
     });
     const embedding = embedResp.data[0].embedding as number[];
     const similar = await querySimilarChunks(embedding, 3, adminId);
@@ -2292,7 +2126,7 @@ export async function getReasonFromDocs(
     }
     return null;
   } catch (e) {
-    console.error("Error getting reason from docs:", e);
+    // console.error removed
     return null;
   }
 }
@@ -2322,7 +2156,7 @@ export async function getGenericReason(
     });
     return completion.choices[0].message.content?.trim() || null;
   } catch (e) {
-    console.error("Error getting generic reason:", e);
+    // console.error removed
     return null;
   }
 }
@@ -2366,24 +2200,19 @@ export async function answerQuestion(
   question: string,
 ): Promise<string | null> {
   try {
-    console.log(
-      `[AnswerQuestion] Question: "${question}" | AdminId: ${adminId} | SearchMode: user`,
-    );
+    // console.log removed
 
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const embedResp = await openai.embeddings.create({
       input: [question],
-      model: "text-embedding-3-small", dimensions: 1024,
+      model: "text-embedding-3-small",
+      dimensions: 1024,
     });
     const embedding = embedResp.data[0].embedding as number[];
     // Search within the user's knowledge base (scoped to adminId) to ensure relevant answers
     const similar = await querySimilarChunks(embedding, 10, adminId, "user");
 
-    console.log(
-      `[AnswerQuestion] Found ${
-        similar ? similar.length : 0
-      } chunks. Sources: ${similar?.map((s) => s.source).join(", ")}`,
-    );
+    // console.log removed
 
     const systemContext = `
 System Knowledge (Common Onboarding Terms):

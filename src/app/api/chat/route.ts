@@ -180,10 +180,7 @@ async function getSessionBookingStatus(sessionId: string, adminId?: string) {
           }
         }
       } catch (fallbackErr) {
-        console.log(
-          "[Booking Status] Email fallback lookup failed:",
-          fallbackErr,
-        );
+        // console.log removed
       }
 
       return {
@@ -235,7 +232,7 @@ async function getSessionBookingStatus(sessionId: string, adminId?: string) {
       },
     };
   } catch (error) {
-    console.error("[Booking Status] Error checking booking status:", error);
+    // console.error removed
     return {
       hasActiveBooking: false,
       currentBooking: null,
@@ -681,14 +678,9 @@ async function updateChatWithBookingReference(
       },
     );
 
-    console.log(
-      `[Booking] Updated chat messages for session ${sessionId} with booking ${bookingId}`,
-    );
+    // console.log removed
   } catch (error) {
-    console.error(
-      "[Booking] Error updating chat with booking reference:",
-      error,
-    );
+    // console.error removed
   }
 }
 
@@ -835,13 +827,10 @@ Return ONLY a valid JSON object with this structure:
       };
     }
   } catch (error) {
-    console.error("Error generating sales entry response:", error);
+    // console.error removed
   }
 
-  console.log("[SalesEntry] Using fallback sales entry response", {
-    reason: "empty_or_invalid_ai_content",
-    timestamp: new Date().toISOString(),
-  });
+  // console.log removed
   return {
     mainText:
       "We’re now in sales mode and will focus on next steps. Would you like to schedule a demo, review pricing, or talk to sales?",
@@ -863,18 +852,7 @@ async function analyzeForProbing(input: {
   bantConfig?: any; // Added BANT config support
   hasActiveBooking?: boolean;
 }) {
-  console.log("[analyzeForProbing] Inputs:", {
-    hasBantConfig: !!input.bantConfig,
-    bantConfigDims: input.bantConfig
-      ? Object.keys(input.bantConfig).filter(
-          (k) =>
-            Array.isArray(input.bantConfig[k]) &&
-            input.bantConfig[k].length > 0,
-        )
-      : [],
-    missingDims: input.missingDims,
-    botMode: input.botMode,
-  });
+  // console.log removed
 
   const messages: any = [
     {
@@ -956,12 +934,7 @@ async function analyzeForProbing(input: {
   }
   const should = Boolean(parsed && parsed.shouldSendFollowUp);
 
-  console.log("[analyzeForProbing] LLM Output:", {
-    should,
-    bantDimension: parsed.bantDimension,
-    mainText: parsed.mainText,
-    buttons: parsed.buttons,
-  });
+  // console.log removed
 
   // Validate that the generated BANT dimension is actually missing
   if (should) {
@@ -1043,10 +1016,7 @@ async function analyzeForProbing(input: {
         input.bantConfig[chosen][0]
       ) {
         const qConfig = input.bantConfig[chosen][0];
-        console.log(
-          `[analyzeForProbing] Fallback using BANT config for ${chosen}:`,
-          qConfig,
-        );
+        // console.log removed
 
         // Handle both string and object structure (schema uses object with question/options)
         const questionText =
@@ -1482,7 +1452,7 @@ Assistant Response: "${input.assistantResponse.mainText}"`,
       };
     }
   } catch (error) {
-    console.error("Error generating dynamic fallback:", error);
+    // console.error removed
   }
 
   return {
@@ -1959,18 +1929,14 @@ async function updateProfileOnBantComplete(
     if (profileResponse.ok) {
       const profileResult = (await profileResponse.json()) as any;
       if (profileResult.updated) {
-        console.log(
-          `[CustomerProfiling] Profile updated via ${profileResult.trigger} - Confidence: ${profileResult.confidence}`,
-        );
+        // console.log removed
         if (profileResult.profile?.intelligenceProfile?.buyingReadiness) {
-          console.log(
-            `[CustomerProfiling] Buying readiness: ${profileResult.profile.intelligenceProfile.buyingReadiness}`,
-          );
+          // console.log removed
         }
       }
     }
   } catch (e) {
-    console.log("[CustomerProfiling] BANT completion update failed:", e);
+    // console.log removed
   }
 }
 
@@ -2025,18 +1991,14 @@ async function updateProfileOnContactRequest(
     if (profileResponse.ok) {
       const profileResult = (await profileResponse.json()) as any;
       if (profileResult.updated) {
-        console.log(
-          `[CustomerProfiling] Profile updated via ${profileResult.trigger} - Confidence: ${profileResult.confidence}`,
-        );
+        // console.log removed
         if (profileResult.profile?.intelligenceProfile?.buyingReadiness) {
-          console.log(
-            `[CustomerProfiling] Buying readiness: ${profileResult.profile.intelligenceProfile.buyingReadiness}`,
-          );
+          // console.log removed
         }
       }
     }
   } catch (e) {
-    console.log("[CustomerProfiling] Contact-request update failed:", e);
+    // console.log removed
   }
 }
 
@@ -2511,7 +2473,7 @@ async function extractTextFromUrl(
 ): Promise<string> {
   // Prevent infinite redirect loops
   if (depth > 5) {
-    console.log(`[OnDemandCrawl] Max redirect depth reached for ${url}`);
+    // console.log removed
     throw new Error(`Too many redirects for ${url}`);
   }
 
@@ -2526,23 +2488,16 @@ async function extractTextFromUrl(
     const match = metaRefresh.match(/url=(.+)$/i);
     if (match) {
       let redirectUrl = match[1].trim();
-      console.log(
-        `[OnDemandCrawl] Following meta redirect from ${url} to ${redirectUrl}`,
-      );
+      // console.log removed
 
       // Handle relative URLs by converting to absolute
       if (!redirectUrl.startsWith("http")) {
         try {
           const baseUrl = new URL(url);
           redirectUrl = new URL(redirectUrl, baseUrl.origin).href;
-          console.log(
-            `[OnDemandCrawl] Converted relative URL to absolute: ${redirectUrl}`,
-          );
+          // console.log removed
         } catch (urlError) {
-          console.log(
-            `[OnDemandCrawl] Failed to convert relative URL: ${redirectUrl}`,
-            urlError,
-          );
+          // console.log removed
           // If URL conversion fails, proceed with original content
         }
       }
@@ -2559,11 +2514,7 @@ async function extractTextFromUrl(
 
   // If the text is too short (likely a redirect page), log it
   if (text.length < 100) {
-    console.log(
-      `[OnDemandCrawl] Warning: Very short content for ${url} (${
-        text.length
-      } chars): ${text.substring(0, 100)}`,
-    );
+    // console.log removed
   }
 
   return text;
@@ -2634,7 +2585,7 @@ function parseAIResponse(content: string): {
 
     try {
       const fixedParsed = JSON.parse(fixedContent);
-      console.log("[DEBUG] Fixed JSON parsing successful");
+      // console.log removed
       let mainText = fixedParsed.mainText || fixedParsed.answer || content;
       if (typeof mainText === "string") {
         mainText = formatMainText(mainText);
@@ -2648,9 +2599,7 @@ function parseAIResponse(content: string): {
         bookingType: fixedParsed.bookingType || undefined,
       };
     } catch (fixError) {
-      console.log(
-        "[DEBUG] Fixed JSON parsing also failed, continuing to method 2",
-      );
+      // console.log removed
     }
 
     // Method 2: Extract multiple JSON objects from the response
@@ -2735,7 +2684,7 @@ function parseAIResponse(content: string): {
           Object.assign(combined, parsed);
         } catch (e) {
           // Skip invalid JSON objects
-          console.log("[DEBUG] Skipping invalid JSON object:", jsonStr);
+          // console.log removed
         }
       });
 
@@ -2802,10 +2751,7 @@ function parseAIResponse(content: string): {
       bookingType: undefined,
     };
   } catch (error) {
-    console.warn(
-      "⚠️ AI response parsing failed completely, using ultimate fallback:",
-      error,
-    );
+    // console.warn removed
 
     // Clean up the content as much as possible
     const cleanText = content
@@ -2830,15 +2776,16 @@ function detectVertical(pageUrl: string, pageContent: string = ""): string {
   const url = pageUrl.toLowerCase();
   const content = pageContent.toLowerCase();
 
-  console.log(`[VERTICAL DEBUG] Analyzing pageUrl: ${pageUrl}`);
-  console.log(`[VERTICAL DEBUG] Content length: ${pageContent.length} chars`);
-  console.log(
-    `[VERTICAL DEBUG] Content preview: ${content.substring(0, 200)}...`,
-  );
+  // REMOVED LOGS
+  // console.log(`[VERTICAL DEBUG] Analyzing pageUrl: ${pageUrl}`);
+  // console.log(`[VERTICAL DEBUG] Content length: ${pageContent.length} chars`);
+  // console.log(
+  //   `[VERTICAL DEBUG] Content preview: ${content.substring(0, 200)}...`,
+  // );
 
   // URL-based detection
   if (url.includes("/consulting") || url.includes("/consultant")) {
-    console.log(`[VERTICAL DEBUG] Detected 'consulting' from URL: ${pageUrl}`);
+    // console.log(`[VERTICAL DEBUG] Detected 'consulting' from URL: ${pageUrl}`);
     return "consulting";
   }
   if (
@@ -2846,7 +2793,7 @@ function detectVertical(pageUrl: string, pageContent: string = ""): string {
     url.includes("/law") ||
     url.includes("/attorney")
   ) {
-    console.log(`[VERTICAL DEBUG] Detected 'legal' from URL: ${pageUrl}`);
+    // console.log(`[VERTICAL DEBUG] Detected 'legal' from URL: ${pageUrl}`);
     return "legal";
   }
   if (
@@ -2854,7 +2801,7 @@ function detectVertical(pageUrl: string, pageContent: string = ""): string {
     url.includes("/finance") ||
     url.includes("/bookkeeping")
   ) {
-    console.log(`[VERTICAL DEBUG] Detected 'accounting' from URL: ${pageUrl}`);
+    // console.log(`[VERTICAL DEBUG] Detected 'accounting' from URL: ${pageUrl}`);
     return "accounting";
   }
   if (
@@ -2862,7 +2809,7 @@ function detectVertical(pageUrl: string, pageContent: string = ""): string {
     url.includes("/recruiting") ||
     url.includes("/hr")
   ) {
-    console.log(`[VERTICAL DEBUG] Detected 'staffing' from URL: ${pageUrl}`);
+    // console.log(`[VERTICAL DEBUG] Detected 'staffing' from URL: ${pageUrl}`);
     return "staffing";
   }
   if (
@@ -2870,7 +2817,7 @@ function detectVertical(pageUrl: string, pageContent: string = ""): string {
     url.includes("/medical") ||
     url.includes("/clinic")
   ) {
-    console.log(`[VERTICAL DEBUG] Detected 'healthcare' from URL: ${pageUrl}`);
+    // console.log(`[VERTICAL DEBUG] Detected 'healthcare' from URL: ${pageUrl}`);
     return "healthcare";
   }
   if (
@@ -2878,7 +2825,7 @@ function detectVertical(pageUrl: string, pageContent: string = ""): string {
     url.includes("/school") ||
     url.includes("/university")
   ) {
-    console.log(`[VERTICAL DEBUG] Detected 'education' from URL: ${pageUrl}`);
+    // console.log(`[VERTICAL DEBUG] Detected 'education' from URL: ${pageUrl}`);
     return "education";
   }
   if (
@@ -2886,7 +2833,7 @@ function detectVertical(pageUrl: string, pageContent: string = ""): string {
     url.includes("/realty") ||
     url.includes("/property")
   ) {
-    console.log(`[VERTICAL DEBUG] Detected 'real_estate' from URL: ${pageUrl}`);
+    // console.log(`[VERTICAL DEBUG] Detected 'real_estate' from URL: ${pageUrl}`);
     return "real_estate";
   }
   if (
@@ -2894,7 +2841,7 @@ function detectVertical(pageUrl: string, pageContent: string = ""): string {
     url.includes("/software") ||
     url.includes("/saas")
   ) {
-    console.log(`[VERTICAL DEBUG] Detected 'technology' from URL: ${pageUrl}`);
+    // console.log(`[VERTICAL DEBUG] Detected 'technology' from URL: ${pageUrl}`);
     return "technology";
   }
   if (
@@ -2902,13 +2849,13 @@ function detectVertical(pageUrl: string, pageContent: string = ""): string {
     url.includes("/ecommerce") ||
     url.includes("/store")
   ) {
-    console.log(`[VERTICAL DEBUG] Detected 'retail' from URL: ${pageUrl}`);
+    // console.log(`[VERTICAL DEBUG] Detected 'retail' from URL: ${pageUrl}`);
     return "retail";
   }
 
   // Content-based detection (basic keyword matching)
   if (content.includes("consultation") || content.includes("advisory")) {
-    console.log(`[VERTICAL DEBUG] Detected 'consulting' from content keywords`);
+    // console.log(`[VERTICAL DEBUG] Detected 'consulting' from content keywords`);
     return "consulting";
   }
   if (
@@ -2916,13 +2863,13 @@ function detectVertical(pageUrl: string, pageContent: string = ""): string {
     content.includes("litigation") ||
     content.includes("attorney")
   ) {
-    console.log(
-      `[VERTICAL DEBUG] Detected 'legal' from content keywords: legal=${content.includes(
-        "legal",
-      )}, litigation=${content.includes(
-        "litigation",
-      )}, attorney=${content.includes("attorney")}`,
-    );
+    // console.log(
+    //   `[VERTICAL DEBUG] Detected 'legal' from content keywords: legal=${content.includes(
+    //     "legal",
+    //   )}, litigation=${content.includes(
+    //     "litigation",
+    //   )}, attorney=${content.includes("attorney")}`,
+    // );
     return "legal";
   }
   if (
@@ -2930,7 +2877,7 @@ function detectVertical(pageUrl: string, pageContent: string = ""): string {
     content.includes("bookkeeping") ||
     content.includes("tax")
   ) {
-    console.log(`[VERTICAL DEBUG] Detected 'accounting' from content keywords`);
+    // console.log(`[VERTICAL DEBUG] Detected 'accounting' from content keywords`);
     return "accounting";
   }
   if (
@@ -2938,7 +2885,7 @@ function detectVertical(pageUrl: string, pageContent: string = ""): string {
     content.includes("staffing") ||
     content.includes("candidates")
   ) {
-    console.log(`[VERTICAL DEBUG] Detected 'staffing' from content keywords`);
+    // console.log(`[VERTICAL DEBUG] Detected 'staffing' from content keywords`);
     return "staffing";
   }
   if (
@@ -2946,11 +2893,11 @@ function detectVertical(pageUrl: string, pageContent: string = ""): string {
     content.includes("medical") ||
     content.includes("healthcare")
   ) {
-    console.log(`[VERTICAL DEBUG] Detected 'healthcare' from content keywords`);
+    // console.log(`[VERTICAL DEBUG] Detected 'healthcare' from content keywords`);
     return "healthcare";
   }
 
-  console.log(`[VERTICAL DEBUG] No vertical detected, returning 'general'`);
+  // console.log(`[VERTICAL DEBUG] No vertical detected, returning 'general'`);
   return "general";
 }
 
@@ -3065,11 +3012,9 @@ async function trackSDREvent(
       timestamp: new Date(),
     });
 
-    console.log(
-      `[SDR Analytics] Tracked event: ${eventType} for session ${sessionId}`,
-    );
+    // console.log removed
   } catch (error) {
-    console.error("[SDR Analytics] Failed to track event:", error);
+    // console.error removed
     // Don't break the flow if analytics fails
   }
 }
@@ -3080,6 +3025,7 @@ async function detectUserPersona(
   messages: any[],
   pageUrl: string,
   adminId: string,
+  pageContext: string = "",
 ): Promise<any | null> {
   try {
     const db = await getDb();
@@ -3096,47 +3042,48 @@ async function detectUserPersona(
       .map((msg) => `${msg.role}: ${msg.content}`)
       .join("\n");
 
+    // Combine conversation history with current page context for better signal detection
+    const analysisText = `${conversationText}\n${pageContext}`;
+
     const signals = {
       // Company size indicators
-      mentionsTeam: /team|staff|employees|colleagues/i.test(conversationText),
+      mentionsTeam: /team|staff|employees|colleagues/i.test(analysisText),
       mentionsEnterprise:
-        /enterprise|corporation|department|organization/i.test(
-          conversationText,
-        ),
+        /enterprise|corporation|department|organization/i.test(analysisText),
       mentionsSmallBiz: /small business|startup|freelance|solo/i.test(
-        conversationText,
+        analysisText,
       ),
 
       // Budget sensitivity
       asksPricing: /cost|price|budget|affordable|expensive|cheap/i.test(
-        conversationText,
+        analysisText,
       ),
       mentionsBudget: /\$|budget|cost|price|expensive|affordable/i.test(
-        conversationText,
+        analysisText,
       ),
 
       // Technical level
       asksTechnical: /api|integration|webhook|sso|technical|developer/i.test(
-        conversationText,
+        analysisText,
       ),
       mentionsIntegration: /integrate|connection|sync|api|plugin/i.test(
-        conversationText,
+        analysisText,
       ),
 
       // Urgency level
       urgentWords: /urgent|asap|immediately|quickly|soon|deadline/i.test(
-        conversationText,
+        analysisText,
       ),
       exploratory: /wondering|curious|exploring|looking into|considering/i.test(
-        conversationText,
+        analysisText,
       ),
 
       // Decision making
       decisionLanguage: /decide|decision|choose|purchase|buy|implement/i.test(
-        conversationText,
+        analysisText,
       ),
       exploringLanguage: /learn|understand|know more|information|details/i.test(
-        conversationText,
+        analysisText,
       ),
 
       // Page behavior
@@ -3198,20 +3145,14 @@ async function detectUserPersona(
 
     // Only return persona if we have a reasonable confidence level
     if (bestScore >= 3 && bestMatch) {
-      console.log(
-        `[Persona] Detected persona: ${
-          bestMatch?.name || "unknown"
-        } (score: ${bestScore})`,
-      );
+      // console.log removed
       return bestMatch;
     }
 
-    console.log(
-      `[Persona] No strong persona match found (best score: ${bestScore})`,
-    );
+    // console.log removed
     return null;
   } catch (error) {
-    console.error("[Persona] Error detecting user persona:", error);
+    // console.error removed
     return null;
   }
 }
@@ -3301,7 +3242,7 @@ Conversation Flow Intelligence:
 
     return JSON.parse(completion.choices[0].message.content || "{}");
   } catch (error) {
-    console.error("[Persona] Error generating persona-based followup:", error);
+    // console.error removed
     return null;
   }
 }
@@ -3432,13 +3373,10 @@ async function generateTopicBasedFollowup(
     }
     const parsed = JSON.parse(responseText);
 
-    console.log(
-      `[FOLLOWUP] Generated topic-based followup for ${followupTopic}:`,
-      parsed,
-    );
+    // console.log removed
     return parsed;
   } catch (error) {
-    console.error("[FOLLOWUP] Error generating topic-based followup:", error);
+    // console.error removed
     return null;
   }
 }
@@ -3696,7 +3634,7 @@ export async function POST(req: NextRequest) {
       }
     }
   } catch (e) {
-    console.error("Error resolving adminId:", e);
+    // console.error removed
     if (adminIdFromBody) resolvedAdminId = adminIdFromBody;
   }
 
@@ -3728,11 +3666,11 @@ export async function POST(req: NextRequest) {
       customerProfile = await profiles.findOne(query);
 
       if (customerProfile) {
-        console.log(`[Chat API] Found profile by email: ${effectiveEmail}`);
+        // console.log removed
       }
     }
   } catch (e) {
-    console.error("[Chat API] Error fetching customer profile:", e);
+    // console.error removed
   }
 
   // Resolve user email from session if not in current request
@@ -3754,16 +3692,7 @@ export async function POST(req: NextRequest) {
       }
     } catch (e) {}
   }
-  console.log(`[Chat API ${requestId}] Processing request:`, {
-    question: question ? `"${question}"` : undefined,
-    sessionId,
-    pageUrl,
-    proactive,
-    followup,
-    contextualQuestionGeneration,
-    autoResponse,
-    timestamp: new Date().toISOString(),
-  });
+  // console.log removed per request
 
   // -------------------------------------------------------------------------
   // WORKFLOW ENGINE INTEGRATION (PHASE 2)
@@ -3792,9 +3721,7 @@ export async function POST(req: NextRequest) {
       );
 
       if (workflowResponse) {
-        console.log(
-          `[Chat API ${requestId}] Workflow engine active step: ${workflowResponse.workflowStep}`,
-        );
+        // console.log removed per request
 
         return NextResponse.json({
           mainText: workflowResponse.message,
@@ -3809,7 +3736,7 @@ export async function POST(req: NextRequest) {
         });
       }
     } catch (error) {
-      console.error(`[Chat API ${requestId}] Workflow engine error:`, error);
+      // console.error removed
       // Fall through to standard logic on error
     }
   }
@@ -3931,41 +3858,22 @@ export async function POST(req: NextRequest) {
       personas = personaDoc.targetAudiences;
     }
   } catch (e) {
-    console.error("[Chat API] Error fetching personas:", e);
+    // console.error removed
   }
 
   // Fetch BANT configuration
   let bantConfig: any = null;
   try {
     // const finalAdminId = apiAuth?.adminId || adminIdFromBody || "default-admin"; (using outer scope)
-    console.log(
-      `[Chat API ${requestId}] Loading BANT config for adminId: ${finalAdminId}`,
-    );
+    // console.log removed
     const db = await getDb();
     const bantCollection = db.collection("bant_configurations");
     bantConfig = await bantCollection.findOne({ adminId: finalAdminId });
 
     if (bantConfig) {
-      console.log(
-        `[Chat API ${requestId}] BANT config raw:`,
-        JSON.stringify({
-          adminId: finalAdminId,
-          budget: bantConfig.budget?.length,
-          authority: bantConfig.authority?.length,
-          need: bantConfig.need?.length,
-          timeline: bantConfig.timeline?.length,
-          questions: {
-            budget: bantConfig.budget?.[0]?.question,
-            authority: bantConfig.authority?.[0]?.question,
-            need: bantConfig.need?.[0]?.question,
-            timeline: bantConfig.timeline?.[0]?.question,
-          },
-        }),
-      );
+      // console.log removed
     } else {
-      console.log(
-        `[Chat API ${requestId}] No BANT config found for adminId: ${finalAdminId}`,
-      );
+      // console.log removed
     }
 
     // Filter only active questions
@@ -3979,30 +3887,15 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    console.log(`[Chat API ${requestId}] BANT config found: ${!!bantConfig}`);
+    // console.log removed
   } catch (e) {
-    console.error("[Chat API] Error fetching BANT config:", e);
+    // console.error removed
   }
 
   // 🔥 HANDLE USER PROFILE UPDATE FOR CUSTOMER INTELLIGENCE
   if (updateUserProfile && profileUserEmail) {
     try {
-      console.log(
-        `[Chat API ${requestId}] 📊 Updating user profile for customer intelligence`,
-      );
-      console.log(`[Chat API ${requestId}] 📊 Profile data:`, {
-        sessionId,
-        userEmail: profileUserEmail,
-        userName: profileUserName,
-        leadSource,
-        bookingIntent,
-        bookingConfirmed,
-        bookingType,
-        bookingDate,
-        bookingTime,
-        confirmationNumber,
-        leadStatus,
-      });
+      // console.log removed
 
       const db = await getDb();
       const conversationsCollection = db.collection("conversations");
@@ -4102,10 +3995,7 @@ export async function POST(req: NextRequest) {
             trigger: "booking_confirmation",
           });
         } catch (profileError) {
-          console.error(
-            `[Chat API ${requestId}] ⚠️ Failed to update customer_profiles:`,
-            profileError,
-          );
+          // console.error removed
         }
       }
 
@@ -4166,29 +4056,20 @@ export async function POST(req: NextRequest) {
               };
             } else {
               // Do not force a fallback BANT if no dimension is confidently missing
-              console.log(
-                `[Chat API ${requestId}] ⚠️ AI declined post-booking follow-up; skipping forced BANT since dims may be complete.`,
-              );
+              // console.log removed
             }
           } else {
             // Nothing missing; skip follow-up entirely
-            console.log(
-              `[Chat API ${requestId}] ✅ BANT appears complete; skipping post-booking follow-up.`,
-            );
+            // console.log removed
           }
         } catch (e) {
-          console.warn(
-            `[Chat API ${requestId}] ⚠️ Failed to generate post-booking BANT follow-up:`,
-            e,
-          );
+          // console.warn removed
           // On errors, avoid forcing BANT to prevent duplicates
           followUpMessage = null;
         }
       }
 
-      console.log(
-        `[Chat API ${requestId}] ✅ User profile updated successfully`,
-      );
+      // console.log removed
 
       // Insert booking confirmation into chats collection for history and email resolution
       if (bookingConfirmed && profileUserEmail) {
@@ -4212,14 +4093,9 @@ export async function POST(req: NextRequest) {
             },
             adminId: apiAuth?.adminId || "default-admin",
           });
-          console.log(
-            `[Chat API ${requestId}] ✅ Inserted booking confirmation to chats collection`,
-          );
+          // console.log removed
         } catch (chatError) {
-          console.error(
-            `[Chat API ${requestId}] ⚠️ Failed to insert booking msg to chats:`,
-            chatError,
-          );
+          // console.error removed
         }
       }
 
@@ -4271,10 +4147,7 @@ export async function POST(req: NextRequest) {
         { headers: corsHeaders },
       );
     } catch (error) {
-      console.error(
-        `[Chat API ${requestId}] ❌ Error updating user profile:`,
-        error,
-      );
+      // console.error removed
       return NextResponse.json(
         { error: "Failed to update user profile" },
         { status: 500, headers: corsHeaders },
@@ -4428,7 +4301,7 @@ export async function POST(req: NextRequest) {
         // If gating check fails, continue with contextual generation
       }
 
-      console.log("[DEBUG] Handling contextual question generation");
+      // console.log removed
 
       const contextualPrompt = `You are an intelligent business assistant analyzing a webpage to generate contextual questions. 
 
@@ -4463,10 +4336,7 @@ Based on the page context, create an intelligent contextual question that demons
 
       const aiResponse =
         contextualResp.choices[0].message.content?.trim() || "";
-      console.log(
-        "[DEBUG] Raw AI response for contextual question:",
-        aiResponse,
-      );
+      // console.log removed
 
       // Clean up AI response to handle HTML entities and formatting issues
       let cleanedResponse = aiResponse;
@@ -4479,7 +4349,7 @@ Based on the page context, create an intelligent contextual question that demons
       cleanedResponse = cleanedResponse.replace(/&amp;/g, "&"); // Convert &amp; to &
       cleanedResponse = cleanedResponse.trim();
 
-      console.log("[DEBUG] Cleaned AI response:", cleanedResponse);
+      // console.log removed
 
       // Parse the AI response with robust error handling
       let parsed;
@@ -4496,15 +4366,10 @@ Based on the page context, create an intelligent contextual question that demons
           parsed.emailPrompt = "";
         }
 
-        console.log("[DEBUG] Successfully parsed contextual question:", parsed);
+        // console.log removed
       } catch (parseError) {
-        console.error(
-          "[DEBUG] Failed to parse AI response, using fallback:",
-          parseError,
-        );
-        console.log(
-          "[DEBUG] Attempting to extract content from malformed response...",
-        );
+        // console.error removed
+        // console.log removed
 
         // Try to extract content from malformed response
         let extractedMainText =
@@ -4515,7 +4380,7 @@ Based on the page context, create an intelligent contextual question that demons
         const mainTextMatch = cleanedResponse.match(/"mainText":\s*"([^"]+)"/);
         if (mainTextMatch) {
           extractedMainText = mainTextMatch[1].replace(/\\n/g, "\n");
-          console.log("[DEBUG] Extracted mainText:", extractedMainText);
+          // console.log removed
         }
 
         // Look for buttons array in the response
@@ -4524,9 +4389,9 @@ Based on the page context, create an intelligent contextual question that demons
           try {
             const buttonsPart = "[" + buttonsMatch[1] + "]";
             extractedButtons = JSON.parse(buttonsPart);
-            console.log("[DEBUG] Extracted buttons:", extractedButtons);
+            // console.log removed
           } catch (buttonError) {
-            console.log("[DEBUG] Could not parse buttons, using defaults");
+            // console.log removed
           }
         }
 
@@ -4537,10 +4402,7 @@ Based on the page context, create an intelligent contextual question that demons
           emailPrompt: "",
         };
 
-        console.log(
-          "[DEBUG] Using fallback response with extracted content:",
-          parsed,
-        );
+        // console.log removed
       }
 
       // Check for booking detection for contextual questions
@@ -4553,9 +4415,7 @@ Based on the page context, create an intelligent contextual question that demons
         );
 
         if (bookingEnhancement.chatResponse.showBookingCalendar) {
-          console.log(
-            "[Chat API] Booking detected in contextual question - enhancing response with calendar",
-          );
+          // console.log removed
           await updateProfileOnContactRequest(
             req.nextUrl.origin,
             sessionId,
@@ -4572,10 +4432,7 @@ Based on the page context, create an intelligent contextual question that demons
           };
         }
       } catch (error) {
-        console.warn(
-          "[Chat API] Booking detection failed for contextual question:",
-          error,
-        );
+        // console.warn removed
         // Continue with original response if booking detection fails
       }
 
@@ -4636,16 +4493,7 @@ Based on the page context, create an intelligent contextual question that demons
 
       // Sales/Lead exclusivity: if sales is active, do not run lead-gen contextual bot
       if (sessionEmail) {
-        console.log("[BANT] Contextual check results", {
-          sessionId,
-          hasEmail: !!sessionEmail,
-          missingDims,
-          pageUrl,
-          lastAssistantButtonsCount: Array.isArray(enhancedResponse.buttons)
-            ? enhancedResponse.buttons.length
-            : 0,
-          timestamp: new Date().toISOString(),
-        });
+        // console.log removed
         const lastDoc: any = sessionDocs[sessionDocs.length - 1] || null;
         const lastAssistantIdx = [...sessionDocs]
           .reverse()
@@ -4673,13 +4521,7 @@ Based on the page context, create an intelligent contextual question that demons
             pageUrl,
             question || "",
           );
-          console.log("[SalesMode] Switching due to BANT complete", {
-            sessionId,
-            missingDimsCount: missingDims.length,
-            hasEmail: !!sessionEmail,
-            pageUrl,
-            timestamp: new Date().toISOString(),
-          });
+          // console.log removed
           return NextResponse.json(
             {
               mainText:
@@ -4776,9 +4618,7 @@ Based on the page context, create an intelligent contextual question that demons
             (lastAssistant as any)?.bantDimension === "segment";
 
           if (isAskingBudget && !segmentDetected && !justAskedSegment) {
-            console.log(
-              "[BANT] Intercepting budget question to ask segment first",
-            );
+            // console.log removed
             enhancedResponse = {
               ...enhancedResponse,
               mainText:
@@ -4825,14 +4665,11 @@ Based on the page context, create an intelligent contextual question that demons
         })(),
       };
 
-      console.log(
-        "[DEBUG] Returning contextual question response:",
-        responseWithMode,
-      );
+      // console.log removed
 
       return NextResponse.json(responseWithMode, { headers: corsHeaders });
     } catch (error) {
-      console.error("[DEBUG] Error in contextual question generation:", error);
+      // console.error removed
 
       // Return fallback response
       const fallbackResponse = {
@@ -4930,10 +4767,7 @@ Based on the page context, create an intelligent contextual question that demons
         // If gating check fails, continue with auto-response generation
       }
 
-      console.log(
-        "[DEBUG] Generating auto-response for contextual question:",
-        contextualQuestion,
-      );
+      // console.log removed
 
       const autoResponsePrompt = `You are a helpful business assistant. A user was shown this contextual question but didn't respond: "${contextualQuestion}"
 
@@ -4966,7 +4800,7 @@ Keep the response conversational and helpful, focusing on providing value before
 
       const aiResponse =
         autoResponseResult.choices[0]?.message?.content?.trim() || "";
-      console.log("[DEBUG] Raw AI response for auto-response:", aiResponse);
+      // console.log removed
 
       // Parse the AI response with robust error handling
       let parsed;
@@ -4978,12 +4812,9 @@ Keep the response conversational and helpful, focusing on providing value before
           throw new Error("Invalid auto-response structure");
         }
 
-        console.log("[DEBUG] Successfully parsed auto-response:", parsed);
+        // console.log removed
       } catch (parseError) {
-        console.error(
-          "[DEBUG] Failed to parse auto-response, using fallback:",
-          parseError,
-        );
+        // console.error removed
 
         // Fallback response if AI doesn't return valid JSON
         parsed = {
@@ -5004,9 +4835,7 @@ Keep the response conversational and helpful, focusing on providing value before
         );
 
         if (bookingEnhancement.chatResponse.showBookingCalendar) {
-          console.log(
-            "[Chat API] Booking detected in auto-response - enhancing response with calendar",
-          );
+          // console.log removed
           await updateProfileOnContactRequest(
             req.nextUrl.origin,
             sessionId,
@@ -5023,10 +4852,7 @@ Keep the response conversational and helpful, focusing on providing value before
           };
         }
       } catch (error) {
-        console.warn(
-          "[Chat API] Booking detection failed for auto-response:",
-          error,
-        );
+        // console.warn removed
         // Continue with original response if booking detection fails
       }
 
@@ -5055,10 +4881,7 @@ Keep the response conversational and helpful, focusing on providing value before
           botMode: "sales",
           userEmail: sessionEmailAR,
         };
-        console.log(
-          "[DEBUG] Returning sales-mode auto-response:",
-          salesAutoResponse,
-        );
+        // console.log removed
         return NextResponse.json(salesAutoResponse, { headers: corsHeaders });
       }
 
@@ -5070,11 +4893,11 @@ Keep the response conversational and helpful, focusing on providing value before
         userEmail: null,
       };
 
-      console.log("[DEBUG] Returning auto-response:", autoResponseData);
+      // console.log removed
 
       return NextResponse.json(autoResponseData, { headers: corsHeaders });
     } catch (error) {
-      console.error("[DEBUG] Error in auto-response generation:", error);
+      // console.error removed
 
       // Return fallback auto-response
       const fallbackAutoResponse = {
@@ -5107,7 +4930,7 @@ Keep the response conversational and helpful, focusing on providing value before
   // Admin ID resolved at top of function
   let adminId = resolvedAdminId;
   if (adminId) {
-    console.log(`[DEBUG] Using resolved adminId: ${adminId}`);
+    // console.log removed
   }
 
   // 🔥 PHASE 1: CHECK BOOKING STATUS
@@ -5139,20 +4962,10 @@ Keep the response conversational and helpful, focusing on providing value before
         status: "confirmed",
       },
     } as any;
-    console.log(
-      `[Chat API ${requestId}] 🟢 Overriding booking status due to immediate confirmation.`,
-    );
+    // console.log removed
   }
 
-  console.log(
-    `[Chat API ${requestId}] Booking status for session ${sessionId}:`,
-    {
-      hasActiveBooking: bookingStatus.hasActiveBooking,
-      bookingType: bookingStatus.currentBooking?.requestType,
-      bookingDate: bookingStatus.currentBooking?.preferredDate,
-      canBookAgain: bookingStatus.canBookAgain,
-    },
-  );
+  // console.log removed
 
   // 🔰 Onboarding flow entry
   let onboardingConfig: OnboardingSettings | undefined = undefined;
@@ -5161,7 +4974,7 @@ Keep the response conversational and helpful, focusing on providing value before
       const settings = await getAdminSettings(adminId);
       onboardingConfig = settings.onboarding;
     } catch (e) {
-      console.log("[Onboarding] Failed to load admin onboarding settings:", e);
+      // console.log removed
     }
   }
 
@@ -5170,17 +4983,12 @@ Keep the response conversational and helpful, focusing on providing value before
   const isOnboardingOnlyEarly = widgetModeEarly === "onboarding_only";
   if (!adminId && isOnboardingOnlyEarly) {
     adminId = "default-admin";
-    console.log(
-      `[DEBUG] Onboarding-only mode: using fallback adminId: ${adminId}`,
-    );
+    // console.log removed
     try {
       const settings = await getAdminSettings(adminId);
       onboardingConfig = settings.onboarding;
     } catch (e) {
-      console.log(
-        "[Onboarding] Failed to load fallback admin onboarding settings:",
-        e,
-      );
+      // console.log removed
     }
   }
   const onboardingEnabled =
@@ -5386,26 +5194,9 @@ Keep the response conversational and helpful, focusing on providing value before
               }),
             );
             if (!result.success) {
-              console.error(
-                `[Chat API ${requestId}] ❌ Onboarding registration failed`,
-                {
-                  adminId,
-                  sessionId,
-                  status: result.status,
-                  error: result.error,
-                  payload: safePayload,
-                },
-              );
+              // console.error removed
             } else {
-              console.log(
-                `[Chat API ${requestId}] ✅ Onboarding registration succeeded`,
-                {
-                  adminId,
-                  sessionId,
-                  userId: result.userId,
-                  status: result.status,
-                },
-              );
+              // console.log removed
             }
           } catch {}
 
@@ -5508,22 +5299,10 @@ Keep the response conversational and helpful, focusing on providing value before
                     },
                   );
                 } else {
-                  console.warn(
-                    `[Chat API ${requestId}] ⚠️ Auth step failed or no token`,
-                    {
-                      adminId,
-                      sessionId,
-                      status: authRes.status,
-                      error: authRes.error,
-                    },
-                  );
+                  // console.warn removed
                 }
               } catch (e: any) {
-                console.warn(`[Chat API ${requestId}] ⚠️ Auth step error`, {
-                  adminId,
-                  sessionId,
-                  message: e?.message || String(e),
-                });
+                // console.warn removed
               }
             }
 
@@ -6272,26 +6051,9 @@ Keep the response conversational and helpful, focusing on providing value before
               }),
             );
             if (!result2.success) {
-              console.error(
-                `[Chat API ${requestId}] ❌ Onboarding registration failed`,
-                {
-                  adminId,
-                  sessionId,
-                  status: result2.status,
-                  error: result2.error,
-                  payload: safePayload,
-                },
-              );
+              // console.error removed
             } else {
-              console.log(
-                `[Chat API ${requestId}] ✅ Onboarding registration succeeded`,
-                {
-                  adminId,
-                  sessionId,
-                  userId: result2.userId,
-                  status: result2.status,
-                },
-              );
+              // console.log removed
             }
           } catch {}
 
@@ -6675,22 +6437,12 @@ Keep the response conversational and helpful, focusing on providing value before
                 const latestSettings = await getAdminSettings(adminId, true);
                 onboardingConfig = latestSettings.onboarding;
               } catch (e) {
-                console.log(
-                  "[Onboarding] Failed to reload settings for closingMsg:",
-                  e,
-                );
+                // console.log removed
               }
             }
 
             const closingMsg = (onboardingConfig as any)?.closingMessage;
-            console.log(
-              "[DEBUG] closingMsg:",
-              closingMsg,
-              "adminId:",
-              adminId,
-              "onboardingConfig:",
-              JSON.stringify(onboardingConfig),
-            );
+            // console.log removed
             const baseMsg = externalMsg2
               ? `✅ ${externalMsg2}`
               : "✅ You’re all set! Your account has been created.";
@@ -6756,20 +6508,12 @@ Keep the response conversational and helpful, focusing on providing value before
                 const latestSettings = await getAdminSettings(adminId, true);
                 onboardingConfig = latestSettings.onboarding;
               } catch (e) {
-                console.log(
-                  "[Onboarding] Failed to reload settings for closingMsg:",
-                  e,
-                );
+                // console.log removed
               }
             }
 
             const closingMsg = (onboardingConfig as any)?.closingMessage;
-            console.log(
-              "[DEBUG] closingMsg (block 2):",
-              closingMsg,
-              "onboardingConfig:",
-              JSON.stringify(onboardingConfig),
-            );
+            // console.log removed
             const baseMsg = externalMsg3
               ? `✅ ${externalMsg3}`
               : "✅ You’re all set! Your account has been created.";
@@ -7542,13 +7286,11 @@ Extract key requirements (2-3 bullet points max, be concise):`;
           extractedRequirements !== "General inquiry"
         ) {
           updateData.requirements = extractedRequirements;
-          console.log(
-            `[LeadGen] Extracted requirements for ${detectedEmail}: ${extractedRequirements}`,
-          );
+          // console.log removed
         }
       }
     } catch (error) {
-      console.error("[LeadGen] Error extracting requirements:", error);
+      // console.error removed
       // Continue without requirements if AI analysis fails
     }
 
@@ -7615,11 +7357,9 @@ Extract key requirements (2-3 bullet points max, be concise):`;
               visitedPages: visitedPages.slice(-10), // Last 10 unique pages
             };
 
-            console.log(
-              `[LeadGen] Enhanced context: intent=${detectedIntent}, vertical=${detectedVertical}, pages=${visitedPages.length}`,
-            );
+            // console.log removed
           } catch (contextError) {
-            console.error("[LeadGen] Error gathering context:", contextError);
+            // console.error removed
             // Continue with basic context
           }
         }
@@ -7634,19 +7374,15 @@ Extract key requirements (2-3 bullet points max, be concise):`;
           pageContext,
         );
 
-        console.log(
-          `[LeadGen] Created/updated lead record for ${detectedEmail} with adminId: ${adminId}`,
-        );
+        // console.log removed
       } catch (error) {
-        console.error("[LeadGen] Error creating lead record:", error);
+        // console.error removed
         // Continue even if lead creation fails
       }
     }
 
     // Log for verification
-    console.log(
-      `[LeadGen] Stored email for session ${sessionId}: ${detectedEmail} with adminId: ${adminId}`,
-    );
+    // console.log removed
 
     // Track email capture event
     await trackSDREvent(
@@ -7715,28 +7451,18 @@ Extract key requirements (2-3 bullet points max, be concise):`;
       if (profileResponse.ok) {
         const profileResult = (await profileResponse.json()) as any;
         if (profileResult.updated) {
-          console.log(
-            `[CustomerProfiling] Profile updated via ${profileResult.trigger} - Confidence: ${profileResult.confidence}`,
-          );
+          // console.log removed
 
           // Store profile data for potential use in response generation
           if (profileResult.profile?.intelligenceProfile?.buyingReadiness) {
-            console.log(
-              `[CustomerProfiling] Buying readiness: ${profileResult.profile.intelligenceProfile.buyingReadiness}`,
-            );
+            // console.log removed
           }
         }
       } else {
-        console.log(
-          "[CustomerProfiling] Profile update request failed:",
-          profileResponse.status,
-        );
+        // console.log removed
       }
     } catch (error) {
-      console.error(
-        "[CustomerProfiling] Error in profile update process:",
-        error,
-      );
+      // console.error removed
       // Continue with normal chat flow - profiling failures shouldn't break the conversation
     }
   }
@@ -7751,9 +7477,7 @@ Extract key requirements (2-3 bullet points max, be concise):`;
     );
 
     if (bookingAwareResponse.existingBooking) {
-      console.log(
-        `[Chat API ${requestId}] 🔒 User has active booking, returning booking-aware response`,
-      );
+      // console.log removed
 
       // Store user message
       await chats.insertOne({
@@ -7800,9 +7524,7 @@ Extract key requirements (2-3 bullet points max, be concise):`;
     );
 
     if (isBookingAction && bookingStatus.hasActiveBooking) {
-      console.log(
-        `[Chat API ${requestId}] 🎛️ Handling booking management action: ${question}`,
-      );
+      // console.log removed
 
       // Determine which action was requested
       let requestedAction = "manage"; // default
@@ -7970,15 +7692,11 @@ Extract key requirements (2-3 bullet points max, be concise):`;
 
   // Proactive page-aware message
   if ((proactive || followup) && pageUrl) {
-    console.log(
-      `[DEBUG] Proactive request - pageUrl: ${pageUrl}, adminId: ${adminId}, proactive: ${proactive}, followup: ${followup}`,
-    );
+    // console.log removed
 
     let pageChunks: string[] = [];
     if (adminId) {
-      console.log(
-        `[DEBUG] AdminId found: ${adminId}, checking sitemap for pageUrl: ${pageUrl}`,
-      );
+      // console.log removed
       // Check if pageUrl is in sitemap_urls and if it's crawled
       const sitemapUrls = db.collection("sitemap_urls");
       // Robust lookup handling trailing slash mismatch
@@ -7988,41 +7706,24 @@ Extract key requirements (2-3 bullet points max, be concise):`;
         url: { $in: [normalizedUrl, normalizedUrl + "/"] },
       });
       // LOG: adminId, pageUrl, sitemapEntry
-      console.log(
-        "[Proactive] adminId:",
-        adminId,
-        "pageUrl:",
-        pageUrl,
-        "sitemapEntry:",
-        sitemapEntry,
-      );
+      // console.log removed
 
       if (!sitemapEntry) {
-        console.log(
-          `[DEBUG] No sitemap entry found for pageUrl: ${pageUrl} with adminId: ${adminId}`,
-        );
-        console.log(
-          `[DEBUG] This means the page is not in your sitemap. Add it via admin panel.`,
-        );
+        // console.log removed
+        // console.log removed
       } else if (!sitemapEntry.crawled) {
-        console.log(
-          `[DEBUG] Sitemap entry found but page not crawled yet. Will crawl now.`,
-        );
+        // console.log removed
       } else {
-        console.log(`[DEBUG] Page found and crawled. Getting chunks...`);
+        // console.log removed
       }
       if (sitemapEntry && !sitemapEntry.crawled) {
         // Crawl the page on demand with redirect handling
         try {
           // Use the URL from sitemap entry to ensure consistency
           const targetUrl = sitemapEntry.url;
-          console.log(`[OnDemandCrawl] Starting to crawl: ${targetUrl}`);
+          // console.log removed
           const text = await extractTextFromUrl(targetUrl);
-          console.log(
-            `[OnDemandCrawl] Extracted text for ${targetUrl}: ${
-              text.length
-            } chars, first 100: ${text.slice(0, 100)}`,
-          );
+          // console.log removed
 
           // Store in crawled_pages
           await db.collection("crawled_pages").insertOne({
@@ -8056,33 +7757,25 @@ Extract key requirements (2-3 bullet points max, be concise):`;
             }));
             await addChunks(chunks, embeddings, metadata);
             pageChunks = chunks;
-            console.log(
-              `[OnDemandCrawl] Successfully processed ${targetUrl}: ${chunks.length} chunks`,
-            );
+            // console.log removed
           } else {
-            console.log(
-              `[OnDemandCrawl] No chunks created for ${targetUrl} - content may be too short or empty`,
-            );
+            // console.log removed
           }
         } catch (err) {
-          console.error(`[OnDemandCrawl] Failed for ${sitemapEntry.url}:`, err);
+          // console.error removed
           // If crawl fails, fallback to no info
         }
       } else if (sitemapEntry && sitemapEntry.crawled) {
         // Use the canonical URL from sitemap entry to fetch chunks
         pageChunks = await getChunksByPageUrl(adminId, sitemapEntry.url);
         // LOG: pageChunks result
-        console.log("[Proactive] getChunksByPageUrl result:", pageChunks);
+        // console.log removed
       }
     } else {
       // LOG: No adminId found for session
-      console.log("[Proactive] No adminId found for sessionId:", sessionId);
-      console.log(
-        "[DEBUG] This means your API key is not properly mapped to an adminId",
-      );
-      console.log(
-        "[DEBUG] Check that your API key exists in the users collection",
-      );
+      // console.log removed
+      // console.log removed
+      // console.log removed
     }
     let pageSummary = "(No specific information found for this page.)";
     let summaryContext = "";
@@ -8094,9 +7787,7 @@ Extract key requirements (2-3 bullet points max, be concise):`;
       contextualPageContext &&
       (triggerLeadQuestion || proactive || !hasBeenGreeted)
     ) {
-      console.log(
-        "[Proactive] Injecting contextualPageContext as pageChunk for lead question",
-      );
+      // console.log removed
       pageChunks = [contextualPageContext];
     }
 
@@ -8106,7 +7797,7 @@ Extract key requirements (2-3 bullet points max, be concise):`;
         summaryContext = pageChunks.slice(0, 10).join("\n---\n");
         const fullPageText = pageChunks.join(" ");
         const tokenCount = countTokens(fullPageText);
-        console.log(`[Proactive] Page content token count: ${tokenCount}`);
+        // console.log removed
         // Exclusivity gating: if onboarding is active, suppress proactive lead/sales prompts
         try {
           const db = await getDb();
@@ -8218,15 +7909,11 @@ Extract key requirements (2-3 bullet points max, be concise):`;
             fullPageText,
             chunkSize,
           );
-          console.log(
-            `[Proactive] Splitting into ${textChunks.length} chunks of ~${chunkSize} tokens each`,
-          );
+          // console.log removed
           const summaries = [];
           for (let i = 0; i < textChunks.length; i++) {
             const chunk = textChunks[i];
-            console.log(
-              `[Proactive] Summarizing chunk ${i + 1}/${textChunks.length}`,
-            );
+            // console.log removed
             const summaryResp = await openai.chat.completions.create({
               model: "gpt-4o-mini",
               messages: [
@@ -8240,21 +7927,15 @@ Extract key requirements (2-3 bullet points max, be concise):`;
             summaries.push(summaryResp.choices[0].message.content || "");
           }
           summaryContext = summaries.join("\n");
-          console.log(
-            `[Proactive] Combined summary length: ${summaryContext.length} chars`,
-          );
+          // console.log removed
         }
         const detectedIntent = detectIntent({ pageUrl });
         const detectedVertical = detectVertical(pageUrl, summaryContext);
         const verticalInfo = getVerticalMessage(detectedVertical);
 
-        console.log(
-          `[DEBUG] Detected intent for pageUrl "${pageUrl}": "${detectedIntent}"`,
-        );
-        console.log(`[DEBUG] Detected vertical: "${detectedVertical}"`);
-        console.log(
-          `[DEBUG] Conversation state: hasBeenGreeted=${hasBeenGreeted}, proactiveCount=${proactiveMessageCount}, visitedPages=${visitedPages.length}`,
-        );
+        // console.log removed
+        // console.log removed
+        // console.log removed
 
         const businessName = (() => {
           try {
@@ -8378,6 +8059,7 @@ Extract key requirements (2-3 bullet points max, be concise):`;
 
         let summaryPrompt;
         let systemInstruction;
+        let detectedPersona: any = null;
 
         if (!hasBeenGreeted) {
           // Check if user already has email (sales mode activation) or preserved SDR status
@@ -8461,6 +8143,16 @@ Extract key requirements (2-3 bullet points max, be concise):`;
           // First time greeting - create intelligent, page-specific messages
           // PRIORITIZE: If we have specific section context from frontend, use that as the primary signal
           const activeContext = contextualPageContext || summaryContext || "";
+
+          // NEW: Attempt to detect persona from page context to personalize the greeting
+          detectedPersona = await detectUserPersona(
+            sessionId,
+            [], // No messages yet for first greeting
+            pageUrl || "",
+            adminId || "",
+            contextualPageContext || "",
+          );
+
           const contextSource = contextualPageContext
             ? "User is currently viewing this section (High Priority)"
             : "Page content summary";
@@ -8473,6 +8165,7 @@ Extract key requirements (2-3 bullet points max, be concise):`;
 Page URL: ${pageUrl}
 User Intent: ${detectedIntent}
 Context Source: ${contextSource}
+Detected Persona: ${detectedPersona ? `${detectedPersona.name} (${detectedPersona.type})` : "Unknown"}
 Content Preview: ${contextPreview}...
 
 TASK: Create a highly contextual, "read-my-mind" style opening question based on the specific content.
@@ -8481,6 +8174,7 @@ BEHAVIORAL ANALYSIS:
 1. What is the PRIMARY value proposition of this specific content?
 2. What problem is a user trying to solve if they are reading this?
 3. What is the most logical next step or question they would have?
+4. ${detectedPersona ? `Speak directly to the ${detectedPersona.name} persona needs: ${detectedPersona.painPoints?.join(", ")}` : "Identify the user's likely role/needs from the content."}
 
 Generate response in JSON format:
 {
@@ -8749,9 +8443,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
           proactiveResponse = JSON.parse(pageSummary);
         } catch (error) {
           // Dynamic fallback based on page content
-          console.log(
-            "[Proactive] Failed to parse JSON, creating dynamic fallback",
-          );
+          // console.log removed
 
           // Extract key info from page context for fallback
           const contextKeywords = summaryContext.toLowerCase();
@@ -8837,9 +8529,6 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
           );
 
           if (bookingEnhancement.chatResponse.showBookingCalendar) {
-            console.log(
-              "[Chat API] Booking detected in proactive message - enhancing response with calendar",
-            );
             await updateProfileOnContactRequest(
               req.nextUrl.origin,
               sessionId,
@@ -8858,25 +8547,21 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
             };
           }
         } catch (error) {
-          console.warn(
-            "[Chat API] Booking detection failed for proactive message:",
-            error,
-          );
           // Continue with original response if booking detection fails
         }
 
-        console.log("[Chat API] Proactive response:", {
-          botMode,
-          userEmail: userEmail || null,
-          hasProactiveMsg: !!proactiveMsg,
-          timestamp: new Date().toISOString(),
-        });
+        console.log(`[Chatbot] Greeting: "${finalProactiveMsg}"`);
 
         let secondary: any = null;
 
         // NEW: Check for Stored Lead Question to use as SECONDARY (Immediate Delivery)
         // This ensures the Lead Question appears immediately AFTER the welcome message
-        if (adminId && pageUrl) {
+        // Core Memory Rule: If persona was detected with specific context, SKIP stored questions
+        // to avoid overriding the highly tailored persona message.
+        const shouldSkipStoredQuestions =
+          detectedPersona && contextualPageContext;
+
+        if (adminId && pageUrl && !shouldSkipStoredQuestions) {
           try {
             const structuredSummaryDoc = await db
               .collection("structured_summaries")
@@ -8962,9 +8647,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
               ) {
                 const q = matchedSection.leadQuestions[0];
                 if (q && q.question) {
-                  console.log(
-                    `[Proactive] Found stored lead question for secondary message: ${matchedSection.sectionName}`,
-                  );
+                  console.log(`[Chatbot] Lead Question: "${q.question}"`);
                   const rawOptions = q.options || [];
                   const secButtons = rawOptions.map((o: any) =>
                     typeof o === "string" ? o : o.label || JSON.stringify(o),
@@ -8980,10 +8663,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
               }
             }
           } catch (e) {
-            console.error(
-              "[Proactive] Error finding stored secondary lead question:",
-              e,
-            );
+            // Error finding stored secondary lead question
           }
         }
 
@@ -9130,10 +8810,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
             : 0;
         const preferMessageBased =
           fcPref === 0 && lastUserContent && lastUserContent.trim() !== "";
-        console.log("[FOLLOWUP] BANT missingDims and preference", {
-          missingDims,
-          preferMessageBased,
-        });
+        // console.log removed
 
         if (missingDims.length === 0) {
           await updateProfileOnBantComplete(
@@ -9180,9 +8857,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
           );
 
           if (hasBannedPattern) {
-            console.log(
-              `[VARIETY] Rejected message for banned pattern: "${newText}"`,
-            );
+            // console.log removed
             return true; // Reject this message as too similar
           }
 
@@ -9231,28 +8906,20 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
               : 0;
         const followupTopic = body.followupTopic || "general";
 
-        console.log(
-          "[FOLLOWUP] Generating followup message for topic:",
-          followupTopic,
-          "Count:",
-          followupCount,
-          "Raw:",
-          rawFollowupCount,
-        );
+        // console.log removed
 
         // Check if user already has email (sales mode)
         // resolvedUserEmail is the authoritative source (includes profile, booking, etc.)
         const userHasEmail = resolvedUserEmail;
 
         // Try persona-based followup first
-        console.log(
-          `[Persona] Attempting persona detection for followup ${followupCount}`,
-        );
+        // console.log removed
         const detectedPersona = await detectUserPersona(
           sessionId,
           previousChats,
           pageUrl,
           adminId || "",
+          contextualPageContext || "",
         );
 
         // Build summary-first page context for prompts
@@ -9298,10 +8965,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
               if (summaryCtx) pageContextForPrompt = summaryCtx;
             }
           } catch (e) {
-            console.log(
-              "[Followup] Summary-first context build failed, using chunks",
-              e,
-            );
+            // console.log removed
           }
         }
 
@@ -9328,9 +8992,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
                 let bestScore = -1;
                 let bestSection: any = null;
 
-                console.log(
-                  `[Followup] Matching context (${lowerContext.length} chars) against ${sections.length} sections...`,
-                );
+                // console.log removed
 
                 sections.forEach((s: any) => {
                   const sName = (s.sectionName || "").toLowerCase();
@@ -9386,9 +9048,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
                   }
 
                   if (score > 0) {
-                    console.log(
-                      `[Followup] Section "${sName}" Score: ${score}`,
-                    );
+                    // console.log removed
                   }
 
                   if (score > bestScore) {
@@ -9410,9 +9070,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
                 sections.length > 0 &&
                 !contextualPageContext
               ) {
-                console.log(
-                  "[Followup] No specific section matched (and no context). Falling back to Section 1 (Hero).",
-                );
+                // console.log removed
                 matchedSection = sections[0];
               }
 
@@ -9424,9 +9082,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
               ) {
                 const q = matchedSection.leadQuestions[followupCount];
                 if (q && q.question) {
-                  console.log(
-                    `[Followup] Found stored lead question for section: ${matchedSection.sectionName} (Index: ${followupCount})`,
-                  );
+                  // console.log removed
                   const rawOptions = q.options || [];
                   const buttons = rawOptions.map((o: any) =>
                     typeof o === "string" ? o : o.label || JSON.stringify(o),
@@ -9439,10 +9095,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
                 }
               }
             } catch (err) {
-              console.error(
-                "[Followup] Error finding stored section question:",
-                err,
-              );
+              // console.error removed
             }
           }
 
@@ -9452,17 +9105,11 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
             contextualPageContext || summaryContext || "";
 
           if (!personaFollowup && effectiveContext) {
-            console.log(
-              `[Followup] Generating prioritized delayed lead question based on context source: "${
-                contextualPageContext ? "Visible Section" : "Page Summary"
-              }"`,
-            );
+            // console.log removed
 
             // TRY PERSONA-AWARE GENERATION FIRST if available
             if (detectedPersona) {
-              console.log(
-                `[Followup] Using Persona-Aware Section Generation for: ${detectedPersona.type}`,
-              );
+              // console.log removed
               try {
                 personaFollowup = await generatePersonaBasedFollowup(
                   detectedPersona,
@@ -9475,10 +9122,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
                   effectiveContext, // Pass effective context
                 );
               } catch (err) {
-                console.error(
-                  "[Followup] Error generating persona-based section lead question:",
-                  err,
-                );
+                // console.error removed
               }
             }
 
@@ -9521,10 +9165,7 @@ CRITICAL RULES:
                   personaFollowup = JSON.parse(content);
                 }
               } catch (e) {
-                console.error(
-                  "[Followup] Failed to generate prioritized lead question:",
-                  e,
-                );
+                // console.error removed
                 // CRITICAL FALLBACK: Ensure we return a section-related response even if AI fails
                 personaFollowup = {
                   mainText:
@@ -9545,9 +9186,7 @@ CRITICAL RULES:
           followupTopic !== "general" &&
           followupCount !== 2
         ) {
-          console.log(
-            `[FOLLOWUP] Generating topic-based followup for: ${followupTopic}`,
-          );
+          // console.log removed
           personaFollowup = await generateTopicBasedFollowup(
             followupTopic,
             pageContextForPrompt,
@@ -9565,11 +9204,7 @@ CRITICAL RULES:
           pageChunks.length > 0 &&
           followupCount !== 2
         ) {
-          console.log(
-            `[Persona] Generating persona-based followup for: ${
-              detectedPersona?.name || "unknown"
-            }`,
-          );
+          // console.log removed
           personaFollowup = await generatePersonaBasedFollowup(
             detectedPersona,
             pageContextForPrompt,
@@ -9704,15 +9339,7 @@ CRITICAL RULES:
 
         // Use persona-based followup if available, otherwise fall back to generic
         if (personaFollowup && personaFollowup.mainText) {
-          console.log(
-            `[Persona] Using ${
-              detectedPersona
-                ? `persona-based followup for ${
-                    detectedPersona?.name || "unknown"
-                  }`
-                : "generated followup"
-            }`,
-          );
+          // console.log removed
 
           const userEmail =
             resolvedUserEmail ||
@@ -9735,9 +9362,7 @@ CRITICAL RULES:
             );
 
             if (bookingEnhancement.chatResponse.showBookingCalendar) {
-              console.log(
-                "[Chat API] Booking detected in persona followup - enhancing response with calendar",
-              );
+              // console.log removed
               await updateProfileOnContactRequest(
                 req.nextUrl.origin,
                 sessionId,
@@ -9757,10 +9382,7 @@ CRITICAL RULES:
               };
             }
           } catch (error) {
-            console.warn(
-              "[Chat API] Booking detection failed for persona followup:",
-              error,
-            );
+            // console.warn removed
             // Continue with original response if booking detection fails
           }
 
@@ -9825,15 +9447,11 @@ CRITICAL RULES:
         }
 
         // Fall back to generic followup logic
-        console.log(
-          `[Persona] No persona detected or persona followup failed, using generic followup`,
-        );
+        // console.log removed
 
         if (followupCount === 0) {
           if (preferMessageBased) {
-            console.log(
-              `[Followup] First followup based on last user message: "${lastUserContent}"`,
-            );
+            // console.log removed
             if (userHasEmail) {
               followupSystemPrompt = `You are a helpful sales assistant. Always return ONLY valid JSON: {"mainText":"...","buttons":[...],"emailPrompt":""}.
 
@@ -9866,9 +9484,7 @@ Rules:
             }
           } else {
             // No user message yet - use existing page-context driven logic
-            console.log(
-              `[Followup] No user message found, using page-context driven first followup (triggerLeadQuestion: ${triggerLeadQuestion}, context: ${!!contextualPageContext})`,
-            );
+            // console.log removed
 
             followupSystemPrompt = `
 You are a helpful sales assistant. The user has not provided an email yet.
@@ -10298,9 +9914,7 @@ ${previousQnA}
           }
         } else {
           // No more follow-ups after 4
-          console.log(
-            `[Followup] No more followups after count 4 for session ${sessionId}`,
-          );
+          // console.log removed
           return NextResponse.json(
             {
               mainText:
@@ -10330,9 +9944,7 @@ ${previousQnA}
           });
 
           if (recentUserActivity) {
-            console.log(
-              `[Followup] Skipping followup - user was active within last 25 seconds for session ${sessionId}`,
-            );
+            // console.log removed
             let userEmail: string | null = null;
             const lastEmailMsg = await chats.findOne(
               { sessionId, email: { $exists: true } },
@@ -10365,17 +9977,13 @@ ${previousQnA}
         const normalizeLabel = (s: string) => s.trim().toLowerCase();
 
         // Start followup generation with error handling
-        console.log(
-          `[Followup] Starting followup generation for session ${sessionId}, count: ${followupCount}`,
-        );
+        // console.log removed
         let followupMsg = "";
         let parsed = null;
 
         try {
           for (let attempt = 0; attempt < 2; attempt++) {
-            console.log(
-              `[Followup] Attempt ${attempt + 1}/2 for session ${sessionId}`,
-            );
+            // console.log removed
             // For retries, add explicit constraints to avoid previously used options
             const augmentedUserPrompt =
               attempt === 0
@@ -10398,10 +10006,7 @@ ${previousQnA}
             try {
               parsed = JSON.parse(followupMsg || "");
             } catch {
-              console.warn(
-                "[Followup Debug] JSON parse failed, using raw msg:",
-                followupMsg,
-              );
+              // console.warn removed
               parsed = { mainText: followupMsg, buttons: [], emailPrompt: "" };
             }
             // Check main text similarity and options overlap
@@ -10429,9 +10034,7 @@ ${previousQnA}
           }
           // If still too similar, skip sending a new follow-up
           if (isTooSimilar(parsed.mainText, lastFewQuestions)) {
-            console.log(
-              `[Followup] Skipping followup - too similar to previous questions for session ${sessionId}`,
-            );
+            // console.log removed
             let userEmail: string | null = null;
             const lastEmailMsg = await chats.findOne(
               { sessionId, email: { $exists: true } },
@@ -10480,15 +10083,7 @@ ${previousQnA}
               );
 
               if (isTopicDiscussed) {
-                console.log(
-                  `[Followup] Filtering button "${b}" because it relates to discussed topic: "${topicsDiscussed.find(
-                    (t: string) =>
-                      String(t || "")
-                        .toLowerCase()
-                        .includes(key) ||
-                      key.includes(String(t || "").toLowerCase()),
-                  )}"`,
-                );
+                // console.log removed
                 return false;
               }
 
@@ -10497,9 +10092,7 @@ ${previousQnA}
             });
           }
 
-          console.log(
-            `[Followup] Successfully generated followup for session ${sessionId}`,
-          );
+          // console.log removed
 
           // Add bot mode to followup response
           let userEmail: string | null = null;
@@ -10519,9 +10112,7 @@ ${previousQnA}
             );
 
             if (bookingEnhancement.chatResponse.showBookingCalendar) {
-              console.log(
-                "[Chat API] Booking detected in generic followup - enhancing response with calendar",
-              );
+              // console.log removed
               await updateProfileOnContactRequest(
                 req.nextUrl.origin,
                 sessionId,
@@ -10540,18 +10131,13 @@ ${previousQnA}
               };
             }
           } catch (error) {
-            console.warn(
-              "[Chat API] Booking detection failed for generic followup:",
-              error,
-            );
+            // console.warn removed
             // Continue with original response if booking detection fails
           }
 
           // Force empty buttons for 3rd followup (ghost closure)
           if (followupCount === 2) {
-            console.log(
-              "[Ghost Closure] Enforcing empty buttons for followupCount 2",
-            );
+            // console.log removed
             enhancedFollowup.buttons = [];
             enhancedFollowup.showBookingCalendar = false;
           }
@@ -10594,15 +10180,8 @@ ${previousQnA}
 
           return NextResponse.json(followupWithMode, { headers: corsHeaders });
         } catch (error) {
-          console.error(
-            `[Followup] Error generating followup for session ${sessionId}:`,
-            error,
-          );
-          if (followupSystemPrompt)
-            console.log(
-              "[Followup Debug] System Prompt:",
-              followupSystemPrompt,
-            );
+          // console.error removed
+          // console.log removed
 
           let userEmail: string | null = null;
           const lastEmailMsg = await chats.findOne(
@@ -10628,13 +10207,9 @@ ${previousQnA}
       }
     }
     // Fallback if no context
-    console.log(
-      `[DEBUG] Falling back to generic message. pageSummary: "${pageSummary}", pageChunks.length: ${pageChunks.length}`,
-    );
+    // console.log removed
     if (proactive) {
-      console.log(
-        `[DEBUG] Returning generic proactive message - no page context found`,
-      );
+      // console.log removed
 
       // 🎯 DYNAMIC FALLBACK FOR PROACTIVE GREETING (No page context)
       let proactiveMsg = "";
@@ -10671,7 +10246,7 @@ ${previousQnA}
         });
         proactiveMsg = completion.choices[0]?.message?.content?.trim() || "";
       } catch (e) {
-        console.error("Error generating dynamic proactive fallback:", e);
+        // console.error removed
       }
 
       if (!proactiveMsg) {
@@ -10728,9 +10303,7 @@ How can I help you today?`;
         { headers: corsHeaders },
       );
     } else if (followup) {
-      console.log(
-        `[Followup] Simple fallback followup for session ${sessionId}`,
-      );
+      // console.log removed
 
       // Exclusivity gating: suppress followups if onboarding is active
       try {
@@ -10890,7 +10463,7 @@ How can I help you today?`;
           }
         }
       } catch (e) {
-        console.error("[Followup] Dynamic fallback generation failed:", e);
+        // console.error removed
         // Randomize static fallback if AI fails
         const fallbacks = [
           {
@@ -10943,9 +10516,7 @@ How can I help you today?`;
       } as any;
       return NextResponse.json(mirrorResp2, { headers: corsHeaders });
     }
-    console.log(
-      `[Followup] Processing followup without pageUrl for session ${sessionId}`,
-    );
+    // console.log removed
 
     try {
       // Exclusivity gating: suppress followups if onboarding is active
@@ -11046,9 +10617,7 @@ How can I help you today?`;
             "Would you like to connect with our team or learn more about our approach?";
         }
 
-        console.log(
-          `[Followup] Sending contextual followup ${followupCount} for session ${sessionId}`,
-        );
+        // console.log removed
 
         // Add bot mode to generic followup
         const userEmail =
@@ -11072,9 +10641,7 @@ How can I help you today?`;
           { headers: corsHeaders },
         );
       } else {
-        console.log(
-          `[Followup] No more generic followups for session ${sessionId}`,
-        );
+        // console.log removed
         return NextResponse.json(
           {
             mainText: "I’m here if you need me. How can I help next?",
@@ -11086,10 +10653,7 @@ How can I help you today?`;
         );
       }
     } catch (error) {
-      console.error(
-        `[Followup] Error in generic followup for session ${sessionId}:`,
-        error,
-      );
+      // console.error removed
       return NextResponse.json(
         {
           mainText: "I’m here if you need me. How can I help next?",
@@ -11104,7 +10668,7 @@ How can I help you today?`;
 
   // Embed the question - Add validation to prevent API errors
   if (!question || question.trim().length === 0) {
-    console.log("[DEBUG] Empty question, returning generic response");
+    // console.log removed
     return NextResponse.json(
       {
         answer: "I'm here to help! What would you like to know?",
@@ -11165,7 +10729,7 @@ How can I help you today?`;
   // If we detected an email in the current message, the user is now identified
   if (detectedEmail) {
     userEmail = detectedEmail;
-    console.log(`[DEBUG] User provided email in current message: ${userEmail}`);
+    // console.log removed
   }
 
   const enableBantChaining = !!userEmail;
@@ -11601,9 +11165,7 @@ How can I help you today?`;
     hasRequirements = Boolean(reqDoc && reqDoc.requirements);
   } catch {}
   if (userEmail) {
-    console.log(
-      `[DEBUG] User has email: ${userEmail} - Switching to SALES mode`,
-    );
+    // console.log removed
     if (isMeetingIntent) {
       systemPrompt = `You are a product assistant for scheduling (sales-qualified). The user mentioned group meetings or team distribution. Return ONLY valid JSON.
 {
@@ -11881,17 +11443,13 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
   if (limitReached || approachingLimit) {
     const { attemptAutoRecharge } = await import("@/lib/credits");
     // Fire and forget - don't block the request
-    attemptAutoRecharge(adminId || "default-admin").catch((e) =>
-      console.error("[Chat API] Auto-recharge check failed:", e),
-    );
+    attemptAutoRecharge(adminId || "default-admin").catch((e) => {
+      // console.error removed
+    });
   }
 
   if (limitReached) {
-    console.warn(
-      `[Chat API] Credit limit reached for admin ${
-        adminId || "default-admin"
-      } (${creditsUsed}/${limit})`,
-    );
+    // console.warn removed
     return NextResponse.json(
       {
         mainText:
@@ -11939,9 +11497,9 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
   }
 
   // Use robust parsing to handle multiple JSON objects and formats
-  console.log("[DEBUG] Raw AI response:", answer);
+  // console.log removed
   const parsed = parseAIResponse(answer || "");
-  console.log("[DEBUG] Parsed AI response:", parsed);
+  // console.log removed
 
   let emailAckText = "";
 
@@ -12098,10 +11656,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
       trigger: "chat_message",
     });
   } catch (profileErr) {
-    console.error(
-      `[Chat API ${requestId}] ⚠️ Failed to update customer profile:`,
-      profileErr,
-    );
+    // console.error removed
   }
 
   // Add bot mode information to the response
@@ -12127,9 +11682,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
       bookingEnhancement.chatResponse.showBookingCalendar &&
       explicitBooking.test(String(question || ""))
     ) {
-      console.log(
-        `[Chat API ${requestId}] Booking detected - enhancing response with calendar`,
-      );
+      // console.log removed
       await updateProfileOnContactRequest(
         req.nextUrl.origin,
         sessionId,
@@ -12149,14 +11702,10 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
         showBookingCalendar: true,
         bookingType: bookingEnhancement.chatResponse.bookingType || "demo",
       };
-      console.log(`[Chat API ${requestId}] Enhanced response created:`, {
-        showBookingCalendar: enhancedResponse.showBookingCalendar,
-        bookingType: enhancedResponse.bookingType,
-        hasMainText: !!enhancedResponse.mainText,
-      });
+      // console.log removed
     }
   } catch (error) {
-    console.warn("[Chat API] Booking detection failed:", error);
+    // console.warn removed
     // Continue with original response if booking detection fails
   }
 
@@ -12186,10 +11735,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
   if (bookingManagementResponse) {
     // Use booking management response (view details, reschedule, etc.)
     finalResponse = bookingManagementResponse;
-    console.log(`[Chat API ${requestId}] Booking management action detected:`, {
-      action: bookingManagementResponse.bookingAction,
-      hasActiveBooking: bookingStatus.hasActiveBooking,
-    });
+    // console.log removed
   } else {
     // Use standard booking-aware filtering
     finalResponse = generateBookingAwareResponse(
@@ -12265,19 +11811,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
     (finalResponse as any).sources = sources;
   }
 
-  console.log(`[Chat API ${requestId}] Main response:`, {
-    botMode,
-    userEmail: userEmail || null,
-    hasResponse: !!finalResponse.mainText,
-    showBookingCalendar: !!finalResponse.showBookingCalendar,
-    bookingType: finalResponse.bookingType || undefined,
-    hasActiveBooking: bookingStatus.hasActiveBooking,
-    buttonsFiltered:
-      bookingStatus.hasActiveBooking &&
-      responseWithMode.buttons?.length !== finalResponse.buttons?.length,
-    bookingAction: finalResponse.bookingAction || undefined,
-    timestamp: new Date().toISOString(),
-  });
+  // console.log removed
 
   let secondary: any = null;
 
@@ -12319,16 +11853,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
       // Only force-skip checks if we JUST captured email (start of flow)
       if (justCapturedEmail) skipDueToRecentFollowup = false;
 
-      console.log(`[Chat API ${requestId}] Qualification gating`, {
-        assistantCountBefore,
-        assistantCountClient: Number(assistantCountClient),
-        lastAssistantType: (lastAssistant as any)?.followupType || null,
-        lastAssistantAt: (lastAssistant as any)?.createdAt || null,
-        currentUserAt: now,
-        skipSecondaryForFirstAssistant,
-        skipDueToRecentFollowup,
-        userInactiveForMs: Number(userInactiveForMs),
-      });
+      // console.log removed
       const inactiveEnough = Number(userInactiveForMs) >= 120000;
 
       // Ensure we don't double-probe if the user just answered a probe
@@ -12386,10 +11911,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
             bantConfig,
           });
           if (heuristic) {
-            console.log(
-              `[Chat API ${requestId}] Heuristic BANT triggered:`,
-              JSON.stringify(heuristic),
-            );
+            // console.log removed
             immediate = {
               mainText: heuristic.mainText,
               buttons: heuristic.buttons,
@@ -12408,15 +11930,10 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
 
         if (!immediate) {
           if (assistantHasQuestion) {
-            console.log(
-              `[Chat API ${requestId}] Skipping BANT probing because main response contains a question.`,
-            );
+            // console.log removed
           } else {
             if (bantConfig) {
-              console.log(
-                `[Chat API ${requestId}] Using BANT config for probing:`,
-                JSON.stringify(bantConfig).slice(0, 100) + "...",
-              );
+              // console.log removed
             }
             probingQuick = await analyzeForProbing({
               userMessage: question || "",
@@ -12431,10 +11948,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
               personas,
               bantConfig,
             });
-            console.log(
-              `[Chat API ${requestId}] Probing result:`,
-              JSON.stringify(probingQuick, null, 2),
-            );
+            // console.log removed
           }
         }
 
@@ -12531,16 +12045,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
               immediate.type = "bant";
             }
           }
-          console.log(
-            `[Chat API ${requestId}] Immediate qualification generated`,
-            {
-              type: immediate.type,
-              preview: String(immediate.mainText || "").slice(0, 120),
-              buttonsCount: Array.isArray(immediate.buttons)
-                ? immediate.buttons.length
-                : 0,
-            },
-          );
+          // console.log removed
           secondary = immediate;
           await chats.insertOne({
             sessionId,
@@ -12626,16 +12131,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
             } as any;
           }
           if (immediate) {
-            console.log(
-              `[Chat API ${requestId}] Immediate qualification generated (targeted)`,
-              {
-                type: immediate.type,
-                preview: String(immediate.mainText || "").slice(0, 120),
-                buttonsCount: Array.isArray(immediate.buttons)
-                  ? immediate.buttons.length
-                  : 0,
-              },
-            );
+            // console.log removed
             secondary = immediate;
             await chats.insertOne({
               sessionId,
@@ -12748,27 +12244,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
       if (secondary) {
         secondary = { ...secondary, type: "probe" };
       }
-      console.log(
-        `[Chat API ${requestId}] Qualification evaluator failed, using fallback`,
-        {
-          error:
-            err instanceof Error
-              ? err.message
-              : typeof err === "string"
-                ? err
-                : "Unknown error",
-          type: (secondary as any)?.type,
-          hasMainText: !!(secondary as any)?.mainText,
-          buttonsCount:
-            secondary && Array.isArray((secondary as any).buttons)
-              ? (secondary as any).buttons.length
-              : 0,
-          preview:
-            secondary && typeof (secondary as any).mainText === "string"
-              ? (secondary as any).mainText.slice(0, 120)
-              : "",
-        },
-      );
+      // console.log removed
       const assistantCountBefore = await chats.countDocuments({
         sessionId,
         role: "assistant",
@@ -12794,15 +12270,9 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
         const userAfterFollowup = luTime > laTime;
         return laIsRecent && !userAfterFollowup;
       })();
-      console.log(`[Chat API ${requestId}] Fallback follow-up gating`, {
-        assistantCountBefore,
-        skipDueToRecentFollowup,
-      });
+      // console.log removed
       if (assistantCountBefore > 0 && !skipDueToRecentFollowup && secondary) {
-        console.log(`[Chat API ${requestId}] Inserting fallback follow-up`, {
-          type: (secondary as any).type,
-          createdAt: new Date(now.getTime() + 2).toISOString(),
-        });
+        // console.log removed
         await chats.insertOne({
           sessionId,
           role: "assistant",
@@ -12815,21 +12285,12 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
           ...(adminId ? { adminId } : {}),
         });
       } else {
-        console.log(
-          `[Chat API ${requestId}] Skipping fallback follow-up insert`,
-        );
+        // console.log removed
       }
     }
   }
 
-  console.log(`[Chat API ${requestId}] Final response`, {
-    hasSecondary: !!secondary,
-    secondaryType: (secondary as any)?.type || null,
-    secondaryPreview:
-      secondary && typeof (secondary as any).mainText === "string"
-        ? String((secondary as any).mainText).slice(0, 120)
-        : null,
-  });
+  // console.log removed
   const out = secondary ? { ...finalResponse, secondary } : finalResponse;
   return NextResponse.json(out, { headers: corsHeaders });
 }
@@ -12895,7 +12356,7 @@ export async function GET(req: NextRequest) {
       }
     }
   } catch (error) {
-    console.error("Summary generation failed:", error);
+    // console.error removed
     try {
       const texts = pageMessages
         .map((m: any) => {
@@ -12953,9 +12414,7 @@ export async function DELETE(req: NextRequest) {
       // Delete all chat history for this session
       const result = await chats.deleteMany({ sessionId });
 
-      console.log(
-        `[Chat] Cleared ${result.deletedCount} messages for session ${sessionId}`,
-      );
+      // console.log removed
 
       // If user had email, preserve their SDR status for cross-page activation
       let preservedEmailStatus = null;
@@ -12967,9 +12426,7 @@ export async function DELETE(req: NextRequest) {
           adminId: emailMessage.adminId,
         };
 
-        console.log(
-          `[Chat] Preserving SDR status for ${emailMessage.email} across page navigation`,
-        );
+        // console.log removed
 
         // Store a minimal record to maintain SDR status
         await chats.insertOne({
@@ -13001,7 +12458,7 @@ export async function DELETE(req: NextRequest) {
       { status: 400, headers: corsHeaders },
     );
   } catch (error) {
-    console.error("[Chat] Error clearing chat history:", error);
+    // console.error removed
     return NextResponse.json(
       { error: "Failed to clear chat history" },
       { status: 500, headers: corsHeaders },

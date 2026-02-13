@@ -285,12 +285,7 @@ const AdminPanel: React.FC = () => {
   // Auth form submit
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log(
-      "🔵 [AdminPanel] handleAuth called with action:",
-      form.action,
-      "email:",
-      form.email,
-    );
+    // console.log removed
     setAuthError("");
     setAuthSuccess("");
     setAuthLoading(true);
@@ -306,13 +301,9 @@ const AdminPanel: React.FC = () => {
         }),
       });
 
-      console.log(
-        "🔵 [AdminPanel] Response status:",
-        res.status,
-        res.statusText,
-      );
+      // console.log removed
       const data = await res.json();
-      console.log("🔵 [AdminPanel] Response data:", data);
+      // console.log removed
 
       if (res.ok) {
         if (form.action === "register") {
@@ -450,7 +441,7 @@ const AdminPanel: React.FC = () => {
       }
     } catch (err) {
       setSitemapStatus("❌ Failed to crawl sitemap");
-      console.error("Sitemap crawl exception:", err);
+      // console.error removed
       setSitemapLoading(false);
       setContinueCrawling(false);
     }
@@ -488,7 +479,7 @@ const AdminPanel: React.FC = () => {
         body: JSON.stringify({ action: "stop" }),
       });
     } catch (err) {
-      console.error("Failed to send stop signal to backend:", err);
+      // console.error removed
     } finally {
       fetchCrawledPages();
     }
@@ -515,7 +506,7 @@ const AdminPanel: React.FC = () => {
         setApiKeyCreated(data.apiKeyCreated || "");
       }
     } catch (error) {
-      console.error("Failed to fetch API key:", error);
+      // console.error removed
     }
   };
 
@@ -576,7 +567,7 @@ const AdminPanel: React.FC = () => {
         }
       } catch (error) {
         setLeadsError("Failed to fetch leads");
-        console.error("Error fetching leads:", error);
+        // console.error removed
       } finally {
         setLeadsLoading(false);
       }
@@ -646,7 +637,7 @@ const AdminPanel: React.FC = () => {
       setUrlSummaryStatus(urlSummaryStatusMap);
     } catch (error) {
       setDocumentsError("Failed to fetch documents");
-      console.error("Error fetching documents:", error);
+      // console.error removed
     } finally {
       setDocumentsLoading(false);
     }
@@ -672,7 +663,7 @@ const AdminPanel: React.FC = () => {
       }
     } catch (error) {
       setCrawledPagesError("Failed to fetch crawled pages");
-      console.error("Error fetching crawled pages:", error);
+      // console.error removed
     } finally {
       setCrawledPagesLoading(false);
     }
@@ -721,7 +712,7 @@ const AdminPanel: React.FC = () => {
       setCrawledPages(previousPages);
       setDocuments(previousDocuments);
       setCrawledPagesError("Failed to delete crawled page");
-      console.error("Error deleting crawled page:", error);
+      // console.error removed
     }
   };
 
@@ -808,7 +799,7 @@ const AdminPanel: React.FC = () => {
         showToast(`Retry failed: ${data.error}`, "error");
       }
     } catch (error) {
-      console.error("Error retrying page:", error);
+      // console.error removed
       showToast("Error retrying page. Please try again.", "error");
     }
   };
@@ -846,7 +837,7 @@ const AdminPanel: React.FC = () => {
       // Revert on error
       setDocuments(previousDocuments);
       setDocumentsError("Failed to delete document");
-      console.error("Error deleting document:", error);
+      // console.error removed
     }
   };
 
@@ -892,7 +883,7 @@ const AdminPanel: React.FC = () => {
         }
       }
     } catch (error) {
-      console.error("Error fetching summary:", error);
+      // console.error removed
     }
   };
 
@@ -925,7 +916,7 @@ const AdminPanel: React.FC = () => {
 
       if (response.ok) {
         const result = await response.json();
-        console.log("Summary generated successfully:", result);
+        // console.log removed
 
         // Update modal content in-place so summary shows immediately
         setSelectedPageForSummary((prev) =>
@@ -947,7 +938,7 @@ const AdminPanel: React.FC = () => {
         showToast("Summary generated successfully!", "success");
       } else {
         const errorData = await response.json();
-        console.error("Failed to generate summary:", errorData);
+        // console.error removed
 
         // Show more user-friendly error messages
         let errorMessage = errorData.error || "Unknown error";
@@ -965,7 +956,7 @@ const AdminPanel: React.FC = () => {
         showToast(`Failed to generate summary: ${errorMessage}`, "error");
       }
     } catch (error) {
-      console.error("Error generating summary:", error);
+      // console.error removed
       showToast("Error generating summary. Please try again.", "error");
     }
   };
@@ -1000,11 +991,11 @@ const AdminPanel: React.FC = () => {
 
         setUrlSummaryStatus(statusMap);
         setUrlExistsInCrawledPages(existsMap);
-        console.log("URL summary status updated:", statusMap);
-        console.log("URL exists mapping updated:", existsMap);
+        // console.log removed
+        // console.log removed
       }
     } catch (error) {
-      console.error("Error fetching URL summary status:", error);
+      // console.error removed
     }
   };
 
@@ -1027,7 +1018,7 @@ const AdminPanel: React.FC = () => {
       }
     } catch (error) {
       setLeadsError("Failed to delete lead");
-      console.error("Error deleting lead:", error);
+      // console.error removed
     }
   };
 
@@ -1045,7 +1036,7 @@ const AdminPanel: React.FC = () => {
       const data = await res.json();
       if (data.urls) setSitemapUrls(data.urls);
     } catch (error) {
-      console.error("Error fetching sitemap URLs:", error);
+      // console.error removed
     }
   };
 

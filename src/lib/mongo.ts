@@ -64,10 +64,10 @@ export async function testConnection(): Promise<boolean> {
   try {
     const client = await getMongoClient();
     await client.db().admin().ping();
-    console.log('✅ MongoDB connection test successful');
+    // console.log removed
     return true;
   } catch (error) {
-    console.error('❌ MongoDB connection test failed:', error);
+    // console.error removed
     return false;
   }
 }

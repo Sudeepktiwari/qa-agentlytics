@@ -68,11 +68,11 @@ export async function testBookingDetection(): Promise<{
   const results = [];
   let allPassed = true;
 
-  console.log("🔍 Testing Booking Detection Service...\n");
+  // console.log("🔍 Testing Booking Detection Service...\n");
 
   for (const testCase of testCases) {
     try {
-      console.log(`Testing: "${testCase.message}"`);
+      // console.log(`Testing: "${testCase.message}"`);
 
       const result = await detectBookingIntent(testCase.message);
 
@@ -104,12 +104,12 @@ export async function testBookingDetection(): Promise<{
       if (!testPassed) allPassed = false;
 
       const status = testPassed ? "✅" : "❌";
-      console.log(
-        `${status} Intent: ${result.hasBookingIntent}, Confidence: ${result.confidence}%, Type: ${result.bookingType}`
-      );
+      // console.log(
+      //   `${status} Intent: ${result.hasBookingIntent}, Confidence: ${result.confidence}%, Type: ${result.bookingType}`
+      // );
 
       if (result.reasoning) {
-        console.log(`   Reasoning: ${result.reasoning}`);
+        // console.log(`   Reasoning: ${result.reasoning}`);
       }
 
       results.push({
@@ -124,7 +124,7 @@ export async function testBookingDetection(): Promise<{
       });
     } catch (error) {
       allPassed = false;
-      console.log(`❌ Error testing "${testCase.message}":`, error);
+      // console.log(`❌ Error testing "${testCase.message}":`, error);
       results.push({
         message: testCase.message,
         expected: testCase.expected,
@@ -135,7 +135,7 @@ export async function testBookingDetection(): Promise<{
       });
     }
 
-    console.log(""); // Empty line for readability
+    // console.log(""); // Empty line for readability
   }
 
   return { passed: allPassed, results };
@@ -151,7 +151,7 @@ export async function testBookingResponseGeneration(): Promise<{
   const results = [];
   let allPassed = true;
 
-  console.log("💬 Testing Booking Response Generation...\n");
+  // console.log("💬 Testing Booking Response Generation...\n");
 
   const testCases = [
     {
@@ -176,11 +176,11 @@ export async function testBookingResponseGeneration(): Promise<{
 
   for (const testCase of testCases) {
     try {
-      console.log(`Testing response for: "${testCase.message}"`);
+      // console.log(`Testing response for: "${testCase.message}"`);
 
       const response = await generateBookingResponse(
         testCase.intent,
-        testCase.message
+        testCase.message,
       );
 
       // Validate response structure
@@ -194,10 +194,10 @@ export async function testBookingResponseGeneration(): Promise<{
       if (!testPassed) allPassed = false;
 
       const status = testPassed ? "✅" : "❌";
-      console.log(`${status} Response generated successfully`);
-      console.log(`   Reply: "${response.reply}"`);
-      console.log(`   Show Calendar: ${response.showBookingCalendar}`);
-      console.log(`   Booking Type: ${response.bookingType}`);
+      // console.log(`${status} Response generated successfully`);
+      // console.log(`   Reply: "${response.reply}"`);
+      // console.log(`   Show Calendar: ${response.showBookingCalendar}`);
+      // console.log(`   Booking Type: ${response.bookingType}`);
 
       results.push({
         message: testCase.message,
@@ -207,10 +207,10 @@ export async function testBookingResponseGeneration(): Promise<{
       });
     } catch (error) {
       allPassed = false;
-      console.log(
-        `❌ Error generating response for "${testCase.message}":`,
-        error
-      );
+      // console.log(
+      //   `❌ Error generating response for "${testCase.message}":`,
+      //   error
+      // );
       results.push({
         message: testCase.message,
         intent: testCase.intent,
@@ -221,7 +221,7 @@ export async function testBookingResponseGeneration(): Promise<{
       });
     }
 
-    console.log(""); // Empty line for readability
+    // console.log(""); // Empty line for readability
   }
 
   return { passed: allPassed, results };
@@ -237,7 +237,7 @@ export async function testEnhancedChatProcessing(): Promise<{
   const results = [];
   let allPassed = true;
 
-  console.log("🚀 Testing Enhanced Chat Processing...\n");
+  // console.log("🚀 Testing Enhanced Chat Processing...\n");
 
   const testMessages = [
     "I'd like to book a demo",
@@ -248,7 +248,7 @@ export async function testEnhancedChatProcessing(): Promise<{
 
   for (const message of testMessages) {
     try {
-      console.log(`Testing enhanced processing for: "${message}"`);
+      // console.log(`Testing enhanced processing for: "${message}"`);
 
       const result = await enhanceChatWithBookingDetection(message, [
         "Hello!",
@@ -266,10 +266,10 @@ export async function testEnhancedChatProcessing(): Promise<{
       if (!testPassed) allPassed = false;
 
       const status = testPassed ? "✅" : "❌";
-      console.log(`${status} Enhanced processing completed`);
-      console.log(`   Is Booking Flow: ${result.isBookingFlow}`);
-      console.log(`   Intent Confidence: ${result.bookingIntent.confidence}%`);
-      console.log(`   Reply: "${result.chatResponse.reply}"`);
+      // console.log(`${status} Enhanced processing completed`);
+      // console.log(`   Is Booking Flow: ${result.isBookingFlow}`);
+      // console.log(`   Intent Confidence: ${result.bookingIntent.confidence}%`);
+      // console.log(`   Reply: "${result.chatResponse.reply}"`);
 
       results.push({
         message,
@@ -278,7 +278,7 @@ export async function testEnhancedChatProcessing(): Promise<{
       });
     } catch (error) {
       allPassed = false;
-      console.log(`❌ Error in enhanced processing for "${message}":`, error);
+      // console.log(`❌ Error in enhanced processing for "${message}":`, error);
       results.push({
         message,
         result: {
@@ -288,7 +288,7 @@ export async function testEnhancedChatProcessing(): Promise<{
       });
     }
 
-    console.log(""); // Empty line for readability
+    // console.log(""); // Empty line for readability
   }
 
   return { passed: allPassed, results };
@@ -306,7 +306,7 @@ export async function runAllBookingTests(): Promise<{
   };
   summary: string;
 }> {
-  console.log("🧪 Running Booking Detection Test Suite...\n");
+  // console.log("🧪 Running Booking Detection Test Suite...\n");
 
   const detectionResults = await testBookingDetection();
   const responseResults = await testBookingResponseGeneration();
@@ -330,13 +330,21 @@ export async function runAllBookingTests(): Promise<{
     results.responseGeneration.results.filter((r) => r.passed).length +
     results.enhancedProcessing.results.filter((r) => r.passed).length;
 
-  const summary = allPassed
-    ? `✅ All booking detection tests passed! (${passedTests}/${totalTests})`
-    : `❌ Some booking detection tests failed. (${passedTests}/${totalTests} passed)`;
+  const summary = `
+  Booking Detection Tests Summary:
+  --------------------------------
+  Detection Logic: ${detectionResults.passed ? "✅ PASSED" : "❌ FAILED"}
+  Response Generation: ${responseResults.passed ? "✅ PASSED" : "❌ FAILED"}
+  Enhanced Processing: ${enhancedResults.passed ? "✅ PASSED" : "❌ FAILED"}
+  `;
 
-  console.log("\n" + "=".repeat(50));
-  console.log(summary);
-  console.log("=".repeat(50));
+  // console.log("\n" + "=".repeat(50));
+  // console.log(summary);
+  // console.log("=".repeat(50) + "\n");
 
-  return { allPassed, results, summary };
+  return {
+    allPassed,
+    results,
+    summary,
+  };
 }

@@ -24,13 +24,13 @@ export async function detectBookingIntent(
   message: string,
   conversationHistory: string[] = [],
   pageContext?: string,
-  adminId: string = "default"
+  adminId: string = "default",
 ): Promise<BookingIntentResult> {
   try {
     // Check if booking detection is enabled (core feature - always enabled in new system)
-    const isEnabled = await isFeatureEnabled(adminId, 'bookingDetection');
+    const isEnabled = await isFeatureEnabled(adminId, "bookingDetection");
     if (!isEnabled) {
-      console.log("[BookingDetection] Feature disabled via admin settings");
+      // console.log removed
       return {
         hasBookingIntent: false,
         confidence: 0,
@@ -42,10 +42,10 @@ export async function detectBookingIntent(
     // Validate and sanitize inputs
     const sanitizedMessage = JavaScriptSafetyUtils.sanitizeString(
       message,
-      1000
+      1000,
     );
     if (!JavaScriptSafetyUtils.validateJavaScriptString(sanitizedMessage)) {
-      console.warn("[BookingDetection] Message failed safety validation");
+      // console.warn removed
       return {
         hasBookingIntent: false,
         confidence: 0,
@@ -130,19 +130,14 @@ Remember: ONLY return the JSON object, nothing else.`;
     // Robust JSON parsing with multiple fallback strategies
     let parsed: any;
     try {
-      console.log("[BookingDetection] Raw AI response:", aiResponse);
+      // console.log removed
 
       // Strategy 1: Direct JSON parsing
       try {
         parsed = JSON.parse(aiResponse);
-        console.log(
-          "[BookingDetection] ✅ Direct JSON parse successful:",
-          parsed
-        );
+        // console.log removed
       } catch (directParseError) {
-        console.log(
-          "[BookingDetection] Direct parse failed, trying cleanup strategies..."
-        );
+        // console.log removed
 
         // Strategy 2: Clean up common AI formatting issues
         let cleanedResponse = aiResponse
@@ -162,26 +157,18 @@ Remember: ONLY return the JSON object, nothing else.`;
 
         try {
           parsed = JSON.parse(cleanedResponse);
-          console.log(
-            "[BookingDetection] ✅ Cleaned JSON parse successful:",
-            parsed
-          );
+          // console.log removed
         } catch (cleanedParseError) {
-          console.log(
-            "[BookingDetection] Cleaned parse failed, trying regex extraction..."
-          );
+          // console.log removed
 
           // Strategy 3: Regex extraction of JSON-like content
           const jsonMatch = aiResponse.match(
-            /\{[^{}]*"hasBookingIntent"[^{}]*\}/
+            /\{[^{}]*"hasBookingIntent"[^{}]*\}/,
           );
           if (jsonMatch) {
             try {
               parsed = JSON.parse(jsonMatch[0]);
-              console.log(
-                "[BookingDetection] ✅ Regex extraction successful:",
-                parsed
-              );
+              // console.log removed
             } catch (regexParseError) {
               throw new Error("All parsing strategies failed");
             }
@@ -205,13 +192,10 @@ Remember: ONLY return the JSON object, nothing else.`;
         suggestedResponse: parsed.suggestedResponse || null,
       };
 
-      console.log("[BookingDetection] ✅ Final validated response:", parsed);
+      // console.log removed
     } catch (parseError) {
-      console.error(
-        "[BookingDetection] All JSON parsing strategies failed:",
-        parseError
-      );
-      console.log("[BookingDetection] Falling back to keyword detection");
+      // console.error removed
+      // console.log removed
 
       // Fallback: Simple keyword detection for obvious booking requests
       const message = sanitizedMessage.toLowerCase();
@@ -249,11 +233,9 @@ Remember: ONLY return the JSON object, nothing else.`;
           const bookingType = keyword.includes("demo")
             ? "demo"
             : keyword.includes("call")
-            ? "call"
-            : "consultation";
-          console.log(
-            `[BookingDetection] ✅ Keyword fallback detected: "${keyword}" -> ${bookingType}`
-          );
+              ? "call"
+              : "consultation";
+          // console.log removed
           return {
             hasBookingIntent: true,
             confidence: 95,
@@ -320,9 +302,7 @@ Remember: ONLY return the JSON object, nothing else.`;
       for (const phrase of obviousBookingPhrases) {
         if (message.includes(phrase)) {
           const bookingType = phrase.includes("demo") ? "demo" : "call";
-          console.log(
-            `[BookingDetection] AI underconfident (${result.confidence}%), overriding with keyword detection: "${phrase}" -> ${bookingType}`
-          );
+          // console.log removed
           result.hasBookingIntent = true;
           result.confidence = 95;
           result.bookingType = bookingType as BookingType;
@@ -333,13 +313,11 @@ Remember: ONLY return the JSON object, nothing else.`;
       }
     }
 
-    console.log(
-      `[BookingDetection] Analysis complete: intent=${result.hasBookingIntent}, confidence=${result.confidence}, type=${result.bookingType}`
-    );
+    // console.log removed
 
     return result;
   } catch (error) {
-    console.error("[BookingDetection] Error in detectBookingIntent:", error);
+    // console.error removed
     return {
       hasBookingIntent: false,
       confidence: 0,
@@ -355,7 +333,7 @@ Remember: ONLY return the JSON object, nothing else.`;
 export async function generateBookingResponse(
   bookingIntent: BookingIntentResult,
   userMessage: string,
-  pageContext?: string
+  pageContext?: string,
 ): Promise<SafeChatResponse> {
   try {
     if (!bookingIntent.hasBookingIntent || bookingIntent.confidence < 50) {
@@ -370,7 +348,7 @@ export async function generateBookingResponse(
     // Generate contextual booking response
     const sanitizedMessage = JavaScriptSafetyUtils.sanitizeString(
       userMessage,
-      500
+      500,
     );
     const pageContextSafe = pageContext
       ? JavaScriptSafetyUtils.sanitizeString(pageContext, 300)
@@ -425,9 +403,7 @@ Keep the reply conversational and helpful. Focus on the value they'll get from t
     try {
       parsed = JSON.parse(aiResponse);
     } catch (parseError) {
-      console.warn(
-        "[BookingDetection] Failed to parse booking response, using fallback"
-      );
+      // console.warn removed
       return {
         reply: `Perfect! I can help you schedule a ${bookingIntent.bookingType}. Let's find a convenient time.`,
         showBookingCalendar: true,
@@ -442,16 +418,11 @@ Keep the reply conversational and helpful. Focus on the value they'll get from t
       bookingType: parsed.bookingType,
     });
 
-    console.log(
-      `[BookingDetection] Generated safe booking response for ${bookingIntent.bookingType}`
-    );
+    // console.log removed
 
     return safeResponse;
   } catch (error) {
-    console.error(
-      "[BookingDetection] Error generating booking response:",
-      error
-    );
+    // console.error removed
 
     // Safe fallback response
     return {
@@ -469,16 +440,16 @@ Keep the reply conversational and helpful. Focus on the value they'll get from t
 export async function enhanceChatWithBookingDetection(
   userMessage: string,
   conversationHistory: string[] = [],
-  pageContext?: string
+  pageContext?: string,
 ): Promise<EnhancedChatResponse> {
   try {
-    console.log("[BookingDetection] Processing message with booking detection");
+    // console.log removed
 
     // Step 1: Detect booking intent
     const bookingIntent = await detectBookingIntent(
       userMessage,
       conversationHistory,
-      pageContext
+      pageContext,
     );
 
     // Step 2: Generate appropriate response
@@ -489,12 +460,10 @@ export async function enhanceChatWithBookingDetection(
       chatResponse = await generateBookingResponse(
         bookingIntent,
         userMessage,
-        pageContext
+        pageContext,
       );
 
-      console.log(
-        `[BookingDetection] Booking intent detected: ${bookingIntent.bookingType} (${bookingIntent.confidence}% confidence)`
-      );
+      // console.log removed
     } else {
       // Use suggested response from detection or default
       const reply =
@@ -506,9 +475,7 @@ export async function enhanceChatWithBookingDetection(
         bookingType: null,
       };
 
-      console.log(
-        "[BookingDetection] No booking intent detected, using standard response"
-      );
+      // console.log removed
     }
 
     return {
@@ -518,10 +485,7 @@ export async function enhanceChatWithBookingDetection(
         bookingIntent.hasBookingIntent && bookingIntent.confidence >= 50,
     };
   } catch (error) {
-    console.error(
-      "[BookingDetection] Error in enhanced chat processing:",
-      error
-    );
+    // console.error removed
 
     // Safe fallback
     return {

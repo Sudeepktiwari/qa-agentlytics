@@ -73,17 +73,17 @@ export class BookingService {
    * Create a new booking with safety validation
    */
   async createBookingFromDetection(
-    params: CreateBookingParams
+    params: CreateBookingParams,
   ): Promise<BookingRequest> {
     try {
       // Sanitize all user inputs for safety
       const sanitizedBooking: Omit<BookingRequest, "_id"> = {
         sessionId: JavaScriptSafetyUtils.sanitizeString(params.sessionId),
         customerRequest: JavaScriptSafetyUtils.sanitizeString(
-          params.customerRequest
+          params.customerRequest,
         ),
         email: JavaScriptSafetyUtils.sanitizeString(
-          params.email.toLowerCase().trim()
+          params.email.toLowerCase().trim(),
         ),
         name: params.name
           ? JavaScriptSafetyUtils.sanitizeString(params.name)
@@ -97,7 +97,7 @@ export class BookingService {
         requestType: params.requestType,
         preferredDate: new Date(params.preferredDate),
         preferredTime: JavaScriptSafetyUtils.sanitizeString(
-          params.preferredTime
+          params.preferredTime,
         ),
         timezone: JavaScriptSafetyUtils.sanitizeString(params.timezone),
         message: params.message
@@ -117,11 +117,11 @@ export class BookingService {
           ? JavaScriptSafetyUtils.sanitizeString(params.referrer)
           : undefined,
         originalMessage: JavaScriptSafetyUtils.sanitizeString(
-          params.originalMessage
+          params.originalMessage,
         ),
         detectionConfidence: Math.max(
           0,
-          Math.min(1, params.detectionConfidence)
+          Math.min(1, params.detectionConfidence),
         ),
         priority: "medium",
         confirmationSent: false,
@@ -150,13 +150,13 @@ export class BookingService {
       const collection = await getBookingsCollection();
       const result = await collection.insertOne(sanitizedBooking);
 
-      console.log("✅ Booking created from detection:", result.insertedId);
+      // console.log removed
       return {
         ...sanitizedBooking,
         _id: result.insertedId.toString(),
       };
     } catch (error) {
-      console.error("❌ Error creating booking from detection:", error);
+      // console.error removed
       throw error instanceof Error
         ? error
         : new Error("Failed to create booking");
@@ -165,7 +165,7 @@ export class BookingService {
 
   // Create a new booking request
   async createBooking(
-    bookingData: Omit<BookingRequest, "_id" | "createdAt" | "updatedAt">
+    bookingData: Omit<BookingRequest, "_id" | "createdAt" | "updatedAt">,
   ): Promise<BookingRequest> {
     try {
       const collection = await getBookingsCollection();
@@ -174,10 +174,10 @@ export class BookingService {
       const sanitizedData = {
         ...bookingData,
         customerRequest: JavaScriptSafetyUtils.sanitizeString(
-          bookingData.customerRequest || ""
+          bookingData.customerRequest || "",
         ),
         email: JavaScriptSafetyUtils.sanitizeString(
-          bookingData.email.toLowerCase().trim()
+          bookingData.email.toLowerCase().trim(),
         ),
         name: bookingData.name
           ? JavaScriptSafetyUtils.sanitizeString(bookingData.name)
@@ -192,7 +192,7 @@ export class BookingService {
           ? JavaScriptSafetyUtils.sanitizeString(bookingData.message)
           : undefined,
         originalMessage: JavaScriptSafetyUtils.sanitizeString(
-          bookingData.originalMessage || ""
+          bookingData.originalMessage || "",
         ),
         adminNotes: bookingData.adminNotes
           ? JavaScriptSafetyUtils.sanitizeString(bookingData.adminNotes)
@@ -217,10 +217,10 @@ export class BookingService {
         _id: result.insertedId.toString(),
       };
 
-      console.log("✅ Booking created:", createdBooking._id);
+      // console.log removed
       return createdBooking;
     } catch (error) {
-      console.error("❌ Error creating booking:", error);
+      // console.error removed
       throw new Error("Failed to create booking");
     }
   }
@@ -231,7 +231,7 @@ export class BookingService {
   async getAllBookings(
     filters: BookingFilters = {},
     page: number = 1,
-    limit: number = 20
+    limit: number = 20,
   ): Promise<{ bookings: BookingRequest[]; total: number; hasMore: boolean }> {
     try {
       const collection = await getBookingsCollection();
@@ -259,7 +259,7 @@ export class BookingService {
       if (filters.searchTerm) {
         const searchRegex = new RegExp(
           JavaScriptSafetyUtils.sanitizeString(filters.searchTerm),
-          "i"
+          "i",
         );
         query.$or = [
           { customerRequest: searchRegex },
@@ -292,7 +292,7 @@ export class BookingService {
         hasMore: page * limit < total,
       };
     } catch (error) {
-      console.error("❌ Error getting all bookings:", error);
+      // console.error removed
       throw error instanceof Error
         ? error
         : new Error("Failed to get bookings");
@@ -373,7 +373,7 @@ export class BookingService {
         recentBookings: transformedRecentBookings,
       };
     } catch (error) {
-      console.error("❌ Error getting dashboard stats:", error);
+      // console.error removed
       throw error instanceof Error
         ? error
         : new Error("Failed to get dashboard stats");
@@ -390,7 +390,7 @@ export class BookingService {
       priority?: BookingRequest["priority"];
       adminNotes?: string;
       adminId?: string;
-    }
+    },
   ): Promise<BookingRequest | null> {
     try {
       const collection = await getBookingsCollection();
@@ -412,33 +412,33 @@ export class BookingService {
 
       if (updates.adminNotes) {
         sanitizedUpdates.adminNotes = JavaScriptSafetyUtils.sanitizeString(
-          updates.adminNotes
+          updates.adminNotes,
         );
       }
 
       if (updates.adminId) {
         sanitizedUpdates.adminId = JavaScriptSafetyUtils.sanitizeString(
-          updates.adminId
+          updates.adminId,
         );
       }
 
       const result = await collection.findOneAndUpdate(
         { _id: new ObjectId(bookingId) },
         { $set: sanitizedUpdates },
-        { returnDocument: "after" }
+        { returnDocument: "after" },
       );
 
       if (!result) {
         return null;
       }
 
-      console.log(`✅ Booking ${bookingId} updated by admin`);
+      // console.log removed
       return {
         ...result,
         _id: result._id.toString(),
       } as BookingRequest;
     } catch (error) {
-      console.error("❌ Error updating booking with admin notes:", error);
+      // console.error removed
       throw error instanceof Error
         ? error
         : new Error("Failed to update booking");
@@ -450,7 +450,7 @@ export class BookingService {
    */
   async bulkUpdateStatus(
     bookingIds: string[],
-    status: BookingRequest["status"]
+    status: BookingRequest["status"],
   ): Promise<number> {
     try {
       const collection = await getBookingsCollection();
@@ -467,15 +467,13 @@ export class BookingService {
 
       const result = await collection.updateMany(
         { _id: { $in: objectIds } },
-        { $set: updateData }
+        { $set: updateData },
       );
 
-      console.log(
-        `✅ Bulk updated ${result.modifiedCount} bookings to ${status}`
-      );
+      // console.log removed
       return result.modifiedCount;
     } catch (error) {
-      console.error("❌ Error bulk updating booking status:", error);
+      // console.error removed
       throw error instanceof Error
         ? error
         : new Error("Failed to bulk update bookings");
@@ -490,10 +488,10 @@ export class BookingService {
       const collection = await getBookingsCollection();
       const result = await collection.deleteOne({ _id: new ObjectId(id) });
 
-      console.log(`✅ Booking ${id} deleted`);
+      // console.log removed
       return result.deletedCount > 0;
     } catch (error) {
-      console.error("❌ Error deleting booking:", error);
+      // console.error removed
       throw error instanceof Error
         ? error
         : new Error("Failed to delete booking");
@@ -510,7 +508,7 @@ export class BookingService {
       dateTo?: Date;
       limit?: number;
       skip?: number;
-    }
+    },
   ): Promise<BookingRequest[]> {
     try {
       const collection = await getBookingsCollection();
@@ -539,7 +537,7 @@ export class BookingService {
         _id: booking._id.toString(),
       })) as BookingRequest[];
     } catch (error) {
-      console.error("❌ Error fetching bookings:", error);
+      // console.error removed
       throw new Error("Failed to fetch bookings");
     }
   }
@@ -548,7 +546,7 @@ export class BookingService {
   async updateBookingStatus(
     bookingId: string,
     status: BookingRequest["status"],
-    adminNotes?: string
+    adminNotes?: string,
   ): Promise<boolean> {
     try {
       const collection = await getBookingsCollection();
@@ -562,13 +560,13 @@ export class BookingService {
 
       const result = await collection.updateOne(
         { _id: new ObjectId(bookingId) },
-        { $set: updateData }
+        { $set: updateData },
       );
 
-      console.log(`✅ Booking ${bookingId} status updated to ${status}`);
+      // console.log removed
       return result.modifiedCount > 0;
     } catch (error) {
-      console.error("❌ Error updating booking status:", error);
+      // console.error removed
       throw new Error("Failed to update booking status");
     }
   }
@@ -576,7 +574,7 @@ export class BookingService {
   // Get a specific booking by ID
   async getBookingById(
     bookingId: string,
-    adminId?: string
+    adminId?: string,
   ): Promise<BookingRequest | null> {
     try {
       const collection = await getBookingsCollection();
@@ -597,7 +595,7 @@ export class BookingService {
         _id: booking._id.toString(),
       } as BookingRequest;
     } catch (error) {
-      console.error("❌ Error fetching booking:", error);
+      // console.error removed
       throw new Error("Failed to fetch booking");
     }
   }
@@ -607,7 +605,7 @@ export class BookingService {
     bookingId: string,
     adminId: string | undefined,
     newDate: Date,
-    newTime: string
+    newTime: string,
   ): Promise<BookingRequest | null> {
     try {
       const collection = await getBookingsCollection();
@@ -625,7 +623,7 @@ export class BookingService {
       const isAvailable = await this.isTimeSlotAvailable(
         current.adminId || (adminId as string),
         newDate,
-        newTime
+        newTime,
       );
       if (!isAvailable) {
         throw new Error("Selected time slot is not available");
@@ -641,7 +639,7 @@ export class BookingService {
             status: "confirmed",
           },
         },
-        { returnDocument: "after" }
+        { returnDocument: "after" },
       );
 
       if (!result) return null;
@@ -651,7 +649,7 @@ export class BookingService {
         _id: result._id.toString(),
       } as BookingRequest;
     } catch (error) {
-      console.error("❌ Error rescheduling booking:", error);
+      // console.error removed
       throw error instanceof Error
         ? error
         : new Error("Failed to reschedule booking");
@@ -671,7 +669,7 @@ export class BookingService {
 
       return result.modifiedCount > 0;
     } catch (error) {
-      console.error("❌ Error cancelling booking:", error);
+      // console.error removed
       throw new Error("Failed to cancel booking");
     }
   }
@@ -680,7 +678,7 @@ export class BookingService {
   async isTimeSlotAvailable(
     adminId: string,
     date: Date,
-    time: string
+    time: string,
   ): Promise<boolean> {
     try {
       const collection = await getBookingsCollection();
@@ -695,7 +693,7 @@ export class BookingService {
 
       return !existingBooking;
     } catch (error) {
-      console.error("❌ Error checking time slot availability:", error);
+      // console.error removed
       return false;
     }
   }
@@ -717,7 +715,7 @@ export class BookingService {
       const weekStart = new Date(
         now.getFullYear(),
         now.getMonth(),
-        now.getDate() - now.getDay()
+        now.getDate() - now.getDay(),
       );
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
@@ -749,7 +747,7 @@ export class BookingService {
         thisMonth,
       };
     } catch (error) {
-      console.error("❌ Error fetching booking stats:", error);
+      // console.error removed
       throw new Error("Failed to fetch booking statistics");
     }
   }
@@ -765,37 +763,39 @@ export class BookingService {
   }> {
     try {
       const collection = await getBookingsCollection();
-      
+
       // Sanitize email input
       const sanitizedEmail = JavaScriptSafetyUtils.sanitizeString(
-        email.toLowerCase().trim()
+        email.toLowerCase().trim(),
       );
 
       // Find bookings with pending or confirmed status
       const activeBookings = await collection
         .find({
           email: sanitizedEmail,
-          status: { $in: ["pending", "confirmed"] }
+          status: { $in: ["pending", "confirmed"] },
         })
         .sort({ createdAt: -1 })
         .toArray();
 
-      const bookingsWithId: BookingRequest[] = activeBookings.map(booking => ({
-        ...booking,
-        _id: booking._id.toString()
-      })) as BookingRequest[];
+      const bookingsWithId: BookingRequest[] = activeBookings.map(
+        (booking) => ({
+          ...booking,
+          _id: booking._id.toString(),
+        }),
+      ) as BookingRequest[];
 
       return {
         hasActiveBooking: bookingsWithId.length > 0,
         activeBookings: bookingsWithId,
-        latestBooking: bookingsWithId[0] || undefined
+        latestBooking: bookingsWithId[0] || undefined,
       };
     } catch (error) {
-      console.error("❌ Error checking existing bookings by email:", error);
+      // console.error removed
       return {
         hasActiveBooking: false,
         activeBookings: [],
-        latestBooking: undefined
+        latestBooking: undefined,
       };
     }
   }

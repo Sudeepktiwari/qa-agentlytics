@@ -84,10 +84,7 @@ export async function getSessionState(
 
 // Stub for alert system
 async function sendAlert(sessionId: string, type: string, details: any) {
-  console.log(`[ALERT] High Risk/Sales Signal in Session ${sessionId}:`, {
-    type,
-    details,
-  });
+  // console.log removed
   // TODO: Integrate email service (SendGrid/AWS SES) or Slack webhook here
 }
 

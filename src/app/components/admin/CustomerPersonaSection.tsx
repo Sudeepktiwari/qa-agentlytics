@@ -108,7 +108,7 @@ const CustomerPersonaSection: React.FC<CustomerPersonaSectionProps> = ({
     setMessage("");
 
     try {
-      console.log("Starting persona auto-extraction...");
+      // console.log removed
 
       const res = await fetch("/api/admin/personas", {
         method: "POST",
@@ -120,22 +120,19 @@ const CustomerPersonaSection: React.FC<CustomerPersonaSectionProps> = ({
       });
 
       const data = await res.json();
-      console.log("Persona extraction response:", data);
+      // console.log removed
 
       if (res.ok) {
         setPersonaData(data.personas);
         setMessage(data.message);
-        console.log(
-          "Successfully extracted personas:",
-          data.personas?.targetAudiences?.length || 0,
-        );
+        // console.log removed
       } else {
         setError(data.error || "Failed to extract personas");
-        console.error("Persona extraction failed:", data.error);
+        // console.error removed
       }
     } catch (error) {
       setError("Failed to extract personas");
-      console.error("Error extracting personas:", error);
+      // console.error removed
     } finally {
       setLoading(false);
     }
@@ -147,6 +144,7 @@ const CustomerPersonaSection: React.FC<CustomerPersonaSectionProps> = ({
     setMessage("");
 
     try {
+      // console.log removed
       const res = await fetch("/api/admin/personas", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -157,6 +155,7 @@ const CustomerPersonaSection: React.FC<CustomerPersonaSectionProps> = ({
       });
 
       const data = await res.json();
+      // console.log removed
 
       if (res.ok) {
         setPersonaData(data.personas);
@@ -165,10 +164,11 @@ const CustomerPersonaSection: React.FC<CustomerPersonaSectionProps> = ({
         setShowCreateForm(false);
       } else {
         setError(data.error || "Failed to save personas");
+        // console.error removed
       }
     } catch (error) {
       setError("Failed to save personas");
-      console.error("Error saving personas:", error);
+      // console.error removed
     } finally {
       setLoading(false);
     }
@@ -187,21 +187,24 @@ const CustomerPersonaSection: React.FC<CustomerPersonaSectionProps> = ({
     setError("");
 
     try {
+      // console.log removed
       const res = await fetch("/api/admin/personas", {
         method: "DELETE",
       });
 
       const data = await res.json();
+      // console.log removed
 
       if (res.ok) {
         setPersonaData(null);
         setMessage("Personas deleted successfully");
       } else {
         setError(data.error || "Failed to delete personas");
+        // console.error removed
       }
     } catch (error) {
       setError("Failed to delete personas");
-      console.error("Error deleting personas:", error);
+      // console.error removed
     } finally {
       setLoading(false);
     }

@@ -75,10 +75,7 @@ Example:
       }
       return map;
     } catch (error) {
-      console.error(
-        `Error generating option tags (attempt ${4 - retries}/3):`,
-        error,
-      );
+      // console.error removed
       retries--;
       if (retries === 0) return {};
       // Exponential backoff: 1s, 2s, 4s...
@@ -99,9 +96,7 @@ export async function generateDiagnosticAnswers(
 
   // PRIORITY: If adminId is provided, use Vector Search (RAG) for global context
   if (adminId) {
-    console.log(
-      `[Diagnostic] Generating answers using Vector Search for ${items.length} items (Admin: ${adminId})...`,
-    );
+    // console.log removed
     const map: Record<string, { answer: string; options: string[] }> = {};
     const CONCURRENCY = 5;
 
@@ -148,10 +143,7 @@ export async function generateDiagnosticAnswers(
               map[`${item.label}::${item.workflow}`] = result;
             }
           } catch (e) {
-            console.error(
-              `[Diagnostic] Error generating for "${item.label}":`,
-              e,
-            );
+            // console.error removed
           }
         }),
       );
@@ -231,12 +223,10 @@ Example:
         }
       });
     }
-    console.log(
-      `[Diagnostic] Generated ${Object.keys(map).length} answers successfully.`,
-    );
+    // console.log removed
     return map;
   } catch (error) {
-    console.error("Error generating diagnostic answers:", error);
+    // console.error removed
     return {};
   }
 }
@@ -430,9 +420,7 @@ export async function processQuestionsWithTags(
         const res = diagnosticMap[key];
         if (res) {
           if (!res.options || res.options.length === 0) {
-            console.warn(
-              `[Diagnostic] Warning: Options missing for ${key} in processQuestionsWithTags. Using fallback.`,
-            );
+            // console.warn removed
           }
           return {
             ...o,
