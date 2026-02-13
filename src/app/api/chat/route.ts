@@ -8142,7 +8142,9 @@ Extract key requirements (2-3 bullet points max, be concise):`;
 
           // First time greeting - create intelligent, page-specific messages
           // PRIORITIZE: If we have specific section context from frontend, use that as the primary signal
-          const activeContext = contextualPageContext || summaryContext || "";
+          // Ensure we don't block on empty whitespace strings
+          const cleanPageContext = (contextualPageContext || "").trim();
+          const activeContext = cleanPageContext || summaryContext || "";
 
           // NEW: Attempt to detect persona from page context to personalize the greeting
           detectedPersona = await detectUserPersona(
@@ -8150,15 +8152,15 @@ Extract key requirements (2-3 bullet points max, be concise):`;
             [], // No messages yet for first greeting
             pageUrl || "",
             adminId || "",
-            contextualPageContext || "",
+            cleanPageContext,
           );
 
-          const contextSource = contextualPageContext
+          const contextSource = cleanPageContext
             ? "User is currently viewing this section (High Priority)"
             : "Page content summary";
 
           const contextPreview = activeContext
-            ? activeContext.substring(0, 800)
+            ? activeContext.substring(0, 2500)
             : `(No page content available. CRITICAL: Analyze the URL "${pageUrl}" to infer the page topic and user intent)`;
 
           summaryPrompt = `CONTEXT ANALYSIS:
@@ -8559,7 +8561,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
         // Core Memory Rule: If persona was detected with specific context, SKIP stored questions
         // to avoid overriding the highly tailored persona message.
         const shouldSkipStoredQuestions =
-          detectedPersona && contextualPageContext;
+          detectedPersona && (contextualPageContext || "").trim().length > 0;
 
         if (adminId && pageUrl && !shouldSkipStoredQuestions) {
           try {
