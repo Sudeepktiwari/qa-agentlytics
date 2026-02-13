@@ -8562,10 +8562,12 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
         // This ensures the Lead Question appears immediately AFTER the welcome message
         // Core Memory Rule: If persona was detected with specific context, SKIP stored questions
         // to avoid overriding the highly tailored persona message.
+        // HOWEVER: User explicitly requested IMMEDIATE lead question delivery.
+        // We will allow the secondary message (stored question) to be attached even if persona is detected.
         const shouldSkipStoredQuestions =
           detectedPersona && (contextualPageContext || "").trim().length > 0;
 
-        if (adminId && pageUrl && !shouldSkipStoredQuestions) {
+        if (adminId && pageUrl) {
           try {
             const structuredSummaryDoc = await db
               .collection("structured_summaries")
