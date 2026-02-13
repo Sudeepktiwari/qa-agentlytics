@@ -8981,10 +8981,14 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
         if (followupCount <= 1) {
           // 1. Try to find stored question from crawled data first
           // SKIP if we have a detected persona + context, as we prefer dynamic persona-aware generation
+          // Core Memory Rule: If persona was detected with specific context, SKIP stored questions
+          const shouldSkipStoredQuestions =
+            detectedPersona && (contextualPageContext || "").trim().length > 0;
+
           if (
             structuredSummaryDoc?.structuredSummary?.sections &&
             Array.isArray(structuredSummaryDoc.structuredSummary.sections) &&
-            !contextualPageContext // Always prefer dynamic generation if we have live context
+            !shouldSkipStoredQuestions
           ) {
             try {
               const sections = structuredSummaryDoc.structuredSummary.sections;
