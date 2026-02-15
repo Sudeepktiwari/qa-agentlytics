@@ -8673,7 +8673,11 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
               ) {
                 const q = matchedSection.leadQuestions[0];
                 if (q && q.question) {
-                  console.log(`[Chatbot] Lead Question: "${q.question}"`);
+                  console.log(
+                    `[Chatbot] Lead Question (DB) [section="${
+                      matchedSection.sectionName || "unknown"
+                    }"]: "${q.question}"`,
+                  );
                   const rawOptions = q.options || [];
                   const secButtons = rawOptions.map((o: any) =>
                     typeof o === "string" ? o : o.label || JSON.stringify(o),
@@ -8682,6 +8686,9 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
                     mainText: q.question,
                     buttons: secButtons,
                     emailPrompt: "",
+                    type: "probe",
+                    source: "structured_summary",
+                    sectionName: matchedSection.sectionName || null,
                   };
                   enhancedProactiveData.buttons = [];
                 }

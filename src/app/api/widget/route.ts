@@ -1718,7 +1718,30 @@ export async function GET(request: Request) {
       
       // Extract page summary
       const pageSummary = extractPageSummary();
-      // console.log('📄 [WIDGET CONTEXT] Page summary extracted:', pageSummary); // console.log removed
+      // Also capture visible section context for precise section matching
+      let contextualPageContext = '';
+      try {
+        const viewportContext = getViewportContext();
+        if (
+          viewportContext &&
+          Array.isArray(viewportContext.visibleElements) &&
+          viewportContext.visibleElements.length > 0
+        ) {
+          contextualPageContext = viewportContext.visibleElements
+            .map((el) => String(el.text || '').trim())
+            .filter((text) => text.length > 0)
+            .join(' ')
+            .substring(0, 800);
+        } else {
+          contextualPageContext = document.body.innerText
+            ? document.body.innerText.substring(0, 800)
+            : '';
+        }
+      } catch (e) {
+        contextualPageContext = document.body.innerText
+          ? document.body.innerText.substring(0, 800)
+          : '';
+      }
       
       // Get page-specific proactive message
       const data = await sendApiRequest('chat', {
@@ -1728,7 +1751,8 @@ export async function GET(request: Request) {
         hasBeenGreeted: hasBeenGreeted,
         proactiveMessageCount: proactiveMessageCount,
         visitedPages: visitedPages,
-        pageSummary: pageSummary
+        pageSummary: pageSummary,
+        contextualPageContext
         // Don't specify adminId - let the API extract it from the API key
       });
       
@@ -1749,6 +1773,7 @@ export async function GET(request: Request) {
           // console.log(reason); // console.log removed
           sendProactiveMessage(data.mainText, data.buttons || [], data.emailPrompt || '', 'PROACTIVE');
           if (data.secondary && data.secondary.mainText) {
+            console.log('[WIDGET CONTEXT] Secondary lead question source:', data.secondary.source || 'unknown', 'section:', data.secondary.sectionName || 'unknown');
             sendProactiveMessage(
               data.secondary.mainText,
               data.secondary.buttons || [],
