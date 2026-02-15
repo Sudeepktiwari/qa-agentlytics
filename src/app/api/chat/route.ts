@@ -8558,15 +8558,6 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
 
         let secondary: any = null;
 
-        // NEW: Check for Stored Lead Question to use as SECONDARY (Immediate Delivery)
-        // This ensures the Lead Question appears immediately AFTER the welcome message
-        // Core Memory Rule: If persona was detected with specific context, SKIP stored questions
-        // to avoid overriding the highly tailored persona message.
-        // HOWEVER: User explicitly requested IMMEDIATE lead question delivery.
-        // We will allow the secondary message (stored question) to be attached even if persona is detected.
-        const shouldSkipStoredQuestions =
-          detectedPersona && (contextualPageContext || "").trim().length > 0;
-
         if (adminId && pageUrl) {
           try {
             // Robust URL Matching: Strip params and handle trailing slash
@@ -9030,20 +9021,10 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
 
         let personaFollowup = null;
 
-        // NEW: Prioritize triggerLeadQuestion for first two followups
-        // Also enable for any followup where we have section context (Gold Standard)
-        // CHANGE: Relaxed condition to allow fallback to Section 1 if no context is provided
         if (followupCount <= 1) {
-          // 1. Try to find stored question from crawled data first
-          // SKIP if we have a detected persona + context, as we prefer dynamic persona-aware generation
-          // Core Memory Rule: If persona was detected with specific context, SKIP stored questions
-          const shouldSkipStoredQuestions =
-            detectedPersona && (contextualPageContext || "").trim().length > 0;
-
           if (
             structuredSummaryDoc?.structuredSummary?.sections &&
-            Array.isArray(structuredSummaryDoc.structuredSummary.sections) &&
-            !shouldSkipStoredQuestions
+            Array.isArray(structuredSummaryDoc.structuredSummary.sections)
           ) {
             try {
               const sections = structuredSummaryDoc.structuredSummary.sections;
@@ -9126,14 +9107,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
                 }
               }
 
-              // B. Fallback to Section 1 (Hero) if no specific match found AND no context provided
-              // If context IS provided but didn't match, we prefer AI generation (below) over generic Hero fallback
-              if (
-                !matchedSection &&
-                sections.length > 0 &&
-                !contextualPageContext
-              ) {
-                // console.log removed
+              if (!matchedSection && sections.length > 0) {
                 matchedSection = sections[0];
               }
 
