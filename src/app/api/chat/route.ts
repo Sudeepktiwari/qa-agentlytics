@@ -8569,9 +8569,34 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
 
         if (adminId && pageUrl) {
           try {
-            const structuredSummaryDoc = await db
+            // Robust URL Matching: Strip params and handle trailing slash
+            const cleanUrl = pageUrl.split("?")[0].replace(/\/$/, "");
+            const urlRegex = new RegExp(
+              `^${cleanUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/?$`,
+              "i",
+            );
+
+            let structuredSummaryDoc = await db
               .collection("structured_summaries")
-              .findOne({ adminId, url: pageUrl });
+              .findOne({ adminId, url: { $regex: urlRegex } });
+
+            // QA/Testing Fallback: If no summary found on QA domain, try Production domain
+            if (
+              !structuredSummaryDoc &&
+              cleanUrl.includes("qa-agentlytics.vercel.app")
+            ) {
+              const prodUrl = cleanUrl.replace(
+                "qa-agentlytics.vercel.app",
+                "agentlytics.advancelytics.com",
+              );
+              const prodRegex = new RegExp(
+                `^${prodUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/?$`,
+                "i",
+              );
+              structuredSummaryDoc = await db
+                .collection("structured_summaries")
+                .findOne({ adminId, url: { $regex: prodRegex } });
+            }
 
             if (
               structuredSummaryDoc?.structuredSummary?.sections &&
@@ -8934,9 +8959,34 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
         if (adminId && pageUrl) {
           try {
             const db = await getDb();
+            // Robust URL Matching: Strip params and handle trailing slash
+            const cleanUrl = pageUrl.split("?")[0].replace(/\/$/, "");
+            const urlRegex = new RegExp(
+              `^${cleanUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/?$`,
+              "i",
+            );
+
             structuredSummaryDoc = await db
               .collection("structured_summaries")
-              .findOne({ adminId, url: pageUrl });
+              .findOne({ adminId, url: { $regex: urlRegex } });
+
+            // QA/Testing Fallback: If no summary found on QA domain, try Production domain
+            if (
+              !structuredSummaryDoc &&
+              cleanUrl.includes("qa-agentlytics.vercel.app")
+            ) {
+              const prodUrl = cleanUrl.replace(
+                "qa-agentlytics.vercel.app",
+                "agentlytics.advancelytics.com",
+              );
+              const prodRegex = new RegExp(
+                `^${prodUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/?$`,
+                "i",
+              );
+              structuredSummaryDoc = await db
+                .collection("structured_summaries")
+                .findOne({ adminId, url: { $regex: prodRegex } });
+            }
 
             const ss: any = structuredSummaryDoc?.structuredSummary;
             if (ss && typeof ss === "object") {
