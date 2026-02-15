@@ -8605,7 +8605,6 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
               const sections = structuredSummaryDoc.structuredSummary.sections;
               let matchedSection: any = null;
 
-              // A. Try Matching if context is available
               if (contextualPageContext) {
                 const lowerContext = contextualPageContext.toLowerCase();
                 let bestScore = -1;
@@ -8613,10 +8612,11 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
 
                 sections.forEach((s: any) => {
                   const sName = (s.sectionName || "").toLowerCase();
+                  const sSummary = (s.sectionSummary || "").toLowerCase();
                   const sContent = (s.sectionContent || "").toLowerCase();
+
                   let score = 0;
 
-                  // 1. Exact Title Match
                   try {
                     const escapedName = sName.replace(
                       /[.*+?^${}()|[\]\\]/g,
@@ -8640,7 +8640,6 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
                     }
                   }
 
-                  // 2. Content Overlap
                   if (sContent && sContent.length > 20) {
                     const viewportWords = lowerContext
                       .split(/[\s,.-]+/)
@@ -8650,6 +8649,15 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
                       if (sContent.includes(w)) hits++;
                     }
                     score += hits * 5;
+                  } else if (sSummary && sSummary.length > 20) {
+                    const summaryWords = sSummary
+                      .split(/[\s,.-]+/)
+                      .filter((w: string) => w.length > 4);
+                    let hitCount = 0;
+                    for (const w of summaryWords) {
+                      if (lowerContext.includes(w)) hitCount++;
+                    }
+                    score += hitCount * 3;
                   }
 
                   if (score > bestScore) {
@@ -8658,19 +8666,15 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
                   }
                 });
 
-                // Threshold: 5 points
                 if (bestScore >= 5) {
                   matchedSection = bestSection;
                 }
               }
 
-              // B. Fallback to Section 1 (Hero) if no specific match
               if (!matchedSection && sections.length > 0) {
-                // If no context provided or no match, assume top of page -> Hero
                 matchedSection = sections[0];
               }
 
-              // C. Extract Question from Matched Section
               if (
                 matchedSection &&
                 matchedSection.leadQuestions &&
@@ -8688,7 +8692,6 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
                     buttons: secButtons,
                     emailPrompt: "",
                   };
-                  // Clear primary buttons to focus on the lead question
                   enhancedProactiveData.buttons = [];
                 }
               }
