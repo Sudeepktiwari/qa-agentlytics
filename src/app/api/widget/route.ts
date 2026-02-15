@@ -1747,10 +1747,8 @@ export async function GET(request: Request) {
         } else if (config.autoOpenProactive || isOpen) {
           const reason = isOpen ? '💬 [WIDGET CONTEXT] Chat is open, rendering proactive message' : '🎯 [WIDGET CONTEXT] Auto-open enabled, sending proactive message';
           // console.log(reason); // console.log removed
-          const assistantCountBefore = messages.filter((m) => m && m.role === 'assistant').length;
           sendProactiveMessage(data.mainText, data.buttons || [], data.emailPrompt || '', 'PROACTIVE');
-          // Suppress secondary follow-up for very first bot message
-          if (assistantCountBefore > 0 && data.secondary && data.secondary.mainText) {
+          if (data.secondary && data.secondary.mainText) {
             sendProactiveMessage(
               data.secondary.mainText,
               data.secondary.buttons || [],
