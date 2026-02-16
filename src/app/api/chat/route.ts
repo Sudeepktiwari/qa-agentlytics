@@ -8879,12 +8879,36 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
               "i",
             );
 
-            const structuredSummaryDoc = await db
+            let structuredSummaryDoc = await db
               .collection("structured_summaries")
               .findOne({
                 adminId: resolvedAdminId || adminIdFromBody || "default-admin",
                 url: { $regex: urlRegex },
               });
+
+            if (
+              !structuredSummaryDoc &&
+              typeof pageUrl === "string" &&
+              pageUrl.includes("qa-agentlytics.vercel.app")
+            ) {
+              const prodUrl = pageUrl.replace(
+                "qa-agentlytics.vercel.app",
+                "agentlytics.advancelytics.com",
+              );
+              const normalizedProd = normalizeUrlForLookup(prodUrl);
+              const cleanProd = normalizedProd.split("?")[0].replace(/\/$/, "");
+              const prodRegex = new RegExp(
+                `^${cleanProd.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/?$`,
+                "i",
+              );
+              structuredSummaryDoc = await db
+                .collection("structured_summaries")
+                .findOne({
+                  adminId:
+                    resolvedAdminId || adminIdFromBody || "default-admin",
+                  url: { $regex: prodRegex },
+                });
+            }
 
             if (
               structuredSummaryDoc?.structuredSummary?.sections &&
