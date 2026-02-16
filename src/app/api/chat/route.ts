@@ -892,6 +892,52 @@ function matchSectionAndFirstLeadQuestion(
   return null;
 }
 
+function buildFallbackLeadQuestionFromContext(context: any): {
+  mainText: string;
+  buttons: string[];
+} | null {
+  const str =
+    typeof context === "string" ? context : JSON.stringify(context || "");
+  const lower = str.toLowerCase();
+  if (!lower || lower.trim().length < 10) {
+    return {
+      mainText: "What are you mainly looking to improve right now?",
+      buttons: [
+        "Get more demo bookings",
+        "Qualify leads better",
+        "Improve onboarding",
+        "Something else",
+      ],
+    };
+  }
+  if (/(pricing|price|plan|plans|billing)/i.test(lower)) {
+    return {
+      mainText: "Want help choosing the right plan for your situation?",
+      buttons: [
+        "Help me choose a plan",
+        "Show me key differences",
+        "Talk about ROI",
+      ],
+    };
+  }
+  if (/(demo|book.*demo|schedule.*demo|call|meeting)/i.test(lower)) {
+    return {
+      mainText:
+        "Do you want to understand fit first, or jump into a live demo?",
+      buttons: ["Understand fit first", "See how it works", "Not sure yet"],
+    };
+  }
+  return {
+    mainText: "What are you mainly looking to improve right now?",
+    buttons: [
+      "More demo bookings",
+      "Better lead qualification",
+      "Customer onboarding",
+      "Something else",
+    ],
+  };
+}
+
 async function generateSalesEntryResponse(
   messages: any[],
   profile: any,
@@ -8792,7 +8838,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
         try {
           const bookingEnhancement = await enhanceChatWithBookingDetection(
             proactiveMsg || "",
-            [], // conversation history - could be enhanced later
+            [],
             `Page URL: ${pageUrl || "unknown"}`,
           );
 
@@ -8809,20 +8855,15 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
               showBookingCalendar: true,
               bookingType:
                 bookingEnhancement.chatResponse.bookingType || "demo",
-              // Override answer with booking-specific response
-              answer:
-                bookingEnhancement.chatResponse.reply || finalProactiveMsg,
             };
           }
-        } catch (error) {
-          // Continue with original response if booking detection fails
-        }
+        } catch (error) {}
 
         console.log(`[Chatbot] Greeting: "${finalProactiveMsg}"`);
 
         let secondary: any = null;
 
-        if (adminId && pageUrl) {
+        if (pageUrl) {
           try {
             // Robust URL Matching: Strip params and handle trailing slash
             const normalizedUrl = normalizeUrlForLookup(pageUrl);
@@ -8834,7 +8875,10 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
 
             const structuredSummaryDoc = await db
               .collection("structured_summaries")
-              .findOne({ adminId, url: { $regex: urlRegex } });
+              .findOne({
+                adminId: resolvedAdminId || adminIdFromBody || "default-admin",
+                url: { $regex: urlRegex },
+              });
 
             if (
               structuredSummaryDoc?.structuredSummary?.sections &&
@@ -8863,6 +8907,22 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
             }
           } catch (e) {
             // Error finding stored secondary lead question
+          }
+        }
+
+        if (!secondary) {
+          const fallback = buildFallbackLeadQuestionFromContext(
+            contextualPageContext,
+          );
+          if (fallback) {
+            secondary = {
+              mainText: fallback.mainText,
+              buttons: fallback.buttons,
+              emailPrompt: "",
+              type: "probe",
+              source: "fallback",
+              sectionName: null,
+            };
           }
         }
 
