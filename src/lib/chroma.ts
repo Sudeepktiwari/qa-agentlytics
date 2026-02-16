@@ -274,19 +274,8 @@ export async function getChunksByPageUrl(adminId: string, pageUrl: string) {
       .toArray();
   };
 
-  // 1. Try the exact requested URL (e.g. QA URL)
-  let ids = await findVectorsForUrl(pageUrl);
-
-  // 2. QA/Testing Fallback: If no chunks found on QA domain, try Production domain
-  // This allows testing the QA site using data crawled from the Production site
-  if (ids.length === 0 && pageUrl.includes("qa-agentlytics.vercel.app")) {
-    const prodUrl = pageUrl.replace(
-      "https://qa-agentlytics.vercel.app",
-      "https://agentlytics.advancelytics.com",
-    );
-    // console.log removed
-    ids = await findVectorsForUrl(prodUrl);
-  }
+  // Always use the exact requested URL (normalized for trailing slash)
+  const ids = await findVectorsForUrl(pageUrl);
 
   const vectorIds = ids.map((d) => (d as { vectorId: string }).vectorId);
   // console.log removed
