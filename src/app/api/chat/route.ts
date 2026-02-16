@@ -770,6 +770,14 @@ function generateBookingManagementResponse(action: string, booking: any) {
   }
 }
 
+function normalizeUrlForLookup(url: string | null | undefined): string {
+  if (!url) return "";
+  return String(url)
+    .trim()
+    .replace(/^["'`]+/, "")
+    .replace(/["'`]+$/, "");
+}
+
 async function generateSalesEntryResponse(
   messages: any[],
   profile: any,
@@ -4307,7 +4315,8 @@ export async function POST(req: NextRequest) {
         try {
           const db = await getDb();
 
-          const cleanUrl = pageUrl.split("?")[0].replace(/\/$/, "");
+          const normalizedUrl = normalizeUrlForLookup(pageUrl);
+          const cleanUrl = normalizedUrl.split("?")[0].replace(/\/$/, "");
           const urlRegex = new RegExp(
             `^${cleanUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/?$`,
             "i",
@@ -8702,7 +8711,8 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
         if (adminId && pageUrl) {
           try {
             // Robust URL Matching: Strip params and handle trailing slash
-            const cleanUrl = pageUrl.split("?")[0].replace(/\/$/, "");
+            const normalizedUrl = normalizeUrlForLookup(pageUrl);
+            const cleanUrl = normalizedUrl.split("?")[0].replace(/\/$/, "");
             const urlRegex = new RegExp(
               `^${cleanUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/?$`,
               "i",
@@ -9102,7 +9112,8 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
           try {
             const db = await getDb();
             // Robust URL Matching: Strip params and handle trailing slash
-            const cleanUrl = pageUrl.split("?")[0].replace(/\/$/, "");
+            const normalizedUrl = normalizeUrlForLookup(pageUrl);
+            const cleanUrl = normalizedUrl.split("?")[0].replace(/\/$/, "");
             const urlRegex = new RegExp(
               `^${cleanUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/?$`,
               "i",
