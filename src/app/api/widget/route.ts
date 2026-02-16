@@ -3546,6 +3546,10 @@ export async function GET(request: Request) {
     if (ONBOARDING_ONLY) {
       return;
     }
+    const hasUserMessages = messages.some((m) => m && m.role === 'user');
+    if (!hasUserMessages) {
+      return;
+    }
     clearFollowupTimer();
     // Reader-friendly dynamic delay based on last assistant message length
     let lastAssistantText = '';
