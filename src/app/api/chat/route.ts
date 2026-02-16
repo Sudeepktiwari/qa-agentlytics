@@ -815,57 +815,70 @@ function matchSectionAndFirstLeadQuestion(
   const lowerContext = ctxString.toLowerCase();
   let matchedSection: any = null;
   if (lowerContext) {
-    let bestScore = -1;
-    let bestSection: any = null;
+    let bestNameScore = -1;
+    let bestByName: any = null;
     sections.forEach((s: any) => {
       const sName = (s.sectionName || "").toLowerCase();
-      const sSummary = (s.sectionSummary || "").toLowerCase();
-      const sContent = (s.sectionContent || "").toLowerCase();
-      let contentScore = 0;
-      let titleScore = 0;
-      if (sContent && sContent.length > 20) {
-        const viewportWords = lowerContext
-          .split(/[\s,.-]+/)
-          .filter((w: string) => w.length > 4);
-        let hits = 0;
-        for (const w of viewportWords) {
-          if (sContent.includes(w)) hits++;
-        }
-        contentScore += hits * 5;
-      } else if (sSummary && sSummary.length > 20) {
-        const summaryWords = sSummary
-          .split(/[\s,.-]+/)
-          .filter((w: string) => w.length > 4);
-        let hitCount = 0;
-        for (const w of summaryWords) {
-          if (lowerContext.includes(w)) hitCount++;
-        }
-        contentScore += hitCount * 3;
-      }
-      if (sName && sName.length > 3) {
-        try {
-          const escapedName = sName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-          const titleRegex = new RegExp(`\\b${escapedName}\\b`, "i");
-          if (titleRegex.test(lowerContext)) {
-            titleScore += Math.min(10 + sName.length, 30);
-          }
-        } catch {
-          if (lowerContext.includes(sName)) {
-            titleScore += 10;
-          }
-        }
-      }
+      if (!sName || sName.length <= 3) return;
       let score = 0;
-      if (contentScore > 0) {
-        score = contentScore + Math.floor(titleScore * 0.5);
+      try {
+        const escapedName = sName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const titleRegex = new RegExp(`\\b${escapedName}\\b`, "i");
+        if (titleRegex.test(lowerContext)) {
+          score = Math.min(10 + sName.length, 40);
+        }
+      } catch {
+        if (lowerContext.includes(sName)) {
+          score = 10;
+        }
       }
-      if (score > bestScore) {
-        bestScore = score;
-        bestSection = s;
+      if (score > bestNameScore) {
+        bestNameScore = score;
+        bestByName = s;
       }
     });
-    if (bestScore >= 5) {
-      matchedSection = bestSection;
+    if (bestNameScore >= 10 && bestByName) {
+      matchedSection = bestByName;
+    } else {
+      let bestScore = -1;
+      let bestSection: any = null;
+      sections.forEach((s: any) => {
+        const sName = (s.sectionName || "").toLowerCase();
+        const sSummary = (s.sectionSummary || "").toLowerCase();
+        const sContent = (s.sectionContent || "").toLowerCase();
+        let contentScore = 0;
+        let titleScore = 0;
+        if (sContent && sContent.length > 20) {
+          const viewportWords = lowerContext
+            .split(/[\s,.-]+/)
+            .filter((w: string) => w.length > 4);
+          let hits = 0;
+          for (const w of viewportWords) {
+            if (sContent.includes(w)) hits++;
+          }
+          contentScore += hits * 5;
+        } else if (sSummary && sSummary.length > 20) {
+          const summaryWords = sSummary
+            .split(/[\s,.-]+/)
+            .filter((w: string) => w.length > 4);
+          let hitCount = 0;
+          for (const w of summaryWords) {
+            if (lowerContext.includes(w)) hitCount++;
+          }
+          contentScore += hitCount * 3;
+        }
+        let score = 0;
+        if (contentScore > 0) {
+          score = contentScore + Math.floor(titleScore * 0.5);
+        }
+        if (score > bestScore) {
+          bestScore = score;
+          bestSection = s;
+        }
+      });
+      if (bestScore >= 5) {
+        matchedSection = bestSection;
+      }
     }
   }
   if (!matchedSection && sections.length > 0) {
