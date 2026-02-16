@@ -834,18 +834,8 @@ function matchSectionAndFirstLeadQuestion(
       const sName = (s.sectionName || "").toLowerCase();
       const sSummary = (s.sectionSummary || "").toLowerCase();
       const sContent = (s.sectionContent || "").toLowerCase();
-      let score = 0;
-      try {
-        const escapedName = sName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-        const titleRegex = new RegExp(`\\b${escapedName}\\b`, "i");
-        if (sName && sName.length > 3 && titleRegex.test(lowerContext)) {
-          score += Math.min(10 + sName.length, 30);
-        }
-      } catch {
-        if (sName && sName.length > 3 && lowerContext.includes(sName)) {
-          score += 10;
-        }
-      }
+      let contentScore = 0;
+      let titleScore = 0;
       if (sContent && sContent.length > 20) {
         const viewportWords = lowerContext
           .split(/[\s,.-]+/)
@@ -854,7 +844,7 @@ function matchSectionAndFirstLeadQuestion(
         for (const w of viewportWords) {
           if (sContent.includes(w)) hits++;
         }
-        score += hits * 5;
+        contentScore += hits * 5;
       } else if (sSummary && sSummary.length > 20) {
         const summaryWords = sSummary
           .split(/[\s,.-]+/)
@@ -863,7 +853,24 @@ function matchSectionAndFirstLeadQuestion(
         for (const w of summaryWords) {
           if (lowerContext.includes(w)) hitCount++;
         }
-        score += hitCount * 3;
+        contentScore += hitCount * 3;
+      }
+      if (sName && sName.length > 3) {
+        try {
+          const escapedName = sName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          const titleRegex = new RegExp(`\\b${escapedName}\\b`, "i");
+          if (titleRegex.test(lowerContext)) {
+            titleScore += Math.min(10 + sName.length, 30);
+          }
+        } catch {
+          if (lowerContext.includes(sName)) {
+            titleScore += 10;
+          }
+        }
+      }
+      let score = 0;
+      if (contentScore > 0) {
+        score = contentScore + Math.floor(titleScore * 0.5);
       }
       if (score > bestScore) {
         bestScore = score;
