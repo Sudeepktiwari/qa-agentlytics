@@ -1245,7 +1245,6 @@ export async function GET(request: Request) {
       // Submit booking (create or reschedule)
       let response;
       if (isRescheduleMode && currentBookingData) {
-        console.log('🔁 [WIDGET BOOKING] Rescheduling existing booking...', currentBookingData);
         const payload = {
           bookingId: currentBookingData?._id || currentBookingData?.id || undefined,
           confirmation: currentBookingData?.confirmationNumber || undefined,
@@ -1289,7 +1288,6 @@ export async function GET(request: Request) {
 
       if (response.ok) {
         const result = await response.json();
-        console.log("✅ [WIDGET BOOKING] Booking action successful:", result);
 
         // 🔥 UPDATE SESSION WITH BOOKING CONFIRMATION FOR CUSTOMER INTELLIGENCE
         try {
@@ -1318,11 +1316,9 @@ export async function GET(request: Request) {
           }
 
           if (profileRes && profileRes.followUpMessage) {
-            console.log("🎯 [WIDGET BOOKING] Triggering post-booking BANT follow-up");
-            
+
             // Ensure widget is open and visible
             if (!isOpen) {
-                 console.log("🚪 [WIDGET BOOKING] Restoring chat interface for BANT follow-up");
                  toggleWidget();
             }
 
@@ -1364,12 +1360,10 @@ export async function GET(request: Request) {
              }, 1500);
           }
         } catch (error) {
-          console.warn("⚠️ [WIDGET BOOKING] Failed to update customer intelligence:", error);
            // Error fallback
            
            // Ensure widget is open and visible
             if (!isOpen) {
-                 console.log("🚪 [WIDGET BOOKING] Restoring chat interface for BANT follow-up (error fallback)");
                  toggleWidget();
             }
 
@@ -1881,7 +1875,7 @@ export async function GET(request: Request) {
     });
     
     mirrorIframe.addEventListener('error', (e) => {
-      console.error('❌ [WIDGET MIRROR] Mirror iframe failed to load:', e);
+      console.error('❌ Mirror iframe failed to load:', e);
     });
     
     // Setup scroll synchronization
@@ -1897,15 +1891,11 @@ export async function GET(request: Request) {
     setTimeout(() => {
       scaleMirror();
     }, 1000);
-    
-    console.log('✅ [WIDGET MIRROR] Mirror initialized');
   }
   
   // Setup scroll synchronization
   function setupScrollSync() {
     if (!mirrorIframe) return;
-    
-    console.log('🔄 [WIDGET MIRROR] Setting up scroll sync');
     
     const sendScrollUpdate = () => {
       if (!mirrorIframe || !mirrorIframe.contentWindow) return;
@@ -2221,22 +2211,17 @@ export async function GET(request: Request) {
     const { sectionName, viewportContext, scrollPercentage } = sectionData;
     let question = '';
     
-    console.log('🤔 [WIDGET SCROLL] Generating question for:', sectionName, 'with', viewportContext.visibleElements.length, 'visible elements');
-    
     // Try AI first
     try {
       const aiQuestion = await generateAiContextualQuestion(sectionName, viewportContext, scrollPercentage, sectionData);
       if (aiQuestion) {
-        console.log('🤖 [WIDGET SCROLL] AI successfully generated and displayed question - returning');
         return; // AI function already handles display, no need to continue
       }
     } catch (error) {
-      console.warn('⚠️ [WIDGET SCROLL] AI generation failed, using fallback:', error);
     }
     
     // Fallback to improved rule-based questions (case-insensitive)
     if (!question) {
-      console.log('🔄 [WIDGET SCROLL] Using fallback rule-based questions');
       const sectionLower = sectionName.toLowerCase();
       
       if (sectionLower.includes('pricing') || viewportContext.visibleElements.some(el => el.isPricing)) {
@@ -2257,7 +2242,6 @@ export async function GET(request: Request) {
           "Would a demo of these features be helpful?"
         ];
         question = questions[Math.floor(Math.random() * questions.length)];
-        console.log('🎯 [WIDGET SCROLL] Matched FEATURES section');
       }
       else if (sectionLower.includes('testimonial') || sectionLower.includes('review')) {
         const questions = [
@@ -2309,8 +2293,7 @@ export async function GET(request: Request) {
       }
     }
     
-    console.log('💡 [WIDGET SCROLL] Final question:', question);
-    
+    // Final fallback question
     // Send the question to the API
     if (question) {
       sendScrollBasedQuestion(question, sectionData);
@@ -2319,8 +2302,6 @@ export async function GET(request: Request) {
   
   // Send scroll-based contextual question to API
   async function sendScrollBasedQuestion(question, sectionData) {
-    console.log('📤 [WIDGET SCROLL] Sending scroll-based question to API:', question);
-    
     try {
       const data = await sendApiRequest('chat', {
         sessionId,
@@ -2445,7 +2426,6 @@ export async function GET(request: Request) {
   function onSectionEnter(sectionName, element) {
     // Skip section messages if user is actively scrolling
     if (isScrolling) {
-      console.log('📜 [WIDGET MIRROR] Skipping section message - user is actively scrolling');
       return;
     }
 
@@ -2460,8 +2440,6 @@ export async function GET(request: Request) {
         timeOnPage: Date.now() - (window.appointyPageLoadTime || Date.now()),
         viewportContext: getViewportContext()
       };
-
-      console.log('📊 [WIDGET MIRROR] Section data for', sectionName, ':', sectionData);
 
       if (sectionData.scrollPercentage < mirrorMessageScrollThreshold) {
         return;
@@ -5543,14 +5521,11 @@ export async function GET(request: Request) {
             console.error('❌ [WIDGET QUESTIONS] Failed to send custom question:', error);
           });
           
-          console.log('💬 [WIDGET QUESTIONS] Sent custom contextual question:', customQuestion);
           return 'Custom question sent: ' + customQuestion;
         }
         return 'No question provided';
       }
-    };
-    
-    console.log('AI Chatbot Widget loaded successfully');
+      };
   
   // Wait for DOM to be ready
   if (document.readyState === 'loading') {
@@ -5564,8 +5539,6 @@ export async function GET(request: Request) {
   (function() {
     // Only run this in iframe context
     if (window !== window.parent) {
-      console.log('🔍 [MIRROR] Page loaded in iframe, setting up mirror mode');
-      
       // Listen for scroll sync messages from host
       window.addEventListener('message', (event) => {
         if (event.origin !== window.location.origin) return;
