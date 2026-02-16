@@ -791,9 +791,22 @@ async function findStructuredSummaryByUrl(
     `^${cleanUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/?$`,
     "i",
   );
-  const doc = await db
+  let doc = await db
     .collection("structured_summaries")
     .findOne({ adminId, url: { $regex: baseRegex } });
+  if (!doc && cleanUrl.includes("qa-agentlytics.vercel.app")) {
+    const prodUrl = cleanUrl.replace(
+      "qa-agentlytics.vercel.app",
+      "agentlytics.advancelytics.com",
+    );
+    const prodRegex = new RegExp(
+      `^${prodUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/?$`,
+      "i",
+    );
+    doc = await db
+      .collection("structured_summaries")
+      .findOne({ adminId, url: { $regex: prodRegex } });
+  }
   return doc;
 }
 
@@ -3806,25 +3819,55 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Check for API key authentication (strictly required)
+  // Check for API key authentication (moved up for profile scoping)
   const apiKey = req.headers.get("x-api-key") || req.headers.get("X-API-Key");
-  if (!apiKey || !apiKey.trim()) {
-    return NextResponse.json(
-      { error: "Missing API key" },
-      { status: 401, headers: corsHeaders },
-    );
-  }
-  let apiAuth = await verifyApiKey(apiKey);
-  if (!apiAuth) {
-    return NextResponse.json(
-      { error: "Invalid API key" },
-      { status: 401, headers: corsHeaders },
-    );
+  let apiAuth = null;
+  if (apiKey) {
+    apiAuth = await verifyApiKey(apiKey);
+    if (!apiAuth) {
+      return NextResponse.json(
+        { error: "Invalid API key" },
+        { status: 401, headers: corsHeaders },
+      );
+    }
   }
 
-  // Resolve Admin ID strictly from API key authentication
-  const resolvedAdminId: string = apiAuth.adminId;
-  const finalAdminId: string = resolvedAdminId;
+  // Resolve Admin ID (moved up for profile scoping)
+  let resolvedAdminId: string | null = null;
+  try {
+    const dbAuth = await getDb();
+    const chatsAuth = dbAuth.collection("chats");
+
+    if (apiAuth) {
+      resolvedAdminId = apiAuth.adminId;
+    } else if (adminIdFromBody) {
+      resolvedAdminId = adminIdFromBody;
+    } else {
+      // Cookie check
+      try {
+        const cookieAccess = verifyAdminAccessFromCookie(req);
+        if (cookieAccess?.isValid && cookieAccess.adminId) {
+          resolvedAdminId = cookieAccess.adminId;
+        }
+      } catch (e) {}
+
+      // Previous chat check
+      if (!resolvedAdminId && sessionId) {
+        const lastMsg = await chatsAuth.findOne({
+          sessionId,
+          adminId: { $exists: true },
+        });
+        if (lastMsg && lastMsg.adminId) {
+          resolvedAdminId = lastMsg.adminId;
+        }
+      }
+    }
+  } catch (e) {
+    // console.error removed
+    if (adminIdFromBody) resolvedAdminId = adminIdFromBody;
+  }
+
+  const finalAdminId = resolvedAdminId || "default-admin";
 
   // Extract email from question if not provided in body
   let effectiveEmail = profileUserEmail;
@@ -4487,145 +4530,29 @@ export async function POST(req: NextRequest) {
         // If gating check fails, continue with contextual generation
       }
 
-      // console.log removed
-
       if (resolvedAdminId && pageUrl) {
         try {
-          const db = await getDb();
-
-          const normalizedUrl = normalizeUrlForLookup(pageUrl);
-          const cleanUrl = normalizedUrl.split("?")[0].replace(/\/$/, "");
-          const urlRegex = new RegExp(
-            `^${cleanUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/?$`,
-            "i",
+          const structuredSummaryDoc = await findStructuredSummaryByUrl(
+            resolvedAdminId,
+            pageUrl,
           );
-
-          let structuredSummaryDoc = await db
-            .collection("structured_summaries")
-            .findOne({ adminId: resolvedAdminId, url: { $regex: urlRegex } });
-
-          if (
-            !structuredSummaryDoc &&
-            cleanUrl.includes("qa-agentlytics.vercel.app")
-          ) {
-            const prodUrl = cleanUrl.replace(
-              "qa-agentlytics.vercel.app",
-              "agentlytics.advancelytics.com",
-            );
-            const prodRegex = new RegExp(
-              `^${prodUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/?$`,
-              "i",
-            );
-            structuredSummaryDoc = await db
-              .collection("structured_summaries")
-              .findOne({
-                adminId: resolvedAdminId,
-                url: { $regex: prodRegex },
-              });
-          }
 
           if (
             structuredSummaryDoc?.structuredSummary?.sections &&
             Array.isArray(structuredSummaryDoc.structuredSummary.sections)
           ) {
-            const sections: any[] =
-              structuredSummaryDoc.structuredSummary.sections;
-            let matchedSection: any = null;
-
-            const ctxString =
-              typeof contextualPageContext === "string"
-                ? contextualPageContext
-                : JSON.stringify(contextualPageContext || {});
-            const lowerContext = ctxString.toLowerCase();
-
-            if (lowerContext) {
-              let bestScore = -1;
-              let bestSection: any = null;
-
-              sections.forEach((s: any) => {
-                const sName = (s.sectionName || "").toLowerCase();
-                const sSummary = (s.sectionSummary || "").toLowerCase();
-                const sContent = (s.sectionContent || "").toLowerCase();
-
-                let score = 0;
-
-                try {
-                  const escapedName = sName.replace(
-                    /[.*+?^${}()|[\]\\]/g,
-                    "\\$&",
-                  );
-                  const titleRegex = new RegExp(`\\b${escapedName}\\b`, "i");
-                  if (
-                    sName &&
-                    sName.length > 3 &&
-                    titleRegex.test(lowerContext)
-                  ) {
-                    score += Math.min(10 + sName.length, 30);
-                  }
-                } catch {
-                  if (
-                    sName &&
-                    sName.length > 3 &&
-                    lowerContext.includes(sName)
-                  ) {
-                    score += 10;
-                  }
-                }
-
-                if (sContent && sContent.length > 20) {
-                  const viewportWords = lowerContext
-                    .split(/[\s,.-]+/)
-                    .filter((w: string) => w.length > 4);
-                  let hits = 0;
-                  for (const w of viewportWords) {
-                    if (sContent.includes(w)) hits++;
-                  }
-                  score += hits * 5;
-                } else if (sSummary && sSummary.length > 20) {
-                  const summaryWords = sSummary
-                    .split(/[\s,.-]+/)
-                    .filter((w: string) => w.length > 4);
-                  let hitCount = 0;
-                  for (const w of summaryWords) {
-                    if (lowerContext.includes(w)) hitCount++;
-                  }
-                  score += hitCount * 3;
-                }
-
-                if (score > bestScore) {
-                  bestScore = score;
-                  bestSection = s;
-                }
-              });
-
-              if (bestScore >= 5) {
-                matchedSection = bestSection;
-              }
-            }
-
-            if (!matchedSection && sections.length > 0) {
-              matchedSection = sections[0];
-            }
-
-            if (
-              matchedSection &&
-              matchedSection.leadQuestions &&
-              matchedSection.leadQuestions.length > 0
-            ) {
-              const q = matchedSection.leadQuestions[0];
-              if (q && q.question) {
-                const rawOptions = q.options || [];
-                const buttons = rawOptions.map((o: any) =>
-                  typeof o === "string" ? o : o.label || JSON.stringify(o),
-                );
-                const resp = {
-                  mainText: q.question,
-                  buttons,
-                  emailPrompt: "",
-                  sectionName: matchedSection.sectionName || null,
-                };
-                return NextResponse.json(resp, { headers: corsHeaders });
-              }
+            const matched = matchSectionAndFirstLeadQuestion(
+              structuredSummaryDoc,
+              contextualPageContext,
+            );
+            if (matched) {
+              const resp = {
+                mainText: matched.question,
+                buttons: matched.buttons,
+                emailPrompt: "",
+                sectionName: matched.sectionName || null,
+              };
+              return NextResponse.json(resp, { headers: corsHeaders });
             }
           }
         } catch {}
@@ -8884,43 +8811,11 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
         if (pageUrl) {
           try {
             // Robust URL Matching: Strip params and handle trailing slash
-            const normalizedUrl = normalizeUrlForLookup(pageUrl);
-            const cleanUrl = normalizedUrl.split("?")[0].replace(/\/$/, "");
-            const urlRegex = new RegExp(
-              `^${cleanUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/?$`,
-              "i",
-            );
-
             const lookupAdminId = resolvedAdminId || finalAdminId;
-            let structuredSummaryDoc = await db
-              .collection("structured_summaries")
-              .findOne({
-                adminId: lookupAdminId,
-                url: { $regex: urlRegex },
-              });
-
-            if (
-              !structuredSummaryDoc &&
-              typeof pageUrl === "string" &&
-              pageUrl.includes("qa-agentlytics.vercel.app")
-            ) {
-              const prodUrl = pageUrl.replace(
-                "qa-agentlytics.vercel.app",
-                "agentlytics.advancelytics.com",
-              );
-              const normalizedProd = normalizeUrlForLookup(prodUrl);
-              const cleanProd = normalizedProd.split("?")[0].replace(/\/$/, "");
-              const prodRegex = new RegExp(
-                `^${cleanProd.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/?$`,
-                "i",
-              );
-              structuredSummaryDoc = await db
-                .collection("structured_summaries")
-                .findOne({
-                  adminId: lookupAdminId,
-                  url: { $regex: prodRegex },
-                });
-            }
+            const structuredSummaryDoc = await findStructuredSummaryByUrl(
+              lookupAdminId,
+              pageUrl,
+            );
 
             if (
               structuredSummaryDoc?.structuredSummary?.sections &&
@@ -8928,7 +8823,6 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
             ) {
               console.log("[StructuredSummaryLookup] Using document", {
                 adminId: lookupAdminId,
-                requestUrl: cleanUrl,
                 docUrl: structuredSummaryDoc.url,
                 docId: String(structuredSummaryDoc._id || ""),
               });

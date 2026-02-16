@@ -6,7 +6,7 @@ import Chatbot from "./Chatbot";
 
 const AdminPanel: React.FC = () => {
   const [auth, setAuth] = useState<null | { email: string; adminId?: string }>(
-    null
+    null,
   );
   const [authError, setAuthError] = useState("");
   const [authLoading, setAuthLoading] = useState(true);
@@ -119,7 +119,7 @@ const AdminPanel: React.FC = () => {
       const data = await res.json();
       if (res.ok) {
         setSitemapStatus(
-          `Success: Crawled ${data.crawled} pages, ${data.totalChunks} total chunks`
+          `Success: Crawled ${data.crawled} pages, ${data.totalChunks} total chunks`,
         );
       } else {
         setSitemapStatus(`Error: ${data.error}`);
@@ -209,7 +209,7 @@ const AdminPanel: React.FC = () => {
         setLeadsLoading(false);
       }
     },
-    [leadsSearch, leadsSortBy, leadsSortOrder, LEADS_PAGE_SIZE]
+    [leadsSearch, leadsSortBy, leadsSortOrder, LEADS_PAGE_SIZE],
   );
 
   const deleteLead = async (email: string) => {
@@ -347,8 +347,8 @@ const AdminPanel: React.FC = () => {
             {authLoading
               ? "Processing..."
               : form.action === "login"
-              ? "Login"
-              : "Register"}
+                ? "Login"
+                : "Register"}
           </button>
         </form>
       </div>
@@ -489,8 +489,8 @@ const AdminPanel: React.FC = () => {
             {apiKeyLoading
               ? "Generating..."
               : apiKey
-              ? "Regenerate API Key"
-              : "Generate API Key"}
+                ? "Regenerate API Key"
+                : "Generate API Key"}
           </button>
 
           {apiKeyError && (
@@ -525,7 +525,7 @@ const AdminPanel: React.FC = () => {
               <button
                 onClick={() =>
                   copyToClipboard(
-                    `<script src="${window.location.origin}/api/widget" data-api-key="${apiKey}"></script>`
+                    `<script src="${window.location.origin}/api/widget" data-api-key="${apiKey}"></script>`,
                   )
                 }
                 style={{ marginTop: 8 }}
@@ -833,10 +833,10 @@ const AdminPanel: React.FC = () => {
                         {typeof lead.latestContent === "string"
                           ? lead.latestContent
                           : lead.latestContent &&
-                            typeof lead.latestContent === "object" &&
-                            "mainText" in lead.latestContent
-                          ? lead.latestContent.mainText
-                          : "No content"}
+                              typeof lead.latestContent === "object" &&
+                              "mainText" in lead.latestContent
+                            ? lead.latestContent.mainText
+                            : "No content"}
                       </div>
                     </td>
                     <td
@@ -980,12 +980,12 @@ const AdminPanel: React.FC = () => {
                       `"${(typeof lead.latestContent === "string"
                         ? lead.latestContent
                         : lead.latestContent &&
-                          typeof lead.latestContent === "object" &&
-                          "mainText" in lead.latestContent
-                        ? lead.latestContent.mainText
-                        : ""
+                            typeof lead.latestContent === "object" &&
+                            "mainText" in lead.latestContent
+                          ? lead.latestContent.mainText
+                          : ""
                       ).replace(/"/g, '""')}"`,
-                    ].join(",")
+                    ].join(","),
                   ),
                 ].join("\n");
 
@@ -1052,27 +1052,7 @@ const AdminPanel: React.FC = () => {
           </select>
         </div>
       )}
-      {apiKey ? (
-        <Chatbot
-          pageUrl={selectedPageUrl || undefined}
-          adminId={auth?.adminId}
-          apiKey={apiKey}
-        />
-      ) : (
-        <div
-          style={{
-            marginTop: 16,
-            padding: 12,
-            borderRadius: 8,
-            border: "1px dashed #cbd5f5",
-            color: "#6b7280",
-            fontSize: 14,
-            textAlign: "center",
-          }}
-        >
-          Generate an API key above to use the chatbot preview.
-        </div>
-      )}
+      <Chatbot pageUrl={selectedPageUrl || undefined} adminId={auth?.adminId} />
       <DocumentUploader onUploadDone={() => {}} />
     </div>
   );
