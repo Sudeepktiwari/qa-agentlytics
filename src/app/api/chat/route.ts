@@ -8921,10 +8921,11 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
               "i",
             );
 
+            const lookupAdminId = resolvedAdminId || finalAdminId;
             let structuredSummaryDoc = await db
               .collection("structured_summaries")
               .findOne({
-                adminId: resolvedAdminId || adminIdFromBody || "default-admin",
+                adminId: lookupAdminId,
                 url: { $regex: urlRegex },
               });
 
@@ -8946,8 +8947,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
               structuredSummaryDoc = await db
                 .collection("structured_summaries")
                 .findOne({
-                  adminId:
-                    resolvedAdminId || adminIdFromBody || "default-admin",
+                  adminId: lookupAdminId,
                   url: { $regex: prodRegex },
                 });
             }
@@ -8956,6 +8956,12 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
               structuredSummaryDoc?.structuredSummary?.sections &&
               Array.isArray(structuredSummaryDoc.structuredSummary.sections)
             ) {
+              console.log("[StructuredSummaryLookup] Using document", {
+                adminId: lookupAdminId,
+                requestUrl: cleanUrl,
+                docUrl: structuredSummaryDoc.url,
+                docId: String(structuredSummaryDoc._id || ""),
+              });
               const matched = matchSectionAndFirstLeadQuestion(
                 structuredSummaryDoc,
                 contextualPageContext,
