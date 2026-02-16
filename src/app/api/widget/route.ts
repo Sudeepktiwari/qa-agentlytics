@@ -1772,7 +1772,7 @@ export async function GET(request: Request) {
               data.secondary.mainText,
               data.secondary.buttons || [],
               data.secondary.emailPrompt || '',
-              'FOLLOWUP',
+              'PROACTIVE',
               null,
               data.secondary.type || null
             );
