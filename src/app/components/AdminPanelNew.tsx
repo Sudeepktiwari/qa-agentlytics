@@ -532,6 +532,7 @@ const AdminPanel: React.FC = () => {
             sitemapUrls={sitemapUrls}
             selectedPageUrl={selectedPageUrl}
             onSelectedPageUrlChange={setSelectedPageUrl}
+            apiKey={apiKey}
           />
 
           {/* Live Chatbot Preview */}
@@ -559,10 +560,27 @@ const AdminPanel: React.FC = () => {
             >
               💬 Live Chatbot Preview
             </h3>
-            <Chatbot
-              pageUrl={selectedPageUrl || undefined}
-              adminId={auth?.adminId}
-            />
+            {apiKey ? (
+              <Chatbot
+                pageUrl={selectedPageUrl || undefined}
+                adminId={auth?.adminId}
+                apiKey={apiKey}
+              />
+            ) : (
+              <div
+                style={{
+                  borderRadius: "16px",
+                  border: "1px dashed #cbd5f5",
+                  padding: "16px",
+                  textAlign: "center",
+                  color: "#6b7280",
+                  fontSize: "14px",
+                }}
+              >
+                Generate an API key in the API Key section to use the live
+                chatbot preview.
+              </div>
+            )}
           </div>
 
           {/* Document Upload */}

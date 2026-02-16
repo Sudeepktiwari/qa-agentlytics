@@ -1052,7 +1052,27 @@ const AdminPanel: React.FC = () => {
           </select>
         </div>
       )}
-      <Chatbot pageUrl={selectedPageUrl || undefined} adminId={auth?.adminId} />
+      {apiKey ? (
+        <Chatbot
+          pageUrl={selectedPageUrl || undefined}
+          adminId={auth?.adminId}
+          apiKey={apiKey}
+        />
+      ) : (
+        <div
+          style={{
+            marginTop: 16,
+            padding: 12,
+            borderRadius: 8,
+            border: "1px dashed #cbd5f5",
+            color: "#6b7280",
+            fontSize: 14,
+            textAlign: "center",
+          }}
+        >
+          Generate an API key above to use the chatbot preview.
+        </div>
+      )}
       <DocumentUploader onUploadDone={() => {}} />
     </div>
   );

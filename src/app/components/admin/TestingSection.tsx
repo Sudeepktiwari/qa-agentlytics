@@ -8,6 +8,7 @@ interface TestingSectionProps {
   sitemapUrls: { url: string; crawled: boolean }[];
   selectedPageUrl: string;
   onSelectedPageUrlChange: (url: string) => void;
+  apiKey: string;
 }
 
 const TestingSection: React.FC<TestingSectionProps> = ({
@@ -15,6 +16,7 @@ const TestingSection: React.FC<TestingSectionProps> = ({
   sitemapUrls,
   selectedPageUrl,
   onSelectedPageUrlChange,
+  apiKey,
 }) => {
   if (!auth || sitemapUrls.length === 0) {
     return null;
@@ -66,11 +68,19 @@ const TestingSection: React.FC<TestingSectionProps> = ({
               Preview
             </h3>
             <div className="relative border border-slate-200 rounded-xl overflow-hidden bg-slate-50 h-[600px]">
-              <Chatbot
-                pageUrl={selectedPageUrl}
-                adminId={auth.adminId}
-                disableProactive={false}
-              />
+              {apiKey ? (
+                <Chatbot
+                  pageUrl={selectedPageUrl}
+                  adminId={auth.adminId}
+                  disableProactive={false}
+                  apiKey={apiKey}
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center text-sm text-slate-500 px-4 text-center">
+                  Generate an API key in the API Key section to test the
+                  chatbot.
+                </div>
+              )}
             </div>
           </div>
           <div className="bg-slate-900 rounded-2xl p-6 text-slate-300 font-mono text-sm overflow-y-auto max-h-[600px]">

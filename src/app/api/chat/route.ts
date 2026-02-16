@@ -3806,55 +3806,25 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Check for API key authentication (moved up for profile scoping)
+  // Check for API key authentication (strictly required)
   const apiKey = req.headers.get("x-api-key") || req.headers.get("X-API-Key");
-  let apiAuth = null;
-  if (apiKey) {
-    apiAuth = await verifyApiKey(apiKey);
-    if (!apiAuth) {
-      return NextResponse.json(
-        { error: "Invalid API key" },
-        { status: 401, headers: corsHeaders },
-      );
-    }
+  if (!apiKey || !apiKey.trim()) {
+    return NextResponse.json(
+      { error: "Missing API key" },
+      { status: 401, headers: corsHeaders },
+    );
+  }
+  let apiAuth = await verifyApiKey(apiKey);
+  if (!apiAuth) {
+    return NextResponse.json(
+      { error: "Invalid API key" },
+      { status: 401, headers: corsHeaders },
+    );
   }
 
-  // Resolve Admin ID (moved up for profile scoping)
-  let resolvedAdminId: string | null = null;
-  try {
-    const dbAuth = await getDb();
-    const chatsAuth = dbAuth.collection("chats");
-
-    if (apiAuth) {
-      resolvedAdminId = apiAuth.adminId;
-    } else if (adminIdFromBody) {
-      resolvedAdminId = adminIdFromBody;
-    } else {
-      // Cookie check
-      try {
-        const cookieAccess = verifyAdminAccessFromCookie(req);
-        if (cookieAccess?.isValid && cookieAccess.adminId) {
-          resolvedAdminId = cookieAccess.adminId;
-        }
-      } catch (e) {}
-
-      // Previous chat check
-      if (!resolvedAdminId && sessionId) {
-        const lastMsg = await chatsAuth.findOne({
-          sessionId,
-          adminId: { $exists: true },
-        });
-        if (lastMsg && lastMsg.adminId) {
-          resolvedAdminId = lastMsg.adminId;
-        }
-      }
-    }
-  } catch (e) {
-    // console.error removed
-    if (adminIdFromBody) resolvedAdminId = adminIdFromBody;
-  }
-
-  const finalAdminId = resolvedAdminId || "default-admin";
+  // Resolve Admin ID strictly from API key authentication
+  const resolvedAdminId: string = apiAuth.adminId;
+  const finalAdminId: string = resolvedAdminId;
 
   // Extract email from question if not provided in body
   let effectiveEmail = profileUserEmail;

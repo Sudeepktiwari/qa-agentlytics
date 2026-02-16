@@ -42,6 +42,7 @@ interface Message {
 interface ChatbotProps {
   pageUrl?: string;
   adminId?: string;
+  apiKey?: string;
   prefillQuestions?: string[];
   disableProactive?: boolean;
   seedAssistantMessages?: string[];
@@ -50,6 +51,7 @@ interface ChatbotProps {
 const Chatbot: React.FC<ChatbotProps> = ({
   pageUrl,
   adminId,
+  apiKey,
   prefillQuestions = [],
   disableProactive,
   seedAssistantMessages = [],
@@ -326,7 +328,10 @@ const Chatbot: React.FC<ChatbotProps> = ({
             // Clear chat history from backend first
             fetch("/api/chat", {
               method: "DELETE",
-              headers: { "Content-Type": "application/json" },
+              headers: {
+                "Content-Type": "application/json",
+                ...(apiKey ? { "x-api-key": apiKey } : {}),
+              },
               body: JSON.stringify({
                 sessionId,
                 clearHistory: true,
@@ -336,7 +341,10 @@ const Chatbot: React.FC<ChatbotProps> = ({
                 // Now show the proactive message with clean history
                 return fetch("/api/chat", {
                   method: "POST",
-                  headers: { "Content-Type": "application/json" },
+                  headers: {
+                    "Content-Type": "application/json",
+                    ...(apiKey ? { "x-api-key": apiKey } : {}),
+                  },
                   body: JSON.stringify({
                     sessionId,
                     pageUrl: effectivePageUrl,
@@ -419,7 +427,10 @@ const Chatbot: React.FC<ChatbotProps> = ({
         const initialSectionContext = getVisibleSectionContext();
         fetch("/api/chat", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            ...(apiKey ? { "x-api-key": apiKey } : {}),
+          },
           body: JSON.stringify({
             sessionId,
             pageUrl: effectivePageUrl,
@@ -649,7 +660,10 @@ const Chatbot: React.FC<ChatbotProps> = ({
 
       fetch("/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(apiKey ? { "x-api-key": apiKey } : {}),
+        },
         body: JSON.stringify({
           sessionId,
           pageUrl: effectivePageUrl,
@@ -1185,7 +1199,10 @@ const Chatbot: React.FC<ChatbotProps> = ({
 
       const res = await fetch("/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(apiKey ? { "x-api-key": apiKey } : {}),
+        },
         body: JSON.stringify({
           question: userMsg.content,
           sessionId,
