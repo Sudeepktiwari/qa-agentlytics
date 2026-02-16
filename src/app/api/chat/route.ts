@@ -787,6 +787,12 @@ async function findStructuredSummaryByUrl(
   const normalizedUrl = normalizeUrlForLookup(pageUrl);
   const cleanUrl = normalizedUrl.split("?")[0].replace(/\/$/, "");
   if (!cleanUrl) return null;
+  console.log("[StructuredSummaryLookup] Incoming lookup", {
+    adminId,
+    pageUrl,
+    normalizedUrl,
+    cleanUrl,
+  });
   const baseRegex = new RegExp(
     `^${cleanUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/?$`,
     "i",
@@ -794,6 +800,14 @@ async function findStructuredSummaryByUrl(
   let doc = await db
     .collection("structured_summaries")
     .findOne({ adminId, url: { $regex: baseRegex } });
+  if (doc) {
+    console.log("[StructuredSummaryLookup] Found document for URL", {
+      adminId,
+      docUrl: doc.url,
+      docId: doc._id ? String(doc._id) : null,
+      source: "primary",
+    });
+  }
   if (!doc && cleanUrl.includes("qa-agentlytics.vercel.app")) {
     const prodUrl = cleanUrl.replace(
       "qa-agentlytics.vercel.app",
@@ -806,6 +820,14 @@ async function findStructuredSummaryByUrl(
     doc = await db
       .collection("structured_summaries")
       .findOne({ adminId, url: { $regex: prodRegex } });
+    console.log("[StructuredSummaryLookup] QA->Prod fallback", {
+      adminId,
+      qaUrl: cleanUrl,
+      prodUrl,
+      found: !!doc,
+      docUrl: doc ? doc.url : null,
+      docId: doc && doc._id ? String(doc._id) : null,
+    });
   }
   return doc;
 }
@@ -3839,7 +3861,18 @@ export async function POST(req: NextRequest) {
     const chatsAuth = dbAuth.collection("chats");
 
     if (apiAuth) {
-      resolvedAdminId = apiAuth.adminId;
+      const marketingBotKey = process.env.NEXT_PUBLIC_BOT_KEY;
+      const marketingAdminId = process.env.MARKETING_ADMIN_ID;
+      if (
+        marketingBotKey &&
+        marketingAdminId &&
+        apiKey &&
+        apiKey === marketingBotKey
+      ) {
+        resolvedAdminId = marketingAdminId;
+      } else {
+        resolvedAdminId = apiAuth.adminId;
+      }
     } else if (adminIdFromBody) {
       resolvedAdminId = adminIdFromBody;
     } else {
