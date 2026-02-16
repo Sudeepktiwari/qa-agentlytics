@@ -4303,6 +4303,147 @@ export async function POST(req: NextRequest) {
 
       // console.log removed
 
+      if (resolvedAdminId && pageUrl) {
+        try {
+          const db = await getDb();
+
+          const cleanUrl = pageUrl.split("?")[0].replace(/\/$/, "");
+          const urlRegex = new RegExp(
+            `^${cleanUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/?$`,
+            "i",
+          );
+
+          let structuredSummaryDoc = await db
+            .collection("structured_summaries")
+            .findOne({ adminId: resolvedAdminId, url: { $regex: urlRegex } });
+
+          if (
+            !structuredSummaryDoc &&
+            cleanUrl.includes("qa-agentlytics.vercel.app")
+          ) {
+            const prodUrl = cleanUrl.replace(
+              "qa-agentlytics.vercel.app",
+              "agentlytics.advancelytics.com",
+            );
+            const prodRegex = new RegExp(
+              `^${prodUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/?$`,
+              "i",
+            );
+            structuredSummaryDoc = await db
+              .collection("structured_summaries")
+              .findOne({
+                adminId: resolvedAdminId,
+                url: { $regex: prodRegex },
+              });
+          }
+
+          if (
+            structuredSummaryDoc?.structuredSummary?.sections &&
+            Array.isArray(structuredSummaryDoc.structuredSummary.sections)
+          ) {
+            const sections: any[] =
+              structuredSummaryDoc.structuredSummary.sections;
+            let matchedSection: any = null;
+
+            const ctxString =
+              typeof contextualPageContext === "string"
+                ? contextualPageContext
+                : JSON.stringify(contextualPageContext || {});
+            const lowerContext = ctxString.toLowerCase();
+
+            if (lowerContext) {
+              let bestScore = -1;
+              let bestSection: any = null;
+
+              sections.forEach((s: any) => {
+                const sName = (s.sectionName || "").toLowerCase();
+                const sSummary = (s.sectionSummary || "").toLowerCase();
+                const sContent = (s.sectionContent || "").toLowerCase();
+
+                let score = 0;
+
+                try {
+                  const escapedName = sName.replace(
+                    /[.*+?^${}()|[\]\\]/g,
+                    "\\$&",
+                  );
+                  const titleRegex = new RegExp(`\\b${escapedName}\\b`, "i");
+                  if (
+                    sName &&
+                    sName.length > 3 &&
+                    titleRegex.test(lowerContext)
+                  ) {
+                    score += Math.min(10 + sName.length, 30);
+                  }
+                } catch {
+                  if (
+                    sName &&
+                    sName.length > 3 &&
+                    lowerContext.includes(sName)
+                  ) {
+                    score += 10;
+                  }
+                }
+
+                if (sContent && sContent.length > 20) {
+                  const viewportWords = lowerContext
+                    .split(/[\s,.-]+/)
+                    .filter((w: string) => w.length > 4);
+                  let hits = 0;
+                  for (const w of viewportWords) {
+                    if (sContent.includes(w)) hits++;
+                  }
+                  score += hits * 5;
+                } else if (sSummary && sSummary.length > 20) {
+                  const summaryWords = sSummary
+                    .split(/[\s,.-]+/)
+                    .filter((w: string) => w.length > 4);
+                  let hitCount = 0;
+                  for (const w of summaryWords) {
+                    if (lowerContext.includes(w)) hitCount++;
+                  }
+                  score += hitCount * 3;
+                }
+
+                if (score > bestScore) {
+                  bestScore = score;
+                  bestSection = s;
+                }
+              });
+
+              if (bestScore >= 5) {
+                matchedSection = bestSection;
+              }
+            }
+
+            if (!matchedSection && sections.length > 0) {
+              matchedSection = sections[0];
+            }
+
+            if (
+              matchedSection &&
+              matchedSection.leadQuestions &&
+              matchedSection.leadQuestions.length > 0
+            ) {
+              const q = matchedSection.leadQuestions[0];
+              if (q && q.question) {
+                const rawOptions = q.options || [];
+                const buttons = rawOptions.map((o: any) =>
+                  typeof o === "string" ? o : o.label || JSON.stringify(o),
+                );
+                const resp = {
+                  mainText: q.question,
+                  buttons,
+                  emailPrompt: "",
+                  sectionName: matchedSection.sectionName || null,
+                };
+                return NextResponse.json(resp, { headers: corsHeaders });
+              }
+            }
+          }
+        } catch {}
+      }
+
       const contextualPrompt = `You are an intelligent business assistant analyzing a webpage to generate contextual questions. 
 
 Page Context:
