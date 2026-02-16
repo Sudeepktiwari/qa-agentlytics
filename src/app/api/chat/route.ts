@@ -9118,7 +9118,6 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
                 matchedSection = sections[0];
               }
 
-              // C. Extract Question from Matched Section (or Fallback)
               if (
                 matchedSection &&
                 matchedSection.leadQuestions &&
@@ -9126,7 +9125,6 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
               ) {
                 const q = matchedSection.leadQuestions[followupCount];
                 if (q && q.question) {
-                  // console.log removed
                   const rawOptions = q.options || [];
                   const buttons = rawOptions.map((o: any) =>
                     typeof o === "string" ? o : o.label || JSON.stringify(o),
@@ -9135,6 +9133,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
                     mainText: q.question,
                     buttons: buttons,
                     emailPrompt: "",
+                    sectionName: matchedSection.sectionName || null,
                   };
                 }
               }

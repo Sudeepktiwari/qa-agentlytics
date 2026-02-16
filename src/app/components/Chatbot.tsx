@@ -483,7 +483,11 @@ const Chatbot: React.FC<ChatbotProps> = ({
                 userEmail: data.userEmail,
                 topicsDiscussed: data.topicsDiscussed,
               };
-              // console.log removed
+              if ((data.secondary as any)?.sectionName) {
+                console.log(
+                  `You are viewing "${(data.secondary as any).sectionName}" from structured summary`,
+                );
+              }
               setMessages((msgs) => [...msgs, secMsg]);
             }
             // Start follow-up timer
@@ -663,15 +667,17 @@ const Chatbot: React.FC<ChatbotProps> = ({
       })
         .then((res) => res.json())
         .then((data) => {
-          // Update bot mode tracking
           if (data.botMode) {
             setCurrentBotMode(data.botMode);
           }
           if (data.userEmail !== undefined) {
             setCurrentUserEmail(data.userEmail);
           }
-
-          // Use parseBotResponse for follow-up responses
+          if ((data as any)?.sectionName) {
+            console.log(
+              `You are viewing "${(data as any).sectionName}" from structured summary`,
+            );
+          }
           const parsed = parseBotResponse(data);
           setMessages((msgs) => [
             ...msgs,
@@ -1233,7 +1239,6 @@ const Chatbot: React.FC<ChatbotProps> = ({
         return newMessages;
       });
       if (data.secondary) {
-        // console.log removed
         const secParsed = parseBotResponse(data.secondary);
         const secMsg = {
           role: "assistant" as const,
@@ -1248,6 +1253,11 @@ const Chatbot: React.FC<ChatbotProps> = ({
             : undefined,
           topicsDiscussed: data.topicsDiscussed,
         };
+        if ((data.secondary as any)?.sectionName) {
+          console.log(
+            `You are viewing "${(data.secondary as any).sectionName}" from structured summary`,
+          );
+        }
         if (assistantCountBefore > 0) {
           const words = String(newMessage.content || "")
             .replace(/<[^>]+>/g, " ")
