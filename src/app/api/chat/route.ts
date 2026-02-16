@@ -807,7 +807,10 @@ function matchSectionAndFirstLeadQuestion(
 } | null {
   const sections: any[] =
     structuredSummaryDoc?.structuredSummary?.sections || [];
-  if (!Array.isArray(sections) || sections.length === 0) return null;
+  if (!Array.isArray(sections) || sections.length === 0) {
+    console.log("[SectionMatch] No sections available in structured summary");
+    return null;
+  }
   const ctxString =
     typeof contextualPageContext === "string"
       ? contextualPageContext
@@ -839,11 +842,14 @@ function matchSectionAndFirstLeadQuestion(
     });
     if (bestNameScore >= 10 && bestByName) {
       matchedSection = bestByName;
+      console.log("[SectionMatch] Using sectionName match", {
+        sectionName: matchedSection.sectionName || null,
+        score: bestNameScore,
+      });
     } else {
       let bestScore = -1;
       let bestSection: any = null;
       sections.forEach((s: any) => {
-        const sName = (s.sectionName || "").toLowerCase();
         const sSummary = (s.sectionSummary || "").toLowerCase();
         const sContent = (s.sectionContent || "").toLowerCase();
         let contentScore = 0;
@@ -878,11 +884,27 @@ function matchSectionAndFirstLeadQuestion(
       });
       if (bestScore >= 5) {
         matchedSection = bestSection;
+        console.log("[SectionMatch] Using content match", {
+          sectionName: matchedSection.sectionName || null,
+          score: bestScore,
+        });
+      } else {
+        console.log("[SectionMatch] No strong name or content match", {
+          bestNameScore,
+          bestContentScore: bestScore,
+        });
       }
     }
+  } else {
+    console.log(
+      "[SectionMatch] Empty contextualPageContext; skipping matching",
+    );
   }
   if (!matchedSection && sections.length > 0) {
     matchedSection = sections[0];
+    console.log("[SectionMatch] Falling back to first section", {
+      sectionName: matchedSection.sectionName || null,
+    });
   }
   if (
     matchedSection &&
@@ -895,6 +917,10 @@ function matchSectionAndFirstLeadQuestion(
       const buttons = rawOptions.map((o: any) =>
         typeof o === "string" ? o : o.label || JSON.stringify(o),
       );
+      console.log("[SectionMatch] Using lead question from matched section", {
+        sectionName: matchedSection.sectionName || null,
+        question: q.question,
+      });
       return {
         sectionName: matchedSection.sectionName || null,
         question: q.question,
@@ -902,6 +928,9 @@ function matchSectionAndFirstLeadQuestion(
       };
     }
   }
+  console.log("[SectionMatch] No usable leadQuestions in matched section", {
+    sectionName: matchedSection ? matchedSection.sectionName || null : null,
+  });
   return null;
 }
 
