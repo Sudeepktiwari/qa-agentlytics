@@ -892,7 +892,10 @@ function matchSectionAndFirstLeadQuestion(
   return null;
 }
 
-function buildFallbackLeadQuestionFromContext(context: any): {
+function buildFallbackLeadQuestionFromContext(
+  context: any,
+  pageUrl?: string | null,
+): {
   mainText: string;
   buttons: string[];
 } | null {
@@ -910,7 +913,10 @@ function buildFallbackLeadQuestionFromContext(context: any): {
       ],
     };
   }
-  if (/(pricing|price|plan|plans|billing)/i.test(lower)) {
+  const isPricingPage =
+    typeof pageUrl === "string" &&
+    /\/pricing(\/|$)/i.test(pageUrl.split("?")[0] || "");
+  if (isPricingPage && /(pricing|price|plan|plans|billing)/i.test(lower)) {
     return {
       mainText: "Want help choosing the right plan for your situation?",
       buttons: [
@@ -8913,6 +8919,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
         if (!secondary) {
           const fallback = buildFallbackLeadQuestionFromContext(
             contextualPageContext,
+            pageUrl,
           );
           if (fallback) {
             secondary = {
