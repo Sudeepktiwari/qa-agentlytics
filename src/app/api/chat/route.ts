@@ -889,7 +889,27 @@ function matchSectionAndFirstLeadQuestion(
     Array.isArray(matchedSection.leadQuestions) &&
     matchedSection.leadQuestions.length > 0
   ) {
-    const q = matchedSection.leadQuestions[0];
+    let q = matchedSection.leadQuestions[0];
+    if (
+      q &&
+      typeof q.question === "string" &&
+      /desired business outcome/i.test(q.question)
+    ) {
+      for (const s of sections) {
+        if (s && Array.isArray(s.leadQuestions) && s.leadQuestions.length > 0) {
+          const cand = s.leadQuestions[0];
+          if (
+            cand &&
+            typeof cand.question === "string" &&
+            !/desired business outcome/i.test(cand.question)
+          ) {
+            q = cand;
+            matchedSection = s;
+            break;
+          }
+        }
+      }
+    }
     if (q && q.question) {
       const rawOptions = q.options || [];
       const buttons = rawOptions.map((o: any) =>
