@@ -3786,12 +3786,14 @@ export async function GET(request: Request) {
     const normalizedSecondary = responseData.secondary
       ? {
           mainText:
-            (responseData.secondary.mainText ||
-              responseData.secondary.answer ||
-              ''),
+            responseData.secondary.mainText ||
+            responseData.secondary.answer ||
+            '',
           buttons: responseData.secondary.buttons || [],
           emailPrompt: responseData.secondary.emailPrompt || '',
           type: responseData.secondary.type || null,
+          source: responseData.secondary.source || null,
+          sectionName: responseData.secondary.sectionName || null,
         }
       : null;
     
