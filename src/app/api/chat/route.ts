@@ -8871,105 +8871,25 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
               structuredSummaryDoc?.structuredSummary?.sections &&
               Array.isArray(structuredSummaryDoc.structuredSummary.sections)
             ) {
-              const sections = structuredSummaryDoc.structuredSummary.sections;
-              let matchedSection: any = null;
-
-              if (contextualPageContext) {
-                const lowerContext = contextualPageContext.toLowerCase();
-                let bestScore = -1;
-                let bestSection: any = null;
-
-                sections.forEach((s: any) => {
-                  const sName = (s.sectionName || "").toLowerCase();
-                  const sSummary = (s.sectionSummary || "").toLowerCase();
-                  const sContent = (s.sectionContent || "").toLowerCase();
-
-                  let score = 0;
-
-                  try {
-                    const escapedName = sName.replace(
-                      /[.*+?^${}()|[\]\\]/g,
-                      "\\$&",
-                    );
-                    const titleRegex = new RegExp(`\\b${escapedName}\\b`, "i");
-                    if (
-                      sName &&
-                      sName.length > 3 &&
-                      titleRegex.test(lowerContext)
-                    ) {
-                      score += Math.min(10 + sName.length, 30);
-                    }
-                  } catch (e) {
-                    if (
-                      sName &&
-                      sName.length > 3 &&
-                      lowerContext.includes(sName)
-                    ) {
-                      score += 10;
-                    }
-                  }
-
-                  if (sContent && sContent.length > 20) {
-                    const viewportWords = lowerContext
-                      .split(/[\s,.-]+/)
-                      .filter((w: string) => w.length > 4);
-                    let hits = 0;
-                    for (const w of viewportWords) {
-                      if (sContent.includes(w)) hits++;
-                    }
-                    score += hits * 5;
-                  } else if (sSummary && sSummary.length > 20) {
-                    const summaryWords = sSummary
-                      .split(/[\s,.-]+/)
-                      .filter((w: string) => w.length > 4);
-                    let hitCount = 0;
-                    for (const w of summaryWords) {
-                      if (lowerContext.includes(w)) hitCount++;
-                    }
-                    score += hitCount * 3;
-                  }
-
-                  if (score > bestScore) {
-                    bestScore = score;
-                    bestSection = s;
-                  }
-                });
-
-                if (bestScore >= 5) {
-                  matchedSection = bestSection;
-                }
-              }
-
-              if (!matchedSection && sections.length > 0) {
-                matchedSection = sections[0];
-              }
-
-              if (
-                matchedSection &&
-                matchedSection.leadQuestions &&
-                matchedSection.leadQuestions.length > 0
-              ) {
-                const q = matchedSection.leadQuestions[0];
-                if (q && q.question) {
-                  console.log(
-                    `[Chatbot] Lead Question (DB) [section="${
-                      matchedSection.sectionName || "unknown"
-                    }"]: "${q.question}"`,
-                  );
-                  const rawOptions = q.options || [];
-                  const secButtons = rawOptions.map((o: any) =>
-                    typeof o === "string" ? o : o.label || JSON.stringify(o),
-                  );
-                  secondary = {
-                    mainText: q.question,
-                    buttons: secButtons,
-                    emailPrompt: "",
-                    type: "probe",
-                    source: "structured_summary",
-                    sectionName: matchedSection.sectionName || null,
-                  };
-                  enhancedProactiveData.buttons = [];
-                }
+              const matched = matchSectionAndFirstLeadQuestion(
+                structuredSummaryDoc,
+                contextualPageContext,
+              );
+              if (matched) {
+                console.log(
+                  `[Chatbot] Lead Question (DB) [section="${
+                    matched.sectionName || "unknown"
+                  }"]: "${matched.question}"`,
+                );
+                secondary = {
+                  mainText: matched.question,
+                  buttons: matched.buttons,
+                  emailPrompt: "",
+                  type: "probe",
+                  source: "structured_summary",
+                  sectionName: matched.sectionName || null,
+                };
+                enhancedProactiveData.buttons = [];
               }
             }
           } catch (e) {
