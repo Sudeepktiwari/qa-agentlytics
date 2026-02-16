@@ -27,7 +27,7 @@ export async function verifyApiKey(apiKey: string) {
     }
 
     return {
-      adminId: keyRecord.adminId || keyRecord._id.toString(), // use ObjectId as adminId if no explicit adminId
+      adminId: keyRecord._id.toString(),
       email: keyRecord.email,
     };
   } catch {
