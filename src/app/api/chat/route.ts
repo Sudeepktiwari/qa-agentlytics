@@ -3861,18 +3861,7 @@ export async function POST(req: NextRequest) {
     const chatsAuth = dbAuth.collection("chats");
 
     if (apiAuth) {
-      const marketingBotKey = process.env.NEXT_PUBLIC_BOT_KEY;
-      const marketingAdminId = process.env.MARKETING_ADMIN_ID;
-      if (
-        marketingBotKey &&
-        marketingAdminId &&
-        apiKey &&
-        apiKey === marketingBotKey
-      ) {
-        resolvedAdminId = marketingAdminId;
-      } else {
-        resolvedAdminId = apiAuth.adminId;
-      }
+      resolvedAdminId = apiAuth.adminId;
     } else if (adminIdFromBody) {
       resolvedAdminId = adminIdFromBody;
     } else {
