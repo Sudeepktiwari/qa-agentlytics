@@ -778,6 +778,126 @@ function normalizeUrlForLookup(url: string | null | undefined): string {
     .replace(/["'`]+$/, "");
 }
 
+async function findStructuredSummaryByUrl(
+  adminId: string | null | undefined,
+  pageUrl: string | null | undefined,
+): Promise<any | null> {
+  if (!adminId || !pageUrl) return null;
+  const db = await getDb();
+  const normalizedUrl = normalizeUrlForLookup(pageUrl);
+  const cleanUrl = normalizedUrl.split("?")[0].replace(/\/$/, "");
+  if (!cleanUrl) return null;
+  const baseRegex = new RegExp(
+    `^${cleanUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/?$`,
+    "i",
+  );
+  let doc = await db
+    .collection("structured_summaries")
+    .findOne({ adminId, url: { $regex: baseRegex } });
+  if (!doc && cleanUrl.includes("qa-agentlytics.vercel.app")) {
+    const prodUrl = cleanUrl.replace(
+      "qa-agentlytics.vercel.app",
+      "agentlytics.advancelytics.com",
+    );
+    const prodRegex = new RegExp(
+      `^${prodUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/?$`,
+      "i",
+    );
+    doc = await db
+      .collection("structured_summaries")
+      .findOne({ adminId, url: { $regex: prodRegex } });
+  }
+  return doc;
+}
+
+function matchSectionAndFirstLeadQuestion(
+  structuredSummaryDoc: any,
+  contextualPageContext: any,
+): {
+  sectionName: string | null;
+  question: string;
+  buttons: string[];
+} | null {
+  const sections: any[] =
+    structuredSummaryDoc?.structuredSummary?.sections || [];
+  if (!Array.isArray(sections) || sections.length === 0) return null;
+  const ctxString =
+    typeof contextualPageContext === "string"
+      ? contextualPageContext
+      : JSON.stringify(contextualPageContext || {});
+  const lowerContext = ctxString.toLowerCase();
+  let matchedSection: any = null;
+  if (lowerContext) {
+    let bestScore = -1;
+    let bestSection: any = null;
+    sections.forEach((s: any) => {
+      const sName = (s.sectionName || "").toLowerCase();
+      const sSummary = (s.sectionSummary || "").toLowerCase();
+      const sContent = (s.sectionContent || "").toLowerCase();
+      let score = 0;
+      try {
+        const escapedName = sName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const titleRegex = new RegExp(`\\b${escapedName}\\b`, "i");
+        if (sName && sName.length > 3 && titleRegex.test(lowerContext)) {
+          score += Math.min(10 + sName.length, 30);
+        }
+      } catch {
+        if (sName && sName.length > 3 && lowerContext.includes(sName)) {
+          score += 10;
+        }
+      }
+      if (sContent && sContent.length > 20) {
+        const viewportWords = lowerContext
+          .split(/[\s,.-]+/)
+          .filter((w: string) => w.length > 4);
+        let hits = 0;
+        for (const w of viewportWords) {
+          if (sContent.includes(w)) hits++;
+        }
+        score += hits * 5;
+      } else if (sSummary && sSummary.length > 20) {
+        const summaryWords = sSummary
+          .split(/[\s,.-]+/)
+          .filter((w: string) => w.length > 4);
+        let hitCount = 0;
+        for (const w of summaryWords) {
+          if (lowerContext.includes(w)) hitCount++;
+        }
+        score += hitCount * 3;
+      }
+      if (score > bestScore) {
+        bestScore = score;
+        bestSection = s;
+      }
+    });
+    if (bestScore >= 5) {
+      matchedSection = bestSection;
+    }
+  }
+  if (!matchedSection && sections.length > 0) {
+    matchedSection = sections[0];
+  }
+  if (
+    matchedSection &&
+    Array.isArray(matchedSection.leadQuestions) &&
+    matchedSection.leadQuestions.length > 0
+  ) {
+    const q = matchedSection.leadQuestions[0];
+    if (q && q.question) {
+      const rawOptions = q.options || [];
+      const buttons = rawOptions.map((o: any) =>
+        typeof o === "string" ? o : o.label || JSON.stringify(o),
+      );
+      return {
+        sectionName: matchedSection.sectionName || null,
+        question: q.question,
+        buttons,
+      };
+    }
+  }
+  return null;
+}
+
 async function generateSalesEntryResponse(
   messages: any[],
   profile: any,
@@ -12017,6 +12137,41 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
     try {
       const db = await getDb();
       const chats = db.collection("chats");
+      if (!secondary) {
+        try {
+          const ssDoc = await findStructuredSummaryByUrl(
+            resolvedAdminId,
+            pageUrl,
+          );
+          const matched = matchSectionAndFirstLeadQuestion(
+            ssDoc,
+            contextualPageContext,
+          );
+          if (matched) {
+            const immediate = {
+              mainText: matched.question,
+              buttons: matched.buttons,
+              emailPrompt: "",
+              type: "probe",
+              source: "structured_summary",
+              sectionName: matched.sectionName,
+            } as any;
+            secondary = immediate;
+            await chats.insertOne({
+              sessionId,
+              role: "assistant",
+              content: immediate.mainText,
+              buttons: immediate.buttons,
+              emailPrompt: immediate.emailPrompt,
+              followupType: immediate.type,
+              createdAt: new Date(now.getTime() + 1),
+              sectionName: immediate.sectionName || null,
+              ...(pageUrl ? { pageUrl } : {}),
+              ...(resolvedAdminId ? { adminId: resolvedAdminId } : {}),
+            });
+          }
+        } catch {}
+      }
       const assistantCountBefore = await chats.countDocuments({
         sessionId,
         role: "assistant",
@@ -12056,7 +12211,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
       // skipDueToRecentFollowup handles the "double bot message" case.
       // We should proceed if skipDueToRecentFollowup is false.
 
-      if (!skipDueToRecentFollowup) {
+      if (!skipDueToRecentFollowup && !secondary) {
         const sessionDocsQuick = await chats
           .find({ sessionId })
           .sort({ createdAt: 1 })
