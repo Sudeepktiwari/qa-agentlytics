@@ -850,6 +850,9 @@ function matchSectionAndFirstLeadQuestion(
     typeof contextualPageContext === "string"
       ? contextualPageContext
       : JSON.stringify(contextualPageContext || {});
+  console.log("[SectionMatch] Context received for matching", {
+    contextPreview: ctxString.substring(0, 200),
+  });
   const lowerContext = ctxString.toLowerCase();
   let matchedSection: any = null;
   if (lowerContext) {
@@ -970,6 +973,12 @@ function matchSectionAndFirstLeadQuestion(
       console.log("[SectionMatch] Using lead question from matched section", {
         sectionName: matchedSection.sectionName || null,
         question: q.question,
+        sectionContentPreview: String(
+          matchedSection.sectionContent || "",
+        ).substring(0, 200),
+        sectionSummaryPreview: String(
+          matchedSection.sectionSummary || "",
+        ).substring(0, 200),
       });
       return {
         sectionName: matchedSection.sectionName || null,
@@ -9003,6 +9012,15 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
           botMode: leadBotMode,
           userEmail: resolvedUserEmail || null,
         };
+
+        console.log("[Mirror] leadQuestionRequest received", {
+          pageUrl,
+          adminId: lookupAdminId,
+          contextualPreview:
+            typeof contextualPageContext === "string"
+              ? String(contextualPageContext).substring(0, 200)
+              : JSON.stringify(contextualPageContext || {}).substring(0, 200),
+        });
 
         if (pageUrl && lookupAdminId) {
           try {

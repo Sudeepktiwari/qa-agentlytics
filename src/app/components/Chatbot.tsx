@@ -575,7 +575,13 @@ const Chatbot: React.FC<ChatbotProps> = ({
     }
 
     if (!candidates.length) {
-      return document.body.innerText.substring(0, 800);
+      const fallbackText = document.body.innerText.substring(0, 800);
+      if (fallbackText) {
+        console.log("[Mirror] No section candidates found, using body text", {
+          textPreview: fallbackText.substring(0, 200),
+        });
+      }
+      return fallbackText;
     }
 
     const MIN_VIEWPORT_COVERAGE = 0.4;
@@ -585,18 +591,37 @@ const Chatbot: React.FC<ChatbotProps> = ({
       .sort((a, b) => b.score - a.score);
     const byScore = candidates.sort((a, b) => b.score - a.score);
 
-    const chosen =
+    const chosenCandidate =
       bySpanMid[0] && bySpanMid[0].viewportCoverage >= MIN_VIEWPORT_COVERAGE
         ? bySpanMid[0]
         : byScore[0].viewportCoverage >= MIN_VIEWPORT_COVERAGE
           ? byScore[0]
           : null;
 
-    if (!chosen) {
+    if (!chosenCandidate) {
+      console.log("[Mirror] No candidate met viewport coverage threshold", {
+        topCandidate: byScore[0]
+          ? {
+              tag: byScore[0].el.tagName,
+              id: byScore[0].el.id || null,
+              viewportCoverage: byScore[0].viewportCoverage,
+              textPreview: byScore[0].el.innerText.trim().substring(0, 200),
+            }
+          : null,
+      });
       return "";
     }
 
-    return chosen.el.innerText.substring(0, 800);
+    const contextText = chosenCandidate.el.innerText.substring(0, 800);
+    console.log("[Mirror] Detected section context", {
+      tag: chosenCandidate.el.tagName,
+      id: chosenCandidate.el.id || null,
+      spansMid: chosenCandidate.spansMid,
+      viewportCoverage: chosenCandidate.viewportCoverage,
+      score: chosenCandidate.score,
+      textPreview: contextText.substring(0, 200),
+    });
+    return contextText;
   };
 
   useEffect(() => {
@@ -606,6 +631,9 @@ const Chatbot: React.FC<ChatbotProps> = ({
     const handleSectionCheck = () => {
       const ctx = getVisibleSectionContext();
       if (!ctx) return;
+      console.log("[Mirror] handleSectionCheck context", {
+        textPreview: ctx.substring(0, 200),
+      });
       if (!currentSectionContext) {
         setCurrentSectionContext(ctx);
         return;
