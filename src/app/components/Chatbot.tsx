@@ -521,143 +521,44 @@ const Chatbot: React.FC<ChatbotProps> = ({
   const getVisibleSectionContext = () => {
     if (typeof document === "undefined") return "";
 
-    const t0 = typeof performance !== "undefined" ? performance.now() : 0;
-
-    const viewportHeight = window.innerHeight || 0;
-    const viewportWidth = window.innerWidth || 0;
-    if (!viewportHeight || !viewportWidth) return "";
-
-    let occludedTop = 0;
-    let occludedBottom = 0;
-
-    try {
-      const fixedCandidates = Array.from(
-        document.querySelectorAll("*"),
-      ) as HTMLElement[];
-      for (const el of fixedCandidates) {
-        const style = window.getComputedStyle(el);
-        if (style.position !== "fixed" && style.position !== "sticky") continue;
-        if (
-          style.display === "none" ||
-          style.visibility === "hidden" ||
-          style.opacity === "0"
-        )
-          continue;
-        const rect = el.getBoundingClientRect();
-        if (!rect.height || !rect.width) continue;
-        const isTopOverlay =
-          rect.top <= 0 &&
-          rect.bottom > 0 &&
-          rect.height < viewportHeight * 0.5;
-        const isBottomOverlay =
-          rect.bottom >= viewportHeight &&
-          rect.top < viewportHeight &&
-          rect.height < viewportHeight * 0.5;
-        if (isTopOverlay) {
-          if (rect.bottom > occludedTop) occludedTop = rect.bottom;
-        } else if (isBottomOverlay) {
-          const overlap = viewportHeight - rect.top;
-          if (overlap > occludedBottom) occludedBottom = overlap;
-        }
-      }
-    } catch {}
-
-    const visibleTop = Math.min(Math.max(0, occludedTop), viewportHeight);
-    const visibleBottom = Math.max(
-      visibleTop,
-      viewportHeight - Math.max(0, occludedBottom),
+    const elements = document.querySelectorAll(
+      "h1, h2, h3, h4, section, article, div[id], main, header, p, li",
     );
-    const visibleHeight = visibleBottom - visibleTop;
-    if (!visibleHeight) return "";
-
-    let elements = document.querySelectorAll(
-      "section, article, [data-section], [data-track-section], div[data-section-id]",
-    );
-    if (!elements.length) {
-      elements = document.querySelectorAll(
-        "h1, h2, h3, h4, section, article, header, p, li, div[id]",
-      );
-    }
-
     let mostVisibleElement: Element | null = null;
-    let maxScore = 0;
+    let maxVisibility = 0;
+
+    const viewportHeight = window.innerHeight;
 
     (elements as NodeListOf<HTMLElement>).forEach((el) => {
       const rect = el.getBoundingClientRect();
-      if (!rect.height || !rect.width) return;
-      if (rect.height > viewportHeight * 2) return;
+      if (rect.height === 0 || rect.width === 0) return;
 
-      const intersectionTop = Math.max(rect.top, visibleTop);
-      const intersectionBottom = Math.min(rect.bottom, visibleBottom);
       const intersectionHeight = Math.max(
         0,
-        intersectionBottom - intersectionTop,
+        Math.min(rect.bottom, viewportHeight) - Math.max(rect.top, 0),
       );
-      if (!intersectionHeight) return;
-
-      const text = (el.innerText || "").trim();
-      if (text.length < 20) return;
-
       const elementVisibility = intersectionHeight / rect.height;
-      const viewportCoverage = intersectionHeight / visibleHeight;
+      const viewportCoverage = intersectionHeight / viewportHeight;
+
       const score = viewportCoverage * 2 + elementVisibility;
 
-      if (score > maxScore) {
-        maxScore = score;
+      if (
+        score > maxVisibility &&
+        (el as HTMLElement).innerText?.trim().length > 20
+      ) {
+        maxVisibility = score;
         mostVisibleElement = el;
       }
     });
 
     let contextText = "";
-
     if (mostVisibleElement) {
-      const visibleTexts: string[] = [];
-      const children = Array.from((mostVisibleElement as HTMLElement).children);
-
-      if (children.length) {
-        for (const child of children) {
-          const el = child as HTMLElement;
-          const rect = el.getBoundingClientRect();
-          if (!rect.height || !rect.width) continue;
-          const intersectionTop = Math.max(rect.top, visibleTop);
-          const intersectionBottom = Math.min(rect.bottom, visibleBottom);
-          const intersectionHeight = Math.max(
-            0,
-            intersectionBottom - intersectionTop,
-          );
-          if (!intersectionHeight) continue;
-          const text = (el.innerText || "").trim();
-          if (!text) continue;
-          visibleTexts.push(text);
-          if (visibleTexts.join(" ").length > 1000) break;
-        }
-      }
-
-      if (visibleTexts.length) {
-        contextText = visibleTexts.join(" ").substring(0, 800);
-      } else {
-        contextText = (mostVisibleElement.innerText || "").substring(0, 800);
-      }
+      contextText = (mostVisibleElement as HTMLElement).innerText.substring(
+        0,
+        800,
+      );
     } else {
       contextText = document.body.innerText.substring(0, 800);
-    }
-
-    if (t0 && typeof performance !== "undefined") {
-      const duration = performance.now() - t0;
-      try {
-        const w = window as any;
-        if (!w.__sectionDetectionMetrics) {
-          w.__sectionDetectionMetrics = {
-            samples: 0,
-            totalMs: 0,
-            maxMs: 0,
-          };
-        }
-        const m = w.__sectionDetectionMetrics;
-        m.samples += 1;
-        m.totalMs += duration;
-        if (duration > m.maxMs) m.maxMs = duration;
-      } catch {}
     }
 
     return contextText;
