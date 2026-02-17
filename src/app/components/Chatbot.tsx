@@ -571,11 +571,11 @@ const Chatbot: React.FC<ChatbotProps> = ({
     if (!visibleHeight) return "";
 
     let elements = document.querySelectorAll(
-      "section, article, main, [data-section], [data-track-section], div[data-section-id], div[id]",
+      "section, article, [data-section], [data-track-section], div[data-section-id]",
     );
     if (!elements.length) {
       elements = document.querySelectorAll(
-        "h1, h2, h3, h4, section, article, div[id], main, header, p, li",
+        "h1, h2, h3, h4, section, article, header, p, li, div[id]",
       );
     }
 
@@ -585,6 +585,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
     (elements as NodeListOf<HTMLElement>).forEach((el) => {
       const rect = el.getBoundingClientRect();
       if (!rect.height || !rect.width) return;
+      if (rect.height > viewportHeight * 2) return;
 
       const intersectionTop = Math.max(rect.top, visibleTop);
       const intersectionBottom = Math.min(rect.bottom, visibleBottom);
