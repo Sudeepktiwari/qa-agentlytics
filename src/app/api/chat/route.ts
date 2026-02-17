@@ -8980,6 +8980,11 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
           resolvedUserEmail || bookingStatus.hasActiveBooking
             ? "sales"
             : "lead_generation";
+        const previousQuestionsBody: string[] = Array.isArray(
+          (body as any)?.previousQuestions,
+        )
+          ? (body as any).previousQuestions.map((q: any) => String(q || ""))
+          : [];
         let leadResponse: any = {
           mainText:
             "Would you like help with this part of the page or have any questions?",
@@ -8999,22 +9004,13 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
               structuredSummaryDoc,
               contextualPageContext,
             );
-            if (matched && sessionId) {
-              const recentAssistant = await chats
-                .find({ sessionId, role: "assistant" })
-                .sort({ createdAt: -1 })
-                .limit(5)
-                .toArray();
-              const previousTexts = recentAssistant
-                .map((m: any) =>
-                  typeof m.content === "string"
-                    ? m.content
-                    : m.content?.mainText || "",
-                )
-                .filter((s: string) => !!s && s.trim().length > 0);
+            if (matched) {
+              const previousTexts = previousQuestionsBody
+                .map((s: string) => s.trim())
+                .filter((s: string) => s.length > 0);
               const candidate = (matched.question || "").trim();
               const alreadyUsed = previousTexts.some(
-                (t: string) => t.trim() === candidate,
+                (t: string) => t === candidate,
               );
               if (alreadyUsed) {
                 matched = null;
