@@ -533,7 +533,8 @@ const Chatbot: React.FC<ChatbotProps> = ({
 
     const pickBest = (nodes: NodeListOf<HTMLElement>) => {
       let best: HTMLElement | null = null;
-      let bestScore = 0;
+      let bestCoverage = 0;
+      let bestVisibility = 0;
 
       nodes.forEach((el) => {
         const rect = el.getBoundingClientRect();
@@ -544,19 +545,23 @@ const Chatbot: React.FC<ChatbotProps> = ({
         const visibleHeight = Math.max(0, intersectionBottom - intersectionTop);
         if (!visibleHeight) return;
 
-        const elementVisibility = visibleHeight / rect.height;
-        if (elementVisibility < 0.25) return;
-
         const viewportCoverage = visibleHeight / viewportHeight;
-        const score = elementVisibility * 2 + viewportCoverage;
+        const elementVisibility = visibleHeight / rect.height;
 
-        if (score > bestScore) {
-          bestScore = score;
+        if (viewportCoverage < 0.2) return;
+
+        if (
+          viewportCoverage > bestCoverage ||
+          (viewportCoverage === bestCoverage &&
+            elementVisibility > bestVisibility)
+        ) {
+          bestCoverage = viewportCoverage;
+          bestVisibility = elementVisibility;
           best = el;
         }
       });
 
-      return { best, bestScore };
+      return { best, bestCoverage, bestVisibility };
     };
 
     const explicitPick = pickBest(explicitNodes);
