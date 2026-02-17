@@ -519,10 +519,10 @@ const Chatbot: React.FC<ChatbotProps> = ({
   ]);
 
   const getVisibleSectionContext = () => {
-    if (typeof document === "undefined") return "";
+    if (typeof document === "undefined") return { text: "", hint: "" };
 
     const viewportHeight = window.innerHeight;
-    if (!viewportHeight) return "";
+    if (!viewportHeight) return { text: "", hint: "" };
 
     const midY = viewportHeight / 2;
     const primaryElements = document.querySelectorAll(
@@ -581,7 +581,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
           textPreview: fallbackText.substring(0, 200),
         });
       }
-      return fallbackText;
+      return { text: fallbackText, hint: "" };
     }
 
     const MIN_VIEWPORT_COVERAGE = 0.4;
@@ -609,10 +609,42 @@ const Chatbot: React.FC<ChatbotProps> = ({
             }
           : null,
       });
-      return "";
+      return { text: "", hint: "" };
     }
 
     const contextText = chosenCandidate.el.innerText.substring(0, 800);
+    let sectionHint = "";
+    let node: HTMLElement | null = chosenCandidate.el;
+    while (node) {
+      const dataSection = node.getAttribute("data-section");
+      if (dataSection && dataSection.trim().length > 0) {
+        sectionHint = dataSection.trim();
+        break;
+      }
+      if (
+        node.tagName === "SECTION" ||
+        node.getAttribute("data-track-section")
+      ) {
+        if (node.id && node.id.trim().length > 0) {
+          sectionHint = node.id.trim();
+          break;
+        }
+      }
+      node = node.parentElement;
+    }
+    if (!sectionHint) {
+      const heading =
+        chosenCandidate.el.querySelector("h1, h2, h3") ||
+        chosenCandidate.el
+          .closest("section, article, div[id]")
+          ?.querySelector("h1, h2, h3");
+      if (heading) {
+        const hText = (heading as HTMLElement).innerText.trim();
+        if (hText.length > 0) {
+          sectionHint = hText;
+        }
+      }
+    }
     console.log("[Mirror] Detected section context", {
       tag: chosenCandidate.el.tagName,
       id: chosenCandidate.el.id || null,
@@ -620,8 +652,9 @@ const Chatbot: React.FC<ChatbotProps> = ({
       viewportCoverage: chosenCandidate.viewportCoverage,
       score: chosenCandidate.score,
       textPreview: contextText.substring(0, 200),
+      sectionHint,
     });
-    return contextText;
+    return { text: contextText, hint: sectionHint };
   };
 
   useEffect(() => {
@@ -629,17 +662,18 @@ const Chatbot: React.FC<ChatbotProps> = ({
     if (typeof window === "undefined") return;
 
     const handleSectionCheck = () => {
-      const ctx = getVisibleSectionContext();
-      if (!ctx) return;
+      const info = getVisibleSectionContext();
+      if (!info.text) return;
       console.log("[Mirror] handleSectionCheck context", {
-        textPreview: ctx.substring(0, 200),
+        textPreview: info.text.substring(0, 200),
+        sectionHint: info.hint || null,
       });
       if (!currentSectionContext) {
-        setCurrentSectionContext(ctx);
+        setCurrentSectionContext(info.text);
         return;
       }
-      if (ctx === currentSectionContext) return;
-      setCurrentSectionContext(ctx);
+      if (info.text === currentSectionContext) return;
+      setCurrentSectionContext(info.text);
       if (sectionFollowupTimer.current) {
         clearTimeout(sectionFollowupTimer.current);
       }
@@ -665,7 +699,8 @@ const Chatbot: React.FC<ChatbotProps> = ({
             pageUrl: effectivePageUrl,
             leadQuestionRequest: true,
             previousQuestions,
-            contextualPageContext: ctx,
+            contextualPageContext: info.text,
+            ...(info.hint ? { sectionHint: info.hint } : {}),
             ...(adminId ? { adminId } : {}),
           }),
         })
@@ -800,9 +835,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
       // count 0 -> Lead Question 1
       // count 1 -> Lead Question 2
       const shouldSendContext = followupCount <= 1;
-      const sectionContext = shouldSendContext
-        ? getVisibleSectionContext()
-        : null;
+      const sectionInfo = shouldSendContext ? getVisibleSectionContext() : null;
 
       fetch("/api/chat", {
         method: "POST",
@@ -814,9 +847,10 @@ const Chatbot: React.FC<ChatbotProps> = ({
           previousQuestions,
           followupCount, // <-- backend uses follow-up stage
           ...(adminId ? { adminId } : {}),
-          ...(shouldSendContext
+          ...(shouldSendContext && sectionInfo && sectionInfo.text
             ? {
-                contextualPageContext: sectionContext,
+                contextualPageContext: sectionInfo.text,
+                ...(sectionInfo.hint ? { sectionHint: sectionInfo.hint } : {}),
               }
             : {}),
         }),

@@ -832,6 +832,15 @@ async function findStructuredSummaryByUrl(
   return doc;
 }
 
+function normalizeSectionKey(raw: string): string {
+  return String(raw || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\b(section|area|block|module|part)\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function matchSectionAndFirstLeadQuestion(
   structuredSummaryDoc: any,
   contextualPageContext: any,
@@ -856,23 +865,23 @@ function matchSectionAndFirstLeadQuestion(
   });
   const lowerContext = ctxString.toLowerCase();
   let matchedSection: any = null;
-  const trimmedHint =
+  const hintKey =
     typeof explicitSectionName === "string"
-      ? explicitSectionName.toLowerCase().trim()
+      ? normalizeSectionKey(explicitSectionName)
       : "";
-  if (trimmedHint) {
+  if (hintKey) {
     let bestHintScore = -1;
     let bestByHint: any = null;
     sections.forEach((s: any) => {
-      const sName = (s.sectionName || "").toLowerCase();
-      if (!sName || sName.length <= 2) return;
-      if (sName === trimmedHint) {
+      const sKey = normalizeSectionKey(s.sectionName || "");
+      if (!sKey || sKey.length === 0) return;
+      if (sKey === hintKey) {
         bestHintScore = 100;
         bestByHint = s;
         return;
       }
-      if (sName.includes(trimmedHint) || trimmedHint.includes(sName)) {
-        const score = 80 + sName.length;
+      if (sKey.includes(hintKey) || hintKey.includes(sKey)) {
+        const score = 80 + sKey.length;
         if (score > bestHintScore) {
           bestHintScore = score;
           bestByHint = s;
@@ -882,7 +891,7 @@ function matchSectionAndFirstLeadQuestion(
     if (bestByHint) {
       matchedSection = bestByHint;
       console.log("[SectionMatch] Using explicit section hint", {
-        hint: trimmedHint,
+        hint: hintKey,
         sectionName: matchedSection.sectionName || null,
       });
     }
@@ -891,7 +900,7 @@ function matchSectionAndFirstLeadQuestion(
     const contextWords = lowerContext
       .split(/[\s,.-]+/)
       .map((w: string) => w.trim())
-      .filter((w: string) => w.length > 4);
+      .filter((w: string) => w.length > 2);
     let bestNameScore = -1;
     let bestByName: any = null;
     sections.forEach((s: any) => {
@@ -937,7 +946,7 @@ function matchSectionAndFirstLeadQuestion(
           ? baseText
               .split(/[\s,.-]+/)
               .map((w: string) => w.trim())
-              .filter((w: string) => w.length > 4)
+              .filter((w: string) => w.length > 2)
           : [];
         const set = new Set<string>();
         for (const w of words) {
@@ -984,12 +993,6 @@ function matchSectionAndFirstLeadQuestion(
     console.log(
       "[SectionMatch] Empty contextualPageContext; skipping matching",
     );
-  }
-  if (!matchedSection && sections.length > 0) {
-    matchedSection = sections[0];
-    console.log("[SectionMatch] Falling back to first section", {
-      sectionName: matchedSection.sectionName || null,
-    });
   }
   if (
     matchedSection &&
