@@ -849,6 +849,7 @@ function matchSectionAndFirstLeadQuestion(
   sectionName: string | null;
   question: string;
   buttons: string[];
+  source: "structured_summary" | "feature_snapshot_override";
 } | null {
   const sections: any[] =
     structuredSummaryDoc?.structuredSummary?.sections || [];
@@ -1017,21 +1018,28 @@ function matchSectionAndFirstLeadQuestion(
       sectionNameLower,
     );
     if (contextSuggestsFeatures && sectionSuggestsRetention) {
-      const fb = buildFallbackLeadQuestionFromContext(contextualPageContext);
-      if (fb) {
-        console.log(
-          "[SectionMatch] Overriding retention section with features-focused fallback",
-          {
-            sectionName: matchedSection.sectionName || null,
-            hintLower,
-          },
-        );
-        return {
+      const featureQuestion =
+        "Since you're looking at these features, which capability matters most right now?";
+      const featureButtons = [
+        "Behavioral triggers",
+        "Multi-persona AI",
+        "Scheduling & automation",
+        "Analytics & reporting",
+        "Something else",
+      ];
+      console.log(
+        "[SectionMatch] Using Feature Snapshot override question instead of retention section",
+        {
           sectionName: matchedSection.sectionName || null,
-          question: fb.mainText,
-          buttons: fb.buttons,
-        };
-      }
+          hintLower,
+        },
+      );
+      return {
+        sectionName: matchedSection.sectionName || null,
+        question: featureQuestion,
+        buttons: featureButtons,
+        source: "feature_snapshot_override",
+      };
     }
     if (q && q.question) {
       const rawOptions = q.options || [];
@@ -1052,6 +1060,7 @@ function matchSectionAndFirstLeadQuestion(
         sectionName: matchedSection.sectionName || null,
         question: q.question,
         buttons,
+        source: "structured_summary",
       };
     }
   }
@@ -8948,7 +8957,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
               );
               if (matched) {
                 console.log(
-                  `[Chatbot] Lead Question (DB) [section="${
+                  `[Chatbot] Lead Question (${matched.source}) [section="${
                     matched.sectionName || "unknown"
                   }"]: "${matched.question}"`,
                 );
@@ -8957,7 +8966,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
                   buttons: matched.buttons,
                   emailPrompt: "",
                   type: "probe",
-                  source: "structured_summary",
+                  source: matched.source,
                   sectionName: matched.sectionName || null,
                 };
                 enhancedProactiveData.buttons = [];
