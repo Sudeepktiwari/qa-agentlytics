@@ -865,6 +865,20 @@ function matchSectionAndFirstLeadQuestion(
   });
   const lowerContext = ctxString.toLowerCase();
   let matchedSection: any = null;
+  if (/feature snapshot/i.test(lowerContext)) {
+    const featureSection = sections.find((s: any) =>
+      String(s.sectionName || ""),
+    );
+    if (featureSection) {
+      matchedSection = featureSection;
+      console.log(
+        "[SectionMatch] For Feature Snapshot context, forcing section match by name",
+        {
+          sectionName: featureSection.sectionName || null,
+        },
+      );
+    }
+  }
   const hintKey =
     typeof explicitSectionName === "string"
       ? normalizeSectionKey(explicitSectionName)
@@ -872,20 +886,31 @@ function matchSectionAndFirstLeadQuestion(
   if (hintKey) {
     let bestHintScore = -1;
     let bestByHint: any = null;
+    const hintTokens = new Set(
+      hintKey
+        .split(" ")
+        .map((w) => w.trim())
+        .filter((w) => w.length > 1),
+    );
     sections.forEach((s: any) => {
       const sKey = normalizeSectionKey(s.sectionName || "");
       if (!sKey || sKey.length === 0) return;
+      const sectionTokens = sKey
+        .split(" ")
+        .map((w) => w.trim())
+        .filter((w) => w.length > 1);
+      let overlap = 0;
+      sectionTokens.forEach((t) => {
+        if (hintTokens.has(t)) overlap += 1;
+      });
+      if (overlap === 0) return;
+      let score = overlap * 10;
       if (sKey === hintKey) {
-        bestHintScore = 100;
-        bestByHint = s;
-        return;
+        score += 50;
       }
-      if (sKey.includes(hintKey) || hintKey.includes(sKey)) {
-        const score = 80 + sKey.length;
-        if (score > bestHintScore) {
-          bestHintScore = score;
-          bestByHint = s;
-        }
+      if (score > bestHintScore) {
+        bestHintScore = score;
+        bestByHint = s;
       }
     });
     if (bestByHint) {
