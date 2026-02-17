@@ -8995,10 +8995,31 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
               lookupAdminId,
               pageUrl,
             );
-            const matched = matchSectionAndFirstLeadQuestion(
+            let matched = matchSectionAndFirstLeadQuestion(
               structuredSummaryDoc,
               contextualPageContext,
             );
+            if (matched && sessionId) {
+              const recentAssistant = await chats
+                .find({ sessionId, role: "assistant" })
+                .sort({ createdAt: -1 })
+                .limit(5)
+                .toArray();
+              const previousTexts = recentAssistant
+                .map((m: any) =>
+                  typeof m.content === "string"
+                    ? m.content
+                    : m.content?.mainText || "",
+                )
+                .filter((s: string) => !!s && s.trim().length > 0);
+              const candidate = (matched.question || "").trim();
+              const alreadyUsed = previousTexts.some(
+                (t: string) => t.trim() === candidate,
+              );
+              if (alreadyUsed) {
+                matched = null;
+              }
+            }
             if (matched) {
               leadResponse = {
                 mainText: matched.question,
@@ -9008,6 +9029,20 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
                 userEmail: resolvedUserEmail || null,
                 sectionName: matched.sectionName || null,
               };
+            } else {
+              const fallbackLead = buildFallbackLeadQuestionFromContext(
+                contextualPageContext,
+                pageUrl,
+              );
+              if (fallbackLead) {
+                leadResponse = {
+                  mainText: fallbackLead.mainText,
+                  buttons: fallbackLead.buttons,
+                  emailPrompt: "",
+                  botMode: leadBotMode,
+                  userEmail: resolvedUserEmail || null,
+                };
+              }
             }
           } catch (e) {}
         }
