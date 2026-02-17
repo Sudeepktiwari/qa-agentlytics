@@ -9259,7 +9259,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
 
         let personaFollowup = null;
 
-        if (followupCount <= 1) {
+        if (followupCount <= 1 && triggerLeadQuestion) {
           if (
             structuredSummaryDoc?.structuredSummary?.sections &&
             Array.isArray(structuredSummaryDoc.structuredSummary.sections)

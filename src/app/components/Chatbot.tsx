@@ -637,7 +637,6 @@ const Chatbot: React.FC<ChatbotProps> = ({
                 botMode: data.botMode,
                 userEmail: data.userEmail,
                 topicsDiscussed: data.topicsDiscussed,
-                isFollowup: true,
                 clarifierShown: !!data.clarifierShown,
                 missingDims: Array.isArray(data.missingDims)
                   ? (data.missingDims as string[])
@@ -653,7 +652,6 @@ const Chatbot: React.FC<ChatbotProps> = ({
                   : undefined,
               },
             ]);
-            setFollowupCount((c) => c + 1);
           })
           .catch(() => {});
       }, 10000);
@@ -767,7 +765,6 @@ const Chatbot: React.FC<ChatbotProps> = ({
           ...(adminId ? { adminId } : {}),
           ...(shouldSendContext
             ? {
-                triggerLeadQuestion: true,
                 contextualPageContext: sectionContext,
               }
             : {}),
