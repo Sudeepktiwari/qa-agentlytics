@@ -865,20 +865,6 @@ function matchSectionAndFirstLeadQuestion(
   });
   const lowerContext = ctxString.toLowerCase();
   let matchedSection: any = null;
-  if (/feature snapshot/i.test(lowerContext)) {
-    const featureSection = sections.find((s: any) =>
-      String(s.sectionName || ""),
-    );
-    if (featureSection) {
-      matchedSection = featureSection;
-      console.log(
-        "[SectionMatch] For Feature Snapshot context, forcing section match by name",
-        {
-          sectionName: featureSection.sectionName || null,
-        },
-      );
-    }
-  }
   const hintKey =
     typeof explicitSectionName === "string"
       ? normalizeSectionKey(explicitSectionName)
@@ -9421,10 +9407,6 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
                 if (bestScore >= 5) {
                   matchedSection = bestSection;
                 }
-              }
-
-              if (!matchedSection && sections.length > 0) {
-                matchedSection = sections[0];
               }
 
               if (
