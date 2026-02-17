@@ -8997,11 +8997,6 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
           resolvedUserEmail || bookingStatus.hasActiveBooking
             ? "sales"
             : "lead_generation";
-        const previousQuestionsBody: string[] = Array.isArray(
-          (body as any)?.previousQuestions,
-        )
-          ? (body as any).previousQuestions.map((q: any) => String(q || ""))
-          : [];
         let leadResponse: any = {
           mainText:
             "Would you like help with this part of the page or have any questions?",
@@ -9021,18 +9016,6 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
               structuredSummaryDoc,
               contextualPageContext,
             );
-            if (matched) {
-              const previousTexts = previousQuestionsBody
-                .map((s: string) => s.trim())
-                .filter((s: string) => s.length > 0);
-              const candidate = (matched.question || "").trim();
-              const alreadyUsed = previousTexts.some(
-                (t: string) => t === candidate,
-              );
-              if (alreadyUsed) {
-                matched = null;
-              }
-            }
             if (matched) {
               leadResponse = {
                 mainText: matched.question,

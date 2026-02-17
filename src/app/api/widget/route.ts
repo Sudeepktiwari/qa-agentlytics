@@ -3196,60 +3196,30 @@ export async function GET(request: Request) {
   
   // Send section context to API
   async function sendSectionContextToAPI(sectionData) {
-    if (!isOpen || followupSent) return; // Don't spam if chat is closed or already sent followup
+    if (!isOpen || followupSent) return;
     if (sectionData && sectionData.scrollPercentage < mirrorMessageScrollThreshold) return;
 
-    // Check if AI contextual question system is already handling this section
     if (contextualMessageDelayActive) {
       return;
     }
-    
-    // Generate a contextual question first
-    const questions = [];
-    const { sectionName, sectionContent } = sectionData;
-    
-    // Generate questions based on section
-    if (sectionName.includes('pricing') || sectionContent.hasPricing) {
-      questions.push(
-        "Which pricing plan fits your team size?",
-        "Would you like me to calculate the ROI for your use case?",
-        "Do you have questions about what's included in each plan?"
-      );
-    } else if (sectionName.includes('feature')) {
-      questions.push(
-        "Which of these features interests you most?",
-        "Would you like to see how this feature works?",
-        "How do you currently handle this in your workflow?"
-      );
-    } else if (sectionName.includes('testimonial')) {
-      questions.push(
-        "Are you curious about results like these for your business?",
-        "Would you like to speak with one of these customers?",
-        "What specific outcomes are you hoping to achieve?"
-      );
-    } else if (sectionName.includes('contact') || sectionName.includes('form')) {
-      questions.push(
-        "Would you like help filling out this form?",
-        "Do you have any questions before getting started?",
-        "Ready to see how this could work for your team?"
-      );
-    } else {
-      questions.push(
-        "What questions do you have about this section?",
-        "Would you like me to explain this in more detail?",
-        "How does this relate to your current challenges?"
-      );
-    }
-    
-    const selectedQuestion = questions[0]; // Use first question for now
-    
+
     try {
+      const { sectionName, sectionContent } = sectionData || {};
+      const parts = [];
+      if (sectionName) parts.push(sectionName);
+      if (sectionContent && Array.isArray(sectionContent.headings)) {
+        parts.push(sectionContent.headings.join(" "));
+      }
+      if (sectionContent && Array.isArray(sectionContent.paragraphs)) {
+        parts.push(sectionContent.paragraphs.join(" "));
+      }
+      const contextText = parts.join(" ").slice(0, 1500);
+
       const data = await sendApiRequest('chat', {
         sessionId,
         pageUrl: currentPageUrl,
-        question: selectedQuestion, // Add the generated question
-        sectionContext: sectionData,
-        contextual: true,
+        leadQuestionRequest: true,
+        contextualPageContext: contextText,
         hasBeenGreeted: hasBeenGreeted,
         proactiveMessageCount: proactiveMessageCount
       });
