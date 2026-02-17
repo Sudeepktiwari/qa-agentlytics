@@ -521,56 +521,142 @@ const Chatbot: React.FC<ChatbotProps> = ({
   const getVisibleSectionContext = () => {
     if (typeof document === "undefined") return "";
 
-    // Find all potential section headers or containers
-    // Expanded selectors to catch more content types
-    const elements = document.querySelectorAll(
-      "h1, h2, h3, h4, section, article, div[id], main, header, p, li",
+    const t0 = typeof performance !== "undefined" ? performance.now() : 0;
+
+    const viewportHeight = window.innerHeight || 0;
+    const viewportWidth = window.innerWidth || 0;
+    if (!viewportHeight || !viewportWidth) return "";
+
+    let occludedTop = 0;
+    let occludedBottom = 0;
+
+    try {
+      const fixedCandidates = Array.from(
+        document.querySelectorAll("*"),
+      ) as HTMLElement[];
+      for (const el of fixedCandidates) {
+        const style = window.getComputedStyle(el);
+        if (style.position !== "fixed" && style.position !== "sticky") continue;
+        if (
+          style.display === "none" ||
+          style.visibility === "hidden" ||
+          style.opacity === "0"
+        )
+          continue;
+        const rect = el.getBoundingClientRect();
+        if (!rect.height || !rect.width) continue;
+        const isTopOverlay =
+          rect.top <= 0 &&
+          rect.bottom > 0 &&
+          rect.height < viewportHeight * 0.5;
+        const isBottomOverlay =
+          rect.bottom >= viewportHeight &&
+          rect.top < viewportHeight &&
+          rect.height < viewportHeight * 0.5;
+        if (isTopOverlay) {
+          if (rect.bottom > occludedTop) occludedTop = rect.bottom;
+        } else if (isBottomOverlay) {
+          const overlap = viewportHeight - rect.top;
+          if (overlap > occludedBottom) occludedBottom = overlap;
+        }
+      }
+    } catch {}
+
+    const visibleTop = Math.min(Math.max(0, occludedTop), viewportHeight);
+    const visibleBottom = Math.max(
+      visibleTop,
+      viewportHeight - Math.max(0, occludedBottom),
     );
-    let mostVisibleElement = null;
-    let maxVisibility = 0;
+    const visibleHeight = visibleBottom - visibleTop;
+    if (!visibleHeight) return "";
 
-    const viewportHeight = window.innerHeight;
+    let elements = document.querySelectorAll(
+      "section, article, main, [data-section], [data-track-section], div[data-section-id], div[id]",
+    );
+    if (!elements.length) {
+      elements = document.querySelectorAll(
+        "h1, h2, h3, h4, section, article, div[id], main, header, p, li",
+      );
+    }
 
-    elements.forEach((el) => {
+    let mostVisibleElement: Element | null = null;
+    let maxScore = 0;
+
+    (elements as NodeListOf<HTMLElement>).forEach((el) => {
       const rect = el.getBoundingClientRect();
+      if (!rect.height || !rect.width) return;
 
-      // Skip invisible elements
-      if (rect.height === 0 || rect.width === 0) return;
-
-      // Calculate intersection with viewport
+      const intersectionTop = Math.max(rect.top, visibleTop);
+      const intersectionBottom = Math.min(rect.bottom, visibleBottom);
       const intersectionHeight = Math.max(
         0,
-        Math.min(rect.bottom, viewportHeight) - Math.max(rect.top, 0),
+        intersectionBottom - intersectionTop,
       );
-      const elementVisibility = intersectionHeight / rect.height; // Percentage of element visible
-      const viewportCoverage = intersectionHeight / viewportHeight; // Percentage of viewport covered
+      if (!intersectionHeight) return;
 
-      // Combine metrics to find "most relevant" section
-      // Prefer elements that cover significant viewport area or are mostly visible
+      const text = (el.innerText || "").trim();
+      if (text.length < 20) return;
+
+      const elementVisibility = intersectionHeight / rect.height;
+      const viewportCoverage = intersectionHeight / visibleHeight;
       const score = viewportCoverage * 2 + elementVisibility;
 
-      if (
-        score > maxVisibility &&
-        (el as HTMLElement).innerText?.trim().length > 20 // Lower threshold to catch smaller valid sections
-      ) {
-        maxVisibility = score;
+      if (score > maxScore) {
+        maxScore = score;
         mostVisibleElement = el;
       }
     });
 
     let contextText = "";
+
     if (mostVisibleElement) {
-      // Get text from the element and its immediate siblings/children
-      // Limit to 800 chars to avoid huge payloads
-      contextText = (mostVisibleElement as HTMLElement).innerText.substring(
-        0,
-        800,
-      );
-      // console.log removed
+      const visibleTexts: string[] = [];
+      const children = Array.from((mostVisibleElement as HTMLElement).children);
+
+      if (children.length) {
+        for (const child of children) {
+          const el = child as HTMLElement;
+          const rect = el.getBoundingClientRect();
+          if (!rect.height || !rect.width) continue;
+          const intersectionTop = Math.max(rect.top, visibleTop);
+          const intersectionBottom = Math.min(rect.bottom, visibleBottom);
+          const intersectionHeight = Math.max(
+            0,
+            intersectionBottom - intersectionTop,
+          );
+          if (!intersectionHeight) continue;
+          const text = (el.innerText || "").trim();
+          if (!text) continue;
+          visibleTexts.push(text);
+          if (visibleTexts.join(" ").length > 1000) break;
+        }
+      }
+
+      if (visibleTexts.length) {
+        contextText = visibleTexts.join(" ").substring(0, 800);
+      } else {
+        contextText = (mostVisibleElement.innerText || "").substring(0, 800);
+      }
     } else {
-      // Fallback: get text from the middle of the viewport or body
       contextText = document.body.innerText.substring(0, 800);
-      // console.log removed
+    }
+
+    if (t0 && typeof performance !== "undefined") {
+      const duration = performance.now() - t0;
+      try {
+        const w = window as any;
+        if (!w.__sectionDetectionMetrics) {
+          w.__sectionDetectionMetrics = {
+            samples: 0,
+            totalMs: 0,
+            maxMs: 0,
+          };
+        }
+        const m = w.__sectionDetectionMetrics;
+        m.samples += 1;
+        m.totalMs += duration;
+        if (duration > m.maxMs) m.maxMs = duration;
+      } catch {}
     }
 
     return contextText;
