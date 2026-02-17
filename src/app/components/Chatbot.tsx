@@ -524,30 +524,47 @@ const Chatbot: React.FC<ChatbotProps> = ({
     const viewportHeight = window.innerHeight;
     if (!viewportHeight) return { text: "", hint: "" };
 
-    const sectionNodes = document.querySelectorAll(
-      "section, [data-section], [data-track-section], div[data-section-id]",
+    const explicitNodes = document.querySelectorAll(
+      "[data-section], [data-track-section], div[data-section-id]",
+    ) as NodeListOf<HTMLElement>;
+    const genericNodes = document.querySelectorAll(
+      "section",
     ) as NodeListOf<HTMLElement>;
 
-    let bestSection: HTMLElement | null = null;
-    let bestCoverage = 0;
+    const pickBest = (nodes: NodeListOf<HTMLElement>) => {
+      let best: HTMLElement | null = null;
+      let bestScore = 0;
 
-    sectionNodes.forEach((el) => {
-      const rect = el.getBoundingClientRect();
-      if (!rect.height || !rect.width) return;
+      nodes.forEach((el) => {
+        const rect = el.getBoundingClientRect();
+        if (!rect.height || !rect.width) return;
 
-      const intersectionTop = Math.max(rect.top, 0);
-      const intersectionBottom = Math.min(rect.bottom, viewportHeight);
-      const visibleHeight = Math.max(0, intersectionBottom - intersectionTop);
-      if (!visibleHeight) return;
+        const intersectionTop = Math.max(rect.top, 0);
+        const intersectionBottom = Math.min(rect.bottom, viewportHeight);
+        const visibleHeight = Math.max(0, intersectionBottom - intersectionTop);
+        if (!visibleHeight) return;
 
-      const coverage = visibleHeight / viewportHeight;
-      if (coverage > bestCoverage) {
-        bestCoverage = coverage;
-        bestSection = el;
-      }
-    });
+        const elementVisibility = visibleHeight / rect.height;
+        if (elementVisibility < 0.25) return;
 
-    if (!bestSection || bestCoverage < 0.2) {
+        const viewportCoverage = visibleHeight / viewportHeight;
+        const score = elementVisibility * 2 + viewportCoverage;
+
+        if (score > bestScore) {
+          bestScore = score;
+          best = el;
+        }
+      });
+
+      return { best, bestScore };
+    };
+
+    const explicitPick = pickBest(explicitNodes);
+    const genericPick = pickBest(genericNodes);
+
+    const chosenSection = explicitPick.best || genericPick.best;
+
+    if (!chosenSection) {
       const fallbackText = document.body.innerText.substring(0, 800);
       if (fallbackText) {
         console.log(
@@ -560,7 +577,8 @@ const Chatbot: React.FC<ChatbotProps> = ({
       return { text: fallbackText, hint: "" };
     }
 
-    const sectionEl: HTMLElement = bestSection;
+    const sectionEl: HTMLElement = chosenSection;
+
     const contextText = sectionEl.innerText.substring(0, 800);
 
     let sectionHint = "";
