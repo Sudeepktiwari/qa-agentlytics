@@ -853,6 +853,10 @@ function matchSectionAndFirstLeadQuestion(
   const lowerContext = ctxString.toLowerCase();
   let matchedSection: any = null;
   if (lowerContext) {
+    const contextWords = lowerContext
+      .split(/[\s,.-]+/)
+      .map((w: string) => w.trim())
+      .filter((w: string) => w.length > 4);
     let bestNameScore = -1;
     let bestByName: any = null;
     sections.forEach((s: any) => {
@@ -882,59 +886,53 @@ function matchSectionAndFirstLeadQuestion(
         score: bestNameScore,
       });
     } else {
-      let bestScore = -1;
-      let bestSection: any = null;
+      const sectionWordSets: { section: any; words: Set<string> }[] = [];
+      const wordSectionCount = new Map<string, number>();
+
       sections.forEach((s: any) => {
         const sSummary = (s.sectionSummary || "").toLowerCase();
         const sContent = (s.sectionContent || "").toLowerCase();
-        let contentScore = 0;
-        if (sContent && sContent.length > 20) {
-          const viewportWords = lowerContext
-            .split(/[\s,.-]+/)
-            .filter((w: string) => w.length > 4);
-          const sectionWords = sContent
-            .split(/[\s,.-]+/)
-            .filter((w: string) => w.length > 4);
-          const sectionWordSet = new Set(sectionWords);
-          const uniqueHits = new Set<string>();
-          for (const w of viewportWords) {
-            if (sectionWordSet.has(w)) {
-              uniqueHits.add(w);
-            }
-          }
-          const hitCount = uniqueHits.size;
-          const coverageRatio =
-            sectionWordSet.size > 0 ? hitCount / sectionWordSet.size : 0;
-          contentScore = Math.round(coverageRatio * 100);
-        } else if (sSummary && sSummary.length > 20) {
-          const summaryWords = sSummary
-            .split(/[\s,.-]+/)
-            .filter((w: string) => w.length > 4);
-          const contextWords = lowerContext
-            .split(/[\s,.-]+/)
-            .filter((w: string) => w.length > 4);
-          const contextWordSet = new Set(contextWords);
-          const uniqueHits = new Set<string>();
-          for (const w of summaryWords) {
-            if (contextWordSet.has(w)) {
-              uniqueHits.add(w);
-            }
-          }
-          const hitCount = uniqueHits.size;
-          const coverageRatio =
-            summaryWords.length > 0 ? hitCount / summaryWords.length : 0;
-          contentScore = Math.round(coverageRatio * 100);
+        const baseText =
+          sContent && sContent.length > 20
+            ? sContent
+            : sSummary && sSummary.length > 20
+              ? sSummary
+              : "";
+        const words = baseText
+          ? baseText
+              .split(/[\s,.-]+/)
+              .map((w: string) => w.trim())
+              .filter((w: string) => w.length > 4)
+          : [];
+        const set = new Set<string>();
+        for (const w of words) {
+          set.add(w);
         }
+        sectionWordSets.push({ section: s, words: set });
+        set.forEach((w) => {
+          wordSectionCount.set(w, (wordSectionCount.get(w) || 0) + 1);
+        });
+      });
+
+      let bestScore = -1;
+      let bestSection: any = null;
+
+      sectionWordSets.forEach(({ section, words }) => {
+        if (!words.size) return;
         let score = 0;
-        if (contentScore > 0) {
-          score = contentScore;
+        for (const w of contextWords) {
+          if (words.has(w)) {
+            const count = wordSectionCount.get(w) || 1;
+            score += 10 / count;
+          }
         }
         if (score > bestScore) {
           bestScore = score;
-          bestSection = s;
+          bestSection = section;
         }
       });
-      if (bestScore >= 5) {
+
+      if (bestScore >= 5 && bestSection) {
         matchedSection = bestSection;
         console.log("[SectionMatch] Using content match", {
           sectionName: matchedSection.sectionName || null,
