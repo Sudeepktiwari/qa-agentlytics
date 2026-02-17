@@ -8974,6 +8974,45 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
         return NextResponse.json(proactiveOut, {
           headers: corsHeaders,
         });
+      } else if ((body as any)?.leadQuestionRequest) {
+        const lookupAdminId = resolvedAdminId || finalAdminId;
+        const leadBotMode: "sales" | "lead_generation" =
+          resolvedUserEmail || bookingStatus.hasActiveBooking
+            ? "sales"
+            : "lead_generation";
+        let leadResponse: any = {
+          mainText:
+            "Would you like help with this part of the page or have any questions?",
+          buttons: ["Yes, tell me more", "I have a question", "Not now"],
+          emailPrompt: "",
+          botMode: leadBotMode,
+          userEmail: resolvedUserEmail || null,
+        };
+
+        if (pageUrl && lookupAdminId) {
+          try {
+            const structuredSummaryDoc = await findStructuredSummaryByUrl(
+              lookupAdminId,
+              pageUrl,
+            );
+            const matched = matchSectionAndFirstLeadQuestion(
+              structuredSummaryDoc,
+              contextualPageContext,
+            );
+            if (matched) {
+              leadResponse = {
+                mainText: matched.question,
+                buttons: matched.buttons,
+                emailPrompt: "",
+                botMode: leadBotMode,
+                userEmail: resolvedUserEmail || null,
+                sectionName: matched.sectionName || null,
+              };
+            }
+          } catch (e) {}
+        }
+
+        return NextResponse.json(leadResponse, { headers: corsHeaders });
       } else if (followup) {
         if (isScrolling) {
           const lastEmailDoc = await chats.findOne(

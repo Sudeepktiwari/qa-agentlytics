@@ -82,6 +82,9 @@ const Chatbot: React.FC<ChatbotProps> = ({
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
   const [othersInputValue, setOthersInputValue] = useState("");
   const [hasBeenGreeted, setHasBeenGreeted] = useState(false);
+  const [currentSectionContext, setCurrentSectionContext] = useState("");
+  const sectionFollowupTimer = useRef<NodeJS.Timeout | null>(null);
+  const inactivityFollowupsEnabled = false;
 
   // Helper function to clean malformed JSON strings
   const cleanJsonString = (jsonStr: string): string => {
@@ -490,19 +493,9 @@ const Chatbot: React.FC<ChatbotProps> = ({
               }
               setMessages((msgs) => [...msgs, secMsg]);
             }
-            // Start follow-up timer
-            if (followupTimer.current) clearTimeout(followupTimer.current);
-            setFollowupSent(false);
-            if (data.secondary) {
-              setFollowupCount(1); // Advance count since we just showed the first lead question
-            } else {
-              setFollowupCount(0); // Reset followup count for new URL
-            }
+            setFollowupCount(0);
             setUserIsActive(false); // Reset user activity
             setLastUserAction(Date.now());
-            followupTimer.current = setTimeout(() => {
-              setFollowupSent(true);
-            }, 30000); // 30 seconds
           });
       });
     // Cleanup timer on unmount
@@ -584,6 +577,121 @@ const Chatbot: React.FC<ChatbotProps> = ({
   };
 
   useEffect(() => {
+    if (disableProactive) return;
+    if (typeof window === "undefined") return;
+
+    const handleSectionCheck = () => {
+      const ctx = getVisibleSectionContext();
+      if (!ctx) return;
+      if (!currentSectionContext) {
+        setCurrentSectionContext(ctx);
+        return;
+      }
+      if (ctx === currentSectionContext) return;
+      setCurrentSectionContext(ctx);
+      if (sectionFollowupTimer.current) {
+        clearTimeout(sectionFollowupTimer.current);
+      }
+      sectionFollowupTimer.current = setTimeout(() => {
+        const lastMsg = messages[messages.length - 1];
+        if (!lastMsg || lastMsg.role !== "assistant") {
+          return;
+        }
+        if (userIsActive) {
+          return;
+        }
+        const sessionId = getSessionId();
+        const effectivePageUrl = pageUrl || getPageUrl();
+        const previousQuestions = messages
+          .filter((m) => m.role === "assistant")
+          .map((m) => m.content);
+
+        fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sessionId,
+            pageUrl: effectivePageUrl,
+            leadQuestionRequest: true,
+            previousQuestions,
+            contextualPageContext: ctx,
+            ...(adminId ? { adminId } : {}),
+          }),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.botMode) {
+              setCurrentBotMode(data.botMode);
+            }
+            if (data.userEmail !== undefined) {
+              setCurrentUserEmail(data.userEmail);
+            }
+            const parsed = parseBotResponse(data);
+            setMessages((msgs) => [
+              ...msgs,
+              {
+                role: "assistant",
+                content: parsed.mainText,
+                buttons: parsed.buttons,
+                emailPrompt: parsed.emailPrompt,
+                botMode: data.botMode,
+                userEmail: data.userEmail,
+                topicsDiscussed: data.topicsDiscussed,
+                isFollowup: true,
+                clarifierShown: !!data.clarifierShown,
+                missingDims: Array.isArray(data.missingDims)
+                  ? (data.missingDims as string[])
+                  : undefined,
+                domain: data.domain,
+                domainMatch: data.domainMatch,
+                confidence:
+                  typeof data.confidence === "number"
+                    ? data.confidence
+                    : undefined,
+                suggestedActions: Array.isArray(data.suggestedActions)
+                  ? data.suggestedActions
+                  : undefined,
+              },
+            ]);
+            setFollowupCount((c) => c + 1);
+          })
+          .catch(() => {});
+      }, 10000);
+    };
+
+    const handleScroll = () => {
+      handleSectionCheck();
+    };
+
+    const handleResize = () => {
+      handleSectionCheck();
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleResize);
+      if (sectionFollowupTimer.current) {
+        clearTimeout(sectionFollowupTimer.current);
+        sectionFollowupTimer.current = null;
+      }
+    };
+  }, [
+    disableProactive,
+    pageUrl,
+    adminId,
+    messages,
+    followupCount,
+    userIsActive,
+    currentSectionContext,
+  ]);
+
+  useEffect(() => {
+    if (!inactivityFollowupsEnabled) {
+      return;
+    }
     if (messages.length === 0) return;
     const lastMsg = messages[messages.length - 1];
     const effectivePageUrl = pageUrl || getPageUrl();
