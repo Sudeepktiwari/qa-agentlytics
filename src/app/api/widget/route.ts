@@ -1982,33 +1982,30 @@ export async function GET(request: Request) {
       }
     }
     
-    // Handle when user stops scrolling
     function handleScrollStop() {
       const currentSection = getCurrentVisibleSection();
       const viewportContext = getViewportContext();
       
-      // console.log('🎯 [WIDGET SCROLL] Scroll stopped on section:', currentSection);
-      
-      if (currentSection && viewportContext.visibleElements.length > 0) {
-        const sectionData = {
-          sectionName: currentSection,
-          sectionContent: extractSectionContent(document.body),
-          scrollPosition: window.scrollY,
-          scrollPercentage: Math.round((window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100),
-          timeOnPage: Date.now() - (window.appointyPageLoadTime || Date.now()),
-          viewportContext: viewportContext,
-          triggeredByScrollStop: true
-        };
-        
-        // Generate and send contextual question immediately
-        generateContextualQuestionForScrollStop(sectionData);
+      if (!currentSection || !currentSection.element || viewportContext.visibleElements.length === 0) {
+        return;
       }
+      
+      const sectionData = {
+        sectionName: currentSection.name,
+        sectionContent: extractSectionContent(currentSection.element),
+        scrollPosition: window.scrollY,
+        scrollPercentage: Math.round((window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100),
+        timeOnPage: Date.now() - (window.appointyPageLoadTime || Date.now()),
+        viewportContext: viewportContext,
+        triggeredByScrollStop: true
+      };
+      
+      generateContextualQuestionForScrollStop(sectionData);
     }
     
-    // Get the most visible section in current viewport
     function getCurrentVisibleSection() {
       const sections = document.querySelectorAll('[data-section], .section, .hero, .pricing, .features, .testimonials, .contact, section, article');
-      let mostVisibleSection = null;
+      let mostVisibleElement = null;
       let maxVisibility = 0;
       
       sections.forEach(section => {
@@ -2023,15 +2020,23 @@ export async function GET(request: Request) {
         
         if (sectionHeight > 0) {
           const visibilityPercentage = visibleHeight / Math.min(sectionHeight, viewportHeight);
-          
           if (visibilityPercentage > maxVisibility && visibilityPercentage > 0.3) {
             maxVisibility = visibilityPercentage;
-            mostVisibleSection = getSectionName(section);
+            mostVisibleElement = section;
           }
         }
       });
       
-      return mostVisibleSection || currentViewportSection;
+      if (!mostVisibleElement) {
+        if (currentViewportSection) {
+          return { element: null, name: currentViewportSection };
+        }
+        return null;
+      }
+      
+      const sectionName = getSectionName(mostVisibleElement);
+      currentViewportSection = sectionName;
+      return { element: mostVisibleElement, name: sectionName };
     }
     
     // Add scroll event listener with throttling
@@ -3210,8 +3215,12 @@ export async function GET(request: Request) {
       if (sectionContent && Array.isArray(sectionContent.headings)) {
         parts.push(sectionContent.headings.join(" "));
       }
-      if (sectionContent && Array.isArray(sectionContent.paragraphs)) {
-        parts.push(sectionContent.paragraphs.join(" "));
+      if (sectionContent) {
+        if (Array.isArray(sectionContent.paragraphs) && sectionContent.paragraphs.length) {
+          parts.push(sectionContent.paragraphs.join(" "));
+        } else if (sectionContent.text) {
+          parts.push(sectionContent.text);
+        }
       }
       const contextText = parts.join(" ").slice(0, 1500);
 
