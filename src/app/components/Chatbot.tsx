@@ -525,117 +525,67 @@ const Chatbot: React.FC<ChatbotProps> = ({
     if (!viewportHeight) return { text: "", hint: "" };
 
     const midY = viewportHeight / 2;
-    const primaryElements = document.querySelectorAll(
-      "section, article, [data-section], [data-track-section], div[data-section-id]",
-    );
-    const fallbackElements = document.querySelectorAll(
-      "h1, h2, h3, h4, header, main, div[id], p, li",
-    );
 
-    const candidates: {
-      el: HTMLElement;
-      score: number;
-      spansMid: boolean;
-      viewportCoverage: number;
-    }[] = [];
+    const sectionNodes = document.querySelectorAll(
+      "section, [data-section], [data-track-section], div[data-section-id]",
+    ) as NodeListOf<HTMLElement>;
 
-    const collect = (nodeList: NodeListOf<HTMLElement>) => {
-      nodeList.forEach((el) => {
-        const rect = el.getBoundingClientRect();
-        if (!rect.height || !rect.width) return;
+    let midSection: HTMLElement | null = null;
+    let altBestSection: HTMLElement | null = null;
+    let altBestDistance = Infinity;
 
-        const intersectionTop = Math.max(rect.top, 0);
-        const intersectionBottom = Math.min(rect.bottom, viewportHeight);
-        const intersectionHeight = Math.max(
-          0,
-          intersectionBottom - intersectionTop,
-        );
-        if (!intersectionHeight) return;
+    sectionNodes.forEach((el) => {
+      const rect = el.getBoundingClientRect();
+      if (!rect.height || !rect.width) return;
 
-        const text = (el.innerText || "").trim();
-        if (text.length < 20) return;
+      const spansMid = rect.top <= midY && rect.bottom >= midY;
+      const centerY = rect.top + rect.height / 2;
 
-        const elementVisibility = intersectionHeight / rect.height;
-        const viewportCoverage = intersectionHeight / viewportHeight;
-        const spansMid = rect.top <= midY && rect.bottom >= midY;
-        const score = viewportCoverage * 2 + elementVisibility;
+      if (spansMid) {
+        midSection = el;
+        return;
+      }
 
-        candidates.push({
-          el,
-          score,
-          spansMid,
-          viewportCoverage,
-        });
-      });
-    };
+      if (rect.bottom < 0 || rect.top > viewportHeight) {
+        return;
+      }
 
-    collect(primaryElements as NodeListOf<HTMLElement>);
-    if (!candidates.length) {
-      collect(fallbackElements as NodeListOf<HTMLElement>);
-    }
+      const distance = Math.abs(centerY - midY);
+      if (distance < altBestDistance) {
+        altBestDistance = distance;
+        altBestSection = el;
+      }
+    });
 
-    if (!candidates.length) {
+    const chosenSection = (midSection || altBestSection) as HTMLElement | null;
+
+    if (!chosenSection) {
       const fallbackText = document.body.innerText.substring(0, 800);
       if (fallbackText) {
-        console.log("[Mirror] No section candidates found, using body text", {
+        console.log("[Mirror] No section element found, using body text", {
           textPreview: fallbackText.substring(0, 200),
         });
       }
       return { text: fallbackText, hint: "" };
     }
 
-    const MIN_VIEWPORT_COVERAGE = 0.4;
+    const sectionEl: HTMLElement = chosenSection;
+    const contextText = sectionEl.innerText.substring(0, 800);
 
-    const bySpanMid = candidates
-      .filter((c) => c.spansMid)
-      .sort((a, b) => b.score - a.score);
-    const byScore = candidates.sort((a, b) => b.score - a.score);
-
-    const chosenCandidate =
-      bySpanMid[0] && bySpanMid[0].viewportCoverage >= MIN_VIEWPORT_COVERAGE
-        ? bySpanMid[0]
-        : byScore[0].viewportCoverage >= MIN_VIEWPORT_COVERAGE
-          ? byScore[0]
-          : null;
-
-    if (!chosenCandidate) {
-      console.log("[Mirror] No candidate met viewport coverage threshold", {
-        topCandidate: byScore[0]
-          ? {
-              tag: byScore[0].el.tagName,
-              id: byScore[0].el.id || null,
-              viewportCoverage: byScore[0].viewportCoverage,
-              textPreview: byScore[0].el.innerText.trim().substring(0, 200),
-            }
-          : null,
-      });
-      return { text: "", hint: "" };
-    }
-
-    const contextText = chosenCandidate.el.innerText.substring(0, 800);
     let sectionHint = "";
-    let node: HTMLElement | null = chosenCandidate.el;
-    while (node) {
-      const dataSection = node.getAttribute("data-section");
-      if (dataSection && dataSection.trim().length > 0) {
-        sectionHint = dataSection.trim();
-        break;
-      }
-      if (
-        node.tagName === "SECTION" ||
-        node.getAttribute("data-track-section")
-      ) {
-        if (node.id && node.id.trim().length > 0) {
-          sectionHint = node.id.trim();
-          break;
-        }
-      }
-      node = node.parentElement;
-    }
-    if (!sectionHint) {
+    const dataSection = sectionEl.getAttribute("data-section");
+    if (dataSection && dataSection.trim().length > 0) {
+      sectionHint = dataSection.trim();
+    } else if (
+      sectionEl.id &&
+      sectionEl.id.trim().length > 0 &&
+      sectionEl.id.trim().length <= 80
+    ) {
+      sectionHint = sectionEl.id.trim();
+    } else {
       const heading =
-        chosenCandidate.el.querySelector("h1, h2, h3") ||
-        chosenCandidate.el
+        sectionEl.querySelector("h1, h2, h3") ||
+        sectionEl
           .closest("section, article, div[id]")
           ?.querySelector("h1, h2, h3");
       if (heading) {
@@ -645,15 +595,14 @@ const Chatbot: React.FC<ChatbotProps> = ({
         }
       }
     }
+
     console.log("[Mirror] Detected section context", {
-      tag: chosenCandidate.el.tagName,
-      id: chosenCandidate.el.id || null,
-      spansMid: chosenCandidate.spansMid,
-      viewportCoverage: chosenCandidate.viewportCoverage,
-      score: chosenCandidate.score,
+      tag: sectionEl.tagName,
+      id: sectionEl.id || null,
       textPreview: contextText.substring(0, 200),
       sectionHint,
     });
+
     return { text: contextText, hint: sectionHint };
   };
 
