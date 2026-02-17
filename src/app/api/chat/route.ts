@@ -835,6 +835,7 @@ async function findStructuredSummaryByUrl(
 function matchSectionAndFirstLeadQuestion(
   structuredSummaryDoc: any,
   contextualPageContext: any,
+  explicitSectionName?: string | null,
 ): {
   sectionName: string | null;
   question: string;
@@ -855,6 +856,37 @@ function matchSectionAndFirstLeadQuestion(
   });
   const lowerContext = ctxString.toLowerCase();
   let matchedSection: any = null;
+  const trimmedHint =
+    typeof explicitSectionName === "string"
+      ? explicitSectionName.toLowerCase().trim()
+      : "";
+  if (trimmedHint) {
+    let bestHintScore = -1;
+    let bestByHint: any = null;
+    sections.forEach((s: any) => {
+      const sName = (s.sectionName || "").toLowerCase();
+      if (!sName || sName.length <= 2) return;
+      if (sName === trimmedHint) {
+        bestHintScore = 100;
+        bestByHint = s;
+        return;
+      }
+      if (sName.includes(trimmedHint) || trimmedHint.includes(sName)) {
+        const score = 80 + sName.length;
+        if (score > bestHintScore) {
+          bestHintScore = score;
+          bestByHint = s;
+        }
+      }
+    });
+    if (bestByHint) {
+      matchedSection = bestByHint;
+      console.log("[SectionMatch] Using explicit section hint", {
+        hint: trimmedHint,
+        sectionName: matchedSection.sectionName || null,
+      });
+    }
+  }
   if (lowerContext) {
     const contextWords = lowerContext
       .split(/[\s,.-]+/)
@@ -882,7 +914,7 @@ function matchSectionAndFirstLeadQuestion(
         bestByName = s;
       }
     });
-    if (bestNameScore >= 10 && bestByName) {
+    if (!matchedSection && bestNameScore >= 10 && bestByName) {
       matchedSection = bestByName;
       console.log("[SectionMatch] Using sectionName match", {
         sectionName: matchedSection.sectionName || null,
@@ -935,7 +967,7 @@ function matchSectionAndFirstLeadQuestion(
         }
       });
 
-      if (bestScore >= 5 && bestSection) {
+      if (!matchedSection && bestScore >= 5 && bestSection) {
         matchedSection = bestSection;
         console.log("[SectionMatch] Using content match", {
           sectionName: matchedSection.sectionName || null,
@@ -4590,6 +4622,7 @@ export async function POST(req: NextRequest) {
             const matched = matchSectionAndFirstLeadQuestion(
               structuredSummaryDoc,
               contextualPageContext,
+              (body as any)?.sectionHint || null,
             );
             if (matched) {
               const resp = {
@@ -8875,6 +8908,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
               const matched = matchSectionAndFirstLeadQuestion(
                 structuredSummaryDoc,
                 contextualPageContext,
+                (body as any)?.sectionHint || null,
               );
               if (matched) {
                 console.log(
@@ -9031,6 +9065,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
             let matched = matchSectionAndFirstLeadQuestion(
               structuredSummaryDoc,
               contextualPageContext,
+              (body as any)?.sectionHint || null,
             );
             if (matched) {
               leadResponse = {
@@ -12121,6 +12156,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
           const matched = matchSectionAndFirstLeadQuestion(
             ssDoc,
             contextualPageContext,
+            (body as any)?.sectionHint || null,
           );
           if (matched) {
             const immediate = {

@@ -1712,8 +1712,8 @@ export async function GET(request: Request) {
       
       const pageSummary = extractPageSummary();
       let contextualPageContext = '';
+      let sectionNameForContext = '';
       try {
-        let sectionNameForContext = '';
         let sectionTextForContext = '';
         const currentSection = typeof getCurrentVisibleSection === 'function'
           ? getCurrentVisibleSection()
@@ -1757,7 +1757,6 @@ export async function GET(request: Request) {
           : '';
       }
       
-      // Get page-specific proactive message
       const data = await sendApiRequest('chat', {
         sessionId,
         pageUrl: currentPageUrl,
@@ -1766,8 +1765,8 @@ export async function GET(request: Request) {
         proactiveMessageCount: proactiveMessageCount,
         visitedPages: visitedPages,
         pageSummary: pageSummary,
-        contextualPageContext
-        // Don't specify adminId - let the API extract it from the API key
+        contextualPageContext,
+        ...(sectionNameForContext ? { sectionHint: sectionNameForContext } : {})
       });
       
       // console.log('📨 [WIDGET CONTEXT] API response for proactive request:', data);
