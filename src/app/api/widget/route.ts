@@ -1710,26 +1710,46 @@ export async function GET(request: Request) {
       isPageContextLoading = true;
       // console.log('🔍 [WIDGET CONTEXT] Loading context for page:', currentPageUrl); // console.log removed
       
-      // Extract page summary
       const pageSummary = extractPageSummary();
-      // Also capture visible section context for precise section matching
       let contextualPageContext = '';
       try {
-        const viewportContext = getViewportContext();
-        if (
-          viewportContext &&
-          Array.isArray(viewportContext.visibleElements) &&
-          viewportContext.visibleElements.length > 0
-        ) {
-          contextualPageContext = viewportContext.visibleElements
-            .map((el) => String(el.text || '').trim())
-            .filter((text) => text.length > 0)
-            .join(' ')
-            .substring(0, 800);
+        let sectionNameForContext = '';
+        let sectionTextForContext = '';
+        const currentSection = typeof getCurrentVisibleSection === 'function'
+          ? getCurrentVisibleSection()
+          : null;
+        if (currentSection && currentSection.element) {
+          sectionNameForContext = String(currentSection.name || '').trim();
+          const sectionContent = extractSectionContent(currentSection.element);
+          const parts = [];
+          if (sectionNameForContext) parts.push(sectionNameForContext);
+          if (Array.isArray(sectionContent.headings) && sectionContent.headings.length) {
+            parts.push(sectionContent.headings.join(' '));
+          }
+          if (sectionContent.text) {
+            parts.push(sectionContent.text);
+          }
+          sectionTextForContext = parts.join(' ');
+        }
+        if (sectionTextForContext) {
+          contextualPageContext = sectionTextForContext.substring(0, 800);
         } else {
-          contextualPageContext = document.body.innerText
-            ? document.body.innerText.substring(0, 800)
-            : '';
+          const viewportContext = getViewportContext();
+          if (
+            viewportContext &&
+            Array.isArray(viewportContext.visibleElements) &&
+            viewportContext.visibleElements.length > 0
+          ) {
+            contextualPageContext = viewportContext.visibleElements
+              .map((el) => String(el.text || '').trim())
+              .filter((text) => text.length > 0)
+              .join(' ')
+              .substring(0, 800);
+          } else {
+            contextualPageContext = document.body.innerText
+              ? document.body.innerText.substring(0, 800)
+              : '';
+          }
         }
       } catch (e) {
         contextualPageContext = document.body.innerText
