@@ -524,52 +524,43 @@ const Chatbot: React.FC<ChatbotProps> = ({
     const viewportHeight = window.innerHeight;
     if (!viewportHeight) return { text: "", hint: "" };
 
-    const midY = viewportHeight / 2;
-
     const sectionNodes = document.querySelectorAll(
       "section, [data-section], [data-track-section], div[data-section-id]",
     ) as NodeListOf<HTMLElement>;
 
-    let midSection: HTMLElement | null = null;
-    let altBestSection: HTMLElement | null = null;
-    let altBestDistance = Infinity;
+    let bestSection: HTMLElement | null = null;
+    let bestCoverage = 0;
 
     sectionNodes.forEach((el) => {
       const rect = el.getBoundingClientRect();
       if (!rect.height || !rect.width) return;
 
-      const spansMid = rect.top <= midY && rect.bottom >= midY;
-      const centerY = rect.top + rect.height / 2;
+      const intersectionTop = Math.max(rect.top, 0);
+      const intersectionBottom = Math.min(rect.bottom, viewportHeight);
+      const visibleHeight = Math.max(0, intersectionBottom - intersectionTop);
+      if (!visibleHeight) return;
 
-      if (spansMid) {
-        midSection = el;
-        return;
-      }
-
-      if (rect.bottom < 0 || rect.top > viewportHeight) {
-        return;
-      }
-
-      const distance = Math.abs(centerY - midY);
-      if (distance < altBestDistance) {
-        altBestDistance = distance;
-        altBestSection = el;
+      const coverage = visibleHeight / viewportHeight;
+      if (coverage > bestCoverage) {
+        bestCoverage = coverage;
+        bestSection = el;
       }
     });
 
-    const chosenSection = (midSection || altBestSection) as HTMLElement | null;
-
-    if (!chosenSection) {
+    if (!bestSection || bestCoverage < 0.2) {
       const fallbackText = document.body.innerText.substring(0, 800);
       if (fallbackText) {
-        console.log("[Mirror] No section element found, using body text", {
-          textPreview: fallbackText.substring(0, 200),
-        });
+        console.log(
+          "[Mirror] No section with sufficient visibility, using body text",
+          {
+            textPreview: fallbackText.substring(0, 200),
+          },
+        );
       }
       return { text: fallbackText, hint: "" };
     }
 
-    const sectionEl: HTMLElement = chosenSection;
+    const sectionEl: HTMLElement = bestSection;
     const contextText = sectionEl.innerText.substring(0, 800);
 
     let sectionHint = "";
