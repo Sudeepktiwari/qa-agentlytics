@@ -862,6 +862,7 @@ function matchSectionAndFirstLeadQuestion(
       : JSON.stringify(contextualPageContext || {});
   console.log("[SectionMatch] Context received for matching", {
     contextPreview: ctxString.substring(0, 200),
+    explicitSectionName: explicitSectionName || null,
   });
   const lowerContext = ctxString.toLowerCase();
   let matchedSection: any = null;
@@ -903,6 +904,7 @@ function matchSectionAndFirstLeadQuestion(
       matchedSection = bestByHint;
       console.log("[SectionMatch] Using explicit section hint", {
         hint: hintKey,
+        sectionNames: sections.map((s: any) => s.sectionName || null),
         sectionName: matchedSection.sectionName || null,
       });
     }
@@ -4623,6 +4625,19 @@ export async function POST(req: NextRequest) {
       }
 
       if (resolvedAdminId && pageUrl) {
+        const contextualPageContext =
+          typeof (body as any)?.contextualPageContext === "string"
+            ? (body as any)?.contextualPageContext
+            : JSON.stringify((body as any)?.contextualPageContext || {});
+        const incomingSectionHint = (body as any)?.sectionHint || null;
+        console.log("[LeadQuestion] Incoming lead question request", {
+          pageUrl,
+          sectionHint: incomingSectionHint,
+          contextualPreview: String(contextualPageContext || "").substring(
+            0,
+            200,
+          ),
+        });
         try {
           const structuredSummaryDoc = await findStructuredSummaryByUrl(
             resolvedAdminId,
@@ -4633,10 +4648,16 @@ export async function POST(req: NextRequest) {
             structuredSummaryDoc?.structuredSummary?.sections &&
             Array.isArray(structuredSummaryDoc.structuredSummary.sections)
           ) {
+            console.log("[LeadQuestion] Structured summary sections", {
+              pageUrl,
+              sectionNames: structuredSummaryDoc.structuredSummary.sections.map(
+                (s: any) => s.sectionName || null,
+              ),
+            });
             const matched = matchSectionAndFirstLeadQuestion(
               structuredSummaryDoc,
               contextualPageContext,
-              (body as any)?.sectionHint || null,
+              incomingSectionHint,
             );
             if (matched) {
               const resp = {
@@ -4647,8 +4668,17 @@ export async function POST(req: NextRequest) {
               };
               return NextResponse.json(resp, { headers: corsHeaders });
             }
+            console.log("[LeadQuestion] No section matched from summary", {
+              pageUrl,
+              sectionHint: incomingSectionHint,
+            });
           }
-        } catch {}
+        } catch (e) {
+          console.log("[LeadQuestion] Error while loading structured summary", {
+            pageUrl,
+            error: (e as Error)?.message,
+          });
+        }
       }
 
       const contextualPrompt = `You are an intelligent business assistant analyzing a webpage to generate contextual questions. 
