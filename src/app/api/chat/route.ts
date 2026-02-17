@@ -888,29 +888,46 @@ function matchSectionAndFirstLeadQuestion(
         const sSummary = (s.sectionSummary || "").toLowerCase();
         const sContent = (s.sectionContent || "").toLowerCase();
         let contentScore = 0;
-        let titleScore = 0;
         if (sContent && sContent.length > 20) {
           const viewportWords = lowerContext
             .split(/[\s,.-]+/)
             .filter((w: string) => w.length > 4);
-          let hits = 0;
+          const sectionWords = sContent
+            .split(/[\s,.-]+/)
+            .filter((w: string) => w.length > 4);
+          const sectionWordSet = new Set(sectionWords);
+          const uniqueHits = new Set<string>();
           for (const w of viewportWords) {
-            if (sContent.includes(w)) hits++;
+            if (sectionWordSet.has(w)) {
+              uniqueHits.add(w);
+            }
           }
-          contentScore += hits * 5;
+          const hitCount = uniqueHits.size;
+          const coverageRatio =
+            sectionWordSet.size > 0 ? hitCount / sectionWordSet.size : 0;
+          contentScore = Math.round(coverageRatio * 100);
         } else if (sSummary && sSummary.length > 20) {
           const summaryWords = sSummary
             .split(/[\s,.-]+/)
             .filter((w: string) => w.length > 4);
-          let hitCount = 0;
+          const contextWords = lowerContext
+            .split(/[\s,.-]+/)
+            .filter((w: string) => w.length > 4);
+          const contextWordSet = new Set(contextWords);
+          const uniqueHits = new Set<string>();
           for (const w of summaryWords) {
-            if (lowerContext.includes(w)) hitCount++;
+            if (contextWordSet.has(w)) {
+              uniqueHits.add(w);
+            }
           }
-          contentScore += hitCount * 3;
+          const hitCount = uniqueHits.size;
+          const coverageRatio =
+            summaryWords.length > 0 ? hitCount / summaryWords.length : 0;
+          contentScore = Math.round(coverageRatio * 100);
         }
         let score = 0;
         if (contentScore > 0) {
-          score = contentScore + Math.floor(titleScore * 0.5);
+          score = contentScore;
         }
         if (score > bestScore) {
           bestScore = score;
