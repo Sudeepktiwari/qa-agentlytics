@@ -9042,20 +9042,6 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
                 userEmail: resolvedUserEmail || null,
                 sectionName: matched.sectionName || null,
               };
-            } else {
-              const fallbackLead = buildFallbackLeadQuestionFromContext(
-                contextualPageContext,
-                pageUrl,
-              );
-              if (fallbackLead) {
-                leadResponse = {
-                  mainText: fallbackLead.mainText,
-                  buttons: fallbackLead.buttons,
-                  emailPrompt: "",
-                  botMode: leadBotMode,
-                  userEmail: resolvedUserEmail || null,
-                };
-              }
             }
           } catch (e) {}
         }
