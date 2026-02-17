@@ -1000,6 +1000,39 @@ function matchSectionAndFirstLeadQuestion(
     matchedSection.leadQuestions.length > 0
   ) {
     const q = matchedSection.leadQuestions[0];
+    const sectionNameLower = String(
+      matchedSection.sectionName || "",
+    ).toLowerCase();
+    const hintLower =
+      typeof explicitSectionName === "string"
+        ? explicitSectionName.toLowerCase()
+        : "";
+    const contextLower = lowerContext;
+    const contextSuggestsFeatures =
+      /(feature snapshot|feature\b|features\b|feature grid)/i.test(
+        contextLower,
+      ) ||
+      /(feature snapshot|feature\b|features\b|feature grid)/i.test(hintLower);
+    const sectionSuggestsRetention = /(support|retain|retention)/i.test(
+      sectionNameLower,
+    );
+    if (contextSuggestsFeatures && sectionSuggestsRetention) {
+      const fb = buildFallbackLeadQuestionFromContext(contextualPageContext);
+      if (fb) {
+        console.log(
+          "[SectionMatch] Overriding retention section with features-focused fallback",
+          {
+            sectionName: matchedSection.sectionName || null,
+            hintLower,
+          },
+        );
+        return {
+          sectionName: matchedSection.sectionName || null,
+          question: fb.mainText,
+          buttons: fb.buttons,
+        };
+      }
+    }
     if (q && q.question) {
       const rawOptions = q.options || [];
       const buttons = rawOptions.map((o: any) =>
