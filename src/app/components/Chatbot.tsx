@@ -521,47 +521,82 @@ const Chatbot: React.FC<ChatbotProps> = ({
   const getVisibleSectionContext = () => {
     if (typeof document === "undefined") return "";
 
-    const elements = document.querySelectorAll(
-      "h1, h2, h3, h4, section, article, div[id], main, header, p, li",
-    );
-    let mostVisibleElement: Element | null = null;
-    let maxVisibility = 0;
-
     const viewportHeight = window.innerHeight;
+    if (!viewportHeight) return "";
 
-    (elements as NodeListOf<HTMLElement>).forEach((el) => {
-      const rect = el.getBoundingClientRect();
-      if (rect.height === 0 || rect.width === 0) return;
+    const midY = viewportHeight / 2;
+    const primaryElements = document.querySelectorAll(
+      "section, article, [data-section], [data-track-section], div[data-section-id]",
+    );
+    const fallbackElements = document.querySelectorAll(
+      "h1, h2, h3, h4, header, main, div[id], p, li",
+    );
 
-      const intersectionHeight = Math.max(
-        0,
-        Math.min(rect.bottom, viewportHeight) - Math.max(rect.top, 0),
-      );
-      const elementVisibility = intersectionHeight / rect.height;
-      const viewportCoverage = intersectionHeight / viewportHeight;
+    const candidates: {
+      el: HTMLElement;
+      score: number;
+      spansMid: boolean;
+      viewportCoverage: number;
+    }[] = [];
 
-      const score = viewportCoverage * 2 + elementVisibility;
+    const collect = (nodeList: NodeListOf<HTMLElement>) => {
+      nodeList.forEach((el) => {
+        const rect = el.getBoundingClientRect();
+        if (!rect.height || !rect.width) return;
 
-      if (
-        score > maxVisibility &&
-        (el as HTMLElement).innerText?.trim().length > 20
-      ) {
-        maxVisibility = score;
-        mostVisibleElement = el;
-      }
-    });
+        const intersectionTop = Math.max(rect.top, 0);
+        const intersectionBottom = Math.min(rect.bottom, viewportHeight);
+        const intersectionHeight = Math.max(
+          0,
+          intersectionBottom - intersectionTop,
+        );
+        if (!intersectionHeight) return;
 
-    let contextText = "";
-    if (mostVisibleElement) {
-      contextText = (mostVisibleElement as HTMLElement).innerText.substring(
-        0,
-        800,
-      );
-    } else {
-      contextText = document.body.innerText.substring(0, 800);
+        const text = (el.innerText || "").trim();
+        if (text.length < 20) return;
+
+        const elementVisibility = intersectionHeight / rect.height;
+        const viewportCoverage = intersectionHeight / viewportHeight;
+        const spansMid = rect.top <= midY && rect.bottom >= midY;
+        const score = viewportCoverage * 2 + elementVisibility;
+
+        candidates.push({
+          el,
+          score,
+          spansMid,
+          viewportCoverage,
+        });
+      });
+    };
+
+    collect(primaryElements as NodeListOf<HTMLElement>);
+    if (!candidates.length) {
+      collect(fallbackElements as NodeListOf<HTMLElement>);
     }
 
-    return contextText;
+    if (!candidates.length) {
+      return document.body.innerText.substring(0, 800);
+    }
+
+    const MIN_VIEWPORT_COVERAGE = 0.4;
+
+    const bySpanMid = candidates
+      .filter((c) => c.spansMid)
+      .sort((a, b) => b.score - a.score);
+    const byScore = candidates.sort((a, b) => b.score - a.score);
+
+    const chosen =
+      bySpanMid[0] && bySpanMid[0].viewportCoverage >= MIN_VIEWPORT_COVERAGE
+        ? bySpanMid[0]
+        : byScore[0].viewportCoverage >= MIN_VIEWPORT_COVERAGE
+          ? byScore[0]
+          : null;
+
+    if (!chosen) {
+      return "";
+    }
+
+    return chosen.el.innerText.substring(0, 800);
   };
 
   useEffect(() => {
