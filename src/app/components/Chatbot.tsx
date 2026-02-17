@@ -524,95 +524,71 @@ const Chatbot: React.FC<ChatbotProps> = ({
     const viewportHeight = window.innerHeight;
     if (!viewportHeight) return { text: "", hint: "" };
 
-    const explicitNodes = document.querySelectorAll(
-      "[data-section], [data-track-section], div[data-section-id]",
-    ) as NodeListOf<HTMLElement>;
-    const genericNodes = document.querySelectorAll(
-      "section",
-    ) as NodeListOf<HTMLElement>;
+    const headings = Array.from(
+      document.querySelectorAll("h1, h2, h3"),
+    ) as HTMLElement[];
 
-    const pickBest = (nodes: NodeListOf<HTMLElement>) => {
-      let best: HTMLElement | null = null;
-      let bestCoverage = 0;
-      let bestVisibility = 0;
+    let currentHeading: HTMLElement | null = null;
+    let currentTop = -Infinity;
 
-      nodes.forEach((el) => {
-        const rect = el.getBoundingClientRect();
-        if (!rect.height || !rect.width) return;
+    headings.forEach((heading) => {
+      const rect = heading.getBoundingClientRect();
+      if (!rect.height || !rect.width) return;
+      if (rect.bottom <= 0) return;
+      if (rect.top >= viewportHeight * 0.75) return;
 
-        const intersectionTop = Math.max(rect.top, 0);
-        const intersectionBottom = Math.min(rect.bottom, viewportHeight);
-        const visibleHeight = Math.max(0, intersectionBottom - intersectionTop);
-        if (!visibleHeight) return;
+      if (!currentHeading || rect.top > currentTop) {
+        currentHeading = heading;
+        currentTop = rect.top;
+      }
+    });
 
-        const viewportCoverage = visibleHeight / viewportHeight;
-        const elementVisibility = visibleHeight / rect.height;
-
-        if (viewportCoverage < 0.2) return;
-
-        if (
-          viewportCoverage > bestCoverage ||
-          (viewportCoverage === bestCoverage &&
-            elementVisibility > bestVisibility)
-        ) {
-          bestCoverage = viewportCoverage;
-          bestVisibility = elementVisibility;
-          best = el;
-        }
-      });
-
-      return { best, bestCoverage, bestVisibility };
-    };
-
-    const explicitPick = pickBest(explicitNodes);
-    const genericPick = pickBest(genericNodes);
-
-    const chosenSection = explicitPick.best || genericPick.best;
-
-    if (!chosenSection) {
+    if (!currentHeading) {
       const fallbackText = document.body.innerText.substring(0, 800);
       if (fallbackText) {
-        console.log(
-          "[Mirror] No section with sufficient visibility, using body text",
-          {
-            textPreview: fallbackText.substring(0, 200),
-          },
-        );
+        console.log("[Mirror] No heading found, using body text", {
+          textPreview: fallbackText.substring(0, 200),
+        });
       }
       return { text: fallbackText, hint: "" };
     }
 
-    const sectionEl: HTMLElement = chosenSection;
+    const headingEl: HTMLElement = currentHeading;
 
-    const contextText = sectionEl.innerText.substring(0, 800);
+    let container: HTMLElement | null =
+      headingEl.closest(
+        "section, [data-section], [data-track-section], div[data-section-id]",
+      ) || headingEl.parentElement;
+
+    if (!container) {
+      const fallbackText = document.body.innerText.substring(0, 800);
+      return { text: fallbackText, hint: headingEl.innerText.trim() };
+    }
+
+    const contextText = container.innerText.substring(0, 800);
 
     let sectionHint = "";
-    const dataSection = sectionEl.getAttribute("data-section");
+    const dataSection = container.getAttribute("data-section");
     if (dataSection && dataSection.trim().length > 0) {
       sectionHint = dataSection.trim();
     } else if (
-      sectionEl.id &&
-      sectionEl.id.trim().length > 0 &&
-      sectionEl.id.trim().length <= 80
+      container.id &&
+      container.id.trim().length > 0 &&
+      container.id.trim().length <= 80
     ) {
-      sectionHint = sectionEl.id.trim();
+      sectionHint = container.id.trim();
     } else {
-      const heading =
-        sectionEl.querySelector("h1, h2, h3") ||
-        sectionEl
-          .closest("section, article, div[id]")
-          ?.querySelector("h1, h2, h3");
-      if (heading) {
-        const hText = (heading as HTMLElement).innerText.trim();
-        if (hText.length > 0) {
-          sectionHint = hText;
-        }
+      const hText = headingEl.innerText.trim();
+      if (hText.length > 0) {
+        sectionHint = hText;
       }
     }
 
     console.log("[Mirror] Detected section context", {
-      tag: sectionEl.tagName,
-      id: sectionEl.id || null,
+      headingText: headingEl.innerText.trim().substring(0, 120),
+      headingTop: headingEl.getBoundingClientRect().top,
+      containerTag: container.tagName,
+      containerId: container.id || null,
       textPreview: contextText.substring(0, 200),
       sectionHint,
     });
