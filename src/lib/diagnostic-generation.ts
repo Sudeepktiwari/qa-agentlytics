@@ -97,7 +97,14 @@ export async function generateDiagnosticAnswers(
   // PRIORITY: If adminId is provided, use Vector Search (RAG) for global context
   if (adminId) {
     // console.log removed
-    const map: Record<string, { answer: string; options: string[] }> = {};
+    const map: Record<
+      string,
+      {
+        answer: string;
+        options: string[];
+        optionDetails?: { label: string; answer: string }[];
+      }
+    > = {};
     const CONCURRENCY = 5;
 
     // Process in batches to control concurrency
@@ -158,7 +165,7 @@ export async function generateDiagnosticAnswers(
           
 RULES:
 - Return a JSON object with a "results" array.
-- Each result MUST include the "id" from the input, "diagnostic_answer", and "diagnostic_options".
+- Each result MUST include the "id" from the input, "diagnostic_answer", "diagnostic_options", and "diagnostic_option_details".
 - Speak directly to the user (use "you").
 - Tone: Professional, consultative, client-ready.
 - Follow the correct template:
@@ -178,15 +185,31 @@ CRITICAL:
 -  - They should represent what the user can achieve or the specific capability that helps them.
 -  - Do NOT use generic CTAs like "Book Call", "View Case Study", "Contact Sales", "View Case Study", "See API Docs", "Book Strategy Call", "Read Integration Guide", or similar phrases.
 -  - Examples of GOOD options: "Automate Qualification", "Enhance Show-up Rates", "Real-time Scoring", "Reduce Sales Cycles", "Identify High Intent".
+-  - For each diagnostic_option generated, also create a short "option_answer" that reads like a sales pitch explaining the specific feature or capability, the business benefit, and how it helps the user. Keep each option_answer to 1-2 short sentences.
 
 ${contextText ? `WEBSITE CONTEXT:\n${contextText}\n` : ""}
 
 INPUT: List of options with ids, labels and workflows.
-OUTPUT: JSON object with "results" array containing "id", "diagnostic_answer", and "diagnostic_options" (MUST be an array of 3-4 strings).
+OUTPUT: JSON object with "results" array. Each result MUST contain:
+- "id": number from input.
+- "diagnostic_answer": main diagnostic text.
+- "diagnostic_options": array of 3-4 strings (options).
+- "diagnostic_option_details": array of objects, one per diagnostic_option, each with:
+   - "label": the exact option string as in diagnostic_options.
+   - "answer": a sales-pitch style explanation of the feature benefit and how it helps.
 Example:
 {
   "results": [
-    { "id": 1, "diagnostic_answer": "...", "diagnostic_options": ["Option 1", "Option 2", "Option 3"] }
+    {
+      "id": 1,
+      "diagnostic_answer": "...",
+      "diagnostic_options": ["Option 1", "Option 2", "Option 3"],
+      "diagnostic_option_details": [
+        { "label": "Option 1", "answer": "..." },
+        { "label": "Option 2", "answer": "..." },
+        { "label": "Option 3", "answer": "..." }
+      ]
+    }
   ]
 }`,
         },
@@ -199,7 +222,14 @@ Example:
 
     const content = response.choices[0]?.message?.content || "{}";
     const data = JSON.parse(content);
-    const map: Record<string, { answer: string; options: string[] }> = {};
+    const map: Record<
+      string,
+      {
+        answer: string;
+        options: string[];
+        optionDetails?: { label: string; answer: string }[];
+      }
+    > = {};
 
     if (Array.isArray(data.results)) {
       data.results.forEach((item: any) => {
@@ -208,11 +238,30 @@ Example:
           const original = itemsWithId.find((i) => i.id === item.id);
           if (original) {
             const key = `${original.label}::${original.workflow}`;
+            const options = Array.isArray(item.diagnostic_options)
+              ? item.diagnostic_options
+              : [];
+            const optionDetailsRaw = Array.isArray(
+              item.diagnostic_option_details,
+            )
+              ? item.diagnostic_option_details
+              : [];
+            const optionDetails = optionDetailsRaw
+              .map((detail: any) => {
+                if (!detail || typeof detail !== "object") return null;
+                const optLabel =
+                  typeof detail.label === "string" ? detail.label : "";
+                const ans =
+                  typeof detail.answer === "string" ? detail.answer : "";
+                if (!optLabel || !ans) return null;
+                return { label: optLabel, answer: ans };
+              })
+              .filter((v: any) => v !== null);
+
             map[key] = {
               answer: item.diagnostic_answer,
-              options: Array.isArray(item.diagnostic_options)
-                ? item.diagnostic_options
-                : [],
+              options,
+              optionDetails,
             };
           }
         }
@@ -420,6 +469,10 @@ export async function processQuestionsWithTags(
           return {
             ...o,
             diagnostic_answer: res.answer,
+            diagnostic_option_details:
+              Array.isArray(res.optionDetails) && res.optionDetails.length > 0
+                ? res.optionDetails
+                : o.diagnostic_option_details,
             diagnostic_options:
               Array.isArray(res.options) && res.options.length > 0
                 ? res.options
@@ -534,6 +587,11 @@ export function normalizeStructuredSummary(raw: any) {
               diagnostic_options: Array.isArray(o.diagnostic_options)
                 ? o.diagnostic_options
                 : undefined,
+              diagnostic_option_details: Array.isArray(
+                o.diagnostic_option_details,
+              )
+                ? o.diagnostic_option_details
+                : undefined,
             };
           }
           const label = String(o || "");
@@ -596,6 +654,11 @@ export function normalizeStructuredSummary(raw: any) {
                   : undefined,
               diagnostic_options: Array.isArray(o.diagnostic_options)
                 ? o.diagnostic_options
+                : undefined,
+              diagnostic_option_details: Array.isArray(
+                o.diagnostic_option_details,
+              )
+                ? o.diagnostic_option_details
                 : undefined,
             };
           }

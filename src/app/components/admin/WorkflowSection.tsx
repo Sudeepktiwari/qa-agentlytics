@@ -24,6 +24,7 @@ export default function WorkflowSection() {
     title: string;
     answer: string;
     options?: string[];
+    optionDetails?: { label: string; answer: string }[];
   } | null>(null);
   const [pageTypeFilter, setPageTypeFilter] = useState<string>("");
   const [loading, setLoading] = useState(true);
@@ -388,10 +389,6 @@ export default function WorkflowSection() {
                                                             if (
                                                               opt?.diagnostic_answer
                                                             ) {
-                                                              // console.log(
-                                                              //   "Sales Option Clicked:",
-                                                              //   opt,
-                                                              // );
                                                               setSelectedDiagnostic(
                                                                 {
                                                                   title:
@@ -403,6 +400,12 @@ export default function WorkflowSection() {
                                                                     opt.diagnostic_options ||
                                                                     opt.diagnosticOptions ||
                                                                     [],
+                                                                  optionDetails:
+                                                                    Array.isArray(
+                                                                      opt.diagnostic_option_details,
+                                                                    )
+                                                                      ? opt.diagnostic_option_details
+                                                                      : [],
                                                                 },
                                                               );
                                                             }
@@ -533,10 +536,6 @@ export default function WorkflowSection() {
                                                             if (
                                                               opt?.diagnostic_answer
                                                             ) {
-                                                              console.log(
-                                                                "Sales Option Clicked:",
-                                                                opt,
-                                                              );
                                                               setSelectedDiagnostic(
                                                                 {
                                                                   title:
@@ -548,6 +547,12 @@ export default function WorkflowSection() {
                                                                     opt.diagnostic_options ||
                                                                     opt.diagnosticOptions ||
                                                                     [],
+                                                                  optionDetails:
+                                                                    Array.isArray(
+                                                                      opt.diagnostic_option_details,
+                                                                    )
+                                                                      ? opt.diagnostic_option_details
+                                                                      : [],
                                                                 },
                                                               );
                                                             }
@@ -661,20 +666,25 @@ export default function WorkflowSection() {
               <div className="prose prose-sm max-w-none text-slate-600 whitespace-pre-wrap">
                 {selectedDiagnostic.answer}
               </div>
-              {selectedDiagnostic.options &&
-                selectedDiagnostic.options.length > 0 && (
-                  <div className="mt-4 pt-4 border-t border-slate-100">
-                    <span className="text-xs font-bold text-slate-500 uppercase block mb-2">
+              {selectedDiagnostic.optionDetails &&
+                selectedDiagnostic.optionDetails.length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-slate-100 space-y-3">
+                    <span className="text-xs font-bold text-slate-500 uppercase block">
                       Recommended Actions
                     </span>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedDiagnostic.options.map((opt, i) => (
-                        <span
+                    <div className="space-y-2">
+                      {selectedDiagnostic.optionDetails.map((od, i) => (
+                        <div
                           key={i}
-                          className="text-xs bg-blue-50 text-blue-700 px-3 py-1.5 rounded-full border border-blue-200 font-medium hover:bg-blue-100 cursor-default transition-colors"
+                          className="border border-blue-100 rounded-lg p-2.5 bg-blue-50/40"
                         >
-                          {opt}
-                        </span>
+                          <div className="text-xs font-semibold text-blue-700">
+                            {od.label}
+                          </div>
+                          <div className="text-xs text-slate-600 mt-0.5">
+                            {od.answer}
+                          </div>
+                        </div>
                       ))}
                     </div>
                   </div>
