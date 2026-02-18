@@ -3978,6 +3978,175 @@ function detectIntent({
   return "exploring services";
 }
 
+// Helper function to normalize text for matching (trim, collapse whitespace, lowercase)
+function normalizeTextForMatching(text: string): string {
+  return text
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+}
+
+// Helper function to sanitize button labels (backend equivalent of frontend sanitizeButtonLabel)
+function sanitizeButtonLabel(s: any): string {
+  if (typeof s === "string") {
+    return s.trim();
+  }
+  if (s && typeof s === "object") {
+    const candidate =
+      (typeof s.label === "string" ? s.label : null) ??
+      (typeof s.text === "string" ? s.text : null) ??
+      (typeof s.title === "string" ? s.title : null) ??
+      (typeof s.name === "string" ? s.name : null) ??
+      (typeof s.value === "string" ? s.value : null);
+    if (candidate) {
+      return candidate.trim();
+    }
+  }
+  return String(s || "").trim();
+}
+
+// Resolve diagnostic answer for a lead question option click
+async function resolveLeadQuestionDiagnosticAnswer(
+  clickedLabel: string,
+  parentMessage: { content: string; buttons: string[] },
+  sectionName: string | null,
+  adminId: string | null,
+  pageUrl: string,
+): Promise<{ mainText: string; buttons: string[]; emailPrompt: string } | null> {
+  if (!adminId || !pageUrl) {
+    console.log("[DiagnosticResolver] Missing adminId or pageUrl");
+    return null;
+  }
+
+  try {
+    // Load structured summary
+    const structuredSummaryDoc = await findStructuredSummaryByUrl(adminId, pageUrl);
+    if (!structuredSummaryDoc?.structuredSummary?.sections) {
+      console.log("[DiagnosticResolver] No structured summary found");
+      return null;
+    }
+
+    const sections = structuredSummaryDoc.structuredSummary.sections || [];
+    const normalizedParentContent = normalizeTextForMatching(parentMessage.content);
+    const normalizedClickedLabel = normalizeTextForMatching(clickedLabel);
+
+    console.log("[DiagnosticResolver] Looking for diagnostic answer", {
+      clickedLabel,
+      normalizedClickedLabel,
+      parentContent: parentMessage.content.substring(0, 100),
+      normalizedParentContent: normalizedParentContent.substring(0, 100),
+      sectionName,
+      sectionsCount: sections.length,
+    });
+
+    // Iterate through sections
+    let matchedOption: any = null;
+    let matchedSection: any = null;
+
+    for (const section of sections) {
+      // If sectionName is provided, prefer matching section
+      if (
+        sectionName &&
+        section.sectionName &&
+        normalizeTextForMatching(section.sectionName) ===
+          normalizeTextForMatching(sectionName)
+      ) {
+        // Check lead questions in this section
+        const leadQuestions = section.leadQuestions || [];
+        for (const leadQ of leadQuestions) {
+          const normalizedQuestion = normalizeTextForMatching(leadQ.question || "");
+          if (normalizedQuestion === normalizedParentContent) {
+            // Found matching question, now find matching option
+            const options = leadQ.options || [];
+            for (const opt of options) {
+              const optLabel =
+                typeof opt === "string" ? opt : sanitizeButtonLabel(opt);
+              const normalizedOptLabel = normalizeTextForMatching(optLabel);
+              if (
+                normalizedOptLabel === normalizedClickedLabel ||
+                normalizedOptLabel.includes(normalizedClickedLabel) ||
+                normalizedClickedLabel.includes(normalizedOptLabel)
+              ) {
+                // Found matching option
+                if (typeof opt === "object" && opt.diagnostic_answer) {
+                  matchedOption = opt;
+                  matchedSection = section;
+                  break;
+                }
+              }
+            }
+            if (matchedOption) break;
+          }
+        }
+        if (matchedOption) break;
+      }
+    }
+
+    // If no match found with sectionName, try without sectionName preference
+    if (!matchedOption) {
+      for (const section of sections) {
+        const leadQuestions = section.leadQuestions || [];
+        for (const leadQ of leadQuestions) {
+          const normalizedQuestion = normalizeTextForMatching(leadQ.question || "");
+          if (normalizedQuestion === normalizedParentContent) {
+            const options = leadQ.options || [];
+            for (const opt of options) {
+              const optLabel =
+                typeof opt === "string" ? opt : sanitizeButtonLabel(opt);
+              const normalizedOptLabel = normalizeTextForMatching(optLabel);
+              if (
+                normalizedOptLabel === normalizedClickedLabel ||
+                normalizedOptLabel.includes(normalizedClickedLabel) ||
+                normalizedClickedLabel.includes(normalizedOptLabel)
+              ) {
+                if (typeof opt === "object" && opt.diagnostic_answer) {
+                  matchedOption = opt;
+                  matchedSection = section;
+                  break;
+                }
+              }
+            }
+            if (matchedOption) break;
+          }
+        }
+        if (matchedOption) break;
+      }
+    }
+
+    if (!matchedOption || !matchedOption.diagnostic_answer) {
+      console.log("[DiagnosticResolver] No diagnostic answer found for option", {
+        clickedLabel,
+        parentContent: parentMessage.content.substring(0, 100),
+      });
+      return null;
+    }
+
+    // Extract and sanitize diagnostic options
+    const diagnosticOptions = Array.isArray(matchedOption.diagnostic_options)
+      ? matchedOption.diagnostic_options
+      : [];
+    const sanitizedButtons = diagnosticOptions
+      .map((opt: any) => sanitizeButtonLabel(opt))
+      .filter((label: string) => label.length > 0)
+      .slice(0, 6); // Limit to 6 buttons max
+
+    console.log("[DiagnosticResolver] Found diagnostic answer", {
+      diagnosticAnswer: matchedOption.diagnostic_answer.substring(0, 100),
+      buttonsCount: sanitizedButtons.length,
+      sectionName: matchedSection?.sectionName || null,
+    });
+
+    return {
+      mainText: matchedOption.diagnostic_answer,
+      buttons: sanitizedButtons,
+      emailPrompt: "",
+    };
+  } catch (error) {
+    console.error("[DiagnosticResolver] Error resolving diagnostic answer", error);
+    return null;
+  }
+}
+
 export async function POST(req: NextRequest) {
   const rl = await rateLimit(req, "public");
   if (!rl.allowed) {
@@ -4042,6 +4211,7 @@ export async function POST(req: NextRequest) {
     confirmationNumber = null,
     leadStatus = null,
     messageType,
+    buttonClickContext,
   } = body;
 
   // Add request ID for debugging
@@ -4130,6 +4300,38 @@ export async function POST(req: NextRequest) {
   }
 
   const finalAdminId = resolvedAdminId || "default-admin";
+
+  // Early detection: Handle lead question option clicks with diagnostic answers
+  if (
+    buttonClickContext &&
+    typeof buttonClickContext === "object" &&
+    buttonClickContext.isLeadQuestion === true &&
+    buttonClickContext.clickedLabel &&
+    buttonClickContext.parentMessage
+  ) {
+    console.log("[LeadQuestionDiagnostic] Detected lead question option click", {
+      clickedLabel: buttonClickContext.clickedLabel,
+      sectionName: buttonClickContext.sectionName || null,
+    });
+
+    const diagnosticResponse = await resolveLeadQuestionDiagnosticAnswer(
+      buttonClickContext.clickedLabel,
+      buttonClickContext.parentMessage,
+      buttonClickContext.sectionName || null,
+      resolvedAdminId,
+      pageUrl || null,
+    );
+
+    if (diagnosticResponse) {
+      console.log("[LeadQuestionDiagnostic] Returning diagnostic answer", {
+        mainTextLength: diagnosticResponse.mainText.length,
+        buttonsCount: diagnosticResponse.buttons.length,
+      });
+      return NextResponse.json(diagnosticResponse, { headers: corsHeaders });
+    } else {
+      console.log("[LeadQuestionDiagnostic] No diagnostic answer found, falling through to normal chat flow");
+    }
+  }
 
   // Extract email from question if not provided in body
   let effectiveEmail = profileUserEmail;

@@ -35,6 +35,8 @@ interface Message {
   isSummary?: boolean;
   topicsDiscussed?: string[];
   sources?: string[];
+  isLeadQuestion?: boolean;
+  sectionName?: string;
 }
 
 // Type for backend bot response
@@ -1144,7 +1146,21 @@ const Chatbot: React.FC<ChatbotProps> = ({
 
     trackNudge(action, { pageUrl, adminId, message: msg });
     setInput("");
-    sendMessage(action);
+    
+    // Prepare button click context if this is a lead question
+    const buttonClickContext = msg.isLeadQuestion
+      ? {
+          clickedLabel: action,
+          parentMessage: {
+            content: msg.content,
+            buttons: msg.buttons || [],
+          },
+          isLeadQuestion: true,
+          sectionName: msg.sectionName,
+        }
+      : undefined;
+    
+    sendMessage(action, buttonClickContext);
   };
 
   // Helper to filter out buttons related to discussed topics
@@ -1294,7 +1310,15 @@ const Chatbot: React.FC<ChatbotProps> = ({
     return phrases.some((p) => t.includes(p));
   };
 
-  const sendMessage = async (userInput: string) => {
+  const sendMessage = async (
+    userInput: string,
+    buttonClickContext?: {
+      clickedLabel: string;
+      parentMessage: { content: string; buttons: string[] };
+      isLeadQuestion: boolean;
+      sectionName?: string;
+    },
+  ) => {
     if (!userInput.trim()) return;
 
     // Clear followup timer and reset activity state when user sends message
@@ -1333,11 +1357,16 @@ const Chatbot: React.FC<ChatbotProps> = ({
           userInactiveForMs: Date.now() - lastUserAction,
           ...(adminId ? { adminId } : {}),
           messageType,
+          ...(buttonClickContext ? { buttonClickContext } : {}),
         }),
       });
 
       const data = await res.json();
       const parsed = parseBotResponse(data.answer || data);
+
+      // Check if this is a lead question response (has sectionName or is from lead question trigger)
+      const isLeadQuestion = !!(data.sectionName || data.answer?.sectionName);
+      const sectionName = data.sectionName || data.answer?.sectionName || undefined;
 
       const newMessage = {
         role: "assistant" as const,
@@ -1366,6 +1395,8 @@ const Chatbot: React.FC<ChatbotProps> = ({
           : undefined,
         topicsDiscussed: data.topicsDiscussed,
         sources: data.sources,
+        isLeadQuestion,
+        sectionName,
       };
 
       const assistantCountBefore = messages.filter(
