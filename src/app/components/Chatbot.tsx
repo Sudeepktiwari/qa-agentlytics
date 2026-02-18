@@ -533,17 +533,20 @@ const Chatbot: React.FC<ChatbotProps> = ({
     ) as HTMLElement[];
 
     let currentHeading: HTMLElement | null = null;
-    let currentTop = -Infinity;
+    let bestDistance = Infinity;
+    const viewportCenter = viewportHeight / 2;
 
     headings.forEach((heading) => {
       const rect = heading.getBoundingClientRect();
       if (!rect.height || !rect.width) return;
       if (rect.bottom <= 0) return;
-      if (rect.top >= viewportHeight * 0.75) return;
+      if (rect.top >= viewportHeight) return;
 
-      if (!currentHeading || rect.top > currentTop) {
+      const center = rect.top + rect.height / 2;
+      const distance = Math.abs(center - viewportCenter);
+      if (!currentHeading || distance < bestDistance) {
         currentHeading = heading;
-        currentTop = rect.top;
+        bestDistance = distance;
       }
     });
 
