@@ -608,10 +608,6 @@ const Chatbot: React.FC<ChatbotProps> = ({
         textPreview: info.text.substring(0, 200),
         sectionHint: info.hint || null,
       });
-      if (!currentSectionContext) {
-        setCurrentSectionContext(info.text);
-        return;
-      }
       if (info.text === currentSectionContext) return;
       setCurrentSectionContext(info.text);
       if (sectionFollowupTimer.current) {
