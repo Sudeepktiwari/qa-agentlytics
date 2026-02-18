@@ -4340,6 +4340,18 @@ export async function POST(req: NextRequest) {
   const finalAdminId = resolvedAdminId || "default-admin";
 
   // Early detection: Handle lead question option clicks with diagnostic answers
+  console.log("[LeadQuestionDiagnostic] Checking buttonClickContext:", {
+    exists: !!buttonClickContext,
+    type: typeof buttonClickContext,
+    isLeadQuestion: buttonClickContext?.isLeadQuestion,
+    clickedLabel: buttonClickContext?.clickedLabel,
+    sectionName: buttonClickContext?.sectionName,
+    parentMessage: buttonClickContext?.parentMessage ? {
+      content: buttonClickContext.parentMessage.content?.substring(0, 100),
+      buttonsCount: buttonClickContext.parentMessage.buttons?.length
+    } : null
+  });
+  
   if (
     buttonClickContext &&
     typeof buttonClickContext === "object" &&
@@ -4350,6 +4362,7 @@ export async function POST(req: NextRequest) {
     console.log("[LeadQuestionDiagnostic] Detected lead question option click", {
       clickedLabel: buttonClickContext.clickedLabel,
       sectionName: buttonClickContext.sectionName || null,
+      parentContent: buttonClickContext.parentMessage.content?.substring(0, 100),
     });
 
     const diagnosticResponse = await resolveLeadQuestionDiagnosticAnswer(

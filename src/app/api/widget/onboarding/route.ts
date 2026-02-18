@@ -1460,7 +1460,7 @@ export async function GET(request: Request) {
   }
   
   // Send proactive message with voice and auto-opening
-  function sendProactiveMessage(text, buttons = [], emailPrompt = '', messageType = 'PROACTIVE', inputFields = null, followupType = null) {
+  function sendProactiveMessage(text, buttons = [], emailPrompt = '', messageType = 'PROACTIVE', inputFields = null, followupType = null, sectionName = null) {
     if (ONBOARDING_ONLY) {
       if (messageType !== 'PROACTIVE') return;
       if (onboardingProactiveSent) return;
@@ -1569,7 +1569,9 @@ export async function GET(request: Request) {
       followupType: followupType || null,
       emailPrompt: finalEmailPrompt,
       inputFields: finalInputFields,
-      isProactive: true
+      isProactive: true,
+      sectionName: sectionName || null,
+      isLeadQuestion: !!sectionName
     };
     
     if (messageType === 'FOLLOWUP') {
@@ -1719,7 +1721,8 @@ export async function GET(request: Request) {
               data.secondary.emailPrompt || '',
               'FOLLOWUP',
               null,
-              data.secondary.type || null
+              data.secondary.type || null,
+              data.secondary.sectionName || null
             );
           }
         } else {
@@ -4848,7 +4851,8 @@ export async function GET(request: Request) {
             data.secondary.emailPrompt || '',
             'FOLLOWUP',
             null,
-            data.secondary.type || null
+            data.secondary.type || null,
+            data.secondary.sectionName || null
           );
         }
       }

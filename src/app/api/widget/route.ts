@@ -1492,7 +1492,7 @@ export async function GET(request: Request) {
   }
   
   // Send proactive message with voice and auto-opening
-  function sendProactiveMessage(text, buttons = [], emailPrompt = '', messageType = 'PROACTIVE', inputFields = null, followupType = null) {
+  function sendProactiveMessage(text, buttons = [], emailPrompt = '', messageType = 'PROACTIVE', inputFields = null, followupType = null, sectionName = null) {
     if (ONBOARDING_ONLY) {
       if (messageType !== 'PROACTIVE') return;
       if (onboardingProactiveSent) return;
@@ -1601,7 +1601,9 @@ export async function GET(request: Request) {
       followupType: followupType || null,
       emailPrompt: finalEmailPrompt,
       inputFields: finalInputFields,
-      isProactive: true
+      isProactive: true,
+      sectionName: sectionName || null,
+      isLeadQuestion: !!sectionName
     };
     
     if (messageType === 'FOLLOWUP') {
@@ -1793,7 +1795,8 @@ export async function GET(request: Request) {
               data.secondary.emailPrompt || '',
               'PROACTIVE',
               null,
-              data.secondary.type || null
+              data.secondary.type || null,
+              data.secondary.sectionName || null
             );
           }
         } else {
@@ -3908,7 +3911,7 @@ export async function GET(request: Request) {
     
     // Send to API with current page context
     const assistantCountClient = messages.filter((m) => m && m.role === 'assistant').length;
-    const data = await sendApiRequest('chat', {
+    const requestPayload = {
       question: text,
       sessionId,
       pageUrl: currentPageUrl,
@@ -3920,7 +3923,11 @@ export async function GET(request: Request) {
       // Don't specify adminId - let the API extract it from the API key
       ,
       ...(buttonClickContext ? { buttonClickContext: buttonClickContext } : {})
-    });
+    };
+    if (buttonClickContext) {
+      console.log('[WIDGET MESSAGE] Sending buttonClickContext:', JSON.stringify(buttonClickContext, null, 2));
+    }
+    const data = await sendApiRequest('chat', requestPayload);
     
     // Hide typing indicator
     hideTypingIndicator();
@@ -4411,6 +4418,7 @@ export async function GET(request: Request) {
                 isLeadQuestion: true,
                 sectionName: (msg && msg.sectionName) ? String(msg.sectionName) : null
               } : null;
+              console.log('[WIDGET BUTTON] Button clicked:', displayText, 'isLead:', isLead, 'sectionName:', msg?.sectionName, 'ctx:', ctx);
               sendMessage(displayText, ctx);
             });
             
