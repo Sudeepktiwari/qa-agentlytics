@@ -9154,30 +9154,76 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
               structuredSummaryDoc?.structuredSummary?.sections &&
               Array.isArray(structuredSummaryDoc.structuredSummary.sections)
             ) {
+              const sections =
+                structuredSummaryDoc.structuredSummary.sections || [];
               console.log("[StructuredSummaryLookup] Using document", {
                 adminId: lookupAdminId,
                 docUrl: structuredSummaryDoc.url,
                 docId: String(structuredSummaryDoc._id || ""),
               });
-              const matched = matchSectionAndFirstLeadQuestion(
-                structuredSummaryDoc,
+              const crawledIndex = await matchSectionIndexFromCrawledText(
+                lookupAdminId,
+                pageUrl,
                 contextualPageContext,
                 (body as any)?.sectionHint || null,
               );
-              if (matched) {
-                console.log(
-                  `[Chatbot] Lead Question (DB) [section="${
-                    matched.sectionName || "unknown"
-                  }"]: "${matched.question}"`,
+              if (
+                crawledIndex !== null &&
+                crawledIndex >= 0 &&
+                crawledIndex < sections.length
+              ) {
+                const sec = sections[crawledIndex];
+                if (
+                  sec &&
+                  Array.isArray(sec.leadQuestions) &&
+                  sec.leadQuestions.length > 0
+                ) {
+                  const q = sec.leadQuestions[0];
+                  if (q && q.question) {
+                    const rawOptions = q.options || [];
+                    const buttons = rawOptions.map((o: any) =>
+                      typeof o === "string" ? o : o.label || JSON.stringify(o),
+                    );
+                    console.log(
+                      "[Chatbot] Lead Question (CrawledIndex) [section]",
+                      {
+                        pageUrl,
+                        index: crawledIndex,
+                        sectionName: sec.sectionName || null,
+                      },
+                    );
+                    secondary = {
+                      mainText: q.question,
+                      buttons,
+                      emailPrompt: "",
+                      type: "probe",
+                      sectionName: sec.sectionName || null,
+                    } as any;
+                    enhancedProactiveData.buttons = [];
+                  }
+                }
+              }
+              if (!secondary) {
+                const matched = matchSectionAndFirstLeadQuestion(
+                  structuredSummaryDoc,
+                  contextualPageContext,
+                  (body as any)?.sectionHint || null,
                 );
-                secondary = {
-                  mainText: matched.question,
-                  buttons: matched.buttons,
-                  emailPrompt: "",
-                  type: "probe",
-                  sectionName: matched.sectionName || null,
-                } as any;
-                enhancedProactiveData.buttons = [];
+                if (matched) {
+                  console.log(
+                    `[Chatbot] Lead Question (DB) [section="${
+                      matched.sectionName || "unknown"
+                    }"]: "${matched.question}"`,
+                  );
+                  secondary = {
+                    mainText: matched.question,
+                    buttons: matched.buttons,
+                    emailPrompt: "",
+                    type: "probe",
+                    sectionName: matched.sectionName || null,
+                  } as any;
+                  enhancedProactiveData.buttons = [];
+                }
               }
             }
           } catch (e) {

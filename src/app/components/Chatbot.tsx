@@ -429,7 +429,10 @@ const Chatbot: React.FC<ChatbotProps> = ({
             pageUrl: effectivePageUrl,
             proactive: true,
             hasBeenGreeted: alreadyGreeted,
-            contextualPageContext: initialSectionContext,
+            contextualPageContext: initialSectionContext.text,
+            ...(initialSectionContext.hint
+              ? { sectionHint: initialSectionContext.hint }
+              : {}),
             visitedPages: (() => {
               if (typeof window === "undefined") return [];
               try {
