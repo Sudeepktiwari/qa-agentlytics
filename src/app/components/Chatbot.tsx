@@ -84,6 +84,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
   const [hasBeenGreeted, setHasBeenGreeted] = useState(false);
   const [currentSectionContext, setCurrentSectionContext] = useState("");
   const sectionFollowupTimer = useRef<NodeJS.Timeout | null>(null);
+  const hasInitializedSectionCheck = useRef(false);
   const inactivityFollowupsEnabled = false;
 
   // Helper function to clean malformed JSON strings
@@ -692,6 +693,11 @@ const Chatbot: React.FC<ChatbotProps> = ({
 
     window.addEventListener("scroll", handleScroll);
     window.addEventListener("resize", handleResize);
+
+    if (!hasInitializedSectionCheck.current) {
+      hasInitializedSectionCheck.current = true;
+      handleSectionCheck();
+    }
 
     return () => {
       window.removeEventListener("scroll", handleScroll);
