@@ -876,13 +876,51 @@ async function matchSectionIndexFromCrawledText(
   adminId: string | null | undefined,
   pageUrl: string | null | undefined,
   context: any,
+  explicitSectionName?: string | null,
 ): Promise<number | null> {
+  let ctxObj: any = null;
+  if (typeof context === "string") {
+    try {
+      ctxObj = JSON.parse(context);
+    } catch {
+      ctxObj = null;
+    }
+  } else if (context && typeof context === "object") {
+    ctxObj = context;
+  }
+
   const ctxString =
     typeof context === "string" ? context : JSON.stringify(context || {});
   const ctxLower = ctxString.toLowerCase();
   if (!adminId || !pageUrl || !ctxLower || ctxLower.trim().length < 10) {
     return null;
   }
+
+  const rawSectionName =
+    explicitSectionName ||
+    (ctxObj &&
+      (ctxObj.sectionName ||
+        (ctxObj.sectionData && ctxObj.sectionData.sectionName))) ||
+    "";
+  const canonicalToken = (w: string) => {
+    const base = w.trim().toLowerCase();
+    if (base.length > 4 && base.endsWith("s")) {
+      return base.slice(0, -1);
+    }
+    return base;
+  };
+
+  const semanticKey = normalizeSectionKey(rawSectionName);
+  const semanticTokens =
+    semanticKey && semanticKey.length > 0
+      ? new Set(
+          semanticKey
+            .split(" ")
+            .map(canonicalToken)
+            .filter((w) => w.length > 1),
+        )
+      : null;
+
   const crawled = await findCrawledPageByUrl(adminId, pageUrl);
   if (!crawled || !crawled.text || typeof crawled.text !== "string") {
     return null;
@@ -894,7 +932,8 @@ async function matchSectionIndexFromCrawledText(
   console.log("[CrawledMatch] Matching section from crawled text", {
     pageUrl,
     blocksCount: blocks.length,
-    contextPreview: ctxString.substring(0, 200),
+    contextPreview: ctxString.substring(0, 400),
+    sectionName: rawSectionName || null,
   });
   const ctxWords = ctxLower
     .split(/[\s,.-]+/)
@@ -909,6 +948,26 @@ async function matchSectionIndexFromCrawledText(
       return;
     }
     let score = 0;
+
+    if (semanticTokens && block.title) {
+      const titleKey = normalizeSectionKey(block.title || "");
+      if (titleKey) {
+        const titleTokens = titleKey
+          .split(" ")
+          .map(canonicalToken)
+          .filter((w) => w.length > 1);
+        let hintOverlap = 0;
+        titleTokens.forEach((t) => {
+          if (semanticTokens.has(t)) {
+            hintOverlap += 1;
+          }
+        });
+        if (hintOverlap > 0) {
+          score += 80 + hintOverlap * 10;
+        }
+      }
+    }
+
     if (titleLower && ctxLower.includes(titleLower)) {
       score += Math.min(40, 10 + titleLower.length);
     }
@@ -4768,6 +4827,7 @@ export async function POST(req: NextRequest) {
               resolvedAdminId,
               pageUrl,
               contextualPageContext,
+              incomingSectionHint,
             );
             if (
               crawledIndex !== null &&
