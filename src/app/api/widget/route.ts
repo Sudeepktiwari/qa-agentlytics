@@ -3842,7 +3842,8 @@ export async function GET(request: Request) {
         updateBotModeIndicator(data.botMode, data.userEmail);
       }
       
-      if (data.mainText) {
+        if (data.mainText) {
+          const sectionNameFromApi = (data && data.sectionName) ? data.sectionName : null;
         const botMessage = {
           role: 'assistant',
           content: data.mainText,
@@ -3852,7 +3853,9 @@ export async function GET(request: Request) {
           bookingType: data.bookingType || null,
           // Carry multi-field inputs if provided
           inputFields: data.inputFields || null,
-          sources: data.sources || []
+            sources: data.sources || [],
+            sectionName: sectionNameFromApi,
+            isLeadQuestion: !!sectionNameFromApi
         };
         messages.push(botMessage);
         renderMessages();
@@ -3880,7 +3883,7 @@ export async function GET(request: Request) {
   }
   
   // Send message
-  async function sendMessage(text) {
+  async function sendMessage(text, buttonClickContext) {
     if (!text.trim()) return;
     
     console.log("💬 [WIDGET MESSAGE] User sending message:", text);
@@ -3915,6 +3918,8 @@ export async function GET(request: Request) {
       isScrolling: isScrolling,
       scrollDepth: (getViewportContext() || {}).scrollDepth || 0
       // Don't specify adminId - let the API extract it from the API key
+      ,
+      ...(buttonClickContext ? { buttonClickContext: buttonClickContext } : {})
     });
     
     // Hide typing indicator
@@ -3969,6 +3974,7 @@ export async function GET(request: Request) {
       const useFallbackForConfirm = ONBOARDING_ONLY && (isConfirmInput || lastAssistantWithConfirm) && !data.error && !hasServerMessage;
       const btnsForInference = Array.isArray(data.buttons) ? data.buttons : [];
       const contentForInference = String((data.mainText && data.mainText.trim()) ? data.mainText : ((data.answer && String(data.answer).trim()) ? String(data.answer) : fallbackText)).toLowerCase();
+      const sectionNameFromApi = (data && data.sectionName) ? data.sectionName : null;
       const botMessage = {
         role: 'assistant',
         content: ((data.mainText && data.mainText.trim())
@@ -3983,7 +3989,9 @@ export async function GET(request: Request) {
         inputFields: data.inputFields || null,
         onboardingAction: inferredAction,
         followupType: (data.type || null),
-        sources: Array.isArray(data.sources) ? data.sources : []
+        sources: Array.isArray(data.sources) ? data.sources : [],
+        sectionName: sectionNameFromApi,
+        isLeadQuestion: !!sectionNameFromApi
       };
       if (data.silent) {
         console.log('[Widget] Silent response received, skipping message display.');
@@ -3994,12 +4002,15 @@ export async function GET(request: Request) {
         console.log('[Widget] Bot response received, starting followup timer');
         if (!ONBOARDING_ONLY) startFollowupTimer();
         if (data.secondary && data.secondary.mainText) {
+          const secondarySectionName = data.secondary.sectionName || null;
           const secondaryMessage = {
             role: 'assistant',
             content: data.secondary.mainText,
             buttons: data.secondary.buttons || [],
             emailPrompt: data.secondary.emailPrompt || '',
-            followupType: data.secondary.type || null
+            followupType: data.secondary.type || null,
+            sectionName: secondarySectionName,
+            isLeadQuestion: !!secondarySectionName
           };
           const typeLower = String(secondaryMessage.followupType || '').toLowerCase();
           const isImmediateType = typeLower === 'bant' || typeLower === 'probe' || typeLower === 'probing';
@@ -4378,7 +4389,29 @@ export async function GET(request: Request) {
             });
             button.addEventListener('click', () => {
               resetUserActivity();
-              sendMessage(displayText);
+              const parentButtons = (msg && Array.isArray(msg.buttons))
+                ? msg.buttons.map(bt => {
+                    if (typeof bt === 'string') return bt;
+                    if (bt && typeof bt === 'object') {
+                      if ('text' in bt && bt.text) return String(bt.text).trim();
+                      if ('label' in bt && bt.label) return String(bt.label).trim();
+                      if ('value' in bt && bt.value) return String(bt.value).trim();
+                      if ('title' in bt && bt.title) return String(bt.title).trim();
+                    }
+                    return String(bt || '').trim();
+                  }).filter(Boolean)
+                : [];
+              const isLead = !!(msg && (msg.isLeadQuestion || msg.sectionName));
+              const ctx = isLead ? {
+                clickedLabel: displayText,
+                parentMessage: {
+                  content: (msg && msg.content) ? String(msg.content) : '',
+                  buttons: parentButtons
+                },
+                isLeadQuestion: true,
+                sectionName: (msg && msg.sectionName) ? String(msg.sectionName) : null
+              } : null;
+              sendMessage(displayText, ctx);
             });
             
             buttonsDiv.appendChild(button);

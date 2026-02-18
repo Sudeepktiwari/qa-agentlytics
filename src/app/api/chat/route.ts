@@ -4357,7 +4357,7 @@ export async function POST(req: NextRequest) {
       buttonClickContext.parentMessage,
       buttonClickContext.sectionName || null,
       resolvedAdminId,
-      pageUrl || null,
+      pageUrl || "",
     );
 
     if (diagnosticResponse) {
