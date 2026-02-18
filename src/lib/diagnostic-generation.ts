@@ -130,15 +130,6 @@ export async function generateDiagnosticAnswers(
               fullContext,
             );
 
-            // Fallback for missing options
-            if (!result.options || result.options.length === 0) {
-              result.options = [
-                "View Details",
-                "Contact Sales",
-                "Read Documentation",
-              ];
-            }
-
             if (result && result.answer) {
               map[`${item.label}::${item.workflow}`] = result;
             }
@@ -182,7 +173,11 @@ CRITICAL:
 - Use the WEBSITE CONTEXT (if provided) to ground your answer in the customer's specific business domain.
 - Keep it concise (2-3 sentences).
 - Avoid generic phrases like "It looks like your choice indicates...". Be direct.
-- GENERATE OPTIONS: Create 3-4 short, actionable options (max 4 words each) based on the solution mentioned in your answer. These should be next steps for the user. Examples: "View Case Study", "See API Docs", "Book Strategy Call", "Read Integration Guide".
+- GENERATE OPTIONS: Create 3-4 short, value-driven options (max 5 words each).
+-  - These must be specific SOLUTIONS, BENEFITS, or CAPABILITIES explicitly mentioned in your diagnostic answer or in the WEBSITE CONTEXT.
+-  - They should represent what the user can achieve or the specific capability that helps them.
+-  - Do NOT use generic CTAs like "Book Call", "View Case Study", "Contact Sales", "View Case Study", "See API Docs", "Book Strategy Call", "Read Integration Guide", or similar phrases.
+-  - Examples of GOOD options: "Automate Qualification", "Enhance Show-up Rates", "Real-time Scoring", "Reduce Sales Cycles", "Identify High Intent".
 
 ${contextText ? `WEBSITE CONTEXT:\n${contextText}\n` : ""}
 
