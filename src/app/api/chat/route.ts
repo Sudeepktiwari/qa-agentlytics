@@ -5,6 +5,7 @@ import OpenAI from "openai";
 import { querySimilarChunks } from "@/lib/chroma";
 import { getDb } from "@/lib/mongo";
 import { getChunksByPageUrl } from "@/lib/chroma";
+import { parseSectionBlocks } from "@/lib/parsing";
 import fetch from "node-fetch";
 import * as cheerio from "cheerio";
 import { chunkText } from "@/lib/chunkText";
@@ -830,6 +831,114 @@ async function findStructuredSummaryByUrl(
     });
   }
   return doc;
+}
+
+async function findCrawledPageByUrl(
+  adminId: string | null | undefined,
+  pageUrl: string | null | undefined,
+): Promise<any | null> {
+  if (!adminId || !pageUrl) return null;
+  const db = await getDb();
+  const normalizedUrl = normalizeUrlForLookup(pageUrl);
+  const cleanUrl = normalizedUrl.split("?")[0].replace(/\/$/, "");
+  if (!cleanUrl) return null;
+  const baseRegex = new RegExp(
+    `^${cleanUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/?$`,
+    "i",
+  );
+  let doc = await db
+    .collection("crawled_pages")
+    .findOne({ adminId, url: { $regex: baseRegex } });
+  if (!doc && cleanUrl.includes("qa-agentlytics.vercel.app")) {
+    const prodUrl = cleanUrl.replace(
+      "qa-agentlytics.vercel.app",
+      "agentlytics.advancelytics.com",
+    );
+    const prodRegex = new RegExp(
+      `^${prodUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/?$`,
+      "i",
+    );
+    doc = await db
+      .collection("crawled_pages")
+      .findOne({ adminId, url: { $regex: prodRegex } });
+    console.log("[CrawledPageLookup] QA->Prod fallback", {
+      adminId,
+      qaUrl: cleanUrl,
+      prodUrl,
+      found: !!doc,
+      docUrl: doc ? doc.url : null,
+    });
+  }
+  return doc;
+}
+
+async function matchSectionIndexFromCrawledText(
+  adminId: string | null | undefined,
+  pageUrl: string | null | undefined,
+  context: any,
+): Promise<number | null> {
+  const ctxString =
+    typeof context === "string" ? context : JSON.stringify(context || {});
+  const ctxLower = ctxString.toLowerCase();
+  if (!adminId || !pageUrl || !ctxLower || ctxLower.trim().length < 10) {
+    return null;
+  }
+  const crawled = await findCrawledPageByUrl(adminId, pageUrl);
+  if (!crawled || !crawled.text || typeof crawled.text !== "string") {
+    return null;
+  }
+  const blocks = parseSectionBlocks(crawled.text);
+  if (!Array.isArray(blocks) || blocks.length === 0) {
+    return null;
+  }
+  console.log("[CrawledMatch] Matching section from crawled text", {
+    pageUrl,
+    blocksCount: blocks.length,
+    contextPreview: ctxString.substring(0, 200),
+  });
+  const ctxWords = ctxLower
+    .split(/[\s,.-]+/)
+    .map((w) => w.trim())
+    .filter((w) => w.length > 3);
+  let bestScore = -1;
+  let bestIndex: number | null = null;
+  blocks.forEach((block, index) => {
+    const titleLower = String(block.title || "").toLowerCase();
+    const bodyLower = String(block.body || "").toLowerCase();
+    if (!titleLower && !bodyLower) {
+      return;
+    }
+    let score = 0;
+    if (titleLower && ctxLower.includes(titleLower)) {
+      score += Math.min(40, 10 + titleLower.length);
+    }
+    if (bodyLower) {
+      let hits = 0;
+      ctxWords.forEach((w) => {
+        if (bodyLower.includes(w)) {
+          hits += 1;
+        }
+      });
+      score += hits * 3;
+    }
+    if (score > bestScore) {
+      bestScore = score;
+      bestIndex = index;
+    }
+  });
+  if (bestIndex === null || bestScore < 5) {
+    console.log("[CrawledMatch] No strong match from crawled text", {
+      bestScore,
+    });
+    return null;
+  }
+  console.log("[CrawledMatch] Matched section index from crawled text", {
+    pageUrl,
+    index: bestIndex,
+    score: bestScore,
+    title: blocks[bestIndex].title || null,
+  });
+  return bestIndex;
 }
 
 function normalizeSectionKey(raw: string): string {
@@ -4648,12 +4757,53 @@ export async function POST(req: NextRequest) {
             structuredSummaryDoc?.structuredSummary?.sections &&
             Array.isArray(structuredSummaryDoc.structuredSummary.sections)
           ) {
+            const sections =
+              structuredSummaryDoc.structuredSummary.sections || [];
             console.log("[LeadQuestion] Structured summary sections", {
               pageUrl,
-              sectionNames: structuredSummaryDoc.structuredSummary.sections.map(
-                (s: any) => s.sectionName || null,
-              ),
+              sectionNames: sections.map((s: any) => s.sectionName || null),
             });
+
+            const crawledIndex = await matchSectionIndexFromCrawledText(
+              resolvedAdminId,
+              pageUrl,
+              contextualPageContext,
+            );
+            if (
+              crawledIndex !== null &&
+              crawledIndex >= 0 &&
+              crawledIndex < sections.length
+            ) {
+              const sec = sections[crawledIndex];
+              if (
+                sec &&
+                Array.isArray(sec.leadQuestions) &&
+                sec.leadQuestions.length > 0
+              ) {
+                const q = sec.leadQuestions[0];
+                if (q && q.question) {
+                  const rawOptions = q.options || [];
+                  const buttons = rawOptions.map((o: any) =>
+                    typeof o === "string" ? o : o.label || JSON.stringify(o),
+                  );
+                  console.log("[LeadQuestion] Using crawled section index", {
+                    pageUrl,
+                    index: crawledIndex,
+                    sectionName: sec.sectionName || null,
+                  });
+                  return NextResponse.json(
+                    {
+                      mainText: q.question,
+                      buttons,
+                      emailPrompt: "",
+                      sectionName: sec.sectionName || null,
+                    },
+                    { headers: corsHeaders },
+                  );
+                }
+              }
+            }
+
             const matched = matchSectionAndFirstLeadQuestion(
               structuredSummaryDoc,
               contextualPageContext,
