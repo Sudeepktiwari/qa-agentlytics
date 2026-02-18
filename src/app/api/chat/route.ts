@@ -4039,6 +4039,43 @@ async function resolveLeadQuestionDiagnosticAnswer(
       sectionsCount: sections.length,
     });
 
+    const normalizeSectionName = (s: any) =>
+      typeof s === "string" ? normalizeTextForMatching(s) : "";
+
+    const questionMatches = (questionText: any) => {
+      const q = normalizeTextForMatching(String(questionText || ""));
+      if (!q || !normalizedParentContent) return false;
+      return (
+        q === normalizedParentContent ||
+        q.includes(normalizedParentContent) ||
+        normalizedParentContent.includes(q)
+      );
+    };
+
+    const optionLabelMatches = (optLabel: string) => {
+      const o = normalizeTextForMatching(optLabel);
+      if (!o || !normalizedClickedLabel) return false;
+      return (
+        o === normalizedClickedLabel ||
+        o.includes(normalizedClickedLabel) ||
+        normalizedClickedLabel.includes(o)
+      );
+    };
+
+    const getDiagnosticAnswer = (opt: any): string | null => {
+      const ans =
+        (typeof opt?.diagnostic_answer === "string" ? opt.diagnostic_answer : null) ??
+        (typeof opt?.diagnosticAnswer === "string" ? opt.diagnosticAnswer : null);
+      return ans && ans.trim().length > 0 ? ans : null;
+    };
+
+    const getDiagnosticOptions = (opt: any): any[] => {
+      const opts =
+        (Array.isArray(opt?.diagnostic_options) ? opt.diagnostic_options : null) ??
+        (Array.isArray(opt?.diagnosticOptions) ? opt.diagnosticOptions : null);
+      return Array.isArray(opts) ? opts : [];
+    };
+
     // Iterate through sections
     let matchedOption: any = null;
     let matchedSection: any = null;
@@ -4048,27 +4085,28 @@ async function resolveLeadQuestionDiagnosticAnswer(
       if (
         sectionName &&
         section.sectionName &&
-        normalizeTextForMatching(section.sectionName) ===
-          normalizeTextForMatching(sectionName)
+        (normalizeSectionName(section.sectionName) ===
+          normalizeSectionName(sectionName) ||
+          normalizeSectionName(section.sectionName).includes(
+            normalizeSectionName(sectionName),
+          ) ||
+          normalizeSectionName(sectionName).includes(
+            normalizeSectionName(section.sectionName),
+          ))
       ) {
         // Check lead questions in this section
         const leadQuestions = section.leadQuestions || [];
         for (const leadQ of leadQuestions) {
-          const normalizedQuestion = normalizeTextForMatching(leadQ.question || "");
-          if (normalizedQuestion === normalizedParentContent) {
+          if (questionMatches(leadQ.question)) {
             // Found matching question, now find matching option
             const options = leadQ.options || [];
             for (const opt of options) {
               const optLabel =
                 typeof opt === "string" ? opt : sanitizeButtonLabel(opt);
-              const normalizedOptLabel = normalizeTextForMatching(optLabel);
-              if (
-                normalizedOptLabel === normalizedClickedLabel ||
-                normalizedOptLabel.includes(normalizedClickedLabel) ||
-                normalizedClickedLabel.includes(normalizedOptLabel)
-              ) {
+              if (optionLabelMatches(optLabel)) {
                 // Found matching option
-                if (typeof opt === "object" && opt.diagnostic_answer) {
+                const diagAnswer = typeof opt === "object" ? getDiagnosticAnswer(opt) : null;
+                if (typeof opt === "object" && diagAnswer) {
                   matchedOption = opt;
                   matchedSection = section;
                   break;
@@ -4087,19 +4125,14 @@ async function resolveLeadQuestionDiagnosticAnswer(
       for (const section of sections) {
         const leadQuestions = section.leadQuestions || [];
         for (const leadQ of leadQuestions) {
-          const normalizedQuestion = normalizeTextForMatching(leadQ.question || "");
-          if (normalizedQuestion === normalizedParentContent) {
+          if (questionMatches(leadQ.question)) {
             const options = leadQ.options || [];
             for (const opt of options) {
               const optLabel =
                 typeof opt === "string" ? opt : sanitizeButtonLabel(opt);
-              const normalizedOptLabel = normalizeTextForMatching(optLabel);
-              if (
-                normalizedOptLabel === normalizedClickedLabel ||
-                normalizedOptLabel.includes(normalizedClickedLabel) ||
-                normalizedClickedLabel.includes(normalizedOptLabel)
-              ) {
-                if (typeof opt === "object" && opt.diagnostic_answer) {
+              if (optionLabelMatches(optLabel)) {
+                const diagAnswer = typeof opt === "object" ? getDiagnosticAnswer(opt) : null;
+                if (typeof opt === "object" && diagAnswer) {
                   matchedOption = opt;
                   matchedSection = section;
                   break;
@@ -4113,7 +4146,11 @@ async function resolveLeadQuestionDiagnosticAnswer(
       }
     }
 
-    if (!matchedOption || !matchedOption.diagnostic_answer) {
+    const resolvedDiagnosticAnswer =
+      matchedOption && typeof matchedOption === "object"
+        ? getDiagnosticAnswer(matchedOption)
+        : null;
+    if (!matchedOption || !resolvedDiagnosticAnswer) {
       console.log("[DiagnosticResolver] No diagnostic answer found for option", {
         clickedLabel,
         parentContent: parentMessage.content.substring(0, 100),
@@ -4122,22 +4159,23 @@ async function resolveLeadQuestionDiagnosticAnswer(
     }
 
     // Extract and sanitize diagnostic options
-    const diagnosticOptions = Array.isArray(matchedOption.diagnostic_options)
-      ? matchedOption.diagnostic_options
-      : [];
+    const diagnosticOptions =
+      matchedOption && typeof matchedOption === "object"
+        ? getDiagnosticOptions(matchedOption)
+        : [];
     const sanitizedButtons = diagnosticOptions
       .map((opt: any) => sanitizeButtonLabel(opt))
       .filter((label: string) => label.length > 0)
       .slice(0, 6); // Limit to 6 buttons max
 
     console.log("[DiagnosticResolver] Found diagnostic answer", {
-      diagnosticAnswer: matchedOption.diagnostic_answer.substring(0, 100),
+      diagnosticAnswer: resolvedDiagnosticAnswer.substring(0, 100),
       buttonsCount: sanitizedButtons.length,
       sectionName: matchedSection?.sectionName || null,
     });
 
     return {
-      mainText: matchedOption.diagnostic_answer,
+      mainText: resolvedDiagnosticAnswer,
       buttons: sanitizedButtons,
       emailPrompt: "",
     };
