@@ -5105,47 +5105,6 @@ export async function POST(req: NextRequest) {
               sectionNames: sections.map((s: any) => s.sectionName || null),
             });
 
-            const crawledIndex = await matchSectionIndexFromCrawledText(
-              resolvedAdminId,
-              pageUrl,
-              contextualPageContext,
-              incomingSectionHint,
-            );
-            if (
-              crawledIndex !== null &&
-              crawledIndex >= 0 &&
-              crawledIndex < sections.length
-            ) {
-              const sec = sections[crawledIndex];
-              if (
-                sec &&
-                Array.isArray(sec.leadQuestions) &&
-                sec.leadQuestions.length > 0
-              ) {
-                const q = sec.leadQuestions[0];
-                if (q && q.question) {
-                  const rawOptions = q.options || [];
-                  const buttons = rawOptions.map((o: any) =>
-                    typeof o === "string" ? o : o.label || JSON.stringify(o),
-                  );
-                  console.log("[LeadQuestion] Using crawled section index", {
-                    pageUrl,
-                    index: crawledIndex,
-                    sectionName: sec.sectionName || null,
-                  });
-                  return NextResponse.json(
-                    {
-                      mainText: q.question,
-                      buttons,
-                      emailPrompt: "",
-                      sectionName: sec.sectionName || null,
-                    },
-                    { headers: corsHeaders },
-                  );
-                }
-              }
-            }
-
             const matched = matchSectionAndFirstLeadQuestion(
               structuredSummaryDoc,
               contextualPageContext,
@@ -9443,48 +9402,6 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
                 docUrl: structuredSummaryDoc.url,
                 docId: String(structuredSummaryDoc._id || ""),
               });
-              const crawledIndex = await matchSectionIndexFromCrawledText(
-                lookupAdminId,
-                pageUrl,
-                contextualPageContext,
-                (body as any)?.sectionHint || null,
-              );
-              if (
-                crawledIndex !== null &&
-                crawledIndex >= 0 &&
-                crawledIndex < sections.length
-              ) {
-                const sec = sections[crawledIndex];
-                if (
-                  sec &&
-                  Array.isArray(sec.leadQuestions) &&
-                  sec.leadQuestions.length > 0
-                ) {
-                  const q = sec.leadQuestions[0];
-                  if (q && q.question) {
-                    const rawOptions = q.options || [];
-                    const buttons = rawOptions.map((o: any) =>
-                      typeof o === "string" ? o : o.label || JSON.stringify(o),
-                    );
-                    console.log(
-                      "[Chatbot] Lead Question (CrawledIndex) [section]",
-                      {
-                        pageUrl,
-                        index: crawledIndex,
-                        sectionName: sec.sectionName || null,
-                      },
-                    );
-                    secondary = {
-                      mainText: q.question,
-                      buttons,
-                      emailPrompt: "",
-                      type: "probe",
-                      sectionName: sec.sectionName || null,
-                    } as any;
-                    enhancedProactiveData.buttons = [];
-                  }
-                }
-              }
               if (!secondary) {
                 const matched = matchSectionAndFirstLeadQuestion(
                   structuredSummaryDoc,
