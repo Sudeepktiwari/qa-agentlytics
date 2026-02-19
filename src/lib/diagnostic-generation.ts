@@ -94,26 +94,24 @@ export async function generateDiagnosticAnswers(
 ) {
   if (!items || items.length === 0) return {};
 
-  // PRIORITY: If adminId is provided, use Vector Search (RAG) for global context
-  if (adminId) {
-    // console.log removed
-    const map: Record<
-      string,
-      {
-        answer: string;
-        options: string[];
-        optionDetails?: { label: string; answer: string }[];
-      }
-    > = {};
-    const CONCURRENCY = 5;
+  const map: Record<
+    string,
+    {
+      answer: string;
+      options: string[];
+      optionDetails?: { label: string; answer: string }[];
+    }
+  > = {};
+  const CONCURRENCY = 5;
 
-    // Process in batches to control concurrency
-    for (let i = 0; i < items.length; i += CONCURRENCY) {
-      const batch = items.slice(i, i + CONCURRENCY);
-      await Promise.all(
-        batch.map(async (item) => {
-          try {
-            // 1. Embedding
+  for (let i = 0; i < items.length; i += CONCURRENCY) {
+    const batch = items.slice(i, i + CONCURRENCY);
+    await Promise.all(
+      batch.map(async (item) => {
+        try {
+          let fullContext = contextText;
+
+          if (adminId) {
             const embResp = await openai.embeddings.create({
               model: "text-embedding-3-small",
               input: item.label,
@@ -121,158 +119,29 @@ export async function generateDiagnosticAnswers(
             });
             const vector = embResp.data[0].embedding;
 
-            // 2. Vector Search
             const chunks = await querySimilarChunks(vector, 3, adminId);
             const retrievedContext = chunks.map((c) => c.text).join("\n---\n");
 
-            // Combine specific section context (if any) with retrieved context
-            const fullContext = contextText
+            fullContext = contextText
               ? `SECTION CONTEXT:\n${contextText}\n\nKNOWLEDGE BASE:\n${retrievedContext}`
               : retrievedContext;
-
-            // 3. Generate
-            const result = await generateSingleDiagnosticAnswer(
-              item.label,
-              item.workflow,
-              fullContext,
-            );
-
-            if (result && result.answer) {
-              map[`${item.label}::${item.workflow}`] = result;
-            }
-          } catch (e) {
-            // console.error removed
           }
-        }),
-      );
-    }
-    return map;
+
+          const result = await generateSingleDiagnosticAnswer(
+            item.label,
+            item.workflow,
+            fullContext,
+          );
+
+          if (result && result.answer) {
+            map[`${item.label}::${item.workflow}`] = result;
+          }
+        } catch {}
+      }),
+    );
   }
 
-  // FALLBACK: Local Context Only (Batch Generation)
-  // Create a mapping of ID to Item to ensure we can map back the results
-  const itemsWithId = items.map((item, index) => ({ ...item, id: index + 1 }));
-
-  try {
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      response_format: { type: "json_object" },
-      temperature: 0.2,
-      messages: [
-        {
-          role: "system",
-          content: `You are an expert consultant. Write a diagnostic answer to the user based on their selection that demonstrates value and expertise.
-          
-RULES:
-- Return a JSON object with a "results" array.
-- Each result MUST include the "id" from the input, "diagnostic_answer", "diagnostic_options", and "diagnostic_option_details".
-- Speak directly to the user (use "you").
-- Tone: Professional, consultative, client-ready.
-- Follow the correct template:
-  - validation_path → Validate their strong position. Suggest how they can leverage this stability to scale or optimize further using the platform. Focus on "what's next" for growth.
-  - optimization_workflow → Acknowledge the process friction. Explain the specific business impact (e.g., lost revenue, efficiency gaps). Clearly state how the platform automates or resolves this.
-  - diagnostic_education → Address the visibility gap. Explain why knowing this data is critical for decision-making. Explain how the platform provides this specific intelligence.
-  - sales_alert → Address the high-stakes nature of the problem. Explain the cost of inaction. Briefly explain how the platform mitigates this risk immediately.
-
-CRITICAL:
-- FOCUS ON VALUE: Explain HOW the platform helps.
-- You MAY mention relevant high-level capabilities or features if they solve the problem.
-- Use the WEBSITE CONTEXT (if provided) to ground your answer in the customer's specific business domain.
-- Keep it concise (2-3 sentences).
-- Avoid generic phrases like "It looks like your choice indicates...". Be direct.
-- GENERATE OPTIONS: Create 3-4 short, value-driven options (max 5 words each).
--  - These must be specific SOLUTIONS, BENEFITS, or CAPABILITIES explicitly mentioned in your diagnostic answer or in the WEBSITE CONTEXT.
--  - They should represent what the user can achieve or the specific capability that helps them.
--  - Do NOT use generic CTAs like "Book Call", "View Case Study", "Contact Sales", "View Case Study", "See API Docs", "Book Strategy Call", "Read Integration Guide", or similar phrases.
--  - Examples of GOOD options: "Automate Qualification", "Enhance Show-up Rates", "Real-time Scoring", "Reduce Sales Cycles", "Identify High Intent".
--  - For each diagnostic_option generated, also create a short "option_answer" that reads like a sales pitch explaining the specific feature or capability, the business benefit, and how it helps the user. Keep each option_answer to 1-2 short sentences.
-
-${contextText ? `WEBSITE CONTEXT:\n${contextText}\n` : ""}
-
-INPUT: List of options with ids, labels and workflows.
-OUTPUT: JSON object with "results" array. Each result MUST contain:
-- "id": number from input.
-- "diagnostic_answer": main diagnostic text.
-- "diagnostic_options": array of 3-4 strings (options).
-- "diagnostic_option_details": array of objects, one per diagnostic_option, each with:
-   - "label": the exact option string as in diagnostic_options.
-   - "answer": a sales-pitch style explanation of the feature benefit and how it helps.
-Example:
-{
-  "results": [
-    {
-      "id": 1,
-      "diagnostic_answer": "...",
-      "diagnostic_options": ["Option 1", "Option 2", "Option 3"],
-      "diagnostic_option_details": [
-        { "label": "Option 1", "answer": "..." },
-        { "label": "Option 2", "answer": "..." },
-        { "label": "Option 3", "answer": "..." }
-      ]
-    }
-  ]
-}`,
-        },
-        {
-          role: "user",
-          content: JSON.stringify(itemsWithId),
-        },
-      ],
-    });
-
-    const content = response.choices[0]?.message?.content || "{}";
-    const data = JSON.parse(content);
-    const map: Record<
-      string,
-      {
-        answer: string;
-        options: string[];
-        optionDetails?: { label: string; answer: string }[];
-      }
-    > = {};
-
-    if (Array.isArray(data.results)) {
-      data.results.forEach((item: any) => {
-        if (item && typeof item.id === "number" && item.diagnostic_answer) {
-          // Find the original item by ID to reconstruct the key
-          const original = itemsWithId.find((i) => i.id === item.id);
-          if (original) {
-            const key = `${original.label}::${original.workflow}`;
-            const options = Array.isArray(item.diagnostic_options)
-              ? item.diagnostic_options
-              : [];
-            const optionDetailsRaw = Array.isArray(
-              item.diagnostic_option_details,
-            )
-              ? item.diagnostic_option_details
-              : [];
-            const optionDetails = optionDetailsRaw
-              .map((detail: any) => {
-                if (!detail || typeof detail !== "object") return null;
-                const optLabel =
-                  typeof detail.label === "string" ? detail.label : "";
-                const ans =
-                  typeof detail.answer === "string" ? detail.answer : "";
-                if (!optLabel || !ans) return null;
-                return { label: optLabel, answer: ans };
-              })
-              .filter((v: any) => v !== null);
-
-            map[key] = {
-              answer: item.diagnostic_answer,
-              options,
-              optionDetails,
-            };
-          }
-        }
-      });
-    }
-    // console.log removed
-    return map;
-  } catch (error) {
-    // console.error removed
-    return {};
-  }
+  return map;
 }
 
 export async function processQuestionsWithTags(
@@ -485,7 +354,7 @@ export async function processQuestionsWithTags(
     return q;
   });
 
-  return processedQuestions;
+  return finalQuestions;
 }
 
 export async function enrichStructuredSummary(

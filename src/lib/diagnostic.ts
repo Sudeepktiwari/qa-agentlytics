@@ -4,6 +4,160 @@ import { querySimilarChunks } from "./chroma";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+async function generateDiagnosticAnswerText(
+  label: string,
+  workflow: string,
+  context: string,
+): Promise<string> {
+  try {
+    const prompt = `
+SYSTEM:
+You are an expert consultant engaging with a potential client. They just selected an option, and you need to provide a diagnostic insight that demonstrates value.
+Write your response as a professional, direct message to the user. Use "you" and "your".
+
+RULES:
+- Tone: Professional, consultative, value-driven.
+- Follow the correct template based on the workflow:
+  - validation_path → Validate their strong position. Suggest how they can leverage this stability to scale or optimize further using the platform. Focus on "what's next" for growth.
+  - optimization_workflow → Acknowledge the process friction. Explain the specific business impact (e.g., lost revenue, efficiency gaps). Clearly state how the platform automates or resolves this.
+  - diagnostic_education → Address the visibility gap. Explain why knowing this data is critical for decision-making. Explain how the platform provides this specific intelligence.
+  - sales_alert → Address the high-stakes nature of the problem. Explain the cost of inaction. Briefly explain how the platform mitigates this risk immediately.
+
+CONTEXT:
+${context}
+
+INPUT:
+label: ${label}
+workflow: ${workflow}
+
+OUTPUT:
+Return a JSON object with:
+- "diagnostic_answer": The diagnostic text (2-3 sentences).`;
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      response_format: { type: "json_object" },
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.3,
+    });
+
+    const content = response.choices[0]?.message?.content || "{}";
+    const data = JSON.parse(content);
+    const answer =
+      typeof data.diagnostic_answer === "string" ? data.diagnostic_answer : "";
+    return answer;
+  } catch {
+    return "";
+  }
+}
+
+async function generateDiagnosticOptionsList(
+  label: string,
+  workflow: string,
+  context: string,
+  diagnosticAnswer: string,
+): Promise<string[]> {
+  if (!diagnosticAnswer) return [];
+  try {
+    const prompt = `
+SYSTEM:
+You are designing follow-up options for a diagnostic answer. Each option should represent a concrete solution, benefit, or capability derived from the answer.
+
+RULES:
+- Generate 3-4 short, value-driven options (max 5 words each).
+- Options must map to specific outcomes, levers, or capabilities mentioned in the diagnostic answer or context.
+- Do not use generic CTAs like "Book Call", "View Case Study", "Contact Sales".
+
+CONTEXT:
+${context}
+
+INPUT:
+label: ${label}
+workflow: ${workflow}
+diagnostic_answer: ${diagnosticAnswer}
+
+OUTPUT:
+Return a JSON object with:
+- "diagnostic_options": array of 3-4 strings (options).`;
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      response_format: { type: "json_object" },
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.3,
+    });
+
+    const content = response.choices[0]?.message?.content || "{}";
+    const data = JSON.parse(content);
+    const options = Array.isArray(data.diagnostic_options)
+      ? data.diagnostic_options
+      : [];
+    return options.filter((o: any) => typeof o === "string" && o.trim().length);
+  } catch {
+    return [];
+  }
+}
+
+async function generateDiagnosticOptionDetailsList(
+  label: string,
+  workflow: string,
+  context: string,
+  diagnosticAnswer: string,
+  options: string[],
+): Promise<{ label: string; answer: string }[]> {
+  if (!diagnosticAnswer || !options || options.length === 0) return [];
+  try {
+    const prompt = `
+SYSTEM:
+You are writing sales-pitch style explanations for each diagnostic option.
+
+RULES:
+- For each option, explain the specific feature or capability, the business benefit, and how it helps the user.
+- Keep each explanation 1-2 short sentences.
+- Tie explanations to the diagnostic answer and context.
+
+CONTEXT:
+${context}
+
+INPUT:
+label: ${label}
+workflow: ${workflow}
+diagnostic_answer: ${diagnosticAnswer}
+diagnostic_options: ${JSON.stringify(options)}
+
+OUTPUT:
+Return a JSON object with:
+- "diagnostic_option_details": array of objects, one per option, each with:
+   - "label": the exact option string.
+   - "answer": the sales-pitch style explanation.`;
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      response_format: { type: "json_object" },
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.3,
+    });
+
+    const content = response.choices[0]?.message?.content || "{}";
+    const data = JSON.parse(content);
+    const raw = Array.isArray(data.diagnostic_option_details)
+      ? data.diagnostic_option_details
+      : [];
+    const details = raw
+      .map((item: any) => {
+        if (!item || typeof item !== "object") return null;
+        const optLabel = typeof item.label === "string" ? item.label : "";
+        const ans = typeof item.answer === "string" ? item.answer : "";
+        if (!optLabel || !ans) return null;
+        return { label: optLabel, answer: ans };
+      })
+      .filter((v: any) => v !== null);
+    return details;
+  } catch {
+    return [];
+  }
+}
+
 export async function autoGenerateDiagnosticAnswers(
   adminId: string,
   filterUrl?: string,
@@ -176,87 +330,32 @@ export async function generateSingleDiagnosticAnswer(
   optionDetails?: { label: string; answer: string }[];
 }> {
   try {
-    const prompt = `
-SYSTEM:
-You are an expert consultant engaging with a potential client. They just selected an option, and you need to provide a diagnostic insight that demonstrates value.
-Write your response as a professional, direct message to the user. Use "you" and "your".
-
-RULES:
-- Tone: Professional, consultative, value-driven. suitable for client communication.
-- Follow the correct template based on the workflow:
-  - validation_path → Validate their strong position. Suggest how they can leverage this stability to scale or optimize further using the platform. Focus on "what's next" for growth.
-  - optimization_workflow → Acknowledge the process friction. Explain the specific business impact (e.g., lost revenue, efficiency gaps). Clearly state how the platform automates or resolves this.
-  - diagnostic_education → Address the visibility gap. Explain why knowing this data is critical for decision-making. Explain how the platform provides this specific intelligence.
-  - sales_alert → Address the high-stakes nature of the problem. Explain the cost of inaction. Briefly explain how the platform mitigates this risk immediately.
-
-CRITICAL: 
-- FOCUS ON VALUE: Explain HOW the platform helps.
-- You MAY mention relevant high-level capabilities or features if they solve the problem.
-- Use the WEBSITE CONTEXT to ground your answer in the customer's specific business domain.
-- Keep it concise (2-3 sentences max).
-- Avoid generic phrases like "It looks like your choice indicates...". Be direct.
-- GENERATE OPTIONS: Create 3-4 short, value-driven options (max 5 words each). 
-  - These must be specific SOLUTIONS, BENEFITS, or KEY FEATURES explicitly mentioned in your answer or the website context. 
-  - They should represent what the user can achieve or the specific capability that helps them.
-  - Do NOT use generic CTAs like "Book Call", "View Case Study", "Contact Sales".
-  - Examples of GOOD options: "Automate Qualification", "Enhance Show-up Rates", "Real-time Scoring", "Reduce Sales Cycles".
-- For each diagnostic_option you generate, also create a short "option_answer" that reads like a sales pitch explaining the specific feature or capability, the business benefit, and how it helps the user. Keep each option_answer to 1-2 short sentences.
-
-WEBSITE CONTEXT:
-${context}
-
-INPUT:
-label: ${label}
-workflow: ${workflow}
-
-OUTPUT:
-Return a JSON object with:
-- "diagnostic_answer": The diagnostic text.
-- "diagnostic_options": Array of 3-4 strings (options). MUST be present.
-- "diagnostic_option_details": Array of objects, one per diagnostic_option, each with:
-   - "label": the exact option string as in diagnostic_options.
-   - "answer": a sales-pitch style explanation of the feature benefit and how it helps.
-
-EXAMPLES OF OPTIONS (DO NOT COPY THESE EXACTLY, USE CONTEXT):
-- "Automate Qualification"
-- "Enhance Show-up Rates"
-- "Real-time Scoring"
-- "Reduce Sales Cycles"
-- "Identify High Intent"
-`;
-
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      response_format: { type: "json_object" },
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0.3,
-    });
-
-    const content = response.choices[0]?.message?.content || "{}";
-    const data = JSON.parse(content);
-    const options = Array.isArray(data.diagnostic_options)
-      ? data.diagnostic_options
-      : [];
-
-    if (options.length === 0) {
-      console.warn(`[Diagnostic] No options generated by AI for ${label}.`);
+    const diagnosticAnswer = await generateDiagnosticAnswerText(
+      label,
+      workflow,
+      context,
+    );
+    if (!diagnosticAnswer) {
+      return { answer: "", options: [] };
     }
 
-    const optionDetailsRaw = Array.isArray(data.diagnostic_option_details)
-      ? data.diagnostic_option_details
-      : [];
-    const optionDetails = optionDetailsRaw
-      .map((item: any) => {
-        if (!item || typeof item !== "object") return null;
-        const optLabel = typeof item.label === "string" ? item.label : "";
-        const ans = typeof item.answer === "string" ? item.answer : "";
-        if (!optLabel || !ans) return null;
-        return { label: optLabel, answer: ans };
-      })
-      .filter((v: any) => v !== null);
+    const options = await generateDiagnosticOptionsList(
+      label,
+      workflow,
+      context,
+      diagnosticAnswer,
+    );
+
+    const optionDetails = await generateDiagnosticOptionDetailsList(
+      label,
+      workflow,
+      context,
+      diagnosticAnswer,
+      options,
+    );
 
     return {
-      answer: data.diagnostic_answer || "",
+      answer: diagnosticAnswer,
       options,
       optionDetails,
     };
