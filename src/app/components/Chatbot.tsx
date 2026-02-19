@@ -574,7 +574,16 @@ const Chatbot: React.FC<ChatbotProps> = ({
       return { text: fallbackText, hint: headingEl.innerText.trim() };
     }
 
-    const contextText = container.innerText.substring(0, 800);
+    let contextText = container.innerText.substring(0, 800);
+    try {
+      const range = document.createRange();
+      range.setStart(headingEl, 0);
+      range.setEnd(container, container.childNodes.length);
+      const localText = range.toString().replace(/\s+/g, " ").trim();
+      if (localText.length >= 80) {
+        contextText = localText.substring(0, 800);
+      }
+    } catch {}
 
     let sectionHint = "";
     const dataSection = container.getAttribute("data-section");
