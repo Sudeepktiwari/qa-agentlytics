@@ -13,7 +13,7 @@ export function parseSectionBlocks(text: string) {
 
 export function mergeSmallSectionBlocks(
   blocks: { title: string; body: string }[],
-  minChars = 500,
+  minChars = 300,
 ) {
   if (!Array.isArray(blocks) || blocks.length === 0) return [];
   const lengthOf = (body: string) => body.replace(/\s+/g, " ").trim().length;
