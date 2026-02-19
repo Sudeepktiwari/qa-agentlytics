@@ -63,6 +63,16 @@ export interface SessionState {
   }>;
 }
 
+function getOptionLabels(options: any[]): string[] {
+  return options
+    .map((opt: any) => {
+      if (typeof opt === "string") return opt;
+      if (opt && typeof opt.label === "string") return opt.label;
+      return "";
+    })
+    .filter((s) => typeof s === "string" && s.trim().length > 0);
+}
+
 export async function getSessionState(
   sessionId: string,
 ): Promise<SessionState> {
@@ -252,10 +262,13 @@ export async function processWorkflowStep(
     const leadQ = currentSection.leadQuestions[0]; // Default to first question
     if (!leadQ) return null;
 
+    const leadOptionsRaw = Array.isArray(leadQ.options) ? leadQ.options : [];
+    const leadOptionLabels = getOptionLabels(leadOptionsRaw);
+
     // If idle, start lead question
     if (state.workflowStep === "idle") {
       response.message = leadQ.question;
-      response.options = leadQ.options;
+      response.options = leadOptionLabels;
       response.workflowStep = "lead_question"; // Update response step
       await updateSessionState(sessionId, {
         workflowStep: "lead_question",
@@ -272,15 +285,15 @@ export async function processWorkflowStep(
     // If already in lead_question, check if user answered
     if (userMessage) {
       // Check if user selected an option (fuzzy match)
-      const selectedIndex = leadQ.options.findIndex(
-        (opt) =>
-          userMessage.toLowerCase().includes(opt.toLowerCase()) ||
-          opt.toLowerCase().includes(userMessage.toLowerCase()),
-      );
+      const selectedIndex = leadOptionLabels.findIndex((opt) => {
+        const lower = opt.toLowerCase();
+        const msg = userMessage.toLowerCase();
+        return msg.includes(lower) || lower.includes(msg);
+      });
 
       if (selectedIndex !== -1) {
         // Option Selected -> Route
-        const selectedOption = leadQ.options[selectedIndex];
+        const selectedOption = leadOptionLabels[selectedIndex];
         const tags = leadQ.tags;
         const tag = tags[selectedIndex] || "unknown";
 
@@ -318,7 +331,10 @@ export async function processWorkflowStep(
           const salesQ = currentSection.salesQuestions[0]; // Default to first sales question
           if (salesQ) {
             response.message = salesQ.question;
-            response.options = salesQ.options;
+            const salesOptionsRaw = Array.isArray(salesQ.options)
+              ? salesQ.options
+              : [];
+            response.options = getOptionLabels(salesOptionsRaw);
             response.workflowStep = "sales_question";
             await updateSessionState(sessionId, {
               workflowStep: "sales_question",
@@ -348,7 +364,7 @@ export async function processWorkflowStep(
             state.followUpCount === 0
               ? `Just to check - ${leadQ.question}` // Follow-up #1
               : `Quick nudge: ${leadQ.question}`; // Follow-up #2
-          response.options = leadQ.options;
+          response.options = leadOptionLabels;
           await updateSessionState(sessionId, {
             followUpCount: state.followUpCount + 1,
           });
@@ -370,16 +386,20 @@ export async function processWorkflowStep(
     const salesQ = currentSection.salesQuestions[0];
     if (!salesQ) return null;
 
+    const salesOptionsRaw = Array.isArray(salesQ.options) ? salesQ.options : [];
+    const salesOptionLabels = getOptionLabels(salesOptionsRaw);
+
     if (userMessage) {
-      const selectedIndex = salesQ.options.findIndex(
-        (opt) =>
-          userMessage.toLowerCase().includes(opt.toLowerCase()) ||
-          opt.toLowerCase().includes(userMessage.toLowerCase()),
-      );
+      const selectedIndex = salesOptionLabels.findIndex((opt) => {
+        const lower = opt.toLowerCase();
+        const msg = userMessage.toLowerCase();
+        return msg.includes(lower) || lower.includes(msg);
+      });
 
       if (selectedIndex !== -1) {
         // Option Selected -> Diagnostic Response
-        const selectedOption = salesQ.options[selectedIndex];
+        const selectedOption = salesOptionLabels[selectedIndex];
+        const selectedOptionObj = salesOptionsRaw[selectedIndex];
         await updateSessionState(sessionId, {
           selectedSalesOption: selectedOption,
         });
@@ -407,10 +427,48 @@ export async function processWorkflowStep(
         });
 
         // Diagnostic Response (Step A, B, C)
-        const diagnosticMsg = currentSection.scripts.diagnosticAnswer;
+        const optionDiagnostic =
+          selectedOptionObj &&
+          typeof (selectedOptionObj as any).diagnostic_answer === "string" &&
+          (selectedOptionObj as any).diagnostic_answer.trim().length > 0
+            ? (selectedOptionObj as any).diagnostic_answer
+            : currentSection.scripts.diagnosticAnswer;
+
+        const rawDetails =
+          selectedOptionObj &&
+          Array.isArray((selectedOptionObj as any).diagnostic_option_details)
+            ? (selectedOptionObj as any).diagnostic_option_details
+            : [];
+
+        let detailsBlock = "";
+        if (rawDetails.length > 0) {
+          const lines = rawDetails
+            .map((d: any, idx: number): string | null => {
+              if (!d || typeof d !== "object") return null;
+              const lbl = typeof d.label === "string" ? d.label.trim() : "";
+              const ans = typeof d.answer === "string" ? d.answer.trim() : "";
+              if (!lbl && !ans) return null;
+              if (!ans) return `- ${lbl}`;
+              if (!lbl) return `- ${ans}`;
+              return `${idx + 1}. ${lbl}: ${ans}`;
+            })
+            .filter(
+              (v: string | null) => typeof v === "string" && v.length > 0,
+            );
+
+          if (lines.length > 0) {
+            detailsBlock = `\n\nHere are some specific ways this helps you:\n${lines.join(
+              "\n",
+            )}`;
+          }
+        }
+
         const followUpMsg = currentSection.scripts.followUpQuestion; // Mandatory follow-up
 
-        response.message = `${diagnosticMsg}\n\n${followUpMsg}`;
+        const parts = [optionDiagnostic];
+        if (detailsBlock) parts.push(detailsBlock.trim());
+        if (followUpMsg) parts.push(followUpMsg);
+        response.message = parts.filter(Boolean).join("\n\n");
         response.options = currentSection.scripts.followUpOptions || [
           "Yes",
           "No",
@@ -428,7 +486,7 @@ export async function processWorkflowStep(
             state.followUpCount === 0
               ? `Following up: ${salesQ.question}`
               : `Just checking: ${salesQ.question}`;
-          response.options = salesQ.options;
+          response.options = salesOptionLabels;
           await updateSessionState(sessionId, {
             followUpCount: state.followUpCount + 1,
           });
