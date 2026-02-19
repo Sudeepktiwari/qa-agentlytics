@@ -10,7 +10,11 @@ import {
   enrichStructuredSummary,
   normalizeStructuredSummary,
 } from "@/lib/diagnostic-generation";
-import { parseSectionBlocks, mergeSmallSectionBlocks } from "@/lib/parsing";
+import {
+  parseSectionBlocks,
+  mergeSmallSectionBlocks,
+  blocksToSectionedText,
+} from "@/lib/parsing";
 
 const pc = new Pinecone({ apiKey: process.env.PINECONE_KEY! });
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
@@ -288,13 +292,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const rawBlocks = parseSectionBlocks(reconstructedContent);
+    const mergedBlocks =
+      rawBlocks.length > 0 ? mergeSmallSectionBlocks(rawBlocks) : rawBlocks;
+    if (mergedBlocks.length > 0) {
+      reconstructedContent = blocksToSectionedText(mergedBlocks);
+    }
+
     // Estimate token count (rough estimate: 1 token ≈ 4 characters)
     const estimatedTokens = Math.ceil(reconstructedContent.length / 4);
     const maxTokensForDirect = 30000; // Leave room for prompt + response (GPT-4o-mini limit ~128k)
 
-    const rawBlocks = parseSectionBlocks(reconstructedContent);
-    const blocks =
-      rawBlocks.length > 0 ? mergeSmallSectionBlocks(rawBlocks) : rawBlocks;
+    const blocks = parseSectionBlocks(reconstructedContent);
 
     let structuredSummary;
 
