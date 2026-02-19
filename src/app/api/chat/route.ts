@@ -933,6 +933,25 @@ async function matchSectionIndexFromCrawledText(
   if (!Array.isArray(blocks) || blocks.length === 0) {
     return null;
   }
+
+  if (semanticKey && semanticTokens && blocks.length > 0) {
+    let titleExactIndex: number | null = null;
+    blocks.forEach((block, index) => {
+      const titleKey = normalizeSectionKey(block.title || "");
+      if (titleKey && titleKey === semanticKey) {
+        titleExactIndex = index;
+      }
+    });
+    if (titleExactIndex !== null) {
+      console.log("[CrawledMatch] Using exact title match from crawled text", {
+        pageUrl,
+        index: titleExactIndex,
+        title: blocks[titleExactIndex].title || null,
+      });
+      return titleExactIndex;
+    }
+  }
+
   console.log("[CrawledMatch] Matching section from crawled text", {
     pageUrl,
     blocksCount: blocks.length,
