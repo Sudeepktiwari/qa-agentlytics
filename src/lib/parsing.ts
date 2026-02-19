@@ -16,35 +16,19 @@ export function mergeSmallSectionBlocks(
   minChars = 500,
 ) {
   if (!Array.isArray(blocks) || blocks.length === 0) return [];
-  const merged: { title: string; body: string }[] = [];
-  let current = { ...blocks[0] };
-
   const lengthOf = (body: string) => body.replace(/\s+/g, " ").trim().length;
+  const result = blocks.map((b) => ({ ...b }));
 
-  for (let i = 1; i < blocks.length; i++) {
-    const next = blocks[i];
-    if (lengthOf(current.body) < minChars) {
-      const title =
-        current.title || next.title || `Section ${merged.length + 1}`;
-      current = {
-        title,
-        body: `${current.body}\n\n${next.body}`.trim(),
-      };
-    } else {
-      merged.push(current);
-      current = { ...next };
+  for (let i = 0; i < result.length; i++) {
+    if (lengthOf(result[i].body) >= minChars) continue;
+    let combined = result[i].body;
+    let j = i + 1;
+    while (lengthOf(combined) < minChars && j < blocks.length) {
+      combined = `${combined}\n\n${blocks[j].body}`.trim();
+      j++;
     }
+    result[i].body = combined;
   }
 
-  if (merged.length > 0 && lengthOf(current.body) < minChars) {
-    const last = merged[merged.length - 1];
-    merged[merged.length - 1] = {
-      title: last.title || current.title,
-      body: `${last.body}\n\n${current.body}`.trim(),
-    };
-  } else {
-    merged.push(current);
-  }
-
-  return merged;
+  return result;
 }
