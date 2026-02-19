@@ -2564,6 +2564,54 @@ IMPORTANT REQUIREMENTS:
             try {
               const parsed = JSON.parse(structuredText);
               structuredSummary = normalizeStructuredSummary(parsed);
+
+              let blocks = parseSectionBlocks(text);
+              blocks =
+                Array.isArray(blocks) && blocks.length > 0
+                  ? mergeSmallSectionBlocks(blocks)
+                  : blocks;
+              if (Array.isArray(structuredSummary?.sections)) {
+                if (
+                  blocks.length > 0 &&
+                  structuredSummary.sections.length !== blocks.length
+                ) {
+                  const baseSections = structuredSummary.sections;
+                  structuredSummary.sections = blocks.map((block, idx) => {
+                    const base =
+                      baseSections[idx] ||
+                      baseSections[baseSections.length - 1] ||
+                      {};
+                    const baseName =
+                      typeof base.sectionName === "string"
+                        ? base.sectionName
+                        : "";
+                    const sectionName =
+                      block.title || baseName || `Section ${idx + 1}`;
+                    const baseSummary =
+                      typeof base.sectionSummary === "string"
+                        ? base.sectionSummary
+                        : "";
+                    const trimmedSummary = baseSummary.trim();
+                    const summary =
+                      trimmedSummary.length > 0
+                        ? trimmedSummary
+                        : (() => {
+                            const body = block.body || "";
+                            if (!body) return sectionName;
+                            return body.length > 400
+                              ? body.slice(0, 400) + "..."
+                              : body;
+                          })();
+                    return {
+                      ...base,
+                      sectionName,
+                      sectionSummary: summary,
+                      sectionContent: block.body || "",
+                    };
+                  });
+                }
+              }
+
               structuredSummary = await enrichStructuredSummary(
                 structuredSummary,
                 text,
