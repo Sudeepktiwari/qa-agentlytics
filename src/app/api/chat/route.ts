@@ -1002,12 +1002,15 @@ async function matchSectionIndexFromCrawledText(
   scored.sort((a, b) => b.score - a.score);
   const best = scored[0];
   const second = scored[1] || null;
+  if (best.score < 3 || best.hits < 2) {
+    console.log("[CrawledMatch] No strong word-overlap match", {
+      pageUrl,
+      best,
+    });
+    return null;
+  }
 
-  if (
-    best.score < 8 ||
-    best.hits < 4 ||
-    (second && second.score > best.score * 0.7)
-  ) {
+  if (second && second.score > best.score * 0.85) {
     console.log("[CrawledMatch] Ambiguous word-overlap; no section chosen", {
       pageUrl,
       best,
