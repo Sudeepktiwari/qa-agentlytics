@@ -884,7 +884,7 @@ async function matchSectionIndexFromCrawledText(
   if (!adminId || !pageUrl || !ctxLower) {
     return null;
   }
-  const ctxNormalized = ctxLower.trim();
+  const ctxNormalized = ctxLower.replace(/\s+/g, " ").trim();
   if (!ctxNormalized) {
     return null;
   }
@@ -1024,106 +1024,19 @@ async function matchSectionAndFirstLeadQuestion(
         index: idxFromCrawled,
         sectionName: matchedSection.sectionName || null,
       });
-    }
-  }
-
-  if (lowerContext) {
-    const contextWords = lowerContext
-      .split(/[\s,.-]+/)
-      .map((w: string) => w.trim())
-      .filter((w: string) => w.length > 2);
-    let bestNameScore = -1;
-    let bestByName: any = null;
-    sections.forEach((s: any) => {
-      const sName = (s.sectionName || "").toLowerCase();
-      if (!sName || sName.length <= 3) return;
-      let score = 0;
-      try {
-        const escapedName = sName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-        const titleRegex = new RegExp(`\\b${escapedName}\\b`, "i");
-        if (titleRegex.test(lowerContext)) {
-          score = Math.min(10 + sName.length, 40);
-        }
-      } catch {
-        if (lowerContext.includes(sName)) {
-          score = 10;
-        }
-      }
-      if (score > bestNameScore) {
-        bestNameScore = score;
-        bestByName = s;
-      }
-    });
-    if (!matchedSection && bestNameScore >= 10 && bestByName) {
-      matchedSection = bestByName;
-      console.log("[SectionMatch] Using sectionName match", {
-        sectionName: matchedSection.sectionName || null,
-        score: bestNameScore,
-      });
     } else {
-      const sectionWordSets: { section: any; words: Set<string> }[] = [];
-      const wordSectionCount = new Map<string, number>();
-
-      sections.forEach((s: any) => {
-        const sSummary = (s.sectionSummary || "").toLowerCase();
-        const sContent = (s.sectionContent || "").toLowerCase();
-        const baseText =
-          sContent && sContent.length > 20
-            ? sContent
-            : sSummary && sSummary.length > 20
-              ? sSummary
-              : "";
-        const words = baseText
-          ? baseText
-              .split(/[\s,.-]+/)
-              .map((w: string) => w.trim())
-              .filter((w: string) => w.length > 2)
-          : [];
-        const set = new Set<string>();
-        for (const w of words) {
-          set.add(w);
-        }
-        sectionWordSets.push({ section: s, words: set });
-        set.forEach((w) => {
-          wordSectionCount.set(w, (wordSectionCount.get(w) || 0) + 1);
-        });
-      });
-
-      let bestScore = -1;
-      let bestSection: any = null;
-
-      sectionWordSets.forEach(({ section, words }) => {
-        if (!words.size) return;
-        let score = 0;
-        for (const w of contextWords) {
-          if (words.has(w)) {
-            const count = wordSectionCount.get(w) || 1;
-            score += 10 / count;
-          }
-        }
-        if (score > bestScore) {
-          bestScore = score;
-          bestSection = section;
-        }
-      });
-
-      if (!matchedSection && bestScore >= 5 && bestSection) {
-        matchedSection = bestSection;
-        console.log("[SectionMatch] Using content match", {
-          sectionName: matchedSection.sectionName || null,
-          score: bestScore,
-        });
-      } else {
-        console.log("[SectionMatch] No strong name or content match", {
-          bestNameScore,
-          bestContentScore: bestScore,
-        });
-      }
+      console.log(
+        "[SectionMatch] No crawled_pages match; skipping section-based lead question",
+        { adminForLookup, urlForLookup },
+      );
+      return null;
     }
   } else {
     console.log(
-      "[SectionMatch] Empty contextualPageContext; skipping matching",
+      "[SectionMatch] Missing admin/url/context; skipping crawled_pages match",
+      { hasAdmin: !!adminForLookup, hasUrl: !!urlForLookup },
     );
+    return null;
   }
   if (
     matchedSection &&
