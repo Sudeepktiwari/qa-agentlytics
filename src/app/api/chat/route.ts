@@ -876,19 +876,8 @@ async function matchSectionIndexFromCrawledText(
   adminId: string | null | undefined,
   pageUrl: string | null | undefined,
   context: any,
-  explicitSectionName?: string | null,
+  _explicitSectionName?: string | null,
 ): Promise<number | null> {
-  let ctxObj: any = null;
-  if (typeof context === "string") {
-    try {
-      ctxObj = JSON.parse(context);
-    } catch {
-      ctxObj = null;
-    }
-  } else if (context && typeof context === "object") {
-    ctxObj = context;
-  }
-
   const ctxString =
     typeof context === "string" ? context : JSON.stringify(context || {});
   const ctxLower = ctxString.toLowerCase();
@@ -900,31 +889,6 @@ async function matchSectionIndexFromCrawledText(
     return null;
   }
 
-  const rawSectionName =
-    explicitSectionName ||
-    (ctxObj &&
-      (ctxObj.sectionName ||
-        (ctxObj.sectionData && ctxObj.sectionData.sectionName))) ||
-    "";
-  const canonicalToken = (w: string) => {
-    const base = w.trim().toLowerCase();
-    if (base.length > 4 && base.endsWith("s")) {
-      return base.slice(0, -1);
-    }
-    return base;
-  };
-
-  const semanticKey = normalizeSectionKey(rawSectionName);
-  const semanticTokens =
-    semanticKey && semanticKey.length > 0
-      ? new Set(
-          semanticKey
-            .split(" ")
-            .map(canonicalToken)
-            .filter((w) => w.length > 1),
-        )
-      : null;
-
   const crawled = await findCrawledPageByUrl(adminId, pageUrl);
   if (!crawled || !crawled.text || typeof crawled.text !== "string") {
     return null;
@@ -933,30 +897,11 @@ async function matchSectionIndexFromCrawledText(
   if (!Array.isArray(blocks) || blocks.length === 0) {
     return null;
   }
-
-  if (semanticKey && semanticTokens && blocks.length > 0) {
-    let titleExactIndex: number | null = null;
-    blocks.forEach((block, index) => {
-      const titleKey = normalizeSectionKey(block.title || "");
-      if (titleKey && titleKey === semanticKey) {
-        titleExactIndex = index;
-      }
-    });
-    if (titleExactIndex !== null) {
-      console.log("[CrawledMatch] Using exact title match from crawled text", {
-        pageUrl,
-        index: titleExactIndex,
-        title: blocks[titleExactIndex].title || null,
-      });
-      return titleExactIndex;
-    }
-  }
-
   console.log("[CrawledMatch] Matching section from crawled text", {
     pageUrl,
     blocksCount: blocks.length,
     contextPreview: ctxString.substring(0, 400),
-    sectionName: rawSectionName || null,
+    sectionName: null,
   });
 
   // Strong exact-text style match: if the normalized viewport text appears
@@ -990,44 +935,18 @@ async function matchSectionIndexFromCrawledText(
   let bestScore = -1;
   let bestIndex: number | null = null;
   blocks.forEach((block, index) => {
-    const titleLower = String(block.title || "").toLowerCase();
     const bodyLower = String(block.body || "").toLowerCase();
-    if (!titleLower && !bodyLower) {
+    if (!bodyLower) {
       return;
     }
     let score = 0;
-
-    if (semanticTokens && block.title) {
-      const titleKey = normalizeSectionKey(block.title || "");
-      if (titleKey) {
-        const titleTokens = titleKey
-          .split(" ")
-          .map(canonicalToken)
-          .filter((w) => w.length > 1);
-        let hintOverlap = 0;
-        titleTokens.forEach((t) => {
-          if (semanticTokens.has(t)) {
-            hintOverlap += 1;
-          }
-        });
-        if (hintOverlap > 0) {
-          score += 80 + hintOverlap * 10;
-        }
+    let hits = 0;
+    ctxWords.forEach((w) => {
+      if (bodyLower.includes(w)) {
+        hits += 1;
       }
-    }
-
-    if (titleLower && ctxLower.includes(titleLower)) {
-      score += Math.min(40, 10 + titleLower.length);
-    }
-    if (bodyLower) {
-      let hits = 0;
-      ctxWords.forEach((w) => {
-        if (bodyLower.includes(w)) {
-          hits += 1;
-        }
-      });
-      score += hits * 3;
-    }
+    });
+    score += hits * 3;
     if (score > bestScore) {
       bestScore = score;
       bestIndex = index;
@@ -1108,49 +1027,6 @@ async function matchSectionAndFirstLeadQuestion(
     }
   }
 
-  const hintKey =
-    typeof explicitSectionName === "string"
-      ? normalizeSectionKey(explicitSectionName)
-      : "";
-  if (hintKey) {
-    let bestHintScore = -1;
-    let bestByHint: any = null;
-    const hintTokens = new Set(
-      hintKey
-        .split(" ")
-        .map((w) => w.trim())
-        .filter((w) => w.length > 1),
-    );
-    sections.forEach((s: any) => {
-      const sKey = normalizeSectionKey(s.sectionName || "");
-      if (!sKey || sKey.length === 0) return;
-      const sectionTokens = sKey
-        .split(" ")
-        .map((w) => w.trim())
-        .filter((w) => w.length > 1);
-      let overlap = 0;
-      sectionTokens.forEach((t) => {
-        if (hintTokens.has(t)) overlap += 1;
-      });
-      if (overlap === 0) return;
-      let score = overlap * 10;
-      if (sKey === hintKey) {
-        score += 50;
-      }
-      if (score > bestHintScore) {
-        bestHintScore = score;
-        bestByHint = s;
-      }
-    });
-    if (bestByHint) {
-      matchedSection = bestByHint;
-      console.log("[SectionMatch] Using explicit section hint", {
-        hint: hintKey,
-        sectionNames: sections.map((s: any) => s.sectionName || null),
-        sectionName: matchedSection.sectionName || null,
-      });
-    }
-  }
   if (lowerContext) {
     const contextWords = lowerContext
       .split(/[\s,.-]+/)
