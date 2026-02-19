@@ -1009,15 +1009,15 @@ function normalizeSectionKey(raw: string): string {
     .trim();
 }
 
-function matchSectionAndFirstLeadQuestion(
+async function matchSectionAndFirstLeadQuestion(
   structuredSummaryDoc: any,
   contextualPageContext: any,
   explicitSectionName?: string | null,
-): {
+): Promise<{
   sectionName: string | null;
   question: string;
   buttons: string[];
-} | null {
+} | null> {
   const sections: any[] =
     structuredSummaryDoc?.structuredSummary?.sections || [];
   if (!Array.isArray(sections) || sections.length === 0) {
@@ -1034,6 +1034,31 @@ function matchSectionAndFirstLeadQuestion(
   });
   const lowerContext = ctxString.toLowerCase();
   let matchedSection: any = null;
+
+  const adminForLookup =
+    structuredSummaryDoc?.adminId || structuredSummaryDoc?.admin_id || null;
+  const urlForLookup = structuredSummaryDoc?.url || null;
+
+  if (adminForLookup && urlForLookup && lowerContext.trim().length >= 10) {
+    const idxFromCrawled = await matchSectionIndexFromCrawledText(
+      adminForLookup,
+      urlForLookup,
+      contextualPageContext,
+      explicitSectionName || null,
+    );
+    if (
+      idxFromCrawled !== null &&
+      idxFromCrawled >= 0 &&
+      idxFromCrawled < sections.length
+    ) {
+      matchedSection = sections[idxFromCrawled];
+      console.log("[SectionMatch] Using crawled_pages [SECTION] index", {
+        index: idxFromCrawled,
+        sectionName: matchedSection.sectionName || null,
+      });
+    }
+  }
+
   const hintKey =
     typeof explicitSectionName === "string"
       ? normalizeSectionKey(explicitSectionName)
@@ -5105,7 +5130,7 @@ export async function POST(req: NextRequest) {
               sectionNames: sections.map((s: any) => s.sectionName || null),
             });
 
-            const matched = matchSectionAndFirstLeadQuestion(
+            const matched = await matchSectionAndFirstLeadQuestion(
               structuredSummaryDoc,
               contextualPageContext,
               incomingSectionHint,
@@ -9403,7 +9428,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
                 docId: String(structuredSummaryDoc._id || ""),
               });
               if (!secondary) {
-                const matched = matchSectionAndFirstLeadQuestion(
+                const matched = await matchSectionAndFirstLeadQuestion(
                   structuredSummaryDoc,
                   contextualPageContext,
                   (body as any)?.sectionHint || null,
@@ -9560,7 +9585,7 @@ Focus on being genuinely useful based on what the user is actually viewing.`;
               lookupAdminId,
               pageUrl,
             );
-            let matched = matchSectionAndFirstLeadQuestion(
+            let matched = await matchSectionAndFirstLeadQuestion(
               structuredSummaryDoc,
               contextualPageContext,
               (body as any)?.sectionHint || null,
@@ -12647,7 +12672,7 @@ CRITICAL: If intent is unclear and requirements are missing, ask ONE short clari
             resolvedAdminId,
             pageUrl,
           );
-          const matched = matchSectionAndFirstLeadQuestion(
+          const matched = await matchSectionAndFirstLeadQuestion(
             ssDoc,
             contextualPageContext,
             (body as any)?.sectionHint || null,
