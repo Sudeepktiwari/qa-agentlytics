@@ -901,35 +901,23 @@ async function matchSectionIndexFromCrawledText(
     pageUrl,
     blocksCount: blocks.length,
     contextPreview: ctxString.substring(0, 400),
-    sectionName: null,
+    ctxLength: ctxNormalized.length,
   });
 
-  // Exact substring-based matching only.
-  // We look for sections whose normalized body text appears as a contiguous
-  // substring in the normalized viewport text, or vice versa.
-  // No fuzzy word scoring is used to avoid wrong-section matches.
-  type Candidate = { index: number; overlapLength: number };
-  const candidates: Candidate[] = [];
+  // 1) Try strong exact-substring matches first.
+  type ExactCandidate = { index: number; overlapLength: number };
+  const exactCandidates: ExactCandidate[] = [];
 
   blocks.forEach((block, index) => {
     const bodyLower = String(block.body || "").toLowerCase();
-    if (!bodyLower) {
-      return;
-    }
+    if (!bodyLower) return;
     const bodyNormalized = bodyLower.replace(/\s+/g, " ").trim();
-    if (!bodyNormalized) {
-      return;
-    }
+    if (!bodyNormalized) return;
 
     const lenBody = bodyNormalized.length;
     const lenCtx = ctxNormalized.length;
     const minLen = Math.min(lenBody, lenCtx);
-
-    // Require a reasonable amount of text overlap so that very short headings
-    // or labels do not claim the match.
-    if (minLen < 40) {
-      return;
-    }
+    if (minLen < 40) return;
 
     let overlapLength = 0;
     if (lenBody <= lenCtx && ctxNormalized.includes(bodyNormalized)) {
@@ -938,26 +926,101 @@ async function matchSectionIndexFromCrawledText(
       overlapLength = lenCtx;
     }
 
-    if (overlapLength > 0) {
-      candidates.push({ index, overlapLength });
+    if (overlapLength >= 60) {
+      exactCandidates.push({ index, overlapLength });
     }
   });
 
-  if (!candidates.length) {
-    console.log("[CrawledMatch] No exact substring match from crawled text", {
+  if (exactCandidates.length > 0) {
+    exactCandidates.sort((a, b) => b.overlapLength - a.overlapLength);
+    const best = exactCandidates[0];
+    console.log("[CrawledMatch] Using strong exact substring match", {
       pageUrl,
-      ctxLength: ctxNormalized.length,
-      blocksCount: blocks.length,
+      index: best.index,
+      overlapLength: best.overlapLength,
+      title: blocks[best.index].title || null,
+    });
+    return best.index;
+  }
+
+  // 2) Fallback: word-overlap scoring across crawled [SECTION] blocks only.
+  const ctxWords = ctxNormalized
+    .split(/[\s,.-]+/)
+    .map((w) => w.trim())
+    .filter((w) => w.length > 3);
+  if (!ctxWords.length) {
+    console.log("[CrawledMatch] No usable context words", {
+      pageUrl,
     });
     return null;
   }
 
-  candidates.sort((a, b) => b.overlapLength - a.overlapLength);
-  const best = candidates[0];
-  console.log("[CrawledMatch] Matched section index from crawled text", {
+  type ScoredCandidate = { index: number; score: number; hits: number };
+  const dfMap = new Map<string, number>();
+  const blockWordSets: { index: number; words: Set<string> }[] = [];
+
+  blocks.forEach((block, index) => {
+    const bodyLower = String(block.body || "").toLowerCase();
+    if (!bodyLower) return;
+    const bodyNormalized = bodyLower.replace(/\s+/g, " ").trim();
+    if (!bodyNormalized) return;
+    const words = bodyNormalized
+      .split(/[\s,.-]+/)
+      .map((w) => w.trim())
+      .filter((w) => w.length > 3);
+    const set = new Set(words);
+    if (!set.size) return;
+    blockWordSets.push({ index, words: set });
+    set.forEach((w) => {
+      dfMap.set(w, (dfMap.get(w) || 0) + 1);
+    });
+  });
+
+  const scored: ScoredCandidate[] = [];
+  blockWordSets.forEach(({ index, words }) => {
+    let score = 0;
+    let hits = 0;
+    ctxWords.forEach((w) => {
+      if (words.has(w)) {
+        hits += 1;
+        const df = dfMap.get(w) || 1;
+        score += 10 / df;
+      }
+    });
+    if (hits > 0) {
+      scored.push({ index, score, hits });
+    }
+  });
+
+  if (!scored.length) {
+    console.log("[CrawledMatch] No word-overlap match from crawled text", {
+      pageUrl,
+    });
+    return null;
+  }
+
+  scored.sort((a, b) => b.score - a.score);
+  const best = scored[0];
+  const second = scored[1] || null;
+
+  if (
+    best.score < 8 ||
+    best.hits < 4 ||
+    (second && second.score > best.score * 0.7)
+  ) {
+    console.log("[CrawledMatch] Ambiguous word-overlap; no section chosen", {
+      pageUrl,
+      best,
+      second,
+    });
+    return null;
+  }
+
+  console.log("[CrawledMatch] Using word-overlap match from crawled text", {
     pageUrl,
     index: best.index,
-    overlapLength: best.overlapLength,
+    score: best.score,
+    hits: best.hits,
     title: blocks[best.index].title || null,
   });
   return best.index;
