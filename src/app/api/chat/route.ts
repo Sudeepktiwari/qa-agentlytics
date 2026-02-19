@@ -892,7 +892,11 @@ async function matchSectionIndexFromCrawledText(
   const ctxString =
     typeof context === "string" ? context : JSON.stringify(context || {});
   const ctxLower = ctxString.toLowerCase();
-  if (!adminId || !pageUrl || !ctxLower || ctxLower.trim().length < 10) {
+  if (!adminId || !pageUrl || !ctxLower) {
+    return null;
+  }
+  const ctxNormalized = ctxLower.trim();
+  if (!ctxNormalized) {
     return null;
   }
 
@@ -935,7 +939,32 @@ async function matchSectionIndexFromCrawledText(
     contextPreview: ctxString.substring(0, 400),
     sectionName: rawSectionName || null,
   });
-  const ctxWords = ctxLower
+
+  // Strong exact-text style match: if the normalized viewport text appears
+  // verbatim inside a single [SECTION] block, use that index immediately.
+  const ctxForExact =
+    ctxNormalized.length > 400
+      ? ctxNormalized.substring(0, 400)
+      : ctxNormalized;
+  let exactIndex: number | null = null;
+  blocks.forEach((block, index) => {
+    const bodyLower = String(block.body || "").toLowerCase();
+    if (!bodyLower) return;
+    const bodyNormalized = bodyLower.replace(/\s+/g, " ").trim();
+    if (bodyNormalized && bodyNormalized.includes(ctxForExact)) {
+      exactIndex = index;
+    }
+  });
+  if (exactIndex !== null) {
+    console.log("[CrawledMatch] Using exact text match from crawled text", {
+      pageUrl,
+      index: exactIndex,
+      snippet: ctxForExact.substring(0, 120),
+    });
+    return exactIndex;
+  }
+
+  const ctxWords = ctxNormalized
     .split(/[\s,.-]+/)
     .map((w) => w.trim())
     .filter((w) => w.length > 3);
