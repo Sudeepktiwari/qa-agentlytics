@@ -107,14 +107,55 @@ async function generateDiagnosticOptionDetailsList(
 ): Promise<{ label: string; answer: string }[]> {
   if (!diagnosticAnswer || !options || options.length === 0) return [];
   try {
+    //     const prompt = `
+    // SYSTEM:
+    // You are writing sales-pitch style explanations for each diagnostic option.
+
+    // RULES:
+    // - For each option, explain the specific feature or capability, the business benefit, and how it helps the user.
+    // - Keep each explanation 1-2 short sentences.
+    // - Tie explanations to the diagnostic answer and context.
+
+    // CONTEXT:
+    // ${context}
+
+    // INPUT:
+    // label: ${label}
+    // workflow: ${workflow}
+    // diagnostic_answer: ${diagnosticAnswer}
+    // diagnostic_options: ${JSON.stringify(options)}
+
+    // OUTPUT:
+    // Return a JSON object with:
+    // - "diagnostic_option_details": array of objects, one per option, each with:
+    //    - "label": the exact option string.
+    //    - "answer": the sales-pitch style explanation.`;
     const prompt = `
 SYSTEM:
-You are writing sales-pitch style explanations for each diagnostic option.
+You are writing mechanism-driven "Recommended Actions" explanations 
+for a proactive AI system used by businesses.
 
-RULES:
-- For each option, explain the specific feature or capability, the business benefit, and how it helps the user.
-- Keep each explanation 1-2 short sentences.
-- Tie explanations to the diagnostic answer and context.
+PRIMARY GOAL:
+Rewrite each recommended action in an authority-style narrative format.
+
+Each explanation MUST:
+
+1) Start with a positioning contrast 
+   (e.g., "The system does not wait...", "Traditional tools react, this system...")
+2) Explain what behavioral signals are continuously monitored 
+   (pricing dwell, comparison loops, scroll hesitation, exit intent, repeat FAQ visits, etc.)
+3) Describe how thresholds or readiness modeling determine activation
+4) Explain what type of contextual intervention is automatically triggered
+5) End with a clear business outcome tied to conversion stability or lead capture
+
+WRITING RULES:
+Use short paragraphs (not bullets)
+8–14 lines per option
+Professional, authoritative tone
+No hype words
+No brand names
+Focus on automation and behavioral modeling
+Avoid generic phrases like "boost growth" without explaining mechanism
 
 CONTEXT:
 ${context}
@@ -127,10 +168,10 @@ diagnostic_options: ${JSON.stringify(options)}
 
 OUTPUT:
 Return a JSON object with:
-- "diagnostic_option_details": array of objects, one per option, each with:
-   - "label": the exact option string.
-   - "answer": the sales-pitch style explanation.`;
-
+"diagnostic_option_details": array of objects, one per option, each with:
+  - "label": the exact option string
+  - "answer": the full narrative explanation
+`;
     const response = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       response_format: { type: "json_object" },
