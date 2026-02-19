@@ -3856,6 +3856,9 @@ export async function GET(request: Request) {
           bookingType: data.bookingType || null,
           // Carry multi-field inputs if provided
           inputFields: data.inputFields || null,
+          diagnosticOptionDetails: Array.isArray(data.diagnosticOptionDetails)
+            ? data.diagnosticOptionDetails
+            : null,
             sources: data.sources || [],
             sectionName: sectionNameFromApi,
             isLeadQuestion: !!sectionNameFromApi
@@ -3994,6 +3997,9 @@ export async function GET(request: Request) {
         showBookingCalendar: data.showBookingCalendar || false,
         bookingType: data.bookingType || null,
         inputFields: data.inputFields || null,
+        diagnosticOptionDetails: Array.isArray(data.diagnosticOptionDetails)
+          ? data.diagnosticOptionDetails
+          : null,
         onboardingAction: inferredAction,
         followupType: (data.type || null),
         sources: Array.isArray(data.sources) ? data.sources : [],
@@ -4413,7 +4419,10 @@ export async function GET(request: Request) {
                 clickedLabel: displayText,
                 parentMessage: {
                   content: (msg && msg.content) ? String(msg.content) : '',
-                  buttons: parentButtons
+                  buttons: parentButtons,
+                  diagnosticOptionDetails: Array.isArray(msg?.diagnosticOptionDetails)
+                    ? msg.diagnosticOptionDetails
+                    : null
                 },
                 isLeadQuestion: isLead,
                 sectionName: (msg && msg.sectionName) ? String(msg.sectionName) : null

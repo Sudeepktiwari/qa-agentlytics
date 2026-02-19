@@ -4027,6 +4027,48 @@ function sanitizeButtonLabel(s: any): string {
   return String(s || "").trim();
 }
 
+// Resolve detailed explanation for a diagnostic option click using parentMessage.diagnosticOptionDetails
+async function resolveDiagnosticOptionDetail(
+  clickedLabel: string,
+  parentMessage: {
+    content: string;
+    buttons: string[];
+    diagnosticOptionDetails?: Array<{ label: string; answer: string }>;
+  },
+): Promise<{
+  mainText: string;
+  buttons: string[];
+  emailPrompt: string;
+} | null> {
+  const details = Array.isArray(parentMessage.diagnosticOptionDetails)
+    ? parentMessage.diagnosticOptionDetails
+    : null;
+  if (!details || details.length === 0) {
+    return null;
+  }
+
+  const normalize = (s: string) =>
+    normalizeTextForMatching(typeof s === "string" ? s : "");
+
+  const target = normalize(clickedLabel);
+  if (!target) return null;
+
+  const match = details.find((d) => {
+    const lbl = normalize(d.label || "");
+    return lbl === target || lbl.includes(target) || target.includes(lbl);
+  });
+
+  if (!match || !match.answer || typeof match.answer !== "string") {
+    return null;
+  }
+
+  return {
+    mainText: match.answer,
+    buttons: [],
+    emailPrompt: "",
+  };
+}
+
 // Resolve diagnostic answer for a lead question option click
 async function resolveLeadQuestionDiagnosticAnswer(
   clickedLabel: string,
@@ -4038,6 +4080,7 @@ async function resolveLeadQuestionDiagnosticAnswer(
   mainText: string;
   buttons: string[];
   emailPrompt: string;
+  diagnosticOptionDetails?: Array<{ label: string; answer: string }>;
 } | null> {
   if (!adminId || !pageUrl) {
     console.log("[DiagnosticResolver] Missing adminId or pageUrl");
@@ -4210,6 +4253,13 @@ async function resolveLeadQuestionDiagnosticAnswer(
       .filter((label: string) => label.length > 0)
       .slice(0, 6); // Limit to 6 buttons max
 
+    const diagnosticOptionDetails =
+      matchedOption &&
+      typeof matchedOption === "object" &&
+      Array.isArray((matchedOption as any).diagnostic_option_details)
+        ? (matchedOption as any).diagnostic_option_details
+        : [];
+
     console.log("[DiagnosticResolver] Found diagnostic answer", {
       diagnosticAnswer: resolvedDiagnosticAnswer.substring(0, 100),
       buttonsCount: sanitizedButtons.length,
@@ -4220,6 +4270,7 @@ async function resolveLeadQuestionDiagnosticAnswer(
       mainText: resolvedDiagnosticAnswer,
       buttons: sanitizedButtons,
       emailPrompt: "",
+      diagnosticOptionDetails,
     };
   } catch (error) {
     console.error(
@@ -4395,6 +4446,9 @@ export async function POST(req: NextRequest) {
       ? {
           content: buttonClickContext.parentMessage.content?.substring(0, 100),
           buttonsCount: buttonClickContext.parentMessage.buttons?.length,
+          hasDiagnosticDetails: Array.isArray(
+            buttonClickContext.parentMessage.diagnosticOptionDetails,
+          ),
         }
       : null,
   });
@@ -4416,6 +4470,18 @@ export async function POST(req: NextRequest) {
         ),
       },
     );
+
+    const detailResponse = await resolveDiagnosticOptionDetail(
+      buttonClickContext.clickedLabel,
+      buttonClickContext.parentMessage,
+    );
+
+    if (detailResponse) {
+      console.log(
+        "[LeadQuestionDiagnostic] Returning diagnostic option detail response",
+      );
+      return NextResponse.json(detailResponse, { headers: corsHeaders });
+    }
 
     const diagnosticResponse = await resolveLeadQuestionDiagnosticAnswer(
       buttonClickContext.clickedLabel,
