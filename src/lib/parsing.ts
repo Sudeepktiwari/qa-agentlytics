@@ -13,22 +13,19 @@ export function parseSectionBlocks(text: string) {
 
 export function mergeSmallSectionBlocks(
   blocks: { title: string; body: string }[],
-  minChars = 250,
+  minChars = 500,
 ) {
   if (!Array.isArray(blocks) || blocks.length === 0) return [];
   const merged: { title: string; body: string }[] = [];
   let current = { ...blocks[0] };
 
-  const lengthOf = (body: string) =>
-    body.replace(/\s+/g, " ").trim().length;
+  const lengthOf = (body: string) => body.replace(/\s+/g, " ").trim().length;
 
   for (let i = 1; i < blocks.length; i++) {
     const next = blocks[i];
     if (lengthOf(current.body) < minChars) {
       const title =
-        current.title ||
-        next.title ||
-        `Section ${merged.length + 1}`;
+        current.title || next.title || `Section ${merged.length + 1}`;
       current = {
         title,
         body: `${current.body}\n\n${next.body}`.trim(),
