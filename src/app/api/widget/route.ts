@@ -4409,15 +4409,15 @@ export async function GET(request: Request) {
                   }).filter(Boolean)
                 : [];
               const isLead = !!(msg && (msg.isLeadQuestion || msg.sectionName));
-              const ctx = isLead ? {
+              const ctx = {
                 clickedLabel: displayText,
                 parentMessage: {
                   content: (msg && msg.content) ? String(msg.content) : '',
                   buttons: parentButtons
                 },
-                isLeadQuestion: true,
+                isLeadQuestion: isLead,
                 sectionName: (msg && msg.sectionName) ? String(msg.sectionName) : null
-              } : null;
+              };
               console.log('[WIDGET BUTTON] Button clicked:', displayText, 'isLead:', isLead, 'sectionName:', msg?.sectionName, 'ctx:', ctx);
               sendMessage(displayText, ctx);
             });

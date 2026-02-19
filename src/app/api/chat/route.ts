@@ -3980,10 +3980,7 @@ function detectIntent({
 
 // Helper function to normalize text for matching (trim, collapse whitespace, lowercase)
 function normalizeTextForMatching(text: string): string {
-  return text
-    .trim()
-    .replace(/\s+/g, " ")
-    .toLowerCase();
+  return text.trim().replace(/\s+/g, " ").toLowerCase();
 }
 
 // Helper function to sanitize button labels (backend equivalent of frontend sanitizeButtonLabel)
@@ -4012,7 +4009,11 @@ async function resolveLeadQuestionDiagnosticAnswer(
   sectionName: string | null,
   adminId: string | null,
   pageUrl: string,
-): Promise<{ mainText: string; buttons: string[]; emailPrompt: string } | null> {
+): Promise<{
+  mainText: string;
+  buttons: string[];
+  emailPrompt: string;
+} | null> {
   if (!adminId || !pageUrl) {
     console.log("[DiagnosticResolver] Missing adminId or pageUrl");
     return null;
@@ -4020,14 +4021,19 @@ async function resolveLeadQuestionDiagnosticAnswer(
 
   try {
     // Load structured summary
-    const structuredSummaryDoc = await findStructuredSummaryByUrl(adminId, pageUrl);
+    const structuredSummaryDoc = await findStructuredSummaryByUrl(
+      adminId,
+      pageUrl,
+    );
     if (!structuredSummaryDoc?.structuredSummary?.sections) {
       console.log("[DiagnosticResolver] No structured summary found");
       return null;
     }
 
     const sections = structuredSummaryDoc.structuredSummary.sections || [];
-    const normalizedParentContent = normalizeTextForMatching(parentMessage.content);
+    const normalizedParentContent = normalizeTextForMatching(
+      parentMessage.content,
+    );
     const normalizedClickedLabel = normalizeTextForMatching(clickedLabel);
 
     console.log("[DiagnosticResolver] Looking for diagnostic answer", {
@@ -4064,14 +4070,20 @@ async function resolveLeadQuestionDiagnosticAnswer(
 
     const getDiagnosticAnswer = (opt: any): string | null => {
       const ans =
-        (typeof opt?.diagnostic_answer === "string" ? opt.diagnostic_answer : null) ??
-        (typeof opt?.diagnosticAnswer === "string" ? opt.diagnosticAnswer : null);
+        (typeof opt?.diagnostic_answer === "string"
+          ? opt.diagnostic_answer
+          : null) ??
+        (typeof opt?.diagnosticAnswer === "string"
+          ? opt.diagnosticAnswer
+          : null);
       return ans && ans.trim().length > 0 ? ans : null;
     };
 
     const getDiagnosticOptions = (opt: any): any[] => {
       const opts =
-        (Array.isArray(opt?.diagnostic_options) ? opt.diagnostic_options : null) ??
+        (Array.isArray(opt?.diagnostic_options)
+          ? opt.diagnostic_options
+          : null) ??
         (Array.isArray(opt?.diagnosticOptions) ? opt.diagnosticOptions : null);
       return Array.isArray(opts) ? opts : [];
     };
@@ -4105,7 +4117,8 @@ async function resolveLeadQuestionDiagnosticAnswer(
                 typeof opt === "string" ? opt : sanitizeButtonLabel(opt);
               if (optionLabelMatches(optLabel)) {
                 // Found matching option
-                const diagAnswer = typeof opt === "object" ? getDiagnosticAnswer(opt) : null;
+                const diagAnswer =
+                  typeof opt === "object" ? getDiagnosticAnswer(opt) : null;
                 if (typeof opt === "object" && diagAnswer) {
                   matchedOption = opt;
                   matchedSection = section;
@@ -4131,7 +4144,8 @@ async function resolveLeadQuestionDiagnosticAnswer(
               const optLabel =
                 typeof opt === "string" ? opt : sanitizeButtonLabel(opt);
               if (optionLabelMatches(optLabel)) {
-                const diagAnswer = typeof opt === "object" ? getDiagnosticAnswer(opt) : null;
+                const diagAnswer =
+                  typeof opt === "object" ? getDiagnosticAnswer(opt) : null;
                 if (typeof opt === "object" && diagAnswer) {
                   matchedOption = opt;
                   matchedSection = section;
@@ -4151,10 +4165,13 @@ async function resolveLeadQuestionDiagnosticAnswer(
         ? getDiagnosticAnswer(matchedOption)
         : null;
     if (!matchedOption || !resolvedDiagnosticAnswer) {
-      console.log("[DiagnosticResolver] No diagnostic answer found for option", {
-        clickedLabel,
-        parentContent: parentMessage.content.substring(0, 100),
-      });
+      console.log(
+        "[DiagnosticResolver] No diagnostic answer found for option",
+        {
+          clickedLabel,
+          parentContent: parentMessage.content.substring(0, 100),
+        },
+      );
       return null;
     }
 
@@ -4180,7 +4197,10 @@ async function resolveLeadQuestionDiagnosticAnswer(
       emailPrompt: "",
     };
   } catch (error) {
-    console.error("[DiagnosticResolver] Error resolving diagnostic answer", error);
+    console.error(
+      "[DiagnosticResolver] Error resolving diagnostic answer",
+      error,
+    );
     return null;
   }
 }
@@ -4346,24 +4366,31 @@ export async function POST(req: NextRequest) {
     isLeadQuestion: buttonClickContext?.isLeadQuestion,
     clickedLabel: buttonClickContext?.clickedLabel,
     sectionName: buttonClickContext?.sectionName,
-    parentMessage: buttonClickContext?.parentMessage ? {
-      content: buttonClickContext.parentMessage.content?.substring(0, 100),
-      buttonsCount: buttonClickContext.parentMessage.buttons?.length
-    } : null
+    parentMessage: buttonClickContext?.parentMessage
+      ? {
+          content: buttonClickContext.parentMessage.content?.substring(0, 100),
+          buttonsCount: buttonClickContext.parentMessage.buttons?.length,
+        }
+      : null,
   });
-  
+
   if (
     buttonClickContext &&
     typeof buttonClickContext === "object" &&
-    buttonClickContext.isLeadQuestion === true &&
     buttonClickContext.clickedLabel &&
     buttonClickContext.parentMessage
   ) {
-    console.log("[LeadQuestionDiagnostic] Detected lead question option click", {
-      clickedLabel: buttonClickContext.clickedLabel,
-      sectionName: buttonClickContext.sectionName || null,
-      parentContent: buttonClickContext.parentMessage.content?.substring(0, 100),
-    });
+    console.log(
+      "[LeadQuestionDiagnostic] Detected lead question option click",
+      {
+        clickedLabel: buttonClickContext.clickedLabel,
+        sectionName: buttonClickContext.sectionName || null,
+        parentContent: buttonClickContext.parentMessage.content?.substring(
+          0,
+          100,
+        ),
+      },
+    );
 
     const diagnosticResponse = await resolveLeadQuestionDiagnosticAnswer(
       buttonClickContext.clickedLabel,
@@ -4380,7 +4407,9 @@ export async function POST(req: NextRequest) {
       });
       return NextResponse.json(diagnosticResponse, { headers: corsHeaders });
     } else {
-      console.log("[LeadQuestionDiagnostic] No diagnostic answer found, falling through to normal chat flow");
+      console.log(
+        "[LeadQuestionDiagnostic] No diagnostic answer found, falling through to normal chat flow",
+      );
     }
   }
 

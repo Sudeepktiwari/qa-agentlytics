@@ -1146,7 +1146,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
 
     trackNudge(action, { pageUrl, adminId, message: msg });
     setInput("");
-    
+
     // Prepare button click context if this is a lead question
     const buttonClickContext = msg.isLeadQuestion
       ? {
@@ -1159,7 +1159,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
           sectionName: msg.sectionName,
         }
       : undefined;
-    
+
     sendMessage(action, buttonClickContext);
   };
 
@@ -1358,6 +1358,7 @@ const Chatbot: React.FC<ChatbotProps> = ({
           ...(adminId ? { adminId } : {}),
           messageType,
           ...(buttonClickContext ? { buttonClickContext } : {}),
+          ...(hasBeenGreeted ? { hasBeenGreeted: true } : {}),
         }),
       });
 
@@ -1366,7 +1367,8 @@ const Chatbot: React.FC<ChatbotProps> = ({
 
       // Check if this is a lead question response (has sectionName or is from lead question trigger)
       const isLeadQuestion = !!(data.sectionName || data.answer?.sectionName);
-      const sectionName = data.sectionName || data.answer?.sectionName || undefined;
+      const sectionName =
+        data.sectionName || data.answer?.sectionName || undefined;
 
       const newMessage = {
         role: "assistant" as const,
