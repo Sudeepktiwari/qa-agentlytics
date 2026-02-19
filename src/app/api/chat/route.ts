@@ -904,29 +904,43 @@ async function matchSectionIndexFromCrawledText(
     ctxLength: ctxNormalized.length,
   });
 
-  // 1) Try strong exact-substring matches first.
+  // Normalize to alphanumeric+space so we compare on actual text, not punctuation.
+  const ctxAlpha = ctxLower
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!ctxAlpha) {
+    console.log("[CrawledMatch] Empty alpha context after normalization", {
+      pageUrl,
+    });
+    return null;
+  }
+
   type ExactCandidate = { index: number; overlapLength: number };
   const exactCandidates: ExactCandidate[] = [];
 
   blocks.forEach((block, index) => {
     const bodyLower = String(block.body || "").toLowerCase();
     if (!bodyLower) return;
-    const bodyNormalized = bodyLower.replace(/\s+/g, " ").trim();
-    if (!bodyNormalized) return;
+    const bodyAlpha = bodyLower
+      .replace(/[^a-z0-9]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (!bodyAlpha) return;
 
-    const lenBody = bodyNormalized.length;
-    const lenCtx = ctxNormalized.length;
+    const lenBody = bodyAlpha.length;
+    const lenCtx = ctxAlpha.length;
     const minLen = Math.min(lenBody, lenCtx);
     if (minLen < 40) return;
 
     let overlapLength = 0;
-    if (lenBody <= lenCtx && ctxNormalized.includes(bodyNormalized)) {
+    if (lenBody <= lenCtx && ctxAlpha.includes(bodyAlpha)) {
       overlapLength = lenBody;
-    } else if (lenCtx < lenBody && bodyNormalized.includes(ctxNormalized)) {
+    } else if (lenCtx < lenBody && bodyAlpha.includes(ctxAlpha)) {
       overlapLength = lenCtx;
     }
 
-    if (overlapLength >= 60) {
+    if (overlapLength >= 40) {
       exactCandidates.push({ index, overlapLength });
     }
   });
@@ -934,7 +948,7 @@ async function matchSectionIndexFromCrawledText(
   if (exactCandidates.length > 0) {
     exactCandidates.sort((a, b) => b.overlapLength - a.overlapLength);
     const best = exactCandidates[0];
-    console.log("[CrawledMatch] Using strong exact substring match", {
+    console.log("[CrawledMatch] Using exact alpha-substring match", {
       pageUrl,
       index: best.index,
       overlapLength: best.overlapLength,
@@ -943,90 +957,8 @@ async function matchSectionIndexFromCrawledText(
     return best.index;
   }
 
-  // 2) Fallback: word-overlap scoring across crawled [SECTION] blocks only.
-  const ctxWords = ctxNormalized
-    .split(/[\s,.-]+/)
-    .map((w) => w.trim())
-    .filter((w) => w.length > 3);
-  if (!ctxWords.length) {
-    console.log("[CrawledMatch] No usable context words", {
-      pageUrl,
-    });
-    return null;
-  }
-
-  type ScoredCandidate = { index: number; score: number; hits: number };
-  const dfMap = new Map<string, number>();
-  const blockWordSets: { index: number; words: Set<string> }[] = [];
-
-  blocks.forEach((block, index) => {
-    const bodyLower = String(block.body || "").toLowerCase();
-    if (!bodyLower) return;
-    const bodyNormalized = bodyLower.replace(/\s+/g, " ").trim();
-    if (!bodyNormalized) return;
-    const words = bodyNormalized
-      .split(/[\s,.-]+/)
-      .map((w) => w.trim())
-      .filter((w) => w.length > 3);
-    const set = new Set(words);
-    if (!set.size) return;
-    blockWordSets.push({ index, words: set });
-    set.forEach((w) => {
-      dfMap.set(w, (dfMap.get(w) || 0) + 1);
-    });
-  });
-
-  const scored: ScoredCandidate[] = [];
-  blockWordSets.forEach(({ index, words }) => {
-    let score = 0;
-    let hits = 0;
-    ctxWords.forEach((w) => {
-      if (words.has(w)) {
-        hits += 1;
-        const df = dfMap.get(w) || 1;
-        score += 10 / df;
-      }
-    });
-    if (hits > 0) {
-      scored.push({ index, score, hits });
-    }
-  });
-
-  if (!scored.length) {
-    console.log("[CrawledMatch] No word-overlap match from crawled text", {
-      pageUrl,
-    });
-    return null;
-  }
-
-  scored.sort((a, b) => b.score - a.score);
-  const best = scored[0];
-  const second = scored[1] || null;
-  if (best.score < 3 || best.hits < 2) {
-    console.log("[CrawledMatch] No strong word-overlap match", {
-      pageUrl,
-      best,
-    });
-    return null;
-  }
-
-  if (second && second.score > best.score * 0.85) {
-    console.log("[CrawledMatch] Ambiguous word-overlap; no section chosen", {
-      pageUrl,
-      best,
-      second,
-    });
-    return null;
-  }
-
-  console.log("[CrawledMatch] Using word-overlap match from crawled text", {
-    pageUrl,
-    index: best.index,
-    score: best.score,
-    hits: best.hits,
-    title: blocks[best.index].title || null,
-  });
-  return best.index;
+  console.log("[CrawledMatch] No exact alpha-substring match", { pageUrl });
+  return null;
 }
 
 function normalizeSectionKey(raw: string): string {
