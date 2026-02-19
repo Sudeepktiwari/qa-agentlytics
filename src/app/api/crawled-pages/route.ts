@@ -10,7 +10,10 @@ import {
   enrichStructuredSummary,
   normalizeStructuredSummary,
 } from "@/lib/diagnostic-generation";
-import { parseSectionBlocks } from "@/lib/parsing";
+import {
+  parseSectionBlocks,
+  mergeSmallSectionBlocks,
+} from "@/lib/parsing";
 
 const pc = new Pinecone({ apiKey: process.env.PINECONE_KEY! });
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
@@ -292,10 +295,9 @@ export async function POST(request: NextRequest) {
     const estimatedTokens = Math.ceil(reconstructedContent.length / 4);
     const maxTokensForDirect = 30000; // Leave room for prompt + response (GPT-4o-mini limit ~128k)
 
-    // Inject sectionContent from raw text if available (for both direct and chunked)
-    // This ensures [SECTION] markers are respected if present in reconstructedContent
-    const blocks = parseSectionBlocks(reconstructedContent);
-    // console.log removed
+    const rawBlocks = parseSectionBlocks(reconstructedContent);
+    const blocks =
+      rawBlocks.length > 0 ? mergeSmallSectionBlocks(rawBlocks) : rawBlocks;
 
     let structuredSummary;
 
@@ -624,8 +626,9 @@ IMPORTANT REQUIREMENTS:
 
     // console.log removed
 
-    // Inject sectionContent from raw text if available
-    const blocks = parseSectionBlocks(content);
+    const rawBlocks = parseSectionBlocks(content);
+    const blocks =
+      rawBlocks.length > 0 ? mergeSmallSectionBlocks(rawBlocks) : rawBlocks;
 
     // First pass: try to use startSubstring/endSubstring locators from AI
     if (normalized.sections && Array.isArray(normalized.sections)) {
