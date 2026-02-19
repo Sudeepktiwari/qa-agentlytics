@@ -904,67 +904,63 @@ async function matchSectionIndexFromCrawledText(
     sectionName: null,
   });
 
-  // Strong exact-text style match: if the normalized viewport text appears
-  // verbatim inside a single [SECTION] block, use that index immediately.
-  const ctxForExact =
-    ctxNormalized.length > 400
-      ? ctxNormalized.substring(0, 400)
-      : ctxNormalized;
-  let exactIndex: number | null = null;
-  blocks.forEach((block, index) => {
-    const bodyLower = String(block.body || "").toLowerCase();
-    if (!bodyLower) return;
-    const bodyNormalized = bodyLower.replace(/\s+/g, " ").trim();
-    if (bodyNormalized && bodyNormalized.includes(ctxForExact)) {
-      exactIndex = index;
-    }
-  });
-  if (exactIndex !== null) {
-    console.log("[CrawledMatch] Using exact text match from crawled text", {
-      pageUrl,
-      index: exactIndex,
-      snippet: ctxForExact.substring(0, 120),
-    });
-    return exactIndex;
-  }
+  // Exact substring-based matching only.
+  // We look for sections whose normalized body text appears as a contiguous
+  // substring in the normalized viewport text, or vice versa.
+  // No fuzzy word scoring is used to avoid wrong-section matches.
+  type Candidate = { index: number; overlapLength: number };
+  const candidates: Candidate[] = [];
 
-  const ctxWords = ctxNormalized
-    .split(/[\s,.-]+/)
-    .map((w) => w.trim())
-    .filter((w) => w.length > 3);
-  let bestScore = -1;
-  let bestIndex: number | null = null;
   blocks.forEach((block, index) => {
     const bodyLower = String(block.body || "").toLowerCase();
     if (!bodyLower) {
       return;
     }
-    let score = 0;
-    let hits = 0;
-    ctxWords.forEach((w) => {
-      if (bodyLower.includes(w)) {
-        hits += 1;
-      }
-    });
-    score += hits * 3;
-    if (score > bestScore) {
-      bestScore = score;
-      bestIndex = index;
+    const bodyNormalized = bodyLower.replace(/\s+/g, " ").trim();
+    if (!bodyNormalized) {
+      return;
+    }
+
+    const lenBody = bodyNormalized.length;
+    const lenCtx = ctxNormalized.length;
+    const minLen = Math.min(lenBody, lenCtx);
+
+    // Require a reasonable amount of text overlap so that very short headings
+    // or labels do not claim the match.
+    if (minLen < 40) {
+      return;
+    }
+
+    let overlapLength = 0;
+    if (lenBody <= lenCtx && ctxNormalized.includes(bodyNormalized)) {
+      overlapLength = lenBody;
+    } else if (lenCtx < lenBody && bodyNormalized.includes(ctxNormalized)) {
+      overlapLength = lenCtx;
+    }
+
+    if (overlapLength > 0) {
+      candidates.push({ index, overlapLength });
     }
   });
-  if (bestIndex === null || bestScore < 5) {
-    console.log("[CrawledMatch] No strong match from crawled text", {
-      bestScore,
+
+  if (!candidates.length) {
+    console.log("[CrawledMatch] No exact substring match from crawled text", {
+      pageUrl,
+      ctxLength: ctxNormalized.length,
+      blocksCount: blocks.length,
     });
     return null;
   }
+
+  candidates.sort((a, b) => b.overlapLength - a.overlapLength);
+  const best = candidates[0];
   console.log("[CrawledMatch] Matched section index from crawled text", {
     pageUrl,
-    index: bestIndex,
-    score: bestScore,
-    title: blocks[bestIndex].title || null,
+    index: best.index,
+    overlapLength: best.overlapLength,
+    title: blocks[best.index].title || null,
   });
-  return bestIndex;
+  return best.index;
 }
 
 function normalizeSectionKey(raw: string): string {
