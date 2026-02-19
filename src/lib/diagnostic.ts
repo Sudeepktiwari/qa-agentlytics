@@ -153,7 +153,9 @@ Use short paragraphs (not bullets)
 8–14 lines per option
 Professional, authoritative tone
 No hype words
-No brand names
+When the business or product name is present in the context, use it naturally
+when explaining how the business works or how it helps the user (do not invent
+a name if none is given)
 Focus on automation and behavioral modeling
 Avoid generic phrases like "boost growth" without explaining mechanism
 
