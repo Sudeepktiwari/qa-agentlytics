@@ -958,7 +958,102 @@ async function matchSectionIndexFromCrawledText(
   }
 
   console.log("[CrawledMatch] No exact alpha-substring match", { pageUrl });
-  return null;
+
+  const ctxWords = Array.from(
+    new Set(
+      ctxAlpha
+        .split(" ")
+        .map((w) => w.trim())
+        .filter((w) => w.length > 3),
+    ),
+  );
+  if (!ctxWords.length) {
+    console.log("[CrawledMatch] No usable context words after normalization", {
+      pageUrl,
+    });
+    return null;
+  }
+
+  type OverlapCandidate = {
+    index: number;
+    hits: number;
+    ctxCoverage: number;
+    blockCoverage: number;
+  };
+  const overlapCandidates: OverlapCandidate[] = [];
+
+  blocks.forEach((block, index) => {
+    const bodyLower = String(block.body || "").toLowerCase();
+    if (!bodyLower) return;
+    const bodyAlpha = bodyLower
+      .replace(/[^a-z0-9]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (!bodyAlpha) return;
+
+    const blockWords = Array.from(
+      new Set(
+        bodyAlpha
+          .split(" ")
+          .map((w) => w.trim())
+          .filter((w) => w.length > 3),
+      ),
+    );
+    if (!blockWords.length) return;
+
+    const blockWordSet = new Set(blockWords);
+    let hits = 0;
+    ctxWords.forEach((w) => {
+      if (blockWordSet.has(w)) hits += 1;
+    });
+    if (hits === 0) return;
+
+    const ctxCoverage = hits / ctxWords.length;
+    const blockCoverage = hits / blockWords.length;
+
+    overlapCandidates.push({
+      index,
+      hits,
+      ctxCoverage,
+      blockCoverage,
+    });
+  });
+
+  if (!overlapCandidates.length) {
+    console.log("[CrawledMatch] No word-overlap candidates", { pageUrl });
+    return null;
+  }
+
+  const minHits = ctxWords.length <= 8 ? 2 : 3;
+  const strongCandidates = overlapCandidates.filter(
+    (c) =>
+      c.hits >= minHits && (c.ctxCoverage >= 0.25 || c.blockCoverage >= 0.15),
+  );
+
+  if (!strongCandidates.length) {
+    console.log("[CrawledMatch] No strong word-overlap match", {
+      pageUrl,
+      bestRaw: overlapCandidates.sort((a, b) => b.hits - a.hits)[0],
+    });
+    return null;
+  }
+
+  strongCandidates.sort((a, b) => {
+    if (b.hits !== a.hits) return b.hits - a.hits;
+    if (b.ctxCoverage !== a.ctxCoverage) return b.ctxCoverage - a.ctxCoverage;
+    return b.blockCoverage - a.blockCoverage;
+  });
+  const bestOverlap = strongCandidates[0];
+
+  console.log("[CrawledMatch] Using word-overlap fallback match", {
+    pageUrl,
+    index: bestOverlap.index,
+    hits: bestOverlap.hits,
+    ctxCoverage: bestOverlap.ctxCoverage,
+    blockCoverage: bestOverlap.blockCoverage,
+    title: blocks[bestOverlap.index].title || null,
+  });
+  return bestOverlap.index;
 }
 
 function normalizeSectionKey(raw: string): string {
