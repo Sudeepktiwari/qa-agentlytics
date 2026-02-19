@@ -779,6 +779,33 @@ function normalizeUrlForLookup(url: string | null | undefined): string {
     .replace(/["'`]+$/, "");
 }
 
+function hasDiagnosticDetails(summaryDoc: any): boolean {
+  const ss = summaryDoc?.structuredSummary;
+  if (!ss || !Array.isArray(ss.sections)) return false;
+  for (const section of ss.sections) {
+    const leadQs = Array.isArray(section.leadQuestions)
+      ? section.leadQuestions
+      : [];
+    const salesQs = Array.isArray(section.salesQuestions)
+      ? section.salesQuestions
+      : [];
+    for (const q of [...leadQs, ...salesQs]) {
+      const opts = Array.isArray(q?.options) ? q.options : [];
+      for (const o of opts) {
+        if (
+          o &&
+          typeof o === "object" &&
+          Array.isArray((o as any).diagnostic_option_details) &&
+          (o as any).diagnostic_option_details.length > 0
+        ) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
 async function findStructuredSummaryByUrl(
   adminId: string | null | undefined,
   pageUrl: string | null | undefined,
@@ -798,17 +825,30 @@ async function findStructuredSummaryByUrl(
     `^${cleanUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/?$`,
     "i",
   );
-  let doc = await db
-    .collection("structured_summaries")
-    .findOne({ adminId, url: { $regex: baseRegex } });
+  const coll = db.collection("structured_summaries");
+
+  const docs = await coll
+    .find({ adminId, url: { $regex: baseRegex } })
+    .sort({ summaryGeneratedAt: -1, _id: -1 })
+    .toArray();
+
+  let doc =
+    docs.find((d) => hasDiagnosticDetails(d)) ||
+    docs.find((d) => d.pageId) ||
+    docs[0] ||
+    null;
+
   if (doc) {
     console.log("[StructuredSummaryLookup] Found document for URL", {
       adminId,
       docUrl: doc.url,
       docId: doc._id ? String(doc._id) : null,
       source: "primary",
+      hasDiagnosticDetails: hasDiagnosticDetails(doc),
+      hasPageId: !!doc.pageId,
     });
   }
+
   if (!doc && cleanUrl.includes("qa-agentlytics.vercel.app")) {
     const prodUrl = cleanUrl.replace(
       "qa-agentlytics.vercel.app",
@@ -818,9 +858,15 @@ async function findStructuredSummaryByUrl(
       `^${prodUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/?$`,
       "i",
     );
-    doc = await db
-      .collection("structured_summaries")
-      .findOne({ adminId, url: { $regex: prodRegex } });
+    const prodDocs = await coll
+      .find({ adminId, url: { $regex: prodRegex } })
+      .sort({ summaryGeneratedAt: -1, _id: -1 })
+      .toArray();
+    doc =
+      prodDocs.find((d) => hasDiagnosticDetails(d)) ||
+      prodDocs.find((d) => d.pageId) ||
+      prodDocs[0] ||
+      null;
     console.log("[StructuredSummaryLookup] QA->Prod fallback", {
       adminId,
       qaUrl: cleanUrl,
@@ -828,6 +874,8 @@ async function findStructuredSummaryByUrl(
       found: !!doc,
       docUrl: doc ? doc.url : null,
       docId: doc && doc._id ? String(doc._id) : null,
+      hasDiagnosticDetails: doc ? hasDiagnosticDetails(doc) : false,
+      hasPageId: !!(doc && doc.pageId),
     });
   }
   return doc;
