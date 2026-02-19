@@ -421,97 +421,97 @@ const Chatbot: React.FC<ChatbotProps> = ({
 
         if (!shouldTriggerProactive) return;
 
-        // Always trigger proactive bot message and follow-up timer on mount or after link selection
-        const initialSectionContext = getVisibleSectionContext();
-        fetch("/api/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            sessionId,
-            pageUrl: effectivePageUrl,
-            proactive: true,
-            hasBeenGreeted: alreadyGreeted,
-            contextualPageContext: initialSectionContext.text,
-            ...(initialSectionContext.hint
-              ? { sectionHint: initialSectionContext.hint }
-              : {}),
-            visitedPages: (() => {
-              if (typeof window === "undefined") return [];
-              try {
-                const stored = localStorage.getItem("appointy_visited_pages");
-                return stored ? JSON.parse(stored) : [];
-              } catch {
-                return [];
+        const sendProactive = () => {
+          const initialSectionContext = getVisibleSectionContext();
+          fetch("/api/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              sessionId,
+              pageUrl: effectivePageUrl,
+              proactive: true,
+              hasBeenGreeted: alreadyGreeted,
+              contextualPageContext: initialSectionContext.text,
+              ...(initialSectionContext.hint
+                ? { sectionHint: initialSectionContext.hint }
+                : {}),
+              visitedPages: (() => {
+                if (typeof window === "undefined") return [];
+                try {
+                  const stored = localStorage.getItem("appointy_visited_pages");
+                  return stored ? JSON.parse(stored) : [];
+                } catch {
+                  return [];
+                }
+              })(),
+              ...(adminId ? { adminId } : {}),
+            }),
+          })
+            .then((res) => res.json())
+            .then((data) => {
+              if (data.botMode) {
+                setCurrentBotMode(data.botMode);
               }
-            })(),
-            ...(adminId ? { adminId } : {}),
-          }),
-        })
-          .then((res) => res.json())
-          .then((data) => {
-            if (data.botMode) {
-              setCurrentBotMode(data.botMode);
-            }
-            if (data.userEmail !== undefined) {
-              setCurrentUserEmail(data.userEmail);
-            }
-
-            if (data.answer) {
-              // Mark as greeted if not already
-              if (!alreadyGreeted) {
-                localStorage.setItem("appointy_has_been_greeted", "true");
-                setHasBeenGreeted(true);
+              if (data.userEmail !== undefined) {
+                setCurrentUserEmail(data.userEmail);
               }
 
-              setMessages((prev) => [
-                ...prev,
-                {
-                  role: "assistant",
-                  content:
-                    typeof data.answer === "string"
-                      ? normalizeMainText(data.answer)
-                      : data.answer,
-                  buttons: Array.isArray(data.buttons)
-                    ? data.buttons.map(sanitizeButtonLabel).filter(Boolean)
-                    : [],
-                  emailPrompt: "",
+              if (data.answer) {
+                if (!alreadyGreeted) {
+                  localStorage.setItem("appointy_has_been_greeted", "true");
+                  setHasBeenGreeted(true);
+                }
+
+                setMessages((prev) => [
+                  ...prev,
+                  {
+                    role: "assistant",
+                    content:
+                      typeof data.answer === "string"
+                        ? normalizeMainText(data.answer)
+                        : data.answer,
+                    buttons: Array.isArray(data.buttons)
+                      ? data.buttons.map(sanitizeButtonLabel).filter(Boolean)
+                      : [],
+                    emailPrompt: "",
+                    botMode: data.botMode,
+                    userEmail: data.userEmail,
+                    topicsDiscussed: data.topicsDiscussed,
+                  },
+                ]);
+              }
+              if (data.secondary) {
+                const secParsed = parseBotResponse(data.secondary);
+                const secMsg = {
+                  role: "assistant" as const,
+                  content: secParsed.mainText,
+                  buttons: secParsed.buttons,
+                  emailPrompt: secParsed.emailPrompt,
                   botMode: data.botMode,
                   userEmail: data.userEmail,
                   topicsDiscussed: data.topicsDiscussed,
-                },
-              ]);
-            }
-            if (data.secondary) {
-              const secParsed = parseBotResponse(data.secondary);
-              const secMsg = {
-                role: "assistant" as const,
-                content: secParsed.mainText,
-                buttons: secParsed.buttons,
-                emailPrompt: secParsed.emailPrompt,
-                botMode: data.botMode,
-                userEmail: data.userEmail,
-                topicsDiscussed: data.topicsDiscussed,
-              };
-              if ((data.secondary as any)?.sectionName) {
-                console.log(
-                  `You are viewing "${(data.secondary as any).sectionName}" from structured summary`,
-                );
+                };
+                if ((data.secondary as any)?.sectionName) {
+                  console.log(
+                    `You are viewing "${(data.secondary as any).sectionName}" from structured summary`,
+                  );
+                }
+                setMessages((msgs) => [...msgs, secMsg]);
               }
-              setMessages((msgs) => [...msgs, secMsg]);
-            }
-            setFollowupCount(0);
-            setUserIsActive(false); // Reset user activity
-            setLastUserAction(Date.now());
-          });
+              setFollowupCount(0);
+              setUserIsActive(false);
+              setLastUserAction(Date.now());
+            });
+        };
+
+        setTimeout(sendProactive, 600);
       });
     // Cleanup timer on unmount
     return () => {
       if (followupTimer.current) {
-        // console.log removed
         clearTimeout(followupTimer.current);
       }
       if (typingStopTimer.current) {
-        // console.log removed
         clearTimeout(typingStopTimer.current);
         typingStopTimer.current = null;
       }
