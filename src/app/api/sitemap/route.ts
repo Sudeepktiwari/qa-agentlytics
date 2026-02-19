@@ -2414,10 +2414,28 @@ async function processBatch(req: NextRequest) {
     );
 
     try {
-      await pages.deleteMany({ adminId, url: retryUrl });
-      await structuredSummaries.deleteMany({ adminId, url: retryUrl });
-      await pineconeVectors.deleteMany({ adminId, filename: retryUrl });
-      await deleteChunksByUrl(retryUrl, adminId);
+      const retryUrlTrimmed = retryUrl.trim();
+      const retryUrlNoSlash = retryUrlTrimmed.replace(/\/+$/, "");
+      const retryUrlWithSlash =
+        retryUrlNoSlash.length > 0 ? `${retryUrlNoSlash}/` : retryUrlTrimmed;
+
+      const urlVariants =
+        retryUrlNoSlash === retryUrlWithSlash
+          ? [retryUrlNoSlash]
+          : [retryUrlNoSlash, retryUrlWithSlash];
+
+      await pages.deleteMany({ adminId, url: { $in: urlVariants } });
+      await structuredSummaries.deleteMany({
+        adminId,
+        url: { $in: urlVariants },
+      });
+      await pineconeVectors.deleteMany({
+        adminId,
+        filename: { $in: urlVariants },
+      });
+      for (const u of urlVariants) {
+        await deleteChunksByUrl(u, adminId);
+      }
 
       // console.log removed
       const text = await extractTextFromUrl(retryUrl);
