@@ -1068,7 +1068,8 @@ async function matchSectionAndFirstLeadQuestion(
     structuredSummaryDoc?.adminId || structuredSummaryDoc?.admin_id || null;
   const urlForLookup = structuredSummaryDoc?.url || null;
 
-  if (adminForLookup && urlForLookup && lowerContext.trim().length >= 10) {
+  const normalizedContext = lowerContext.trim();
+  if (adminForLookup && urlForLookup && normalizedContext) {
     const idxFromCrawled = await matchSectionIndexFromCrawledText(
       adminForLookup,
       urlForLookup,
