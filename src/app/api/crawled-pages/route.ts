@@ -10,10 +10,7 @@ import {
   enrichStructuredSummary,
   normalizeStructuredSummary,
 } from "@/lib/diagnostic-generation";
-import {
-  parseSectionBlocks,
-  mergeSmallSectionBlocks,
-} from "@/lib/parsing";
+import { parseSectionBlocks, mergeSmallSectionBlocks } from "@/lib/parsing";
 
 const pc = new Pinecone({ apiKey: process.env.PINECONE_KEY! });
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
@@ -330,6 +327,25 @@ export async function POST(request: NextRequest) {
 
     // Create a new summary object to ensure we are updating the one we save
     const finalStructuredSummary = { ...structuredSummary };
+
+    if (
+      Array.isArray(finalStructuredSummary.sections) &&
+      Array.isArray(blocks) &&
+      blocks.length > 0
+    ) {
+      finalStructuredSummary.sections = finalStructuredSummary.sections.map(
+        (sec: any, idx: number) => {
+          const block = blocks[idx] ||
+            blocks[blocks.length - 1] || { body: "" };
+          const body = typeof block.body === "string" ? block.body : "";
+          if (!body) return sec;
+          return {
+            ...sec,
+            sectionContent: body,
+          };
+        },
+      );
+    }
 
     // DEBUG: Log sectionContent presence before saving
     if (
