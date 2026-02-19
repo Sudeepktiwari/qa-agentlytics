@@ -3701,28 +3701,38 @@ export async function GET(request: Request) {
   
   // Normalize API response to ensure consistent format
   function normalizeApiResponse(responseData) {
-    // Ensure we always have mainText field
-    const mainText = responseData.mainText || responseData.answer || responseData.text || responseData.message || responseData.error || '';
-    
-    if (!responseData.mainText && (responseData.answer || responseData.text || responseData.message)) {
+    const mainText =
+      responseData.mainText ||
+      responseData.answer ||
+      responseData.text ||
+      responseData.message ||
+      responseData.error ||
+      '';
+    if (
+      !responseData.mainText &&
+      (responseData.answer || responseData.text || responseData.message)
+    ) {
     }
-    
     const normalized = {
       mainText: mainText,
-      // Pass through error if present so the caller knows it failed
       error: responseData.error || null,
       buttons: responseData.buttons || [],
       emailPrompt: responseData.emailPrompt || '',
       botMode: responseData.botMode || 'lead_generation',
       userEmail: responseData.userEmail || null,
       type: responseData.type || null,
-      // 🎯 BOOKING CALENDAR FIELDS - ESSENTIAL FOR CALENDAR FUNCTIONALITY
       showBookingCalendar: responseData.showBookingCalendar || false,
       bookingType: responseData.bookingType || null,
       onboardingAction: responseData.onboardingAction || null,
-      // New: support multi-field inputs from backend (or future extensions)
-      inputFields: responseData.inputFields || responseData.registrationFields || null,
-      sources: responseData.sources || []
+      inputFields:
+        responseData.inputFields || responseData.registrationFields || null,
+      sources: responseData.sources || [],
+      diagnosticOptionDetails: Array.isArray(
+        responseData.diagnosticOptionDetails,
+      )
+        ? responseData.diagnosticOptionDetails
+        : null,
+      sectionName: responseData.sectionName || null,
     };
     const normalizedSecondary = responseData.secondary
       ? {
