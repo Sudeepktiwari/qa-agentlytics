@@ -384,12 +384,12 @@ export default function AdvancelyticsHomepageHardGovernance() {
             </div>
 
             <div className="flex items-center gap-2">
-              <Button href="#cta" variant="secondary">
+              <Button href="/decision-leakage-model" variant="secondary">
                 Model Decision Leakage
               </Button>
-              <div className="hidden sm:block">
+              {/* <div className="hidden sm:block">
                 <Button href="#cta">Assess Revenue Stability</Button>
-              </div>
+              </div> */}
             </div>
           </div>
         </Container>
