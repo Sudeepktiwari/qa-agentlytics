@@ -1,4 +1,5 @@
-import React from "react";
+"use client";
+import React, { useEffect, useState } from "react";
 
 /**
  * Page: How Advancelytics Works
@@ -180,6 +181,31 @@ function MiniSignalChart() {
 }
 
 export default function HowItWorksPage() {
+  const [scrolled, setScrolled] = useState(false);
+  const [floating, setFloating] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => {
+      const y = window.scrollY || document.documentElement.scrollTop || 0;
+      setScrolled(y > 1);
+      setFloating(y > 1);
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const handleScroll = (
+    e: React.MouseEvent<HTMLAnchorElement, MouseEvent>,
+    id: string,
+  ) => {
+    e.preventDefault();
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
   return (
     <main className="min-h-screen bg-zinc-950 text-white">
       {/* Background */}
@@ -189,7 +215,6 @@ export default function HowItWorksPage() {
         <div className="absolute inset-0 opacity-[0.06] [background-image:linear-gradient(to_right,rgba(255,255,255,0.25)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.25)_1px,transparent_1px)] [background-size:64px_64px]" />
       </div>
 
-      {/* Header */}
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-6">
         <a href="/" className="flex items-center gap-2">
           <div className="h-9 w-9 rounded-xl border border-white/10 bg-white/5" />
@@ -211,17 +236,238 @@ export default function HowItWorksPage() {
             How it works
           </a>
         </nav>
-        <div className="flex items-center gap-3">
-          <SecondaryButton href="/comparison">
-            Watch reactive vs proactive
-          </SecondaryButton>
-          <PrimaryButton href="/decision-leakage-model">
-            Measure Revenue Stability
-          </PrimaryButton>
+      </header>
+
+      <header
+        className={`${
+          scrolled ? "top-0" : "top-16"
+        } fixed left-0 right-0 z-40 border-b border-white/10 bg-zinc-950/80 backdrop-blur transition-[top,opacity,transform] duration-300 ease-out hidden md:block ${
+          floating
+            ? "opacity-0 -translate-y-1 pointer-events-none"
+            : "opacity-100 translate-y-0"
+        }`}
+      >
+        <div className="mx-auto flex h-16 max-w-7xl items-center px-6">
+          <div className="flex items-center gap-3 lg:pr-24">
+            <span className="text-lg font-semibold tracking-tight">
+              Advancelytics
+            </span>
+            <span className="ml-2 rounded-full bg-white/10 px-2 py-0.5 text-xs font-medium text-white/80">
+              How it works
+            </span>
+          </div>
+          <nav className="flex items-center gap-3 text-sm text-white/80">
+            <a
+              href="#instability"
+              className="rounded-xl px-3 py-2 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "instability")}
+            >
+              Instability
+            </a>
+            <a
+              href="#model"
+              className="rounded-xl px-3 py-2 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "model")}
+            >
+              Model
+            </a>
+            <a
+              href="#structure"
+              className="rounded-xl px-3 py-2 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "structure")}
+            >
+              Structure
+            </a>
+            <a
+              href="#exposure"
+              className="rounded-xl px-3 py-2 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "exposure")}
+            >
+              Cost exposure
+            </a>
+            <a
+              href="#methodology"
+              className="rounded-xl px-3 py-2 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "methodology")}
+            >
+              Methodology
+            </a>
+            <a
+              href="#qa"
+              className="rounded-xl px-3 py-2 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "qa")}
+            >
+              Q/A
+            </a>
+          </nav>
         </div>
       </header>
 
-      {/* Hero */}
+      <header
+        className={`fixed left-0 right-0 top-0 z-50 border-b border-white/10 bg-zinc-950/80 backdrop-blur transition-opacity duration-300 ease-out hidden md:block ${
+          floating ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
+        aria-hidden={!floating}
+      >
+        <div className="w-full h-14 flex items-center justify-center px-4">
+          <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm text-white/80">
+            <a
+              href="#instability"
+              className="rounded-xl px-3 py-2 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "instability")}
+            >
+              Instability
+            </a>
+            <a
+              href="#model"
+              className="rounded-xl px-3 py-2 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "model")}
+            >
+              Model
+            </a>
+            <a
+              href="#structure"
+              className="rounded-xl px-3 py-2 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "structure")}
+            >
+              Structure
+            </a>
+            <a
+              href="#exposure"
+              className="rounded-xl px-3 py-2 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "exposure")}
+            >
+              Cost exposure
+            </a>
+            <a
+              href="#methodology"
+              className="rounded-xl px-3 py-2 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "methodology")}
+            >
+              Methodology
+            </a>
+            <a
+              href="#qa"
+              className="rounded-xl px-3 py-2 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "qa")}
+            >
+              Q/A
+            </a>
+          </nav>
+        </div>
+      </header>
+
+      <header
+        className={`${
+          scrolled ? "top-0" : "top-16"
+        } fixed left-0 right-0 z-30 border-b border-white/10 bg-zinc-950/80 backdrop-blur transition-[top,opacity,transform] duration-300 ease-out md:hidden ${
+          floating
+            ? "opacity-0 -translate-y-1 pointer-events-none"
+            : "opacity-100 translate-y-0"
+        }`}
+      >
+        <div className="w-full h-14 flex items-center justify-center px-3">
+          <nav className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-white/70">
+            <a
+              href="#instability"
+              className="rounded-lg px-2 py-1 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "instability")}
+            >
+              Instability
+            </a>
+            <a
+              href="#model"
+              className="rounded-lg px-2 py-1 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "model")}
+            >
+              Model
+            </a>
+            <a
+              href="#structure"
+              className="rounded-lg px-2 py-1 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "structure")}
+            >
+              Structure
+            </a>
+            <a
+              href="#exposure"
+              className="rounded-lg px-2 py-1 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "exposure")}
+            >
+              Cost exposure
+            </a>
+            <a
+              href="#methodology"
+              className="rounded-lg px-2 py-1 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "methodology")}
+            >
+              Methodology
+            </a>
+            <a
+              href="#qa"
+              className="rounded-lg px-2 py-1 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "qa")}
+            >
+              Q/A
+            </a>
+          </nav>
+        </div>
+      </header>
+
+      <header
+        className={`fixed left-0 right-0 top-0 z-40 border-b border-white/10 bg-zinc-950/80 backdrop-blur transition-opacity duration-300 ease-out md:hidden ${
+          floating ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
+        aria-hidden={!floating}
+      >
+        <div className="w-full h-14 flex items-center justify-center px-3">
+          <nav className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-white/70">
+            <a
+              href="#instability"
+              className="rounded-lg px-2 py-1 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "instability")}
+            >
+              Instability
+            </a>
+            <a
+              href="#model"
+              className="rounded-lg px-2 py-1 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "model")}
+            >
+              Model
+            </a>
+            <a
+              href="#structure"
+              className="rounded-lg px-2 py-1 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "structure")}
+            >
+              Structure
+            </a>
+            <a
+              href="#exposure"
+              className="rounded-lg px-2 py-1 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "exposure")}
+            >
+              Cost exposure
+            </a>
+            <a
+              href="#methodology"
+              className="rounded-lg px-2 py-1 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "methodology")}
+            >
+              Methodology
+            </a>
+            <a
+              href="#qa"
+              className="rounded-lg px-2 py-1 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "qa")}
+            >
+              Q/A
+            </a>
+          </nav>
+        </div>
+      </header>
+
       <section className="mx-auto w-full max-w-6xl px-6 pb-10 pt-6 sm:pb-16">
         <div className="grid gap-10 lg:grid-cols-12 lg:items-start">
           <div className="lg:col-span-7">
@@ -283,8 +529,10 @@ export default function HowItWorksPage() {
         </div>
       </section>
 
-      {/* Instability Compression */}
-      <section className="mx-auto w-full max-w-6xl px-6 py-12 sm:py-16">
+      <section
+        id="instability"
+        className="mx-auto w-full max-w-6xl px-6 py-12 sm:py-16"
+      >
         <SectionTitle
           eyebrow="Instability Compression"
           title="Revenue looks stable on the surface. The variance is inside evaluation behavior."
@@ -348,8 +596,10 @@ export default function HowItWorksPage() {
         </div>
       </section>
 
-      {/* Decision-Stage Interpretation Model */}
-      <section className="mx-auto w-full max-w-6xl px-6 py-12 sm:py-16">
+      <section
+        id="model"
+        className="mx-auto w-full max-w-6xl px-6 py-12 sm:py-16"
+      >
         <SectionTitle
           eyebrow="Decision-Stage Interpretation Model"
           title="Behavior Signals → Readiness Mapping → Revenue Stabilization"
@@ -426,7 +676,10 @@ export default function HowItWorksPage() {
       </section>
 
       {/* Structural Differentiation */}
-      <section className="mx-auto w-full max-w-6xl px-6 py-12 sm:py-16">
+      <section
+        className="mx-auto w-full max-w-6xl px-6 py-12 sm:py-16"
+        id="structure"
+      >
         <SectionTitle
           eyebrow="Structural Differentiation"
           title="This is not chat automation. It is decision-stage interpretation."
@@ -506,8 +759,10 @@ export default function HowItWorksPage() {
         </div>
       </section>
 
-      {/* Hidden Cost Exposure */}
-      <section className="mx-auto w-full max-w-6xl px-6 py-12 sm:py-16">
+      <section
+        id="exposure"
+        className="mx-auto w-full max-w-6xl px-6 py-12 sm:py-16"
+      >
         <SectionTitle
           eyebrow="Hidden Cost Exposure"
           title="Revenue instability is operational — not traffic-driven."
@@ -574,8 +829,10 @@ export default function HowItWorksPage() {
         </div>
       </section>
 
-      {/* Measurement Methodology */}
-      <section className="mx-auto w-full max-w-6xl px-6 py-12 sm:py-16">
+      <section
+        id="methodology"
+        className="mx-auto w-full max-w-6xl px-6 py-12 sm:py-16"
+      >
         <SectionTitle
           eyebrow="Measurement Methodology"
           title="Decision Velocity Index (DVI)"
@@ -617,8 +874,7 @@ export default function HowItWorksPage() {
         </div>
       </section>
 
-      {/* AI Retrieval Q/A */}
-      <section className="mx-auto w-full max-w-6xl px-6 py-12 sm:py-16">
+      <section id="qa" className="mx-auto w-full max-w-6xl px-6 py-12 sm:py-16">
         <SectionTitle
           eyebrow="AI Retrieval Q/A"
           title="Fast answers buyers look for during evaluation"

@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
+import DemoVideoModal from "../components/DemoVideoModal";
 
 /**
  * Decision Leakage Model — /decision-leakage-model
@@ -407,6 +408,7 @@ export default function DecisionLeakageModelPage() {
 
   const [scrolled, setScrolled] = useState(false);
   const [floating, setFloating] = useState(false);
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
 
   useEffect(() => {
     const onScroll = () => {
@@ -462,6 +464,10 @@ export default function DecisionLeakageModelPage() {
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-50">
+      <DemoVideoModal
+        isOpen={isDemoModalOpen}
+        onClose={() => setIsDemoModalOpen(false)}
+      />
       {/* Background accents */}
       <div
         aria-hidden
@@ -488,7 +494,7 @@ export default function DecisionLeakageModelPage() {
               Agentlytics
             </span>
             <span className="ml-2 rounded-full bg-[--surface] px-2 py-0.5 text-xs font-medium text-[--secondary]">
-              Decision Intelligence
+              Decision Leakage Model
             </span>
           </div>
 
@@ -648,15 +654,17 @@ export default function DecisionLeakageModelPage() {
                 <a
                   href="#assessment"
                   className="inline-flex items-center justify-center rounded-xl bg-white text-zinc-950 px-5 py-3 text-sm font-medium hover:opacity-90 transition"
+                  onClick={(e) => handleScroll(e, "assessment")}
                 >
                   Model Decision Leakage
                 </a>
-                <a
-                  href="#model"
+                <button
+                  type="button"
                   className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm text-zinc-200 hover:bg-white/10 transition"
+                  onClick={() => setIsDemoModalOpen(true)}
                 >
-                  See how the model works
-                </a>
+                   Watch a Demo
+                </button>
               </div>
 
               <div className="flex flex-wrap items-center gap-3 pt-2 text-xs text-zinc-400">
@@ -763,6 +771,7 @@ export default function DecisionLeakageModelPage() {
                   <a
                     href="#assessment"
                     className="inline-flex w-full items-center justify-center rounded-xl bg-white text-zinc-950 px-5 py-3 text-sm font-medium hover:opacity-90 transition"
+                    onClick={(e) => handleScroll(e, "assessment")}
                   >
                     Calculate Decision Leakage
                   </a>
