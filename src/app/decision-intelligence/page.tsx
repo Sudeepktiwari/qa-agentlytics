@@ -23,7 +23,7 @@ import DemoVideoModal from "../components/DemoVideoModal";
  */
 
 const Container = ({ children }: { children: React.ReactNode }) => (
-  <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8">
+  <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
     {children}
   </div>
 );
@@ -388,7 +388,8 @@ export default function AdvancelyticsHomepageHardGovernance() {
       <header
         className={`${
           scrolled ? "top-0" : "top-16"
-        } fixed left-0 right-0 z-40 border-b border-white/10 bg-slate-950/80 backdrop-blur transition-[top,opacity,transform] duration-300 ease-out hidden md:block ${
+        } fixed left-0 right-0 z-40 border-b border-white/10 bg-slate-950/80 backdrop-blur 
+        transition-[top,opacity,transform] duration-300 ease-out hidden md:block ${
           floating
             ? "opacity-0 -translate-y-1 pointer-events-none"
             : "opacity-100 translate-y-0"
@@ -482,43 +483,89 @@ export default function AdvancelyticsHomepageHardGovernance() {
         </div>
       </header>
 
-      {/* Mobile: keep a simple sticky bar with same links (no hash change) */}
-      <header className="sticky top-0 z-30 border-b border-white/10 bg-slate-950/80 backdrop-blur md:hidden">
-        <Container>
-          <div className="flex h-14 items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <span className="text-base font-semibold tracking-tight">
-                Agentlytics
-              </span>
-              <span className="ml-1 rounded-full bg-[--surface] px-2 py-0.5 text-[10px] font-medium text-[--secondary]">
-                Decision Intelligence
-              </span>
-            </div>
-            <nav className="flex items-center gap-2 text-xs text-white/70">
-              <a
-                href="#mechanism"
-                className="rounded-lg px-2 py-1 hover:bg-white/5 hover:text-white"
-                onClick={(e) => handleScroll(e, "mechanism")}
-              >
-                Mechanism
-              </a>
-              <a
-                href="#outcomes"
-                className="rounded-lg px-2 py-1 hover:bg-white/5 hover:text-white"
-                onClick={(e) => handleScroll(e, "outcomes")}
-              >
-                Outcomes
-              </a>
-              <a
-                href="#qa"
-                className="rounded-lg px-2 py-1 hover:bg-white/5 hover:text-white"
-                onClick={(e) => handleScroll(e, "qa")}
-              >
-                Q/A
-              </a>
-            </nav>
-          </div>
-        </Container>
+      {/* Mobile page-specific menu — match onboarding-ai-bot style */}
+      <header
+        className={`${
+          scrolled ? "top-0" : "top-16"
+        } fixed left-0 right-0 z-30 border-b border-white/10 bg-slate-950/80 backdrop-blur transition-[top,opacity,transform] duration-300 ease-out md:hidden ${
+          floating
+            ? "opacity-0 -translate-y-1 pointer-events-none"
+            : "opacity-100 translate-y-0"
+        }`}
+      >
+        <div className="w-full h-14 flex items-center justify-center px-3">
+          <nav className="flex items-center gap-3 text-xs text-white/70">
+            <a
+              href="#mechanism"
+              className="rounded-lg px-2 py-1 hover:bg-white/5 hover:text-white"
+              onClick={(e) => handleScroll(e, "mechanism")}
+            >
+              Mechanism
+            </a>
+            <a
+              href="#differentiation"
+              className="rounded-xl px-3 py-2 hover:bg-white/5 hover:text-white"
+              onClick={(e) => handleScroll(e, "differentiation")}
+            >
+              Differentiation
+            </a>
+            <a
+              href="#outcomes"
+              className="rounded-lg px-2 py-1 hover:bg-white/5 hover:text-white"
+              onClick={(e) => handleScroll(e, "outcomes")}
+            >
+              Outcomes
+            </a>
+            <a
+              href="#qa"
+              className="rounded-lg px-2 py-1 hover:bg-white/5 hover:text-white"
+              onClick={(e) => handleScroll(e, "qa")}
+            >
+              Q/A
+            </a>
+          </nav>
+        </div>
+      </header>
+
+      {/* Mobile floating bar — appears at very top once scrolled */}
+      <header
+        className={`fixed left-0 right-0 top-0 z-40 border-b border-white/10 bg-slate-950/80 backdrop-blur transition-opacity duration-300 ease-out md:hidden ${
+          floating ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
+        aria-hidden={!floating}
+      >
+        <div className="w-full h-14 flex items-center justify-center px-3">
+          <nav className="flex items-center gap-3 text-xs text-white/70">
+            <a
+              href="#mechanism"
+              className="rounded-lg px-2 py-1 hover:bg-white/5 hover:text-white"
+              onClick={(e) => handleScroll(e, "mechanism")}
+            >
+              Mechanism
+            </a>
+            <a
+              href="#differentiation"
+              className="rounded-xl px-3 py-2 hover:bg-white/5 hover:text-white"
+              onClick={(e) => handleScroll(e, "differentiation")}
+            >
+              Differentiation
+            </a>
+            <a
+              href="#outcomes"
+              className="rounded-lg px-2 py-1 hover:bg-white/5 hover:text-white"
+              onClick={(e) => handleScroll(e, "outcomes")}
+            >
+              Outcomes
+            </a>
+            <a
+              href="#qa"
+              className="rounded-lg px-2 py-1 hover:bg-white/5 hover:text-white"
+              onClick={(e) => handleScroll(e, "qa")}
+            >
+              Q/A
+            </a>
+          </nav>
+        </div>
       </header>
 
       {/* Spacer for fixed desktop headers */}
