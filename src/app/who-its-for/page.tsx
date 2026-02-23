@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   ArrowRight,
   Activity,
@@ -11,6 +11,7 @@ import {
   BarChart3,
   Target,
 } from "lucide-react";
+import DemoVideoModal from "../components/DemoVideoModal";
 
 type StatProps = {
   value: string;
@@ -134,48 +135,244 @@ const QA: React.FC<QAProps> = ({ q, a }: QAProps) => (
 );
 
 function TopNav() {
-  const links = [
-    { label: "Model", href: "#model" },
-    { label: "Qualification", href: "#qualification" },
-    { label: "Filters", href: "#filters" },
-    { label: "Outcomes", href: "#outcomes" },
-    { label: "Q/A", href: "#qa" },
-  ];
-  return (
-    <div className="sticky top-0 z-40 border-b border-white/10 bg-black/50 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-5 py-3">
-        <a href="#" className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-xl border border-white/10 bg-white/5" />
-          <span className="text-sm font-semibold tracking-tight text-white">
-            Advancelytics
-          </span>
-        </a>
-        <div className="hidden items-center gap-1 md:flex">
-          {links.map((l) => (
-            <a
-              key={l.href}
-              href={l.href}
-              className="rounded-xl px-3 py-2 text-xs font-medium text-white/70 hover:bg-white/5 hover:text-white"
-            >
-              {l.label}
-            </a>
-          ))}
-        </div>
-        <a
-          href="#cta"
-          className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-white hover:bg-white/10"
-        >
-          Measure Revenue Stability
-          <ArrowRight className="h-4 w-4" />
-        </a>
-      </div>
-    </div>
-  );
+  return null;
 }
 
 function Hero() {
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [floating, setFloating] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => {
+      const y = window.scrollY || document.documentElement.scrollTop || 0;
+      setScrolled(y > 1);
+      setFloating(y > 1);
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const handleScroll = (
+    e: React.MouseEvent<HTMLAnchorElement, MouseEvent>,
+    id: string,
+  ) => {
+    e.preventDefault();
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
   return (
     <header className="relative overflow-hidden">
+      <DemoVideoModal
+        isOpen={isDemoModalOpen}
+        onClose={() => setIsDemoModalOpen(false)}
+      />
+
+      <header
+        className={`${
+          scrolled ? "top-0" : "top-16"
+        } fixed left-0 right-0 z-40 border-b border-white/10 bg-black/70 backdrop-blur transition-[top,opacity,transform] duration-300 ease-out hidden md:block ${
+          floating
+            ? "opacity-0 -translate-y-1 pointer-events-none"
+            : "opacity-100 translate-y-0"
+        }`}
+      >
+        <div className="mx-auto flex h-16 max-w-7xl items-center lg:pl-8 px-5">
+          <div className="flex items-center gap-3 lg:pr-28">
+            <span className="text-lg font-semibold tracking-tight text-white">
+              Agentlytics
+            </span>
+            <span className="ml-2 rounded-full bg-white/10 px-2 py-0.5 text-xs font-medium text-white/80">
+              Who it’s for
+            </span>
+          </div>
+          <nav className="flex items-center gap-3 text-sm text-white/80">
+            <a
+              href="#model"
+              className="rounded-xl px-3 py-2 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "model")}
+            >
+              Model
+            </a>
+            <a
+              href="#qualification"
+              className="rounded-xl px-3 py-2 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "qualification")}
+            >
+              Qualification
+            </a>
+            <a
+              href="#filters"
+              className="rounded-xl px-3 py-2 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "filters")}
+            >
+              Filters
+            </a>
+            <a
+              href="#outcomes"
+              className="rounded-xl px-3 py-2 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "outcomes")}
+            >
+              Outcomes
+            </a>
+            <a
+              href="#qa"
+              className="rounded-xl px-3 py-2 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "qa")}
+            >
+              Q/A
+            </a>
+          </nav>
+        </div>
+      </header>
+
+      <header
+        className={`fixed left-0 right-0 top-0 z-50 border-b border-white/10 bg-black/80 backdrop-blur transition-opacity duration-300 ease-out hidden md:block ${
+          floating ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
+        aria-hidden={!floating}
+      >
+        <div className="w-full h-14 flex items-center justify-center px-4">
+          <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm text-white/80">
+            <a
+              href="#model"
+              className="rounded-xl px-3 py-2 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "model")}
+            >
+              Model
+            </a>
+            <a
+              href="#qualification"
+              className="rounded-xl px-3 py-2 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "qualification")}
+            >
+              Qualification
+            </a>
+            <a
+              href="#filters"
+              className="rounded-xl px-3 py-2 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "filters")}
+            >
+              Filters
+            </a>
+            <a
+              href="#outcomes"
+              className="rounded-xl px-3 py-2 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "outcomes")}
+            >
+              Outcomes
+            </a>
+            <a
+              href="#qa"
+              className="rounded-xl px-3 py-2 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "qa")}
+            >
+              Q/A
+            </a>
+          </nav>
+        </div>
+      </header>
+
+      <header
+        className={`${
+          scrolled ? "top-0" : "top-16"
+        } fixed left-0 right-0 z-30 border-b border-white/10 bg-black/80 backdrop-blur transition-[top,opacity,transform] duration-300 ease-out md:hidden ${
+          floating
+            ? "opacity-0 -translate-y-1 pointer-events-none"
+            : "opacity-100 translate-y-0"
+        }`}
+      >
+        <div className="w-full h-14 flex items-center justify-center px-3">
+          <nav className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-white/70">
+            <a
+              href="#model"
+              className="rounded-lg px-2 py-1 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "model")}
+            >
+              Model
+            </a>
+            <a
+              href="#qualification"
+              className="rounded-lg px-2 py-1 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "qualification")}
+            >
+              Qualification
+            </a>
+            <a
+              href="#filters"
+              className="rounded-lg px-2 py-1 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "filters")}
+            >
+              Filters
+            </a>
+            <a
+              href="#outcomes"
+              className="rounded-lg px-2 py-1 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "outcomes")}
+            >
+              Outcomes
+            </a>
+            <a
+              href="#qa"
+              className="rounded-lg px-2 py-1 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "qa")}
+            >
+              Q/A
+            </a>
+          </nav>
+        </div>
+      </header>
+
+      <header
+        className={`fixed left-0 right-0 top-0 z-40 border-b border-white/10 bg-black/80 backdrop-blur transition-opacity duration-300 ease-out md:hidden ${
+          floating ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
+        aria-hidden={!floating}
+      >
+        <div className="w-full h-14 flex items-center justify-center px-3">
+          <nav className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-white/70">
+            <a
+              href="#model"
+              className="rounded-lg px-2 py-1 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "model")}
+            >
+              Model
+            </a>
+            <a
+              href="#qualification"
+              className="rounded-lg px-2 py-1 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "qualification")}
+            >
+              Qualification
+            </a>
+            <a
+              href="#filters"
+              className="rounded-lg px-2 py-1 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "filters")}
+            >
+              Filters
+            </a>
+            <a
+              href="#outcomes"
+              className="rounded-lg px-2 py-1 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "outcomes")}
+            >
+              Outcomes
+            </a>
+            <a
+              href="#qa"
+              className="rounded-lg px-2 py-1 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "qa")}
+            >
+              Q/A
+            </a>
+          </nav>
+        </div>
+      </header>
       {/* Background */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-20 left-1/2 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-white/10 blur-3xl" />
@@ -202,19 +399,20 @@ function Hero() {
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
               <a
-                href="#cta"
+                href="/decision-leakage-model"
                 className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-black hover:bg-white/90"
               >
                 Assess Readiness Signals
                 <ArrowRight className="h-4 w-4" />
               </a>
-              <a
-                href="#filters"
+              <button
+                type="button"
+                onClick={() => setIsDemoModalOpen(true)}
                 className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white hover:bg-white/10"
               >
-                Check Fit Conditions
+                Watch a demo
                 <Target className="h-4 w-4" />
-              </a>
+              </button>
             </div>
 
             <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -603,7 +801,7 @@ function FinalCTA() {
             </div>
             <div className="md:col-span-4 md:flex md:justify-end">
               <a
-                href="#"
+                href="/decision-leakage-model"
                 className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-6 py-3 text-sm font-semibold text-black hover:bg-white/90 md:w-auto"
               >
                 Assess Readiness Signals

@@ -248,9 +248,9 @@ export default function HowItWorksPage() {
         }`}
       >
         <div className="mx-auto flex h-16 max-w-7xl items-center px-6">
-          <div className="flex items-center gap-3 lg:pr-24">
+          <div className="flex items-center gap-3 lg:pr-20">
             <span className="text-lg font-semibold tracking-tight">
-              Advancelytics
+              Agentlytics
             </span>
             <span className="ml-2 rounded-full bg-white/10 px-2 py-0.5 text-xs font-medium text-white/80">
               How it works
