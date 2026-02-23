@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import {
   ArrowRight,
@@ -11,6 +11,7 @@ import {
   Layers,
   Check,
 } from "lucide-react";
+import DemoVideoModal from "../components/DemoVideoModal";
 
 /**
  * Advancelytics Homepage — Hard Governance copy, production-safe labels.
@@ -48,10 +49,12 @@ const Button = ({
   children,
   href = "#",
   variant = "primary",
+  onClick,
 }: {
   children: React.ReactNode;
   href?: string;
   variant?: "primary" | "secondary";
+  onClick?: () => void;
 }) => {
   const base =
     "inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-white/20";
@@ -60,8 +63,19 @@ const Button = ({
       ? "bg-white text-slate-950 hover:bg-white/90"
       : "border border-white/15 bg-white/5 text-white hover:bg-white/10";
 
+  const className = `${base} ${styles}`;
+
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} className={className}>
+        {children}
+        <ArrowRight className="h-4 w-4" />
+      </button>
+    );
+  }
+
   return (
-    <a href={href} className={`${base} ${styles}`}>
+    <a href={href} className={className}>
       {children}
       <ArrowRight className="h-4 w-4" />
     </a>
@@ -338,23 +352,27 @@ function __runSanityChecks() {
 __runSanityChecks();
 
 export default function AdvancelyticsHomepageHardGovernance() {
+  const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-slate-950 text-white">
+      <DemoVideoModal
+        isOpen={isDemoModalOpen}
+        onClose={() => setIsDemoModalOpen(false)}
+      />
       {/* Top bar */}
       <div className="sticky top-0 z-50 border-b border-white/10 bg-slate-950/70 backdrop-blur">
         <Container>
           <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-2xl border border-white/10 bg-white/5" />
-              <div>
-                <div className="text-sm font-semibold tracking-tight">
-                  Advancelytics
-                </div>
-                <div className="text-xs text-white/60">
-                  Decision Intelligence
-                </div>
+            {/* <div className="flex items-center gap-3"> */}
+            {/* <div className="h-9 w-9 rounded-2xl border border-white/10 bg-white/5" /> */}
+            <div>
+              <div className="text-sm font-semibold tracking-tight">
+                Advancelytics
               </div>
+              <div className="text-xs text-white/60">Decision Intelligence</div>
             </div>
+            {/* </div> */}
 
             <div className="hidden items-center gap-2 md:flex">
               <a
@@ -416,9 +434,12 @@ export default function AdvancelyticsHomepageHardGovernance() {
                 </p>
 
                 <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-                  <Button href="#cta">Assess Revenue Stability</Button>
-                  <Button href="#differentiation" variant="secondary">
-                    See Differentiation
+                  <Button href="#cta">Model Decision Leakage</Button>
+                  <Button
+                    variant="secondary"
+                    onClick={() => setIsDemoModalOpen(true)}
+                  >
+                    Watch Reactive vs Proactive Comparison
                   </Button>
                 </div>
 
