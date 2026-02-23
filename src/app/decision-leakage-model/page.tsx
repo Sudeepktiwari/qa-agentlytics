@@ -1,5 +1,5 @@
 "use client";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
 /**
  * Decision Leakage Model — /decision-leakage-model
@@ -405,6 +405,31 @@ export default function DecisionLeakageModelPage() {
   const [showFull, setShowFull] = useState(false);
   const results = useMemo(() => computeAll(inputs), [inputs]);
 
+  const [scrolled, setScrolled] = useState(false);
+  const [floating, setFloating] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => {
+      const y = window.scrollY || document.documentElement.scrollTop || 0;
+      setScrolled(y > 1);
+      setFloating(y > 1);
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const handleScroll = (
+    e: React.MouseEvent<HTMLAnchorElement, MouseEvent>,
+    id: string,
+  ) => {
+    e.preventDefault();
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
   const canCalculate = useMemo(() => {
     // Inputs always numeric; keep for future validation.
     return (Object.values(inputs) as number[]).every((n) => n >= 0 && n <= 4);
@@ -447,39 +472,159 @@ export default function DecisionLeakageModelPage() {
         <div className="absolute bottom-0 right-0 h-[520px] w-[520px] rounded-full bg-white/5 blur-3xl" />
       </div>
 
-      {/* Top Nav */}
-      <header className="relative z-10 border-b border-white/10 bg-zinc-950/60 backdrop-blur">
-        <div className="mx-auto max-w-6xl px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl border border-white/10 bg-white/5 grid place-items-center text-xs tracking-widest">
-              A
-            </div>
-            <div>
-              <div className="text-sm font-semibold leading-none">
-                Advancelytics
-              </div>
-              <div className="text-xs text-zinc-400">
-                Decision Leakage Model
-              </div>
-            </div>
+      {/* Desktop page-specific menu — below global header, then fades out */}
+      <header
+        className={`${
+          scrolled ? "top-0" : "top-16"
+        } fixed left-0 right-0 z-40 border-b border-white/10 bg-zinc-950/80 backdrop-blur transition-[top,opacity,transform] duration-300 ease-out hidden md:block ${
+          floating
+            ? "opacity-0 -translate-y-1 pointer-events-none"
+            : "opacity-100 translate-y-0"
+        }`}
+      >
+        <div className="mx-auto w-full max-w-7xl py-4 px-4 sm:px-6 lg:px-8 flex">
+          <div className="flex items-center gap-3 md:pr-42">
+            <span className="text-lg font-semibold tracking-tight">
+              Agentlytics
+            </span>
+            <span className="ml-2 rounded-full bg-[--surface] px-2 py-0.5 text-xs font-medium text-[--secondary]">
+              Decision Intelligence
+            </span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <nav className="flex items-center gap-3 text-sm text-zinc-200">
+            <a
+              href="#model"
+              className="rounded-xl px-3 py-2 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "model")}
+            >
+              Model
+            </a>
             <a
               href="#assessment"
-              className="hidden sm:inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-zinc-200 hover:bg-white/10 transition"
+              className="rounded-xl px-3 py-2 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "assessment")}
             >
-              Model Decision Leakage
+              Assessment
             </a>
             <a
-              href="/admin"
-              className="inline-flex items-center justify-center rounded-xl bg-white text-zinc-950 px-4 py-2 text-sm font-medium hover:opacity-90 transition"
+              href="#results"
+              className="rounded-xl px-3 py-2 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "results")}
             >
-              Register to See Full Stability Model
+              Results
             </a>
-          </div>
+          </nav>
         </div>
       </header>
+
+      {/* Desktop floating bar — at very top when scrolled */}
+      <header
+        className={`fixed left-0 right-0 top-0 z-50 border-b border-white/10 bg-zinc-950/80 backdrop-blur transition-opacity duration-300 ease-out hidden md:block ${
+          floating ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
+        aria-hidden={!floating}
+      >
+        <div className="w-full h-14 flex items-center justify-center px-4">
+          <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm text-zinc-200">
+            <a
+              href="#model"
+              className="rounded-xl px-3 py-2 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "model")}
+            >
+              Model
+            </a>
+            <a
+              href="#assessment"
+              className="rounded-xl px-3 py-2 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "assessment")}
+            >
+              Assessment
+            </a>
+            <a
+              href="#results"
+              className="rounded-xl px-3 py-2 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "results")}
+            >
+              Results
+            </a>
+          </nav>
+        </div>
+      </header>
+
+      {/* Mobile page-specific menu — below global header, then fades out */}
+      <header
+        className={`${
+          scrolled ? "top-0" : "top-16"
+        } fixed left-0 right-0 z-30 border-b border-white/10 bg-zinc-950/80 backdrop-blur transition-[top,opacity,transform] duration-300 ease-out md:hidden ${
+          floating
+            ? "opacity-0 -translate-y-1 pointer-events-none"
+            : "opacity-100 translate-y-0"
+        }`}
+      >
+        <div className="w-full h-14 flex items-center justify-center px-3">
+          <nav className="flex items-center gap-3 text-xs text-zinc-200">
+            <a
+              href="#model"
+              className="rounded-lg px-2 py-1 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "model")}
+            >
+              Model
+            </a>
+            <a
+              href="#assessment"
+              className="rounded-lg px-2 py-1 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "assessment")}
+            >
+              Assessment
+            </a>
+            <a
+              href="#results"
+              className="rounded-lg px-2 py-1 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "results")}
+            >
+              Results
+            </a>
+          </nav>
+        </div>
+      </header>
+
+      {/* Mobile floating bar — at very top when scrolled */}
+      <header
+        className={`fixed left-0 right-0 top-0 z-40 border-b border-white/10 bg-zinc-950/80 backdrop-blur transition-opacity duration-300 ease-out md:hidden ${
+          floating ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
+        aria-hidden={!floating}
+      >
+        <div className="w-full h-14 flex items-center justify-center px-3">
+          <nav className="flex items-center gap-3 text-xs text-zinc-200">
+            <a
+              href="#model"
+              className="rounded-lg px-2 py-1 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "model")}
+            >
+              Model
+            </a>
+            <a
+              href="#assessment"
+              className="rounded-lg px-2 py-1 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "assessment")}
+            >
+              Assessment
+            </a>
+            <a
+              href="#results"
+              className="rounded-lg px-2 py-1 hover:bg-white/10"
+              onClick={(e) => handleScroll(e, "results")}
+            >
+              Results
+            </a>
+          </nav>
+        </div>
+      </header>
+
+      {/* Spacer so content doesn't hide under fixed desktop headers */}
+      <div className="hidden md:block h-16" aria-hidden />
 
       {/* Hero */}
       <section className="relative z-10">
