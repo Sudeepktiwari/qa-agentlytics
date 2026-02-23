@@ -715,12 +715,12 @@ export default function AdvancelyticsHomepageHardGovernance() {
 
               <div className="lg:col-span-5">
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-                  <Button href="#" variant="primary">
+                  <Button href="/decision-leakage-model" variant="primary">
                     Model Decision Leakage
                   </Button>
-                  <Button href="#" variant="secondary">
+                  {/* <Button href="#" variant="secondary">
                     Assess Revenue Stability
-                  </Button>
+                  </Button> */}
                 </div>
 
                 <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-white/70">
