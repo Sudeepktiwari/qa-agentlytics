@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   ArrowRight,
@@ -353,6 +353,30 @@ __runSanityChecks();
 
 export default function AdvancelyticsHomepageHardGovernance() {
   const [isDemoModalOpen, setIsDemoModalOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [floating, setFloating] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => {
+      const y = window.scrollY || document.documentElement.scrollTop || 0;
+      setScrolled(y > 1);
+      setFloating(y > 1);
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const handleScroll = (
+    e: React.MouseEvent<HTMLAnchorElement, MouseEvent>,
+    id: string,
+  ) => {
+    e.preventDefault();
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
@@ -360,58 +384,145 @@ export default function AdvancelyticsHomepageHardGovernance() {
         isOpen={isDemoModalOpen}
         onClose={() => setIsDemoModalOpen(false)}
       />
-      {/* Top bar */}
-      <div className="sticky top-0 z-50 border-b border-white/10 bg-slate-950/70 backdrop-blur">
+      {/* Page-specific menu — dual headers: below global, then floating */}
+      <header
+        className={`${
+          scrolled ? "top-0" : "top-16"
+        } fixed left-0 right-0 z-40 border-b border-white/10 bg-slate-950/80 backdrop-blur transition-[top,opacity,transform] duration-300 ease-out hidden md:block ${
+          floating
+            ? "opacity-0 -translate-y-1 pointer-events-none"
+            : "opacity-100 translate-y-0"
+        }`}
+      >
         <Container>
-          <div className="flex h-16 items-center justify-between">
-            {/* <div className="flex items-center gap-3"> */}
-            {/* <div className="h-9 w-9 rounded-2xl border border-white/10 bg-white/5" /> */}
-            <div>
-              <div className="text-sm font-semibold tracking-tight">
-                Advancelytics
-              </div>
-              <div className="text-xs text-white/60">Decision Intelligence</div>
+          <div className="flex h-16 items-center">
+            <div className="flex items-center gap-3 md:pr-22">
+              <span className="text-lg font-semibold tracking-tight">
+                Agentlytics
+              </span>
+              <span className="ml-2 rounded-full bg-[--surface] px-2 py-0.5 text-xs font-medium text-[--secondary]">
+                Decision Intelligence
+              </span>
             </div>
-            {/* </div> */}
 
             <div className="hidden items-center gap-2 md:flex">
               <a
                 href="#mechanism"
                 className="rounded-xl px-3 py-2 text-sm text-white/70 hover:bg-white/5 hover:text-white"
+                onClick={(e) => handleScroll(e, "mechanism")}
               >
                 Mechanism
               </a>
               <a
                 href="#differentiation"
                 className="rounded-xl px-3 py-2 text-sm text-white/70 hover:bg-white/5 hover:text-white"
+                onClick={(e) => handleScroll(e, "differentiation")}
               >
                 Differentiation
               </a>
               <a
                 href="#outcomes"
                 className="rounded-xl px-3 py-2 text-sm text-white/70 hover:bg-white/5 hover:text-white"
+                onClick={(e) => handleScroll(e, "outcomes")}
               >
                 Outcomes
               </a>
               <a
                 href="#qa"
                 className="rounded-xl px-3 py-2 text-sm text-white/70 hover:bg-white/5 hover:text-white"
+                onClick={(e) => handleScroll(e, "qa")}
               >
                 Q/A
               </a>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Button href="/decision-leakage-model" variant="secondary">
-                Model Decision Leakage
-              </Button>
-              {/* <div className="hidden sm:block">
-                <Button href="#cta">Assess Revenue Stability</Button>
-              </div> */}
-            </div>
+            <div className="flex items-center gap-2" />
           </div>
         </Container>
-      </div>
+      </header>
+
+      {/* Floating bar — appears at very top once scrolled (desktop) */}
+      <header
+        className={`fixed left-0 right-0 top-0 z-50 border-b border-white/10 bg-slate-950/80 backdrop-blur transition-opacity duration-300 ease-out hidden md:block ${
+          floating ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
+        aria-hidden={!floating}
+      >
+        <div className="w-full h-16 flex items-center justify-center">
+          <nav className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm text-white/80">
+            <a
+              href="#mechanism"
+              className="rounded-xl px-3 py-2 hover:bg-white/5 hover:text-white"
+              onClick={(e) => handleScroll(e, "mechanism")}
+            >
+              Mechanism
+            </a>
+            <a
+              href="#differentiation"
+              className="rounded-xl px-3 py-2 hover:bg-white/5 hover:text-white"
+              onClick={(e) => handleScroll(e, "differentiation")}
+            >
+              Differentiation
+            </a>
+            <a
+              href="#outcomes"
+              className="rounded-xl px-3 py-2 hover:bg-white/5 hover:text-white"
+              onClick={(e) => handleScroll(e, "outcomes")}
+            >
+              Outcomes
+            </a>
+            <a
+              href="#qa"
+              className="rounded-xl px-3 py-2 hover:bg-white/5 hover:text-white"
+              onClick={(e) => handleScroll(e, "qa")}
+            >
+              Q/A
+            </a>
+          </nav>
+        </div>
+      </header>
+
+      {/* Mobile: keep a simple sticky bar with same links (no hash change) */}
+      <header className="sticky top-0 z-30 border-b border-white/10 bg-slate-950/80 backdrop-blur md:hidden">
+        <Container>
+          <div className="flex h-14 items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-base font-semibold tracking-tight">
+                Agentlytics
+              </span>
+              <span className="ml-1 rounded-full bg-[--surface] px-2 py-0.5 text-[10px] font-medium text-[--secondary]">
+                Decision Intelligence
+              </span>
+            </div>
+            <nav className="flex items-center gap-2 text-xs text-white/70">
+              <a
+                href="#mechanism"
+                className="rounded-lg px-2 py-1 hover:bg-white/5 hover:text-white"
+                onClick={(e) => handleScroll(e, "mechanism")}
+              >
+                Mechanism
+              </a>
+              <a
+                href="#outcomes"
+                className="rounded-lg px-2 py-1 hover:bg-white/5 hover:text-white"
+                onClick={(e) => handleScroll(e, "outcomes")}
+              >
+                Outcomes
+              </a>
+              <a
+                href="#qa"
+                className="rounded-lg px-2 py-1 hover:bg-white/5 hover:text-white"
+                onClick={(e) => handleScroll(e, "qa")}
+              >
+                Q/A
+              </a>
+            </nav>
+          </div>
+        </Container>
+      </header>
+
+      {/* Spacer for fixed desktop headers */}
+      <div className="hidden md:block h-16" aria-hidden />
 
       {/* Hero */}
       <section className="relative">

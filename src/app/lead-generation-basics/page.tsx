@@ -160,6 +160,17 @@ export default function LeadGenerationPage() {
   const [scrolled, setScrolled] = useState(false);
   const [floating, setFloating] = useState(false);
 
+  const handleScroll = (
+    e: React.MouseEvent<HTMLAnchorElement, MouseEvent>,
+    id: string,
+  ) => {
+    e.preventDefault();
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
   useEffect(() => {
     const onScroll = () => {
       const y = window.scrollY || document.documentElement.scrollTop || 0;
@@ -263,13 +274,25 @@ export default function LeadGenerationPage() {
       >
         <div className="w-full h-14 flex items-center justify-center">
           <nav className="flex items-center gap-3 text-slate-600 text-sm">
-            <a href="#why" className="hover:text-slate-900">
+            <a
+              href="#why"
+              className="hover:text-slate-900"
+              onClick={(e) => handleScroll(e, "why")}
+            >
               Why
             </a>
-            <a href="#how" className="hover:text-slate-900">
+            <a
+              href="#how"
+              className="hover:text-slate-900"
+              onClick={(e) => handleScroll(e, "how")}
+            >
               How it works
             </a>
-            <a href="#features" className="hover:text-slate-900">
+            <a
+              href="#features"
+              className="hover:text-slate-900"
+              onClick={(e) => handleScroll(e, "features")}
+            >
               Features
             </a>
           </nav>
@@ -285,13 +308,25 @@ export default function LeadGenerationPage() {
       >
         <div className="w-full h-14 flex items-center justify-center">
           <nav className="flex items-center gap-3 text-slate-600 text-sm">
-            <a href="#why" className="hover:text-slate-900">
+            <a
+              href="#why"
+              className="hover:text-slate-900"
+              onClick={(e) => handleScroll(e, "why")}
+            >
               Why
             </a>
-            <a href="#how" className="hover:text-slate-900">
+            <a
+              href="#how"
+              className="hover:text-slate-900"
+              onClick={(e) => handleScroll(e, "how")}
+            >
               How it works
             </a>
-            <a href="#features" className="hover:text-slate-900">
+            <a
+              href="#features"
+              className="hover:text-slate-900"
+              onClick={(e) => handleScroll(e, "features")}
+            >
               Features
             </a>
           </nav>
@@ -318,13 +353,25 @@ export default function LeadGenerationPage() {
             </span>
           </div>
           <nav className="hidden items-center gap-6 text-sm font-medium text-slate-700 md:flex ml-28">
-            <a href="#why" className="hover:text-slate-900">
+            <a
+              href="#why"
+              className="hover:text-slate-900"
+              onClick={(e) => handleScroll(e, "why")}
+            >
               Why
             </a>
-            <a href="#how" className="hover:text-slate-900">
+            <a
+              href="#how"
+              className="hover:text-slate-900"
+              onClick={(e) => handleScroll(e, "how")}
+            >
               How it works
             </a>
-            <a href="#features" className="hover:text-slate-900">
+            <a
+              href="#features"
+              className="hover:text-slate-900"
+              onClick={(e) => handleScroll(e, "features")}
+            >
               Features
             </a>
           </nav>
@@ -340,13 +387,25 @@ export default function LeadGenerationPage() {
       >
         <div className="w-full h-14 flex items-center justify-center">
           <nav className="flex items-center gap-3 text-slate-600 text-sm">
-            <a href="#why" className="hover:text-slate-900">
+            <a
+              href="#why"
+              className="hover:text-slate-900"
+              onClick={(e) => handleScroll(e, "why")}
+            >
               Why
             </a>
-            <a href="#how" className="hover:text-slate-900">
+            <a
+              href="#how"
+              className="hover:text-slate-900"
+              onClick={(e) => handleScroll(e, "how")}
+            >
               How it works
             </a>
-            <a href="#features" className="hover:text-slate-900">
+            <a
+              href="#features"
+              className="hover:text-slate-900"
+              onClick={(e) => handleScroll(e, "features")}
+            >
               Features
             </a>
           </nav>

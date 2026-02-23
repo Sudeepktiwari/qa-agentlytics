@@ -471,8 +471,17 @@ export default function ProactiveAIPage() {
               : "opacity-100 translate-y-0"
           }`}
         >
-          <div className="w-full h-auto min-h-16 px-3 py-2 flex items-center justify-center">
-            <nav className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-slate-600 text-sm">
+          <div className="mx-auto flex max-w-7xl items-center px-4 py-3 md:px-6">
+            <div className="flex items-center gap-3 md:pr-22">
+              {/* <div className="h-8 w-8 rounded-xl bg-[--brand-primary]" /> */}
+              <span className="text-lg font-semibold tracking-tight">
+                Agentlytics
+              </span>
+              <span className="ml-2 rounded-full bg-[--surface] px-2 py-0.5 text-xs font-medium text-slate-600">
+                AI Chatbots
+              </span>
+            </div>
+            <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-1 text-slate-600 text-sm">
               <a
                 href="#how"
                 onClick={(e) => handleScroll(e, "how")}

@@ -267,6 +267,17 @@ export default function OnboardingAIBotPage() {
   const [scrolled, setScrolled] = useState(false);
   const [floating, setFloating] = useState(false);
 
+  const handleScroll = (
+    e: React.MouseEvent<HTMLAnchorElement, MouseEvent>,
+    id: string,
+  ) => {
+    e.preventDefault();
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
   useEffect(() => {
     const onScroll = () => {
       const y = window.scrollY || document.documentElement.scrollTop || 0;
@@ -411,22 +422,46 @@ export default function OnboardingAIBotPage() {
       >
         <div className="w-full h-auto min-h-16 px-3 py-2 flex items-center justify-center">
           <nav className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-slate-600 text-sm">
-            <a href="#how-it-works" className="hover:text-slate-900">
+            <a
+              href="#how-it-works"
+              className="hover:text-slate-900"
+              onClick={(e) => handleScroll(e, "how-it-works")}
+            >
               How it works
             </a>
-            <a href="#why" className="hover:text-slate-900">
+            <a
+              href="#why"
+              className="hover:text-slate-900"
+              onClick={(e) => handleScroll(e, "why")}
+            >
               Why
             </a>
-            <a href="#brain" className="hover:text-slate-900">
+            <a
+              href="#brain"
+              className="hover:text-slate-900"
+              onClick={(e) => handleScroll(e, "brain")}
+            >
               Inside the Brain
             </a>
-            <a href="#features" className="hover:text-slate-900">
+            <a
+              href="#features"
+              className="hover:text-slate-900"
+              onClick={(e) => handleScroll(e, "features")}
+            >
               Features
             </a>
-            <a href="#security" className="hover:text-slate-900">
+            <a
+              href="#security"
+              className="hover:text-slate-900"
+              onClick={(e) => handleScroll(e, "security")}
+            >
               Security
             </a>
-            <a href="#reviews" className="hover:text-slate-900">
+            <a
+              href="#reviews"
+              className="hover:text-slate-900"
+              onClick={(e) => handleScroll(e, "reviews")}
+            >
               Reviews
             </a>
           </nav>
@@ -442,22 +477,46 @@ export default function OnboardingAIBotPage() {
       >
         <div className="w-full h-auto min-h-16 px-3 py-2 flex items-center justify-center">
           <nav className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-slate-600 text-sm">
-            <a href="#how-it-works" className="hover:text-slate-900">
+            <a
+              href="#how-it-works"
+              className="hover:text-slate-900"
+              onClick={(e) => handleScroll(e, "how-it-works")}
+            >
               How it works
             </a>
-            <a href="#why" className="hover:text-slate-900">
+            <a
+              href="#why"
+              className="hover:text-slate-900"
+              onClick={(e) => handleScroll(e, "why")}
+            >
               Why
             </a>
-            <a href="#brain" className="hover:text-slate-900">
+            <a
+              href="#brain"
+              className="hover:text-slate-900"
+              onClick={(e) => handleScroll(e, "brain")}
+            >
               Inside the Brain
             </a>
-            <a href="#features" className="hover:text-slate-900">
+            <a
+              href="#features"
+              className="hover:text-slate-900"
+              onClick={(e) => handleScroll(e, "features")}
+            >
               Features
             </a>
-            <a href="#security" className="hover:text-slate-900">
+            <a
+              href="#security"
+              className="hover:text-slate-900"
+              onClick={(e) => handleScroll(e, "security")}
+            >
               Security
             </a>
-            <a href="#reviews" className="hover:text-slate-900">
+            <a
+              href="#reviews"
+              className="hover:text-slate-900"
+              onClick={(e) => handleScroll(e, "reviews")}
+            >
               Reviews
             </a>
           </nav>
@@ -484,22 +543,46 @@ export default function OnboardingAIBotPage() {
             </span>
           </div>
           <nav className="hidden items-center gap-6 text-sm font-medium text-slate-700 md:flex">
-            <a href="#how-it-works" className="hover:text-slate-900">
+            <a
+              href="#how-it-works"
+              className="hover:text-slate-900"
+              onClick={(e) => handleScroll(e, "how-it-works")}
+            >
               How it works
             </a>
-            <a href="#why" className="hover:text-slate-900">
+            <a
+              href="#why"
+              className="hover:text-slate-900"
+              onClick={(e) => handleScroll(e, "why")}
+            >
               Why
             </a>
-            <a href="#brain" className="hover:text-slate-900">
+            <a
+              href="#brain"
+              className="hover:text-slate-900"
+              onClick={(e) => handleScroll(e, "brain")}
+            >
               Inside the Brain
             </a>
-            <a href="#features" className="hover:text-slate-900">
+            <a
+              href="#features"
+              className="hover:text-slate-900"
+              onClick={(e) => handleScroll(e, "features")}
+            >
               Features
             </a>
-            <a href="#security" className="hover:text-slate-900">
+            <a
+              href="#security"
+              className="hover:text-slate-900"
+              onClick={(e) => handleScroll(e, "security")}
+            >
               Security
             </a>
-            <a href="#reviews" className="hover:text-slate-900">
+            <a
+              href="#reviews"
+              className="hover:text-slate-900"
+              onClick={(e) => handleScroll(e, "reviews")}
+            >
               Reviews
             </a>
           </nav>
@@ -515,22 +598,46 @@ export default function OnboardingAIBotPage() {
       >
         <div className="w-full h-auto min-h-16 px-3 py-2 flex items-center justify-center">
           <nav className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-slate-600 text-sm">
-            <a href="#how-it-works" className="hover:text-slate-900">
+            <a
+              href="#how-it-works"
+              className="hover:text-slate-900"
+              onClick={(e) => handleScroll(e, "how-it-works")}
+            >
               How it works
             </a>
-            <a href="#why" className="hover:text-slate-900">
+            <a
+              href="#why"
+              className="hover:text-slate-900"
+              onClick={(e) => handleScroll(e, "why")}
+            >
               Why
             </a>
-            <a href="#brain" className="hover:text-slate-900">
+            <a
+              href="#brain"
+              className="hover:text-slate-900"
+              onClick={(e) => handleScroll(e, "brain")}
+            >
               Inside the Brain
             </a>
-            <a href="#features" className="hover:text-slate-900">
+            <a
+              href="#features"
+              className="hover:text-slate-900"
+              onClick={(e) => handleScroll(e, "features")}
+            >
               Features
             </a>
-            <a href="#security" className="hover:text-slate-900">
+            <a
+              href="#security"
+              className="hover:text-slate-900"
+              onClick={(e) => handleScroll(e, "security")}
+            >
               Security
             </a>
-            <a href="#reviews" className="hover:text-slate-900">
+            <a
+              href="#reviews"
+              className="hover:text-slate-900"
+              onClick={(e) => handleScroll(e, "reviews")}
+            >
               Reviews
             </a>
           </nav>
