@@ -2297,9 +2297,10 @@ async function processBatch(req: NextRequest) {
       const sections = Array.isArray(summary.sections) ? summary.sections : [];
       if (!sections.length) return summary;
       let blocks = parseSectionBlocks(pageText);
+      const minChars = blocks.length >= 8 ? 30 : 100;
       blocks =
         Array.isArray(blocks) && blocks.length > 0
-          ? mergeSmallSectionBlocks(blocks, 100)
+          ? mergeSmallSectionBlocks(blocks, minChars)
           : blocks;
       summary.sections = await Promise.all(
         sections.map(async (sec: any, idx: number) => {
@@ -2502,9 +2503,10 @@ async function processBatch(req: NextRequest) {
       // console.log removed
       let text = await extractTextFromUrl(retryUrl);
       const rawBlocks = parseSectionBlocks(text);
+      const minChars = rawBlocks.length >= 8 ? 30 : 100;
       const mergedBlocks =
         rawBlocks.length > 0
-          ? mergeSmallSectionBlocks(rawBlocks, 100)
+          ? mergeSmallSectionBlocks(rawBlocks, minChars)
           : rawBlocks;
       if (mergedBlocks.length > 0) {
         text = blocksToSectionedText(mergedBlocks);
@@ -2705,9 +2707,10 @@ IMPORTANT REQUIREMENTS:
       // INJECT SECTION CONTENT (Fix for Retry/Recrawl flow)
       if (structuredSummary && Array.isArray(structuredSummary.sections)) {
         let blocks = parseSectionBlocks(text);
+        const minChars = blocks.length >= 8 ? 30 : 100;
         blocks =
           Array.isArray(blocks) && blocks.length > 0
-            ? mergeSmallSectionBlocks(blocks, 100)
+            ? mergeSmallSectionBlocks(blocks, minChars)
             : blocks;
         structuredSummary.sections.forEach((sec: any, idx: number) => {
           // ALWAYS inject content to ensure it matches the parsed text
@@ -3187,9 +3190,10 @@ IMPORTANT REQUIREMENTS:
 
           let text = await extractTextFromUrl(url);
           const rawBlocks = parseSectionBlocks(text);
+          const minChars = rawBlocks.length >= 8 ? 30 : 100;
           const mergedBlocks =
             rawBlocks.length > 0
-              ? mergeSmallSectionBlocks(rawBlocks, 100)
+              ? mergeSmallSectionBlocks(rawBlocks, minChars)
               : rawBlocks;
           if (mergedBlocks.length > 0) {
             text = blocksToSectionedText(mergedBlocks);
@@ -3321,9 +3325,10 @@ IMPORTANT REQUIREMENTS:
                   structuredSummary = normalizeStructuredSummary(parsed);
                   try {
                     let blocks = parseSectionBlocks(text);
+                    const minChars = blocks.length >= 8 ? 30 : 100;
                     blocks =
                       Array.isArray(blocks) && blocks.length > 0
-                        ? mergeSmallSectionBlocks(blocks, 100)
+                        ? mergeSmallSectionBlocks(blocks, minChars)
                         : blocks;
                     if (Array.isArray(structuredSummary?.sections)) {
                       if (
@@ -3567,9 +3572,10 @@ IMPORTANT REQUIREMENTS:
               structuredSummary = normalizeStructuredSummary(fallback);
               try {
                 let blocks = parseSectionBlocks(text);
+                const minChars = blocks.length >= 8 ? 30 : 100;
                 blocks =
                   Array.isArray(blocks) && blocks.length > 0
-                    ? mergeSmallSectionBlocks(blocks, 100)
+                    ? mergeSmallSectionBlocks(blocks, minChars)
                     : blocks;
                 if (Array.isArray(structuredSummary?.sections)) {
                   structuredSummary.sections = await Promise.all(
