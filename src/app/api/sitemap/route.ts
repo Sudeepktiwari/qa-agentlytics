@@ -2764,8 +2764,21 @@ IMPORTANT REQUIREMENTS:
         pageData.summaryGeneratedAt = new Date();
       }
 
-      const insertResult = await pages.insertOne(pageData);
-      const pageId = insertResult.insertedId;
+      // Use updateOne with upsert instead of insertOne to prevent duplicates
+      const updateResult = await pages.updateOne(
+        { adminId, url: retryUrl },
+        { $set: pageData },
+        { upsert: true },
+      );
+
+      let pageId;
+      if (updateResult.upsertedId) {
+        pageId = updateResult.upsertedId;
+      } else {
+        const existingPage = await pages.findOne({ adminId, url: retryUrl });
+        pageId = existingPage?._id;
+      }
+
       if (structuredSummary && pageId) {
         await structuredSummaries.updateOne(
           { adminId, pageId },
