@@ -533,7 +533,11 @@ export async function enrichStructuredSummary(
       `[enrichStructuredSummary] Re-aligning sections (summary: ${sections.length}, parsed: ${blocks.length}) for ${url}`,
     );
     summary.sections = blocks.map((block, idx) => {
-      const base = sections[idx] || sections[sections.length - 1] || {};
+      // Only use the existing section at this index as the base.
+      // Do NOT fallback to the last section, as that copies unrelated questions.
+      const existingSection = sections[idx];
+      const base = existingSection || {};
+
       const baseName =
         typeof base.sectionName === "string" ? base.sectionName : "";
       const sectionName = block.title || baseName || `Section ${idx + 1}`;
@@ -548,12 +552,22 @@ export async function enrichStructuredSummary(
               if (!body) return sectionName;
               return body.length > 400 ? body.slice(0, 400) + "..." : body;
             })();
-      return {
+
+      const newSection: any = {
         ...base,
         sectionName,
         sectionSummary: summaryText,
         sectionContent: block.body || "",
       };
+
+      // If this is a new section (no matching existing section), ensure questions are cleared
+      // so they can be regenerated.
+      if (!existingSection) {
+        delete newSection.leadQuestions;
+        delete newSection.salesQuestions;
+      }
+
+      return newSection;
     });
   }
 
