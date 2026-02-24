@@ -311,7 +311,11 @@ Generate the JSON response.
     const txt = resp.choices[0]?.message?.content || "";
     const data = JSON.parse(txt);
     return data;
-  } catch {
+  } catch (error) {
+    console.error(
+      `[refineSectionQuestions] Error generating questions for section "${sectionName}":`,
+      error,
+    );
     return null;
   }
 }
@@ -1681,7 +1685,7 @@ async function extractTextFromUrl(
     };
 
     const contentSelector =
-      "h1, h2, h3, h4, h5, h6, p, li, blockquote, td, th, div, article, section, dt, summary, legend, span";
+      "h1, h2, h3, h4, h5, h6, p, li, blockquote, td, th, div, article, section, dt, summary, legend, span, button, a";
     scope.find(contentSelector).each((_, el) => {
       const $el = $(el);
       // Avoid duplication: if this element has children that are also in our selector,
@@ -1761,12 +1765,13 @@ async function extractTextFromUrl(
     // Trigger JS extraction if:
     // 1. Content is very short (< 500 chars) - likely loading state
     // 2. Slide page with minimal content
-    // 3. No sections found but content is not huge (< 20000 chars) - likely dynamic rendering masking structure
+    // 3. No sections or few sections found - likely dynamic rendering masking structure
     // 4. Explicitly matches content patterns and is relatively short
     if (
       text.length < 500 ||
       isSlidePageWithMinimalContent ||
-      ((hasNoSections || hasFewSections) && text.length < 20000) ||
+      hasNoSections ||
+      hasFewSections ||
       (text.length < 1000 && isContentPage)
     ) {
       // console.log removed
@@ -1819,6 +1824,10 @@ async function extractTextUsingBrowser(url: string): Promise<string> {
     });
 
     const page = await browser.newPage();
+    // Enable console logging from browser context
+    page.on("console", (msg) => {
+      console.log(`[BROWSER LOG]: ${msg.text()}`);
+    });
     await page.setViewport({ width: 1280, height: 720 });
     await page.setUserAgent(
       "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -1932,10 +1941,10 @@ async function extractTextUsingBrowser(url: string): Promise<string> {
       };
 
       const sections: string[] = [];
+      let headerCount = 0;
       let currentTitle = "";
       let currentContent: string[] = [];
       let sectionCount = 0;
-      let lastHeaderElement: Element | null = null;
       const seenBodies = new Set<string>();
 
       const normalize = (t: string) => t.replace(/\s+/g, " ").trim();
@@ -1943,9 +1952,17 @@ async function extractTextUsingBrowser(url: string): Promise<string> {
       const pushSection = () => {
         const rawBody = normalize(currentContent.join(" "));
         if (!rawBody || rawBody.length < 20) {
-          currentTitle = "";
-          currentContent = [];
-          return;
+          // If we have a title but no body, keep the title?
+          // No, usually meaningless.
+          // But maybe the title IS the content (e.g. strict Q&A).
+          // Reset for now.
+          if (!currentTitle) {
+            currentTitle = "";
+            currentContent = [];
+            return;
+          }
+          // If we have a title, we might want to keep it if it's substantial?
+          // For now, stick to the limit.
         }
 
         // Deduplication
@@ -1959,83 +1976,69 @@ async function extractTextUsingBrowser(url: string): Promise<string> {
 
         // Infer title if missing
         let title = normalize(currentTitle);
-        if (!title) {
+        if (!title && rawBody) {
           title = rawBody.split(".")[0].split(" ").slice(0, 8).join(" ");
         }
 
-        sectionCount++;
-        sections.push(`[SECTION ${sectionCount}] ${title}\n${rawBody}`);
+        if (title || rawBody) {
+          sectionCount++;
+          sections.push(`[SECTION ${sectionCount}] ${title}\n${rawBody}`);
+        }
         currentTitle = "";
         currentContent = [];
       };
 
-      // Traverse the DOM to extract sections
-      // We'll focus on the main content area if possible
+      // Traverse the DOM recursively to extract sections
+      const traverse = (node: Node) => {
+        // Handle Text Nodes
+        if (node.nodeType === Node.TEXT_NODE) {
+          const text = node.textContent?.trim();
+          if (text && text.length > 0) {
+            currentContent.push(text);
+          }
+          return;
+        }
+
+        // Handle Elements
+        if (node.nodeType === Node.ELEMENT_NODE) {
+          const el = node as Element;
+
+          // Skip noise (should have been removed, but double check if needed)
+          // (Scripts etc were removed earlier)
+
+          // Check if Header
+          if (isHeaderElement(el)) {
+            if (currentTitle || currentContent.length > 0) pushSection();
+
+            headerCount++;
+            console.log(
+              `[DEBUG] Found header: ${el.tagName} class=${el.className} text=${el.textContent?.substring(0, 30)}`,
+            );
+
+            currentTitle = el.textContent || "";
+            currentContent = [];
+
+            // Do NOT traverse children of a header (we took its text)
+            return;
+          }
+
+          // Not a header, traverse children
+          node.childNodes.forEach((child) => traverse(child));
+        }
+      };
+
       const main =
         document.querySelector("main") ||
         document.querySelector("[role='main']") ||
         document.body;
 
-      // Get all relevant elements in document order
-      const elements = main.querySelectorAll(contentSelector);
-
-      elements.forEach((el) => {
-        // Skip hidden elements (if strict visibility check is needed)
-        // BUT for Framer Motion opacity:0, we want to capture them.
-        // So we remove the offsetParent check or make it lenient.
-        // if ((el as HTMLElement).offsetParent === null) return;
-
-        // Skip if inside another element we already processed?
-        // Actually, querySelectorAll returns all descendants. We want to avoid duplication.
-        // Simple strategy: If it's a header, treat as header. If it's text, append.
-        // But nested elements (div > p) will cause double text.
-        // We should only process 'leaf' nodes or nodes that contain text directly.
-
-        // Better approach for flat traversal:
-        // Iterate all elements, check if header.
-        // If header -> push previous section, start new.
-        // If content -> append.
-
-        // To avoid duplication, we can check if the element has direct text nodes.
-        const hasChildContentElements =
-          el.querySelector(contentSelector) !== null;
-
-        const hasDirectText = Array.from(el.childNodes).some(
-          (node) =>
-            node.nodeType === Node.TEXT_NODE &&
-            node.textContent &&
-            node.textContent.trim().length > 0,
-        );
-
-        if (isHeaderElement(el)) {
-          // If this header is inside a previously processed header, skip it to avoid duplication.
-          // Example: <h2><span style="font-size:30px">Title</span></h2>
-          // Both H2 and SPAN might be detected as headers.
-          if (lastHeaderElement && lastHeaderElement.contains(el)) {
-            return;
-          }
-
-          if (currentTitle || currentContent.length > 0) pushSection();
-          currentTitle = el.textContent || "";
-          currentContent = [];
-          lastHeaderElement = el;
-        } else if (!hasChildContentElements) {
-          // Leaf node (from our selector's perspective) - capture all text
-          // This captures text in elements not in our selector (buttons, links, spans)
-          // that are inside a container that IS in our selector (div, p)
-          const text = el.textContent || "";
-          if (text && text.trim().length > 0) {
-            currentContent.push(text);
-          }
-        } else if (hasDirectText) {
-          // Container with direct text AND child content elements.
-          // We skip to avoid duplication, assuming the child elements will be visited.
-          // Note: This risks losing direct text in mixed containers (e.g. "Intro: <p>Body</p>"),
-          // but prevents "Header <p>Header</p>" duplication.
-        }
-      });
+      traverse(main);
 
       if (currentTitle || currentContent.length > 0) pushSection();
+
+      console.log(
+        `[DEBUG] extractTextUsingBrowser: Found ${headerCount} headers and generated ${sections.length} sections`,
+      );
 
       return sections.length > 0
         ? sections.join("\n\n")
@@ -2281,7 +2284,18 @@ async function processBatch(req: NextRequest) {
 
   const { sitemapUrl, retryUrl } = body;
 
+  // Helper for URL normalization
+  const normalizeUrl = (u: string) => {
+    try {
+      const urlObj = new URL(u);
+      return urlObj.origin + urlObj.pathname.replace(/\/$/, "");
+    } catch (e) {
+      return u.replace(/\/$/, "");
+    }
+  };
+
   if (retryUrl) {
+    const normalizedRetryUrl = normalizeUrl(retryUrl);
     // console.log removed
     const db = await getDb();
     const sitemapUrls = db.collection("sitemap_urls");
@@ -2297,21 +2311,53 @@ async function processBatch(req: NextRequest) {
       const sections = Array.isArray(summary.sections) ? summary.sections : [];
       if (!sections.length) return summary;
       let blocks = parseSectionBlocks(pageText);
-      const minChars = blocks.length >= 8 ? 30 : 100;
+      // Use a lower threshold (30 chars) to preserve valid small sections
+      const minChars = 30;
       blocks =
         Array.isArray(blocks) && blocks.length > 0
           ? mergeSmallSectionBlocks(blocks, minChars)
           : blocks;
-      summary.sections = await Promise.all(
-        sections.map(async (sec: any, idx: number) => {
+      console.log(
+        `[enrichStructuredSummaryWithQuestions] Processing ${sections.length} sections with ${blocks.length} blocks for retryUrl`,
+      );
+      // Process sections sequentially to avoid rate limits and ensure reliability
+      const enrichedSections = [];
+      for (let idx = 0; idx < sections.length; idx++) {
+        const sec = sections[idx];
+        try {
           const name = String(sec?.sectionName || `Section ${idx + 1}`);
           const sectionSummary = String(sec?.sectionSummary || "");
-          const block = blocks[idx] || { title: name, body: sectionSummary };
+
+          // Improved block matching
+          let block = blocks.find(
+            (b) =>
+              b.title && name && b.title.toLowerCase() === name.toLowerCase(),
+          );
+
+          // Fallback matching: try partial match or index
+          if (!block) {
+            block = blocks[idx];
+          }
+
+          // Final fallback
+          if (!block) {
+            block = { title: name, body: sectionSummary };
+          }
+
           const sectionType = classifySectionType(
             name,
             sectionSummary,
             String(block.body || ""),
           );
+          console.log(
+            `[enrichStructuredSummaryWithQuestions] Generating questions for section ${
+              idx + 1
+            }/${sections.length}: "${name}"`,
+          );
+
+          // Add a small delay between requests to be nice to the API
+          if (idx > 0) await new Promise((resolve) => setTimeout(resolve, 500));
+
           const questionsData = await refineSectionQuestions(
             openai,
             retryUrl,
@@ -2322,6 +2368,14 @@ async function processBatch(req: NextRequest) {
             sectionSummary,
             sectionType as any,
           );
+
+          if (!questionsData) {
+            console.warn(
+              `[enrichStructuredSummaryWithQuestions] No questions generated for section ${
+                idx + 1
+              }`,
+            );
+          }
 
           if (questionsData) {
             sec.leadQuestions = (
@@ -2426,9 +2480,17 @@ async function processBatch(req: NextRequest) {
               );
             }
           }
-          return sec;
-        }),
-      );
+        } catch (err) {
+          console.error(
+            `[enrichStructuredSummaryWithQuestions] Error processing section ${
+              idx + 1
+            }:`,
+            err,
+          );
+        }
+        enrichedSections.push(sec);
+      }
+      summary.sections = enrichedSections;
       return normalizeStructuredSummary(summary);
     };
 
@@ -2503,7 +2565,8 @@ async function processBatch(req: NextRequest) {
       // console.log removed
       let text = await extractTextFromUrl(retryUrl);
       const rawBlocks = parseSectionBlocks(text);
-      const minChars = rawBlocks.length >= 8 ? 30 : 100;
+      // Use a lower threshold (30 chars) to preserve valid small sections
+      const minChars = 30;
       const mergedBlocks =
         rawBlocks.length > 0
           ? mergeSmallSectionBlocks(rawBlocks, minChars)
@@ -2680,23 +2743,28 @@ IMPORTANT REQUIREMENTS:
                 }
               }
 
-              structuredSummary = await enrichStructuredSummary(
+              structuredSummary = await enrichStructuredSummaryWithQuestions(
                 structuredSummary,
                 text,
               );
             } catch (parseError) {
-              // console.error removed
+              console.error(
+                `[Retry] Structured summary parsing failed for ${retryUrl}:`,
+                parseError,
+              );
             }
           }
           if (!structuredSummary && text && text.trim().length > 0) {
             const fallback = buildFallbackStructuredSummaryFromText(text);
             if (fallback) {
               structuredSummary = normalizeStructuredSummary(fallback);
-              structuredSummary = await enrichStructuredSummary(
+              structuredSummary = await enrichStructuredSummaryWithQuestions(
                 structuredSummary,
                 text,
               );
-              // console.log removed
+              console.log(
+                `[Retry] Used fallback structured summary for ${retryUrl}`,
+              );
             }
           }
         } catch (summaryError) {
@@ -2707,7 +2775,8 @@ IMPORTANT REQUIREMENTS:
       // INJECT SECTION CONTENT (Fix for Retry/Recrawl flow)
       if (structuredSummary && Array.isArray(structuredSummary.sections)) {
         let blocks = parseSectionBlocks(text);
-        const minChars = blocks.length >= 8 ? 30 : 100;
+        // Use a lower threshold (30 chars) to preserve valid small sections
+        const minChars = 30;
         blocks =
           Array.isArray(blocks) && blocks.length > 0
             ? mergeSmallSectionBlocks(blocks, minChars)
@@ -2753,10 +2822,10 @@ IMPORTANT REQUIREMENTS:
 
       const pageData: any = {
         adminId,
-        url: retryUrl,
+        url: normalizedRetryUrl,
         text,
         summary: basicSummary,
-        filename: retryUrl,
+        filename: normalizedRetryUrl,
         createdAt: new Date(),
       };
 
@@ -2766,7 +2835,7 @@ IMPORTANT REQUIREMENTS:
 
       // Use updateOne with upsert instead of insertOne to prevent duplicates
       const updateResult = await pages.updateOne(
-        { adminId, url: retryUrl },
+        { adminId, url: normalizedRetryUrl },
         { $set: pageData },
         { upsert: true },
       );
@@ -2775,7 +2844,10 @@ IMPORTANT REQUIREMENTS:
       if (updateResult.upsertedId) {
         pageId = updateResult.upsertedId;
       } else {
-        const existingPage = await pages.findOne({ adminId, url: retryUrl });
+        const existingPage = await pages.findOne({
+          adminId,
+          url: normalizedRetryUrl,
+        });
         pageId = existingPage?._id;
       }
 
@@ -2786,7 +2858,7 @@ IMPORTANT REQUIREMENTS:
             $set: {
               adminId,
               pageId,
-              url: retryUrl,
+              url: normalizedRetryUrl,
               structuredSummary,
               summaryGeneratedAt: new Date(),
             },
@@ -2798,7 +2870,7 @@ IMPORTANT REQUIREMENTS:
       // Mark as crawled for ALL matching URLs (which should be just one now)
       // And clear error state
       await sitemapUrls.updateMany(
-        { adminId, url: retryUrl },
+        { adminId, url: normalizedRetryUrl },
         {
           $set: { crawled: true, crawledAt: new Date() },
           $unset: { failedAt: 1, error: 1 },
@@ -2998,9 +3070,11 @@ IMPORTANT REQUIREMENTS:
     const now = new Date();
 
     // Ensure no duplicate URLs before creating docs
-    const uniqueUrls = Array.from(new Set(urls));
+    const uniqueUrls = Array.from(new Set(urls.map((u) => normalizeUrl(u))));
     if (uniqueUrls.length !== urls.length) {
-      // console.log removed
+      console.log(
+        `[processBatch] Deduped URLs from ${urls.length} to ${uniqueUrls.length}`,
+      );
     }
 
     const sitemapUrlDocs = uniqueUrls.map((url) => ({
