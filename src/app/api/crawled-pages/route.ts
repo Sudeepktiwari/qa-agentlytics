@@ -447,18 +447,29 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   let client: MongoClient | null = null;
   try {
-    // Verify API key
+    let adminId: string | null = null;
+
+    // 1. Try API key
     const apiKey = request.headers.get("x-api-key");
-    if (!apiKey) {
-      return NextResponse.json({ error: "API key required" }, { status: 401 });
+    if (apiKey) {
+      const verification = await verifyApiKey(apiKey);
+      if (verification) {
+        adminId = verification.adminId;
+      }
     }
 
-    const verification = await verifyApiKey(apiKey);
-    if (!verification) {
-      return NextResponse.json({ error: "Invalid API key" }, { status: 401 });
+    // 2. Try Cookie if no API key or invalid
+    if (!adminId) {
+      const cookieAuth = verifyAdminTokenFromCookie(request);
+      if (cookieAuth) {
+        adminId = cookieAuth.adminId;
+      }
     }
 
-    const adminId = verification.adminId;
+    if (!adminId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await request.json();
     assertBodyConstraints(body, { maxBytes: 64 * 1024, maxDepth: 6 });
 

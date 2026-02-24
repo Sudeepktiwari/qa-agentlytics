@@ -1938,6 +1938,7 @@ async function extractTextUsingBrowser(url: string): Promise<string> {
       let currentTitle = "";
       let currentContent: string[] = [];
       let sectionCount = 0;
+      let lastHeaderElement: Element | null = null;
       const seenBodies = new Set<string>();
 
       const normalize = (t: string) => t.replace(/\s+/g, " ").trim();
@@ -2010,9 +2011,17 @@ async function extractTextUsingBrowser(url: string): Promise<string> {
         );
 
         if (isHeaderElement(el)) {
+          // If this header is inside a previously processed header, skip it to avoid duplication.
+          // Example: <h2><span style="font-size:30px">Title</span></h2>
+          // Both H2 and SPAN might be detected as headers.
+          if (lastHeaderElement && lastHeaderElement.contains(el)) {
+            return;
+          }
+
           if (currentTitle || currentContent.length > 0) pushSection();
           currentTitle = el.textContent || "";
           currentContent = [];
+          lastHeaderElement = el;
         } else if (!hasChildContentElements) {
           // Leaf node (from our selector's perspective) - capture all text
           // This captures text in elements not in our selector (buttons, links, spans)
@@ -2293,7 +2302,7 @@ async function processBatch(req: NextRequest) {
       let blocks = parseSectionBlocks(pageText);
       blocks =
         Array.isArray(blocks) && blocks.length > 0
-          ? mergeSmallSectionBlocks(blocks)
+          ? mergeSmallSectionBlocks(blocks, 100)
           : blocks;
       summary.sections = await Promise.all(
         sections.map(async (sec: any, idx: number) => {
@@ -2436,14 +2445,14 @@ async function processBatch(req: NextRequest) {
 
     const sitemapUrlContext = failedEntry.sitemapUrl;
 
-    // Reset status
-    await sitemapUrls.updateOne(
-      { _id: failedEntry._id },
-      {
-        $unset: { failedAt: 1, error: 1 },
-        $set: { recrawlAt: new Date(), recrawlReason: "user_retry" },
-      },
-    );
+    // Reset status for ALL matching URLs (handles duplicates across sitemaps)
+    // await sitemapUrls.updateMany(
+    //   { adminId, url: retryUrl },
+    //   {
+    //     $unset: { failedAt: 1, error: 1 },
+    //     $set: { recrawlAt: new Date(), recrawlReason: "user_retry" },
+    //   },
+    // );
 
     try {
       const retryUrlTrimmed = retryUrl.trim();
@@ -2456,15 +2465,39 @@ async function processBatch(req: NextRequest) {
           ? [retryUrlNoSlash]
           : [retryUrlNoSlash, retryUrlWithSlash];
 
-      await pages.deleteMany({ adminId, url: { $in: urlVariants } });
+      const urlConditions = urlVariants.map((u) => ({
+        url: {
+          $regex: new RegExp(
+            `^${u.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`,
+            "i",
+          ),
+        },
+      }));
+      const filenameConditions = urlVariants.map((u) => ({
+        filename: {
+          $regex: new RegExp(
+            `^${u.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`,
+            "i",
+          ),
+        },
+      }));
+
+      await pages.deleteMany({ adminId, $or: urlConditions });
       await structuredSummaries.deleteMany({
         adminId,
-        url: { $in: urlVariants },
+        $or: urlConditions,
       });
       await pineconeVectors.deleteMany({
         adminId,
-        filename: { $in: urlVariants },
+        $or: filenameConditions,
       });
+      // Delete duplicates from sitemapUrls, keeping only the current failed entry (by ID)
+      await sitemapUrls.deleteMany({
+        adminId,
+        $or: urlConditions,
+        _id: { $ne: failedEntry._id },
+      });
+
       for (const u of urlVariants) {
         await deleteChunksByUrl(u, adminId);
       }
@@ -2473,7 +2506,9 @@ async function processBatch(req: NextRequest) {
       let text = await extractTextFromUrl(retryUrl);
       const rawBlocks = parseSectionBlocks(text);
       const mergedBlocks =
-        rawBlocks.length > 0 ? mergeSmallSectionBlocks(rawBlocks) : rawBlocks;
+        rawBlocks.length > 0
+          ? mergeSmallSectionBlocks(rawBlocks, 100)
+          : rawBlocks;
       if (mergedBlocks.length > 0) {
         text = blocksToSectionedText(mergedBlocks);
       }
@@ -2747,10 +2782,14 @@ IMPORTANT REQUIREMENTS:
         );
       }
 
-      // Mark as crawled
-      await sitemapUrls.updateOne(
-        { adminId, url: retryUrl, sitemapUrl: sitemapUrlContext },
-        { $set: { crawled: true, crawledAt: new Date() } },
+      // Mark as crawled for ALL matching URLs (which should be just one now)
+      // And clear error state
+      await sitemapUrls.updateMany(
+        { adminId, url: retryUrl },
+        {
+          $set: { crawled: true, crawledAt: new Date() },
+          $unset: { failedAt: 1, error: 1 },
+        },
       );
 
       // Chunk and embed
@@ -3140,7 +3179,7 @@ IMPORTANT REQUIREMENTS:
           const rawBlocks = parseSectionBlocks(text);
           const mergedBlocks =
             rawBlocks.length > 0
-              ? mergeSmallSectionBlocks(rawBlocks)
+              ? mergeSmallSectionBlocks(rawBlocks, 100)
               : rawBlocks;
           if (mergedBlocks.length > 0) {
             text = blocksToSectionedText(mergedBlocks);
@@ -3274,7 +3313,7 @@ IMPORTANT REQUIREMENTS:
                     let blocks = parseSectionBlocks(text);
                     blocks =
                       Array.isArray(blocks) && blocks.length > 0
-                        ? mergeSmallSectionBlocks(blocks)
+                        ? mergeSmallSectionBlocks(blocks, 100)
                         : blocks;
                     if (Array.isArray(structuredSummary?.sections)) {
                       if (
