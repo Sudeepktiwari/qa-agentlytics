@@ -1639,7 +1639,9 @@ async function extractTextFromUrl(
         .split(" ")
         .filter((w) => w.length > 0)
         .join(" ");
-      if (!body || body.length < 60) {
+      if (!body || body.length < 30) {
+        // If the body is very short but we have a strong title, we might want to keep it?
+        // But usually sections with < 30 chars are navigation noise or empty divs.
         currentTitle = "";
         currentContent = [];
         return;
@@ -1699,7 +1701,7 @@ async function extractTextFromUrl(
         ["dt", "summary", "legend"].includes(tagName) ||
         role === "heading";
       const isClassHeader =
-        /(\s|^)(section-title|section-header|headline|title)(\s|$)/i.test(
+        /(\s|^)(section-title|section-header|headline|title|header|heading|h[1-6]|text-(xl|2xl|3xl|4xl|5xl))(\s|$)/i.test(
           className,
         );
 
@@ -1859,9 +1861,9 @@ async function extractTextUsingBrowser(url: string): Promise<string> {
 
     // Extract text content from the rendered page
     const text = await page.evaluate(() => {
-      // Remove script and style elements
+      // Remove script and noise elements (BUT KEEP STYLES for computed style checks)
       const scripts = document.querySelectorAll(
-        "script, style, noscript, nav, footer, aside, .site-header, .site-footer, .navbar, .global-nav, .global-header, .cookie-banner, .newsletter, .modal, .offcanvas",
+        "script, noscript, nav, footer, aside, .site-header, .site-footer, .navbar, .global-nav, .global-header, .cookie-banner, .newsletter, .modal, .offcanvas",
       );
       scripts.forEach((el) => el.remove());
 
@@ -1882,7 +1884,11 @@ async function extractTextUsingBrowser(url: string): Promise<string> {
       const isHeaderElement = (el: Element) => {
         const tagName = el.tagName.toLowerCase();
         const role = el.getAttribute("role");
-        const className = el.className || "";
+        const className = typeof el.className === "string" ? el.className : "";
+        const text = el.textContent || "";
+
+        // Skip if text is too long (headers are usually short)
+        if (text.length > 200) return false;
 
         // Tag based
         if (
@@ -1896,16 +1902,34 @@ async function extractTextUsingBrowser(url: string): Promise<string> {
 
         // Class based (only if leaf node or minimal children)
         if (
-          typeof className === "string" &&
-          /(\s|^)(section-title|section-header|headline|title)(\s|$)/i.test(
+          /(\s|^)(section-title|section-header|headline|title|header|heading|h[1-6]|text-(xl|2xl|3xl|4xl|5xl))(\s|$)/i.test(
             className,
           )
         ) {
           // Check if it's not a container for other content
-          return (
-            el.children.length === 0 || (el.textContent || "").length < 100
-          );
+          return el.children.length === 0 || text.length < 100;
         }
+
+        // Computed Style based (Visual Headers)
+        try {
+          const style = window.getComputedStyle(el);
+          const fontSize = parseFloat(style.fontSize);
+          const fontWeight = style.fontWeight;
+          const fontWeightVal = parseInt(fontWeight);
+          const isBold =
+            fontWeight === "bold" ||
+            fontWeight === "bolder" ||
+            (!isNaN(fontWeightVal) && fontWeightVal >= 600);
+
+          // Heuristic: Large font OR (Bold + slightly larger than base)
+          // Assuming base is 16px.
+          if (fontSize >= 24) return true; // Very large text is likely a header
+          if (fontSize >= 18 && isBold) return true; // Large bold text
+
+          // Special case for strong/b tags that are direct children of body/main (unlikely but possible)
+          if ((tagName === "strong" || tagName === "b") && fontSize >= 16)
+            return true;
+        } catch (e) {}
 
         return false;
       };
