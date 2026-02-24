@@ -177,149 +177,6 @@ const TAGS_PROBLEM = [
   "capacity_constraint",
 ];
 
-async function refineSectionQuestions(
-  openaiClient: any,
-  pageUrl: string,
-  pageType: string,
-  sectionId: string,
-  sectionName: string,
-  sectionText: string,
-  sectionSummary: string,
-  sectionType: "hero" | "availability" | "roi" | "security",
-) {
-  try {
-    const resp = await openaiClient.chat.completions.create({
-      model: "gpt-4o-mini",
-      response_format: { type: "json_object" },
-      temperature: 0.2,
-      max_tokens: 1500,
-      messages: [
-        {
-          role: "system",
-          content: `You are generating Lead and Sales qualification questions for a SaaS page section.
-
-Use ONLY the section-specific data provided:
-
-- section_title
-- section_text
-- core_keywords
-- features
-- benefits
-- pain_points
-- intent_signals
-- problem_statement
-
-Your output must follow this EXACT format:
-
-LEAD WORKFLOW — 2 Questions + Options
-
-Goal: Identify visitor intent, motivation, readiness, urgency.
-
-Q1 — Lead Intent / Motivation
-[Write a question based on the primary theme or pain point of the section.]
-
-Options
-Option 1 — [Visitor motivation aligned with a strong keyword from the section]
-→ mapping tag
-
-Option 2 — [Another strong motivation aligned with a different insight]
-→ mapping tag
-
-Option 3 — [Exploratory or low-intent option]
-→ mapping tag
-
-Option 4 — [“Just browsing / early stage” option]
-→ mapping tag
-
-Q2 — Secondary Intent / Urgency / Related Need
-IMPORTANT: Q2 must NOT repeat Q1.
-It must use a DIFFERENT keyword, feature, pain point, or benefit from the section.
-
-Options
-(Use the same logic as Q1, but tied to the new keyword/theme.)
-
----
-
-SALES WORKFLOW — 2 Questions + Options
-
-Goal: Understand sophistication, current workflows, replaceability, and desired outcomes.
-
-Q1 — Current Process (Problem-Aware)
-[Ask about the specific current workflow or problem identified in the 'problem_statement' and 'core_keywords'.]
-[The question must reference the specific domain topic of this section.]
-
-Options (4)
-- [Specific manual/inefficient method from section text]
-- [Specific basic/partial solution from section text]
-- [Specific lack of solution/process from section text]
-- [Specific alternative/competitor approach from section text]
-(Map each using the awareness + urgency logic.)
-
-Q2 — Desired Outcome / Improvement
-Based on a DIFFERENT 'benefit' or 'feature' keyword from Q1.
-[Ask what they want to achieve regarding the specific section topic.]
-
-Options (4)
-- [Specific high-value outcome mentioned in section benefits] → sales_alert
-- [Specific optimization/efficiency outcome] → validation_path
-- [Specific learning/curiosity outcome] → diagnostic_education
-- [Specific uncertainty/researching outcome] → diagnostic_education
-
----
-
-RULES
-- Do NOT mention the page URL.
-- Do NOT create generic questions. Every question must be grounded in actual keywords from this section.
-- Do NOT use generic option labels like "Manual process" or "No process". Make them specific to the domain (e.g. "Using spreadsheets", "Calling manually").
-- Q2 must always use a different theme from Q1.
-- Output JSON ONLY with structure: { "leadQuestions": [], "salesQuestions": [] }
-- Each question object: { "question": "", "options": [{ "label": "", "tags": [], "workflow": "" }] }
-- Mapping Logic:
-  - awarenesspresent, optimizationready → validation_path
-  - awarenesspresent, mediumintent → validation_path
-  - awarenesspresent, highintent → sales_alert
-  - unknownstate, lowrisk → diagnostic_education
-  - awarenessmissing, lowrisk → diagnostic_education
-`,
-        },
-        {
-          role: "user",
-          content: `Analyze this section and generate the configuration.
-
-First, extract these elements from the text below:
-- core_keywords
-- features
-- benefits
-- pain_points
-- intent_signals
-- problem_statement
-
-SECTION DATA:
-page_url: ${pageUrl}
-page_type: ${pageType}
-section_id: ${sectionId}
-section_heading: ${sectionName}
-section_summary: ${sectionSummary}
-section_type: ${sectionType}
-section_text: "${sectionText}"
-
-Generate the JSON response.
-`,
-        },
-      ],
-    });
-    const txt = resp.choices[0]?.message?.content || "";
-    const data = JSON.parse(txt);
-    return data;
-  } catch (error) {
-    console.error(
-      `[refineSectionQuestions] Error generating questions for section "${sectionName}":`,
-      error,
-    );
-    return null;
-  }
-}
-
 // Auto-extract personas after crawling is complete
 import { generateBantFromContent } from "@/lib/bant-generation";
 
@@ -2303,196 +2160,7 @@ async function processBatch(req: NextRequest) {
     const pineconeVectors = db.collection("pinecone_vectors");
     const structuredSummaries = db.collection("structured_summaries");
 
-    const enrichStructuredSummaryWithQuestions = async (
-      summary: any,
-      pageText: string,
-    ) => {
-      if (!summary || !pageText || typeof summary !== "object") return summary;
-      const sections = Array.isArray(summary.sections) ? summary.sections : [];
-      if (!sections.length) return summary;
-      let blocks = parseSectionBlocks(pageText);
-      // Use a lower threshold (30 chars) to preserve valid small sections
-      const minChars = 30;
-      blocks =
-        Array.isArray(blocks) && blocks.length > 0
-          ? mergeSmallSectionBlocks(blocks, minChars)
-          : blocks;
-      console.log(
-        `[enrichStructuredSummaryWithQuestions] Processing ${sections.length} sections with ${blocks.length} blocks for retryUrl`,
-      );
-      // Process sections sequentially to avoid rate limits and ensure reliability
-      const enrichedSections = [];
-      for (let idx = 0; idx < sections.length; idx++) {
-        const sec = sections[idx];
-        try {
-          const name = String(sec?.sectionName || `Section ${idx + 1}`);
-          const sectionSummary = String(sec?.sectionSummary || "");
-
-          // Improved block matching
-          let block = blocks.find(
-            (b) =>
-              b.title && name && b.title.toLowerCase() === name.toLowerCase(),
-          );
-
-          // Fallback matching: try partial match or index
-          if (!block) {
-            block = blocks[idx];
-          }
-
-          // Final fallback
-          if (!block) {
-            block = { title: name, body: sectionSummary };
-          }
-
-          const sectionType = classifySectionType(
-            name,
-            sectionSummary,
-            String(block.body || ""),
-          );
-          console.log(
-            `[enrichStructuredSummaryWithQuestions] Generating questions for section ${
-              idx + 1
-            }/${sections.length}: "${name}"`,
-          );
-
-          // Add a small delay between requests to be nice to the API
-          if (idx > 0) await new Promise((resolve) => setTimeout(resolve, 500));
-
-          const questionsData = await refineSectionQuestions(
-            openai,
-            retryUrl,
-            String(summary?.pageType || "other"),
-            String(idx + 1),
-            name,
-            String(block.body || ""),
-            sectionSummary,
-            sectionType as any,
-          );
-
-          if (!questionsData) {
-            console.warn(
-              `[enrichStructuredSummaryWithQuestions] No questions generated for section ${
-                idx + 1
-              }`,
-            );
-          }
-
-          if (questionsData) {
-            sec.leadQuestions = (
-              Array.isArray(questionsData.leadQuestions)
-                ? questionsData.leadQuestions
-                : []
-            )
-              .slice(0, 2)
-              .map((lq: any) => {
-                let opts = Array.isArray(lq?.options)
-                  ? lq.options.map((o: any) => ({
-                      label: String(o?.label || o || ""),
-                      tags: Array.isArray(o?.tags)
-                        ? o.tags.map((t: any) => snakeTag(String(t)))
-                        : [],
-                      workflow:
-                        typeof o?.workflow === "string"
-                          ? o.workflow
-                          : "ask_sales_question",
-                    }))
-                  : [];
-                if (opts.length < 2) {
-                  while (opts.length < 2)
-                    opts.push({
-                      label: `Option ${opts.length + 1}`,
-                      tags: [],
-                      workflow: "ask_sales_question",
-                    });
-                }
-                if (opts.length > 4) opts = opts.slice(0, 4);
-                return {
-                  question: String(lq?.question || ""),
-                  options: opts,
-                  tags: [],
-                  workflow: "ask_sales_question",
-                };
-              });
-
-            sec.salesQuestions = (
-              Array.isArray(questionsData.salesQuestions)
-                ? questionsData.salesQuestions
-                : []
-            )
-              .slice(0, 2)
-              .map((sq: any) => {
-                let opts = Array.isArray(sq?.options)
-                  ? sq.options.map((o: any) => ({
-                      label: String(o?.label || o || ""),
-                      tags: Array.isArray(o?.tags)
-                        ? o.tags.map((t: any) => snakeTag(String(t)))
-                        : [],
-                      workflow:
-                        typeof o?.workflow === "string"
-                          ? o.workflow
-                          : "diagnostic_education",
-                    }))
-                  : [];
-                if (opts.length < 2) {
-                  while (opts.length < 2)
-                    opts.push({
-                      label: `Option ${opts.length + 1}`,
-                      tags: [],
-                      workflow: "diagnostic_education",
-                    });
-                }
-                if (opts.length > 4) opts = opts.slice(0, 4);
-
-                const ensuredFlows = opts.map((o: any) => ({
-                  forOption: o.label,
-                  diagnosticAnswer: "",
-                  followUpQuestion: "",
-                  followUpOptions: [],
-                  featureMappingAnswer: "",
-                  loopClosure: "",
-                }));
-
-                return {
-                  question: String(sq?.question || ""),
-                  options: opts,
-                  tags: [],
-                  workflow: "diagnostic_response",
-                  optionFlows: ensuredFlows,
-                };
-              });
-
-            // Apply standalone tag generation
-            try {
-              sec.leadQuestions = await processQuestionsWithTags(
-                sec.leadQuestions,
-                block.body,
-                adminId || undefined,
-              );
-              sec.salesQuestions = await processQuestionsWithTags(
-                sec.salesQuestions,
-                block.body,
-                adminId || undefined,
-              );
-            } catch (tagError) {
-              console.error(
-                `[Retry] Tag generation failed for section ${idx}:`,
-                tagError,
-              );
-            }
-          }
-        } catch (err) {
-          console.error(
-            `[enrichStructuredSummaryWithQuestions] Error processing section ${
-              idx + 1
-            }:`,
-            err,
-          );
-        }
-        enrichedSections.push(sec);
-      }
-      summary.sections = enrichedSections;
-      return normalizeStructuredSummary(summary);
-    };
+    // We will use it directly.
 
     // Find the failed entry to get context (sitemapUrl)
     const failedEntry = await sitemapUrls.findOne({ adminId, url: retryUrl });
@@ -2697,9 +2365,11 @@ IMPORTANT REQUIREMENTS:
               structuredSummary = normalizeStructuredSummary(parsed);
 
               let blocks = parseSectionBlocks(text);
+              // Use a lower threshold (30 chars) to preserve valid small sections
+              const minChars = 30;
               blocks =
                 Array.isArray(blocks) && blocks.length > 0
-                  ? mergeSmallSectionBlocks(blocks)
+                  ? mergeSmallSectionBlocks(blocks, minChars)
                   : blocks;
               if (Array.isArray(structuredSummary?.sections)) {
                 if (
@@ -2743,9 +2413,11 @@ IMPORTANT REQUIREMENTS:
                 }
               }
 
-              structuredSummary = await enrichStructuredSummaryWithQuestions(
+              structuredSummary = await enrichStructuredSummary(
                 structuredSummary,
                 text,
+                adminId || undefined,
+                retryUrl,
               );
             } catch (parseError) {
               console.error(
@@ -2758,9 +2430,11 @@ IMPORTANT REQUIREMENTS:
             const fallback = buildFallbackStructuredSummaryFromText(text);
             if (fallback) {
               structuredSummary = normalizeStructuredSummary(fallback);
-              structuredSummary = await enrichStructuredSummaryWithQuestions(
+              structuredSummary = await enrichStructuredSummary(
                 structuredSummary,
                 text,
+                adminId || undefined,
+                retryUrl,
               );
               console.log(
                 `[Retry] Used fallback structured summary for ${retryUrl}`,
@@ -2770,54 +2444,6 @@ IMPORTANT REQUIREMENTS:
         } catch (summaryError) {
           // console.error removed
         }
-      }
-
-      // INJECT SECTION CONTENT (Fix for Retry/Recrawl flow)
-      if (structuredSummary && Array.isArray(structuredSummary.sections)) {
-        let blocks = parseSectionBlocks(text);
-        // Use a lower threshold (30 chars) to preserve valid small sections
-        const minChars = 30;
-        blocks =
-          Array.isArray(blocks) && blocks.length > 0
-            ? mergeSmallSectionBlocks(blocks, minChars)
-            : blocks;
-        structuredSummary.sections.forEach((sec: any, idx: number) => {
-          // ALWAYS inject content to ensure it matches the parsed text
-          const name = sec.sectionName || "";
-          // Try to match by index or name
-          let block = blocks[idx];
-          if (
-            !block ||
-            (block.title &&
-              name &&
-              block.title.toLowerCase() !== name.toLowerCase())
-          ) {
-            block =
-              blocks.find(
-                (b) =>
-                  b.title &&
-                  name &&
-                  b.title.toLowerCase() === name.toLowerCase(),
-              ) || block;
-          }
-
-          if (!block) {
-            block = { title: "", body: "" };
-          }
-
-          // Fallback: If no parsed blocks found (no [SECTION] markers), use full text for the first section
-          if (blocks.length === 0 && idx === 0 && text && text.length > 50) {
-            sec.sectionContent = text;
-            // console.log removed
-          } else {
-            sec.sectionContent = block.body || "";
-            if (idx === 0) {
-              // console.log removed
-            }
-          }
-        });
-        // Re-normalize to ensure consistency
-        structuredSummary = normalizeStructuredSummary(structuredSummary);
       }
 
       const pageData: any = {
@@ -3264,7 +2890,8 @@ IMPORTANT REQUIREMENTS:
 
           let text = await extractTextFromUrl(url);
           const rawBlocks = parseSectionBlocks(text);
-          const minChars = rawBlocks.length >= 8 ? 30 : 100;
+          // Use a lower threshold (30 chars) to preserve valid small sections
+          const minChars = 30;
           const mergedBlocks =
             rawBlocks.length > 0
               ? mergeSmallSectionBlocks(rawBlocks, minChars)
@@ -3398,234 +3025,12 @@ IMPORTANT REQUIREMENTS:
                   const parsed = JSON.parse(structuredText);
                   structuredSummary = normalizeStructuredSummary(parsed);
                   try {
-                    let blocks = parseSectionBlocks(text);
-                    const minChars = blocks.length >= 8 ? 30 : 100;
-                    blocks =
-                      Array.isArray(blocks) && blocks.length > 0
-                        ? mergeSmallSectionBlocks(blocks, minChars)
-                        : blocks;
                     if (Array.isArray(structuredSummary?.sections)) {
-                      if (
-                        blocks.length > 0 &&
-                        structuredSummary.sections.length !== blocks.length
-                      ) {
-                        const baseSections = structuredSummary.sections;
-                        structuredSummary.sections = blocks.map(
-                          (block, idx) => {
-                            const base =
-                              baseSections[idx] ||
-                              baseSections[baseSections.length - 1] ||
-                              {};
-                            const baseName =
-                              typeof base.sectionName === "string"
-                                ? base.sectionName
-                                : "";
-                            const sectionName =
-                              block.title || baseName || `Section ${idx + 1}`;
-                            const baseSummary =
-                              typeof base.sectionSummary === "string"
-                                ? base.sectionSummary
-                                : "";
-                            const trimmedSummary = baseSummary.trim();
-                            const summary =
-                              trimmedSummary.length > 0
-                                ? trimmedSummary
-                                : (() => {
-                                    const body = block.body || "";
-                                    if (!body) return sectionName;
-                                    return body.length > 400
-                                      ? body.slice(0, 400) + "..."
-                                      : body;
-                                  })();
-                            return {
-                              ...base,
-                              sectionName,
-                              sectionSummary: summary,
-                              sectionContent: block.body || "",
-                            };
-                          },
-                        );
-                      }
-                      structuredSummary.sections = await Promise.all(
-                        structuredSummary.sections.map(
-                          async (sec: any, idx: number) => {
-                            const name = String(
-                              sec?.sectionName || `Section ${idx + 1}`,
-                            );
-                            const summary = String(sec?.sectionSummary || "");
-                            const block = blocks.find(
-                              (b) =>
-                                b.title &&
-                                name &&
-                                b.title.toLowerCase() === name.toLowerCase(),
-                            ) ||
-                              blocks[idx] || { title: name, body: summary };
-                            const lead = Array.isArray(sec.leadQuestions)
-                              ? sec.leadQuestions[0]
-                              : null;
-                            const sales = Array.isArray(sec.salesQuestions)
-                              ? sec.salesQuestions[0]
-                              : null;
-                            const sectionType = classifySectionType(
-                              name,
-                              summary,
-                              String(block.body || ""),
-                            );
-                            // STORE RAW CONTENT for accurate chatbot matching
-                            // Fallback: If no parsed blocks found (no [SECTION] markers), use full text for the first section
-                            if (
-                              blocks.length === 0 &&
-                              idx === 0 &&
-                              text &&
-                              text.length > 50
-                            ) {
-                              // console.log removed
-                              sec.sectionContent = text;
-                            } else {
-                              sec.sectionContent = block.body || "";
-                              if (idx === 0) {
-                                // console.log removed
-                              }
-                            }
-
-                            // Generate questions using the master prompt
-                            const questionsData = await refineSectionQuestions(
-                              openai,
-                              url,
-                              String(structuredSummary?.pageType || "other"),
-                              String(idx + 1),
-                              name,
-                              String(block.body || ""),
-                              summary,
-                              sectionType,
-                            );
-
-                            if (questionsData) {
-                              // Map lead questions
-                              sec.leadQuestions = (
-                                Array.isArray(questionsData.leadQuestions)
-                                  ? questionsData.leadQuestions
-                                  : []
-                              )
-                                .slice(0, 2)
-                                .map((lq: any) => {
-                                  let opts = Array.isArray(lq?.options)
-                                    ? lq.options.map((o: any) =>
-                                        String(o?.label || ""),
-                                      )
-                                    : [];
-                                  if (opts.length < 2)
-                                    opts = ["Option 1", "Option 2"];
-                                  if (opts.length > 4) opts = opts.slice(0, 4);
-                                  const tags = Array.isArray(lq?.options)
-                                    ? Array.from(
-                                        new Set(
-                                          lq.options
-                                            .flatMap((o: any) =>
-                                              Array.isArray(o?.tags)
-                                                ? o.tags
-                                                : [],
-                                            )
-                                            .map((t: any) =>
-                                              snakeTag(String(t)),
-                                            ),
-                                        ),
-                                      )
-                                    : [];
-                                  return {
-                                    question: String(lq?.question || ""),
-                                    options: opts,
-                                    tags,
-                                    workflow:
-                                      typeof lq?.workflow === "string"
-                                        ? lq.workflow
-                                        : "ask_sales_question",
-                                  };
-                                });
-                              // Map sales questions
-                              sec.salesQuestions = (
-                                Array.isArray(questionsData.salesQuestions)
-                                  ? questionsData.salesQuestions
-                                  : []
-                              )
-                                .slice(0, 2)
-                                .map((sq: any) => {
-                                  let opts = Array.isArray(sq?.options)
-                                    ? sq.options.map((o: any) =>
-                                        String(o?.label || ""),
-                                      )
-                                    : [];
-                                  if (opts.length < 2)
-                                    opts = ["Option 1", "Option 2"];
-                                  if (opts.length > 4) opts = opts.slice(0, 4);
-                                  const flowsRaw = Array.isArray(sq?.options)
-                                    ? sq.options
-                                    : [];
-                                  const ensuredFlows = opts.map(
-                                    (label: string) => {
-                                      const match =
-                                        flowsRaw.find(
-                                          (o: any) =>
-                                            String(o?.label || "") === label,
-                                        ) || {};
-                                      return {
-                                        forOption: label,
-                                        diagnosticAnswer: "",
-                                        followUpQuestion: "",
-                                        followUpOptions: [],
-                                        featureMappingAnswer: "",
-                                        loopClosure: "",
-                                      };
-                                    },
-                                  );
-                                  const tags = Array.isArray(sq?.options)
-                                    ? Array.from(
-                                        new Set(
-                                          sq.options
-                                            .flatMap((o: any) =>
-                                              Array.isArray(o?.tags)
-                                                ? o.tags
-                                                : [],
-                                            )
-                                            .map((t: any) =>
-                                              snakeTag(String(t)),
-                                            ),
-                                        ),
-                                      )
-                                    : [];
-                                  return {
-                                    question: String(sq?.question || ""),
-                                    options: opts,
-                                    tags,
-                                    workflow: "diagnostic_response",
-                                    optionFlows: ensuredFlows,
-                                  };
-                                });
-
-                              // Apply standalone tag generation
-                              try {
-                                sec.leadQuestions =
-                                  await processQuestionsWithTags(
-                                    sec.leadQuestions,
-                                    block.body,
-                                    adminId || undefined,
-                                  );
-                                sec.salesQuestions =
-                                  await processQuestionsWithTags(
-                                    sec.salesQuestions,
-                                    block.body,
-                                    adminId || undefined,
-                                  );
-                              } catch (e) {
-                                console.error(
-                                  `[Crawl] Tag generation failed for ${url} section ${idx}`,
-                                  e,
-                                );
-                              }
-                            }
-                            return sec;
-                          },
-                        ),
+                      structuredSummary = await enrichStructuredSummary(
+                        structuredSummary,
+                        text,
+                        adminId || undefined,
+                        url,
                       );
                     }
                     structuredSummary =
@@ -3633,11 +3038,17 @@ IMPORTANT REQUIREMENTS:
                   } catch {}
                   // console.log removed
                 } catch (parseError) {
-                  // console.error removed
+                  console.error(
+                    `[Sitemap] Error parsing structured summary for ${url}:`,
+                    parseError,
+                  );
                 }
               }
             } catch (summaryError) {
-              // console.error removed
+              console.error(
+                `[Sitemap] Error generating structured summary for ${url}:`,
+                summaryError,
+              );
             }
           }
           if (!structuredSummary && text && text.trim().length > 0) {
@@ -3645,170 +3056,12 @@ IMPORTANT REQUIREMENTS:
             if (fallback) {
               structuredSummary = normalizeStructuredSummary(fallback);
               try {
-                let blocks = parseSectionBlocks(text);
-                const minChars = blocks.length >= 8 ? 30 : 100;
-                blocks =
-                  Array.isArray(blocks) && blocks.length > 0
-                    ? mergeSmallSectionBlocks(blocks, minChars)
-                    : blocks;
-                if (Array.isArray(structuredSummary?.sections)) {
-                  structuredSummary.sections = await Promise.all(
-                    structuredSummary.sections.map(
-                      async (sec: any, idx: number) => {
-                        const name = String(
-                          sec?.sectionName || `Section ${idx + 1}`,
-                        );
-                        const summary = String(sec?.sectionSummary || "");
-                        const block = blocks.find(
-                          (b) =>
-                            b.title &&
-                            name &&
-                            b.title.toLowerCase() === name.toLowerCase(),
-                        ) ||
-                          blocks[idx] || { title: name, body: summary };
-                        const sectionType = classifySectionType(
-                          name,
-                          summary,
-                          String(block.body || ""),
-                        );
-                        // STORE RAW CONTENT for accurate chatbot matching
-                        // Fallback: If no parsed blocks found (no [SECTION] markers), use full text for the first section
-                        if (
-                          blocks.length === 0 &&
-                          idx === 0 &&
-                          text &&
-                          text.length > 50
-                        ) {
-                          // console.log removed
-                          sec.sectionContent = text;
-                        } else {
-                          sec.sectionContent = block.body || "";
-                          if (idx === 0) {
-                            // console.log removed
-                          }
-                        }
-
-                        const questionsData = await refineSectionQuestions(
-                          openai,
-                          url,
-                          String(structuredSummary?.pageType || "other"),
-                          String(idx + 1),
-                          name,
-                          String(block.body || ""),
-                          summary,
-                          sectionType,
-                        );
-
-                        if (questionsData) {
-                          // Lead
-                          sec.leadQuestions = (
-                            Array.isArray(questionsData.leadQuestions)
-                              ? questionsData.leadQuestions
-                              : []
-                          )
-                            .slice(0, 2)
-                            .map((lq: any) => {
-                              let opts = Array.isArray(lq?.options)
-                                ? lq.options
-                                : [];
-                              opts = opts.map((o: any) => ({
-                                label: String(o?.label || ""),
-                                tags: Array.isArray(o?.tags)
-                                  ? o.tags.map((t: any) => snakeTag(String(t)))
-                                  : [],
-                                workflow:
-                                  typeof o?.workflow === "string"
-                                    ? o.workflow
-                                    : "education_path",
-                              }));
-                              if (opts.length < 2) {
-                                while (opts.length < 2) {
-                                  opts.push({
-                                    label: `Option ${opts.length + 1}`,
-                                    tags: [],
-                                    workflow: "education_path",
-                                  });
-                                }
-                              }
-                              if (opts.length > 4) opts = opts.slice(0, 4);
-                              return {
-                                question: String(lq?.question || ""),
-                                options: opts,
-                                tags: [],
-                                workflow: "validation_path",
-                              };
-                            });
-                          // Sales
-                          sec.salesQuestions = (
-                            Array.isArray(questionsData.salesQuestions)
-                              ? questionsData.salesQuestions
-                              : []
-                          )
-                            .slice(0, 2)
-                            .map((sq: any) => {
-                              let opts = Array.isArray(sq?.options)
-                                ? sq.options
-                                : [];
-                              opts = opts.map((o: any) => ({
-                                label: String(o?.label || ""),
-                                tags: Array.isArray(o?.tags)
-                                  ? o.tags.map((t: any) => snakeTag(String(t)))
-                                  : [],
-                                workflow:
-                                  typeof o?.workflow === "string"
-                                    ? o.workflow
-                                    : "optimization_workflow",
-                              }));
-                              if (opts.length < 2) {
-                                while (opts.length < 2) {
-                                  opts.push({
-                                    label: `Option ${opts.length + 1}`,
-                                    tags: [],
-                                    workflow: "optimization_workflow",
-                                  });
-                                }
-                              }
-                              if (opts.length > 4) opts = opts.slice(0, 4);
-
-                              const ensuredFlows = opts.map((o: any) => ({
-                                forOption: o.label,
-                                diagnosticAnswer: "",
-                                followUpQuestion: "",
-                                followUpOptions: [],
-                                featureMappingAnswer: "",
-                                loopClosure: "",
-                              }));
-
-                              return {
-                                question: String(sq?.question || ""),
-                                options: opts,
-                                tags: [],
-                                workflow: "diagnostic_education",
-                                optionFlows: ensuredFlows,
-                              };
-                            });
-
-                          // Apply standalone tag generation
-                          try {
-                            sec.leadQuestions = await processQuestionsWithTags(
-                              sec.leadQuestions,
-                              block.body,
-                              adminId || undefined,
-                            );
-                            sec.salesQuestions = await processQuestionsWithTags(
-                              sec.salesQuestions,
-                              block.body,
-                              adminId || undefined,
-                            );
-                          } catch (e) {
-                            // console.error removed
-                          }
-                        }
-                        return sec;
-                      },
-                    ),
-                  );
-                }
+                structuredSummary = await enrichStructuredSummary(
+                  structuredSummary,
+                  text,
+                  adminId || undefined,
+                  url,
+                );
               } catch {}
               // console.log removed
             }

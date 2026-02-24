@@ -357,24 +357,298 @@ export async function processQuestionsWithTags(
   return finalQuestions;
 }
 
+export async function refineSectionQuestions(
+  pageUrl: string,
+  pageType: string,
+  sectionId: string,
+  sectionName: string,
+  sectionText: string,
+  sectionSummary: string,
+  sectionType: string = "hero",
+) {
+  try {
+    console.log(
+      `[refineSectionQuestions] Generating for section "${sectionName}" (Type: ${sectionType}, Length: ${sectionText.length} chars)`,
+    );
+    const resp = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      response_format: { type: "json_object" },
+      temperature: 0.2,
+      max_tokens: 1500,
+      messages: [
+        {
+          role: "system",
+          content: `You are generating Lead and Sales qualification questions for a SaaS page section.
+
+Use ONLY the section-specific data provided:
+
+- section_title
+- section_text
+- core_keywords
+- features
+- benefits
+- pain_points
+- intent_signals
+- problem_statement
+
+Your output must follow this EXACT format:
+
+LEAD WORKFLOW — 2 Questions + Options
+
+Goal: Identify visitor intent, motivation, readiness, urgency.
+
+Q1 — Lead Intent / Motivation
+[Write a question based on the primary theme or pain point of the section.]
+
+Options
+Option 1 — [Visitor motivation aligned with a strong keyword from the section]
+→ mapping tag
+
+Option 2 — [Another strong motivation aligned with a different insight]
+→ mapping tag
+
+Option 3 — [Exploratory or low-intent option]
+→ mapping tag
+
+Option 4 — [“Just browsing / early stage” option]
+→ mapping tag
+
+Q2 — Secondary Intent / Urgency / Related Need
+IMPORTANT: Q2 must NOT repeat Q1.
+It must use a DIFFERENT keyword, feature, pain point, or benefit from the section.
+
+Options
+(Use the same logic as Q1, but tied to the new keyword/theme.)
+
+---
+
+SALES WORKFLOW — 2 Questions + Options
+
+Goal: Understand sophistication, current workflows, replaceability, and desired outcomes.
+
+Q1 — Current Process (Problem-Aware)
+[Ask about the specific current workflow or problem identified in the 'problem_statement' and 'core_keywords'.]
+[The question must reference the specific domain topic of this section.]
+
+Options (4)
+- [Specific manual/inefficient method from section text]
+- [Specific basic/partial solution from section text]
+- [Specific lack of solution/process from section text]
+- [Specific alternative/competitor approach from section text]
+(Map each using the awareness + urgency logic.)
+
+Q2 — Desired Outcome / Improvement
+Based on a DIFFERENT 'benefit' or 'feature' keyword from Q1.
+[Ask what they want to achieve regarding the specific section topic.]
+
+Options (4)
+- [Specific high-value outcome mentioned in section benefits] → sales_alert
+- [Specific optimization/efficiency outcome] → validation_path
+- [Specific learning/curiosity outcome] → diagnostic_education
+- [Specific uncertainty/researching outcome] → diagnostic_education
+
+---
+
+RULES
+- Do NOT mention the page URL.
+- Do NOT create generic questions. Every question must be grounded in actual keywords from this section.
+- Do NOT use generic option labels like "Manual process" or "No process". Make them specific to the domain (e.g. "Using spreadsheets", "Calling manually").
+- Q2 must always use a different theme from Q1.
+- Output JSON ONLY with structure: { "leadQuestions": [], "salesQuestions": [] }
+- Each question object: { "question": "", "options": [{ "label": "", "tags": [], "workflow": "" }] }
+- Mapping Logic:
+  - awarenesspresent, optimizationready → validation_path
+  - awarenesspresent, mediumintent → validation_path
+  - awarenesspresent, highintent → sales_alert
+  - unknownstate, lowrisk → diagnostic_education
+  - awarenessmissing, lowrisk → diagnostic_education
+`,
+        },
+        {
+          role: "user",
+          content: `Analyze this section and generate the configuration.
+
+First, extract these elements from the text below:
+- core_keywords
+- features
+- benefits
+- pain_points
+- intent_signals
+- problem_statement
+
+SECTION DATA:
+page_url: ${pageUrl}
+page_type: ${pageType}
+section_id: ${sectionId}
+section_heading: ${sectionName}
+section_summary: ${sectionSummary}
+section_type: ${sectionType}
+section_text: "${sectionText}"
+
+Generate the JSON response.
+`,
+        },
+      ],
+    });
+    const txt = resp.choices[0]?.message?.content || "";
+    const data = JSON.parse(txt);
+    return data;
+  } catch (error: any) {
+    console.error(
+      `[refineSectionQuestions] Error generating questions for section "${sectionName}":`,
+      error,
+    );
+    // Explicitly log status code if available (e.g., 429)
+    if (error?.status === 429 || error?.code === "rate_limit_exceeded") {
+      console.warn(
+        `[refineSectionQuestions] RATE LIMIT HIT for section "${sectionName}". Returning null to trigger retry.`,
+      );
+    }
+    return null;
+  }
+}
+
+import { parseSectionBlocks, mergeSmallSectionBlocks } from "./parsing";
+
 export async function enrichStructuredSummary(
   summary: any,
   contextText: string = "",
   adminId?: string,
+  url: string = "unknown-url",
 ) {
-  if (!summary || !Array.isArray(summary.sections)) return summary;
+  if (!summary || !contextText || typeof summary !== "object") return summary;
+  const sections = Array.isArray(summary.sections) ? summary.sections : [];
+  if (!sections.length) return summary;
 
-  const enrichedSections = await Promise.all(
-    summary.sections.map(async (section: any) => {
-      // Process Lead Questions
+  // 1. Section Alignment Logic
+  let blocks = parseSectionBlocks(contextText);
+  const minChars = 30;
+  blocks =
+    Array.isArray(blocks) && blocks.length > 0
+      ? mergeSmallSectionBlocks(blocks, minChars)
+      : blocks;
+
+  if (blocks.length > 0 && sections.length !== blocks.length) {
+    console.log(
+      `[enrichStructuredSummary] Re-aligning sections (summary: ${sections.length}, parsed: ${blocks.length}) for ${url}`,
+    );
+    summary.sections = blocks.map((block, idx) => {
+      const base = sections[idx] || sections[sections.length - 1] || {};
+      const baseName =
+        typeof base.sectionName === "string" ? base.sectionName : "";
+      const sectionName = block.title || baseName || `Section ${idx + 1}`;
+      const baseSummary =
+        typeof base.sectionSummary === "string" ? base.sectionSummary : "";
+      const trimmedSummary = baseSummary.trim();
+      const summaryText =
+        trimmedSummary.length > 0
+          ? trimmedSummary
+          : (() => {
+              const body = block.body || "";
+              if (!body) return sectionName;
+              return body.length > 400 ? body.slice(0, 400) + "..." : body;
+            })();
+      return {
+        ...base,
+        sectionName,
+        sectionSummary: summaryText,
+        sectionContent: block.body || "",
+      };
+    });
+  }
+
+  // Update local reference
+  const sectionsToProcess = summary.sections;
+  console.log(
+    `[enrichStructuredSummary] Processing ${sectionsToProcess.length} sections with ${blocks.length} blocks for ${url}`,
+  );
+
+  // 2. Sequential Processing
+  const enrichedSections = [];
+  for (let idx = 0; idx < sectionsToProcess.length; idx++) {
+    const section = sectionsToProcess[idx];
+    try {
+      const name = String(section?.sectionName || `Section ${idx + 1}`);
+      const sectionSummary = String(section?.sectionSummary || "");
+
+      // Block matching logic
+      let block = blocks[idx];
+      const blockTitle = block?.title?.toLowerCase() || "";
+      const sectionNameLower = name.toLowerCase();
+
+      if (
+        block &&
+        blockTitle &&
+        sectionNameLower &&
+        !blockTitle.includes(sectionNameLower) &&
+        !sectionNameLower.includes(blockTitle)
+      ) {
+        const betterMatch = blocks.find(
+          (b) =>
+            b.title &&
+            name &&
+            (b.title.toLowerCase().includes(sectionNameLower) ||
+              sectionNameLower.includes(b.title.toLowerCase())),
+        );
+        if (betterMatch) {
+          block = betterMatch;
+        }
+      }
+
+      if (!block) {
+        // console.warn removed
+        block = { title: name, body: sectionSummary };
+      }
+
+      // Store raw content
+      if (
+        blocks.length === 0 &&
+        idx === 0 &&
+        contextText &&
+        contextText.length > 50
+      ) {
+        section.sectionContent = contextText;
+      } else {
+        section.sectionContent = block.body || "";
+      }
+
+      // Generate missing questions if needed
+      const hasLeadQuestions =
+        Array.isArray(section.leadQuestions) &&
+        section.leadQuestions.length > 0;
+      const hasSalesQuestions =
+        Array.isArray(section.salesQuestions) &&
+        section.salesQuestions.length > 0;
+
+      if (!hasLeadQuestions || !hasSalesQuestions) {
+        console.log(
+          `[enrichStructuredSummary] Generating missing questions for section "${name}"`,
+        );
+        const refined = await refineSectionQuestions(
+          url,
+          summary.pageType || "unknown",
+          `section-${idx}`,
+          name,
+          section.sectionContent || block?.body || "",
+          sectionSummary,
+          section.sectionType || "hero",
+        );
+        if (refined) {
+          if (!hasLeadQuestions && refined.leadQuestions)
+            section.leadQuestions = refined.leadQuestions;
+          if (!hasSalesQuestions && refined.salesQuestions)
+            section.salesQuestions = refined.salesQuestions;
+        }
+      }
+
+      // Process Questions
       if (Array.isArray(section.leadQuestions)) {
         section.leadQuestions = await processQuestionsWithTags(
           section.leadQuestions,
-          contextText,
+          contextText, // We pass full context, but maybe we should pass section context? The original passed full context.
           adminId,
         );
       }
-      // Process Sales Questions
       if (Array.isArray(section.salesQuestions)) {
         section.salesQuestions = await processQuestionsWithTags(
           section.salesQuestions,
@@ -382,9 +656,21 @@ export async function enrichStructuredSummary(
           adminId,
         );
       }
-      return section;
-    }),
-  );
+
+      enrichedSections.push(section);
+
+      // Delay to avoid rate limits
+      if (idx < sectionsToProcess.length - 1) {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      }
+    } catch (err) {
+      console.error(
+        `[enrichStructuredSummary] Error processing section ${idx}:`,
+        err,
+      );
+      enrichedSections.push(section); // Keep original on error
+    }
+  }
 
   return { ...summary, sections: enrichedSections };
 }

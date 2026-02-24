@@ -309,13 +309,18 @@ export async function POST(request: NextRequest) {
 
     if (blocks.length > 0) {
       // console.log removed
-      structuredSummary = await generateSummaryFromSections(blocks, adminId);
+      structuredSummary = await generateSummaryFromSections(
+        blocks,
+        adminId,
+        url,
+      );
     } else {
       // console.log removed
       if (estimatedTokens <= maxTokensForDirect) {
         structuredSummary = await generateDirectSummary(
           reconstructedContent,
           adminId,
+          url,
         );
       } else {
         // For chunked summary, pass the vectorDocs with chunk text from Pinecone
@@ -323,7 +328,11 @@ export async function POST(request: NextRequest) {
           ...doc,
           text: idToChunk[doc.vectorId] || "",
         }));
-        structuredSummary = await generateChunkedSummary(chunkObjs, adminId);
+        structuredSummary = await generateChunkedSummary(
+          chunkObjs,
+          adminId,
+          url,
+        );
       }
     }
 
@@ -559,7 +568,11 @@ export async function DELETE(request: NextRequest) {
 }
 
 // Helper function for direct summary generation (smaller content)
-async function generateDirectSummary(content: string, adminId?: string) {
+async function generateDirectSummary(
+  content: string,
+  adminId?: string,
+  url?: string,
+) {
   try {
     // console.log removed
     const summaryResponse = await openai.chat.completions.create({
@@ -720,7 +733,7 @@ IMPORTANT REQUIREMENTS:
       }
     }
 
-    return await enrichStructuredSummary(normalized, content, adminId);
+    return await enrichStructuredSummary(normalized, content, adminId, url);
   } catch (error) {
     // console.error removed
     return null;
@@ -728,7 +741,11 @@ IMPORTANT REQUIREMENTS:
 }
 
 // Helper function for new flow: generate summary from pre-parsed blocks
-async function generateSummaryFromSections(blocks: any[], adminId?: string) {
+async function generateSummaryFromSections(
+  blocks: any[],
+  adminId?: string,
+  url?: string,
+) {
   try {
     console.log(
       `[API] Generating summary from ${blocks.length} pre-parsed sections...`,
@@ -863,6 +880,7 @@ async function generateSummaryFromSections(blocks: any[], adminId?: string) {
       normalized,
       blocks.map((b) => b.body).join("\n\n"),
       adminId,
+      url,
     );
   } catch (error) {
     // console.error removed
@@ -871,7 +889,11 @@ async function generateSummaryFromSections(blocks: any[], adminId?: string) {
 }
 
 // Helper function for chunked summary generation (large content)
-async function generateChunkedSummary(chunks: any[], adminId?: string) {
+async function generateChunkedSummary(
+  chunks: any[],
+  adminId?: string,
+  url?: string,
+) {
   try {
     // console.log removed
 
@@ -1069,7 +1091,12 @@ IMPORTANT REQUIREMENTS:
       });
     }
 
-    return await enrichStructuredSummary(normalized, combinedSummary, adminId);
+    return await enrichStructuredSummary(
+      normalized,
+      combinedSummary,
+      adminId,
+      url,
+    );
   } catch (error) {
     // console.error removed
     return null;
