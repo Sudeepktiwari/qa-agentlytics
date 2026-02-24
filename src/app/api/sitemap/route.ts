@@ -2163,10 +2163,21 @@ async function processBatch(req: NextRequest) {
     // We will use it directly.
 
     // Find the failed entry to get context (sitemapUrl)
-    const failedEntry = await sitemapUrls.findOne({ adminId, url: retryUrl });
+    // Try exact match first, then normalized variations
+    const retryUrlTrimmed = retryUrl.trim();
+    const retryUrlNoSlash = retryUrlTrimmed.replace(/\/+$/, "");
+    const retryUrlWithSlash = `${retryUrlNoSlash}/`;
+
+    const failedEntry = await sitemapUrls.findOne({
+      adminId,
+      url: { $in: [retryUrl, retryUrlNoSlash, retryUrlWithSlash] },
+    });
+
     if (!failedEntry) {
       return NextResponse.json(
-        { error: "URL not found in history" },
+        {
+          error: `URL not found in history (checked variants: ${retryUrl}, ${retryUrlNoSlash})`,
+        },
         { status: 404 },
       );
     }
@@ -2183,11 +2194,7 @@ async function processBatch(req: NextRequest) {
     // );
 
     try {
-      const retryUrlTrimmed = retryUrl.trim();
-      const retryUrlNoSlash = retryUrlTrimmed.replace(/\/+$/, "");
-      const retryUrlWithSlash =
-        retryUrlNoSlash.length > 0 ? `${retryUrlNoSlash}/` : retryUrlTrimmed;
-
+      // Re-use normalized variables
       const urlVariants =
         retryUrlNoSlash === retryUrlWithSlash
           ? [retryUrlNoSlash]
