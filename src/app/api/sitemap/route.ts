@@ -1681,7 +1681,7 @@ async function extractTextFromUrl(
     };
 
     const contentSelector =
-      "h1, h2, h3, h4, h5, h6, p, li, blockquote, td, th, div, article, section, dt, summary, legend";
+      "h1, h2, h3, h4, h5, h6, p, li, blockquote, td, th, div, article, section, dt, summary, legend, span";
     scope.find(contentSelector).each((_, el) => {
       const $el = $(el);
       // Avoid duplication: if this element has children that are also in our selector,
@@ -1756,6 +1756,7 @@ async function extractTextFromUrl(
       url.includes("/slide") && text.length < 500;
 
     const hasNoSections = sections.length === 0;
+    const hasFewSections = sections.length > 0 && sections.length < 3;
 
     // Trigger JS extraction if:
     // 1. Content is very short (< 500 chars) - likely loading state
@@ -1765,19 +1766,15 @@ async function extractTextFromUrl(
     if (
       text.length < 500 ||
       isSlidePageWithMinimalContent ||
-      (hasNoSections && text.length < 20000) ||
+      ((hasNoSections || hasFewSections) && text.length < 20000) ||
       (text.length < 1000 && isContentPage)
     ) {
       // console.log removed
       try {
         const jsText = await extractTextUsingBrowser(url);
-        // Use JS text if it found more content OR if it found sections when we had none
-        const jsHasSections = jsText.includes("[SECTION");
-        if (
-          jsText.length > text.length ||
-          (jsHasSections && !sections.length)
-        ) {
-          // console.log removed
+        const jsSectionCount = (jsText.match(/\[SECTION\s+\d+\]/g) || [])
+          .length;
+        if (jsText.length > text.length || jsSectionCount > sections.length) {
           return jsText;
         }
       } catch (jsError) {
@@ -1878,7 +1875,7 @@ async function extractTextUsingBrowser(url: string): Promise<string> {
 
       // Define content selectors
       const contentSelector =
-        "h1, h2, h3, h4, h5, h6, p, li, blockquote, td, th, div, article, section, dt, summary, legend, button, a";
+        "h1, h2, h3, h4, h5, h6, p, li, blockquote, td, th, div, article, section, dt, summary, legend, span, button, a";
 
       // Helper to check if an element is a header
       const isHeaderElement = (el: Element) => {
@@ -2710,7 +2707,7 @@ IMPORTANT REQUIREMENTS:
         let blocks = parseSectionBlocks(text);
         blocks =
           Array.isArray(blocks) && blocks.length > 0
-            ? mergeSmallSectionBlocks(blocks)
+            ? mergeSmallSectionBlocks(blocks, 100)
             : blocks;
         structuredSummary.sections.forEach((sec: any, idx: number) => {
           // ALWAYS inject content to ensure it matches the parsed text
@@ -3572,7 +3569,7 @@ IMPORTANT REQUIREMENTS:
                 let blocks = parseSectionBlocks(text);
                 blocks =
                   Array.isArray(blocks) && blocks.length > 0
-                    ? mergeSmallSectionBlocks(blocks)
+                    ? mergeSmallSectionBlocks(blocks, 100)
                     : blocks;
                 if (Array.isArray(structuredSummary?.sections)) {
                   structuredSummary.sections = await Promise.all(
