@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { parseSectionBlocks, mergeSmallSectionBlocks } from "@/lib/parsing";
+import { generateDiagnosticAnswers } from "@/lib/diagnostic-generation";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -118,6 +119,7 @@ export async function generateStructuredSummaryFromText(
       const batch = blocks.slice(i, i + concurrency);
 
       const batchPromises = batch.map(async (block) => {
+        // Step 2: Generate Questions
         const prompt = `Analyze this specific website section and generate HIGHLY SPECIFIC lead/sales questions.
         
         Section Title: "${block.title}"
@@ -128,60 +130,38 @@ export async function generateStructuredSummaryFromText(
         {
           "sectionSummary": "Brief summary of this section",
           "leadQuestions": [
-            { "question": "Problem Recognition Question", "options": ["Opt1", "Opt2"], "tags": ["primary_tag", "modifier_tag"], "workflow": "sales_alert" },
-            { "question": "Problem Recognition Question 2", "options": ["Opt1", "Opt2"], "tags": ["primary_tag", "modifier_tag"], "workflow": "sales_alert" }
+            { "question": "Problem Recognition Question", "options": [{"label": "Opt1", "tags": ["primary", "secondary"], "workflow": "sales_alert"}, {"label": "Opt2", "tags": ["primary", "secondary"], "workflow": "optimization_workflow"}], "workflow": "sales_alert" }
           ],
           "salesQuestions": [
              { 
                "question": "Diagnostic Question", 
-               "options": ["Opt1", "Opt2"], 
-               "tags": ["primary_tag", "modifier_tag"], 
-               "workflow": "diagnostic_response",
-               "optionFlows": [
-                 {
-                   "forOption": "Opt1",
-                   "diagnosticAnswer": "Diagnostic response script",
-                   "followUpQuestion": "Follow up question script",
-                   "featureMappingAnswer": "Feature mapping script",
-                   "loopClosure": "Loop closure script"
-                 }
-               ]
-             },
-             { 
-               "question": "Diagnostic Question 2", 
-               "options": ["Opt1", "Opt2"], 
-               "tags": ["primary_tag", "modifier_tag"], 
-               "workflow": "diagnostic_response",
-               "optionFlows": [
-                 {
-                   "forOption": "Opt1",
-                   "diagnosticAnswer": "Diagnostic response script",
-                   "followUpQuestion": "Follow up question script",
-                   "featureMappingAnswer": "Feature mapping script",
-                   "loopClosure": "Loop closure script"
-                 }
-               ]
+               "options": [{"label": "Opt1", "tags": ["primary", "secondary"], "workflow": "diagnostic_response"}, {"label": "Opt2", "tags": ["primary", "secondary"], "workflow": "diagnostic_response"}], 
+               "workflow": "diagnostic_response"
              }
           ]
         }
         
         REQUIREMENTS:
         1. EXACTLY 2 Lead Questions and 2 Sales Questions.
-        2. Questions MUST be directly derived from the specific content of this section (e.g., if section is "Lead Scoring", ask about lead prioritization).
-        3. Do NOT use generic phrasing like "What are you interested in?" or "How can we help?".
+        2. Questions MUST be directly derived from the specific content of this section.
+        3. Do NOT use generic phrasing.
         4. Use specific terminology found in the Section Content.
         5. For Lead Questions: Ask about the user's current challenges related to "${block.title}".
         6. For Sales Questions: Ask about the urgency or specific use case for "${block.title}".
-        7. For each Sales Question, generate an 'optionFlows' entry for EACH option.
-        8. 'diagnosticAnswer' should be an empathetic/validating response.
-        9. 'followUpQuestion' should deepen the diagnosis.
-        10. 'featureMappingAnswer' should map the problem to a specific feature mentioned in the section.
-        11. 'loopClosure' should summarize and move to next steps.
-        12. TAG TAXONOMY (Use EXACTLY 2 tags per option: 1 Primary + 1 Secondary):
+        7. TAG TAXONOMY (Use EXACTLY 2 tags per option: 1 Primary + 1 Secondary):
             Primary (Problem/Readiness): manual_scheduling, scheduling_gap, onboarding_delay, onboarding_dropoff, pipeline_leakage, inconsistent_process, handoff_friction, visibility_gap, no_show_risk, late_engagement, stakeholder_coordination, capacity_constraint, validated_flow, optimization_ready, awareness_missing, unknown_state, low_friction
             Secondary (Risk/Modifier): low_risk, conversion_risk, high_risk, critical_risk, validated_flow, optimization_ready, awareness_missing
-        13. WORKFLOWS: sales_alert (if risk), optimization_workflow (if friction), validation_path (if good), diagnostic_education (if unknown).
+        8. WORKFLOWS: sales_alert (if risk), optimization_workflow (if friction), validation_path (if good), diagnostic_education (if unknown).
+        9. Assign the appropriate 'workflow' to EACH option based on its tags.
         `;
+
+        let sectionData = {
+          sectionName: block.title,
+          sectionContent: block.body,
+          sectionSummary: "No summary available",
+          leadQuestions: [] as any[],
+          salesQuestions: [] as any[],
+        };
 
         try {
           const res = await openai.chat.completions.create({
@@ -199,25 +179,85 @@ export async function generateStructuredSummaryFromText(
           });
 
           const data = JSON.parse(res.choices[0]?.message?.content || "{}");
-          return {
-            sectionName: block.title,
-            sectionContent: block.body, // EXPLICITLY SET HERE
-            sectionSummary: data.sectionSummary || "No summary available",
-            leadQuestions: data.leadQuestions || [],
-            salesQuestions: data.salesQuestions || [],
-          };
+          sectionData.sectionSummary =
+            data.sectionSummary || "No summary available";
+          sectionData.leadQuestions = data.leadQuestions || [];
+          sectionData.salesQuestions = data.salesQuestions || [];
+
+          // Step 3: Generate Diagnostic Details (Separate Request)
+          const allOptions: { label: string; workflow: string }[] = [];
+
+          [...sectionData.leadQuestions, ...sectionData.salesQuestions].forEach(
+            (q: any) => {
+              if (q.options && Array.isArray(q.options)) {
+                q.options.forEach((o: any) => {
+                  const label = typeof o === "string" ? o : o.label;
+                  const workflow =
+                    typeof o === "object" && o.workflow
+                      ? o.workflow
+                      : q.workflow || "diagnostic_response";
+                  if (label) {
+                    allOptions.push({ label, workflow });
+                  }
+                });
+              }
+            },
+          );
+
+          if (allOptions.length > 0) {
+            try {
+              // Use the specialized diagnostic generation function which handles all 3 prompts (answer, options, details)
+              const diagResults = await generateDiagnosticAnswers(
+                allOptions,
+                block.body.substring(0, 8000), // Pass section content as context
+                undefined, // No adminId needed since we provide direct context
+              );
+
+              // Merge details back
+              [sectionData.leadQuestions, sectionData.salesQuestions].forEach(
+                (list) => {
+                  list.forEach((q: any) => {
+                    if (q.options && Array.isArray(q.options)) {
+                      q.options = q.options.map((opt: any) => {
+                        const label = typeof opt === "string" ? opt : opt.label;
+                        const workflow =
+                          typeof opt === "object" && opt.workflow
+                            ? opt.workflow
+                            : q.workflow || "diagnostic_response";
+                        const key = `${label}::${workflow}`;
+                        const details = diagResults[key];
+
+                        const base = typeof opt === "object" ? opt : { label };
+                        if (details) {
+                          return {
+                            ...base,
+                            workflow, // Ensure workflow is set
+                            diagnostic_answer: details.answer,
+                            diagnostic_options: details.options,
+                            diagnostic_option_details: details.optionDetails,
+                          };
+                        }
+                        return { ...base, workflow };
+                      });
+                    }
+                  });
+                },
+              );
+            } catch (e) {
+              console.error(
+                `[StructuredSummary] Failed to generate diagnostic details for '${block.title}'`,
+                e,
+              );
+            }
+          }
+
+          return sectionData;
         } catch (err) {
           console.error(
             `[StructuredSummary] Failed to process section '${block.title}'`,
             err,
           );
-          return {
-            sectionName: block.title,
-            sectionContent: block.body,
-            sectionSummary: "Analysis failed",
-            leadQuestions: [],
-            salesQuestions: [],
-          };
+          return sectionData;
         }
       });
 
