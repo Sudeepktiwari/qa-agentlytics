@@ -146,8 +146,10 @@ export async function generateStructuredSummaryFromText(
         2. Questions MUST be directly derived from the specific content of this section.
         3. Do NOT use generic phrasing.
         4. Use specific terminology found in the Section Content.
-        5. For Lead Questions: Ask about the user's current challenges and problem statement related to "${block.title} and ${block.body}".
-        6. For Sales Questions: Ask about the urgency or specific use case for "${block.title} and ${block.body}".
+        5. LEAD QUESTIONS: Must be a **Problem Statement** asking about challenges related to "${block.title}  and ${block.body}".
+           - Options: Must describe **what the user currently does** or their current status quo (e.g., "I use spreadsheets", "We have no process", "I rely on manual entry").
+        6. SALES QUESTIONS: Must ask about **Urgency** to resolve the problem OR a **Specific Use Case** for the solution related to  "${block.title} and ${block.body}".
+           - Options: Must describe the timeline, importance, or specific application (e.g., "Need it ASAP", "For Q3 planning", "Automating client intake").
         7. TAG TAXONOMY (Use EXACTLY 2 tags per option: 1 Primary + 1 Secondary):
             Primary (Problem/Readiness): manual_scheduling, scheduling_gap, onboarding_delay, onboarding_dropoff, pipeline_leakage, inconsistent_process, handoff_friction, visibility_gap, no_show_risk, late_engagement, stakeholder_coordination, capacity_constraint, validated_flow, optimization_ready, awareness_missing, unknown_state, low_friction
             Secondary (Risk/Modifier): low_risk, conversion_risk, high_risk, critical_risk, validated_flow, optimization_ready, awareness_missing
