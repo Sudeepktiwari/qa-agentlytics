@@ -3216,7 +3216,35 @@ IMPORTANT REQUIREMENTS:
 
       for (const url of uncrawledUrls) {
         // Fast-Track: If already crawled globally, skip fetch but update sitemap status
-        if (globalCrawledSet.has(url)) {
+        // Check for URL variations (trailing slash, protocol) to ensure we don't re-crawl
+        // just because of minor format differences
+        
+        const variations = [url];
+        
+        // Add trailing slash variation
+        if (url.endsWith("/")) {
+            variations.push(url.slice(0, -1));
+        } else {
+            variations.push(`${url}/`);
+        }
+        
+        // Add protocol variation (http <-> https)
+        const isHttps = url.startsWith("https://");
+        const altProtocol = isHttps 
+             ? url.replace("https://", "http://") 
+             : url.replace("http://", "https://");
+        variations.push(altProtocol);
+        
+        // Add combined variation (protocol + slash)
+        if (altProtocol.endsWith("/")) {
+            variations.push(altProtocol.slice(0, -1));
+        } else {
+            variations.push(`${altProtocol}/`);
+        }
+
+        const isAlreadyCrawled = variations.some(v => globalCrawledSet.has(v));
+
+        if (isAlreadyCrawled) {
           // console.log removed
           await sitemapUrls.updateOne(
             { adminId, url, sitemapUrl },
