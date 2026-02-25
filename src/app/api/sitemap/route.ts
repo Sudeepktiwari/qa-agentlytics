@@ -853,10 +853,10 @@ async function extractLinksUsingBrowser(
             const pageUrlObj = new URL(currentUrl);
 
             // Only include same-domain HTTP/HTTPS URLs
-            if (
-              linkUrl.protocol.startsWith("http") &&
-              isSameDomain(linkUrl.hostname, pageUrlObj.hostname)
-            ) {
+            const h1 = linkUrl.hostname.replace(/^www\./, "").toLowerCase();
+            const h2 = pageUrlObj.hostname.replace(/^www\./, "").toLowerCase();
+
+            if (linkUrl.protocol.startsWith("http") && h1 === h2) {
               // Clean up the URL
               let cleanUrl = absoluteUrl.split("#")[0];
 
@@ -1357,8 +1357,8 @@ function detectDynamicContentPage(
 
   // Determine if this looks like a dynamic content page
   const shouldUseJavaScript =
-    // Case 0: Almost no links found (likely SPA/JS-rendered)
-    totalUrls < 5 ||
+    // Case 0: Almost no links found (likely SPA/JS-rendered) - increased threshold
+    totalUrls < 15 ||
     // Case 1: It's clearly a listing page
     isListingPage ||
     // Case 2: Has content keywords but found very few/no content URLs (likely dynamic)
