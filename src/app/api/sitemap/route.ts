@@ -2761,7 +2761,7 @@ IMPORTANT REQUIREMENTS:
               let blocks = parseSectionBlocks(text);
               blocks =
                 Array.isArray(blocks) && blocks.length > 0
-                  ? mergeSmallSectionBlocks(blocks)
+                  ? mergeSmallSectionBlocks(blocks, 30)
                   : blocks;
               if (Array.isArray(structuredSummary?.sections)) {
                 if (

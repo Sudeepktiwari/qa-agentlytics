@@ -302,7 +302,7 @@ export async function POST(request: NextRequest) {
 
     const rawBlocks = parseSectionBlocks(reconstructedContent);
     const mergedBlocks =
-      rawBlocks.length > 0 ? mergeSmallSectionBlocks(rawBlocks) : rawBlocks;
+      rawBlocks.length > 0 ? mergeSmallSectionBlocks(rawBlocks, 30) : rawBlocks;
     if (mergedBlocks.length > 0) {
       reconstructedContent = blocksToSectionedText(mergedBlocks);
     }
