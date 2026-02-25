@@ -91,6 +91,7 @@ export async function generateDiagnosticAnswers(
   items: { label: string; workflow: string }[],
   contextText: string = "",
   adminId?: string,
+  businessName?: string,
 ) {
   if (!items || items.length === 0) return {};
 
@@ -131,6 +132,7 @@ export async function generateDiagnosticAnswers(
             item.label,
             item.workflow,
             fullContext,
+            businessName,
           );
 
           if (result && result.answer) {
@@ -148,6 +150,7 @@ export async function processQuestionsWithTags(
   questions: any[],
   contextText: string = "",
   adminId?: string,
+  businessName?: string,
 ) {
   if (!questions || !questions.length) return questions;
 
@@ -323,6 +326,7 @@ export async function processQuestionsWithTags(
     allOptionsForDiagnostic,
     contextText,
     adminId,
+    businessName,
   );
 
   // Apply diagnostic answers back to options

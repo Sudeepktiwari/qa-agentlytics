@@ -2588,11 +2588,13 @@ async function processBatch(req: NextRequest) {
                 sec.leadQuestions,
                 block.body,
                 adminId || undefined,
+                summary?.businessName,
               );
               sec.salesQuestions = await processQuestionsWithTags(
                 sec.salesQuestions,
                 block.body,
                 adminId || undefined,
+                summary?.businessName,
               );
             } catch (tagError) {
               console.error(
@@ -3610,12 +3612,14 @@ IMPORTANT REQUIREMENTS:
                                     sec.leadQuestions,
                                     block.body,
                                     adminId || undefined,
+                                    structuredSummary?.businessName,
                                   );
                                 sec.salesQuestions =
                                   await processQuestionsWithTags(
                                     sec.salesQuestions,
                                     block.body,
                                     adminId || undefined,
+                                    structuredSummary?.businessName,
                                   );
                               } catch (e) {
                                 console.error(
@@ -3795,11 +3799,13 @@ IMPORTANT REQUIREMENTS:
                               sec.leadQuestions,
                               block.body,
                               adminId || undefined,
+                              structuredSummary?.businessName,
                             );
                             sec.salesQuestions = await processQuestionsWithTags(
                               sec.salesQuestions,
                               block.body,
                               adminId || undefined,
+                              structuredSummary?.businessName,
                             );
                           } catch (e) {
                             // console.error removed

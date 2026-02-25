@@ -12,6 +12,7 @@ export interface SectionBlock {
 export interface StructuredSummary {
   pageType: string;
   businessVertical: string;
+  businessName: string;
   primaryFeatures: string[];
   painPointsAddressed: string[];
   solutions: string[];
@@ -69,6 +70,7 @@ export async function generateStructuredSummaryFromText(
     {
       "pageType": "homepage|pricing|features|about|contact|blog|product|service",
       "businessVertical": "fitness|healthcare|legal|restaurant|saas|ecommerce|consulting|other",
+      "businessName": "Name of the business or product",
       "primaryFeatures": ["feature1", "feature2", "feature3"],
       "painPointsAddressed": ["pain1", "pain2", "pain3"],
       "solutions": ["solution1", "solution2", "solution3"],
@@ -214,6 +216,7 @@ export async function generateStructuredSummaryFromText(
                 allOptions,
                 block.body.substring(0, 8000), // Pass section content as context
                 undefined, // No adminId needed since we provide direct context
+                metadata.businessName, // Pass business name
               );
 
               // Merge details back
@@ -272,6 +275,7 @@ export async function generateStructuredSummaryFromText(
     return {
       pageType: metadata.pageType || "other",
       businessVertical: metadata.businessVertical || "other",
+      businessName: metadata.businessName || "the platform",
       primaryFeatures: metadata.primaryFeatures || [],
       painPointsAddressed: metadata.painPointsAddressed || [],
       solutions: metadata.solutions || [],
