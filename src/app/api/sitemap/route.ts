@@ -3238,9 +3238,13 @@ IMPORTANT REQUIREMENTS:
       // 4. Identify URLs that need processing (either crawl or status update)
       // We do NOT filter out globalCrawledSet here, because we want to iterate over them
       // and update their status in the sitemapUrls collection without re-fetching.
+      // FIX: Also check if globalCrawledSet is missing the URL (meaning content was deleted),
+      // even if sitemapUrls says it was crawled. This allows self-correction.
       const uncrawledUrls = urls
         .filter(
-          (url) => !sitemapCrawledSet.has(url) && !processedInSession.has(url),
+          (url) =>
+            (!sitemapCrawledSet.has(url) || !globalCrawledSet.has(url)) &&
+            !processedInSession.has(url),
         )
         .slice(0, MAX_PAGES);
 
@@ -4303,6 +4307,10 @@ export async function DELETE(req: NextRequest) {
     // Then delete the pages from MongoDB
     const result = await pages.deleteMany({ adminId, filename: sitemapUrl });
     deleteCount = result.deletedCount || 0;
+
+    // Also delete from sitemap_urls to allow re-crawling
+    const sitemapUrls = db.collection("sitemap_urls");
+    await sitemapUrls.deleteMany({ adminId, sitemapUrl });
   } else if (url) {
     // Delete a single page
     // Delete vectors FIRST
@@ -4311,6 +4319,10 @@ export async function DELETE(req: NextRequest) {
     // Then delete from MongoDB
     const result = await pages.deleteMany({ adminId, url });
     deleteCount = result.deletedCount || 0;
+
+    // Also delete from sitemap_urls to allow re-crawling
+    const sitemapUrls = db.collection("sitemap_urls");
+    await sitemapUrls.deleteMany({ adminId, url });
   }
 
   return NextResponse.json({ success: true, deleted: deleteCount });
