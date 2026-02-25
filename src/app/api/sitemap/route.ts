@@ -2201,6 +2201,23 @@ export async function POST(req: NextRequest) {
           await new Promise((resolve) => setTimeout(resolve, 2000));
         }
       }
+
+      // Mark as completed when done (if not stopped)
+      if (adminId) {
+        const db = await getDb();
+        const finalState = await db
+          .collection("crawl_states")
+          .findOne({ adminId });
+        if (finalState?.status !== "stopped") {
+          await db
+            .collection("crawl_states")
+            .updateOne(
+              { adminId },
+              { $set: { status: "completed", updatedAt: new Date() } },
+            );
+        }
+      }
+
       // console.log removed
     } catch (err) {
       // console.error removed
@@ -3047,8 +3064,30 @@ IMPORTANT REQUIREMENTS:
     // console.log removed
     const db = await getDb();
 
-    // Reset crawl state to ensure we don't hit a stale stop signal
+    // Check if stopped BEFORE overwriting
+    // This prevents the race condition where user clicks stop, but this function overwrites it to running
     const crawlStates = db.collection("crawl_states");
+    const currentCrawlState = await crawlStates.findOne({ adminId });
+    if (currentCrawlState?.status === "stopped") {
+      return NextResponse.json({
+        crawled: 0,
+        totalChunks: 0,
+        pages: [],
+        failedPages: [],
+        batchDone: 0,
+        batchRemaining: 0,
+        totalRemaining: 0,
+        recrawledPages: 0,
+        timeoutReached: false,
+        executionTime: 0,
+        totalDiscovered: 0,
+        hasMorePages: false,
+        sitemapUrl,
+        message: "Crawl stopped by user",
+      });
+    }
+
+    // Reset crawl state to ensure we don't hit a stale stop signal
     await crawlStates.updateOne(
       { adminId },
       { $set: { status: "running", updatedAt: new Date() } },
@@ -3218,31 +3257,33 @@ IMPORTANT REQUIREMENTS:
         // Fast-Track: If already crawled globally, skip fetch but update sitemap status
         // Check for URL variations (trailing slash, protocol) to ensure we don't re-crawl
         // just because of minor format differences
-        
+
         const variations = [url];
-        
+
         // Add trailing slash variation
         if (url.endsWith("/")) {
-            variations.push(url.slice(0, -1));
+          variations.push(url.slice(0, -1));
         } else {
-            variations.push(`${url}/`);
-        }
-        
-        // Add protocol variation (http <-> https)
-        const isHttps = url.startsWith("https://");
-        const altProtocol = isHttps 
-             ? url.replace("https://", "http://") 
-             : url.replace("http://", "https://");
-        variations.push(altProtocol);
-        
-        // Add combined variation (protocol + slash)
-        if (altProtocol.endsWith("/")) {
-            variations.push(altProtocol.slice(0, -1));
-        } else {
-            variations.push(`${altProtocol}/`);
+          variations.push(`${url}/`);
         }
 
-        const isAlreadyCrawled = variations.some(v => globalCrawledSet.has(v));
+        // Add protocol variation (http <-> https)
+        const isHttps = url.startsWith("https://");
+        const altProtocol = isHttps
+          ? url.replace("https://", "http://")
+          : url.replace("http://", "https://");
+        variations.push(altProtocol);
+
+        // Add combined variation (protocol + slash)
+        if (altProtocol.endsWith("/")) {
+          variations.push(altProtocol.slice(0, -1));
+        } else {
+          variations.push(`${altProtocol}/`);
+        }
+
+        const isAlreadyCrawled = variations.some((v) =>
+          globalCrawledSet.has(v),
+        );
 
         if (isAlreadyCrawled) {
           // console.log removed
