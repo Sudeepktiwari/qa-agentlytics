@@ -2670,6 +2670,18 @@ Extract and return a JSON object with this exact structure:
 {
   "pageType": "homepage|pricing|features|about|contact|blog|product|service",
   "businessVertical": "fitness|healthcare|legal|restaurant|saas|ecommerce|consulting|other",
+  "primaryFeatures": ["feature1", "feature2", "feature3"],
+  "painPointsAddressed": ["pain1", "pain2", "pain3"],
+  "solutions": ["solution1", "solution2", "solution3"],
+  "targetCustomers": ["small business", "enterprise", "startups"],
+  "businessOutcomes": ["outcome1", "outcome2"],
+  "competitiveAdvantages": ["advantage1", "advantage2"],
+  "industryTerms": ["term1", "term2", "term3"],
+  "pricePoints": ["free", "$X/month", "enterprise"],
+  "integrations": ["tool1", "tool2"],
+  "useCases": ["usecase1", "usecase2"],
+  "callsToAction": ["Get Started", "Book Demo"],
+  "trustSignals": ["testimonial", "certification", "clientcount"],
   "sections": [
     {
       "sectionName": "Inferred Title (e.g., Onboarding Momentum, Renewals)",
@@ -2731,6 +2743,7 @@ IMPORTANT REQUIREMENTS:
 4. Ensure Sales Questions focus on diagnosing the specific root cause of that problem.
 5. The 'optionFlows' array MUST have an entry for every option in each Sales Question.
 6. Tags should be snake_case (e.g., 'onboarding_delay').
+7. Do NOT leave arrays (primaryFeatures, painPointsAddressed, etc.) empty if information can be inferred. Populate them with at least 3 items each where possible.
 `,
                 },
               ],
@@ -3436,6 +3449,18 @@ Extract and return a JSON object with this exact structure:
 {
   "pageType": "homepage|pricing|features|about|contact|blog|product|service",
   "businessVertical": "fitness|healthcare|legal|restaurant|saas|ecommerce|consulting|other",
+  "primaryFeatures": ["feature1", "feature2", "feature3"],
+  "painPointsAddressed": ["pain1", "pain2", "pain3"],
+  "solutions": ["solution1", "solution2", "solution3"],
+  "targetCustomers": ["small business", "enterprise", "startups"],
+  "businessOutcomes": ["outcome1", "outcome2"],
+  "competitiveAdvantages": ["advantage1", "advantage2"],
+  "industryTerms": ["term1", "term2", "term3"],
+  "pricePoints": ["free", "$X/month", "enterprise"],
+  "integrations": ["tool1", "tool2"],
+  "useCases": ["usecase1", "usecase2"],
+  "callsToAction": ["Get Started", "Book Demo"],
+  "trustSignals": ["testimonial", "certification", "clientcount"],
   "sections": [
     {
       "sectionName": "Inferred Title (e.g., Onboarding Momentum, Renewals)",
@@ -3489,6 +3514,7 @@ IMPORTANT REQUIREMENTS:
 4. The second Lead/Sales Question MUST focus on a specific feature, capability, or keyword in the section. Do NOT ask about timeline or urgency.
 5. The 'optionFlows' array MUST have an entry for every option in the Sales Question.
 6. Tags should be snake_case (e.g., 'onboarding_delay').
+7. Do NOT leave arrays (primaryFeatures, painPointsAddressed, etc.) empty if information can be inferred. Populate them with at least 3 items each where possible.
 `,
                     },
                   ],

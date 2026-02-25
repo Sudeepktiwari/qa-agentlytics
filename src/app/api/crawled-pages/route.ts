@@ -183,21 +183,29 @@ export async function POST(request: NextRequest) {
   try {
     // console.log removed
 
-    // Verify API key
+    // Verify Auth (API Key or Cookie)
+    let adminId: string | null = null;
+
+    // 1. Try API key
     const apiKey = request.headers.get("x-api-key");
-    if (!apiKey) {
-      // console.log removed
-      return NextResponse.json({ error: "API key required" }, { status: 401 });
+    if (apiKey) {
+      const verification = await verifyApiKey(apiKey);
+      if (verification) {
+        adminId = verification.adminId;
+      }
     }
 
-    // console.log removed
-    const verification = await verifyApiKey(apiKey);
-    if (!verification) {
-      // console.log removed
-      return NextResponse.json({ error: "Invalid API key" }, { status: 401 });
+    // 2. Try Cookie if no API key or invalid
+    if (!adminId) {
+      const cookieAuth = verifyAdminTokenFromCookie(request);
+      if (cookieAuth) {
+        adminId = cookieAuth.adminId;
+      }
     }
 
-    const adminId = verification.adminId;
+    if (!adminId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     // console.log removed
 
     const body = await request.json();
@@ -1021,6 +1029,7 @@ IMPORTANT REQUIREMENTS:
 2. For EACH section, specify which [CHUNK N] indices belong to it in the 'chunkIndices' array.
 3. Generate EXACTLY 2 distinct lead questions and 2 distinct sales questions per section.
 4. Ensure questions are relevant to the specific content of that section.
+5. Do NOT leave arrays (primaryFeatures, painPointsAddressed, etc.) empty if information can be inferred. Populate them with at least 3 items each where possible.
 `,
         },
       ],
