@@ -2109,6 +2109,38 @@ export async function POST(req: NextRequest) {
   }
 
   if (!body.background) {
+    // If not background, this is the FIRST request.
+    // We MUST set status to 'running' here synchronously before starting the process
+    // This ensures the UI sees 'running' immediately.
+
+    // Extract Admin ID for status update
+    let currentAdminId: string | null = null;
+    if (adminId) {
+      currentAdminId = adminId;
+    } else {
+      // Try to get admin ID from token/key if not already resolved
+      const cookieToken = req.cookies.get("auth_token")?.value;
+      if (cookieToken) {
+        try {
+          const payload = jwt.verify(cookieToken, JWT_SECRET) as {
+            adminId: string;
+          };
+          currentAdminId = payload.adminId;
+        } catch {}
+      }
+    }
+
+    if (currentAdminId) {
+      const db = await getDb();
+      await db
+        .collection("crawl_states")
+        .updateOne(
+          { adminId: currentAdminId },
+          { $set: { status: "running", updatedAt: new Date() } },
+          { upsert: true },
+        );
+    }
+
     return processBatch(req);
   }
 
