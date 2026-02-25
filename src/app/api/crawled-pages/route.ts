@@ -15,6 +15,7 @@ import {
   mergeSmallSectionBlocks,
   blocksToSectionedText,
 } from "@/lib/parsing";
+import { generateStructuredSummaryFromText } from "@/lib/structured-summary";
 
 const pc = new Pinecone({ apiKey: process.env.PINECONE_KEY! });
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
@@ -300,39 +301,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const rawBlocks = parseSectionBlocks(reconstructedContent);
-    const mergedBlocks =
-      rawBlocks.length > 0 ? mergeSmallSectionBlocks(rawBlocks, 30) : rawBlocks;
-    if (mergedBlocks.length > 0) {
-      reconstructedContent = blocksToSectionedText(mergedBlocks);
-    }
-
-    // Estimate token count (rough estimate: 1 token ≈ 4 characters)
-    const estimatedTokens = Math.ceil(reconstructedContent.length / 4);
-    const maxTokensForDirect = 30000; // Leave room for prompt + response (GPT-4o-mini limit ~128k)
-
-    const blocks = parseSectionBlocks(reconstructedContent);
-
     let structuredSummary;
 
-    if (blocks.length > 0) {
-      // console.log removed
-      structuredSummary = await generateSummaryFromSections(blocks, adminId);
-    } else {
-      // console.log removed
-      if (estimatedTokens <= maxTokensForDirect) {
-        structuredSummary = await generateDirectSummary(
-          reconstructedContent,
-          adminId,
-        );
-      } else {
-        // For chunked summary, pass the vectorDocs with chunk text from Pinecone
-        const chunkObjs = vectorDocs.map((doc) => ({
-          ...doc,
-          text: idToChunk[doc.vectorId] || "",
-        }));
-        structuredSummary = await generateChunkedSummary(chunkObjs, adminId);
+    try {
+      structuredSummary =
+        await generateStructuredSummaryFromText(reconstructedContent);
+      if (structuredSummary) {
+        structuredSummary = normalizeStructuredSummary(structuredSummary);
       }
+    } catch (e) {
+      // console.error removed
+    }
+
+    if (!structuredSummary) {
+      // Fallback logic
+      const rawBlocks = parseSectionBlocks(reconstructedContent);
+      const mergedBlocks =
+        rawBlocks.length > 0
+          ? mergeSmallSectionBlocks(rawBlocks, 30)
+          : rawBlocks;
+      if (mergedBlocks.length > 0) {
+        reconstructedContent = blocksToSectionedText(mergedBlocks);
+      }
+
+      // Fallback to direct summary if structured summary generation failed completely
+      structuredSummary = await generateDirectSummary(
+        reconstructedContent,
+        adminId,
+      );
     }
 
     if (!structuredSummary) {
@@ -344,25 +340,6 @@ export async function POST(request: NextRequest) {
 
     // Create a new summary object to ensure we are updating the one we save
     const finalStructuredSummary = { ...structuredSummary };
-
-    if (
-      Array.isArray(finalStructuredSummary.sections) &&
-      Array.isArray(blocks) &&
-      blocks.length > 0
-    ) {
-      finalStructuredSummary.sections = finalStructuredSummary.sections.map(
-        (sec: any, idx: number) => {
-          const block = blocks[idx] ||
-            blocks[blocks.length - 1] || { body: "" };
-          const body = typeof block.body === "string" ? block.body : "";
-          if (!body) return sec;
-          return {
-            ...sec,
-            sectionContent: body,
-          };
-        },
-      );
-    }
 
     // DEBUG: Log sectionContent presence before saving
     if (
@@ -735,352 +712,4 @@ IMPORTANT REQUIREMENTS:
   }
 }
 
-// Helper function for new flow: generate summary from pre-parsed blocks
-async function generateSummaryFromSections(blocks: any[], adminId?: string) {
-  try {
-    console.log(
-      `[API] Generating summary from ${blocks.length} pre-parsed sections...`,
-    );
-
-    // 1. Generate Page Metadata (Type, Vertical, etc)
-    // We can use the titles and the first few sections to guess this
-    const metadataPrompt = `Analyze these section titles and the first section content to determine the page type and business vertical.
-    
-    Sections:
-    ${blocks.map((b, i) => `${i + 1}. ${b.title}`).join("\n")}
-    
-    First Section Content:
-    ${blocks[0]?.body?.substring(0, 1000) || ""}
-    
-    Return a JSON object with:
-    {
-      "pageType": "homepage|pricing|features|about|contact|blog|product|service",
-      "businessVertical": "fitness|healthcare|legal|restaurant|saas|ecommerce|consulting|other",
-      "primaryFeatures": ["feature1", "feature2"],
-      "painPointsAddressed": ["pain1", "pain2"],
-      "solutions": ["solution1", "solution2"],
-      "targetCustomers": ["target1", "target2"]
-    }`;
-
-    const metadataResponse = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are an expert web page analyzer. Return ONLY valid JSON.",
-        },
-        { role: "user", content: metadataPrompt },
-      ],
-      temperature: 0.3,
-    });
-
-    let metadata = {};
-    try {
-      metadata = JSON.parse(
-        metadataResponse.choices[0]?.message?.content || "{}",
-      );
-    } catch (e) {
-      // console.error removed
-    }
-
-    // 2. Generate details for EACH section (Parallel with concurrency limit)
-    const sections = [];
-    const concurrency = 5;
-
-    for (let i = 0; i < blocks.length; i += concurrency) {
-      const batch = blocks.slice(i, i + concurrency);
-      // console.log removed
-
-      const batchPromises = batch.map(async (block) => {
-        const prompt = `Analyze this specific website section and generate lead/sales questions.
-        
-        Section Title: "${block.title}"
-        Section Content:
-        "${block.body.substring(0, 8000)}" 
-        
-        Return a JSON object with:
-        {
-          "sectionSummary": "Brief summary of this section",
-          "leadQuestions": [
-            { "question": "Problem Recognition Question", "options": ["Opt1", "Opt2"], "tags": ["tag1", "tag2"], "workflow": "legacy" },
-            { "question": "Problem Recognition Question 2", "options": ["Opt1", "Opt2"], "tags": ["tag1", "tag2"], "workflow": "legacy" }
-          ],
-          "salesQuestions": [
-             { "question": "Diagnostic Question", "options": ["Opt1", "Opt2"], "tags": ["tag1", "tag2"], "workflow": "diagnostic_response" },
-             { "question": "Diagnostic Question 2", "options": ["Opt1", "Opt2"], "tags": ["tag1", "tag2"], "workflow": "diagnostic_response" }
-          ]
-        }
-        
-        REQUIREMENTS:
-        - EXACTLY 2 Lead Questions and 2 Sales Questions.
-        - Questions must be relevant to THIS section's content.
-        `;
-
-        try {
-          const res = await openai.chat.completions.create({
-            model: "gpt-4o-mini",
-            messages: [
-              {
-                role: "system",
-                content:
-                  "You are an expert sales strategist. Return ONLY valid JSON.",
-              },
-              { role: "user", content: prompt },
-            ],
-            temperature: 0.3,
-          });
-
-          const data = JSON.parse(res.choices[0]?.message?.content || "{}");
-          return {
-            sectionName: block.title,
-            sectionContent: block.body, // EXPLICITLY SET HERE
-            sectionSummary: data.sectionSummary || "No summary available",
-            leadQuestions: data.leadQuestions || [],
-            salesQuestions: data.salesQuestions || [],
-          };
-        } catch (err) {
-          console.error(
-            `[API] Failed to process section '${block.title}'`,
-            err,
-          );
-          // Return basic fallback
-          return {
-            sectionName: block.title,
-            sectionContent: block.body,
-            sectionSummary: "Analysis failed",
-            leadQuestions: [],
-            salesQuestions: [],
-          };
-        }
-      });
-
-      const batchResults = await Promise.all(batchPromises);
-      sections.push(...batchResults);
-    }
-
-    // 3. Assemble final object
-    const finalSummary = {
-      ...metadata,
-      sections,
-    };
-
-    // 4. Enrich/Normalize
-    const normalized = normalizeStructuredSummary(finalSummary);
-    return await enrichStructuredSummary(
-      normalized,
-      blocks.map((b) => b.body).join("\n\n"),
-      adminId,
-    );
-  } catch (error) {
-    // console.error removed
-    return null;
-  }
-}
-
-// Helper function for chunked summary generation (large content)
-async function generateChunkedSummary(chunks: any[], adminId?: string) {
-  try {
-    // console.log removed
-
-    // Step 1: Generate individual summaries for chunks (process in batches of 5)
-    const chunkSummaries = [];
-    const batchSize = 5;
-
-    for (let i = 0; i < chunks.length; i += batchSize) {
-      const batch = chunks.slice(i, i + batchSize);
-      // console.log removed
-
-      const batchPromises = batch.map(async (chunk, index) => {
-        const chunkContent = chunk.text || chunk.content || "";
-        if (chunkContent.length < 50) return null;
-
-        try {
-          const response = await openai.chat.completions.create({
-            model: "gpt-4o-mini",
-            messages: [
-              {
-                role: "system",
-                content:
-                  "Extract key business information from this content chunk. Be concise but comprehensive. Return a brief summary of business-relevant information.",
-              },
-              {
-                role: "user",
-                content: `Analyze this content chunk and extract key business information:
-
-${chunkContent}
-
-Focus on: business features, pain points, solutions, target customers, pricing, integrations, use cases.`,
-              },
-            ],
-            temperature: 0.3,
-            max_tokens: 300,
-          });
-
-          return {
-            index: i + index,
-            summary: response.choices[0]?.message?.content || "",
-          };
-        } catch (error) {
-          console.error(`[API] Failed to process chunk ${i + index}:`, error);
-          return null;
-        }
-      });
-
-      const batchResults = await Promise.all(batchPromises);
-      chunkSummaries.push(...batchResults.filter((item) => item !== null));
-
-      // Small delay between batches to avoid rate limits
-      if (i + batchSize < chunks.length) {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-      }
-    }
-
-    // console.log removed
-
-    if (chunkSummaries.length === 0) {
-      // console.log removed
-      return null;
-    }
-
-    // Step 2: Combine all chunk summaries into final structured summary
-    // We include chunk indices to allow mapping back to original text
-    const combinedSummary = chunkSummaries
-      .map((c: any) => `[CHUNK ${c.index}]: ${c.summary}`)
-      .join("\n\n");
-    // console.log removed
-
-    const finalResponse = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are an expert web page analyzer. Your goal is to deconstruct a web page into its distinct logical sections (e.g., Hero, Features, Pricing, Testimonials, FAQ, Footer) and extract key business intelligence for EACH section. Return ONLY a valid JSON object. Do not include markdown.",
-        },
-        {
-          role: "user",
-          content: `Combine these chunk summaries into a comprehensive business analysis:
-
-${combinedSummary}
-
-Extract and return a JSON object with this exact structure:
-{
-  "pageType": "homepage|pricing|features|about|contact|blog|product|service",
-  "businessVertical": "fitness|healthcare|legal|restaurant|saas|ecommerce|consulting|other",
-  "primaryFeatures": ["feature1", "feature2", "feature3"],
-  "painPointsAddressed": ["pain1", "pain2", "pain3"],
-  "solutions": ["solution1", "solution2", "solution3"],
-  "targetCustomers": ["small business", "enterprise", "startups"],
-  "businessOutcomes": ["outcome1", "outcome2"],
-  "competitiveAdvantages": ["advantage1", "advantage2"],
-  "industryTerms": ["term1", "term2", "term3"],
-  "pricePoints": ["free", "$X/month", "enterprise"],
-  "integrations": ["tool1", "tool2"],
-  "useCases": ["usecase1", "usecase2"],
-  "callsToAction": ["Get Started", "Book Demo"],
-  "trustSignals": ["testimonial", "certification", "clientcount"],
-  "sections": [
-    {
-      "sectionName": "Name of the section (e.g., Hero, Features, Testimonials, Pricing)",
-      "chunkIndices": [0, 1],
-      "sectionSummary": "Brief summary of this section's content",
-      "leadQuestions": [
-        {
-          "question": "First lead qualification question specific to this section",
-          "options": ["Option 1", "Option 2", "Option 3"],
-          "tags": ["tag1", "tag2", "tag3"],
-          "workflow": "ask_sales_question|educational_insight|stop"
-        },
-        {
-          "question": "Second lead qualification question specific to this section",
-          "options": ["Option A", "Option B", "Option C"],
-          "tags": ["tagA", "tagB", "tagC"],
-          "workflow": "ask_sales_question|educational_insight|stop"
-        }
-      ],
-      "salesQuestions": [
-        {
-          "question": "First sales qualification question (high severity)",
-          "options": ["Sales Opt 1", "Sales Opt 2"],
-          "tags": ["sales_tag_1", "sales_tag_2"],
-          "workflow": "diagnostic_response"
-        },
-        {
-          "question": "Second sales qualification question",
-          "options": ["Sales Opt A", "Sales Opt B"],
-          "tags": ["sales_tag_A", "sales_tag_B"],
-          "workflow": "diagnostic_response"
-        }
-      ],
-      "scripts": {
-         "diagnosticAnswer": "Script for diagnostic answer (Reflect, Explain, Validate)",
-         "followUpQuestion": "Script for mandatory follow-up question",
-         "followUpOptions": ["Option 1", "Option 2"],
-         "featureMappingAnswer": "Script for feature mapping (Map to ONE feature only)",
-         "loopClosure": "Script for loop closure (Summarize and Stop)"
-       }
-    }
-  ]
-}
-
-IMPORTANT REQUIREMENTS:
-1. Identify ALL distinct sections in the combined content.
-2. For EACH section, specify which [CHUNK N] indices belong to it in the 'chunkIndices' array.
-3. Generate EXACTLY 2 distinct lead questions and 2 distinct sales questions per section.
-4. Ensure questions are relevant to the specific content of that section.
-5. Do NOT leave arrays (primaryFeatures, painPointsAddressed, etc.) empty if information can be inferred. Populate them with at least 3 items each where possible.
-`,
-        },
-      ],
-      temperature: 0.3,
-      max_tokens: 1500,
-    });
-
-    const finalContent = finalResponse.choices[0]?.message?.content;
-    if (!finalContent) {
-      // console.log removed
-      return null;
-    }
-
-    const parsed = JSON.parse(finalContent);
-    const normalized = normalizeStructuredSummary(parsed);
-
-    // Ensure sectionContent is populated for chunked summaries
-    if (normalized.sections && Array.isArray(normalized.sections)) {
-      normalized.sections.forEach((sec: any) => {
-        // Use chunkIndices to reconstruct section content from original chunks
-        if (Array.isArray(sec.chunkIndices) && sec.chunkIndices.length > 0) {
-          const contentParts = sec.chunkIndices
-            .map((idx: any) => {
-              const chunkIndex = Number(idx);
-              if (
-                !isNaN(chunkIndex) &&
-                chunks[chunkIndex] &&
-                chunks[chunkIndex].text
-              ) {
-                return chunks[chunkIndex].text;
-              }
-              return "";
-            })
-            .filter((t: string) => t.length > 0);
-
-          if (contentParts.length > 0) {
-            sec.sectionContent = contentParts.join("\n\n");
-          }
-        }
-
-        if (!sec.sectionContent) {
-          // Fallback: use summary as content if raw text is missing
-          // This prevents "undefined" content which breaks matching
-          sec.sectionContent = sec.sectionSummary || "Content not available";
-        }
-      });
-    }
-
-    return await enrichStructuredSummary(normalized, combinedSummary, adminId);
-  } catch (error) {
-    // console.error removed
-    return null;
-  }
-}
+// Helper functions removed as they are replaced by generateStructuredSummaryFromText
