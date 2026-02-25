@@ -1704,7 +1704,7 @@ async function extractTextFromUrl(
       "link",
     ]);
 
-    const traverse = ($node: any) => {
+    const traverse = ($node: any, isInsideSectionTag: boolean = false) => {
       $node.contents().each((_: number, el: any) => {
         if (el.type === "text") {
           const txt = normalize($(el).text());
@@ -1716,6 +1716,23 @@ async function extractTextFromUrl(
           if (blocklist.has(tagName)) return;
 
           const $el = $(el);
+
+          // SPECIAL HANDLING FOR <SECTION> TAGS
+          // The user requested that <section> tags should always be treated as a single unit,
+          // preventing internal headers from splitting it into multiple crawler sections.
+          if (tagName === "section") {
+            // 1. Close any pending section from before this <section> tag
+            if (currentTitle || currentContent.length) pushSection();
+
+            // 2. Process this section recursively, with isInsideSectionTag = true
+            // This flag will suppress header-based splitting inside this scope.
+            traverse($el, true);
+
+            // 3. Close this section immediately after finishing the tag
+            if (currentTitle || currentContent.length) pushSection();
+            return;
+          }
+
           const role = $el.attr("role");
           const className = $el.attr("class") || "";
           const testId = $el.attr("data-testid") || "";
@@ -1743,14 +1760,38 @@ async function extractTextFromUrl(
           // but <section class="hero"><h1>Title</h1>...</section> to be a container)
           const isHeader = isTagHeader || (isClassHeader && !hasChildren);
 
-          if (isHeader) {
-            if (currentTitle || currentContent.length) pushSection();
-            // Use .text() to get all text inside the header (e.g. <h1><span>Title</span></h1>)
-            currentTitle = normalize($el.text());
-            currentContent = [];
-            // Do NOT recurse into header children (we consumed them as title)
+          if (isInsideSectionTag) {
+            // INSIDE A <SECTION>:
+            // Do NOT split on headers. Instead, use the first header as the section title,
+            // and treat subsequent headers as body text.
+            if (isHeader) {
+              const headerText = normalize($el.text());
+              if (!currentTitle) {
+                // First header becomes the title for this <section> block
+                currentTitle = headerText;
+              } else {
+                // Subsequent headers are just appended to content
+                if (headerText.length > 0) {
+                  currentContent.push(headerText);
+                }
+              }
+              // We consumed the header text, so do not recurse into its children
+            } else {
+              // Non-header elements: just recurse normally
+              traverse($el, true);
+            }
           } else {
-            traverse($el);
+            // NORMAL MODE (OUTSIDE <SECTION>):
+            // Split on headers as usual.
+            if (isHeader) {
+              if (currentTitle || currentContent.length) pushSection();
+              // Use .text() to get all text inside the header (e.g. <h1><span>Title</span></h1>)
+              currentTitle = normalize($el.text());
+              currentContent = [];
+              // Do NOT recurse into header children (we consumed them as title)
+            } else {
+              traverse($el, false);
+            }
           }
         }
       });
