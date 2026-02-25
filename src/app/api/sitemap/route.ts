@@ -1603,8 +1603,9 @@ async function extractTextFromUrl(
 
     // console.log removed
     $("script, style, noscript").remove();
+    // Remove nav and footer elements, but be careful with headers
     $(
-      "nav, footer, aside, .site-header, .site-footer, .navbar, .global-nav, .global-header, .cookie-banner, .newsletter, .modal, .offcanvas",
+      "nav, footer, aside, .site-footer, .navbar, .global-nav, .cookie-banner, .newsletter, .modal, .offcanvas, .sidebar, .comments, .related-posts, .recommendations, .ad-container",
     ).remove();
     // Only remove header if it looks like a main site header (contains nav or is top level)
     $("body > header").remove();
@@ -1625,12 +1626,9 @@ async function extractTextFromUrl(
     const isNoiseText = (t: string) => NOISE_PATTERNS.some((re) => re.test(t));
     const normalize = (t: string) => t.replace(/\s+/g, " ").trim();
 
-    const scope =
-      $("main, [role='main']").length > 0
-        ? $("main, [role='main']")
-        : $("article").length > 0
-          ? $("article")
-          : $("body");
+    // Use body as scope to ensure we capture Hero sections that might be outside main/article
+    // We rely on the robust removal logic above to strip out navs/footers/etc.
+    const scope = $("body");
 
     const sections: string[] = [];
     let currentTitle = "";
@@ -1651,9 +1649,9 @@ async function extractTextFromUrl(
         currentContent = [];
         return;
       }
-      // Only filter noise if text is relatively short (less than 300 chars)
-      // This prevents dropping long valid sections that just happen to contain a "Sign up" button
-      if (body.length < 300 && isNoiseText(body)) {
+      // Only filter noise if text is very short (less than 100 chars)
+      // This prevents dropping valid sections (like Heroes) that contain "Sign up" buttons
+      if (body.length < 100 && isNoiseText(body)) {
         currentTitle = "";
         currentContent = [];
         return;
@@ -1687,46 +1685,78 @@ async function extractTextFromUrl(
 
     const contentSelector =
       "h1, h2, h3, h4, h5, h6, p, li, blockquote, td, th, div, article, section, dt, summary, legend, span, button, a";
-    scope.find(contentSelector).each((_, el) => {
-      const $el = $(el);
-      // Avoid duplication: if this element has children that are also in our selector,
-      // we let the children handle the text extraction (unless it's a header).
-      // Headers should be treated as titles regardless of content.
-      const tagName = (el as any).tagName
-        ? (el as any).tagName.toLowerCase()
-        : "";
 
-      const role = $el.attr("role");
-      const className = $el.attr("class") || "";
-      const hasChildren = $el.find(contentSelector).length > 0;
+    const blocklist = new Set([
+      "script",
+      "style",
+      "noscript",
+      "iframe",
+      "svg",
+      "img",
+      "video",
+      "audio",
+      "canvas",
+      "map",
+      "object",
+      "embed",
+      "head",
+      "meta",
+      "link",
+    ]);
 
-      // Header detection: tags, roles, or class heuristics (leaf nodes only for classes)
-      const isTagHeader =
-        /^h[1-6]$/.test(tagName) ||
-        ["dt", "summary", "legend"].includes(tagName) ||
-        role === "heading";
-      const isClassHeader =
-        /(\s|^)(section-title|section-header|headline|title|header|heading|h[1-6]|text-(xl|2xl|3xl|4xl|5xl))(\s|$)/i.test(
-          className,
-        );
+    const traverse = ($node: any) => {
+      $node.contents().each((_: number, el: any) => {
+        if (el.type === "text") {
+          const txt = normalize($(el).text());
+          if (txt.length > 0) {
+            currentContent.push(txt);
+          }
+        } else if (el.type === "tag") {
+          const tagName = el.tagName.toLowerCase();
+          if (blocklist.has(tagName)) return;
 
-      const isHeader = isTagHeader || (isClassHeader && !hasChildren);
+          const $el = $(el);
+          const role = $el.attr("role");
+          const className = $el.attr("class") || "";
+          const testId = $el.attr("data-testid") || "";
 
-      if (!isHeader && hasChildren) {
-        return;
-      }
+          // Check if this element acts as a container for other content elements
+          const hasChildren = $el.find(contentSelector).length > 0;
 
-      const elText = normalize($el.text());
-      if (!elText) return;
+          // Header detection: tags, roles, or class heuristics
+          const isTagHeader =
+            /^h[1-6]$/.test(tagName) ||
+            ["dt", "summary", "legend"].includes(tagName) ||
+            role === "heading";
 
-      if (isHeader) {
-        if (currentTitle || currentContent.length) pushSection();
-        currentTitle = elText;
-        currentContent = [];
-      } else {
-        currentContent.push(elText);
-      }
-    });
+          const isHero =
+            /hero/i.test(testId) || /(\s|^)hero(\s|$)/i.test(className);
+
+          const isClassHeader =
+            /(\s|^)(section-title|section-header|headline|title|header|heading|h[1-6]|text-(xl|2xl|3xl|4xl|5xl))(\s|$)/i.test(
+              className,
+            ) || isHero;
+
+          // A container is a header if it's explicitly a header tag,
+          // OR if it looks like a header class AND doesn't contain structured content children.
+          // (This allows <div class="hero">Title</div> to be a header,
+          // but <section class="hero"><h1>Title</h1>...</section> to be a container)
+          const isHeader = isTagHeader || (isClassHeader && !hasChildren);
+
+          if (isHeader) {
+            if (currentTitle || currentContent.length) pushSection();
+            // Use .text() to get all text inside the header (e.g. <h1><span>Title</span></h1>)
+            currentTitle = normalize($el.text());
+            currentContent = [];
+            // Do NOT recurse into header children (we consumed them as title)
+          } else {
+            traverse($el);
+          }
+        }
+      });
+    };
+
+    traverse(scope);
     if (currentTitle || currentContent.length) pushSection();
 
     const text =
@@ -2651,7 +2681,9 @@ async function processBatch(req: NextRequest) {
       if (text && text.trim().length > 0) {
         try {
           try {
-            structuredSummary = await generateStructuredSummaryFromText(text);
+            structuredSummary = await generateStructuredSummaryFromText(
+              text || "",
+            );
             if (structuredSummary) {
               structuredSummary = normalizeStructuredSummary(structuredSummary);
             }
@@ -3198,30 +3230,31 @@ async function processBatch(req: NextRequest) {
           // console.log removed
           results.push({ url, text });
 
-          // Generate basic summary (existing functionality)
-          const basicSummaryResponse = await openai.chat.completions.create({
-            model: "gpt-4o-mini",
-            messages: [
-              {
-                role: "system",
-                content:
-                  "You are a helpful assistant that creates concise summaries of web page content. Focus on the main topics, key information, and important details.",
-              },
-              {
-                role: "user",
-                content: `Please create a concise summary of the following web page content:\n\n${text}`,
-              },
-            ],
-            max_tokens: 300,
-            temperature: 0.3,
-          });
-          const basicSummary =
-            basicSummaryResponse.choices[0]?.message?.content ||
-            "Summary not available";
-
-          // Generate structured summary (NEW - automatic during crawling)
+          // Generate structured summary using shared library
           let structuredSummary: any = null;
-          if (text && text.trim().length > 0) {
+          let basicSummary = "Summary not available";
+
+          try {
+            structuredSummary = await generateStructuredSummaryFromText(text);
+            if (structuredSummary) {
+              structuredSummary = normalizeStructuredSummary(structuredSummary);
+              if (
+                structuredSummary.sections &&
+                structuredSummary.sections.length > 0
+              ) {
+                basicSummary =
+                  structuredSummary.sections
+                    .map((s: any) => s.sectionSummary)
+                    .join("\n\n")
+                    .slice(0, 500) + "...";
+              }
+            }
+          } catch (e) {
+            console.error("Structured summary generation failed:", e);
+          }
+
+          // Legacy block (disabled)
+          if (false) {
             try {
               // console.log removed
               const structuredSummaryResponse =
@@ -3322,10 +3355,10 @@ IMPORTANT REQUIREMENTS:
                 structuredSummaryResponse.choices[0]?.message?.content;
               if (structuredText) {
                 try {
-                  const parsed = JSON.parse(structuredText);
+                  const parsed = JSON.parse(structuredText || "{}");
                   structuredSummary = normalizeStructuredSummary(parsed);
                   try {
-                    let blocks = parseSectionBlocks(text);
+                    let blocks = parseSectionBlocks(text || "");
                     const minChars = blocks.length >= 8 ? 30 : 100;
                     blocks =
                       Array.isArray(blocks) && blocks.length > 0
@@ -3572,7 +3605,7 @@ IMPORTANT REQUIREMENTS:
             if (fallback) {
               structuredSummary = normalizeStructuredSummary(fallback);
               try {
-                let blocks = parseSectionBlocks(text);
+                let blocks = parseSectionBlocks(text || "");
                 const minChars = blocks.length >= 8 ? 30 : 100;
                 blocks =
                   Array.isArray(blocks) && blocks.length > 0
