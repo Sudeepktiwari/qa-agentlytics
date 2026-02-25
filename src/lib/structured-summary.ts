@@ -130,12 +130,12 @@ export async function generateStructuredSummaryFromText(
         {
           "sectionSummary": "Brief summary of this section",
           "leadQuestions": [
-            { "question": "Problem Recognition Question", "options": [{"label": "Opt1", "tags": ["primary", "secondary"], "workflow": "sales_alert"}, {"label": "Opt2", "tags": ["primary", "secondary"], "workflow": "optimization_workflow"}], "workflow": "sales_alert" }
+            { "question": "Problem Recognition Question", "options": [{"label": "Specific Scenario A", "tags": ["primary", "secondary"], "workflow": "sales_alert"}, {"label": "Specific Scenario B", "tags": ["primary", "secondary"], "workflow": "optimization_workflow"}], "workflow": "sales_alert" }
           ],
           "salesQuestions": [
              { 
                "question": "Diagnostic Question", 
-               "options": [{"label": "Opt1", "tags": ["primary", "secondary"], "workflow": "diagnostic_response"}, {"label": "Opt2", "tags": ["primary", "secondary"], "workflow": "diagnostic_response"}], 
+               "options": [{"label": "Specific Use Case A", "tags": ["primary", "secondary"], "workflow": "diagnostic_response"}, {"label": "Specific Use Case B", "tags": ["primary", "secondary"], "workflow": "diagnostic_response"}], 
                "workflow": "diagnostic_response"
              }
           ]
@@ -146,13 +146,14 @@ export async function generateStructuredSummaryFromText(
         2. Questions MUST be directly derived from the specific content of this section.
         3. Do NOT use generic phrasing.
         4. Use specific terminology found in the Section Content.
-        5. For Lead Questions: Ask about the user's current challenges related to "${block.title}".
-        6. For Sales Questions: Ask about the urgency or specific use case for "${block.title}".
+        5. For Lead Questions: Ask about the user's current challenges and problem statement related to "${block.title} and ${block.body}".
+        6. For Sales Questions: Ask about the urgency or specific use case for "${block.title} and ${block.body}".
         7. TAG TAXONOMY (Use EXACTLY 2 tags per option: 1 Primary + 1 Secondary):
             Primary (Problem/Readiness): manual_scheduling, scheduling_gap, onboarding_delay, onboarding_dropoff, pipeline_leakage, inconsistent_process, handoff_friction, visibility_gap, no_show_risk, late_engagement, stakeholder_coordination, capacity_constraint, validated_flow, optimization_ready, awareness_missing, unknown_state, low_friction
             Secondary (Risk/Modifier): low_risk, conversion_risk, high_risk, critical_risk, validated_flow, optimization_ready, awareness_missing
         8. WORKFLOWS: sales_alert (if risk), optimization_workflow (if friction), validation_path (if good), diagnostic_education (if unknown).
         9. Assign the appropriate 'workflow' to EACH option based on its tags.
+        10. OPTIONS MUST BE DESCRIPTIVE PHRASES: Do NOT use "Opt1", "Opt2", "Yes", "No". Options must describe a specific user situation (e.g., "Using manual spreadsheets", "Process is inconsistent", "Fully automated").
         `;
 
         let sectionData = {
