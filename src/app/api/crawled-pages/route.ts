@@ -15,7 +15,10 @@ import {
   mergeSmallSectionBlocks,
   blocksToSectionedText,
 } from "@/lib/parsing";
-import { generateStructuredSummaryFromText } from "@/lib/structured-summary";
+import {
+  generateStructuredSummaryFromText,
+  StructuredSummary,
+} from "@/lib/structured-summary";
 
 const pc = new Pinecone({ apiKey: process.env.PINECONE_KEY! });
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
@@ -301,11 +304,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let structuredSummary;
+    let structuredSummary: StructuredSummary | null = null;
 
     try {
-      structuredSummary =
+      let genResult =
         await generateStructuredSummaryFromText(reconstructedContent);
+      structuredSummary = genResult.summary;
+
+      // Loop to process all sections in batches
+      while (!genResult.isComplete && genResult.nextIndex < 100) {
+        // Safety break
+        genResult = await generateStructuredSummaryFromText(
+          reconstructedContent,
+          genResult.nextIndex,
+          structuredSummary,
+        );
+        structuredSummary = genResult.summary;
+      }
+
       if (structuredSummary) {
         structuredSummary = normalizeStructuredSummary(structuredSummary);
       }

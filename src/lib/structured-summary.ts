@@ -39,8 +39,15 @@ export interface SectionDetail {
 
 export async function generateStructuredSummaryFromText(
   text: string,
-): Promise<StructuredSummary | null> {
-  if (!text || text.trim().length === 0) return null;
+  startIndex: number = 0,
+  existingSummary: StructuredSummary | null = null,
+): Promise<{
+  summary: StructuredSummary | null;
+  nextIndex: number;
+  isComplete: boolean;
+}> {
+  if (!text || text.trim().length === 0)
+    return { summary: null, nextIndex: 0, isComplete: true };
 
   try {
     // 1. Parse and Merge Sections
@@ -54,13 +61,34 @@ export async function generateStructuredSummaryFromText(
       blocks.push({ title: "General Content", body: text });
     }
 
-    // 2. Step 1: Generate Global Metadata (Page Type, Vertical, Features, etc.)
-    const metaStart = Date.now();
-    // We use the first 8000 chars of text + all section titles for context
-    const contextText = text.substring(0, 12000);
-    const sectionTitles = blocks.map((b) => b.title).join(", ");
+    // Initialize summary with existing one or empty
+    let summary: StructuredSummary = existingSummary || {
+      pageType: "unknown",
+      businessVertical: "unknown",
+      businessName: "unknown",
+      primaryFeatures: [],
+      painPointsAddressed: [],
+      solutions: [],
+      targetCustomers: [],
+      businessOutcomes: [],
+      competitiveAdvantages: [],
+      industryTerms: [],
+      pricePoints: [],
+      integrations: [],
+      useCases: [],
+      callsToAction: [],
+      trustSignals: [],
+      sections: [],
+    };
 
-    const metadataPrompt = `Analyze this web page content and extract key business intelligence.
+    // 2. Step 1: Generate Global Metadata (Only if starting fresh and no existing summary)
+    if (startIndex === 0 && !existingSummary) {
+      const metaStart = Date.now();
+      // We use the first 8000 chars of text + all section titles for context
+      const contextText = text.substring(0, 12000);
+      const sectionTitles = blocks.map((b) => b.title).join(", ");
+
+      const metadataPrompt = `Analyze this web page content and extract key business intelligence.
     
     Section Titles: ${sectionTitles}
     
@@ -91,55 +119,66 @@ export async function generateStructuredSummaryFromText(
     2. Be specific and use terminology from the content.
     `;
 
-    const metadataResponse = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      response_format: { type: "json_object" },
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are an expert web page analyzer. Return ONLY valid JSON.",
-        },
-        { role: "user", content: metadataPrompt },
-      ],
-      temperature: 0.3,
-    });
+      const metadataResponse = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        response_format: { type: "json_object" },
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are an expert web page analyzer. Return ONLY valid JSON.",
+          },
+          { role: "user", content: metadataPrompt },
+        ],
+        temperature: 0.3,
+      });
 
-    let metadata: Partial<StructuredSummary> = {};
-    try {
-      metadata = JSON.parse(
-        metadataResponse.choices[0]?.message?.content || "{}",
-      );
-      console.log(
-        `[StructuredSummary] Metadata gen took ${Date.now() - metaStart}ms`,
-      );
-    } catch (e) {
-      console.error("[StructuredSummary] Failed to parse metadata JSON", e);
+      try {
+        const meta = JSON.parse(
+          metadataResponse.choices[0]?.message?.content || "{}",
+        );
+        summary = { ...summary, ...meta };
+        console.log(
+          `[StructuredSummary] Metadata gen took ${Date.now() - metaStart}ms`,
+        );
+      } catch (e) {
+        console.error("[StructuredSummary] Failed to parse metadata JSON", e);
+      }
     }
 
-    // 3. Step 2: Generate Questions for Each Section
-    const sections: SectionDetail[] = [];
-    const concurrency = 1; // Strict sequential processing to avoid rate limits
+    // 3. Step 2: Generate Questions for Each Section (Batch Processing)
+    const BATCH_SIZE = 5; // Process in batches of 5 sections
+    const concurrency = 1; // Strict sequential processing within batch
     const TIMEOUT_BUFFER = 30000; // 30s buffer before Vercel timeout (300s)
     const startTime = Date.now();
-    const MAX_SECTIONS = 5; // Limit to 5 sections max to prevent timeouts
-    const limitedBlocks = blocks.slice(0, MAX_SECTIONS);
 
-    if (blocks.length > MAX_SECTIONS) {
-      console.warn(
-        `[StructuredSummary] Limiting analysis to first ${MAX_SECTIONS} sections (of ${blocks.length}) to prevent timeout`,
-      );
+    // Select the batch to process
+    // If we have already processed sections, we append to them.
+    // However, existingSummary.sections might already have them.
+    // The startIndex tells us where to start in 'blocks'.
+    const targetBlocks = blocks.slice(startIndex, startIndex + BATCH_SIZE);
+
+    if (targetBlocks.length === 0) {
+      // Nothing to process, check if we are done
+      return {
+        summary,
+        nextIndex: startIndex,
+        isComplete: startIndex >= blocks.length,
+      };
     }
 
-    for (let i = 0; i < limitedBlocks.length; i += concurrency) {
+    const newSections: SectionDetail[] = [];
+
+    for (let i = 0; i < targetBlocks.length; i += concurrency) {
       if (Date.now() - startTime > 300000 - TIMEOUT_BUFFER) {
         console.warn(
           "[StructuredSummary] Approaching timeout, stopping section processing",
         );
         break;
       }
+
       const batchStart = Date.now();
-      const batch = limitedBlocks.slice(i, i + concurrency);
+      const batch = targetBlocks.slice(i, i + concurrency);
 
       const batchPromises = batch.map(async (block) => {
         const sectionStart = Date.now();
@@ -266,7 +305,7 @@ export async function generateStructuredSummaryFromText(
                   allOptions,
                   block.body.substring(0, 8000), // Pass section content as context
                   undefined, // No adminId needed since we provide direct context
-                  metadata.businessName, // Pass business name
+                  summary.businessName, // Pass business name
                 );
                 console.log(
                   `[StructuredSummary] Diagnostic gen for '${block.title}' (${
@@ -314,53 +353,47 @@ export async function generateStructuredSummaryFromText(
               );
             }
           }
-
-          return sectionData;
-        } catch (err) {
+        } catch (e) {
           console.error(
-            `[StructuredSummary] Failed to process section '${block.title}'`,
-            err,
+            `[StructuredSummary] Failed to process section "${block.title}"`,
+            e,
           );
-          return sectionData;
         }
+
+        return sectionData;
       });
 
       const batchResults = await Promise.all(batchPromises);
-      sections.push(...batchResults);
-      console.log(
-        `[StructuredSummary] Batch ${Math.floor(i / concurrency) + 1} took ${
-          Date.now() - batchStart
-        }ms`,
-      );
+      newSections.push(...batchResults);
 
-      // Add delay between batches
-      if (i + concurrency < blocks.length) {
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Add delay between internal batches if needed (optional since concurrency is 1)
+      if (i + concurrency < targetBlocks.length) {
+        await new Promise((resolve) => setTimeout(resolve, 200));
       }
     }
 
-    // 4. Assemble Final Object
-    return {
-      pageType: metadata.pageType || "other",
-      businessVertical: metadata.businessVertical || "other",
-      businessName: metadata.businessName || "the platform",
-      primaryFeatures: metadata.primaryFeatures || [],
-      painPointsAddressed: metadata.painPointsAddressed || [],
-      solutions: metadata.solutions || [],
-      targetCustomers: metadata.targetCustomers || [],
-      businessOutcomes: metadata.businessOutcomes || [],
-      competitiveAdvantages: metadata.competitiveAdvantages || [],
-      industryTerms: metadata.industryTerms || [],
-      pricePoints: metadata.pricePoints || [],
-      integrations: metadata.integrations || [],
-      useCases: metadata.useCases || [],
-      callsToAction: metadata.callsToAction || [],
-      trustSignals: metadata.trustSignals || [],
-      sections: sections,
-      summaryGeneratedAt: new Date(),
-    };
+    // Update summary with new sections
+    // If we are resuming, we append.
+    // If we started fresh, we set.
+    // However, existingSummary might have been passed in.
+    if (summary.sections) {
+      summary.sections = [...summary.sections, ...newSections];
+    } else {
+      summary.sections = newSections;
+    }
+
+    summary.summaryGeneratedAt = new Date();
+
+    const nextIndex = startIndex + newSections.length;
+    const isComplete = nextIndex >= blocks.length;
+
+    console.log(
+      `[StructuredSummary] Batch complete. Processed ${newSections.length} sections. Next index: ${nextIndex}. Total blocks: ${blocks.length}`,
+    );
+
+    return { summary, nextIndex, isComplete };
   } catch (error) {
-    console.error("[StructuredSummary] Fatal error generating summary", error);
-    return null;
+    console.error("[StructuredSummary] Error generating summary:", error);
+    return { summary: null, nextIndex: startIndex, isComplete: false };
   }
 }
