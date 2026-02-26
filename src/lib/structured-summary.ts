@@ -55,6 +55,7 @@ export async function generateStructuredSummaryFromText(
     }
 
     // 2. Step 1: Generate Global Metadata (Page Type, Vertical, Features, etc.)
+    const metaStart = Date.now();
     // We use the first 8000 chars of text + all section titles for context
     const contextText = text.substring(0, 12000);
     const sectionTitles = blocks.map((b) => b.title).join(", ");
@@ -109,6 +110,9 @@ export async function generateStructuredSummaryFromText(
       metadata = JSON.parse(
         metadataResponse.choices[0]?.message?.content || "{}",
       );
+      console.log(
+        `[StructuredSummary] Metadata gen took ${Date.now() - metaStart}ms`,
+      );
     } catch (e) {
       console.error("[StructuredSummary] Failed to parse metadata JSON", e);
     }
@@ -118,9 +122,11 @@ export async function generateStructuredSummaryFromText(
     const concurrency = 5; // Process 5 sections at a time
 
     for (let i = 0; i < blocks.length; i += concurrency) {
+      const batchStart = Date.now();
       const batch = blocks.slice(i, i + concurrency);
 
       const batchPromises = batch.map(async (block) => {
+        const sectionStart = Date.now();
         // Step 2: Generate Questions
         const prompt = `Analyze this specific website section and generate HIGHLY SPECIFIC lead/sales questions.
         
@@ -189,6 +195,12 @@ export async function generateStructuredSummaryFromText(
           sectionData.leadQuestions = data.leadQuestions || [];
           sectionData.salesQuestions = data.salesQuestions || [];
 
+          console.log(
+            `[StructuredSummary] Section questions for '${block.title}' took ${
+              Date.now() - sectionStart
+            }ms`,
+          );
+
           // Step 3: Generate Diagnostic Details (Separate Request)
           const allOptions: { label: string; workflow: string }[] = [];
 
@@ -211,12 +223,18 @@ export async function generateStructuredSummaryFromText(
 
           if (allOptions.length > 0) {
             try {
+              const diagStart = Date.now();
               // Use the specialized diagnostic generation function which handles all 3 prompts (answer, options, details)
               const diagResults = await generateDiagnosticAnswers(
                 allOptions,
                 block.body.substring(0, 8000), // Pass section content as context
                 undefined, // No adminId needed since we provide direct context
                 metadata.businessName, // Pass business name
+              );
+              console.log(
+                `[StructuredSummary] Diagnostic gen for '${block.title}' (${
+                  allOptions.length
+                } opts) took ${Date.now() - diagStart}ms`,
               );
 
               // Merge details back
@@ -269,6 +287,11 @@ export async function generateStructuredSummaryFromText(
 
       const batchResults = await Promise.all(batchPromises);
       sections.push(...batchResults);
+      console.log(
+        `[StructuredSummary] Batch ${i / concurrency + 1} took ${
+          Date.now() - batchStart
+        }ms`,
+      );
     }
 
     // 4. Assemble Final Object

@@ -9,10 +9,10 @@ let db: Db | null = null;
 export async function getMongoClient() {
   if (!client) {
     const options = {
-      maxPoolSize: 10,
-      minPoolSize: 0,
-      serverSelectionTimeoutMS: 5000,
-      waitQueueTimeoutMS: 2000,
+      maxPoolSize: 50, // Increased from 10 to handle concurrent crawler requests
+      minPoolSize: 5,
+      serverSelectionTimeoutMS: 15000, // Increased to 15s to allow recovery during load spikes
+      waitQueueTimeoutMS: 10000, // Increased to 10s to prevent premature failures
     } as const;
     client = new MongoClient(uri!, options);
     await client.connect();

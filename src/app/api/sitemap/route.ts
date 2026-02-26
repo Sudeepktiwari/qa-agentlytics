@@ -3293,6 +3293,7 @@ async function processBatch(req: NextRequest) {
 
         crawlCount++;
         try {
+          const perUrlStart = Date.now();
           console.log(
             `[${reqId}] Starting URL ${url} (Item ${crawlCount}) - Elapsed: ${
               Date.now() - startTime
@@ -3323,12 +3324,11 @@ async function processBatch(req: NextRequest) {
           // console.log removed
           // console.log removed
           console.log(
-            `[${reqId}] Blocks`,
-            JSON.stringify({
+            `[${reqId}] Blocks parsed for ${url}: ${JSON.stringify({
               raw: rawBlocks.length,
               merged: mergedBlocks.length,
               ms: endTime - crawlStartTime,
-            }),
+            })}`,
           );
 
           // Debug: Log if text is too short
@@ -3939,14 +3939,20 @@ IMPORTANT REQUIREMENTS:
           // console.log removed
 
           // Mark as crawled in sitemap_urls with specific sitemapUrl context
-          // console.log removed
+          const dbUpdateStart = Date.now();
           await sitemapUrls.updateOne(
             { adminId, url, sitemapUrl }, // Include sitemapUrl to ensure proper tracking
             { $set: { crawled: true, crawledAt: new Date() } },
           );
           console.log(
-            `[${reqId}] Marked crawled`,
-            JSON.stringify({ url, ms: Date.now() - perUrlStart }),
+            `[${reqId}] DB update for ${url} took ${
+              Date.now() - dbUpdateStart
+            }ms`,
+          );
+          console.log(
+            `[${reqId}] Total processing for ${url} took ${
+              Date.now() - perUrlStart
+            }ms`,
           );
           // Chunk and embed for Pinecone
           let chunks = chunkText(text);
