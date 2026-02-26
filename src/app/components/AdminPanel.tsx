@@ -379,12 +379,14 @@ const AdminPanel: React.FC = () => {
         const newTotalProcessed = isInitial
           ? data.crawled
           : accumulatedProcessed + data.crawled;
-        setTotalProcessed(newTotalProcessed);
-        setTotalRemaining(data.totalRemaining);
 
         const overallProcessed = data.totalDiscovered
           ? data.totalDiscovered - data.totalRemaining
           : newTotalProcessed;
+
+        setTotalProcessed(overallProcessed);
+        setTotalRemaining(data.totalRemaining);
+
         const pctRaw = data.totalDiscovered
           ? (overallProcessed / data.totalDiscovered) * 100
           : 0;
@@ -413,7 +415,7 @@ const AdminPanel: React.FC = () => {
 
           // Wait 2 seconds before continuing to prevent overwhelming the server
           setTimeout(() => {
-            crawlBatch(url, false);
+            crawlBatch(url, false, overallProcessed);
           }, 2000);
         } else if (data.hasMorePages) {
           setSitemapStatus(
@@ -452,7 +454,7 @@ const AdminPanel: React.FC = () => {
     if (sitemapUrl && totalRemaining > 0) {
       setContinueCrawling(true);
       setSitemapLoading(true);
-      crawlBatch(sitemapUrl, false);
+      crawlBatch(sitemapUrl, false, totalProcessed);
     }
   };
 
