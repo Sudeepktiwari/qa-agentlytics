@@ -2979,6 +2979,27 @@ async function processBatch(req: NextRequest) {
     // console.log removed
     const db = await getDb();
 
+    // Fetch admin settings for crawl preferences
+    const settings = await db.collection("admin_settings").findOne({ adminId });
+    const crawlAllLinks = settings?.preferences?.crawlAllLinks || false;
+
+    // Filter unwanted URLs if not allowed
+    if (!crawlAllLinks) {
+      const skipPatterns = [
+        "/blog",
+        "/integration",
+        "/admin",
+        "/login",
+        "/register",
+        "/contact",
+        "/about",
+      ];
+      urls = urls.filter((link) => {
+        const lowerLink = link.toLowerCase();
+        return !skipPatterns.some((pattern) => lowerLink.includes(pattern));
+      });
+    }
+
     // Check if stopped BEFORE overwriting
     // This prevents the race condition where user clicks stop, but this function overwrites it to running
     const crawlStates = db.collection("crawl_states");

@@ -34,6 +34,7 @@ export default function SaPage() {
       leadsUnits?: number;
       usage?: { creditsUsed: number; leadsUsed: number };
       limits?: { creditMonthlyLimit: number; leadTotalLimit: number };
+      crawlAllLinks?: boolean;
     }[]
   >([]);
   const [authorized, setAuthorized] = useState(false);
@@ -178,6 +179,33 @@ export default function SaPage() {
       }
     } catch {
       setError("Discontinue failed");
+    } finally {
+      setFormValue(adminId, { saving: false });
+    }
+  };
+
+  const toggleCrawlAllLinks = async (adminId: string, enabled: boolean) => {
+    setFormValue(adminId, { saving: true });
+    setError("");
+    try {
+      const res = await fetch("/api/sa/accounts", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          adminId,
+          crawlAllLinks: enabled,
+          action: "update_settings",
+        }),
+      });
+      if (res.ok) {
+        await fetchAccounts();
+      } else {
+        const data = await res.json();
+        setError(data.error || "Failed to update crawler settings");
+      }
+    } catch {
+      setError("Failed to update crawler settings");
     } finally {
       setFormValue(adminId, { saving: false });
     }
@@ -661,6 +689,30 @@ export default function SaPage() {
                                     <p className="text-sm font-mono text-slate-700 select-all">
                                       {a.id}
                                     </p>
+                                  </div>
+                                  <div className="space-y-1">
+                                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">
+                                      Crawler Settings
+                                    </p>
+                                    <label className="flex items-center gap-2 cursor-pointer mt-1">
+                                      <div className="relative">
+                                        <input
+                                          type="checkbox"
+                                          className="sr-only peer"
+                                          checked={a.crawlAllLinks || false}
+                                          onChange={(e) =>
+                                            toggleCrawlAllLinks(
+                                              a.id,
+                                              e.target.checked,
+                                            )
+                                          }
+                                        />
+                                        <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                                      </div>
+                                      <span className="text-xs text-slate-700">
+                                        Crawl All Links (incl. /blog, /admin)
+                                      </span>
+                                    </label>
                                   </div>
                                   <div className="space-y-1">
                                     <p className="text-xs font-medium text-slate-500 uppercase tracking-wider">

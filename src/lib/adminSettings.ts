@@ -119,6 +119,7 @@ export interface AdminSettings {
     };
     autoResponses: boolean;
     leadCapture: boolean;
+    crawlAllLinks: boolean;
   };
   limits: {
     monthlyInteractions: number;
@@ -158,6 +159,7 @@ export const DEFAULT_ADMIN_SETTINGS: Omit<
     },
     autoResponses: true,
     leadCapture: true,
+    crawlAllLinks: false,
   },
   limits: {
     monthlyInteractions: 10000,
@@ -276,7 +278,7 @@ async function getAdminSettingsCollection(): Promise<
   Collection<AdminSettings>
 > {
   const db = await connectToDatabase();
-  return db.collection<AdminSettings>("adminSettings");
+  return db.collection<AdminSettings>("admin_settings");
 }
 
 /**
@@ -284,7 +286,7 @@ async function getAdminSettingsCollection(): Promise<
  */
 export async function getAdminSettings(
   adminId: string,
-  skipCache: boolean = false
+  skipCache: boolean = false,
 ): Promise<AdminSettings> {
   // Try cache first
   if (!skipCache) {

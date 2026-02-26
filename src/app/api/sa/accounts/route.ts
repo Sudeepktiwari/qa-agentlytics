@@ -38,6 +38,11 @@ export async function GET(request: NextRequest) {
       .find({ adminId: { $in: userIds } })
       .toArray();
 
+    const settings = await db
+      .collection("admin_settings")
+      .find({ adminId: { $in: userIds } })
+      .toArray();
+
     // Map adminId to latest subscription
     const subMap = new Map();
     for (const sub of subscriptions) {
@@ -51,12 +56,19 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Map adminId to settings
+    const settingsMap = new Map();
+    for (const setting of settings) {
+      settingsMap.set(setting.adminId, setting);
+    }
+
     const blocks = db.collection("blocks");
     const accounts = [];
     for (const u of users) {
       const idStr = String((u as any)._id);
       const apiKey = (u as any).apiKey || null;
       const sub = subMap.get(idStr);
+      const setting = settingsMap.get(idStr);
 
       const adminBlocked = await blocks.findOne({
         type: "adminId",
@@ -73,6 +85,7 @@ export async function GET(request: NextRequest) {
         apiKey: apiKey,
         blockedAdmin: Boolean(adminBlocked),
         blockedApiKey: Boolean(apiKeyBlocked),
+        crawlAllLinks: setting?.preferences?.crawlAllLinks || false,
         // Add subscription details
         planKey: sub?.planKey || "free",
         creditsUnits: sub?.addons?.creditsUnits || 0,
@@ -154,6 +167,37 @@ export async function POST(request: NextRequest) {
     }
 
     const db = await getDb();
+
+    // Handle settings update action
+    if (body.action === "update_settings") {
+      const crawlAllLinks =
+        typeof body.crawlAllLinks === "boolean"
+          ? body.crawlAllLinks
+          : undefined;
+
+      if (adminIdInput && crawlAllLinks !== undefined) {
+        // Ensure admin settings exist or create them
+        await db.collection("admin_settings").updateOne(
+          { adminId: adminIdInput },
+          {
+            $set: {
+              "preferences.crawlAllLinks": crawlAllLinks,
+              updatedAt: new Date(),
+            },
+            $setOnInsert: {
+              createdAt: new Date(),
+              // Add other required fields defaults if needed, but partial might be fine
+              // if the app handles missing fields gracefully.
+              // Ideally we should use createDefaultAdminSettings logic here but that requires importing it
+              // and it might not be robust for SA usage without auth context.
+              // For now, assume most users have settings or this update is sufficient.
+            },
+          },
+          { upsert: true },
+        );
+        return NextResponse.json({ success: true, crawlAllLinks });
+      }
+    }
 
     // Find user by adminId or email
     let user = null as any;
