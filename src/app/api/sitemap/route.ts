@@ -3408,9 +3408,15 @@ async function processBatch(req: NextRequest) {
         }
 
         // Also check if we're close to timeout and have processed some URLs
-        if (elapsedTime > MAX_EXECUTION_TIME - 30000 && crawlCount > 0) {
-          // console.log removed
-          // console.log removed
+        // If in Analyze phase, we need a larger buffer (160s) for batch processing
+        const timeoutBuffer = phase === "analyze" ? 160000 : 30000;
+        if (
+          elapsedTime > MAX_EXECUTION_TIME - timeoutBuffer &&
+          crawlCount > 0
+        ) {
+          console.log(
+            `[${reqId}] Timeout approaching (remaining < ${timeoutBuffer}ms), stopping batch processing`,
+          );
           timeoutReached = true;
           break;
         }
