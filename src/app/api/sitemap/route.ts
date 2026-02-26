@@ -2341,7 +2341,9 @@ export async function POST(req: NextRequest) {
 
 async function processBatch(req: NextRequest) {
   const startTime = Date.now();
-  const MAX_EXECUTION_TIME = 240000; // 240 seconds (4 minutes) to stay within Vercel 300s limit
+  // Reduced to 50 seconds to safely fit within Vercel's 60s Pro execution limit
+  // Each page processing (extraction + summary) can take ~30-40s, so we need a buffer to prevent 504 timeouts
+  const MAX_EXECUTION_TIME = 50000;
 
   // console.log removed
   // console.log removed

@@ -168,37 +168,6 @@ export async function POST(request: NextRequest) {
 
     const db = await getDb();
 
-    // Handle settings update action
-    if (body.action === "update_settings") {
-      const crawlAllLinks =
-        typeof body.crawlAllLinks === "boolean"
-          ? body.crawlAllLinks
-          : undefined;
-
-      if (adminIdInput && crawlAllLinks !== undefined) {
-        // Ensure admin settings exist or create them
-        await db.collection("admin_settings").updateOne(
-          { adminId: adminIdInput },
-          {
-            $set: {
-              "preferences.crawlAllLinks": crawlAllLinks,
-              updatedAt: new Date(),
-            },
-            $setOnInsert: {
-              createdAt: new Date(),
-              // Add other required fields defaults if needed, but partial might be fine
-              // if the app handles missing fields gracefully.
-              // Ideally we should use createDefaultAdminSettings logic here but that requires importing it
-              // and it might not be robust for SA usage without auth context.
-              // For now, assume most users have settings or this update is sufficient.
-            },
-          },
-          { upsert: true },
-        );
-        return NextResponse.json({ success: true, crawlAllLinks });
-      }
-    }
-
     // Find user by adminId or email
     let user = null as any;
     if (adminIdInput) {
@@ -332,6 +301,32 @@ export async function PATCH(request: NextRequest) {
     }
 
     const db = await getDb();
+
+    // Handle settings update action
+    if (body.action === "update_settings") {
+      const crawlAllLinks =
+        typeof body.crawlAllLinks === "boolean"
+          ? body.crawlAllLinks
+          : undefined;
+
+      if (adminIdInput && crawlAllLinks !== undefined) {
+        // Ensure admin settings exist or create them
+        await db.collection("admin_settings").updateOne(
+          { adminId: adminIdInput },
+          {
+            $set: {
+              "preferences.crawlAllLinks": crawlAllLinks,
+              updatedAt: new Date(),
+            },
+            $setOnInsert: {
+              createdAt: new Date(),
+            },
+          },
+          { upsert: true },
+        );
+        return NextResponse.json({ success: true, crawlAllLinks });
+      }
+    }
 
     // Find user
     let user = null as any;
