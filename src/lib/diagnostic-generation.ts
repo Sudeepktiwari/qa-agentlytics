@@ -433,6 +433,12 @@ export async function enrichStructuredSummary(
 export function normalizeStructuredSummary(raw: any) {
   if (!raw || typeof raw !== "object") return raw;
   const result: any = { ...raw };
+
+  // Ensure isComplete is preserved
+  if (raw.isComplete !== undefined) {
+    result.isComplete = raw.isComplete;
+  }
+
   if (!Array.isArray(result.sections)) {
     if (result.sections && typeof result.sections === "object") {
       result.sections = [result.sections];

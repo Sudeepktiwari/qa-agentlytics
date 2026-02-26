@@ -3416,6 +3416,7 @@ async function processBatch(req: NextRequest) {
         }
 
         crawlCount++;
+        let structuredSummary: StructuredSummary | null = null;
         try {
           const perUrlStart = Date.now();
           console.log(
@@ -3497,7 +3498,7 @@ async function processBatch(req: NextRequest) {
           }
 
           // Generate structured summary using shared library
-          let structuredSummary: StructuredSummary | null = null;
+          structuredSummary = null;
           let basicSummary = "Summary not available";
 
           // Resume Logic: Check if we have an incomplete summary in DB
@@ -3886,11 +3887,22 @@ async function processBatch(req: NextRequest) {
 
         // If analyzed successfully, mark it
         if (phase === "analyze" && !failedUrls.some((f) => f.url === url)) {
-          await sitemapUrls.updateOne(
-            { adminId, url, sitemapUrl },
-            { $set: { analyzed: true } },
-          );
-          analyzedInThisRequest++;
+          // Check if structured summary is complete
+          let isSummaryComplete = true;
+          if (structuredSummary && structuredSummary.isComplete === false) {
+            isSummaryComplete = false;
+            console.log(
+              `[${reqId}] Summary incomplete for ${url}, keeping analyzed=false to resume later.`,
+            );
+          }
+
+          if (isSummaryComplete) {
+            await sitemapUrls.updateOne(
+              { adminId, url, sitemapUrl },
+              { $set: { analyzed: true } },
+            );
+            analyzedInThisRequest++;
+          }
         }
 
         processedInSession.add(url);
