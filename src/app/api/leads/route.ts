@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
   if (!rl.allowed) {
     return NextResponse.json(
       { error: "Rate limit exceeded" },
-      { status: 429, headers: corsHeaders }
+      { status: 429, headers: corsHeaders },
     );
   }
   // Get leads for authenticated admin
@@ -63,12 +63,17 @@ export async function GET(req: NextRequest) {
   if (!adminId) {
     return NextResponse.json(
       { error: "Not authenticated" },
-      { status: 401, headers: corsHeaders }
+      { status: 401, headers: corsHeaders },
     );
   }
 
+  const startTime = Date.now();
   try {
+    console.log(`[LeadsAPI] Starting request for adminId: ${adminId}`);
+    const dbStart = Date.now();
     const db = await getDb();
+    console.log(`[LeadsAPI] DB connected in ${Date.now() - dbStart}ms`);
+
     const chats = db.collection("chats");
 
     // Get URL parameters for pagination and filtering
@@ -180,7 +185,9 @@ export async function GET(req: NextRequest) {
       },
     ];
 
+    const aggStart = Date.now();
     const leads = await chats.aggregate(pipeline).toArray();
+    console.log(`[LeadsAPI] Main aggregation took ${Date.now() - aggStart}ms`);
 
     // Get total count for pagination
     const totalPipeline = [
@@ -189,13 +196,18 @@ export async function GET(req: NextRequest) {
       { $count: "total" },
     ];
 
+    const countStart = Date.now();
     const totalResult = await chats.aggregate(totalPipeline).toArray();
+    console.log(
+      `[LeadsAPI] Total count query took ${Date.now() - countStart}ms`,
+    );
     const total = totalResult.length > 0 ? totalResult[0].total : 0;
 
     // Determine which emails are visible under the plan limit
     const { limit } = await checkLeadLimit(adminId);
     let visibleEmailsSet: Set<string> = new Set();
     if (typeof limit === "number" && limit > 0) {
+      const visStart = Date.now();
       const visibleEmails = await chats
         .aggregate([
           { $match: query },
@@ -210,6 +222,9 @@ export async function GET(req: NextRequest) {
           { $project: { _id: 0, email: "$_id" } },
         ])
         .toArray();
+      console.log(
+        `[LeadsAPI] Visible emails query took ${Date.now() - visStart}ms`,
+      );
       visibleEmails.forEach((e: any) => {
         if (e && e.email) visibleEmailsSet.add(String(e.email));
       });
@@ -220,6 +235,8 @@ export async function GET(req: NextRequest) {
       ...l,
       visibilityRestricted: !visibleEmailsSet.has(String(l.email || "")),
     }));
+
+    console.log(`[LeadsAPI] Request completed in ${Date.now() - startTime}ms`);
 
     return NextResponse.json({
       leads: leadsWithVisibility,
@@ -232,7 +249,7 @@ export async function GET(req: NextRequest) {
     console.error("Error fetching leads:", error);
     return NextResponse.json(
       { error: "Failed to fetch leads" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -297,7 +314,7 @@ export async function DELETE(req: NextRequest) {
     console.error("Error deleting lead:", error);
     return NextResponse.json(
       { error: "Failed to delete lead" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

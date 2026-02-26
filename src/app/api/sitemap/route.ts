@@ -37,7 +37,7 @@ import puppeteer from "puppeteer";
 export const maxDuration = 300;
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
-const MAX_PAGES = 20;
+const MAX_PAGES = 5;
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // Initialize Pinecone
@@ -2345,8 +2345,8 @@ async function processBatch(req: NextRequest) {
   const startTime = Date.now();
   const MAX_EXECUTION_TIME = 250000;
 
-  // console.log removed
-  // console.log removed
+  const reqId = `SM-${startTime}`;
+  console.log(`[${reqId}] Start batch`);
 
   let adminId: string | null = null;
 
@@ -2406,6 +2406,10 @@ async function processBatch(req: NextRequest) {
   // console.log removed
 
   const { sitemapUrl, retryUrl } = body;
+  console.log(
+    `[${reqId}] Inputs`,
+    JSON.stringify({ sitemapUrl, hasRetry: !!retryUrl }),
+  );
 
   // Helper for URL normalization
   const normalizeUrl = (u: string) => {
@@ -2920,6 +2924,10 @@ async function processBatch(req: NextRequest) {
       const result = await discoverUrls(normalizedUrl, adminId);
       urls = result.urls;
       discoveryType = result.type;
+      console.log(
+        `[${reqId}] Discovery`,
+        JSON.stringify({ type: discoveryType, count: urls.length }),
+      );
       // Clean and filter discovered URLs to the requested locale (reduces batch size)
       const cleanedUrls = urls.map((u) => u.trim().replace(/,$/, ""));
       if (discoveryType === "sitemap") {
@@ -2996,10 +3004,15 @@ async function processBatch(req: NextRequest) {
         "/contact",
         "/about",
       ];
+      const before = urls.length;
       urls = urls.filter((link) => {
         const lowerLink = link.toLowerCase();
         return !skipPatterns.some((pattern) => lowerLink.includes(pattern));
       });
+      console.log(
+        `[${reqId}] Skip filter`,
+        JSON.stringify({ before, after: urls.length }),
+      );
     }
 
     // Check if stopped BEFORE overwriting
@@ -3053,6 +3066,7 @@ async function processBatch(req: NextRequest) {
         `[processBatch] Deduped URLs from ${urls.length} to ${uniqueUrls.length}`,
       );
     }
+    console.log(`[${reqId}] Unique URLs`, uniqueUrls.length);
 
     const sitemapUrlDocs = uniqueUrls.map((url) => ({
       adminId,
@@ -3087,6 +3101,7 @@ async function processBatch(req: NextRequest) {
     const crawledDocs = await sitemapUrls
       .find({ adminId, sitemapUrl, crawled: true }) // This now only looks at URLs from this specific sitemap submission
       .toArray();
+    console.log(`[${reqId}] Already crawled`, crawledDocs.length);
 
     // Also check for pages that were marked as crawled but have no chunks in Pinecone
     // This can happen if they were redirect pages or had errors during processing
@@ -3187,6 +3202,10 @@ async function processBatch(req: NextRequest) {
             !processedInSession.has(url),
         )
         .slice(0, MAX_PAGES);
+      console.log(
+        `[${reqId}] Batch candidates`,
+        JSON.stringify({ count: uncrawledUrls.length }),
+      );
 
       if (uncrawledUrls.length === 0) {
         // console.log removed
@@ -3198,6 +3217,8 @@ async function processBatch(req: NextRequest) {
       // console.log removed
 
       for (const url of uncrawledUrls) {
+        const perUrlStart = Date.now();
+        console.log(`[${reqId}] Process URL`, url);
         // Fast-Track: If already crawled globally, skip fetch but update sitemap status
         // Check for URL variations (trailing slash, protocol) to ensure we don't re-crawl
         // just because of minor format differences
@@ -3272,10 +3293,22 @@ async function processBatch(req: NextRequest) {
 
         crawlCount++;
         try {
-          // console.log removed
+          console.log(
+            `[${reqId}] Starting URL ${url} (Item ${crawlCount}) - Elapsed: ${
+              Date.now() - startTime
+            }ms`,
+          );
           const crawlStartTime = Date.now();
 
           let text = await extractTextFromUrl(url);
+          console.log(
+            `[${reqId}] Extracted`,
+            JSON.stringify({
+              url,
+              ms: Date.now() - crawlStartTime,
+              len: text?.length || 0,
+            }),
+          );
           const rawBlocks = parseSectionBlocks(text);
           const minChars = rawBlocks.length >= 8 ? 30 : 100;
           const mergedBlocks =
@@ -3289,6 +3322,14 @@ async function processBatch(req: NextRequest) {
 
           // console.log removed
           // console.log removed
+          console.log(
+            `[${reqId}] Blocks`,
+            JSON.stringify({
+              raw: rawBlocks.length,
+              merged: mergedBlocks.length,
+              ms: endTime - crawlStartTime,
+            }),
+          );
 
           // Debug: Log if text is too short
           if (text.length < 50) {
@@ -3303,7 +3344,14 @@ async function processBatch(req: NextRequest) {
           let basicSummary = "Summary not available";
 
           try {
+            const summaryStart = Date.now();
+            console.log(
+              `[${reqId}] Starting structured summary gen for ${url}`,
+            );
             structuredSummary = await generateStructuredSummaryFromText(text);
+            console.log(
+              `[${reqId}] Summary gen took ${Date.now() - summaryStart}ms for ${url}`,
+            );
             if (structuredSummary) {
               structuredSummary = normalizeStructuredSummary(structuredSummary);
               if (
@@ -3895,6 +3943,10 @@ IMPORTANT REQUIREMENTS:
           await sitemapUrls.updateOne(
             { adminId, url, sitemapUrl }, // Include sitemapUrl to ensure proper tracking
             { $set: { crawled: true, crawledAt: new Date() } },
+          );
+          console.log(
+            `[${reqId}] Marked crawled`,
+            JSON.stringify({ url, ms: Date.now() - perUrlStart }),
           );
           // Chunk and embed for Pinecone
           let chunks = chunkText(text);

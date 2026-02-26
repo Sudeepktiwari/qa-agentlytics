@@ -93,7 +93,10 @@ export async function generateDiagnosticAnswers(
   adminId?: string,
   businessName?: string,
 ) {
+  const startTime = Date.now();
   if (!items || items.length === 0) return {};
+
+  console.log(`[Diagnostic] Starting generation for ${items.length} items`);
 
   const map: Record<
     string,
@@ -106,7 +109,14 @@ export async function generateDiagnosticAnswers(
   const CONCURRENCY = 5;
 
   for (let i = 0; i < items.length; i += CONCURRENCY) {
+    const batchStart = Date.now();
     const batch = items.slice(i, i + CONCURRENCY);
+    console.log(
+      `[Diagnostic] Processing batch ${
+        Math.floor(i / CONCURRENCY) + 1
+      }, size ${batch.length}`,
+    );
+
     await Promise.all(
       batch.map(async (item) => {
         try {
@@ -138,11 +148,24 @@ export async function generateDiagnosticAnswers(
           if (result && result.answer) {
             map[`${item.label}::${item.workflow}`] = result;
           }
-        } catch {}
+        } catch (err) {
+          console.error(
+            `[Diagnostic] Error processing item ${item.label}:`,
+            err,
+          );
+        }
       }),
+    );
+    console.log(
+      `[Diagnostic] Batch ${Math.floor(i / CONCURRENCY) + 1} took ${
+        Date.now() - batchStart
+      }ms`,
     );
   }
 
+  console.log(
+    `[Diagnostic] Total generation took ${Date.now() - startTime}ms`,
+  );
   return map;
 }
 
