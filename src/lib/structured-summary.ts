@@ -148,7 +148,7 @@ export async function generateStructuredSummaryFromText(
         2. Questions MUST be directly derived from the specific content of this section.
         3. Do NOT use generic phrasing.
         4. Use specific terminology found in the Section Content.
-        5. LEAD QUESTIONS: Must be about understanding needs of the user related to "${block.title}  and ${block.body}".
+        5. LEAD QUESTIONS: Must be about understanding needs and chellenges of the user related to "${block.title}  and ${block.body}", check if as per content of section needs or challenges question is a good fit.
            - Options: Provide 3-4 distinct options, each must describe a specific user situation (e.g., "Using manual spreadsheets", "Process is inconsistent", "Fully automated").
         6. SALES QUESTIONS: Must ask about **Urgency** to resolve the problem OR a **Specific Use Case** for the solution related to  "${block.title} and ${block.body}".
            - Options: Provide 3-4 distinct options. Must describe the timeline, importance, or specific application (e.g., "Need it ASAP", "For Q3 planning", "Automating client intake").
