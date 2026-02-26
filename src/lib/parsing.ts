@@ -2,11 +2,13 @@ export function parseSectionBlocks(text: string) {
   const blocks: { title: string; body: string }[] = [];
   const regex =
     /\[SECTION\s+(\d+)\]\s*([^\n]*)\n?([\s\S]*?)(?=(\[SECTION\s+\d+\])|$)/g;
-  let m: RegExpExecArray | null;
+  let m;
   while ((m = regex.exec(text)) !== null) {
     const title = (m[2] || "").trim();
     const body = (m[3] || "").trim();
-    blocks.push({ title, body });
+    if (title && body) {
+      blocks.push({ title, body });
+    }
   }
   return blocks;
 }
@@ -16,6 +18,7 @@ export function mergeSmallSectionBlocks(
   minChars = 300,
 ) {
   if (!Array.isArray(blocks) || blocks.length === 0) return [];
+
   const lengthOf = (body: string) => body.replace(/\s+/g, " ").trim().length;
 
   const merged: { title: string; body: string }[] = [];
@@ -46,6 +49,19 @@ export function mergeSmallSectionBlocks(
     };
   } else {
     merged.push(current);
+  }
+
+  // Limit total sections to 10 to prevent timeout on very long pages
+  // Apply limit AFTER merging small sections to ensure we don't drop content unnecessarily
+  if (merged.length > 10) {
+    const limitedMerged = merged.slice(0, 10);
+    // Combine the rest into the last block if needed, or just truncate
+    const remaining = merged.slice(10);
+    if (remaining.length > 0) {
+      limitedMerged[9].body +=
+        "\n\n" + remaining.map((b) => b.body).join("\n\n");
+    }
+    return limitedMerged;
   }
 
   return merged;

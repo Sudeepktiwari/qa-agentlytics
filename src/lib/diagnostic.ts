@@ -46,13 +46,11 @@ RULES FOR OPTIONS:
 - NO generic CTAs (Book Call, View Case Study, Contact Sales).
 
 RULES FOR OPTION DETAILS:
-- For EACH option generated above, write a mechanism-driven narrative (8-14 lines).
+- For EACH option generated above, write a concise explanation (3-5 lines).
 - Structure:
-  1. Positioning contrast ("Traditional tools react, this system...")
-  2. Behavioral signals monitored (pricing dwell, comparison loops, etc.)
-  3. Thresholds/readiness modeling determine activation
-  4. Contextual intervention trigger
-  5. Business outcome tied to conversion stability/lead capture
+  1. The core problem/opportunity
+  2. How the solution addresses it
+  3. The specific business outcome
 - Tone: Professional, authoritative. No hype words.
 
 OUTPUT FORMAT (JSON):

@@ -1534,13 +1534,13 @@ async function extractTextFromUrl(
 
   // Try regular extraction first
   try {
-    // console.log removed
+    console.log(`[extractTextFromUrl] Starting fetch for ${url}`);
 
     // Create an AbortController for timeout
     const controller = new AbortController();
     const timeout = setTimeout(() => {
       controller.abort();
-      // console.log removed
+      console.log(`[extractTextFromUrl] Fetch timeout for ${url}`);
     }, 30000); // 30 second timeout
 
     const fetchStart = Date.now();
@@ -2283,7 +2283,11 @@ export async function POST(req: NextRequest) {
         const resp = await fetch(internalUrl, {
           method: "POST",
           headers,
-          body: JSON.stringify({ sitemapUrl, background: false }),
+          body: JSON.stringify({
+            sitemapUrl,
+            background: false,
+            skipDiscovery: batchCount > 0,
+          }),
         });
 
         if (!resp.ok) {
@@ -2346,7 +2350,9 @@ async function processBatch(req: NextRequest) {
   const MAX_EXECUTION_TIME = 250000;
 
   const reqId = `SM-${startTime}`;
-  console.log(`[${reqId}] Start batch`);
+  console.log(
+    `[${reqId}] Start batch processing at ${new Date().toISOString()}`,
+  );
 
   let adminId: string | null = null;
 
@@ -2405,10 +2411,10 @@ async function processBatch(req: NextRequest) {
   const body = await req.json();
   // console.log removed
 
-  const { sitemapUrl, retryUrl } = body;
+  const { sitemapUrl, retryUrl, skipDiscovery } = body;
   console.log(
     `[${reqId}] Inputs`,
-    JSON.stringify({ sitemapUrl, hasRetry: !!retryUrl }),
+    JSON.stringify({ sitemapUrl, hasRetry: !!retryUrl, skipDiscovery }),
   );
 
   // Helper for URL normalization
@@ -2914,76 +2920,92 @@ async function processBatch(req: NextRequest) {
       normalizedUrl = normalizedUrl.replace("http://", "https://");
     }
 
-    // console.log removed
-    // console.log removed
-
+    // console.log(`[${reqId}] Fetching URLs from: ${normalizedUrl}`);
+    const discoveryStart = Date.now();
     let urls: string[] = [];
     let discoveryType: "sitemap" | "webpage" | "javascript" = "sitemap";
-    try {
-      // console.log removed
-      const result = await discoverUrls(normalizedUrl, adminId);
-      urls = result.urls;
-      discoveryType = result.type;
+
+    if (skipDiscovery) {
+      const db = await getDb();
+      const sitemapUrls = db.collection("sitemap_urls");
+      console.log(`[${reqId}] Skipping discovery, fetching URLs from DB...`);
+      const docs = await sitemapUrls
+        .find({ adminId, sitemapUrl })
+        .project({ url: 1 })
+        .toArray();
+      urls = docs.map((d: any) => d.url);
       console.log(
-        `[${reqId}] Discovery`,
-        JSON.stringify({ type: discoveryType, count: urls.length }),
+        `[${reqId}] Fetched ${urls.length} URLs from DB in ${
+          Date.now() - discoveryStart
+        }ms`,
       );
-      // Clean and filter discovered URLs to the requested locale (reduces batch size)
-      const cleanedUrls = urls.map((u) => u.trim().replace(/,$/, ""));
-      if (discoveryType === "sitemap") {
-        try {
-          const u = new URL(normalizedUrl);
-          const localeMatch = u.pathname.match(/\/hc\/(\w[\w-]*)/);
-          const locale = localeMatch ? localeMatch[1] : null;
-          const originHost = u.hostname;
+    } else {
+      try {
+        // console.log(`[${reqId}] Discovering URLs...`);
+        const result = await discoverUrls(normalizedUrl, adminId);
+        urls = result.urls;
+        discoveryType = result.type;
+        console.log(
+          `[${reqId}] Discovery took ${Date.now() - discoveryStart}ms`,
+          JSON.stringify({ type: discoveryType, count: urls.length }),
+        );
+        // Clean and filter discovered URLs to the requested locale (reduces batch size)
+        const cleanedUrls = urls.map((u) => u.trim().replace(/,$/, ""));
+        if (discoveryType === "sitemap") {
+          try {
+            const u = new URL(normalizedUrl);
+            const localeMatch = u.pathname.match(/\/hc\/(\w[\w-]*)/);
+            const locale = localeMatch ? localeMatch[1] : null;
+            const originHost = u.hostname;
 
-          // FIX: Rewrite URLs to match the requested domain
-          // This fixes the issue where a staging site (vercel.app) has a sitemap
-          // generated for production (custom domain), causing all links to be filtered out.
-          const rewrittenUrls = cleanedUrls
-            .map((link) => {
-              try {
-                const linkUrl = new URL(link);
-                if (!isSameDomain(linkUrl.hostname, originHost)) {
-                  // Keep the path and query, but switch to the requested host
-                  linkUrl.protocol = u.protocol;
-                  linkUrl.hostname = originHost;
-                  linkUrl.port = u.port;
-                  return linkUrl.href;
+            // FIX: Rewrite URLs to match the requested domain
+            // This fixes the issue where a staging site (vercel.app) has a sitemap
+            // generated for production (custom domain), causing all links to be filtered out.
+            const rewrittenUrls = cleanedUrls
+              .map((link) => {
+                try {
+                  const linkUrl = new URL(link);
+                  if (!isSameDomain(linkUrl.hostname, originHost)) {
+                    // Keep the path and query, but switch to the requested host
+                    linkUrl.protocol = u.protocol;
+                    linkUrl.hostname = originHost;
+                    linkUrl.port = u.port;
+                    return linkUrl.href;
+                  }
+                  return link;
+                } catch {
+                  return null;
                 }
-                return link;
-              } catch {
-                return null;
-              }
-            })
-            .filter((l): l is string => l !== null);
+              })
+              .filter((l): l is string => l !== null);
 
-          const filtered = rewrittenUrls.filter((link) => {
-            try {
-              const lu = new URL(link);
-              const sameHost = isSameDomain(lu.hostname, originHost);
-              const sameLocale =
-                !locale || lu.pathname.includes(`/hc/${locale}`);
-              return sameHost && sameLocale;
-            } catch {
-              return false;
-            }
-          });
-          urls = Array.from(new Set(filtered));
-        } catch {
+            const filtered = rewrittenUrls.filter((link) => {
+              try {
+                const lu = new URL(link);
+                const sameHost = isSameDomain(lu.hostname, originHost);
+                const sameLocale =
+                  !locale || lu.pathname.includes(`/hc/${locale}`);
+                return sameHost && sameLocale;
+              } catch {
+                return false;
+              }
+            });
+            urls = Array.from(new Set(filtered));
+          } catch {
+            urls = Array.from(new Set(cleanedUrls));
+          }
+        } else {
           urls = Array.from(new Set(cleanedUrls));
         }
-      } else {
-        urls = Array.from(new Set(cleanedUrls));
+        // console.log removed
+        // console.log removed
+      } catch (error) {
+        // console.error removed
+        return NextResponse.json(
+          { error: `Failed to discover URLs from the provided link: ${error}` },
+          { status: 400 },
+        );
       }
-      // console.log removed
-      // console.log removed
-    } catch (error) {
-      // console.error removed
-      return NextResponse.json(
-        { error: `Failed to discover URLs from the provided link: ${error}` },
-        { status: 400 },
-      );
     }
 
     // console.log removed
@@ -3076,7 +3098,11 @@ async function processBatch(req: NextRequest) {
       crawled: false,
       discoveryType, // Track how this URL was discovered
     }));
-    if (sitemapUrlDocs.length > 0) {
+    if (!skipDiscovery && sitemapUrlDocs.length > 0) {
+      console.log(
+        `[${reqId}] Bulk writing ${sitemapUrlDocs.length} URLs to DB...`,
+      );
+      const dbWriteStart = Date.now();
       const ops = sitemapUrlDocs.map((doc) => ({
         updateOne: {
           filter: {
@@ -3093,56 +3119,90 @@ async function processBatch(req: NextRequest) {
         const chunk = ops.slice(i, i + CHUNK);
         await sitemapUrls.bulkWrite(chunk, { ordered: false });
       }
+      console.log(`[${reqId}] DB write took ${Date.now() - dbWriteStart}ms`);
     }
 
     urls = uniqueUrls;
 
     // Find already crawled URLs for this specific admin/sitemapUrl combination
+    const crawledDocsStart = Date.now();
     const crawledDocs = await sitemapUrls
       .find({ adminId, sitemapUrl, crawled: true }) // This now only looks at URLs from this specific sitemap submission
       .toArray();
-    console.log(`[${reqId}] Already crawled`, crawledDocs.length);
+    console.log(
+      `[${reqId}] Fetched ${crawledDocs.length} crawled docs in ${Date.now() - crawledDocsStart}ms`,
+    );
 
     // Also check for pages that were marked as crawled but have no chunks in Pinecone
     // This can happen if they were redirect pages or had errors during processing
     const pineconeVectors = db.collection("pinecone_vectors");
     const problematicUrls: string[] = [];
 
-    // console.log removed
-    for (const doc of crawledDocs) {
-      // Check if vectors exist in Pinecone by trying to fetch them
-      const vectorIds = await pineconeVectors
-        .find({ adminId, filename: doc.url })
-        .project({ vectorId: 1, _id: 0 })
-        .toArray();
+    // Optimization: Skip Pinecone check if too many docs to avoid timeout
+    // Only check if we have a reasonable number of crawled docs, or check in batches
+    // AND only check on the first run (skipDiscovery = false) to avoid checking every time
+    // AND limit to small number of docs to avoid timeout on large sitemaps
+    if (crawledDocs.length > 0 && !skipDiscovery && crawledDocs.length < 50) {
+      console.log(
+        `[${reqId}] Checking Pinecone consistency for ${crawledDocs.length} docs...`,
+      );
+      const pineconeCheckStart = Date.now();
 
-      if (vectorIds.length === 0) {
-        // console.log removed
-        problematicUrls.push(doc.url);
-      } else {
-        // Check if the vectors actually exist in Pinecone
-        try {
-          const vectorIdList = vectorIds.map(
-            (v) => (v as { vectorId: string }).vectorId,
+      // Process in parallel with concurrency limit to speed up
+      const CONCURRENCY = 10;
+      for (let i = 0; i < crawledDocs.length; i += CONCURRENCY) {
+        const batch = crawledDocs.slice(i, i + CONCURRENCY);
+
+        // Check execution time
+        if (Date.now() - startTime > MAX_EXECUTION_TIME - 60000) {
+          console.log(
+            `[${reqId}] Skipping remaining Pinecone checks due to timeout risk`,
           );
-          const result = await index.fetch(vectorIdList);
-          const foundVectors = Object.keys(result.records || {}).length;
-          // console.log removed
-
-          if (foundVectors === 0) {
-            // console.log removed
-            problematicUrls.push(doc.url);
-          }
-        } catch (pineconeError) {
-          // console.log removed
-          problematicUrls.push(doc.url);
+          break;
         }
-      }
 
-      if (problematicUrls.includes(doc.url)) {
-        // Reset the crawled status so it can be re-crawled
-        await sitemapUrls.updateOne(
-          { adminId, url: doc.url, sitemapUrl }, // Include sitemapUrl in the query
+        await Promise.all(
+          batch.map(async (doc) => {
+            try {
+              // Check if vectors exist in Pinecone by trying to fetch them
+              const vectorIds = await pineconeVectors
+                .find({ adminId, filename: doc.url })
+                .project({ vectorId: 1, _id: 0 })
+                .toArray();
+
+              if (vectorIds.length === 0) {
+                // console.log removed
+                problematicUrls.push(doc.url);
+              } else {
+                // Check if the vectors actually exist in Pinecone
+                // Skip actual Pinecone fetch for now to save time, assume DB is correct
+                // OR do a very lightweight check
+                /*
+                  const vectorIdList = vectorIds.map(
+                    (v) => (v as { vectorId: string }).vectorId,
+                  );
+                  const result = await index.fetch(vectorIdList);
+                  const foundVectors = Object.keys(result.records || {}).length;
+        
+                  if (foundVectors === 0) {
+                    problematicUrls.push(doc.url);
+                  }
+                  */
+              }
+            } catch (pineconeError) {
+              // console.log removed
+              problematicUrls.push(doc.url);
+            }
+          }),
+        );
+      }
+      console.log(
+        `[${reqId}] Pinecone check took ${Date.now() - pineconeCheckStart}ms. Found ${problematicUrls.length} problematic URLs.`,
+      );
+
+      if (problematicUrls.length > 0) {
+        await sitemapUrls.updateMany(
+          { adminId, url: { $in: problematicUrls }, sitemapUrl },
           {
             $unset: { crawled: 1, crawledAt: 1 },
             $set: {
@@ -3152,6 +3212,32 @@ async function processBatch(req: NextRequest) {
           },
         );
       }
+    }
+
+    // If discovery and setup took too long (> 20s), return early to let the next request handle crawling
+    // This ensures we don't timeout while trying to crawl the first page after a long discovery
+    if (!skipDiscovery && Date.now() - startTime > 20000) {
+      console.log(
+        `[${reqId}] Discovery took ${
+          Date.now() - startTime
+        }ms, returning early to trigger crawl in next batch`,
+      );
+      return NextResponse.json({
+        crawled: 0,
+        totalChunks: 0,
+        pages: [],
+        failedPages: [],
+        batchDone: 0,
+        batchRemaining: urls.length,
+        totalRemaining: urls.length,
+        recrawledPages: 0,
+        timeoutReached: false,
+        executionTime: Date.now() - startTime,
+        totalDiscovered: urls.length,
+        hasMorePages: true,
+        sitemapUrl,
+        message: "Discovery completed, starting crawl in next batch",
+      });
     }
 
     const results: { url: string; text: string }[] = [];
@@ -3408,58 +3494,14 @@ Extract and return a JSON object with this exact structure:
   "sections": [
     {
       "sectionName": "Inferred Title (e.g., Onboarding Momentum, Renewals)",
-      "sectionSummary": "A concise 2-5 line summary of this section's content (AI generated)",
-      "leadQuestions": [
-        {
-          "question": "Problem Recognition Question (e.g., What usually happens after...?)",
-          "options": ["Option 1", "Option 2", "Option 3", "Option 4"],
-          "tags": ["tag_for_opt1", "tag_for_opt2", "tag_for_opt3", "tag_for_opt4"],
-          "workflow": "ask_sales_question|educational_insight|validation"
-        },
-        {
-          "question": "Feature/Keyword Question (e.g., How do you handle [Specific Feature]...?)",
-          "options": ["Option 1", "Option 2", "Option 3", "Option 4"],
-          "tags": [],
-          "workflow": "ask_sales_question|educational_insight|validation"
-        }
-      ],
-      "salesQuestions": [
-        {
-          "question": "Diagnostic Question (e.g., What prevents...?)",
-          "options": ["Cause 1", "Cause 2", "Cause 3", "Cause 4"],
-          "tags": ["cause_tag_1", "cause_tag_2", "cause_tag_3", "cause_tag_4"],
-          "workflow": "diagnostic_response",
-          "optionFlows": [
-            {
-              "forOption": "Cause 1",
-              "diagnosticAnswer": "Empathic reflection and validation of the problem.",
-              "followUpQuestion": "Specific follow-up to narrow down context.",
-              "featureMappingAnswer": "Explanation of ONE specific feature that solves this cause.",
-              "loopClosure": "Summary statement closing the loop."
-            }
-          ]
-        },
-        {
-          "question": "Feature/Capability Question (e.g., How does [Capability] impact...?)",
-          "options": ["Cause 1", "Cause 2", "Cause 3", "Cause 4"],
-          "tags": [],
-          "workflow": "diagnostic_response",
-          "optionFlows": []
-        }
-      ]
+      "sectionSummary": "A concise 2-5 line summary of this section's content (AI generated)"
     }
   ]
 }
 
 IMPORTANT REQUIREMENTS:
 1. Use the [SECTION N] markers to delineate sections.
-2. Ensure Lead Questions focus on identifying the user's current state or problem awareness SPECIFIC to that section.
-3. Ensure Sales Questions focus on diagnosing the specific root cause of that problem using section terminology.
-4. The second Lead/Sales Question MUST focus on a specific feature, capability, or keyword in the section. Do NOT ask about timeline or urgency.
-5. The 'optionFlows' array MUST have an entry for every option in the Sales Question.
-6. Tags should be snake_case (e.g., 'onboarding_delay').
-7. Do NOT leave arrays (primaryFeatures, painPointsAddressed, etc.) empty if information can be inferred. Populate them with at least 3 items each where possible.
-8. Avoid generic questions like "What are you looking for?". Instead ask "How do you currently handle [Section Topic]?".
+2. Do NOT leave arrays (primaryFeatures, painPointsAddressed, etc.) empty if information can be inferred. Populate them with at least 3 items each where possible.
 `,
                     },
                   ],
@@ -3522,9 +3564,37 @@ IMPORTANT REQUIREMENTS:
                           },
                         );
                       }
-                      structuredSummary.sections = await Promise.all(
-                        structuredSummary.sections.map(
-                          async (sec: any, idx: number) => {
+                      // Process sections in batches to avoid rate limits and timeouts
+                      const processedSections = [];
+                      const sections = structuredSummary.sections;
+                      const BATCH_SIZE = 2; // Process 2 sections at a time
+
+                      console.log(
+                        `[${reqId}] Processing ${sections.length} sections in batches of ${BATCH_SIZE}`,
+                      );
+
+                      for (let i = 0; i < sections.length; i += BATCH_SIZE) {
+                        // Check for global timeout before starting a new batch
+                        if (
+                          Date.now() - startTime >
+                          MAX_EXECUTION_TIME - 20000
+                        ) {
+                          console.log(
+                            `[${reqId}] Timeout approaching, stopping section processing at index ${i}`,
+                          );
+                          // Append remaining sections without enrichment
+                          processedSections.push(...sections.slice(i));
+                          break;
+                        }
+
+                        const batch = sections.slice(i, i + BATCH_SIZE);
+                        console.log(
+                          `[${reqId}] Starting batch ${i / BATCH_SIZE + 1} (sections ${i} to ${i + batch.length - 1})`,
+                        );
+
+                        const batchResults = await Promise.all(
+                          batch.map(async (sec: any, batchIdx: number) => {
+                            const idx = i + batchIdx;
                             const name = String(
                               sec?.sectionName || `Section ${idx + 1}`,
                             );
@@ -3702,9 +3772,20 @@ IMPORTANT REQUIREMENTS:
                               }
                             }
                             return sec;
-                          },
-                        ),
-                      );
+                          }),
+                        );
+
+                        processedSections.push(...batchResults);
+
+                        // Add small delay between batches
+                        if (i + BATCH_SIZE < sections.length) {
+                          await new Promise((resolve) =>
+                            setTimeout(resolve, 500),
+                          );
+                        }
+                      }
+
+                      structuredSummary.sections = processedSections;
                     }
                     structuredSummary =
                       normalizeStructuredSummary(structuredSummary);

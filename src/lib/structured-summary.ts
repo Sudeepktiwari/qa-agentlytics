@@ -120,13 +120,39 @@ export async function generateStructuredSummaryFromText(
     // 3. Step 2: Generate Questions for Each Section
     const sections: SectionDetail[] = [];
     const concurrency = 1; // Strict sequential processing to avoid rate limits
+    const TIMEOUT_BUFFER = 30000; // 30s buffer before Vercel timeout (300s)
+    const startTime = Date.now();
+    const MAX_SECTIONS = 5; // Limit to 5 sections max to prevent timeouts
+    const limitedBlocks = blocks.slice(0, MAX_SECTIONS);
 
-    for (let i = 0; i < blocks.length; i += concurrency) {
+    if (blocks.length > MAX_SECTIONS) {
+      console.warn(
+        `[StructuredSummary] Limiting analysis to first ${MAX_SECTIONS} sections (of ${blocks.length}) to prevent timeout`,
+      );
+    }
+
+    for (let i = 0; i < limitedBlocks.length; i += concurrency) {
+      if (Date.now() - startTime > 300000 - TIMEOUT_BUFFER) {
+        console.warn(
+          "[StructuredSummary] Approaching timeout, stopping section processing",
+        );
+        break;
+      }
       const batchStart = Date.now();
-      const batch = blocks.slice(i, i + concurrency);
+      const batch = limitedBlocks.slice(i, i + concurrency);
 
       const batchPromises = batch.map(async (block) => {
         const sectionStart = Date.now();
+        // Check timeout before starting new section
+        if (Date.now() - startTime > 300000 - TIMEOUT_BUFFER) {
+          return {
+            sectionName: block.title,
+            sectionSummary: "Skipped due to timeout",
+            sectionContent: block.body,
+            leadQuestions: [],
+            salesQuestions: [],
+          };
+        }
         // Step 2: Generate Questions
         const prompt = `Analyze this specific website section and generate HIGHLY SPECIFIC lead/sales questions.
         
@@ -223,50 +249,64 @@ export async function generateStructuredSummaryFromText(
 
           if (allOptions.length > 0) {
             try {
-              const diagStart = Date.now();
-              // Use the specialized diagnostic generation function which handles all 3 prompts (answer, options, details)
-              const diagResults = await generateDiagnosticAnswers(
-                allOptions,
-                block.body.substring(0, 8000), // Pass section content as context
-                undefined, // No adminId needed since we provide direct context
-                metadata.businessName, // Pass business name
-              );
-              console.log(
-                `[StructuredSummary] Diagnostic gen for '${block.title}' (${
-                  allOptions.length
-                } opts) took ${Date.now() - diagStart}ms`,
-              );
+              // Check if we have enough time for diagnostic generation (approx 15s per item)
+              const estimatedTime = allOptions.length * 2000;
+              if (
+                Date.now() - startTime + estimatedTime >
+                300000 - TIMEOUT_BUFFER
+              ) {
+                console.warn(
+                  `[StructuredSummary] Skipping diagnostic details for '${block.title}' due to timeout risk`,
+                );
+              } else {
+                const diagStart = Date.now();
+                // Use the specialized diagnostic generation function which handles all 3 prompts (answer, options, details)
+                // Use smaller batches for diagnostic generation within sections
+                const diagResults = await generateDiagnosticAnswers(
+                  allOptions,
+                  block.body.substring(0, 8000), // Pass section content as context
+                  undefined, // No adminId needed since we provide direct context
+                  metadata.businessName, // Pass business name
+                );
+                console.log(
+                  `[StructuredSummary] Diagnostic gen for '${block.title}' (${
+                    allOptions.length
+                  } opts) took ${Date.now() - diagStart}ms`,
+                );
 
-              // Merge details back
-              [sectionData.leadQuestions, sectionData.salesQuestions].forEach(
-                (list) => {
-                  list.forEach((q: any) => {
-                    if (q.options && Array.isArray(q.options)) {
-                      q.options = q.options.map((opt: any) => {
-                        const label = typeof opt === "string" ? opt : opt.label;
-                        const workflow =
-                          typeof opt === "object" && opt.workflow
-                            ? opt.workflow
-                            : q.workflow || "diagnostic_response";
-                        const key = `${label}::${workflow}`;
-                        const details = diagResults[key];
+                // Merge details back
+                [sectionData.leadQuestions, sectionData.salesQuestions].forEach(
+                  (list) => {
+                    list.forEach((q: any) => {
+                      if (q.options && Array.isArray(q.options)) {
+                        q.options = q.options.map((opt: any) => {
+                          const label =
+                            typeof opt === "string" ? opt : opt.label;
+                          const workflow =
+                            typeof opt === "object" && opt.workflow
+                              ? opt.workflow
+                              : q.workflow || "diagnostic_response";
+                          const key = `${label}::${workflow}`;
+                          const details = diagResults[key];
 
-                        const base = typeof opt === "object" ? opt : { label };
-                        if (details) {
-                          return {
-                            ...base,
-                            workflow, // Ensure workflow is set
-                            diagnostic_answer: details.answer,
-                            diagnostic_options: details.options,
-                            diagnostic_option_details: details.optionDetails,
-                          };
-                        }
-                        return { ...base, workflow };
-                      });
-                    }
-                  });
-                },
-              );
+                          const base =
+                            typeof opt === "object" ? opt : { label };
+                          if (details) {
+                            return {
+                              ...base,
+                              workflow, // Ensure workflow is set
+                              diagnostic_answer: details.answer,
+                              diagnostic_options: details.options,
+                              diagnostic_option_details: details.optionDetails,
+                            };
+                          }
+                          return { ...base, workflow };
+                        });
+                      }
+                    });
+                  },
+                );
+              }
             } catch (e) {
               console.error(
                 `[StructuredSummary] Failed to generate diagnostic details for '${block.title}'`,

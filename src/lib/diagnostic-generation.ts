@@ -106,9 +106,18 @@ export async function generateDiagnosticAnswers(
       optionDetails?: { label: string; answer: string }[];
     }
   > = {};
-  const CONCURRENCY = 1; // Strict sequential processing to avoid rate limits
+  const CONCURRENCY = 3; // Increased concurrency to speed up processing
+  const TIMEOUT_BUFFER = 15000; // 15s buffer for diagnostic generation
+  const diagStartTime = Date.now();
 
   for (let i = 0; i < items.length; i += CONCURRENCY) {
+    if (Date.now() - diagStartTime > 250000 - TIMEOUT_BUFFER) {
+      console.warn(
+        "[Diagnostic] Approaching timeout, stopping diagnostic generation",
+      );
+      break;
+    }
+
     const batchStart = Date.now();
     const batch = items.slice(i, i + CONCURRENCY);
     console.log(
@@ -164,11 +173,13 @@ export async function generateDiagnosticAnswers(
 
     // Add a small delay between batches to respect rate limits
     if (i + CONCURRENCY < items.length) {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 200));
     }
   }
 
-  console.log(`[Diagnostic] Total generation took ${Date.now() - startTime}ms`);
+  console.log(
+    `[Diagnostic] Total generation took ${Date.now() - diagStartTime}ms`,
+  );
   return map;
 }
 
