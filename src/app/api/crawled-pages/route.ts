@@ -20,6 +20,8 @@ import {
   StructuredSummary,
 } from "@/lib/structured-summary";
 
+export const maxDuration = 300; // Increase max duration for long summaries
+
 const pc = new Pinecone({ apiKey: process.env.PINECONE_KEY! });
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 
@@ -306,13 +308,43 @@ export async function POST(request: NextRequest) {
 
     let structuredSummary: StructuredSummary | null = null;
 
+    // Resume Logic: Check if we have an incomplete summary in DB
+    const structuredSummaries = db.collection("structured_summaries");
+    const existingDoc = await structuredSummaries.findOne({ url });
+    if (
+      existingDoc &&
+      existingDoc.structuredSummary &&
+      !existingDoc.structuredSummary.isComplete &&
+      Array.isArray(existingDoc.structuredSummary.sections)
+    ) {
+      console.log(
+        `[CrawledPages] Resuming incomplete summary for ${url} from index ${existingDoc.structuredSummary.sections.length}`,
+      );
+      structuredSummary = existingDoc.structuredSummary;
+    }
+
     try {
-      let genResult =
-        await generateStructuredSummaryFromText(reconstructedContent);
+      let startIndex = structuredSummary?.sections?.length || 0;
+      let genResult = await generateStructuredSummaryFromText(
+        reconstructedContent,
+        startIndex,
+        structuredSummary,
+      );
       structuredSummary = genResult.summary;
 
+      const summaryStartTime = Date.now();
+
       // Loop to process all sections in batches
+      // Each batch of 3 takes ~150s. We need enough time for the next batch.
+      // Buffer: 160s (to be safe)
       while (!genResult.isComplete && genResult.nextIndex < 100) {
+        if (Date.now() - summaryStartTime > 300000 - 160000) {
+          console.log(
+            `[CrawledPages] Timeout approaching (remaining < 160s), returning partial summary`,
+          );
+          break;
+        }
+
         // Safety break
         genResult = await generateStructuredSummaryFromText(
           reconstructedContent,

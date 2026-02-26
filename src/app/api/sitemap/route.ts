@@ -3500,20 +3500,45 @@ async function processBatch(req: NextRequest) {
           let structuredSummary: StructuredSummary | null = null;
           let basicSummary = "Summary not available";
 
+          // Resume Logic: Check if we have an incomplete summary in DB
+          const existingDoc = await db
+            .collection("structured_summaries")
+            .findOne({ url });
+          if (
+            existingDoc &&
+            existingDoc.structuredSummary &&
+            !existingDoc.structuredSummary.isComplete &&
+            Array.isArray(existingDoc.structuredSummary.sections)
+          ) {
+            console.log(
+              `[${reqId}] Resuming incomplete summary for ${url} from index ${existingDoc.structuredSummary.sections.length}`,
+            );
+            structuredSummary = existingDoc.structuredSummary;
+          }
+
           try {
             const summaryStart = Date.now();
             console.log(
               `[${reqId}] Starting structured summary gen for ${url}`,
             );
-            let genResult = await generateStructuredSummaryFromText(text);
+
+            // Initial call (will use existing summary if set, or start fresh)
+            let startIndex = structuredSummary?.sections?.length || 0;
+            let genResult = await generateStructuredSummaryFromText(
+              text,
+              startIndex,
+              structuredSummary,
+            );
             structuredSummary = genResult.summary;
 
             // Loop to process all sections in batches
+            // Each batch of 3 takes ~150s. We need enough time for the next batch.
+            // Buffer: 160s (to be safe)
             while (!genResult.isComplete && genResult.nextIndex < 100) {
-              // Check for timeout
-              if (Date.now() - startTime > MAX_EXECUTION_TIME - 10000) {
+              // Check for timeout with sufficient buffer for a full batch
+              if (Date.now() - startTime > MAX_EXECUTION_TIME - 160000) {
                 console.log(
-                  `[${reqId}] Timeout approaching, stopping summary generation at index ${genResult.nextIndex}`,
+                  `[${reqId}] Timeout approaching (remaining < 160s), stopping summary generation at index ${genResult.nextIndex}`,
                 );
                 break;
               }

@@ -27,6 +27,7 @@ export interface StructuredSummary {
   trustSignals: string[];
   sections: SectionDetail[];
   summaryGeneratedAt?: Date;
+  isComplete?: boolean;
 }
 
 export interface SectionDetail {
@@ -49,6 +50,26 @@ export async function generateStructuredSummaryFromText(
   if (!text || text.trim().length === 0)
     return { summary: null, nextIndex: 0, isComplete: true };
 
+  let summary: StructuredSummary = existingSummary || {
+    pageType: "unknown",
+    businessVertical: "unknown",
+    businessName: "unknown",
+    primaryFeatures: [],
+    painPointsAddressed: [],
+    solutions: [],
+    targetCustomers: [],
+    businessOutcomes: [],
+    competitiveAdvantages: [],
+    industryTerms: [],
+    pricePoints: [],
+    integrations: [],
+    useCases: [],
+    callsToAction: [],
+    trustSignals: [],
+    sections: [],
+    isComplete: false,
+  };
+
   try {
     // 1. Parse and Merge Sections
     const rawBlocks = parseSectionBlocks(text);
@@ -61,25 +82,7 @@ export async function generateStructuredSummaryFromText(
       blocks.push({ title: "General Content", body: text });
     }
 
-    // Initialize summary with existing one or empty
-    let summary: StructuredSummary = existingSummary || {
-      pageType: "unknown",
-      businessVertical: "unknown",
-      businessName: "unknown",
-      primaryFeatures: [],
-      painPointsAddressed: [],
-      solutions: [],
-      targetCustomers: [],
-      businessOutcomes: [],
-      competitiveAdvantages: [],
-      industryTerms: [],
-      pricePoints: [],
-      integrations: [],
-      useCases: [],
-      callsToAction: [],
-      trustSignals: [],
-      sections: [],
-    };
+    // Initialize summary with existing one or empty (moved to top of function)
 
     // 2. Step 1: Generate Global Metadata (Only if starting fresh and no existing summary)
     if (startIndex === 0 && !existingSummary) {
@@ -147,7 +150,7 @@ export async function generateStructuredSummaryFromText(
     }
 
     // 3. Step 2: Generate Questions for Each Section (Batch Processing)
-    const BATCH_SIZE = 5; // Process in batches of 5 sections
+    const BATCH_SIZE = 3; // Process 3 sections at a time (safe for 300s timeout)
     const concurrency = 1; // Strict sequential processing within batch
     const TIMEOUT_BUFFER = 30000; // 30s buffer before Vercel timeout (300s)
     const startTime = Date.now();
@@ -386,6 +389,7 @@ export async function generateStructuredSummaryFromText(
 
     const nextIndex = startIndex + newSections.length;
     const isComplete = nextIndex >= blocks.length;
+    summary.isComplete = isComplete;
 
     console.log(
       `[StructuredSummary] Batch complete. Processed ${newSections.length} sections. Next index: ${nextIndex}. Total blocks: ${blocks.length}`,
@@ -394,6 +398,7 @@ export async function generateStructuredSummaryFromText(
     return { summary, nextIndex, isComplete };
   } catch (error) {
     console.error("[StructuredSummary] Error generating summary:", error);
-    return { summary: null, nextIndex: startIndex, isComplete: false };
+    // Even if error, return what we have so far
+    return { summary, nextIndex: startIndex, isComplete: false };
   }
 }
