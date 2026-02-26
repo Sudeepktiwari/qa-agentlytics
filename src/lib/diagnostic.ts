@@ -64,12 +64,40 @@ OUTPUT FORMAT (JSON):
   ]
 }`;
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      response_format: { type: "json_object" },
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0.3,
-    });
+    const makeRequest = async (model: string) => {
+      return await openai.chat.completions.create({
+        model,
+        response_format: { type: "json_object" },
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.3,
+      });
+    };
+
+    let response;
+    try {
+      response = await makeRequest("gpt-4o-mini");
+    } catch (e: any) {
+      if (e.status === 429) {
+        console.warn(
+          "Rate limit hit for gpt-4o-mini, falling back to gpt-3.5-turbo",
+        );
+        try {
+          response = await makeRequest("gpt-3.5-turbo");
+        } catch (fallbackError) {
+          console.error(
+            "Fallback to gpt-3.5-turbo also failed:",
+            fallbackError,
+          );
+          return {
+            diagnostic_answer: "",
+            diagnostic_options: [],
+            diagnostic_option_details: [],
+          };
+        }
+      } else {
+        throw e;
+      }
+    }
 
     const content = response.choices[0]?.message?.content || "{}";
     const data = JSON.parse(content);

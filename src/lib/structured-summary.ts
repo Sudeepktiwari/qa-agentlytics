@@ -119,7 +119,7 @@ export async function generateStructuredSummaryFromText(
 
     // 3. Step 2: Generate Questions for Each Section
     const sections: SectionDetail[] = [];
-    const concurrency = 5; // Process 5 sections at a time
+    const concurrency = 2; // Reduced from 5 to avoid rate limits
 
     for (let i = 0; i < blocks.length; i += concurrency) {
       const batchStart = Date.now();
@@ -288,10 +288,15 @@ export async function generateStructuredSummaryFromText(
       const batchResults = await Promise.all(batchPromises);
       sections.push(...batchResults);
       console.log(
-        `[StructuredSummary] Batch ${i / concurrency + 1} took ${
+        `[StructuredSummary] Batch ${Math.floor(i / concurrency) + 1} took ${
           Date.now() - batchStart
         }ms`,
       );
+
+      // Add delay between batches
+      if (i + concurrency < blocks.length) {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      }
     }
 
     // 4. Assemble Final Object

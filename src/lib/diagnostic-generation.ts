@@ -106,7 +106,7 @@ export async function generateDiagnosticAnswers(
       optionDetails?: { label: string; answer: string }[];
     }
   > = {};
-  const CONCURRENCY = 5;
+  const CONCURRENCY = 3; // Reduced from 5 to avoid rate limits
 
   for (let i = 0; i < items.length; i += CONCURRENCY) {
     const batchStart = Date.now();
@@ -161,11 +161,14 @@ export async function generateDiagnosticAnswers(
         Date.now() - batchStart
       }ms`,
     );
+
+    // Add a small delay between batches to respect rate limits
+    if (i + CONCURRENCY < items.length) {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
   }
 
-  console.log(
-    `[Diagnostic] Total generation took ${Date.now() - startTime}ms`,
-  );
+  console.log(`[Diagnostic] Total generation took ${Date.now() - startTime}ms`);
   return map;
 }
 
