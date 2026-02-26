@@ -106,7 +106,7 @@ export async function generateDiagnosticAnswers(
       optionDetails?: { label: string; answer: string }[];
     }
   > = {};
-  const CONCURRENCY = 3; // Reduced from 5 to avoid rate limits
+  const CONCURRENCY = 1; // Strict sequential processing to avoid rate limits
 
   for (let i = 0; i < items.length; i += CONCURRENCY) {
     const batchStart = Date.now();

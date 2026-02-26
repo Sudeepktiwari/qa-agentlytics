@@ -37,7 +37,7 @@ import puppeteer from "puppeteer";
 export const maxDuration = 300;
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
-const MAX_PAGES = 5;
+const MAX_PAGES = 1; // Process only 1 page at a time to avoid rate limits
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // Initialize Pinecone

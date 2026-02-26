@@ -119,7 +119,7 @@ export async function generateStructuredSummaryFromText(
 
     // 3. Step 2: Generate Questions for Each Section
     const sections: SectionDetail[] = [];
-    const concurrency = 2; // Reduced from 5 to avoid rate limits
+    const concurrency = 1; // Strict sequential processing to avoid rate limits
 
     for (let i = 0; i < blocks.length; i += concurrency) {
       const batchStart = Date.now();
