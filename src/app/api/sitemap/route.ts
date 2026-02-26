@@ -3302,21 +3302,41 @@ async function processBatch(req: NextRequest) {
 
       if (candidates.length === 0) {
         // Check for Pass 2 (Analyze)
+
+        // PRIORITY: Find pages with incomplete summaries that belong to this sitemap
+        const incompleteDocs = await db
+          .collection("structured_summaries")
+          .find({
+            adminId,
+            "structuredSummary.isComplete": false,
+            url: { $in: urls }, // Ensure it's part of current scope
+          })
+          .project({ url: 1 })
+          .toArray();
+
+        const incompleteUrls = incompleteDocs.map((d: any) => d.url);
+
         const unanalyzedDocs = await sitemapUrls
           .find({
             adminId,
             sitemapUrl,
             crawled: true,
             analyzed: { $ne: true },
-            url: { $in: urls },
+            url: {
+              $in: urls,
+              $nin: incompleteUrls, // Exclude the ones we already prioritized
+            },
           })
-          .limit(MAX_PAGES_PASS_2)
+          .limit(MAX_PAGES_PASS_2 - incompleteUrls.length)
           .project({ url: 1 })
           .toArray();
 
-        if (unanalyzedDocs.length > 0) {
+        const unanalyzedUrls = unanalyzedDocs.map((d: any) => d.url);
+        const allCandidates = [...incompleteUrls, ...unanalyzedUrls];
+
+        if (allCandidates.length > 0) {
           phase = "analyze";
-          candidates = unanalyzedDocs.map((d: any) => d.url);
+          candidates = allCandidates;
         }
       }
 
