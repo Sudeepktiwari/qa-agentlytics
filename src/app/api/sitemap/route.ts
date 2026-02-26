@@ -34,6 +34,8 @@ import OpenAI from "openai";
 import { Pinecone } from "@pinecone-database/pinecone";
 import puppeteer from "puppeteer";
 
+export const maxDuration = 300;
+
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
 const MAX_PAGES = 20;
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -2341,9 +2343,7 @@ export async function POST(req: NextRequest) {
 
 async function processBatch(req: NextRequest) {
   const startTime = Date.now();
-  // Reduced to 50 seconds to safely fit within Vercel's 60s Pro execution limit
-  // Each page processing (extraction + summary) can take ~30-40s, so we need a buffer to prevent 504 timeouts
-  const MAX_EXECUTION_TIME = 50000;
+  const MAX_EXECUTION_TIME = 250000;
 
   // console.log removed
   // console.log removed
@@ -3081,6 +3081,8 @@ async function processBatch(req: NextRequest) {
       }
     }
 
+    urls = uniqueUrls;
+
     // Find already crawled URLs for this specific admin/sitemapUrl combination
     const crawledDocs = await sitemapUrls
       .find({ adminId, sitemapUrl, crawled: true }) // This now only looks at URLs from this specific sitemap submission
@@ -3154,7 +3156,7 @@ async function processBatch(req: NextRequest) {
 
       // 1. Fetch pages already crawled FOR THIS SITEMAP
       const updatedCrawledDocs = await sitemapUrls
-        .find({ adminId, crawled: true })
+        .find({ adminId, sitemapUrl, crawled: true })
         .project({ url: 1, _id: 0 })
         .toArray();
       const sitemapCrawledSet = new Set(
@@ -3986,13 +3988,19 @@ IMPORTANT REQUIREMENTS:
 
     const totalElapsedTime = Date.now() - startTime;
 
-    // Recalculate remaining based on DB truth
+    const totalDiscoveredFromDb = await sitemapUrls.countDocuments({
+      adminId,
+      sitemapUrl,
+    });
     const finalCrawledCount = await sitemapUrls.countDocuments({
       adminId,
       sitemapUrl,
       crawled: true,
     });
-    const totalRemaining = Math.max(0, urls.length - finalCrawledCount);
+    const totalRemaining = Math.max(
+      0,
+      totalDiscoveredFromDb - finalCrawledCount,
+    );
     const hasMorePages = totalRemaining > 0;
 
     // console.log removed
@@ -4014,7 +4022,7 @@ IMPORTANT REQUIREMENTS:
       recrawledPages: problematicUrls.length, // Show how many pages were reset for re-crawling
       timeoutReached, // Indicate if processing stopped due to timeout
       executionTime: totalElapsedTime,
-      totalDiscovered: urls.length,
+      totalDiscovered: totalDiscoveredFromDb,
       hasMorePages, // Indicates if there are more pages to crawl
       sitemapUrl, // Include the sitemap URL for auto-continue
       message: timeoutReached
