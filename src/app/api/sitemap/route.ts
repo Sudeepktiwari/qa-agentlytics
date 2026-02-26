@@ -37,7 +37,6 @@ import puppeteer from "puppeteer";
 export const maxDuration = 300;
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev_secret";
-const MAX_PAGES = 1; // Process only 1 page at a time to avoid rate limits
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // Initialize Pinecone
@@ -3247,6 +3246,9 @@ async function processBatch(req: NextRequest) {
     let timeoutReached = false;
     let updatedCrawledUrls = new Set<string>();
     const processedInSession = new Set<string>();
+    let phase: "crawl" | "analyze" = "crawl";
+    let crawledInThisRequest = 0;
+    let analyzedInThisRequest = 0;
 
     while (true) {
       if (Date.now() - startTime > MAX_EXECUTION_TIME) {
@@ -3281,19 +3283,46 @@ async function processBatch(req: NextRequest) {
       // and update their status in the sitemapUrls collection without re-fetching.
       // FIX: Also check if globalCrawledSet is missing the URL (meaning content was deleted),
       // even if sitemapUrls says it was crawled. This allows self-correction.
-      const uncrawledUrls = urls
+
+      // PHASE 1: CRAWL ONLY (Fetch text, skip AI)
+      const MAX_PAGES_PASS_1 = 10;
+      const MAX_PAGES_PASS_2 = 1;
+      phase = "crawl"; // Default to crawl
+
+      let candidates = urls
         .filter(
           (url) =>
             (!sitemapCrawledSet.has(url) || !globalCrawledSet.has(url)) &&
             !processedInSession.has(url),
         )
-        .slice(0, MAX_PAGES);
+        .slice(0, MAX_PAGES_PASS_1);
+
+      if (candidates.length === 0) {
+        // Check for Pass 2 (Analyze)
+        const unanalyzedDocs = await sitemapUrls
+          .find({
+            adminId,
+            sitemapUrl,
+            crawled: true,
+            analyzed: { $ne: true },
+            url: { $in: urls },
+          })
+          .limit(MAX_PAGES_PASS_2)
+          .project({ url: 1 })
+          .toArray();
+
+        if (unanalyzedDocs.length > 0) {
+          phase = "analyze";
+          candidates = unanalyzedDocs.map((d: any) => d.url);
+        }
+      }
+
       console.log(
-        `[${reqId}] Batch candidates`,
-        JSON.stringify({ count: uncrawledUrls.length }),
+        `[${reqId}] Batch candidates (${phase})`,
+        JSON.stringify({ count: candidates.length }),
       );
 
-      if (uncrawledUrls.length === 0) {
+      if (candidates.length === 0) {
         // console.log removed
         break;
       }
@@ -3302,9 +3331,9 @@ async function processBatch(req: NextRequest) {
       // console.log removed
       // console.log removed
 
-      for (const url of uncrawledUrls) {
+      for (const url of candidates) {
         const perUrlStart = Date.now();
-        console.log(`[${reqId}] Process URL`, url);
+        console.log(`[${reqId}] Process URL (${phase})`, url);
         // Fast-Track: If already crawled globally, skip fetch but update sitemap status
         // Check for URL variations (trailing slash, protocol) to ensure we don't re-crawl
         // just because of minor format differences
@@ -3337,13 +3366,19 @@ async function processBatch(req: NextRequest) {
         );
 
         if (isAlreadyCrawled) {
-          // console.log removed
-          await sitemapUrls.updateOne(
-            { adminId, url, sitemapUrl },
-            { $set: { crawled: true, crawledAt: new Date() } },
-          );
-          processedInSession.add(url);
-          continue;
+          // If in crawl phase, we are done with this URL (just update status)
+          if (phase === "crawl") {
+            // console.log removed
+            await sitemapUrls.updateOne(
+              { adminId, url, sitemapUrl },
+              {
+                $set: { crawled: true, crawledAt: new Date(), analyzed: false },
+              },
+            );
+            processedInSession.add(url);
+            continue;
+          }
+          // If in analyze phase, we proceed (unless we want to optimize further)
         }
 
         // Check for stop signal
@@ -3387,7 +3422,20 @@ async function processBatch(req: NextRequest) {
           );
           const crawlStartTime = Date.now();
 
-          let text = await extractTextFromUrl(url);
+          let text = "";
+          // Optimize: If analyzing, fetch from DB to avoid network request
+          if (phase === "analyze") {
+            const existingPage = await pages.findOne({ adminId, url });
+            if (existingPage?.text) {
+              text = existingPage.text;
+              console.log(`[${reqId}] Fetched text from DB for ${url}`);
+            } else {
+              text = await extractTextFromUrl(url);
+            }
+          } else {
+            text = await extractTextFromUrl(url);
+          }
+
           console.log(
             `[${reqId}] Extracted`,
             JSON.stringify({
@@ -3424,6 +3472,26 @@ async function processBatch(req: NextRequest) {
 
           // console.log removed
           results.push({ url, text });
+
+          // PHASE 1: Skip AI generation if in crawl phase
+          if (phase === "crawl") {
+            // Save to DB
+            await pages.updateOne(
+              { adminId, url },
+              { $set: { text, lastCrawled: new Date(), sitemapUrl } },
+              { upsert: true },
+            );
+            // Mark as crawled but NOT analyzed
+            await sitemapUrls.updateOne(
+              { adminId, url, sitemapUrl },
+              {
+                $set: { crawled: true, crawledAt: new Date(), analyzed: false },
+              },
+            );
+            processedInSession.add(url);
+            crawledInThisRequest++;
+            continue; // Skip the rest (Summary + Embeddings)
+          }
 
           // Generate structured summary using shared library
           let structuredSummary: any = null;
@@ -4108,6 +4176,16 @@ IMPORTANT REQUIREMENTS:
             error: err instanceof Error ? err.message : String(err),
           });
         }
+
+        // If analyzed successfully, mark it
+        if (phase === "analyze" && !failedUrls.some((f) => f.url === url)) {
+          await sitemapUrls.updateOne(
+            { adminId, url, sitemapUrl },
+            { $set: { analyzed: true } },
+          );
+          analyzedInThisRequest++;
+        }
+
         processedInSession.add(url);
       }
 
@@ -4136,39 +4214,66 @@ IMPORTANT REQUIREMENTS:
       sitemapUrl,
       crawled: true,
     });
-    const totalRemaining = Math.max(
-      0,
-      totalDiscoveredFromDb - finalCrawledCount,
-    );
-    const hasMorePages = totalRemaining > 0;
+    let totalRemaining = Math.max(0, totalDiscoveredFromDb - finalCrawledCount);
+    let hasMorePages = false;
+    let message = "";
 
-    // console.log removed
-    // console.log removed
-    // console.log removed
+    // Check if we have unanalyzed pages (Pass 2 pending)
+    const unanalyzedCount = await sitemapUrls.countDocuments({
+      adminId,
+      sitemapUrl,
+      crawled: true,
+      analyzed: { $ne: true },
+    });
+
+    const totalAnalyzedCount = await sitemapUrls.countDocuments({
+      adminId,
+      sitemapUrl,
+      analyzed: true,
+    });
+
+    if (phase === "crawl") {
+      if (totalRemaining > 0) {
+        hasMorePages = true;
+        message = `Crawling ${crawledInThisRequest} pages... ${totalRemaining} remaining to crawl.`;
+      } else if (unanalyzedCount > 0) {
+        hasMorePages = true;
+        totalRemaining = unanalyzedCount;
+        message = `Crawling complete. Switching to analysis for ${unanalyzedCount} pages...`;
+      } else {
+        hasMorePages = false;
+        message = `All ${totalDiscoveredFromDb} pages processed and analyzed!`;
+      }
+    } else {
+      // Analyze phase
+      totalRemaining = unanalyzedCount;
+      hasMorePages = totalRemaining > 0;
+      message = `Analyzing content... ${unanalyzedCount} remaining.`;
+    }
 
     if (timeoutReached) {
-      // console.log removed
+      message = `Timeout. ${message}`;
     }
 
     const response = {
-      crawled: results.length,
+      crawled: crawledInThisRequest,
+      analyzed: analyzedInThisRequest,
+      phase,
+      totalCrawled: finalCrawledCount,
+      totalAnalyzed: totalAnalyzedCount,
       totalChunks,
       pages: results.map((r) => r.url),
       failedPages: failedUrls,
-      batchDone: results.length, // Number of pages successfully crawled in this batch
-      batchRemaining: totalRemaining, // Total remaining pages
+      batchDone: results.length,
+      batchRemaining: totalRemaining,
       totalRemaining: totalRemaining,
-      recrawledPages: problematicUrls.length, // Show how many pages were reset for re-crawling
-      timeoutReached, // Indicate if processing stopped due to timeout
+      recrawledPages: problematicUrls.length,
+      timeoutReached,
       executionTime: totalElapsedTime,
       totalDiscovered: totalDiscoveredFromDb,
-      hasMorePages, // Indicates if there are more pages to crawl
-      sitemapUrl, // Include the sitemap URL for auto-continue
-      message: timeoutReached
-        ? `Processed ${results.length} pages before timeout. ${totalRemaining} pages remaining.`
-        : hasMorePages
-          ? `Successfully processed ${results.length} pages. ${totalRemaining} pages remaining - auto-continue available.`
-          : `All ${urls.length} pages have been successfully processed!`,
+      hasMorePages,
+      sitemapUrl,
+      message,
     };
 
     // Auto-extract personas when crawling is complete
